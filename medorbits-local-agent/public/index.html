@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#162d25">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <meta
+    name="description"
+    content="MedOrbits Local Coding Agent -- inspect your repository, analyze issues, review proposed code changes, and authorize file modifications explicitly."
+  >
+  <title>MedOrbits | Local Coding Agent</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">
+    Skip to main content
+  </a>
+  <div class="agent-shell">
+    <!-- Application header -->
+    <header class="agent-header">
+      <div class="brand">
+        <a
+          class="brand-mark"
+          href="/"
+          aria-label="MedOrbits Local Coding Agent home"
+        >
+          <span aria-hidden="true">M</span>
+        </a>
+        <div class="brand-copy">
+          <p class="eyebrow">
+            MEDORBITS
+            <span aria-hidden="true">/</span>
+            DEVELOPER INTELLIGENCE
+          </p>
+          <p class="brand-subtitle">
+            Local Coding Agent
+          </p>
+        </div>
+        <span class="security-label">
+          <span class="status-indicator" aria-hidden="true"></span>
+          Human-controlled workflow
+        </span>
+      </div>
+      <div class="header-content">
+        <div>
+          <p class="eyebrow">YOUR CODE. YOUR CONTROL.</p>
+          <h1>
+            Build better.
+            <span>Review everything.</span>
+          </h1>
+          <p class="intro">
+            Investigate bugs, understand your repository, improve existing
+            code, and review every proposed modification before it is applied.
+          </p>
+        </div>
+        <div class="header-actions">
+          <span class="environment-badge">
+            <span aria-hidden="true">◆</span>
+            Local AI workspace
+          </span>
+        </div>
+      </div>
+      <!-- Connection status -->
+      <section
+        class="connection-panel"
+        aria-labelledby="connection-heading"
+      >
+        <div class="connection-main">
+          <span
+            class="connection-icon"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="23"
+              height="23"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="13" rx="2"/>
+              <path d="M8 21h8M12 17v4M8 9l-2 2 2 2M16 9l2 2-2 2"/>
+            </svg>
+          </span>
+          <div>
+            <h2 id="connection-heading">AI engine connection</h2>
+            <p id="status" role="status" aria-live="polite">
+              Checking Ollama connection…
+            </p>
+          </div>
+        </div>
+        <div class="connection-meta">
+          <span class="connection-caption">
+            Inference provider
+          </span>
+          <strong>Ollama</strong>
+          <span class="connection-caption">
+            Expected to run locally
+          </span>
+        </div>
+      </section>
+    </header>
+    <main id="main-content" class="agent-main">
+      <!-- Workspace overview -->
+      <section
+        class="workspace-overview"
+        aria-labelledby="workspace-heading"
+      >
+        <div>
+          <p class="eyebrow">WORKSPACE</p>
+          <h2 id="workspace-heading">
+            Repository engineering
+          </h2>
+          <p>
+            From investigation to reviewed changes, with explicit control
+            at every stage.
+          </p>
+        </div>
+        <div class="workflow-steps" aria-label="Agent workflow">
+          <div class="workflow-step active">
+            <span>01</span>
+            <span>Inspect</span>
+          </div>
+          <span class="workflow-divider" aria-hidden="true"></span>
+          <div class="workflow-step">
+            <span>02</span>
+            <span>Review</span>
+          </div>
+          <span class="workflow-divider" aria-hidden="true"></span>
+          <div class="workflow-step">
+            <span>03</span>
+            <span>Approve</span>
+          </div>
+        </div>
+      </section>
+      <!-- Main request panel -->
+      <section
+        class="panel request-panel"
+        aria-labelledby="request-heading"
+      >
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div>
+            <h2 id="request-heading">New coding request</h2>
+            <p>
+              Explain the problem, desired outcome, and constraints.
+            </p>
+          </div>
+        </div>
+        <form id="request-form" novalidate>
+          <div class="form-grid">
+            <div class="field-group">
+              <label for="task-type">Task type</label>
+              <select id="task-type" name="taskType">
+                <option value="inspect">Inspect repository</option>
+                <option value="debug">Debug an issue</option>
+                <option value="fix">Propose a bug fix</option>
+                <option value="improve">Improve existing code</option>
+                <option value="security">Security review</option>
+                <option value="test">Improve test coverage</option>
+                <option value="document">Generate documentation</option>
+                <option value="explain">Explain existing code</option>
+              </select>
+              <p class="field-help">
+                Choose the primary objective for this request.
+              </p>
+            </div>
+            <div class="field-group">
+              <label for="scope">Inspection scope</label>
+              <select id="scope" name="scope">
+                <option value="repository">Whole repository</option>
+                <option value="specific">Specific files or folders</option>
+                <option value="tests">Tests and security checks</option>
+                <option value="frontend">Frontend</option>
+                <option value="backend">Backend and APIs</option>
+                <option value="deployment">Build and deployment</option>
+              </select>
+              <p class="field-help">
+                Scope helps focus the investigation.
+              </p>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="request">
+              Describe your coding request
+            </label>
+            <textarea
+              id="request"
+              name="request"
+              rows="7"
+              maxlength="20000"
+              placeholder="Example: Inspect the MedOrbits search functionality. Identify the root cause of any errors, trace relevant routes and data sources, and propose the smallest safe fix. Preserve existing pages, asset paths, API contracts, and responsive layouts."
+              aria-describedby="request-help"
+              spellcheck="true"
+              required
+            ></textarea>
+            <p id="request-help" class="field-help">
+              Include expected behavior, relevant files, reproduction steps,
+              and anything that must not change.
+            </p>
+          </div>
+          <div class="field-group">
+            <label for="constraints">
+              Additional constraints
+              <span class="optional-label">Optional</span>
+            </label>
+            <textarea
+              id="constraints"
+              name="constraints"
+              rows="3"
+              maxlength="5000"
+              placeholder="Example: Do not change the database schema. Preserve existing routes. Do not add paid dependencies. Do not commit or push changes."
+            ></textarea>
+          </div>
+          <div class="request-footer">
+            <div class="request-note">
+              <span aria-hidden="true">◇</span>
+              <p>
+                Inspection should be read-only until a proposal is reviewed
+                and approved.
+              </p>
+            </div>
+            <div class="action-row">
+              <button
+                id="propose"
+                type="button"
+                class="primary-button"
+              >
+                <span>Inspect and propose</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+          <p
+            id="message"
+            class="message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </form>
+      </section>
+      <!-- Proposal review -->
+      <section
+        id="review"
+        class="panel review-panel"
+        aria-labelledby="review-heading"
+        hidden
+      >
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">02</span>
+          <div>
+            <h2 id="review-heading">Review proposed changes</h2>
+            <p>
+              Examine the rationale, file paths, diffs, and validation plan.
+            </p>
+          </div>
+        </div>
+        <div class="review-notice" role="note">
+          <strong>Approval required</strong>
+          <p>
+            A proposal is not an applied change. Verify the complete diff,
+            inspect potentially destructive operations, and confirm the
+            affected files before authorizing modifications.
+          </p>
+        </div>
+        <section
+          class="proposal-summary"
+          aria-labelledby="summary-heading"
+        >
+          <div class="subsection-heading">
+            <h3 id="summary-heading">Proposal summary</h3>
+            <span class="review-status">
+              Awaiting review
+            </span>
+          </div>
+          <p id="summary">
+            The proposed change summary will appear here.
+          </p>
+        </section>
+        <section
+          class="file-changes"
+          aria-labelledby="changes-heading"
+        >
+          <h3 id="changes-heading">Files and changes</h3>
+          <p class="field-help">
+            Review the complete proposed content or diff for every file.
+            File paths and change operations must be validated by the server.
+          </p>
+          <div id="changes"></div>
+        </section>
+        <section
+          class="validation-section"
+          aria-labelledby="tests-heading"
+        >
+          <h3 id="tests-heading">Suggested validation checks</h3>
+          <p class="field-help">
+            Suggested checks are not evidence of execution. Review actual
+            test results separately.
+          </p>
+          <ul id="tests"></ul>
+        </section>
+        <section
+          class="risk-section"
+          aria-labelledby="risk-heading"
+        >
+          <h3 id="risk-heading">Risk assessment</h3>
+          <p>
+            Before approval, assess changes involving authentication,
+            authorization, secrets, database migrations, file deletion,
+            dependencies, external services, and deployment configuration.
+          </p>
+          <p class="field-help">
+            Any risk label supplied by the AI is advisory. The server must
+            independently enforce the permitted operations and file scope.
+          </p>
+        </section>
+        <div class="approval-panel">
+          <div class="section-heading">
+            <span class="step-number" aria-hidden="true">03</span>
+            <div>
+              <h3>Explicit approval</h3>
+              <p>
+                Authorize only the exact proposal you have reviewed.
+              </p>
+            </div>
+          </div>
+          <div class="review-notice" role="note">
+            <strong>Security boundary</strong>
+            <p>
+              Approval must be bound to an immutable proposal identifier
+              or digest. If the proposal changes, approval must be requested
+              again. The backend must revalidate paths, file state, and
+              authorization before applying any edit.
+            </p>
+          </div>
+          <label for="confirmation">
+            Type <code>APPROVE FILE CHANGES</code> to continue.
+          </label>
+          <input
+            id="confirmation"
+            name="confirmation"
+            type="text"
+            maxlength="64"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="APPROVE FILE CHANGES"
+            aria-describedby="approval-help"
+          >
+          <p id="approval-help" class="field-help">
+            This confirmation is an additional safeguard, not a replacement
+            for server-side authentication and authorization.
+          </p>
+          <div class="action-row approval-actions">
+            <button
+              id="approve"
+              type="button"
+              class="primary-button"
+              disabled
+            >
+              Approve and apply changes
+            </button>
+            <button
+              id="reject"
+              type="button"
+              class="secondary-button"
+            >
+              Reject proposal
+            </button>
+          </div>
+          <p
+            id="approval-message"
+            class="message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </section>
+      <!-- Security and workflow information -->
+      <section
+        class="security-overview"
+        aria-labelledby="security-heading"
+      >
+        <div class="section-heading">
+          <span class="security-symbol" aria-hidden="true">◆</span>
+          <div>
+            <h2 id="security-heading">Designed for controlled changes</h2>
+            <p>
+              The agent should make its actions inspectable and its limits clear.
+            </p>
+          </div>
+        </div>
+        <div class="security-grid">
+          <article class="security-card">
+            <span class="security-card-icon" aria-hidden="true">01</span>
+            <h3>Read before writing</h3>
+            <p>
+              Inspect relevant files and dependencies before proposing
+              targeted modifications.
+            </p>
+          </article>
+          <article class="security-card">
+            <span class="security-card-icon" aria-hidden="true">02</span>
+            <h3>Review every diff</h3>
+            <p>
+              Display proposed changes and explain their purpose before
+              they are applied.
+            </p>
+          </article>
+          <article class="security-card">
+            <span class="security-card-icon" aria-hidden="true">03</span>
+            <h3>Validate independently</h3>
+            <p>
+              Enforce file restrictions, permissions, and proposal integrity
+              on the backend.
+            </p>
+          </article>
+          <article class="security-card">
+            <span class="security-card-icon" aria-hidden="true">04</span>
+            <h3>Verify the result</h3>
+            <p>
+              Report actual test outcomes, failed checks, and changed files
+              without claiming unperformed work.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer class="agent-footer">
+      <div class="footer-brand">
+        <span class="footer-mark" aria-hidden="true">M</span>
+        <div>
+          <strong>MedOrbits</strong>
+          <p>Local Coding Agent</p>
+        </div>
+      </div>
+      <div class="footer-security">
+        <span>
+          <span class="status-indicator" aria-hidden="true"></span>
+          Explicit approval workflow
+        </span>
+        <p>
+          No automatic Git commits, pushes, merges, or deployments.
+        </p>
+      </div>
+      <p class="footer-disclaimer">
+        Local inference does not guarantee that repository data stays local.
+        Verify the configured model, network access, logging, and backend
+        integrations.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
