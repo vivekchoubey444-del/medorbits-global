@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100A17">
+  <meta name="description" content="Prepare for job interviews with role-specific questions, practice frameworks, interview checklists and career guidance from MedOrbits.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Interview Preparation &amp; Practice | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/career/interview-preparation.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #100a17;
+      --bg-2: #191023;
+      --panel: #21172b;
+      --panel-2: #2b1d36;
+      --gold: #c9a96e;
+      --gold-light: #e4d0a1;
+      --lav: #d9cce4;
+      --muted: #b7acbf;
+      --line: rgba(201,169,110,.24);
+      --white: #f7f1fa;
+      --radius: 18px;
+      --shadow: 0 22px 65px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%,rgba(87,57,105,.22),transparent 35%),
+        radial-gradient(ellipse at 92% 32%,rgba(201,169,110,.07),transparent 28%),
+        linear-gradient(135deg,#100a17,#1a1024 55%,#21172b);
+      color: var(--white);
+      font: 400 15px/1.7 "DM Sans",sans-serif;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button,input,select,textarea { font: inherit; }
+    button,a { -webkit-tap-highlight-color: transparent; }
+    a:focus-visible,button:focus-visible,input:focus-visible,
+    select:focus-visible,textarea:focus-visible,summary:focus-visible {
+      outline: 3px solid var(--gold-light);
+      outline-offset: 4px;
+    }
+    .container { width: min(1180px,calc(100% - 40px)); margin-inline: auto; }
+    .skip-link {
+      position: fixed; top: -60px; left: 12px; z-index: 10001;
+      padding: 10px 14px; border-radius: 8px;
+      background: var(--gold-light); color: #170e1d;
+    }
+    .skip-link:focus { top: 12px; }
+    /* Original opening animation */
+    .intro-screen {
+      position: fixed; inset: 0; z-index: 10000;
+      display: grid; place-items: center; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 42%,rgba(84,30,50,.42),transparent 42%),
+        linear-gradient(145deg,#100a17,#1a1024 58%,#0b0710);
+      opacity: 1; visibility: visible;
+      transition: opacity .75s ease,visibility .75s ease;
+    }
+    .intro-screen::before,.intro-screen::after {
+      content: ""; position: absolute; width: min(62vw,420px);
+      aspect-ratio: 1; border: 1px solid rgba(201,169,110,.2);
+      border-radius: 50%; animation: intro-orbit 2.6s ease-out both;
+    }
+    .intro-screen::after {
+      width: min(48vw,320px);
+      border-color: rgba(201,169,110,.32);
+      animation-delay: .12s;
+    }
+    .intro-screen.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .intro-content {
+      position: relative; z-index: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 24px; text-align: center;
+      animation: intro-rise .9s cubic-bezier(.2,.75,.25,1) both;
+    }
+    .intro-logo {
+      width: 76px; height: 76px; margin-bottom: 17px; object-fit: contain;
+      filter: drop-shadow(0 0 22px rgba(201,169,110,.24));
+      animation: intro-logo-in 1.1s cubic-bezier(.2,.75,.25,1) both;
+    }
+    .intro-wordmark {
+      color: var(--gold-light);
+      font: 600 clamp(22px,4vw,31px)/1.2 "Playfair Display",Georgia,serif;
+      letter-spacing: .23em;
+    }
+    .intro-tagline {
+      margin-top: 12px; color: var(--muted); font-size: 9px;
+      letter-spacing: .24em; text-transform: uppercase;
+      animation: intro-fade-in 1.2s .25s both;
+    }
+    .intro-rule {
+      width: 0; height: 1px; margin-top: 22px;
+      background: linear-gradient(90deg,transparent,var(--gold),transparent);
+      animation: intro-rule-in .8s .35s ease-out forwards;
+    }
+    @keyframes intro-orbit {
+      from { transform: scale(.72) rotate(-25deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    @keyframes intro-rise {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes intro-logo-in {
+      from { transform: scale(.72); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes intro-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes intro-rule-in { to { width: 150px; } }
+    /* Original announcement and navigation */
+    .announcement {
+      display: flex; justify-content: center; align-items: center; gap: 12px;
+      padding: 8px 16px; background: #0b0710;
+      border-bottom: 1px solid rgba(201,169,110,.13);
+      color: var(--gold-light); font-size: 10px; font-weight: 700;
+      letter-spacing: .14em; text-align: center; text-transform: uppercase;
+    }
+    .announcement .spark { color: var(--gold); }
+    .header {
+      position: sticky; top: 0; z-index: 1000;
+      background: rgba(16,10,23,.91); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+      transition: box-shadow .25s,background .25s;
+    }
+    .header.scrolled {
+      background: rgba(12,7,17,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+    .nav-wrap {
+      min-height: 82px; display: flex; align-items: center;
+      justify-content: space-between; gap: 22px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand img { width: 47px; height: 47px; object-fit: contain; }
+    .brand strong {
+      display: block; color: var(--gold-light); font-size: 16px;
+      letter-spacing: .12em; line-height: 1.3;
+    }
+    .brand small {
+      display: block; color: var(--muted); font-size: 8px;
+      letter-spacing: .13em; text-transform: uppercase;
+    }
+    .nav { display: flex; align-items: center; gap: 19px; font-size: 12px; }
+    .nav > a,.nav-trigger { color: #eee6f2; white-space: nowrap; }
+    .nav > a:hover,.nav-trigger:hover { color: var(--gold-light); }
+    .nav-group { position: relative; }
+    .nav-trigger { padding: 12px 0; border: 0; background: none; cursor: pointer; }
+    .nav-trigger span { margin-left: 5px; color: var(--gold); }
+    .dropdown {
+      position: absolute; top: 100%; left: -14px; display: none;
+      width: 260px; padding: 9px; border: 1px solid var(--line);
+      border-radius: 12px; background: #21172b; box-shadow: var(--shadow);
+    }
+    .nav-group.open .dropdown,.nav-group:focus-within .dropdown { display: grid; }
+    .dropdown a { padding: 10px 12px; border-radius: 8px; color: var(--lav); font-size: 12px; }
+    .dropdown a:hover { background: rgba(201,169,110,.1); color: var(--gold-light); }
+    .nav-cta,.btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 11px 16px; border: 1px solid var(--gold); border-radius: 9px;
+      background: var(--gold); color: #170e1d; font-size: 12px; font-weight: 700;
+      transition: transform .2s,filter .2s;
+    }
+    .btn:hover,.nav-cta:hover { transform: translateY(-2px); filter: brightness(1.07); }
+    .btn-outline { border-color: rgba(217,204,228,.35); background: transparent; color: var(--gold-light); }
+    .menu-toggle {
+      display: none; padding: 9px 12px; border: 1px solid var(--line);
+      border-radius: 9px; background: transparent; color: var(--gold-light);
+      font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    /* Shared content components */
+    h1,h2,h3,p { margin-top: 0; }
+    .eyebrow,.kicker {
+      display: inline-flex; align-items: center; gap: 9px;
+      color: var(--gold-light); font-size: 10px; font-weight: 700;
+      letter-spacing: .17em; text-transform: uppercase;
+    }
+    .eyebrow:before { content: ""; width: 26px; height: 1px; background: var(--gold); }
+    .section { padding: 76px 0; scroll-margin-top: 100px; }
+    .section.alt {
+      border-block: 1px solid rgba(217,204,228,.08);
+      background: radial-gradient(ellipse at 90% 10%,rgba(84,30,50,.13),transparent 40%),rgba(43,29,54,.18);
+    }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: end;
+      gap: 25px; margin-bottom: 29px;
+    }
+    .section-head h2 {
+      margin: 8px 0 10px;
+      font: 600 clamp(28px,3.3vw,42px)/1.18 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+    }
+    .section-head h2 span { color: var(--gold-light); }
+    .section-head p { max-width: 650px; margin: 0; color: var(--muted); font-size: 12px; }
+    .text-link { color: var(--gold-light); font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .text-link:hover { text-decoration: underline; }
+    .faq-list { display: grid; gap: 10px; }
+    .faq { padding: 17px 19px; border: 1px solid var(--line); border-radius: 10px; background: rgba(43,29,54,.45); }
+    .faq summary { color: var(--lav); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .faq p { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+    /* Interview-preparation hero */
+    .career-intro {
+      position: relative; isolation: isolate; overflow: hidden; padding: 74px 0 68px;
+      background:
+        linear-gradient(90deg,rgba(16,10,23,.97),rgba(26,16,36,.88) 60%,rgba(26,16,36,.58)),
+        url('/assets/images/hero/hero-home.png') center/cover no-repeat,#100a17;
+    }
+    .career-intro:after {
+      content: ""; position: absolute; inset: 0; z-index: -1;
+      background: radial-gradient(ellipse at 82% 18%,rgba(201,169,110,.14),transparent 36%);
+    }
+    .career-intro-grid {
+      display: grid; grid-template-columns: 1.08fr .92fr; align-items: center; gap: 42px;
+    }
+    .career-intro h1 {
+      max-width: 740px; margin: 18px 0;
+      font: 600 clamp(39px,5.3vw,67px)/1.08 "Playfair Display",Georgia,serif;
+      letter-spacing: -.035em;
+    }
+    .career-intro h1 em { color: var(--gold-light); font-style: normal; }
+    .career-lead { max-width: 620px; color: #d0c5d8; font-size: 14px; line-height: 1.9; }
+    .career-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 25px; }
+    .career-search {
+      display: flex; gap: 8px; max-width: 590px; margin-top: 24px; padding: 7px;
+      border: 1px solid var(--line); border-radius: 12px; background: rgba(16,10,23,.82);
+    }
+    .career-search input {
+      width: 100%; min-width: 0; padding: 10px; border: 0; outline: none;
+      background: transparent; color: var(--white);
+    }
+    .career-search input:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 1px; }
+    .career-search button {
+      flex-shrink: 0; padding: 11px 16px; border: 0; border-radius: 8px;
+      background: var(--gold); color: #170e1d; font-weight: 700; cursor: pointer;
+    }
+    .career-art {
+      position: relative; min-height: 390px; overflow: hidden;
+      border: 1px solid var(--line); border-radius: 20px;
+      background: linear-gradient(145deg,#30203e,#171020); box-shadow: var(--shadow);
+    }
+    .career-art img { width: 100%; height: 390px; object-fit: cover; }
+    .career-art:after {
+      content: ""; position: absolute; inset: 40% 0 0;
+      background: linear-gradient(transparent,rgba(16,10,23,.96));
+    }
+    .career-stamp {
+      position: absolute; top: 17px; right: 17px; z-index: 2;
+      padding: 8px 11px; border: 1px solid var(--line); border-radius: 30px;
+      background: rgba(16,10,23,.8); color: var(--gold-light);
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+    }
+    .career-art-caption { position: absolute; z-index: 1; right: 22px; bottom: 19px; left: 22px; }
+    .career-art-caption strong { display: block; color: var(--gold-light); font: 600 22px "Playfair Display",serif; }
+    .career-art-caption span { color: #e2d9e7; font-size: 12px; }
+    .career-stats {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      border-block: 1px solid var(--line); background: rgba(43,29,54,.38);
+    }
+    .career-stat { padding: 20px 14px; border-right: 1px solid var(--line); text-align: center; }
+    .career-stat:last-child { border: 0; }
+    .career-stat strong { display: block; color: var(--gold-light); font: 600 18px "Playfair Display",serif; }
+    .career-stat span { color: var(--muted); font-size: 10px; }
+    /* Interview preparation cards */
+    .interview-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 17px; }
+    .interview-card {
+      min-width: 0; padding: 23px; border: 1px solid rgba(201,169,110,.2);
+      border-radius: 14px; background: linear-gradient(145deg,#2b1d36,#191023);
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+    .interview-card:hover {
+      transform: translateY(-4px); border-color: rgba(201,169,110,.65);
+      box-shadow: 0 18px 42px rgba(0,0,0,.23);
+    }
+    .interview-icon {
+      display: grid; width: 47px; height: 47px; margin-bottom: 16px; place-items: center;
+      border: 1px solid rgba(201,169,110,.4); border-radius: 13px;
+      background: rgba(201,169,110,.07); color: var(--gold-light); font-size: 21px;
+    }
+    .interview-card h3 { margin: 0 0 9px; color: #eee2f3; font: 600 21px/1.3 "Playfair Display",Georgia,serif; }
+    .interview-card p { min-height: 61px; margin: 0 0 15px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+    .interview-card button {
+      padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px;
+      background: transparent; color: var(--gold-light); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .interview-card button:hover { background: var(--gold); color: #170e1d; }
+    .interview-detail {
+      margin-top: 22px; padding: 24px; border: 1px solid var(--line);
+      border-radius: 14px; background: rgba(33,23,43,.82);
+    }
+    .interview-detail h3 { color: var(--gold-light); font: 600 25px "Playfair Display",serif; }
+    .interview-detail li { margin: 8px 0; color: var(--lav); font-size: 12px; }
+    .interview-detail p { color: var(--muted); font-size: 12px; }
+    .interview-hidden { display: none !important; }
+    /* STAR method and preparation tools */
+    .interview-steps { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; }
+    .interview-step {
+      padding: 20px; border: 1px solid var(--line); border-radius: 12px;
+      background: rgba(43,29,54,.45);
+    }
+    .interview-step strong {
+      display: block; margin-bottom: 8px; color: var(--gold-light);
+      font: 600 25px "Playfair Display",serif;
+    }
+    .interview-step h3 { margin: 0 0 7px; color: var(--lav); font-size: 13px; }
+    .interview-step p { margin: 0; color: var(--muted); font-size: 11px; }
+    .interview-form {
+      display: grid; gap: 17px; padding: 25px; border: 1px solid var(--line);
+      border-radius: 15px; background: rgba(33,23,43,.78);
+    }
+    .interview-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .interview-field { display: grid; gap: 7px; min-width: 0; }
+    .interview-field label { color: var(--lav); font-size: 11px; font-weight: 700; }
+    .interview-field input,.interview-field select,.interview-field textarea {
+      width: 100%; min-width: 0; padding: 12px;
+      border: 1px solid rgba(217,204,228,.2); border-radius: 8px;
+      background: #160d20; color: var(--white);
+    }
+    .interview-field select option { background: #21172b; }
+    .interview-field textarea { min-height: 125px; resize: vertical; }
+    .interview-result {
+      padding: 19px; border: 1px solid var(--line); border-radius: 12px;
+      background: rgba(201,169,110,.08); color: var(--lav);
+    }
+    .interview-result h3 { margin-bottom: 8px; color: var(--gold-light); font: 600 22px "Playfair Display",serif; }
+    .interview-result p,.interview-result li { color: var(--muted); font-size: 12px; }
+    .interview-result li { margin: 7px 0; }
+    .interview-progress-track {
+      height: 8px; overflow: hidden; margin: 15px 0 20px;
+      border-radius: 20px; background: #392943;
+    }
+    .interview-progress-bar {
+      width: 0; height: 100%; border-radius: inherit;
+      background: var(--gold); transition: width .2s ease;
+    }
+    .interview-check {
+      display: flex; align-items: flex-start; gap: 11px; padding: 13px 0;
+      border-bottom: 1px solid rgba(201,169,110,.12); cursor: pointer;
+    }
+    .interview-check:last-child { border-bottom: 0; }
+    .interview-check input { margin-top: 5px; accent-color: var(--gold); flex-shrink: 0; }
+    .interview-check span { color: var(--lav); font-size: 12px; }
+    .interview-check input:checked + span { text-decoration: line-through; color: var(--muted); }
+    .interview-timer {
+      padding: 22px; border: 1px solid var(--line); border-radius: 14px;
+      background: rgba(33,23,43,.78); text-align: center;
+    }
+    .interview-timer-display {
+      color: var(--gold-light); font: 600 clamp(36px,7vw,60px)/1.2 "Playfair Display",serif;
+      font-variant-numeric: tabular-nums;
+    }
+    .interview-timer p { margin: 10px 0 18px; color: var(--muted); font-size: 12px; }
+    .interview-timer-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .interview-note {
+      padding: 14px 16px; border-left: 2px solid var(--gold);
+      border-radius: 0 7px 7px 0; background: rgba(43,29,54,.32);
+      color: #a79caf; font-size: 10px; line-height: 1.8;
+    }
+    /* Original CTA */
+    .cta {
+      padding: 49px 0; border-block: 1px solid var(--line);
+      background: linear-gradient(100deg,rgba(16,10,23,.97),rgba(43,29,54,.91) 62%,rgba(84,30,50,.6)),
+      url('/assets/images/education/education-global.jpg') center/cover;
+    }
+    .cta-inner { display: flex; justify-content: space-between; align-items: center; gap: 25px; }
+    .cta h2 { margin: 8px 0; font: 600 clamp(27px,3vw,38px) "Playfair Display",serif; }
+    .cta p { margin: 0; color: var(--muted); font-size: 12px; }
+    /* Original footer */
+    .footer { padding: 48px 0 0; background: #0b0710; border-top: 1px solid var(--line); }
+    .footer-grid { display: grid; grid-template-columns: 1.45fr repeat(4,minmax(0,1fr)); gap: 25px; padding-bottom: 30px; }
+    .footer-grid > div { min-width: 0; }
+    .footer-brand p { max-width: 270px; margin-top: 13px; color: var(--muted); font-size: 11px; line-height: 1.9; }
+    .footer h3 { margin: 0 0 13px; padding-bottom: 9px; border-bottom: 1px solid rgba(201,169,110,.2); color: var(--gold-light); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .footer-grid > div:not(:first-child) a { display: block; width: fit-content; margin: 8px 0; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+    .footer a:hover { color: var(--gold-light); }
+    .footer-social-icons { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .footer-social-icons a,.footer-icon-bottom a {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; flex: 0 0 38px;
+      border: 1px solid var(--line); border-radius: 50%;
+      background: rgba(43,29,54,.55); color: var(--gold-light);
+      transition: color .2s ease,background .2s ease,transform .2s ease;
+    }
+    .footer-social-icons a:hover,.footer-icon-bottom a:hover {
+      transform: translateY(-2px); background: var(--gold-light); color: #170e1d;
+    }
+    .footer-social-icons svg,.footer-icon-bottom svg {
+      width: 18px; height: 18px; fill: none; stroke: currentColor;
+      stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .footer-social-icons .icon-fill { fill: currentColor; stroke: none; }
+    .social-caption { margin: 8px 0 0 !important; color: var(--muted); font-size: 10px !important; }
+    .disclaimer {
+      padding: 13px 16px; margin: 0 0 15px; border-left: 2px solid var(--gold);
+      border-radius: 0 7px 7px 0; background: rgba(43,29,54,.32);
+      color: #a79caf; font-size: 10px; line-height: 1.8;
+    }
+    .footer-bottom {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      padding: 17px 0; border-top: 1px solid rgba(201,169,110,.16);
+      color: #a79caf; font-size: 10px;
+    }
+    .footer-icon-bottom {
+      display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+      gap: 12px; padding: 17px 0 20px; border-top: 1px solid rgba(201,169,110,.13);
+    }
+    .footer-icon-bottom a { width: 34px; height: 34px; flex-basis: 34px; }
+    .footer-icon-bottom svg { width: 16px; height: 16px; }
+    .whatsapp-float {
+      position: fixed; right: 20px; bottom: 20px; z-index: 950;
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      min-height: 48px; padding: 11px 17px; border: 1px solid rgba(16,33,22,.2);
+      border-radius: 999px; background: #b9e7c5; color: #102116;
+      box-shadow: 0 8px 28px rgba(0,0,0,.3); font-size: 12px; font-weight: 700;
+      transition: transform .2s ease,background .2s ease;
+    }
+    .whatsapp-float:hover { transform: translateY(-3px); background: #d4f5dc; color: #102116; }
+    .whatsapp-float svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    @media(max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+      .nav {
+        position: absolute; top: 100%; right: 0; left: 0; display: none;
+        align-items: stretch; flex-direction: column; gap: 4px;
+        padding: 15px 22px 20px; border-bottom: 1px solid var(--line); background: #160d20;
+      }
+      .nav.open { display: flex; }
+      .nav > a,.nav-trigger { display: block; width: 100%; padding: 11px 8px; text-align: left; }
+      .nav-group { width: 100%; }
+      .dropdown { position: static; width: 100%; margin-bottom: 5px; box-shadow: none; }
+      .nav-cta { width: 100%; }
+      .career-intro-grid { gap: 28px; }
+      .career-art,.career-art img { height: 330px; min-height: 330px; }
+      .interview-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .interview-steps { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+    @media(max-width:760px) {
+      .container { width: calc(100% - 28px); }
+      .announcement { gap: 7px; font-size: 8px; letter-spacing: .06em; }
+      .nav-wrap { min-height: 70px; }
+      .brand img { width: 41px; height: 41px; }
+      .brand strong { font-size: 14px; }
+      .brand small { font-size: 7px; letter-spacing: .07em; }
+      .career-intro { padding: 48px 0; }
+      .career-intro-grid { grid-template-columns: 1fr; }
+      .career-intro h1 { font-size: clamp(38px,10vw,54px); }
+      .career-art,.career-art img { height: 270px; min-height: 270px; }
+      .career-stats { grid-template-columns: repeat(2,1fr); }
+      .career-stat { border-bottom: 1px solid var(--line); }
+      .career-stat:nth-child(2) { border-right: 0; }
+      .career-stat:nth-child(n+3) { border-bottom: 0; }
+      .section { padding: 52px 0; }
+      .section-head { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .interview-grid { grid-template-columns: 1fr; }
+      .interview-steps { grid-template-columns: 1fr; }
+      .interview-form-grid { grid-template-columns: 1fr; }
+      .cta-inner { align-items: flex-start; flex-direction: column; }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 16px; }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .footer-social-icons { gap: 8px; }
+      .footer-social-icons a { width: 36px; height: 36px; flex-basis: 36px; }
+      .whatsapp-float { right: 12px; bottom: 12px; width: 48px; height: 48px; padding: 0; }
+      .whatsapp-float .whatsapp-label { display: none; }
+    }
+    @media(max-width:430px) {
+      .career-search { flex-direction: column; }
+      .career-search button { width: 100%; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
+      .career-actions .btn { width: 100%; }
+    }
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *,*:before,*:after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+      .intro-screen,.intro-screen::before,.intro-screen::after,.intro-content,.intro-logo,.intro-tagline,.intro-rule {
+        animation: none !important; transition: none !important;
+      }
+      .intro-rule { width: 150px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Original opening animation -->
+  <div class="intro-screen" id="introScreen" role="status" aria-label="Loading MedOrbits">
+    <div class="intro-content">
+      <img class="intro-logo" src="/assets/images/logo/medorbits-logo.png" alt="" width="76" height="76">
+      <div class="intro-wordmark">MEDORBITS</div>
+      <div class="intro-tagline">Study · Career · Consultancy</div>
+      <div class="intro-rule" aria-hidden="true"></div>
+    </div>
+  </div>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <!-- Original announcement -->
+  <div class="announcement">
+    <span>Prepare with purpose</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Practise · Present · Progress</span>
+  </div>
+  <!-- Original header and navigation -->
+  <header class="header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="" width="48" height="48">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      <nav class="nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">Education <span>⌄</span></button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">Admissions <span>⌄</span></button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees &amp; funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">Careers <span>⌄</span></button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/interview-preparation.html" aria-current="page">Interview preparation</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main-content" tabindex="-1">
+    <!-- Interview-specific hero -->
+    <section class="career-intro" id="interview-intro">
+      <div class="container career-intro-grid">
+        <div>
+          <span class="eyebrow">Interview preparation studio</span>
+          <h1>Walk in prepared. <em>Speak with confidence.</em></h1>
+          <p class="career-lead">
+            Prepare for interviews with structured practice, example questions,
+            answer-building frameworks and a practical readiness checklist.
+            Learn how to explain your experience clearly, discuss your strengths
+            and approach difficult questions without memorising artificial scripts.
+          </p>
+          <form class="career-search" id="interviewSearchForm" role="search">
+            <label for="interviewSearchInput" class="interview-hidden">Search interview questions</label>
+            <input id="interviewSearchInput" type="search"
+                   placeholder="Search HR, technical, fresher, behavioural..."
+                   autocomplete="off">
+            <button type="submit">Find Questions ↗</button>
+          </form>
+          <div class="career-actions">
+            <a class="btn" href="#interview-question-bank">Practise Questions ↓</a>
+            <a class="btn btn-outline" href="#interview-checklist">Prepare My Checklist</a>
+          </div>
+        </div>
+        <div class="career-art">
+          <img src="/assets/images/career/career-guidance.jpg"
+               alt="Professional career preparation and interview guidance"
+               fetchpriority="high" width="900" height="700">
+          <span class="career-stamp">Prepare · Practise · Perform</span>
+          <div class="career-art-caption">
+            <strong>Your experience deserves a clear story.</strong>
+            <span>Practise explaining what you know, what you have done and how you can contribute.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="career-stats" aria-label="Interview preparation features">
+      <div class="career-stat"><strong>Structure</strong><span>Organise your answers</span></div>
+      <div class="career-stat"><strong>Practise</strong><span>Build interview fluency</span></div>
+      <div class="career-stat"><strong>Reflect</strong><span>Identify skill gaps</span></div>
+      <div class="career-stat"><strong>Prepare</strong><span>Plan your interview day</span></div>
+    </section>
+    <!-- Interview question categories -->
+    <section class="section" id="interview-question-bank">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Interview question bank</span>
+            <h2>Practise the questions that <span>matter</span></h2>
+            <p>
+              Choose a category to review example questions and answer-planning tips.
+              These are practice prompts, not questions guaranteed to appear in an interview.
+            </p>
+          </div>
+        </div>
+        <div class="interview-grid" id="interviewQuestionGrid">
+          <article class="interview-card" data-question-card
+                   data-search="hr general human resources introduction strengths weaknesses motivation salary communication">
+            <div class="interview-icon" aria-hidden="true">◎</div>
+            <h3>HR &amp; General Questions</h3>
+            <p>Practise introductions, strengths, motivation, work preferences and common recruiter questions.</p>
+            <button type="button" data-question-category="hr">Explore questions ↗</button>
+          </article>
+          <article class="interview-card" data-question-card
+                   data-search="behavioural situational teamwork conflict leadership problem solving star examples">
+            <div class="interview-icon" aria-hidden="true">◇</div>
+            <h3>Behavioural Questions</h3>
+            <p>Prepare real examples about teamwork, challenges, conflict resolution and decision-making.</p>
+            <button type="button" data-question-category="behavioural">Explore questions ↗</button>
+          </article>
+          <article class="interview-card" data-question-card
+                   data-search="technical coding data science engineering software technology skills">
+            <div class="interview-icon" aria-hidden="true">⌘</div>
+            <h3>Technical Interviews</h3>
+            <p>Practise explaining concepts, solving role-relevant problems and discussing your projects.</p>
+            <button type="button" data-question-category="technical">Explore questions ↗</button>
+          </article>
+          <article class="interview-card" data-question-card
+                   data-search="fresher student graduate entry level internship no experience academic projects">
+            <div class="interview-icon" aria-hidden="true">✦</div>
+            <h3>Freshers &amp; Internships</h3>
+            <p>Present academic work, practical projects, transferable skills and your willingness to learn.</p>
+            <button type="button" data-question-category="fresher">Explore questions ↗</button>
+          </article>
+          <article class="interview-card" data-question-card
+                   data-search="manager leadership management prioritization delegation performance">
+            <div class="interview-icon" aria-hidden="true">↗</div>
+            <h3>Leadership &amp; Management</h3>
+            <p>Prepare to discuss priorities, team performance, accountability and difficult decisions.</p>
+            <button type="button" data-question-category="leadership">Explore questions ↗</button>
+          </article>
+          <article class="interview-card" data-question-card
+                   data-search="healthcare medical clinical patient confidentiality empathy safety ethics">
+            <div class="interview-icon" aria-hidden="true">✚</div>
+            <h3>Healthcare &amp; Clinical Roles</h3>
+            <p>Review communication, ethics, confidentiality, patient safety and role-specific preparation.</p>
+            <button type="button" data-question-category="healthcare">Explore questions ↗</button>
+          </article>
+        </div>
+        <div class="interview-detail interview-hidden" id="interviewQuestionDetails" aria-live="polite">
+          <h3 id="interviewDetailTitle">Practice questions</h3>
+          <p id="interviewDetailIntro"></p>
+          <ol id="interviewDetailList"></ol>
+          <p id="interviewDetailTip"></p>
+          <button class="btn btn-outline" type="button" id="interviewDetailClose">Close questions</button>
+        </div>
+        <p class="interview-note" style="margin-top:20px">
+          For regulated professions and specialist roles, also review the relevant official
+          eligibility, licensing, technical and professional requirements. Do not disclose
+          confidential information from previous employers, patients or clients when giving examples.
+        </p>
+      </div>
+    </section>
+    <!-- STAR answer method -->
+    <section class="section alt" id="interview-answer-method">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Build better answers</span>
+            <h2>Use the <span>STAR method</span></h2>
+            <p>
+              For questions about past experiences, structure your answer around
+              the situation, your responsibility, the actions you took and the outcome.
+            </p>
+          </div>
+        </div>
+        <div class="interview-steps">
+          <article class="interview-step">
+            <strong>S</strong>
+            <h3>Situation</h3>
+            <p>Briefly describe the context and the challenge you faced.</p>
+          </article>
+          <article class="interview-step">
+            <strong>T</strong>
+            <h3>Task</h3>
+            <p>Explain your responsibility, goal or the result you needed to achieve.</p>
+          </article>
+          <article class="interview-step">
+            <strong>A</strong>
+            <h3>Action</h3>
+            <p>Describe the specific steps you personally took and why.</p>
+          </article>
+          <article class="interview-step">
+            <strong>R</strong>
+            <h3>Result</h3>
+            <p>Share the outcome, what you learned and what you would improve.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+    <!-- Answer practice tool -->
+    <section class="section" id="interview-answer-builder">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Interactive practice tool</span>
+            <h2>Build your <span>answer outline</span></h2>
+            <p>
+              Draft your own answer using a structured framework. Your response stays
+              in this page and is not automatically sent to MedOrbits.
+            </p>
+          </div>
+        </div>
+        <form class="interview-form" id="interviewAnswerForm">
+          <div class="interview-form-grid">
+            <div class="interview-field">
+              <label for="interviewQuestionType">Question type</label>
+              <select id="interviewQuestionType" required>
+                <option value="general">General introduction</option>
+                <option value="behavioural">Behavioural / STAR</option>
+                <option value="technical">Technical explanation</option>
+                <option value="fresher">Fresher / internship</option>
+                <option value="motivation">Motivation and career goals</option>
+              </select>
+            </div>
+            <div class="interview-field">
+              <label for="interviewTargetRole">Target role</label>
+              <input id="interviewTargetRole" type="text" maxlength="120"
+                     placeholder="e.g. Software Developer Intern">
+            </div>
+          </div>
+          <div class="interview-field">
+            <label for="interviewPracticeQuestion">Practice question</label>
+            <input id="interviewPracticeQuestion" type="text" maxlength="300" required
+                   placeholder="e.g. Tell me about a challenge you solved">
+          </div>
+          <div class="interview-field">
+            <label for="interviewSituation">Situation or context</label>
+            <textarea id="interviewSituation" maxlength="1500"
+                      placeholder="What was happening? Give only the context needed to understand your example."></textarea>
+          </div>
+          <div class="interview-field">
+            <label for="interviewAction">Your action or explanation</label>
+            <textarea id="interviewAction" maxlength="2500" required
+                      placeholder="What did you personally do? Explain your reasoning, process and contribution."></textarea>
+          </div>
+          <div class="interview-field">
+            <label for="interviewResult">Outcome and learning</label>
+            <textarea id="interviewResult" maxlength="1500"
+                      placeholder="What happened? What did you learn? Include measurable results only when accurate."></textarea>
+          </div>
+          <div class="career-actions">
+            <button class="btn" type="submit">Review My Outline ↗</button>
+            <button class="btn btn-outline" type="reset">Clear draft</button>
+          </div>
+          <div class="interview-result interview-hidden" id="interviewAnswerFeedback" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+    <!-- Mock interview self-assessment -->
+    <section class="section alt" id="mock-interview">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Mock interview self-review</span>
+            <h2>Check your <span>interview readiness</span></h2>
+            <p>
+              Rate your current preparation and identify areas to practise before the real interview.
+              This is a self-review, not a validated performance assessment.
+            </p>
+          </div>
+        </div>
+        <form class="interview-form" id="interviewReadinessForm">
+          <div class="interview-form-grid">
+            <div class="interview-field">
+              <label for="readinessRole">Role you are preparing for</label>
+              <input id="readinessRole" type="text" maxlength="120"
+                     placeholder="Enter your target role">
+            </div>
+            <div class="interview-field">
+              <label for="readinessStage">Interview stage</label>
+              <select id="readinessStage">
+                <option value="screening">Recruiter screening</option>
+                <option value="technical">Technical / skills round</option>
+                <option value="manager">Hiring manager round</option>
+                <option value="final">Final interview</option>
+                <option value="campus">Campus / fresher interview</option>
+              </select>
+            </div>
+          </div>
+          <div class="interview-field">
+            <label for="readinessIntro">Can you give a concise introduction? (1–5)</label>
+            <select id="readinessIntro" required>
+              <option value="">Choose a rating</option>
+              <option value="1">1 -- Need substantial practice</option>
+              <option value="2">2 -- Developing</option>
+              <option value="3">3 -- Fairly prepared</option>
+              <option value="4">4 -- Confident</option>
+              <option value="5">5 -- Well prepared</option>
+            </select>
+          </div>
+          <div class="interview-field">
+            <label for="readinessExamples">Can you explain relevant examples and projects? (1–5)</label>
+            <select id="readinessExamples" required>
+              <option value="">Choose a rating</option>
+              <option value="1">1 -- Need substantial practice</option>
+              <option value="2">2 -- Developing</option>
+              <option value="3">3 -- Fairly prepared</option>
+              <option value="4">4 -- Confident</option>
+              <option value="5">5 -- Well prepared</option>
+            </select>
+          </div>
+          <div class="interview-field">
+            <label for="readinessResearch">Have you researched the organisation and role? (1–5)</label>
+            <select id="readinessResearch" required>
+              <option value="">Choose a rating</option>
+              <option value="1">1 -- Not yet</option>
+              <option value="2">2 -- Started</option>
+              <option value="3">3 -- Some research completed</option>
+              <option value="4">4 -- Thoroughly researched</option>
+              <option value="5">5 -- Thoroughly researched and can explain my fit</option>
+            </select>
+          </div>
+          <div class="interview-field">
+            <label for="readinessQuestions">Have you prepared questions for the interviewer? (1–5)</label>
+            <select id="readinessQuestions" required>
+              <option value="">Choose a rating</option>
+              <option value="1">1 -- Not yet</option>
+              <option value="2">2 -- A few ideas</option>
+              <option value="3">3 -- Some questions prepared</option>
+              <option value="4">4 -- Relevant questions prepared</option>
+              <option value="5">5 -- Questions tailored to the role</option>
+            </select>
+          </div>
+          <div class="career-actions">
+            <button class="btn" type="submit">Review Readiness ↗</button>
+            <button class="btn btn-outline" type="reset">Reset review</button>
+          </div>
+          <div class="interview-result interview-hidden" id="interviewReadinessResult" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+    <!-- Interview preparation checklist -->
+    <section class="section" id="interview-checklist">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Interview-day preparation</span>
+            <h2>Your practical <span>checklist</span></h2>
+            <p>
+              Track preparation tasks in your browser and download a copy for your own use.
+            </p>
+          </div>
+        </div>
+        <div class="interview-form">
+          <strong id="interviewChecklistCount">0 of 8 completed</strong>
+          <div class="interview-progress-track" id="interviewChecklistProgress"
+               role="progressbar" aria-label="Interview checklist progress"
+               aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+            <div class="interview-progress-bar" id="interviewChecklistBar"></div>
+          </div>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="role">
+            <span>I reviewed the job description and identified the key requirements.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="organisation">
+            <span>I researched the organisation using reliable, current sources.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="introduction">
+            <span>I practised a concise introduction tailored to the role.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="examples">
+            <span>I prepared examples that demonstrate my skills and contribution.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="questions">
+            <span>I prepared thoughtful questions about the role and team.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="documents">
+            <span>I organised my resume and any requested documents or portfolio.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="logistics">
+            <span>I confirmed the interview time, location or meeting link and equipment.</span>
+          </label>
+          <label class="interview-check">
+            <input type="checkbox" data-interview-check="followup">
+            <span>I know how I will follow up professionally after the interview.</span>
+          </label>
+          <div class="career-actions">
+            <button class="btn" id="interviewDownloadChecklist" type="button">Download Checklist</button>
+            <button class="btn btn-outline" id="interviewResetChecklist" type="button">Reset Checklist</button>
+          </div>
+          <p class="interview-note">
+            Checklist progress is stored locally in this browser when storage is available.
+            It is not submitted to MedOrbits or an employer.
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- Timed practice -->
+    <section class="section alt" id="interview-timer-section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Practise under a time limit</span>
+            <h2>Timed <span>answer practice</span></h2>
+            <p>
+              Choose a short practice interval, answer a question aloud, and review whether
+              your response is structured, relevant and concise.
+            </p>
+          </div>
+        </div>
+        <div class="interview-timer">
+          <div class="interview-timer-display" id="interviewTimerDisplay" aria-live="off">02:00</div>
+          <p id="interviewTimerStatus" aria-live="polite">Ready when you are. Choose a duration to begin.</p>
+          <div class="interview-timer-actions">
+            <button class="btn" type="button" data-timer-minutes="1">1 minute</button>
+            <button class="btn" type="button" data-timer-minutes="2">2 minutes</button>
+            <button class="btn" type="button" data-timer-minutes="3">3 minutes</button>
+            <button class="btn btn-outline" type="button" id="interviewTimerStart">Start</button>
+            <button class="btn btn-outline" type="button" id="interviewTimerPause">Pause</button>
+            <button class="btn btn-outline" type="button" id="interviewTimerReset">Reset</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Questions to ask -->
+    <section class="section" id="interview-questions-to-ask">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Two-way conversation</span>
+            <h2>Questions you can ask <span>the interviewer</span></h2>
+            <p>
+              Thoughtful questions help you understand the responsibilities, expectations
+              and working environment of the role.
+            </p>
+          </div>
+        </div>
+        <div class="interview-grid">
+          <article class="interview-card">
+            <div class="interview-icon" aria-hidden="true">◇</div>
+            <h3>Role &amp; Expectations</h3>
+            <p>Clarify what success looks like and which responsibilities matter most.</p>
+            <button type="button" data-copy-question="What would success look like in this role during the first three months?">Copy example question</button>
+          </article>
+          <article class="interview-card">
+            <div class="interview-icon" aria-hidden="true">◎</div>
+            <h3>Team &amp; Collaboration</h3>
+            <p>Understand how the team works together and shares feedback.</p>
+            <button type="button" data-copy-question="How does this team collaborate, share feedback and handle priorities?">Copy example question</button>
+          </article>
+          <article class="interview-card">
+            <div class="interview-icon" aria-hidden="true">↗</div>
+            <h3>Learning &amp; Development</h3>
+            <p>Explore onboarding, mentorship and opportunities to build relevant skills.</p>
+            <button type="button" data-copy-question="What learning and development opportunities are available for someone joining this role?">Copy example question</button>
+          </article>
+        </div>
+        <p class="interview-note" style="margin-top:18px">
+          Choose questions that have not already been answered during the interview.
+          For salary, benefits, work arrangements and recruitment timelines, ask at an
+          appropriate stage and seek clear written terms before accepting an offer.
+        </p>
+      </div>
+    </section>
+    <!-- CTA -->
+    <section class="cta">
+      <div class="container cta-inner">
+        <div>
+          <span class="kicker">Your next step starts here</span>
+          <h2>Prepare for the opportunity ahead.</h2>
+          <p>Explore career guidance and application resources from MedOrbits.</p>
+        </div>
+        <div class="career-actions">
+          <a class="btn" href="/pages/apply.html">Request Guidance →</a>
+          <a class="btn btn-outline" href="/career/resume-support.html">Resume Support</a>
+        </div>
+      </div>
+    </section>
+    <!-- FAQs -->
+    <section class="section" id="interview-faqs">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Interview preparation FAQs</span>
+            <h2>Frequently asked <span>questions</span></h2>
+            <p>Practical answers to help you prepare without relying on memorised scripts.</p>
+          </div>
+          <a class="text-link" href="/education/resources/faqs.html">More FAQs →</a>
+        </div>
+        <div class="faq-list">
+          <details class="faq">
+            <summary>How should I answer "Tell me about yourself"?</summary>
+            <p>Give a concise summary of your current background, relevant skills or experience, one or two supporting examples, and why the role interests you. Keep the answer relevant to the position and avoid repeating your entire resume.</p>
+          </details>
+          <details class="faq">
+            <summary>How do I answer questions when I have no work experience?</summary>
+            <p>Use relevant academic projects, internships, volunteering, extracurricular responsibilities or personal projects. Explain your own contribution, what you learned and how it relates to the role. Do not claim experience you do not have.</p>
+          </details>
+          <details class="faq">
+            <summary>Should I memorise interview answers?</summary>
+            <p>Prepare key points and practise speaking naturally rather than memorising a complete script. This helps you adapt to follow-up questions and give answers that reflect your actual experience.</p>
+          </details>
+          <details class="faq">
+            <summary>What should I do if I do not know an answer?</summary>
+            <p>Be honest about the limits of your knowledge. Explain how you would approach the problem, ask a clarifying question if appropriate, and describe how you would verify or learn the missing information.</p>
+          </details>
+          <details class="faq">
+            <summary>How can I prepare for a technical interview?</summary>
+            <p>Review the relevant fundamentals, practise representative problems, explain your reasoning aloud and revisit projects listed on your resume. The appropriate preparation depends on the specific role and interview format.</p>
+          </details>
+          <details class="faq">
+            <summary>Does completing these tools guarantee selection?</summary>
+            <p>No. These tools support practice and preparation, but hiring decisions depend on the employer, role requirements, candidate qualifications, interview performance and other factors.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+  <!-- Original footer structure -->
+  <footer class="footer" id="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="48" height="48" loading="lazy">
+            <span><strong>MEDORBITS</strong><small>Study · Career · Consultancy</small></span>
+          </a>
+          <p>Explore education pathways, admission resources, career opportunities and recruitment services with MedOrbits.</p>
+          <div class="footer-social-icons" aria-label="Social media and messaging">
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.8" r="1" class="icon-fill"/></svg>
+            </a>
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.4 0-5.5 2-5.5 5.7V9H6v4h3.5v8"/></svg>
+            </a>
+            <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v10M5 5v.1M10 19v-6a4 4 0 0 1 8 0v6M10 9v10"/><circle cx="5" cy="5" r="1" class="icon-fill"/></svg>
+            </a>
+            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" class="icon-fill"/></svg>
+            </a>
+            <a href="https://wa.me/919999999999?text=Hello%20MedOrbits" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp MedOrbits" title="WhatsApp">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/><path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/></svg>
+            </a>
+          </div>
+          <p class="social-caption">Connect with MedOrbits</p>
+        </div>
+        <div>
+          <h3>Education</h3>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study Abroad</a>
+        </div>
+        <div>
+          <h3>Student Resources</h3>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance Exams</a>
+          <a href="/education/resources/fees.html">Fees &amp; Funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+        </div>
+        <div>
+          <h3>Career Services</h3>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career Guidance</a>
+          <a href="/career/interview-preparation.html" aria-current="page">Interview Preparation</a>
+          <a href="/career/resume-support.html">Resume Support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer Services</a>
+        </div>
+        <div>
+          <h3>MedOrbits</h3>
+          <a href="/pages/about.html">About Us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/pages/accessibility.html">Accessibility</a>
+          <a href="/legal/privacy-policy.html">Privacy Policy</a>
+          <a href="/legal/terms.html">Terms &amp; Conditions</a>
+          <a href="/legal/refund-policy.html">Refund Policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+      <p class="disclaimer">
+        This page provides general interview preparation information. It does not
+        guarantee employment, interview success or selection. Employer processes,
+        role requirements and assessment methods vary. Verify recruitment details
+        with the relevant organisation, and never share passwords, OTPs or confidential
+        employer, patient or client information in practice responses.
+      </p>
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+      <div class="footer-icon-bottom" aria-label="Quick links">
+        <a href="/index.html" aria-label="Home" title="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>
+        </a>
+        <a href="/pages/about.html" aria-label="About MedOrbits" title="About">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        </a>
+        <a href="/pages/contact.html" aria-label="Contact" title="Contact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+        </a>
+        <a href="/pages/accessibility.html" aria-label="Accessibility" title="Accessibility">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4" r="2"/><path d="M4 8h16M12 8v5m0 0-5 8m5-8 5 8"/></svg>
+        </a>
+        <a href="https://wa.me/919999999999?text=Hello%20MedOrbits" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp MedOrbits" title="WhatsApp">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/><path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+  <!-- Original floating WhatsApp contact -->
+  <a class="whatsapp-float"
+     href="https://wa.me/919999999999?text=Hello%20MedOrbits%2C%20I%20would%20like%20interview%20preparation%20guidance."
+     target="_blank" rel="noopener noreferrer"
+     aria-label="Chat with MedOrbits on WhatsApp" title="Chat with MedOrbits on WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/>
+      <path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/>
+    </svg>
+    <span class="whatsapp-label">Chat on WhatsApp</span>
+  </a>
+  <!-- Original site-shell JavaScript -->
+  <script>
+    (() => {
+      "use strict";
+      const introScreen = document.getElementById("introScreen");
+      const header = document.getElementById("siteHeader");
+      const menuToggle = document.getElementById("menuToggle");
+      const nav = document.getElementById("mainNav");
+      const groups = [...document.querySelectorAll(".nav-group")];
+      const year = document.getElementById("currentYear");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (year) year.textContent = String(new Date().getFullYear());
+      if (introScreen) {
+        if (reducedMotion.matches) {
+          introScreen.classList.add("is-hidden");
+          introScreen.remove();
+        } else {
+          window.setTimeout(() => introScreen.classList.add("is-hidden"), 1900);
+          introScreen.addEventListener("transitionend", event => {
+            if (event.target === introScreen && introScreen.classList.contains("is-hidden")) {
+              introScreen.remove();
+            }
+          });
+        }
+      }
+      function closeMenu() {
+        nav?.classList.remove("open");
+        menuToggle?.setAttribute("aria-expanded", "false");
+        if (menuToggle) menuToggle.textContent = "☰ MENU";
+        groups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
+        });
+      }
+      menuToggle?.addEventListener("click", () => {
+        const open = nav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(open));
+        menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        if (!open) {
+          groups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+      groups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+        trigger?.addEventListener("click", event => {
+          event.stopPropagation();
+          const open = !group.classList.contains("open");
+          groups.forEach(item => {
+            item.classList.remove("open");
+            item.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
+          });
+          if (open) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+      nav?.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMenu));
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+        if (!event.target.closest(".nav-group")) {
+          groups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
+          });
+        }
+        if (nav?.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")) {
+          closeMenu();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeMenu();
+          menuToggle?.focus();
+        }
+      });
+      function updateHeader() {
+        header?.classList.toggle("scrolled", window.scrollY > 20);
+      }
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+      if (desktopQuery.addEventListener) {
+        desktopQuery.addEventListener("change", event => {
+          if (event.matches) closeMenu();
+        });
+      } else if (desktopQuery.addListener) {
+        desktopQuery.addListener(event => {
+          if (event.matches) closeMenu();
+        });
+      }
+    })();
+  </script>
+  <!-- Interview question bank, answer builder, readiness review and timer -->
+  <script>
+    (() => {
+      "use strict";
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+      const questionSets = {
+        hr: {
+          title: "HR & General Interview Questions",
+          intro: "Keep your answers relevant to the role and support claims with accurate examples.",
+          questions: [
+            "Tell me about yourself.",
+            "Why are you interested in this role?",
+            "What are your strongest relevant skills?",
+            "Describe an area you are working to improve.",
+            "What type of work environment helps you do your best work?",
+            "What would you like to learn or contribute in this position?"
+          ],
+          tip: "Preparation tip: connect your background, relevant strengths and motivation without repeating your full resume."
+        },
+        behavioural: {
+          title: "Behavioural Interview Questions",
+          intro: "Use real examples and explain your own contribution clearly.",
+          questions: [
+            "Tell me about a time you solved a difficult problem.",
+            "Describe a disagreement and how you handled it.",
+            "Give an example of working with a team toward a goal.",
+            "Tell me about a mistake and what you learned.",
+            "Describe a time you had to manage competing priorities.",
+            "Give an example of receiving feedback and acting on it."
+          ],
+          tip: "Preparation tip: use Situation, Task, Action and Result. Spend most of your answer explaining your actions and learning."
+        },
+        technical: {
+          title: "Technical Interview Questions",
+          intro: "The correct questions depend on the target role, seniority and employer assessment.",
+          questions: [
+            "Explain a technical concept relevant to your target role.",
+            "Walk me through a project and the decisions you made.",
+            "How would you investigate a problem you cannot immediately solve?",
+            "How do you test or validate your work?",
+            "What trade-offs did you consider in a project?",
+            "How do you keep your skills current?"
+          ],
+          tip: "Preparation tip: practise explaining your reasoning, assumptions and verification steps aloud rather than jumping straight to a result."
+        },
+        fresher: {
+          title: "Fresher & Internship Questions",
+          intro: "Academic projects, coursework, volunteering and independent learning can provide useful examples.",
+          questions: [
+            "Tell me about a project you completed during your studies.",
+            "Why are you applying for this internship or entry-level role?",
+            "What have you done to build relevant skills?",
+            "How would you approach a task you have never done before?",
+            "Describe a time you worked with others to complete an assignment.",
+            "What do you hope to learn in your first few months?"
+          ],
+          tip: "Preparation tip: be clear about what you actually did, what support you received and what you learned."
+        },
+        leadership: {
+          title: "Leadership & Management Questions",
+          intro: "Use examples that demonstrate judgement, accountability and how you support others.",
+          questions: [
+            "How do you prioritise work when several tasks are urgent?",
+            "Describe a time you helped a team overcome a challenge.",
+            "How do you address missed expectations?",
+            "Tell me about a difficult decision you made.",
+            "How do you give constructive feedback?",
+            "How would you measure progress toward a team goal?"
+          ],
+          tip: "Preparation tip: describe the context, your reasoning, how you involved others and what changed as a result."
+        },
+        healthcare: {
+          title: "Healthcare & Clinical Interview Questions",
+          intro: "Answer within your actual qualifications and experience. Do not present yourself as authorised to perform duties outside your scope.",
+          questions: [
+            "How would you protect patient confidentiality?",
+            "How do you communicate with someone who is distressed?",
+            "What would you do if you noticed a potential safety concern?",
+            "How would you respond if you were unsure about a procedure or instruction?",
+            "Why are ethics and accurate documentation important?",
+            "How do you work effectively with a multidisciplinary team?"
+          ],
+          tip: "Preparation tip: follow applicable protocols, escalation procedures, professional standards and the boundaries of your role."
+        }
+      };
+      const detailsPanel = $("#interviewQuestionDetails");
+      const detailTitle = $("#interviewDetailTitle");
+      const detailIntro = $("#interviewDetailIntro");
+      const detailList = $("#interviewDetailList");
+      const detailTip = $("#interviewDetailTip");
+      function openQuestionSet(key) {
+        const set = questionSets[key];
+        if (!set) return;
+        detailTitle.textContent = set.title;
+        detailIntro.textContent = set.intro;
+        detailTip.textContent = set.tip;
+        detailList.replaceChildren();
+        set.questions.forEach(question => {
+          const item = document.createElement("li");
+          item.textContent = question;
+          detailList.append(item);
+        });
+        detailsPanel.classList.remove("interview-hidden");
+        detailsPanel.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "nearest"
+        });
+      }
+      $$("[data-question-category]").forEach(button => {
+        button.addEventListener("click", () => openQuestionSet(button.dataset.questionCategory));
+      });
+      $("#interviewDetailClose")?.addEventListener("click", () => {
+        detailsPanel.classList.add("interview-hidden");
+      });
+      const searchForm = $("#interviewSearchForm");
+      const searchInput = $("#interviewSearchInput");
+      const questionCards = $$("[data-question-card]");
+      function filterQuestionCards(query) {
+        let visible = 0;
+        questionCards.forEach(card => {
+          const haystack = (card.dataset.search + " " + card.textContent).toLowerCase();
+          const matches = !query || haystack.includes(query);
+          card.classList.toggle("interview-hidden", !matches);
+          if (matches) visible++;
+        });
+        if (!visible) {
+          detailsPanel.classList.remove("interview-hidden");
+          detailTitle.textContent = "No matching category found";
+          detailIntro.textContent = "Try a broader term, such as HR, technical, fresher or behavioural.";
+          detailList.replaceChildren();
+          detailTip.textContent = "You can also browse all question categories above.";
+        }
+      }
+      searchForm?.addEventListener("submit", event => {
+        event.preventDefault();
+        filterQuestionCards((searchInput.value || "").trim().toLowerCase());
+        $("#interview-question-bank")?.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+        });
+      });
+      searchInput?.addEventListener("input", () => {
+        if (!searchInput.value.trim()) {
+          filterQuestionCards("");
+          detailsPanel.classList.add("interview-hidden");
+        }
+      });
+      /* Answer outline feedback */
+      const answerForm = $("#interviewAnswerForm");
+      const answerFeedback = $("#interviewAnswerFeedback");
+      answerForm?.addEventListener("submit", event => {
+        event.preventDefault();
+        const type = $("#interviewQuestionType").value;
+        const role = $("#interviewTargetRole").value.trim();
+        const question = $("#interviewPracticeQuestion").value.trim();
+        const situation = $("#interviewSituation").value.trim();
+        const action = $("#interviewAction").value.trim();
+        const result = $("#interviewResult").value.trim();
+        if (!question || !action) {
+          answerFeedback.classList.add("interview-hidden");
+          return;
+        }
+        const wordCount = [situation, action, result]
+          .join(" ")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length;
+        const tips = [];
+        if (type === "behavioural") {
+          if (!situation) tips.push("Add brief context so the interviewer understands the situation.");
+          if (!result) tips.push("Include the outcome and what you learned, where possible.");
+          tips.push("Make your personal contribution clear. STAR is a guide, not a rigid script.");
+        } else if (type === "technical") {
+          tips.push("Explain your assumptions, reasoning, validation and trade-offs.");
+          tips.push("Use a concrete example if it helps clarify the concept.");
+        } else if (type === "fresher") {
+          tips.push("Use genuine coursework, project, volunteering or independent-learning examples.");
+          tips.push("State honestly what you did yourself and what you learned.");
+        } else if (type === "motivation") {
+          tips.push("Connect your interests and skills to the role's actual responsibilities.");
+          tips.push("Avoid generic claims; explain why this role is relevant to your goals.");
+        } else {
+          tips.push("Give a concise introduction that connects your background to the role.");
+          tips.push("Use one or two specific examples instead of listing every skill.");
+        }
+        if (wordCount < 35) {
+          tips.push("Your outline is very brief. Consider adding one specific example or explaining your reasoning.");
+        } else if (wordCount > 220) {
+          tips.push("Your outline may be long for a spoken answer. Practise shortening it while preserving the key point.");
+        } else {
+          tips.push("Practise saying this aloud and adjust the length to the question and interview format.");
+        }
+        answerFeedback.replaceChildren();
+        const heading = document.createElement("h3");
+        heading.textContent = "Your answer review";
+        answerFeedback.append(heading);
+        const summary = document.createElement("p");
+        summary.textContent =
+          `Question: ${question}` +
+          (role ? ` | Target role: ${role}` : "") +
+          ` | Draft length: approximately ${wordCount} words.`;
+        answerFeedback.append(summary);
+        const list = document.createElement("ul");
+        tips.forEach(tip => {
+          const item = document.createElement("li");
+          item.textContent = tip;
+          list.append(item);
+        });
+        answerFeedback.append(list);
+        const reminder = document.createElement("p");
+        reminder.textContent = "This is a structure-based self-review. It does not grade your answer or predict an employer's decision.";
+        answerFeedback.append(reminder);
+        answerFeedback.classList.remove("interview-hidden");
+      });
+      answerForm?.addEventListener("reset", () => {
+        answerFeedback.classList.add("interview-hidden");
+        answerFeedback.replaceChildren();
+      });
+      /* Readiness review */
+      const readinessForm = $("#interviewReadinessForm");
+      const readinessResult = $("#interviewReadinessResult");
+      readinessForm?.addEventListener("submit", event => {
+        event.preventDefault();
+        const fields = [
+          ["Introduction", $("#readinessIntro")],
+          ["Examples and projects", $("#readinessExamples")],
+          ["Organisation research", $("#readinessResearch")],
+          ["Questions for the interviewer", $("#readinessQuestions")]
+        ];
+        if (fields.some(([, field]) => !field.value)) return;
+        const average = fields.reduce((sum, [, field]) => sum + Number(field.value), 0) / fields.length;
+        const role = $("#readinessRole").value.trim();
+        const stage = $("#readinessStage").selectedOptions[0].textContent;
+        const weakest = [...fields].sort((a, b) => Number(a[1].value) - Number(b[1].value));
+        readinessResult.replaceChildren();
+        const heading = document.createElement("h3");
+        heading.textContent = "Your preparation review";
+        readinessResult.append(heading);
+        const summary = document.createElement("p");
+        summary.textContent =
+          `Your self-rating average is ${average.toFixed(1)} out of 5 for ${stage.toLowerCase()}` +
+          (role ? ` for ${role}.` : ".");
+        readinessResult.append(summary);
+        const advice = document.createElement("p");
+        advice.textContent = average < 2.5
+          ? "Focus on the basics first: understand the role, prepare a concise introduction and practise examples aloud."
+          : average < 4
+            ? "You have a starting foundation. Improve the lowest-rated areas and practise under realistic conditions."
+            : "Your self-ratings suggest you have covered several important areas. Do a final review and continue practising naturally.";
+        readinessResult.append(advice);
+        const list = document.createElement("ul");
+        weakest.slice(0, 2).forEach(([label, field]) => {
+          const item = document.createElement("li");
+          item.textContent = `Priority for review: ${label} (your rating: ${field.value}/5).`;
+          list.append(item);
+        });
+        readinessResult.append(list);
+        const note = document.createElement("p");
+        note.textContent = "This self-rating is for reflection only; it is not an objective interview score or a prediction of selection.";
+        readinessResult.append(note);
+        readinessResult.classList.remove("interview-hidden");
+      });
+      readinessForm?.addEventListener("reset", () => {
+        readinessResult.classList.add("interview-hidden");
+        readinessResult.replaceChildren();
+      });
+      /* Checklist with local persistence */
+      const checklistItems = $$("[data-interview-check]");
+      const checklistCount = $("#interviewChecklistCount");
+      const checklistBar = $("#interviewChecklistBar");
+      const checklistProgress = $("#interviewChecklistProgress");
+      const storageKey = "medorbits-interview-preparation-checklist-v1";
+      function readSavedChecklist() {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey) || "{}");
+        } catch {
+          return {};
+        }
+      }
+      function saveChecklist(state) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch {
+          // Checklist still works for the current page session if storage is unavailable.
+        }
+      }
+      function updateChecklist(persist = true) {
+        const completed = checklistItems.filter(item => item.checked).length;
+        const total = checklistItems.length;
+        const percentage = total ? completed / total * 100 : 0;
+        checklistCount.textContent = `${completed} of ${total} completed`;
+        checklistBar.style.width = `${percentage}%`;
+        checklistProgress.setAttribute("aria-valuenow", String(completed));
+        if (persist) {
+          const state = {};
+          checklistItems.forEach(item => {
+            state[item.dataset.interviewCheck] = item.checked;
+          });
+          saveChecklist(state);
+        }
+      }
+      const savedState = readSavedChecklist();
+      checklistItems.forEach(item => {
+        item.checked = savedState[item.dataset.interviewCheck] === true;
+        item.addEventListener("change", () => updateChecklist());
+      });
+      updateChecklist(false);
+      $("#interviewResetChecklist")?.addEventListener("click", () => {
+        checklistItems.forEach(item => { item.checked = false; });
+        updateChecklist();
+      });
+      $("#interviewDownloadChecklist")?.addEventListener("click", () => {
+        const lines = [
+          "MedOrbits -- Interview Preparation Checklist",
+          `Date: ${new Date().toLocaleDateString()}`,
+          ""
+        ];
+        checklistItems.forEach(item => {
+          const label = item.parentElement.querySelector("span").textContent.trim();
+          lines.push(`${item.checked ? "[x]" : "[ ]"} ${label}`);
+        });
+        lines.push(
+          "",
+          "This checklist is a preparation aid. It does not guarantee interview success or selection."
+        );
+        const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "medorbits-interview-preparation-checklist.txt";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      });
+      /* Countdown timer: only one interval can run at a time. */
+      const timerDisplay = $("#interviewTimerDisplay");
+      const timerStatus = $("#interviewTimerStatus");
+      const startButton = $("#interviewTimerStart");
+      const pauseButton = $("#interviewTimerPause");
+      const resetButton = $("#interviewTimerReset");
+      let remainingSeconds = 120;
+      let selectedMinutes = 2;
+      let timerHandle = null;
+      let timerEndAt = null;
+      function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainder = seconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+      }
+      function renderTimer() {
+        timerDisplay.textContent = formatTime(remainingSeconds);
+      }
+      function stopTimer() {
+        if (timerHandle !== null) {
+          window.clearInterval(timerHandle);
+          timerHandle = null;
+        }
+        timerEndAt = null;
+      }
+      function finishTimer() {
+        stopTimer();
+        remainingSeconds = 0;
+        renderTimer();
+        timerStatus.textContent = "Time is up. Take a moment to review your answer.";
+      }
+      function tickTimer() {
+        if (timerEndAt === null) return;
+        remainingSeconds = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+        renderTimer();
+        if (remainingSeconds <= 0) finishTimer();
+      }
+      $$("[data-timer-minutes]").forEach(button => {
+        button.addEventListener("click", () => {
+          stopTimer();
+          selectedMinutes = Number(button.dataset.timerMinutes);
+          remainingSeconds = selectedMinutes * 60;
+          renderTimer();
+          timerStatus.textContent = `${selectedMinutes}-minute practice selected. Press Start when ready.`;
+        });
+      });
+      startButton?.addEventListener("click", () => {
+        if (timerHandle !== null) return;
+        if (remainingSeconds <= 0) {
+          remainingSeconds = selectedMinutes * 60;
+        }
+        timerEndAt = Date.now() + remainingSeconds * 1000;
+        timerStatus.textContent = "Practice in progress. Focus on the question and your answer structure.";
+        timerHandle = window.setInterval(tickTimer, 250);
+        tickTimer();
+      });
+      pauseButton?.addEventListener("click", () => {
+        if (timerHandle === null) {
+          timerStatus.textContent = "The timer is not running.";
+          return;
+        }
+        tickTimer();
+        if (timerHandle !== null) {
+          stopTimer();
+          timerStatus.textContent = "Paused. Press Start to continue.";
+        }
+      });
+      resetButton?.addEventListener("click", () => {
+        stopTimer();
+        remainingSeconds = selectedMinutes * 60;
+        renderTimer();
+        timerStatus.textContent = "Timer reset. Press Start when ready.";
+      });
+      /* Copy questions using the Clipboard API with a fallback. */
+      $$("[data-copy-question]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const text = button.dataset.copyQuestion;
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              const textarea = document.createElement("textarea");
+              textarea.value = text;
+              textarea.setAttribute("readonly", "");
+              textarea.style.position = "fixed";
+              textarea.style.opacity = "0";
+              document.body.append(textarea);
+              textarea.select();
+              const copied = document.execCommand("copy");
+              textarea.remove();
+              if (!copied) throw new Error("Copy was not available");
+            }
+            const original = button.textContent;
+            button.textContent = "Copied ✓";
+            window.setTimeout(() => { button.textContent = original; }, 1500);
+          } catch {
+            window.prompt("Copy this question:", text);
+          }
+        });
+      });
+      renderTimer();
+    })();
+  </script>
+  <!-- Original shared scripts -->
+  <script defer src="/assets/js/constants.js"></script>
+  <script defer src="/assets/js/config.js"></script>
+  <script defer src="/assets/js/utils.js"></script>
+  <script defer src="/assets/js/navigation.js"></script>
+  <script defer src="/assets/js/search.js"></script>
+  <script defer src="/assets/js/animations.js"></script>
+  <script defer src="/assets/js/app.js"></script>
+  <script defer src="/assets/js/site-search-bar.js"></script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+{
+  "schemaVersion": "1.1.0",
+  "updatedAt": null,
+  "metadata": {
+    "title": "MedOrbits Testimonials",
+    "description": "Publish only authentic feedback from real contributors who explicitly consented to publication.",
+    "defaultLanguage": "en",
+    "dateFormat": "YYYY-MM-DD",
+    "authenticityPolicy": "Never invent, buy, ghost-write, or misrepresent testimonials. Development fixtures must never be deployed as live testimonials.",
+    "environment": "production",
+    "recordCount": 0,
+    "publicationRequires": [
+      "verified real contributor",
+      "documented publication consent",
+      "moderation approval",
+      "policy-compliant content"
+    ]
+  },
+  "fields": [
+    "id",
+    "displayName",
+    "displayNameMode",
+    "role",
+    "relatedCourseId",
+    "relatedInstitutionId",
+    "countryCode",
+    "stateId",
+    "yearOfExperience",
+    "quote",
+    "fullFeedback",
+    "rating",
+    "serviceUsed",
+    "tags",
+    "language",
+    "originalLanguageText",
+    "photo",
+    "videoUrl",
+    "sourceType",
+    "receivedAt",
+    "receivedVia",
+    "consent",
+    "isIncentivised",
+    "incentiveDisclosure",
+    "edits",
+    "outcomeClaim",
+    "featured",
+    "sortOrder",
+    "moderationStatus",
+    "moderatedBy",
+    "moderatedAt",
+    "rejectionReason",
+    "verificationStatus",
+    "verifiedAt",
+    "verifiedBy",
+    "reviewDueAt",
+    "active",
+    "createdAt",
+    "updatedAt"
+  ],
+  "fieldDefinitions": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "pattern": "^testimonial-[0-9]{4,}$"
+    },
+    "displayName": {
+      "type": "string",
+      "required": true,
+      "note": "Use only the name format the contributor explicitly approved."
+    },
+    "displayNameMode": {
+      "type": "string",
+      "required": true,
+      "enum": "allowedValues.displayNameMode"
+    },
+    "role": {
+      "type": "string",
+      "required": true,
+      "enum": "allowedValues.role"
+    },
+    "relatedCourseId": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "references": "courses.id"
+    },
+    "relatedInstitutionId": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "references": "universities.id"
+    },
+    "countryCode": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "format": "ISO 3166-1 alpha-2"
+    },
+    "stateId": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "references": "locations.states.id"
+    },
+    "yearOfExperience": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "format": "YYYY"
+    },
+    "quote": {
+      "type": "string",
+      "required": true,
+      "maxLength": 280,
+      "note": "Must be an exact excerpt from fullFeedback, unless an approved privacy redaction or translation is documented."
+    },
+    "fullFeedback": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "maxLength": 2000
+    },
+    "rating": {
+      "type": "number",
+      "required": false,
+      "nullable": true,
+      "minimum": 1,
+      "maximum": 5
+    },
+    "serviceUsed": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "enum": "allowedValues.serviceUsed"
+    },
+    "tags": {
+      "type": "array",
+      "default": [],
+      "itemType": "string",
+      "maxItems": 12
+    },
+    "language": {
+      "type": "string",
+      "default": "en",
+      "format": "BCP 47"
+    },
+    "originalLanguageText": {
+      "type": "string",
+      "required": false,
+      "nullable": true
+    },
+    "photo": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "url": "string",
+        "alt": "string",
+        "consentToPublishPhoto": "boolean"
+      }
+    },
+    "videoUrl": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "format": "https URL"
+    },
+    "sourceType": {
+      "type": "string",
+      "required": true,
+      "enum": "allowedValues.sourceType"
+    },
+    "receivedAt": {
+      "type": "string",
+      "required": true,
+      "format": "YYYY-MM-DD"
+    },
+    "receivedVia": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "enum": "allowedValues.receivedVia"
+    },
+    "consent": {
+      "type": "object",
+      "required": true,
+      "shape": {
+        "publishConsentGiven": "boolean",
+        "consentDate": "YYYY-MM-DD or null",
+        "consentRecordRef": "internal reference or null",
+        "namePublishConsent": "boolean",
+        "photoPublishConsent": "boolean",
+        "canWithdraw": "true",
+        "guardianConsentIfMinor": "boolean or null"
+      }
+    },
+    "isIncentivised": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "incentiveDisclosure": {
+      "type": "string",
+      "required": false,
+      "nullable": true
+    },
+    "edits": {
+      "type": "array",
+      "default": [],
+      "itemShape": {
+        "editedAt": "YYYY-MM-DD",
+        "editedBy": "string",
+        "kind": "enum allowedValues.editKind",
+        "approvedByAuthor": "boolean"
+      }
+    },
+    "outcomeClaim": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "claimsOutcome": "boolean",
+        "claimType": "enum allowedValues.outcomeClaimType or null",
+        "evidenceNote": "string or null"
+      }
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "moderationStatus": {
+      "type": "string",
+      "required": true,
+      "enum": "allowedValues.moderationStatus",
+      "default": "pending"
+    },
+    "moderatedBy": {
+      "type": "string",
+      "nullable": true
+    },
+    "moderatedAt": {
+      "type": "string",
+      "nullable": true,
+      "format": "ISO 8601 datetime"
+    },
+    "rejectionReason": {
+      "type": "string",
+      "nullable": true
+    },
+    "verificationStatus": {
+      "type": "string",
+      "required": true,
+      "enum": "allowedValues.verificationStatus",
+      "default": "unverified"
+    },
+    "verifiedAt": {
+      "type": "string",
+      "nullable": true,
+      "format": "YYYY-MM-DD"
+    },
+    "verifiedBy": {
+      "type": "string",
+      "nullable": true
+    },
+    "reviewDueAt": {
+      "type": "string",
+      "nullable": true,
+      "format": "YYYY-MM-DD"
+    },
+    "active": {
+      "type": "boolean",
+      "required": true,
+      "default": true
+    },
+    "createdAt": {
+      "type": "string",
+      "nullable": true,
+      "format": "ISO 8601 datetime"
+    },
+    "updatedAt": {
+      "type": "string",
+      "nullable": true,
+      "format": "ISO 8601 datetime"
+    }
+  },
+  "allowedValues": {
+    "displayNameMode": [
+      "full_name",
+      "first_name_only",
+      "initials",
+      "anonymous"
+    ],
+    "role": [
+      "student",
+      "parent_or_guardian",
+      "aspirant",
+      "graduate",
+      "professional",
+      "counsellor",
+      "institution_representative",
+      "other"
+    ],
+    "serviceUsed": [
+      "course_guidance",
+      "exam_information",
+      "admission_information",
+      "counselling_guidance",
+      "document_help",
+      "study_abroad_information",
+      "career_information",
+      "website_use",
+      "other"
+    ],
+    "sourceType": [
+      "direct_submission",
+      "survey_response",
+      "email",
+      "interview",
+      "social_post_with_permission",
+      "other"
+    ],
+    "receivedVia": [
+      "web_form",
+      "email",
+      "survey",
+      "phone_interview",
+      "in_person",
+      "other"
+    ],
+    "editKind": [
+      "spelling_grammar",
+      "trimmed_for_length",
+      "translation",
+      "privacy_redaction"
+    ],
+    "outcomeClaimType": [
+      "admission",
+      "rank_or_score",
+      "scholarship",
+      "job",
+      "other"
+    ],
+    "moderationStatus": [
+      "pending",
+      "approved",
+      "rejected",
+      "withdrawn"
+    ],
+    "verificationStatus": [
+      "unverified",
+      "pending_review",
+      "verified",
+      "outdated",
+      "rejected"
+    ]
+  },
+  "dataRules": [
+    "Never invent, ghost-write or fabricate testimonials, and never publish sample or placeholder testimonials on the live site.",
+    "Approval requires consent.publishConsentGiven=true, a valid consentDate, and an internal consentRecordRef.",
+    "If displayNameMode is anonymous, displayName must be 'Anonymous' or an approved pseudonym; never imply a pseudonym is a verified identity.",
+    "Full names and photos require separate explicit permission. If the contributor is a minor, require guardian consent and do not display full name or photo.",
+    "On consent withdrawal, set moderationStatus='withdrawn', active=false, and remove the testimonial from public responses promptly.",
+    "Every edit must be logged, permitted by editKind, and must not change the author's meaning. Translations retain originalLanguageText.",
+    "quote must match a substring of fullFeedback unless a documented, author-approved translation or privacy redaction applies.",
+    "Ratings must be the exact rating submitted by the contributor; never infer, round, or add a rating.",
+    "Outcome claims require reasonable supporting evidence and the site-wide results disclaimer; unsupported claims cannot be published.",
+    "Incentivised feedback must disclose the incentive visibly next to the testimonial.",
+    "Do not expose internal consent references, moderation notes, personal contact details, or private verification records in public API responses.",
+    "Do not publish third-party personal data or unsupported endorsements of institutions.",
+    "relatedCourseId, relatedInstitutionId, and stateId must resolve to existing records when non-null.",
+    "Do not reject feedback solely because it is negative or mixed; moderate against policy consistently.",
+    "active controls display only and never overrides consent, moderation, or verification requirements.",
+    "Production builds must read this file only; development fixtures are stored separately."
+  ],
+  "displayRules": {
+    "showOnlyWhen": [
+      "active == true",
+      "moderationStatus == 'approved'",
+      "verificationStatus == 'verified'",
+      "consent.publishConsentGiven == true",
+      "consent.canWithdraw == true"
+    ],
+    "alwaysShow": [
+      "displayName",
+      "role"
+    ],
+    "showWhenSet": [
+      "incentiveDisclosure"
+    ],
+    "resultsDisclaimer": "Testimonials reflect individual experiences. Results vary; no admission, job, scholarship, funding, or other outcome is guaranteed.",
+    "defaultSort": [
+      "featured desc",
+      "sortOrder asc",
+      "receivedAt desc"
+    ],
+    "maxOnHomepage": 6,
+    "imageAltRequired": true,
+    "neverExposeFields": [
+      "consentRecordRef",
+      "moderatedBy",
+      "rejectionReason",
+      "verifiedBy",
+      "evidenceNote"
+    ],
+    "emptyState": {
+      "title": "Student and community feedback",
+      "message": "Feedback will appear here after it has been received, consented to, and reviewed.",
+      "showRatingSummary": false
+    }
+  },
+  "testimonials": []
+}

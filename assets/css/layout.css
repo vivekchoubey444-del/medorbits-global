@@ -1,0 +1,616 @@
+
+/* ==========================================================================
+   MedOrbits -- Layout Styles
+   File: assets/css/layout.css
+   Design System: Luxury Aubergine & Champagne Gold
+   Version: 1.3.0
+
+   Components:
+   - Announcement bar
+   - Sticky header
+   - Brand and logo
+   - Primary navigation
+   - Dropdown menus
+   - Navigation CTA and buttons
+   - Mobile navigation toggle
+   - Footer and footer links
+
+   Preserve the existing index.html structure and JavaScript behavior.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. Announcement Bar
+   ========================================================================== */
+
+.announcement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+
+  padding: 8px 16px;
+
+  background: #0b0710;
+  border-bottom: 1px solid rgba(201, 169, 110, 0.13);
+
+  color: var(--gold-light, #e8d7ad);
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  text-align: center;
+  text-transform: uppercase;
+
+  overflow-wrap: anywhere;
+}
+
+.announcement .spark {
+  flex: 0 0 auto;
+  color: var(--gold, #c9a96e);
+}
+
+
+/* ==========================================================================
+   2. Sticky Header
+   ========================================================================== */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  background: rgba(16, 10, 23, 0.96);
+  border-bottom: 1px solid var(--line, rgba(217, 204, 228, 0.2));
+
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+
+  transition:
+    box-shadow 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.header.scrolled {
+  background: rgba(12, 7, 17, 0.98);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ==========================================================================
+   3. Navigation Container
+   ========================================================================== */
+
+.nav-wrap {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+
+  min-width: 0;
+  min-height: 82px;
+}
+
+.nav-wrap > * {
+  min-width: 0;
+}
+
+
+/* ==========================================================================
+   4. Brand and Logo
+   ========================================================================== */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  flex: 0 1 auto;
+  min-width: 0;
+
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+
+  width: 47px;
+  height: 47px;
+
+  flex: 0 0 47px;
+  object-fit: contain;
+}
+
+.brand strong {
+  display: block;
+
+  color: var(--gold-light, #e8d7ad);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: 16px;
+  font-weight: var(--weight-semibold, 600);
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+
+  overflow-wrap: anywhere;
+}
+
+.brand small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--muted, #a79caf);
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 8px;
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.13em;
+  line-height: 1.5;
+  text-transform: uppercase;
+
+  overflow-wrap: anywhere;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 5px;
+  border-radius: 3px;
+}
+
+
+/* ==========================================================================
+   5. Primary Navigation
+   ========================================================================== */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+
+  min-width: 0;
+
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+}
+
+.nav > a,
+.nav-trigger {
+  color: #eee6f2;
+  white-space: nowrap;
+}
+
+.nav > a {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav > a:hover,
+.nav-trigger:hover {
+  color: var(--gold-light, #e8d7ad);
+}
+
+.nav > a:focus-visible,
+.nav-trigger:focus-visible,
+.dropdown a:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.nav-group {
+  position: relative;
+  min-width: 0;
+}
+
+.nav-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  min-height: 42px;
+  padding: 8px 0;
+
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+
+  font: inherit;
+  cursor: pointer;
+}
+
+.nav-trigger span {
+  margin-left: 0;
+  color: var(--gold, #c9a96e);
+}
+
+
+/* ==========================================================================
+   6. Dropdown Menus
+   ========================================================================== */
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: -14px;
+  z-index: 1100;
+
+  display: none;
+  grid-template-columns: minmax(0, 1fr);
+
+  width: 260px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(70vh, 520px);
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding: 9px;
+
+  border: 1px solid var(--line, rgba(217, 204, 228, 0.2));
+  border-radius: 12px;
+
+  background: #21172b;
+  box-shadow: var(--shadow, 0 16px 40px rgba(0, 0, 0, 0.3));
+
+  overscroll-behavior: contain;
+}
+
+.nav-group.open > .dropdown,
+.nav-group:hover > .dropdown,
+.nav-group:focus-within > .dropdown {
+  display: grid;
+}
+
+.dropdown a {
+  display: block;
+
+  min-width: 0;
+  padding: 10px 12px;
+
+  border-radius: 8px;
+
+  color: var(--lav, #d9cce4);
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+
+  overflow-wrap: anywhere;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dropdown a:hover {
+  background: rgba(201, 169, 110, 0.1);
+  color: var(--gold-light, #e8d7ad);
+}
+
+.dropdown a:active {
+  background: rgba(201, 169, 110, 0.16);
+}
+
+
+/* ==========================================================================
+   7. Navigation CTA and Buttons
+   ========================================================================== */
+
+.nav-cta,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-width: 0;
+  min-height: 42px;
+  padding: 11px 16px;
+
+  border: 1px solid var(--gold, #c9a96e);
+  border-radius: 9px;
+
+  background: var(--gold, #c9a96e);
+  color: #170e1d;
+
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+  font-weight: var(--weight-bold, 700);
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+
+  cursor: pointer;
+
+  overflow-wrap: anywhere;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn:hover,
+.nav-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+}
+
+.btn:focus-visible,
+.nav-cta:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 3px;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"],
+.nav-cta[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
+
+/* ==========================================================================
+   8. Mobile Navigation Toggle
+   ========================================================================== */
+
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px 12px;
+
+  border: 1px solid var(--line, rgba(217, 204, 228, 0.2));
+  border-radius: 9px;
+
+  background: transparent;
+  color: var(--gold-light, #e8d7ad);
+
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+  font-weight: var(--weight-bold, 700);
+
+  cursor: pointer;
+}
+
+.menu-toggle:hover {
+  border-color: var(--gold, #c9a96e);
+}
+
+.menu-toggle:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 3px;
+}
+
+.menu-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   9. Footer
+   ========================================================================== */
+
+.footer {
+  padding: 48px 0 0;
+
+  background: #0b0710;
+  border-top: 1px solid var(--line, rgba(217, 204, 228, 0.2));
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) repeat(4, minmax(0, 1fr));
+  gap: 25px;
+
+  padding-bottom: 34px;
+}
+
+.footer-grid > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.footer-brand p {
+  max-width: 270px;
+  margin-top: 13px;
+
+  color: var(--muted, #a79caf);
+  font-family: var(--font-body, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+
+/* ==========================================================================
+   10. Footer Headings and Links
+   ========================================================================== */
+
+.footer h3 {
+  margin: 0 0 13px;
+  padding-bottom: 9px;
+
+  border-bottom: 1px solid rgba(201, 169, 110, 0.2);
+
+  color: var(--gold-light, #e8d7ad);
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 11px;
+  font-weight: var(--weight-bold, 700);
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  text-transform: uppercase;
+
+  overflow-wrap: anywhere;
+}
+
+.footer-grid > div:not(:first-child) a {
+  display: block;
+
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px 0;
+
+  color: var(--muted, #a79caf);
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 12px;
+  line-height: 1.6;
+  text-decoration: none;
+
+  overflow-wrap: anywhere;
+
+  transition: color 0.2s ease;
+}
+
+.footer a:hover {
+  color: var(--gold-light, #e8d7ad);
+}
+
+.footer a:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+
+/* ==========================================================================
+   11. Footer Bottom Bar
+   ========================================================================== */
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  padding: 17px 0;
+
+  border-top: 1px solid rgba(201, 169, 110, 0.16);
+
+  color: #a79caf;
+  font-family: var(--font-ui, "DM Sans", Arial, sans-serif);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.footer-bottom > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.footer-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+
+  width: 100%;
+  padding-top: 11px;
+
+  border-top: 1px solid rgba(201, 169, 110, 0.12);
+}
+
+.footer-social-links[hidden] {
+  display: none !important;
+}
+
+.footer-social-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 12px;
+
+  border: 1px solid rgba(201, 169, 110, 0.3);
+  border-radius: 999px;
+
+  background: rgba(201, 169, 110, 0.06);
+  color: var(--muted, #a79caf);
+
+  font-size: 11px;
+  line-height: 1.5;
+  text-decoration: none;
+
+  overflow-wrap: anywhere;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.footer-social-links a img {
+  display: block;
+
+  width: 18px;
+  height: 18px;
+
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+
+.footer-social-links a:hover {
+  border-color: var(--gold, #c9a96e);
+  background: rgba(201, 169, 110, 0.14);
+  color: var(--gold-light, #e8d7ad);
+}
+
+.footer-social-links a:focus-visible {
+  outline: 2px solid var(--gold-light, #e8d7ad);
+  outline-offset: 3px;
+}
+
+
+/* ==========================================================================
+   12. Responsive Layout Safeguards
+   Note: Main breakpoint behavior belongs in responsive.css.
+   ========================================================================== */
+
+.nav-wrap,
+.footer-grid,
+.footer-bottom {
+  box-sizing: border-box;
+}
+
+.footer img,
+.brand img {
+  max-width: 100%;
+}
+
+
+/* ==========================================================================
+   13. Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .header,
+  .nav > a,
+  .dropdown a,
+  .btn,
+  .nav-cta,
+  .footer-grid > div:not(:first-child) a,
+  .footer-social-links a {
+    transition: none !important;
+  }
+
+  .btn:hover,
+  .nav-cta:hover {
+    transform: none;
+    filter: none;
+  }
+}

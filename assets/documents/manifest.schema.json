@@ -1,0 +1,803 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/documents-manifest.schema.json",
+  "title": "MedOrbits Document Library Manifest",
+  "description": "Validation schema for the central MedOrbits document library and specialised document packages. Structural validation does not establish file existence, authenticity, authorization, or publication safety.",
+  "type": "object",
+  "required": [
+    "manifestVersion"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "$ref": "#/$defs/semver"
+    },
+    "manifestVersion": {
+      "$ref": "#/$defs/semver"
+    },
+    "manifestType": {
+      "enum": [
+        "standard",
+        "package"
+      ]
+    },
+    "package": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "title": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "name": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "description": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "purpose": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "directory": {
+      "$ref": "#/$defs/documentDirectory"
+    },
+    "baseDirectory": {
+      "$ref": "#/$defs/documentDirectory"
+    },
+    "brand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "$ref": "#/$defs/brandObject"
+        }
+      ]
+    },
+    "designSystem": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "access": {
+      "$ref": "#/$defs/access"
+    },
+    "classification": {
+      "$ref": "#/$defs/classification"
+    },
+    "maintainedBy": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "language": {
+      "$ref": "#/$defs/language"
+    },
+    "defaultFormat": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "academicYear": {
+      "$ref": "#/$defs/nullableString"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/nullableDateTime"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/nullableDateTime"
+    },
+    "lastReviewedAt": {
+      "$ref": "#/$defs/nullableDate"
+    },
+    "readme": {
+      "$ref": "#/$defs/safeRelativePath"
+    },
+    "disclaimer": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/category"
+      },
+      "uniqueItems": true
+    },
+    "publicationPolicy": {
+      "$ref": "#/$defs/publicationPolicy"
+    },
+    "verificationPolicy": {
+      "$ref": "#/$defs/verificationPolicy"
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/resource"
+      },
+      "uniqueItems": true
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/document"
+      },
+      "uniqueItems": true
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Explicit namespace for project-specific extension fields.",
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {
+      "title": "Standard document-library manifest",
+      "required": [
+        "schemaVersion",
+        "manifestVersion",
+        "metadata",
+        "resources"
+      ],
+      "properties": {
+        "manifestType": {
+          "const": "standard"
+        }
+      },
+      "not": {
+        "required": [
+          "package"
+        ]
+      }
+    },
+    {
+      "title": "Specialised document-package manifest",
+      "required": [
+        "package",
+        "manifestVersion",
+        "directory",
+        "purpose",
+        "brand",
+        "access",
+        "documents"
+      ],
+      "properties": {
+        "manifestType": {
+          "const": "package"
+        }
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "manifestType"
+        ],
+        "properties": {
+          "manifestType": {
+            "const": "standard"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "schemaVersion",
+          "metadata",
+          "resources"
+        ],
+        "not": {
+          "required": [
+            "package"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "manifestType"
+        ],
+        "properties": {
+          "manifestType": {
+            "const": "package"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "package",
+          "directory",
+          "purpose",
+          "brand",
+          "access",
+          "documents"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nullableDate": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "format": "date"
+        }
+      ]
+    },
+    "nullableDateTime": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "format": "date-time"
+        }
+      ]
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 20,
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+    },
+    "access": {
+      "enum": [
+        "public",
+        "private",
+        "restricted"
+      ]
+    },
+    "classification": {
+      "enum": [
+        "public-frontend-assets",
+        "internal",
+        "restricted"
+      ]
+    },
+    "documentDirectory": {
+      "type": "string",
+      "minLength": 17,
+      "pattern": "^assets/documents/(?:[a-z0-9]+(?:-[a-z0-9]+)*/)*$",
+      "description": "Repository-relative directory beneath assets/documents/, ending in a slash."
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*[\\u0000-\\u001F]).+$",
+      "description": "Relative repository path without traversal segments, backslashes, or control characters."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "publicationStatus": {
+      "enum": [
+        "planned",
+        "draft",
+        "in_review",
+        "approved",
+        "published",
+        "under_review",
+        "outdated",
+        "archived",
+        "withdrawn"
+      ]
+    },
+    "verificationStatus": {
+      "enum": [
+        "not_verified",
+        "content_reviewed",
+        "official_sources_checked",
+        "officially_verified"
+      ]
+    },
+    "brandObject": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "designDirection": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "designSystem": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "primaryColour": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "secondaryColour": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "logoPath": {
+          "$ref": "#/$defs/safeRelativePath"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "required": [
+            "designDirection"
+          ]
+        },
+        {
+          "required": [
+            "designSystem"
+          ]
+        }
+      ],
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "directory",
+        "classification",
+        "access",
+        "maintainedBy"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "purpose": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "brand": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "designSystem": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "directory": {
+          "$ref": "#/$defs/documentDirectory"
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "access": {
+          "$ref": "#/$defs/access"
+        },
+        "maintainedBy": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "defaultFormat": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "academicYear": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "lastReviewedAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "readme": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "disclaimer": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "additionalProperties": true
+    },
+    "category": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "directory": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "readme": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "manifest": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "schema": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "additionalProperties": true
+    },
+    "officialSource": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "checkedAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "lastCheckedAt": {
+          "$ref": "#/$defs/nullableDate"
+        }
+      },
+      "additionalProperties": true
+    },
+    "publicationPolicy": {
+      "type": "object",
+      "properties": {
+        "allowedStatuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/publicationStatus"
+          }
+        },
+        "allowedVerificationStatuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/verificationStatus"
+          }
+        },
+        "publicDownloadStatuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "const": "published"
+          }
+        },
+        "requireVerificationForPublicDownload": {
+          "type": "boolean"
+        },
+        "requireOfficialSourcesForOfficiallyVerified": {
+          "type": "boolean"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "verificationPolicy": {
+      "type": "object",
+      "properties": {
+        "allowedStatuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/verificationStatus"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "publicDownloadStatuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "const": "published"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "resource": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "path",
+        "format",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "category": {
+          "$ref": "#/$defs/slug"
+        },
+        "path": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "format": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "mimeType": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "intendedUse": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/publicationStatus"
+        },
+        "verificationStatus": {
+          "$ref": "#/$defs/verificationStatus"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "academicYear": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "officialSources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/officialSource"
+          },
+          "uniqueItems": true
+        },
+        "lastReviewedAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "reviewDueAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "sizeBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "checksum": {
+          "$ref": "#/$defs/checksum"
+        },
+        "relatedResources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          },
+          "uniqueItems": true
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "document": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "filename",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "category": {
+          "$ref": "#/$defs/slug"
+        },
+        "path": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "format": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "mimeType": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "intendedUse": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/publicationStatus"
+        },
+        "verificationStatus": {
+          "$ref": "#/$defs/verificationStatus"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "academicYear": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "officialSources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/officialSource"
+          },
+          "uniqueItems": true
+        },
+        "lastReviewedAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "reviewDueAt": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/nullableDateTime"
+        },
+        "sizeBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "checksum": {
+          "$ref": "#/$defs/checksum"
+        },
+        "relatedResources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          },
+          "uniqueItems": true
+        },
+        "relatedDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          },
+          "uniqueItems": true
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "checksum": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

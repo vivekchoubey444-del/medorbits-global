@@ -1,0 +1,3271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100A17">
+  <meta name="description" content="Explore internships, discover opportunities, prepare application documents, track applications and build professional experience with MedOrbits.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Internships &amp; Early Career Opportunities | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/career/internships.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="manifest" href="/manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #100a17;
+      --bg-2: #191023;
+      --panel: #21172b;
+      --panel-2: #2b1d36;
+      --gold: #c9a96e;
+      --gold-light: #e4d0a1;
+      --lav: #d9cce4;
+      --muted: #b7acbf;
+      --line: rgba(201,169,110,.24);
+      --white: #f7f1fa;
+      --radius: 18px;
+      --shadow: 0 22px 65px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%,rgba(87,57,105,.22),transparent 35%),
+        radial-gradient(ellipse at 92% 32%,rgba(201,169,110,.07),transparent 28%),
+        linear-gradient(135deg,#100a17,#1a1024 55%,#21172b);
+      color: var(--white);
+      font: 400 15px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+
+    a { color: inherit; text-decoration: none; }
+
+    button,input,select,textarea { font: inherit; }
+
+    button,a { -webkit-tap-highlight-color: transparent; }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--gold-light);
+      outline-offset: 4px;
+    }
+
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: -60px;
+      left: 12px;
+      z-index: 10001;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--gold-light);
+      color: #170e1d;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    /* Opening animation */
+
+    .intro-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 42%,rgba(84,30,50,.42),transparent 42%),
+        linear-gradient(145deg,#100a17,#1a1024 58%,#0b0710);
+      opacity: 1;
+      visibility: visible;
+      transition: opacity .75s ease,visibility .75s ease;
+    }
+
+    .intro-screen::before,
+    .intro-screen::after {
+      content: "";
+      position: absolute;
+      width: min(62vw,420px);
+      aspect-ratio: 1;
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: 50%;
+      animation: internship-orbit 2.6s ease-out both;
+    }
+
+    .intro-screen::after {
+      width: min(48vw,320px);
+      border-color: rgba(201,169,110,.32);
+      animation-delay: .12s;
+    }
+
+    .intro-screen.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .intro-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      text-align: center;
+      animation: internship-rise .9s cubic-bezier(.2,.75,.25,1) both;
+    }
+
+    .intro-logo {
+      width: 76px;
+      height: 76px;
+      margin-bottom: 17px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 22px rgba(201,169,110,.24));
+    }
+
+    .intro-wordmark {
+      color: var(--gold-light);
+      font: 600 clamp(22px,4vw,31px)/1.2 "Playfair Display",Georgia,serif;
+      letter-spacing: .23em;
+    }
+
+    .intro-tagline {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+
+    .intro-rule {
+      width: 150px;
+      height: 1px;
+      margin-top: 22px;
+      background: linear-gradient(90deg,transparent,var(--gold),transparent);
+    }
+
+    @keyframes internship-orbit {
+      from { transform: scale(.72) rotate(-25deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @keyframes internship-rise {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Announcement and navigation */
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #0b0710;
+      border-bottom: 1px solid rgba(201,169,110,.13);
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement .spark { color: var(--gold); }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(16,10,23,.91);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+      transition: box-shadow .25s,background .25s;
+    }
+
+    .header.scrolled {
+      background: rgba(12,7,17,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 47px;
+      height: 47px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--gold-light);
+      font-size: 16px;
+      letter-spacing: .12em;
+      line-height: 1.3;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 19px;
+      font-size: 12px;
+    }
+
+    .nav > a,
+    .nav-trigger {
+      color: #eee6f2;
+      white-space: nowrap;
+    }
+
+    .nav > a:hover,
+    .nav-trigger:hover { color: var(--gold-light); }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 5px;
+      color: var(--gold);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -14px;
+      display: none;
+      width: 260px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #21172b;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--lav);
+      font-size: 12px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(201,169,110,.1);
+      color: var(--gold-light);
+    }
+
+    .nav-cta,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 11px 16px;
+      border: 1px solid var(--gold);
+      border-radius: 9px;
+      background: var(--gold);
+      color: #170e1d;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn:hover,
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+    }
+
+    .btn-outline {
+      border-color: rgba(217,204,228,.35);
+      background: transparent;
+      color: var(--gold-light);
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Shared content */
+
+    h1,h2,h3,p { margin-top: 0; }
+
+    .eyebrow,
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 26px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .section {
+      padding: 76px 0;
+      scroll-margin-top: 100px;
+    }
+
+    .section.alt {
+      border-block: 1px solid rgba(217,204,228,.08);
+      background:
+        radial-gradient(ellipse at 90% 10%,rgba(84,30,50,.13),transparent 40%),
+        rgba(43,29,54,.18);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 25px;
+      margin-bottom: 29px;
+    }
+
+    .section-head h2 {
+      margin: 8px 0 10px;
+      font: 600 clamp(28px,3.3vw,42px)/1.18 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+    }
+
+    .section-head h2 span { color: var(--gold-light); }
+
+    .section-head p {
+      max-width: 650px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .text-link {
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .text-link:hover { text-decoration: underline; }
+
+    .interview-hidden { display: none !important; }
+
+    /* Different internships homepage hero */
+
+    .career-intro {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: 74px 0 68px;
+      background:
+        linear-gradient(100deg,rgba(16,10,23,.97),rgba(26,16,36,.88) 56%,rgba(26,16,36,.42)),
+        url('/assets/images/education/education-global.jpg') center/cover no-repeat,
+        #100a17;
+    }
+
+    .career-intro::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse at 78% 15%,rgba(201,169,110,.2),transparent 32%),
+        radial-gradient(ellipse at 20% 100%,rgba(104,57,126,.22),transparent 40%);
+    }
+
+    .career-intro-grid {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      align-items: center;
+      gap: 42px;
+    }
+
+    .career-intro h1 {
+      max-width: 740px;
+      margin: 18px 0;
+      font: 600 clamp(39px,5.3vw,67px)/1.08 "Playfair Display",Georgia,serif;
+      letter-spacing: -.035em;
+    }
+
+    .career-intro h1 em {
+      color: var(--gold-light);
+      font-style: normal;
+    }
+
+    .career-lead {
+      max-width: 620px;
+      color: #d0c5d8;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    .career-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .career-search {
+      display: flex;
+      gap: 8px;
+      max-width: 590px;
+      margin-top: 24px;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(16,10,23,.86);
+    }
+
+    .career-search input {
+      width: 100%;
+      min-width: 0;
+      padding: 10px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--white);
+    }
+
+    .career-search input:focus-visible {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 1px;
+    }
+
+    .career-search button {
+      flex-shrink: 0;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--gold);
+      color: #170e1d;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .career-art {
+      position: relative;
+      min-height: 410px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background:
+        radial-gradient(ellipse at 50% 20%,rgba(201,169,110,.24),transparent 40%),
+        linear-gradient(145deg,#30203e,#171020);
+      box-shadow: var(--shadow);
+    }
+
+    .career-art img {
+      width: 100%;
+      height: 410px;
+      object-fit: cover;
+    }
+
+    .career-art::after {
+      content: "";
+      position: absolute;
+      inset: 30% 0 0;
+      background: linear-gradient(transparent,rgba(16,10,23,.97));
+      pointer-events: none;
+    }
+
+    .career-stamp {
+      position: absolute;
+      top: 17px;
+      right: 17px;
+      z-index: 2;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: rgba(16,10,23,.84);
+      color: var(--gold-light);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .career-art-caption {
+      position: absolute;
+      z-index: 1;
+      right: 22px;
+      bottom: 19px;
+      left: 22px;
+    }
+
+    .career-art-caption strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--gold-light);
+      font: 600 24px "Playfair Display",serif;
+    }
+
+    .career-art-caption span {
+      color: #e2d9e7;
+      font-size: 12px;
+    }
+
+    .career-stats {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      border-block: 1px solid var(--line);
+      background: rgba(43,29,54,.38);
+    }
+
+    .career-stat {
+      padding: 20px 14px;
+      border-right: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .career-stat:last-child { border: 0; }
+
+    .career-stat strong {
+      display: block;
+      color: var(--gold-light);
+      font: 600 18px "Playfair Display",serif;
+    }
+
+    .career-stat span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    /* Internship cards */
+
+    .internship-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .internship-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(43,29,54,.55);
+      color: var(--lav);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .filter-btn[aria-pressed="true"],
+    .filter-btn:hover {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: #170e1d;
+    }
+
+    .internship-sort {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #160d20;
+      color: var(--lav);
+      font-size: 11px;
+    }
+
+    .internship-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 17px;
+    }
+
+    .internship-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: 14px;
+      background: linear-gradient(145deg,#2b1d36,#191023);
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .internship-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(201,169,110,.65);
+      box-shadow: 0 18px 42px rgba(0,0,0,.23);
+    }
+
+    .internship-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .internship-icon {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      place-items: center;
+      border: 1px solid rgba(201,169,110,.4);
+      border-radius: 13px;
+      background: rgba(201,169,110,.07);
+      color: var(--gold-light);
+      font-size: 21px;
+    }
+
+    .internship-type {
+      display: inline-flex;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      color: var(--gold-light);
+      font-size: 9px;
+    }
+
+    .internship-card h3 {
+      margin: 0 0 6px;
+      color: #eee2f3;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .internship-company {
+      margin-bottom: 13px;
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .internship-card p {
+      margin-bottom: 15px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .internship-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 13px;
+      margin: 0 0 17px;
+      color: var(--lav);
+      font-size: 10px;
+    }
+
+    .internship-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .internship-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .internship-card-actions button,
+    .internship-card-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .internship-card-actions button:hover,
+    .internship-card-actions a:hover {
+      background: var(--gold);
+      color: #170e1d;
+    }
+
+    .internship-card-actions .track-button.is-tracked {
+      background: rgba(201,169,110,.14);
+      border-color: var(--gold);
+    }
+
+    .internship-empty {
+      padding: 35px 20px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .internship-note {
+      padding: 14px 16px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 7px 7px 0;
+      background: rgba(43,29,54,.32);
+      color: #b8adbf;
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    /* Category and guidance cards */
+
+    .guidance-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 17px;
+    }
+
+    .guidance-card {
+      padding: 23px;
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: 14px;
+      background: linear-gradient(145deg,#2b1d36,#191023);
+    }
+
+    .guidance-card .internship-icon { margin-bottom: 16px; }
+
+    .guidance-card h3 {
+      margin: 0 0 9px;
+      color: #eee2f3;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .guidance-card p {
+      margin-bottom: 15px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .guidance-card a {
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Application tracker */
+
+    .internship-panel {
+      display: grid;
+      gap: 17px;
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(33,23,43,.78);
+    }
+
+    .internship-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 14px;
+    }
+
+    .internship-field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .internship-field label {
+      color: var(--lav);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .internship-field input,
+    .internship-field select,
+    .internship-field textarea {
+      width: 100%;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid rgba(217,204,228,.2);
+      border-radius: 8px;
+      background: #160d20;
+      color: var(--white);
+    }
+
+    .internship-field select option { background: #21172b; }
+
+    .internship-field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .tracker-summary {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .tracker-stat {
+      padding: 16px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(43,29,54,.45);
+    }
+
+    .tracker-stat strong {
+      display: block;
+      color: var(--gold-light);
+      font: 600 25px "Playfair Display",serif;
+    }
+
+    .tracker-stat span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .tracker-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tracker-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(43,29,54,.4);
+    }
+
+    .tracker-item h3 {
+      margin: 0 0 4px;
+      color: var(--lav);
+      font-size: 13px;
+    }
+
+    .tracker-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .tracker-item-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .tracker-item select,
+    .tracker-item button {
+      max-width: 100%;
+      padding: 8px 9px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #160d20;
+      color: var(--lav);
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .tracker-item button:hover {
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+
+    /* Checklist */
+
+    .internship-progress-track {
+      height: 8px;
+      overflow: hidden;
+      margin: 15px 0 20px;
+      border-radius: 20px;
+      background: #392943;
+    }
+
+    .internship-progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--gold);
+      transition: width .2s ease;
+    }
+
+    .internship-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      padding: 13px 0;
+      border-bottom: 1px solid rgba(201,169,110,.12);
+      cursor: pointer;
+    }
+
+    .internship-check:last-of-type { border-bottom: 0; }
+
+    .internship-check input {
+      margin-top: 5px;
+      accent-color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .internship-check span {
+      color: var(--lav);
+      font-size: 12px;
+    }
+
+    .internship-check input:checked + span {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    /* FAQ */
+
+    .faq-list { display: grid; gap: 10px; }
+
+    .faq {
+      padding: 17px 19px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(43,29,54,.45);
+    }
+
+    .faq summary {
+      color: var(--lav);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .faq p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* CTA and footer */
+
+    .cta {
+      padding: 49px 0;
+      border-block: 1px solid var(--line);
+      background:
+        linear-gradient(100deg,rgba(16,10,23,.97),rgba(43,29,54,.91) 62%,rgba(84,30,50,.6)),
+        url('/assets/images/education/education-global.jpg') center/cover;
+    }
+
+    .cta-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .cta h2 {
+      margin: 8px 0;
+      font: 600 clamp(27px,3vw,38px) "Playfair Display",serif;
+    }
+
+    .cta p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer {
+      padding: 48px 0 0;
+      background: #0b0710;
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.45fr repeat(4,minmax(0,1fr));
+      gap: 25px;
+      padding-bottom: 30px;
+    }
+
+    .footer-grid > div { min-width: 0; }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .footer h3 {
+      margin: 0 0 13px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(201,169,110,.2);
+      color: var(--gold-light);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-grid > div:not(:first-child) a {
+      display: block;
+      width: fit-content;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .footer a:hover { color: var(--gold-light); }
+
+    .footer-social-icons {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .footer-social-icons a,
+    .footer-icon-bottom a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: rgba(43,29,54,.55);
+      color: var(--gold-light);
+      transition: color .2s,background .2s,transform .2s;
+    }
+
+    .footer-social-icons a:hover,
+    .footer-icon-bottom a:hover {
+      transform: translateY(-2px);
+      background: var(--gold-light);
+      color: #170e1d;
+    }
+
+    .footer-social-icons svg,
+    .footer-icon-bottom svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .footer-social-icons .icon-fill {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .social-caption {
+      margin: 8px 0 0 !important;
+      color: var(--muted);
+      font-size: 10px !important;
+    }
+
+    .disclaimer {
+      padding: 13px 16px;
+      margin: 0 0 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 7px 7px 0;
+      background: rgba(43,29,54,.32);
+      color: #a79caf;
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(201,169,110,.16);
+      color: #a79caf;
+      font-size: 10px;
+    }
+
+    .footer-icon-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 17px 0 20px;
+      border-top: 1px solid rgba(201,169,110,.13);
+    }
+
+    .footer-icon-bottom a {
+      width: 34px;
+      height: 34px;
+      flex-basis: 34px;
+    }
+
+    .footer-icon-bottom svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .whatsapp-float {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 950;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 48px;
+      padding: 11px 17px;
+      border: 1px solid rgba(16,33,22,.2);
+      border-radius: 999px;
+      background: #b9e7c5;
+      color: #102116;
+      box-shadow: 0 8px 28px rgba(0,0,0,.3);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .whatsapp-float:hover {
+      transform: translateY(-3px);
+      background: #d4f5dc;
+      color: #102116;
+    }
+
+    .whatsapp-float svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Responsive layouts */
+
+    @media(max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        padding: 15px 22px 20px;
+        border-bottom: 1px solid var(--line);
+        background: #160d20;
+      }
+
+      .nav.open { display: flex; }
+
+      .nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .nav-group { width: 100%; }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .nav-cta { width: 100%; }
+
+      .career-intro-grid { gap: 28px; }
+
+      .career-art,
+      .career-art img {
+        height: 340px;
+        min-height: 340px;
+      }
+
+      .internship-grid,
+      .guidance-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media(max-width:760px) {
+      .container { width: calc(100% - 28px); }
+
+      .announcement {
+        gap: 7px;
+        font-size: 8px;
+        letter-spacing: .06em;
+      }
+
+      .nav-wrap { min-height: 70px; }
+
+      .brand img {
+        width: 41px;
+        height: 41px;
+      }
+
+      .brand strong { font-size: 14px; }
+
+      .brand small {
+        font-size: 7px;
+        letter-spacing: .07em;
+      }
+
+      .career-intro { padding: 48px 0; }
+
+      .career-intro-grid { grid-template-columns: 1fr; }
+
+      .career-intro h1 { font-size: clamp(38px,10vw,54px); }
+
+      .career-art,
+      .career-art img {
+        height: 285px;
+        min-height: 285px;
+      }
+
+      .career-stats { grid-template-columns: repeat(2,1fr); }
+
+      .career-stat { border-bottom: 1px solid var(--line); }
+
+      .career-stat:nth-child(2) { border-right: 0; }
+
+      .career-stat:nth-child(n+3) { border-bottom: 0; }
+
+      .section { padding: 52px 0; }
+
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .internship-grid,
+      .guidance-grid { grid-template-columns: 1fr; }
+
+      .internship-form-grid { grid-template-columns: 1fr; }
+
+      .tracker-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .tracker-item { grid-template-columns: 1fr; }
+
+      .tracker-item-actions { justify-content: flex-start; }
+
+      .cta-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 22px 16px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+
+      .footer-bottom { flex-direction: column; }
+
+      .whatsapp-float {
+        right: 12px;
+        bottom: 12px;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+      }
+
+      .whatsapp-float .whatsapp-label { display: none; }
+    }
+
+    @media(max-width:430px) {
+      .career-search { flex-direction: column; }
+
+      .career-search button { width: 100%; }
+
+      .footer-grid { grid-template-columns: 1fr; }
+
+      .footer-brand { grid-column: auto; }
+
+      .career-actions .btn { width: 100%; }
+
+      .internship-toolbar { align-items: stretch; }
+
+      .internship-sort { width: 100%; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="intro-screen" id="introScreen"
+       role="status" aria-label="Loading MedOrbits">
+    <div class="intro-content">
+      <img class="intro-logo"
+           src="/assets/images/logo/medorbits-logo.png"
+           alt="" width="76" height="76">
+      <div class="intro-wordmark">MEDORBITS</div>
+      <div class="intro-tagline">Study · Career · Consultancy</div>
+      <div class="intro-rule" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your next opportunity starts here</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Discover · Apply · Grow</span>
+  </div>
+
+  <header class="header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="" width="48" height="48">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span>⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span>⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees &amp; funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span>⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html" aria-current="page">Internships</a>
+            <a href="/career/interview-preparation.html">Interview preparation</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/guidance.html">Career guidance</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" tabindex="-1">
+
+    <!-- Internships homepage hero: distinct from interview preparation -->
+
+    <section class="career-intro" id="internship-intro">
+      <div class="container career-intro-grid">
+        <div>
+          <span class="eyebrow">Internship discovery studio</span>
+
+          <h1>
+            Start small.
+            <em>Build a remarkable career.</em>
+          </h1>
+
+          <p class="career-lead">
+            Turn your education into practical experience. Explore internship
+            pathways, identify the skills employers value, organise your
+            applications and prepare for your first professional opportunity.
+            Whether you are a student, recent graduate or career changer,
+            your next step starts with a plan.
+          </p>
+
+          <form class="career-search" id="internshipSearchForm" role="search">
+            <label class="interview-hidden" for="internshipSearchInput">
+              Search internships
+            </label>
+            <input id="internshipSearchInput" type="search"
+                   placeholder="Search marketing, healthcare, IT, finance..."
+                   autocomplete="off">
+            <button type="submit">Explore Opportunities ↗</button>
+          </form>
+
+          <div class="career-actions">
+            <a class="btn" href="#internship-opportunities">
+              Explore Categories ↓
+            </a>
+            <a class="btn btn-outline" href="#internship-tracker">
+              Track Applications
+            </a>
+          </div>
+        </div>
+
+        <div class="career-art">
+          <img src="/assets/images/career/career-guidance.jpg"
+               alt="Career development and professional learning"
+               fetchpriority="high" width="900" height="700">
+          <span class="career-stamp">Learn · Experience · Advance</span>
+          <div class="career-art-caption">
+            <strong>Your potential deserves an opportunity.</strong>
+            <span>
+              Build practical skills, learn from real projects and take
+              purposeful steps towards your career goals.
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="career-stats" aria-label="Internship planning features">
+      <div class="career-stat">
+        <strong>Discover</strong>
+        <span>Explore career pathways</span>
+      </div>
+      <div class="career-stat">
+        <strong>Prepare</strong>
+        <span>Strengthen your application</span>
+      </div>
+      <div class="career-stat">
+        <strong>Organise</strong>
+        <span>Track your progress</span>
+      </div>
+      <div class="career-stat">
+        <strong>Develop</strong>
+        <span>Build practical experience</span>
+      </div>
+    </section>
+
+    <!-- Internship opportunity categories -->
+
+    <section class="section" id="internship-opportunities">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Explore internship pathways</span>
+            <h2>Find your <span>starting point</span></h2>
+            <p>
+              Explore different professional fields and understand the work,
+              skills and experience associated with each pathway.
+              The examples below are category guides, not verified live vacancies.
+            </p>
+          </div>
+        </div>
+
+        <div class="internship-toolbar">
+          <div class="internship-filters" id="internshipFilters"
+               aria-label="Filter internship categories">
+            <button class="filter-btn" type="button"
+                    data-internship-filter="all" aria-pressed="true">
+              All fields
+            </button>
+            <button class="filter-btn" type="button"
+                    data-internship-filter="technology" aria-pressed="false">
+              Technology
+            </button>
+            <button class="filter-btn" type="button"
+                    data-internship-filter="business" aria-pressed="false">
+              Business
+            </button>
+            <button class="filter-btn" type="button"
+                    data-internship-filter="healthcare" aria-pressed="false">
+              Healthcare
+            </button>
+            <button class="filter-btn" type="button"
+                    data-internship-filter="creative" aria-pressed="false">
+              Creative
+            </button>
+            <button class="filter-btn" type="button"
+                    data-internship-filter="research" aria-pressed="false">
+              Research
+            </button>
+          </div>
+
+          <label class="interview-hidden" for="internshipSort">
+            Sort internship categories
+          </label>
+          <select class="internship-sort" id="internshipSort">
+            <option value="default">Default order</option>
+            <option value="title">Sort alphabetically</option>
+          </select>
+        </div>
+
+        <div class="internship-grid" id="internshipGrid">
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="technology"
+                   data-search="software development programming web developer frontend backend javascript python technology IT">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">⌘</div>
+              <span class="internship-type">Technology</span>
+            </div>
+            <h3>Software Development</h3>
+            <div class="internship-company">Technology &amp; Engineering</div>
+            <p>
+              Learn how applications are designed, developed, tested and
+              maintained. Build projects and practise collaborative coding.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Programming</span>
+              <span>◈ Projects</span>
+              <span>◈ Problem-solving</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Software Development Internship"
+                      data-track-category="Technology">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare resume ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="technology"
+                   data-search="data analytics business intelligence statistics SQL Python dashboards data analyst technology">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">▥</div>
+              <span class="internship-type">Technology</span>
+            </div>
+            <h3>Data Analytics</h3>
+            <div class="internship-company">Data &amp; Business Intelligence</div>
+            <p>
+              Practise data cleaning, spreadsheet analysis, visualisation,
+              reporting and communicating evidence-based findings.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Excel / SQL</span>
+              <span>◈ Analytics</span>
+              <span>◈ Reporting</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Data Analytics Internship"
+                      data-track-category="Technology">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare resume ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="business"
+                   data-search="digital marketing SEO social media content campaigns advertising business marketing">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">↗</div>
+              <span class="internship-type">Business</span>
+            </div>
+            <h3>Digital Marketing</h3>
+            <div class="internship-company">Marketing &amp; Growth</div>
+            <p>
+              Explore content planning, search optimisation, social media,
+              campaign reporting and audience research.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Content</span>
+              <span>◈ SEO</span>
+              <span>◈ Campaigns</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Digital Marketing Internship"
+                      data-track-category="Business">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare resume ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="business"
+                   data-search="finance accounting banking financial analysis budgeting audit commerce business">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">₹</div>
+              <span class="internship-type">Business</span>
+            </div>
+            <h3>Finance &amp; Accounting</h3>
+            <div class="internship-company">Finance &amp; Commerce</div>
+            <p>
+              Develop familiarity with financial records, reconciliations,
+              spreadsheet models, budgets and business reporting.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Accounting</span>
+              <span>◈ Excel</span>
+              <span>◈ Analysis</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Finance and Accounting Internship"
+                      data-track-category="Business">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare resume ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="healthcare"
+                   data-search="healthcare hospital public health healthcare administration medical research clinical public health">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">✚</div>
+              <span class="internship-type">Healthcare</span>
+            </div>
+            <h3>Healthcare &amp; Public Health</h3>
+            <div class="internship-company">Healthcare &amp; Health Services</div>
+            <p>
+              Explore eligible non-clinical projects, public health research,
+              health education and healthcare administration.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Research</span>
+              <span>◈ Communication</span>
+              <span>◈ Ethics</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Healthcare and Public Health Internship"
+                      data-track-category="Healthcare">
+                Add to tracker
+              </button>
+              <a href="/career/guidance.html">Career guidance ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="creative"
+                   data-search="graphic design UI UX user experience visual design creative Figma portfolio">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">◇</div>
+              <span class="internship-type">Creative</span>
+            </div>
+            <h3>Design &amp; User Experience</h3>
+            <div class="internship-company">Design &amp; Product</div>
+            <p>
+              Practise visual communication, interface design, wireframing,
+              usability research and portfolio development.
+            </p>
+            <div class="internship-meta">
+              <span>◈ UI / UX</span>
+              <span>◈ Design tools</span>
+              <span>◈ Portfolio</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Design and UX Internship"
+                      data-track-category="Creative">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare portfolio ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="business"
+                   data-search="human resources recruitment talent acquisition people operations HR business">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">◎</div>
+              <span class="internship-type">Business</span>
+            </div>
+            <h3>Human Resources</h3>
+            <div class="internship-company">People &amp; Operations</div>
+            <p>
+              Learn about recruitment coordination, candidate communication,
+              onboarding administration and people operations.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Communication</span>
+              <span>◈ Coordination</span>
+              <span>◈ Organisation</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Human Resources Internship"
+                      data-track-category="Business">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare resume ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="research"
+                   data-search="research academic science laboratory scientific literature literature review research assistant">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">⌕</div>
+              <span class="internship-type">Research</span>
+            </div>
+            <h3>Research Assistant</h3>
+            <div class="internship-company">Academic &amp; Scientific Research</div>
+            <p>
+              Develop literature review, documentation, data collection
+              and analytical skills under appropriate supervision.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Research methods</span>
+              <span>◈ Documentation</span>
+              <span>◈ Analysis</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Research Assistant Internship"
+                      data-track-category="Research">
+                Add to tracker
+              </button>
+              <a href="/career/guidance.html">Career guidance ↗</a>
+            </div>
+          </article>
+
+          <article class="internship-card"
+                   data-internship-card
+                   data-category="creative"
+                   data-search="content writing copywriting editing communications journalism storytelling creative">
+            <div class="internship-card-top">
+              <div class="internship-icon" aria-hidden="true">✎</div>
+              <span class="internship-type">Creative</span>
+            </div>
+            <h3>Content &amp; Communications</h3>
+            <div class="internship-company">Writing &amp; Media</div>
+            <p>
+              Build experience in research-led writing, editing, content
+              calendars, communications and editorial workflows.
+            </p>
+            <div class="internship-meta">
+              <span>◈ Writing</span>
+              <span>◈ Editing</span>
+              <span>◈ Research</span>
+            </div>
+            <div class="internship-card-actions">
+              <button type="button" data-internship-track
+                      data-track-title="Content and Communications Internship"
+                      data-track-category="Creative">
+                Add to tracker
+              </button>
+              <a href="/career/resume-support.html">Prepare portfolio ↗</a>
+            </div>
+          </article>
+        </div>
+
+        <p class="interview-note" id="internshipResultCount"
+           style="margin-top:20px" aria-live="polite">
+          Browse internship categories and add relevant pathways to your tracker.
+        </p>
+
+        <p class="internship-note" style="margin-top:14px">
+          These are illustrative internship categories, not confirmed vacancies.
+          No employer, stipend, opening date, eligibility or placement is implied.
+          Verify each opportunity on the relevant employer's official website
+          before applying.
+        </p>
+      </div>
+    </section>
+
+    <!-- Guidance for students -->
+
+    <section class="section alt" id="internship-guidance">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Build your application</span>
+            <h2>Everything starts with <span>preparation</span></h2>
+            <p>
+              Make your application more focused by preparing the essentials
+              before approaching employers.
+            </p>
+          </div>
+        </div>
+
+        <div class="guidance-grid">
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">▤</div>
+            <h3>Resume &amp; Portfolio</h3>
+            <p>
+              Present your education, projects, skills and achievements clearly.
+              Include evidence of your contribution wherever possible.
+            </p>
+            <a href="/career/resume-support.html">Explore resume support ↗</a>
+          </article>
+
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">◎</div>
+            <h3>Interview Preparation</h3>
+            <p>
+              Practise introductions, behavioural questions, project explanations
+              and thoughtful questions for potential employers.
+            </p>
+            <a href="/career/interview-preparation.html">Practise interviews ↗</a>
+          </article>
+
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">↗</div>
+            <h3>Career Planning</h3>
+            <p>
+              Identify relevant fields, compare skill requirements and create
+              a realistic learning plan for your preferred career direction.
+            </p>
+            <a href="/career/guidance.html">Explore career guidance ↗</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Application tracker -->
+
+    <section class="section" id="internship-tracker">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Your personal workspace</span>
+            <h2>Internship <span>application tracker</span></h2>
+            <p>
+              Record opportunities you discover, track your application stage
+              and keep important dates organised. Your tracker is stored locally
+              in this browser when storage is available.
+            </p>
+          </div>
+        </div>
+
+        <div class="internship-panel">
+          <div class="tracker-summary" aria-label="Application statistics">
+            <div class="tracker-stat">
+              <strong id="trackerTotal">0</strong>
+              <span>Tracked opportunities</span>
+            </div>
+            <div class="tracker-stat">
+              <strong id="trackerApplied">0</strong>
+              <span>Applications submitted</span>
+            </div>
+            <div class="tracker-stat">
+              <strong id="trackerInterviews">0</strong>
+              <span>Interview stage</span>
+            </div>
+            <div class="tracker-stat">
+              <strong id="trackerOffers">0</strong>
+              <span>Offers received</span>
+            </div>
+          </div>
+
+          <form id="internshipTrackerForm">
+            <div class="internship-form-grid">
+              <div class="internship-field">
+                <label for="trackerRole">Internship / role title *</label>
+                <input id="trackerRole" type="text" maxlength="120"
+                       placeholder="e.g. Data Analyst Intern" required>
+              </div>
+
+              <div class="internship-field">
+                <label for="trackerCompany">Organisation *</label>
+                <input id="trackerCompany" type="text" maxlength="120"
+                       placeholder="Organisation name" required>
+              </div>
+
+              <div class="internship-field">
+                <label for="trackerCategory">Field</label>
+                <select id="trackerCategory">
+                  <option value="Technology">Technology</option>
+                  <option value="Business">Business</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Creative">Creative</option>
+                  <option value="Research">Research</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div class="internship-field">
+                <label for="trackerStatus">Application status</label>
+                <select id="trackerStatus">
+                  <option value="Interested">Interested</option>
+                  <option value="Preparing">Preparing application</option>
+                  <option value="Applied">Applied</option>
+                  <option value="Assessment">Assessment</option>
+                  <option value="Interview">Interview</option>
+                  <option value="Offer">Offer received</option>
+                  <option value="Rejected">Not selected</option>
+                  <option value="Withdrawn">Withdrawn</option>
+                </select>
+              </div>
+
+              <div class="internship-field">
+                <label for="trackerDeadline">Application deadline</label>
+                <input id="trackerDeadline" type="date">
+              </div>
+
+              <div class="internship-field">
+                <label for="trackerUrl">Official opportunity URL</label>
+                <input id="trackerUrl" type="url" maxlength="1000"
+                       placeholder="https://example.com/careers">
+              </div>
+            </div>
+
+            <div class="internship-field" style="margin-top:14px">
+              <label for="trackerNotes">Notes and next steps</label>
+              <textarea id="trackerNotes" maxlength="1500"
+                        placeholder="Eligibility, skills to revise, contact details or next action"></textarea>
+            </div>
+
+            <div class="career-actions">
+              <button class="btn" type="submit">Save Opportunity ↗</button>
+              <button class="btn btn-outline" type="button"
+                      id="trackerExport">
+                Export Tracker
+              </button>
+            </div>
+          </form>
+
+          <div>
+            <h3 style="color:var(--gold-light);font-family:'Playfair Display',serif">
+              Your tracked opportunities
+            </h3>
+            <div class="tracker-list" id="trackerList" aria-live="polite">
+              <p class="internship-note">
+                No opportunities tracked yet. Add an opportunity above or
+                select a category card to get started.
+              </p>
+            </div>
+          </div>
+
+          <p class="internship-note">
+            Tracker information is intended for your own use on this device.
+            It is not automatically sent to MedOrbits or employers. Browser
+            storage may be cleared by your device or browser settings.
+            Do not store passwords, OTPs or sensitive personal information here.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Application readiness checklist -->
+
+    <section class="section alt" id="internship-checklist">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Before you apply</span>
+            <h2>Your internship <span>readiness checklist</span></h2>
+            <p>
+              Complete the essentials before submitting an application.
+              Track progress and download a checklist for later reference.
+            </p>
+          </div>
+        </div>
+
+        <div class="internship-panel">
+          <strong id="internshipChecklistCount">0 of 8 completed</strong>
+
+          <div class="internship-progress-track"
+               id="internshipChecklistProgress"
+               role="progressbar"
+               aria-label="Internship readiness progress"
+               aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+            <div class="internship-progress-bar"
+                 id="internshipChecklistBar"></div>
+          </div>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="eligibility">
+            <span>I checked the eligibility requirements and application deadline.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="employer">
+            <span>I verified the employer and opportunity through reliable sources.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="resume">
+            <span>I updated my resume for the role and checked it for errors.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="portfolio">
+            <span>I prepared relevant projects, work samples or a portfolio where applicable.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="coverletter">
+            <span>I prepared a concise, role-specific application message or cover letter.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="skills">
+            <span>I identified the key skills required and planned how to demonstrate them.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="interview">
+            <span>I practised relevant interview questions and project explanations.</span>
+          </label>
+
+          <label class="internship-check">
+            <input type="checkbox" data-internship-check="followup">
+            <span>I recorded the submission date and planned an appropriate follow-up.</span>
+          </label>
+
+          <div class="career-actions">
+            <button class="btn" type="button" id="internshipDownloadChecklist">
+              Download Checklist
+            </button>
+            <button class="btn btn-outline" type="button"
+                    id="internshipResetChecklist">
+              Reset Checklist
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Safe and effective internship search -->
+
+    <section class="section" id="internship-safety">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Apply with confidence</span>
+            <h2>Recognise a <span>legitimate opportunity</span></h2>
+            <p>
+              Verify the details before sharing documents, accepting an offer
+              or making any financial commitment.
+            </p>
+          </div>
+        </div>
+
+        <div class="guidance-grid">
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">✓</div>
+            <h3>Verify the employer</h3>
+            <p>
+              Look for the organisation's official website, consistent contact
+              information and a vacancy or recruitment page that matches the offer.
+            </p>
+          </article>
+
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">₹</div>
+            <h3>Question suspicious fees</h3>
+            <p>
+              Be cautious of demands for payment to secure an internship,
+              guarantee selection or release an offer. Independently verify
+              any legitimate programme fees.
+            </p>
+          </article>
+
+          <article class="guidance-card">
+            <div class="internship-icon" aria-hidden="true">◇</div>
+            <h3>Protect your information</h3>
+            <p>
+              Never share account passwords or OTPs. Check how documents and
+              personal information will be used before submitting them.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to action -->
+
+    <section class="cta">
+      <div class="container cta-inner">
+        <div>
+          <span class="kicker">Your next step starts here</span>
+          <h2>Turn your learning into experience.</h2>
+          <p>
+            Build your application, practise interviews and explore career
+            guidance with MedOrbits.
+          </p>
+        </div>
+        <div class="career-actions">
+          <a class="btn" href="/pages/apply.html">Request Guidance →</a>
+          <a class="btn btn-outline"
+             href="/career/interview-preparation.html">
+            Interview Preparation
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQs -->
+
+    <section class="section" id="internship-faqs">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Internship FAQs</span>
+            <h2>Frequently asked <span>questions</span></h2>
+            <p>
+              Practical answers to help students and graduates plan
+              their internship applications.
+            </p>
+          </div>
+          <a class="text-link" href="/education/resources/faqs.html">
+            More FAQs →
+          </a>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq">
+            <summary>Who can apply for an internship?</summary>
+            <p>
+              Eligibility depends on the employer and programme. Opportunities
+              may be open to current students, recent graduates, diploma holders
+              or career changers. Check the specific eligibility requirements,
+              educational criteria and application dates before applying.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Can I get an internship without previous work experience?</summary>
+            <p>
+              Yes, some internships are designed for beginners. Relevant
+              coursework, academic projects, volunteering, independent projects
+              and transferable skills can help demonstrate your potential.
+              Explain your actual contribution honestly.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Are all internships paid?</summary>
+            <p>
+              No. Compensation varies by employer, location and programme.
+              Confirm the stipend, payment schedule, working hours, duration,
+              expenses and other conditions directly with the organisation
+              before accepting an offer.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>How do I find genuine internship vacancies?</summary>
+            <p>
+              Start with official company career pages, university placement
+              offices, recognised internship programmes and reputable job
+              platforms. Independently verify the employer, vacancy and
+              recruitment contact before sharing personal information.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>How should I prepare my internship resume?</summary>
+            <p>
+              Highlight relevant education, skills, projects, coursework,
+              achievements and practical experience. Tailor the resume to
+              the opportunity, use clear language and avoid unsupported
+              claims about your abilities or results.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Can I track applications using this page?</summary>
+            <p>
+              Yes. The application tracker lets you record roles, organisations,
+              deadlines, application stages and notes. The information is saved
+              locally in your browser when storage is available; it is not
+              automatically shared with MedOrbits or an employer.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Does MedOrbits guarantee an internship or placement?</summary>
+            <p>
+              No. This page provides internship planning resources and example
+              career categories. It does not confirm live vacancies, guarantee
+              interviews or promise selection. Hiring decisions are made by
+              the relevant organisations.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Can healthcare students apply for clinical internships?</summary>
+            <p>
+              Requirements depend on the programme, institution, location and
+              professional regulations. Verify supervision, eligibility,
+              registration requirements and permitted duties. Never perform
+              clinical activities outside your authorised scope.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+
+  <footer class="footer" id="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="48" height="48" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+
+          <p>
+            Explore education pathways, admission resources, career
+            opportunities and recruitment services with MedOrbits.
+          </p>
+
+          <div class="footer-social-icons"
+               aria-label="Social media and messaging">
+            <a href="https://www.instagram.com/"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="Instagram" title="Instagram">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.8" r="1" class="icon-fill"/>
+              </svg>
+            </a>
+
+            <a href="https://www.facebook.com/"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="Facebook" title="Facebook">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.4 0-5.5 2-5.5 5.7V9H6v4h3.5v8"/>
+              </svg>
+            </a>
+
+            <a href="https://www.linkedin.com/"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="LinkedIn" title="LinkedIn">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 9v10M5 5v.1M10 19v-6a4 4 0 0 1 8 0v6M10 9v10"/>
+                <circle cx="5" cy="5" r="1" class="icon-fill"/>
+              </svg>
+            </a>
+
+            <a href="https://www.youtube.com/"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="YouTube" title="YouTube">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="2" y="5" width="20" height="14" rx="4"/>
+                <path d="m10 9 5 3-5 3z" class="icon-fill"/>
+              </svg>
+            </a>
+
+            <a href="https://wa.me/919999999999?text=Hello%20MedOrbits"
+               target="_blank" rel="noopener noreferrer"
+               aria-label="WhatsApp MedOrbits" title="WhatsApp">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/>
+                <path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/>
+              </svg>
+            </a>
+          </div>
+
+          <p class="social-caption">Connect with MedOrbits</p>
+        </div>
+
+        <div>
+          <h3>Education</h3>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study Abroad</a>
+        </div>
+
+        <div>
+          <h3>Student Resources</h3>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance Exams</a>
+          <a href="/education/resources/fees.html">Fees &amp; Funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+        </div>
+
+        <div>
+          <h3>Career Services</h3>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html" aria-current="page">Internships</a>
+          <a href="/career/guidance.html">Career Guidance</a>
+          <a href="/career/interview-preparation.html">Interview Preparation</a>
+          <a href="/career/resume-support.html">Resume Support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer Services</a>
+        </div>
+
+        <div>
+          <h3>MedOrbits</h3>
+          <a href="/pages/about.html">About Us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/pages/accessibility.html">Accessibility</a>
+          <a href="/legal/privacy-policy.html">Privacy Policy</a>
+          <a href="/legal/terms.html">Terms &amp; Conditions</a>
+          <a href="/legal/refund-policy.html">Refund Policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides general internship discovery and application
+        preparation resources. The categories on this page are illustrative,
+        not verified vacancies. Availability, compensation, eligibility and
+        recruitment processes depend on the relevant organisation. Verify
+        information through official sources. MedOrbits does not guarantee
+        an internship, interview, placement or employment. Never share
+        passwords, OTPs or confidential information in an application.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+
+      <div class="footer-icon-bottom" aria-label="Quick links">
+        <a href="/index.html" aria-label="Home" title="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/>
+          </svg>
+        </a>
+
+        <a href="/pages/about.html" aria-label="About MedOrbits" title="About">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 11v5M12 8h.01"/>
+          </svg>
+        </a>
+
+        <a href="/pages/contact.html" aria-label="Contact" title="Contact">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <path d="m4 7 8 6 8-6"/>
+          </svg>
+        </a>
+
+        <a href="/pages/accessibility.html"
+           aria-label="Accessibility" title="Accessibility">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="4" r="2"/>
+            <path d="M4 8h16M12 8v5m0 0-5 8m5-8 5 8"/>
+          </svg>
+        </a>
+
+        <a href="https://wa.me/919999999999?text=Hello%20MedOrbits"
+           target="_blank" rel="noopener noreferrer"
+           aria-label="WhatsApp MedOrbits" title="WhatsApp">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/>
+            <path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp contact -->
+
+  <a class="whatsapp-float"
+     href="https://wa.me/919999999999?text=Hello%20MedOrbits%2C%20I%20would%20like%20internship%20guidance."
+     target="_blank" rel="noopener noreferrer"
+     aria-label="Chat with MedOrbits on WhatsApp"
+     title="Chat with MedOrbits on WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.2 11.8a8.2 8.2 0 0 1-12.1 7.1L3 20l1.2-4.9a8.2 8.2 0 1 1 16-3.3Z"/>
+      <path d="M8.2 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4-.1.6l-.6.8c-.2.2-.2.4 0 .6.5.9 1.3 1.6 2.2 2.1.2.1.4.1.6-.1l.8-1c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.7-.5.5-1.2.7-2 .5-1.1-.2-2.5-.9-3.8-2.1-1.6-1.4-2.5-3.1-2.7-4.2-.2-.9.1-1.6.5-2Z"/>
+    </svg>
+    <span class="whatsapp-label">Chat on WhatsApp</span>
+  </a>
+
+  <!-- Shared navigation and page-shell JavaScript -->
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      const introScreen = $("#introScreen");
+      const header = $("#siteHeader");
+      const menuToggle = $("#menuToggle");
+      const nav = $("#mainNav");
+      const groups = $$(".nav-group");
+      const year = $("#currentYear");
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+      if (year) {
+        year.textContent = String(new Date().getFullYear());
+      }
+
+      if (introScreen) {
+        if (reducedMotion.matches) {
+          introScreen.classList.add("is-hidden");
+          introScreen.remove();
+        } else {
+          const hideIntro = () => {
+            introScreen.classList.add("is-hidden");
+          };
+
+          window.setTimeout(hideIntro, 1900);
+
+          introScreen.addEventListener("transitionend", event => {
+            if (
+              event.target === introScreen &&
+              introScreen.classList.contains("is-hidden")
+            ) {
+              introScreen.remove();
+            }
+          });
+        }
+      }
+
+      function closeMenu() {
+        nav?.classList.remove("open");
+        menuToggle?.setAttribute("aria-expanded", "false");
+
+        if (menuToggle) {
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        groups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle?.addEventListener("click", () => {
+        const open = nav.classList.toggle("open");
+
+        menuToggle.setAttribute("aria-expanded", String(open));
+        menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+
+        if (!open) {
+          groups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+
+      groups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger?.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const open = !group.classList.contains("open");
+
+          groups.forEach(item => {
+            item.classList.remove("open");
+            item.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (open) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      nav?.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          groups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          nav?.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeMenu();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeMenu();
+          menuToggle?.focus();
+        }
+      });
+
+      function updateHeader() {
+        header?.classList.toggle("scrolled", window.scrollY > 20);
+      }
+
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+      if (desktopQuery.addEventListener) {
+        desktopQuery.addEventListener("change", event => {
+          if (event.matches) closeMenu();
+        });
+      } else if (desktopQuery.addListener) {
+        desktopQuery.addListener(event => {
+          if (event.matches) closeMenu();
+        });
+      }
+    })();
+  </script>
+
+  <!-- Internship search and category filters -->
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      const searchForm = $("#internshipSearchForm");
+      const searchInput = $("#internshipSearchInput");
+      const filterButtons = $$("[data-internship-filter]");
+      const sortSelect = $("#internshipSort");
+      const grid = $("#internshipGrid");
+      const resultCount = $("#internshipResultCount");
+
+      const originalCards = $$("[data-internship-card]");
+      let activeCategory = "all";
+      let activeQuery = "";
+
+      function updateInternships() {
+        const query = activeQuery.toLowerCase();
+        let visibleCount = 0;
+
+        originalCards.forEach(card => {
+          const category = card.dataset.category;
+          const searchableText = (
+            (card.dataset.search || "") + " " + card.textContent
+          ).toLowerCase();
+
+          const categoryMatches =
+            activeCategory === "all" || category === activeCategory;
+
+          const queryMatches =
+            !query || searchableText.includes(query);
+
+          const visible = categoryMatches && queryMatches;
+
+          card.classList.toggle("interview-hidden", !visible);
+
+          if (visible) visibleCount++;
+        });
+
+        resultCount.textContent = visibleCount
+          ? `${visibleCount} internship ${visibleCount === 1 ? "category" : "categories"} found. These are example pathways, not confirmed vacancies.`
+          : "No matching categories found. Try another keyword or select All fields.";
+
+        const visibleCards = originalCards.filter(card =>
+          !card.classList.contains("interview-hidden")
+        );
+
+        if (sortSelect.value === "title") {
+          visibleCards.sort((a, b) =>
+            a.querySelector("h3").textContent.localeCompare(
+              b.querySelector("h3").textContent
+            )
+          );
+
+          visibleCards.forEach(card => grid.append(card));
+        } else {
+          originalCards.forEach(card => grid.append(card));
+        }
+      }
+
+      filterButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          activeCategory = button.dataset.internshipFilter;
+
+          filterButtons.forEach(item => {
+            item.setAttribute(
+              "aria-pressed",
+              String(item === button)
+            );
+          });
+
+          updateInternships();
+        });
+      });
+
+      searchForm?.addEventListener("submit", event => {
+        event.preventDefault();
+
+        activeQuery = searchInput.value.trim();
+
+        updateInternships();
+
+        $("#internship-opportunities")?.scrollIntoView({
+          behavior: window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+          ).matches ? "auto" : "smooth"
+        });
+      });
+
+      searchInput?.addEventListener("input", () => {
+        if (!searchInput.value.trim()) {
+          activeQuery = "";
+          updateInternships();
+        }
+      });
+
+      sortSelect?.addEventListener("change", updateInternships);
+
+      updateInternships();
+    })();
+  </script>
+
+  <!-- Application tracker with browser-local persistence -->
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      const form = $("#internshipTrackerForm");
+      const trackerList = $("#trackerList");
+
+      const storageKey = "medorbits-internship-tracker-v1";
+      const validStatuses = [
+        "Interested",
+        "Preparing",
+        "Applied",
+        "Assessment",
+        "Interview",
+        "Offer",
+        "Rejected",
+        "Withdrawn"
+      ];
+
+      let entries = [];
+      let editingId = null;
+
+      function makeId() {
+        if (window.crypto?.randomUUID) {
+          return window.crypto.randomUUID();
+        }
+
+        return `internship-${Date.now()}-${Math.random()
+          .toString(36).slice(2, 10)}`;
+      }
+
+      function readEntries() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+          if (!Array.isArray(stored)) return [];
+
+          return stored.filter(entry =>
+            entry &&
+            typeof entry.id === "string" &&
+            typeof entry.role === "string" &&
+            typeof entry.company === "string" &&
+            validStatuses.includes(entry.status)
+          );
+        } catch {
+          return [];
+        }
+      }
+
+      function saveEntries() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(entries));
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      function addText(parent, tag, value, className) {
+        const element = document.createElement(tag);
+        element.textContent = value;
+
+        if (className) element.className = className;
+
+        parent.append(element);
+        return element;
+      }
+
+      function updateStats() {
+        $("#trackerTotal").textContent = String(entries.length);
+
+        $("#trackerApplied").textContent = String(
+          entries.filter(entry => entry.status === "Applied").length
+        );
+
+        $("#trackerInterviews").textContent = String(
+          entries.filter(entry =>
+            entry.status === "Interview" ||
+            entry.status === "Assessment"
+          ).length
+        );
+
+        $("#trackerOffers").textContent = String(
+          entries.filter(entry => entry.status === "Offer").length
+        );
+      }
+
+      function renderEntries() {
+        trackerList.replaceChildren();
+
+        if (!entries.length) {
+          addText(
+            trackerList,
+            "p",
+            "No opportunities tracked yet. Add an opportunity above or select a category card to get started.",
+            "internship-note"
+          );
+
+          updateStats();
+          return;
+        }
+
+        const sortedEntries = [...entries].sort((a, b) => {
+          if (a.deadline && b.deadline) {
+            return a.deadline.localeCompare(b.deadline);
+          }
+
+          if (a.deadline) return -1;
+          if (b.deadline) return 1;
+
+          return b.updatedAt - a.updatedAt;
+        });
+
+        sortedEntries.forEach(entry => {
+          const item = document.createElement("article");
+          item.className = "tracker-item";
+
+          const details = document.createElement("div");
+
+          addText(details, "h3", `${entry.role} -- ${entry.company}`);
+
+          const metadata = [
+            entry.category,
+            entry.status,
+            entry.deadline ? `Deadline: ${entry.deadline}` : "",
+            entry.notes || ""
+          ].filter(Boolean).join(" · ");
+
+          addText(details, "p", metadata);
+
+          if (entry.url) {
+            const link = document.createElement("a");
+            link.href = entry.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = "Open opportunity website ↗";
+            link.style.cssText =
+              "display:inline-block;margin-top:7px;color:var(--gold-light);font-size:10px;overflow-wrap:anywhere";
+
+            details.append(link);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "tracker-item-actions";
+
+          const status = document.createElement("select");
+          status.setAttribute(
+            "aria-label",
+            `Update status for ${entry.role} at ${entry.company}`
+          );
+
+          validStatuses.forEach(value => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            option.selected = value === entry.status;
+            status.append(option);
+          });
+
+          status.addEventListener("change", () => {
+            entry.status = status.value;
+            entry.updatedAt = Date.now();
+
+            if (!saveEntries()) {
+              window.alert(
+                "Browser storage is unavailable. Your latest changes may not persist after this page is closed."
+              );
+            }
+
+            renderEntries();
+          });
+
+          const edit = document.createElement("button");
+          edit.type = "button";
+          edit.textContent = "Edit";
+
+          edit.addEventListener("click", () => {
+            editingId = entry.id;
+
+            $("#trackerRole").value = entry.role;
+            $("#trackerCompany").value = entry.company;
+            $("#trackerCategory").value = entry.category;
+            $("#trackerStatus").value = entry.status;
+            $("#trackerDeadline").value = entry.deadline;
+            $("#trackerUrl").value = entry.url;
+            $("#trackerNotes").value = entry.notes;
+
+            form.querySelector('[type="submit"]').textContent =
+              "Update Opportunity ↗";
+
+            form.scrollIntoView({
+              behavior: window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches ? "auto" : "smooth"
+            });
+
+            $("#trackerRole").focus();
+          });
+
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "Delete";
+
+          remove.addEventListener("click", () => {
+            const confirmed = window.confirm(
+              `Delete the tracked opportunity "${entry.role}" at "${entry.company}"?`
+            );
+
+            if (!confirmed) return;
+
+            entries = entries.filter(item => item.id !== entry.id);
+
+            if (editingId === entry.id) resetForm();
+
+            saveEntries();
+            renderEntries();
+          });
+
+          actions.append(status, edit, remove);
+          item.append(details, actions);
+          trackerList.append(item);
+        });
+
+        updateStats();
+      }
+
+      function resetForm() {
+        form.reset();
+        editingId = null;
+
+        form.querySelector('[type="submit"]').textContent =
+          "Save Opportunity ↗";
+      }
+
+      function validOpportunityUrl(value) {
+        if (!value) return "";
+
+        try {
+          const url = new URL(value);
+
+          if (!["https:", "http:"].includes(url.protocol)) {
+            throw new Error("Invalid protocol");
+          }
+
+          return url.href;
+        } catch {
+          throw new Error("Enter a valid HTTP or HTTPS opportunity URL.");
+        }
+      }
+
+      form?.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const role = $("#trackerRole").value.trim();
+        const company = $("#trackerCompany").value.trim();
+
+        if (!role || !company) {
+          window.alert("Enter both the internship title and organisation.");
+          return;
+        }
+
+        let url;
+
+        try {
+          url = validOpportunityUrl($("#trackerUrl").value.trim());
+        } catch (error) {
+          window.alert(error.message);
+          $("#trackerUrl").focus();
+          return;
+        }
+
+        const existing = editingId
+          ? entries.find(entry => entry.id === editingId)
+          : null;
+
+        const entry = {
+          id: editingId || makeId(),
+          role: role.slice(0, 120),
+          company: company.slice(0, 120),
+          category: $("#trackerCategory").value,
+          status: $("#trackerStatus").value,
+          deadline: $("#trackerDeadline").value,
+          url,
+          notes: $("#trackerNotes").value.trim().slice(0, 1500),
+          createdAt: existing?.createdAt || Date.now(),
+          updatedAt: Date.now()
+        };
+
+        if (existing) {
+          entries = entries.map(item =>
+            item.id === editingId ? entry : item
+          );
+        } else {
+          entries.push(entry);
+        }
+
+        const saved = saveEntries();
+
+        resetForm();
+        renderEntries();
+
+        if (!saved) {
+          window.alert(
+            "The opportunity was added for this page session, but browser storage is unavailable. Export your tracker to keep a copy."
+          );
+        }
+      });
+
+      /* Add a sample pathway to the tracker without claiming it is a vacancy. */
+
+      $$("[data-internship-track]").forEach(button => {
+        button.addEventListener("click", () => {
+          const role = button.dataset.trackTitle;
+          const category = button.dataset.trackCategory;
+
+          const existing = entries.find(entry =>
+            entry.role === role &&
+            entry.company === "To be identified"
+          );
+
+          if (existing) {
+            $("#internship-tracker").scrollIntoView({
+              behavior: window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches ? "auto" : "smooth"
+            });
+
+            return;
+          }
+
+          entries.push({
+            id: makeId(),
+            role,
+            company: "To be identified",
+            category,
+            status: "Interested",
+            deadline: "",
+            url: "",
+            notes: "Example career category only. Identify and verify a real vacancy before applying.",
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+
+          const saved = saveEntries();
+          renderEntries();
+
+          if (!saved) {
+            window.alert(
+              "Added for this page session. Browser storage is unavailable, so export your tracker to keep a copy."
+            );
+          }
+
+          $("#internship-tracker").scrollIntoView({
+            behavior: window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches ? "auto" : "smooth"
+          });
+        });
+      });
+
+      $("#trackerExport")?.addEventListener("click", () => {
+        const exportData = {
+          exportedAt: new Date().toISOString(),
+          applicationCount: entries.length,
+          applications: entries
+        };
+
+        const blob = new Blob(
+          [JSON.stringify(exportData, null, 2)],
+          { type: "application/json;charset=utf-8" }
+        );
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "medorbits-internship-tracker.json";
+
+        document.body.append(link);
+        link.click();
+        link.remove();
+
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+
+      entries = readEntries();
+      renderEntries();
+    })();
+  </script>
+
+  <!-- Internship readiness checklist -->
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = selector => document.querySelector(selector);
+      const items = $$items();
+
+      function $$items() {
+        return [...document.querySelectorAll("[data-internship-check]")];
+      }
+
+      const count = $("#internshipChecklistCount");
+      const bar = $("#internshipChecklistBar");
+      const progress = $("#internshipChecklistProgress");
+      const storageKey = "medorbits-internship-readiness-v1";
+
+      function readState() {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function saveState() {
+        try {
+          const state = {};
+
+          items.forEach(item => {
+            state[item.dataset.internshipCheck] = item.checked;
+          });
+
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch {
+          /* Checklist remains usable for the current page session. */
+        }
+      }
+
+      function updateProgress(persist = true) {
+        const completed = items.filter(item => item.checked).length;
+        const total = items.length;
+        const percentage = total ? completed / total * 100 : 0;
+
+        count.textContent = `${completed} of ${total} completed`;
+        bar.style.width = `${percentage}%`;
+
+        progress.setAttribute("aria-valuenow", String(completed));
+
+        if (persist) saveState();
+      }
+
+      const saved = readState();
+
+      items.forEach(item => {
+        item.checked = saved[item.dataset.internshipCheck] === true;
+
+        item.addEventListener("change", () => updateProgress());
+      });
+
+      updateProgress(false);
+
+      $("#internshipResetChecklist")?.addEventListener("click", () => {
+        items.forEach(item => {
+          item.checked = false;
+        });
+
+        updateProgress();
+      });
+
+      $("#internshipDownloadChecklist")?.addEventListener("click", () => {
+        const lines = [
+          "MedOrbits -- Internship Readiness Checklist",
+          `Date: ${new Date().toLocaleDateString()}`,
+          ""
+        ];
+
+        items.forEach(item => {
+          const label = item.parentElement.querySelector("span")
+            .textContent.trim();
+
+          lines.push(`${item.checked ? "[x]" : "[ ]"} ${label}`);
+        });
+
+        lines.push(
+          "",
+          "This checklist is a preparation aid and does not guarantee an internship or selection."
+        );
+
+        const blob = new Blob(
+          [lines.join("\n")],
+          { type: "text/plain;charset=utf-8" }
+        );
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "medorbits-internship-readiness-checklist.txt";
+
+        document.body.append(link);
+        link.click();
+        link.remove();
+
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+    })();
+  </script>
+
+  <!-- Existing shared MedOrbits scripts -->
+
+  <script defer src="/assets/js/constants.js"></script>
+  <script defer src="/assets/js/config.js"></script>
+  <script defer src="/assets/js/utils.js"></script>
+  <script defer src="/assets/js/navigation.js"></script>
+  <script defer src="/assets/js/search.js"></script>
+  <script defer src="/assets/js/animations.js"></script>
+  <script defer src="/assets/js/app.js"></script>
+  <script defer src="/assets/js/site-search-bar.js"></script>
+</body>
+</html>

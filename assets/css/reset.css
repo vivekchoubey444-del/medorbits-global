@@ -1,0 +1,401 @@
+
+/* ==========================================================================
+   MedOrbits -- Base Reset
+   File: assets/css/reset.css
+   Theme: Luxury Aubergine & Champagne Gold
+   Version: 1.3.0
+
+   Purpose:
+   - Browser normalization
+   - Foundational layout and sizing
+   - Responsive media and form defaults
+   - Accessible keyboard focus
+   - Reduced-motion and high-contrast support
+
+   Original homepage selectors and behavior preserved where practical.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. Consistent Box Sizing
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+
+/* ==========================================================================
+   2. Document Scrolling and Anchor Positioning
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height, 82px) + 18px);
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 0;
+  margin: 0;
+}
+
+
+/* ==========================================================================
+   3. Media Defaults
+   ========================================================================== */
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+iframe {
+  max-width: 100%;
+  border: 0;
+}
+
+figure {
+  margin: 0;
+}
+
+picture {
+  min-width: 0;
+}
+
+/* Responsive embeds can opt in using their own aspect-ratio wrapper. */
+
+
+/* ==========================================================================
+   4. Typography Defaults
+   ========================================================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-top: 0;
+}
+
+address {
+  font-style: normal;
+}
+
+small {
+  font-size: 0.875em;
+}
+
+sub,
+sup {
+  position: relative;
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+
+/* ==========================================================================
+   5. Links and Interactive Elements
+   ========================================================================== */
+
+a {
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+  margin: 0;
+  font: inherit;
+}
+
+button,
+select {
+  text-transform: none;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+button,
+input {
+  overflow: visible;
+}
+
+textarea {
+  overflow: auto;
+  resize: vertical;
+}
+
+/* Preserve native keyboard focus behavior; do not globally remove outlines. */
+
+
+/* ==========================================================================
+   6. Form Control Normalization
+   ========================================================================== */
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+input[type="search"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  max-width: none;
+}
+
+input[type="file"] {
+  max-width: 100%;
+}
+
+input[type="file"]::file-selector-button {
+  font: inherit;
+  cursor: pointer;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+select {
+  max-width: 100%;
+}
+
+textarea {
+  min-height: 5rem;
+}
+
+/* Keep native validation, autocomplete and autofill functionality enabled. */
+
+
+/* ==========================================================================
+   7. Lists and Tables
+   ========================================================================== */
+
+ul,
+ol {
+  padding-left: 1.5em;
+}
+
+table {
+  width: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+th {
+  text-align: left;
+}
+
+/* Scroll wide tables inside their own wrapper rather than clipping the page. */
+table img {
+  max-width: 100%;
+}
+
+
+/* ==========================================================================
+   8. Prevent Layout Overflow
+   ========================================================================== */
+
+main,
+section,
+article,
+aside,
+header,
+footer,
+nav,
+figure {
+  min-width: 0;
+}
+
+pre,
+code,
+kbd,
+samp {
+  font-family: monospace;
+}
+
+pre {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior-x: contain;
+}
+
+p,
+li,
+td,
+th {
+  overflow-wrap: break-word;
+}
+
+/* Long URLs, identifiers and user-generated text should not force page width. */
+p,
+li,
+td,
+th,
+a,
+button {
+  overflow-wrap: anywhere;
+}
+
+/* Keep form controls and grid/flex children from expanding their containers. */
+input,
+select,
+textarea,
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+
+/* ==========================================================================
+   9. Accessible Focus Defaults
+   ========================================================================== */
+
+/* Fallback for browsers that do not support :focus-visible. */
+:focus {
+  outline-color: var(--gold, #c9a96e);
+}
+
+/* Use a clearer indicator for keyboard navigation. */
+:focus-visible {
+  outline: var(--focus-width, 2px) solid
+    var(--gold-light, #e4d0a1);
+  outline-offset: var(--focus-offset, 3px);
+}
+
+/* Suppress the fallback outline only for non-keyboard focus. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Native controls must retain a visible focus indicator. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: var(--focus-width, 2px) solid
+    var(--gold-light, #e4d0a1);
+  outline-offset: var(--focus-offset, 3px);
+}
+
+
+/* ==========================================================================
+   10. Hidden Elements
+   ========================================================================== */
+
+[hidden] {
+  display: none !important;
+}
+
+
+/* ==========================================================================
+   11. Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ==========================================================================
+   12. Forced Colors and High Contrast
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  :focus,
+  :focus-visible,
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    color: GrayText;
+  }
+}
+
+
+/* ==========================================================================
+   End of MedOrbits Base Reset
+   ========================================================================== */

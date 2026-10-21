@@ -1,0 +1,1886 @@
+{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2026-10-20T00:00:00Z",
+  "metadata": {
+    "title": "MedOrbits Recruitment Drives",
+    "description": "Recruitment drives and cycles run by public bodies, hospitals and employers for health roles. Drives group one or more posts and link to individual job records.",
+    "defaultCountryCode": "IN",
+    "defaultCurrency": "INR",
+    "dateFormat": "YYYY-MM-DD",
+    "relationToJobs": "jobs.json holds individual posts. This file holds the drive or notice that advertises them; each drive lists jobIds.",
+    "verificationPolicy": "Publish only from the official recruitment notice. Verify dates, posts, eligibility, fees and application channel before publication. Never invent them."
+  },
+  "fields": [
+    "id",
+    "title",
+    "slug",
+    "recruitingBodyName",
+    "recruitingBodyType",
+    "recruitingBodyUrl",
+    "employerName",
+    "noticeNumber",
+    "noticeTitle",
+    "noticeDate",
+    "noticeUrl",
+    "advertisementType",
+    "countryCode",
+    "stateIds",
+    "jobIds",
+    "courseIds",
+    "totalVacancies",
+    "vacancyBreakdown",
+    "eligibilitySummary",
+    "eligibilitySourceUrl",
+    "ageLimit",
+    "applicationFee",
+    "stages",
+    "selectionProcess",
+    "requiredDocumentIds",
+    "applicationMode",
+    "applicationStart",
+    "applicationEnd",
+    "applicationStatus",
+    "applicationUrl",
+    "officialUrl",
+    "sourceUrl",
+    "helpdeskEmail",
+    "helpdeskPhone",
+    "corrigendumIds",
+    "supersedesId",
+    "importantNotes",
+    "notes",
+    "verificationStatus",
+    "verifiedAt",
+    "verifiedBy",
+    "reviewDueAt",
+    "publicationStatus",
+    "active",
+    "createdAt",
+    "updatedAt"
+  ],
+  "fieldDefinitions": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "example": "recruit-body-notice-2026"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "recruitingBodyType": {
+      "type": "string",
+      "enum": "recruitingBodyCatalogue[].type"
+    },
+    "employerName": {
+      "type": "string",
+      "nullable": true,
+      "note": "The employer when different from the recruiting body."
+    },
+    "advertisementType": {
+      "type": "string",
+      "enum": "allowedValues.advertisementType"
+    },
+    "jobIds": {
+      "type": "array",
+      "references": "jobs.id"
+    },
+    "courseIds": {
+      "type": "array",
+      "references": "courses.id"
+    },
+    "totalVacancies": {
+      "type": "integer",
+      "nullable": true,
+      "note": "Only as published; do not sum unless the notice does."
+    },
+    "vacancyBreakdown": {
+      "type": "array",
+      "itemShape": {
+        "postName": "string",
+        "vacancies": "integer or null",
+        "reservationNote": "string or null",
+        "payLevelNote": "string or null"
+      }
+    },
+    "ageLimit": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "minYears": "integer or null",
+        "maxYears": "integer or null",
+        "asOnDate": "YYYY-MM-DD or null",
+        "relaxationNote": "string or null"
+      }
+    },
+    "applicationFee": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "amount": "number or null",
+        "currency": "ISO 4217 or null",
+        "exemptionNote": "string or null",
+        "refundable": "boolean or null"
+      }
+    },
+    "stages": {
+      "type": "array",
+      "itemShape": {
+        "stage": "enum stageCatalogue[].key",
+        "startDate": "YYYY-MM-DD or null",
+        "endDate": "YYYY-MM-DD or null",
+        "status": "enum allowedValues.stageStatus",
+        "noticeUrl": "https URL or null"
+      }
+    },
+    "selectionProcess": {
+      "type": "array",
+      "itemEnum": "stageCatalogue[].key"
+    },
+    "requiredDocumentIds": {
+      "type": "array",
+      "references": "documents.id",
+      "note": "Only as listed in the official notice."
+    },
+    "applicationStatus": {
+      "type": "string",
+      "enum": "allowedValues.applicationStatus",
+      "default": "awaiting_notification"
+    },
+    "corrigendumIds": {
+      "type": "array",
+      "references": "recruitment.id",
+      "note": "Records that amend this drive."
+    },
+    "supersedesId": {
+      "type": "string",
+      "nullable": true,
+      "references": "recruitment.id"
+    }
+  },
+  "allowedValues": {
+    "advertisementType": [
+      "regular",
+      "contract",
+      "walk_in",
+      "campus",
+      "apprenticeship",
+      "corrigendum",
+      "other"
+    ],
+    "applicationMode": [
+      "online",
+      "offline",
+      "hybrid",
+      "walk_in",
+      "not_applicable"
+    ],
+    "applicationStatus": [
+      "upcoming",
+      "open",
+      "closed",
+      "extended",
+      "awaiting_notification",
+      "not_applicable"
+    ],
+    "stageStatus": [
+      "scheduled",
+      "ongoing",
+      "completed",
+      "postponed",
+      "cancelled",
+      "unknown"
+    ],
+    "publicationStatus": [
+      "draft",
+      "in_review",
+      "published",
+      "archived"
+    ],
+    "verificationStatus": [
+      "unverified",
+      "pending_review",
+      "verified",
+      "outdated",
+      "rejected"
+    ]
+  },
+  "recruitingBodyCatalogue": [
+    {
+      "type": "public_service_commission",
+      "label": "Public service commission",
+      "description": "Constitutional or statutory body recruiting for government posts."
+    },
+    {
+      "type": "recruitment_board",
+      "label": "Recruitment board or selection board",
+      "description": "Dedicated board conducting recruitment for departments or services."
+    },
+    {
+      "type": "health_department",
+      "label": "Health department or directorate",
+      "description": "Government health department recruiting directly."
+    },
+    {
+      "type": "national_health_programme",
+      "label": "National or state health programme",
+      "description": "Programme or mission recruiting on contract."
+    },
+    {
+      "type": "hospital_or_medical_college",
+      "label": "Hospital or medical college",
+      "description": "Government or private hospital or college recruiting directly."
+    },
+    {
+      "type": "armed_forces_medical",
+      "label": "Armed forces medical services",
+      "description": "Defence medical recruitment channels."
+    },
+    {
+      "type": "research_organisation",
+      "label": "Research organisation",
+      "description": "Research bodies recruiting scientists and staff."
+    },
+    {
+      "type": "university",
+      "label": "University",
+      "description": "University recruiting teaching and non-teaching staff."
+    },
+    {
+      "type": "private_employer",
+      "label": "Private employer",
+      "description": "Private hospital, company or chain recruiting directly."
+    },
+    {
+      "type": "ngo_or_international_body",
+      "label": "NGO or international organisation",
+      "description": "Non-profit or international recruiters."
+    },
+    {
+      "type": "other",
+      "label": "Other",
+      "description": "Other recruiting body."
+    }
+  ],
+  "stageCatalogue": [
+    {
+      "key": "notification",
+      "label": "Notification published",
+      "description": "Official recruitment notice released by the recruiting body."
+    },
+    {
+      "key": "registration",
+      "label": "Online registration",
+      "description": "Candidates register on the official portal."
+    },
+    {
+      "key": "application",
+      "label": "Application submission",
+      "description": "Application form and fee submission, where applicable."
+    },
+    {
+      "key": "application_correction",
+      "label": "Correction window",
+      "description": "Period to correct application details, where offered."
+    },
+    {
+      "key": "admit_card",
+      "label": "Admit card release",
+      "description": "Admit card or call letter issued."
+    },
+    {
+      "key": "written_test",
+      "label": "Written or computer-based test",
+      "description": "Screening or main examination."
+    },
+    {
+      "key": "skill_or_practical_test",
+      "label": "Skill or practical test",
+      "description": "Practical assessment, where applicable."
+    },
+    {
+      "key": "interview",
+      "label": "Interview or personality test",
+      "description": "Panel interview or viva."
+    },
+    {
+      "key": "document_verification",
+      "label": "Document verification",
+      "description": "Original document check."
+    },
+    {
+      "key": "medical_examination",
+      "label": "Medical examination",
+      "description": "Fitness check, where required."
+    },
+    {
+      "key": "merit_list",
+      "label": "Merit or selection list",
+      "description": "Provisional or final list published."
+    },
+    {
+      "key": "appointment",
+      "label": "Appointment or joining",
+      "description": "Offer or appointment letter and joining formalities."
+    }
+  ],
+  "commonDocumentIds": [
+    "doc-class-10-marksheet",
+    "doc-class-12-marksheet",
+    "doc-photo-id",
+    "doc-passport-photograph",
+    "doc-signature",
+    "doc-category-certificate",
+    "doc-ews-certificate",
+    "doc-disability-certificate",
+    "doc-domicile-certificate",
+    "doc-address-proof",
+    "doc-medical-fitness-certificate",
+    "doc-undertaking-affidavit",
+    "doc-fee-payment-receipt"
+  ],
+  "commonDocumentNote": "Indicative only. The official notice decides which documents are required for a given drive.",
+  "dataRules": [
+    "Every drive must have a unique id and slug; jobIds, courseIds, stateIds, requiredDocumentIds, corrigendumIds and supersedesId must reference existing records.",
+    "Publish only from the recruiting body's official notice; noticeUrl or officialUrl is required, and noticeNumber must be copied exactly when present.",
+    "Never invent vacancies, posts, pay levels, age limits, fees, dates, helpdesk details or links; use null when unknown.",
+    "totalVacancies must be as published; do not compute or round it.",
+    "applicationEnd must not precede applicationStart; stage dates must be consistent with the notice; dates use YYYY-MM-DD or null.",
+    "When a corrigendum, extension or revised schedule is issued, create a record with supersedesId and mark the earlier record outdated rather than silently editing.",
+    "Closed or expired drives must be reviewed before display, and must not appear as open.",
+    "Show the official application channel only; never link to third parties who offer to 'guarantee' selection or charge to apply.",
+    "Application fees must be shown exactly as published with currency and exemptions; never imply a fee is required unless the notice says so.",
+    "Age limits and eligibility must be quoted from the notice, with asOnDate where stated; never infer eligibility.",
+    "Reservation and category rules must be stated only as published, without interpretation.",
+    "Do not publish personal data of candidates or officials beyond official helpdesk contacts printed in the notice.",
+    "verifiedAt and verifiedBy must be null until verified, and set together; 'verified' requires noticeUrl or sourceUrl.",
+    "The active field controls display only; it does not mean applications are open."
+  ],
+  "displayRules": {
+    "alwaysShow": [
+      "recruitingBodyName",
+      "noticeNumber",
+      "applicationEnd",
+      "verificationStatus"
+    ],
+    "hideFromPublicWhen": [
+      "active == false",
+      "verificationStatus == 'rejected'",
+      "publicationStatus != 'published'"
+    ],
+    "showStaleWarningWhen": [
+      "applicationEnd < today",
+      "reviewDueAt < today",
+      "verificationStatus == 'outdated'"
+    ],
+    "unverifiedLabel": "Unverified - confirm this recruitment with the official notice.",
+    "scamWarning": "Genuine recruitment never requires payment to 'secure' a job. Apply only through the official channel named in the notice.",
+    "disclaimer": "Recruitment details are informational and can change. MedOrbits does not recruit, guarantee selection, or replace the official notice."
+  },
+  "recruitments": [
+    {
+      "id": "recruit-aiims-new-delhi-junior-resident-special-drive-oct-2026",
+      "title": "AIIMS New Delhi Junior Resident special recruitment drive (July 2026 session)",
+      "slug": "aiims-new-delhi-junior-resident-special-drive-july-2026",
+      "recruitingBodyName": "All India Institute of Medical Sciences, New Delhi",
+      "recruitingBodyType": "hospital_or_medical_college",
+      "recruitingBodyUrl": "https://aiimsexams.ac.in/",
+      "employerName": "All India Institute of Medical Sciences, New Delhi",
+      "noticeNumber": null,
+      "noticeTitle": "Special recruitment drive for the post of Junior Resident for the remaining period up to 31.12.2026",
+      "noticeDate": "2026-10-19",
+      "noticeUrl": "https://aiimsexams.ac.in/",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [
+        "IN-DL"
+      ],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2026-10-19",
+          "endDate": null,
+          "status": "unknown",
+          "noticeUrl": "https://aiimsexams.ac.in/"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": null,
+      "officialUrl": "https://aiimsexams.ac.in/",
+      "sourceUrl": "https://aiimsexams.ac.in/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Official AIIMS examination portal listed this notice on 2026-10-19. Confirm the detailed notice and application dates on the portal before applying.",
+        "This record is not eligible for public display until the direct notice URL and details are reviewed."
+      ],
+      "notes": "Search result confirms the official portal listing, but the linked detailed notice URL, eligibility, vacancies, fee and application dates were not independently extracted in this record.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-rrb-cen-03-2025-paramedical",
+      "title": "Railway Recruitment Boards CEN 03/2025 -- Paramedical categories",
+      "slug": "rrb-cen-03-2025-paramedical",
+      "recruitingBodyName": "Railway Recruitment Boards",
+      "recruitingBodyType": "recruitment_board",
+      "recruitingBodyUrl": "https://www.rrbcdg.gov.in/employment-notices.php",
+      "employerName": "Indian Railways",
+      "noticeNumber": "CEN 03/2025",
+      "noticeTitle": "Centralised Employment Notice No. 03/2025 -- Recruitment of various categories of Para-Medical",
+      "noticeDate": "2025-08-08",
+      "noticeUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2025-08-08",
+          "endDate": null,
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        },
+        {
+          "stage": "application",
+          "startDate": "2025-08-09",
+          "endDate": "2025-09-08",
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": "2025-08-09",
+      "applicationEnd": "2025-09-08",
+      "applicationStatus": "closed",
+      "applicationUrl": null,
+      "officialUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "sourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Closed recruitment cycle. Do not display as open.",
+        "The official notice records application submission from 2025-08-09 through 2025-09-08 and a separate fee-payment deadline of 2025-09-10."
+      ],
+      "notes": "Archived official recruitment cycle; individual post details should be represented in jobs.json only after the notice and job IDs are reconciled.",
+      "verificationStatus": "verified",
+      "verifiedAt": "2026-10-20T00:00:00Z",
+      "verifiedBy": "MedOrbits editorial review (official RRB notice checked)",
+      "reviewDueAt": null,
+      "publicationStatus": "archived",
+      "active": false,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    }
+  ]
+}{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2026-10-20T00:00:00Z",
+  "metadata": {
+    "title": "MedOrbits Recruitment Drives",
+    "description": "Recruitment drives and cycles run by public bodies, hospitals and employers for health roles and other job categories, including Gulf-region driving roles. Drives group one or more posts and link to individual job records.",
+    "defaultCountryCode": "IN",
+    "defaultCurrency": "INR",
+    "dateFormat": "YYYY-MM-DD",
+    "relationToJobs": "jobs.json holds individual posts. This file holds the drive or notice that advertises them; each drive lists jobIds.",
+    "verificationPolicy": "Publish only from the official recruitment notice. Verify dates, posts, eligibility, fees and application channel before publication. Never invent them."
+  },
+  "fields": [
+    "id",
+    "title",
+    "slug",
+    "recruitingBodyName",
+    "recruitingBodyType",
+    "recruitingBodyUrl",
+    "employerName",
+    "noticeNumber",
+    "noticeTitle",
+    "noticeDate",
+    "noticeUrl",
+    "advertisementType",
+    "countryCode",
+    "stateIds",
+    "jobIds",
+    "courseIds",
+    "totalVacancies",
+    "vacancyBreakdown",
+    "eligibilitySummary",
+    "eligibilitySourceUrl",
+    "ageLimit",
+    "applicationFee",
+    "stages",
+    "selectionProcess",
+    "requiredDocumentIds",
+    "applicationMode",
+    "applicationStart",
+    "applicationEnd",
+    "applicationStatus",
+    "applicationUrl",
+    "officialUrl",
+    "sourceUrl",
+    "helpdeskEmail",
+    "helpdeskPhone",
+    "corrigendumIds",
+    "supersedesId",
+    "importantNotes",
+    "notes",
+    "verificationStatus",
+    "verifiedAt",
+    "verifiedBy",
+    "reviewDueAt",
+    "publicationStatus",
+    "active",
+    "createdAt",
+    "updatedAt"
+  ],
+  "fieldDefinitions": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "example": "recruit-body-notice-2026"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "recruitingBodyType": {
+      "type": "string",
+      "enum": "recruitingBodyCatalogue[].type"
+    },
+    "employerName": {
+      "type": "string",
+      "nullable": true,
+      "note": "The employer when different from the recruiting body."
+    },
+    "advertisementType": {
+      "type": "string",
+      "enum": "allowedValues.advertisementType"
+    },
+    "jobIds": {
+      "type": "array",
+      "references": "jobs.id"
+    },
+    "courseIds": {
+      "type": "array",
+      "references": "courses.id"
+    },
+    "totalVacancies": {
+      "type": "integer",
+      "nullable": true,
+      "note": "Only as published; do not sum unless the notice does."
+    },
+    "vacancyBreakdown": {
+      "type": "array",
+      "itemShape": {
+        "postName": "string",
+        "vacancies": "integer or null",
+        "reservationNote": "string or null",
+        "payLevelNote": "string or null"
+      }
+    },
+    "ageLimit": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "minYears": "integer or null",
+        "maxYears": "integer or null",
+        "asOnDate": "YYYY-MM-DD or null",
+        "relaxationNote": "string or null"
+      }
+    },
+    "applicationFee": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "amount": "number or null",
+        "currency": "ISO 4217 or null",
+        "exemptionNote": "string or null",
+        "refundable": "boolean or null"
+      }
+    },
+    "stages": {
+      "type": "array",
+      "itemShape": {
+        "stage": "enum stageCatalogue[].key",
+        "startDate": "YYYY-MM-DD or null",
+        "endDate": "YYYY-MM-DD or null",
+        "status": "enum allowedValues.stageStatus",
+        "noticeUrl": "https URL or null"
+      }
+    },
+    "selectionProcess": {
+      "type": "array",
+      "itemEnum": "stageCatalogue[].key"
+    },
+    "requiredDocumentIds": {
+      "type": "array",
+      "references": "documents.id",
+      "note": "Only as listed in the official notice."
+    },
+    "applicationStatus": {
+      "type": "string",
+      "enum": "allowedValues.applicationStatus",
+      "default": "awaiting_notification"
+    },
+    "corrigendumIds": {
+      "type": "array",
+      "references": "recruitment.id",
+      "note": "Records that amend this drive."
+    },
+    "supersedesId": {
+      "type": "string",
+      "nullable": true,
+      "references": "recruitment.id"
+    }
+  },
+  "allowedValues": {
+    "advertisementType": [
+      "regular",
+      "contract",
+      "walk_in",
+      "campus",
+      "apprenticeship",
+      "corrigendum",
+      "other"
+    ],
+    "applicationMode": [
+      "online",
+      "offline",
+      "hybrid",
+      "walk_in",
+      "not_applicable"
+    ],
+    "applicationStatus": [
+      "upcoming",
+      "open",
+      "closed",
+      "extended",
+      "awaiting_notification",
+      "not_applicable"
+    ],
+    "stageStatus": [
+      "scheduled",
+      "ongoing",
+      "completed",
+      "postponed",
+      "cancelled",
+      "unknown"
+    ],
+    "publicationStatus": [
+      "draft",
+      "in_review",
+      "published",
+      "archived"
+    ],
+    "verificationStatus": [
+      "unverified",
+      "pending_review",
+      "verified",
+      "outdated",
+      "rejected"
+    ]
+  },
+  "recruitingBodyCatalogue": [
+    {
+      "type": "public_service_commission",
+      "label": "Public service commission",
+      "description": "Constitutional or statutory body recruiting for government posts."
+    },
+    {
+      "type": "recruitment_board",
+      "label": "Recruitment board or selection board",
+      "description": "Dedicated board conducting recruitment for departments or services."
+    },
+    {
+      "type": "health_department",
+      "label": "Health department or directorate",
+      "description": "Government health department recruiting directly."
+    },
+    {
+      "type": "national_health_programme",
+      "label": "National or state health programme",
+      "description": "Programme or mission recruiting on contract."
+    },
+    {
+      "type": "hospital_or_medical_college",
+      "label": "Hospital or medical college",
+      "description": "Government or private hospital or college recruiting directly."
+    },
+    {
+      "type": "armed_forces_medical",
+      "label": "Armed forces medical services",
+      "description": "Defence medical recruitment channels."
+    },
+    {
+      "type": "research_organisation",
+      "label": "Research organisation",
+      "description": "Research bodies recruiting scientists and staff."
+    },
+    {
+      "type": "university",
+      "label": "University",
+      "description": "University recruiting teaching and non-teaching staff."
+    },
+    {
+      "type": "private_employer",
+      "label": "Private employer",
+      "description": "Private hospital, company or chain recruiting directly."
+    },
+    {
+      "type": "ngo_or_international_body",
+      "label": "NGO or international organisation",
+      "description": "Non-profit or international recruiters."
+    },
+    {
+      "type": "other",
+      "label": "Other",
+      "description": "Other recruiting body."
+    }
+  ],
+  "stageCatalogue": [
+    {
+      "key": "notification",
+      "label": "Notification published",
+      "description": "Official recruitment notice released by the recruiting body."
+    },
+    {
+      "key": "registration",
+      "label": "Online registration",
+      "description": "Candidates register on the official portal."
+    },
+    {
+      "key": "application",
+      "label": "Application submission",
+      "description": "Application form and fee submission, where applicable."
+    },
+    {
+      "key": "application_correction",
+      "label": "Correction window",
+      "description": "Period to correct application details, where offered."
+    },
+    {
+      "key": "admit_card",
+      "label": "Admit card release",
+      "description": "Admit card or call letter issued."
+    },
+    {
+      "key": "written_test",
+      "label": "Written or computer-based test",
+      "description": "Screening or main examination."
+    },
+    {
+      "key": "skill_or_practical_test",
+      "label": "Skill or practical test",
+      "description": "Practical assessment, where applicable."
+    },
+    {
+      "key": "interview",
+      "label": "Interview or personality test",
+      "description": "Panel interview or viva."
+    },
+    {
+      "key": "document_verification",
+      "label": "Document verification",
+      "description": "Original document check."
+    },
+    {
+      "key": "medical_examination",
+      "label": "Medical examination",
+      "description": "Fitness check, where required."
+    },
+    {
+      "key": "merit_list",
+      "label": "Merit or selection list",
+      "description": "Provisional or final list published."
+    },
+    {
+      "key": "appointment",
+      "label": "Appointment or joining",
+      "description": "Offer or appointment letter and joining formalities."
+    }
+  ],
+  "commonDocumentIds": [
+    "doc-class-10-marksheet",
+    "doc-class-12-marksheet",
+    "doc-photo-id",
+    "doc-passport-photograph",
+    "doc-signature",
+    "doc-category-certificate",
+    "doc-ews-certificate",
+    "doc-disability-certificate",
+    "doc-domicile-certificate",
+    "doc-address-proof",
+    "doc-medical-fitness-certificate",
+    "doc-undertaking-affidavit",
+    "doc-fee-payment-receipt"
+  ],
+  "commonDocumentNote": "Indicative only. The official notice decides which documents are required for a given drive.",
+  "dataRules": [
+    "Every drive must have a unique id and slug; jobIds, courseIds, stateIds, requiredDocumentIds, corrigendumIds and supersedesId must reference existing records.",
+    "Publish only from the recruiting body's official notice; noticeUrl or officialUrl is required, and noticeNumber must be copied exactly when present.",
+    "Never invent vacancies, posts, pay levels, age limits, fees, dates, helpdesk details or links; use null when unknown.",
+    "totalVacancies must be as published; do not compute or round it.",
+    "applicationEnd must not precede applicationStart; stage dates must be consistent with the notice; dates use YYYY-MM-DD or null.",
+    "When a corrigendum, extension or revised schedule is issued, create a record with supersedesId and mark the earlier record outdated rather than silently editing.",
+    "Closed or expired drives must be reviewed before display, and must not appear as open.",
+    "Show the official application channel only; never link to third parties who offer to 'guarantee' selection or charge to apply.",
+    "Application fees must be shown exactly as published with currency and exemptions; never imply a fee is required unless the notice says so.",
+    "Age limits and eligibility must be quoted from the notice, with asOnDate where stated; never infer eligibility.",
+    "Reservation and category rules must be stated only as published, without interpretation.",
+    "Do not publish personal data of candidates or officials beyond official helpdesk contacts printed in the notice.",
+    "verifiedAt and verifiedBy must be null until verified, and set together; 'verified' requires noticeUrl or sourceUrl.",
+    "The active field controls display only; it does not mean applications are open."
+  ],
+  "displayRules": {
+    "alwaysShow": [
+      "recruitingBodyName",
+      "noticeNumber",
+      "applicationEnd",
+      "verificationStatus"
+    ],
+    "hideFromPublicWhen": [
+      "active == false",
+      "verificationStatus == 'rejected'",
+      "publicationStatus != 'published'"
+    ],
+    "showStaleWarningWhen": [
+      "applicationEnd < today",
+      "reviewDueAt < today",
+      "verificationStatus == 'outdated'"
+    ],
+    "unverifiedLabel": "Unverified - confirm this recruitment with the official notice.",
+    "scamWarning": "Genuine recruitment never requires payment to 'secure' a job. Apply only through the official channel named in the notice.",
+    "disclaimer": "Recruitment details are informational and can change. MedOrbits does not recruit, guarantee selection, or replace the official notice."
+  },
+  "recruitments": [
+    {
+      "id": "recruit-aiims-new-delhi-junior-resident-special-drive-oct-2026",
+      "title": "AIIMS New Delhi Junior Resident special recruitment drive (July 2026 session)",
+      "slug": "aiims-new-delhi-junior-resident-special-drive-july-2026",
+      "recruitingBodyName": "All India Institute of Medical Sciences, New Delhi",
+      "recruitingBodyType": "hospital_or_medical_college",
+      "recruitingBodyUrl": "https://aiimsexams.ac.in/",
+      "employerName": "All India Institute of Medical Sciences, New Delhi",
+      "noticeNumber": null,
+      "noticeTitle": "Special recruitment drive for the post of Junior Resident for the remaining period up to 31.12.2026",
+      "noticeDate": "2026-10-19",
+      "noticeUrl": "https://aiimsexams.ac.in/",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [
+        "IN-DL"
+      ],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2026-10-19",
+          "endDate": null,
+          "status": "unknown",
+          "noticeUrl": "https://aiimsexams.ac.in/"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": null,
+      "officialUrl": "https://aiimsexams.ac.in/",
+      "sourceUrl": "https://aiimsexams.ac.in/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Official AIIMS examination portal listed this notice on 2026-10-19. Confirm the detailed notice and application dates on the portal before applying.",
+        "This record is not eligible for public display until the direct notice URL and details are reviewed."
+      ],
+      "notes": "Search result confirms the official portal listing, but the linked detailed notice URL, eligibility, vacancies, fee and application dates were not independently extracted in this record.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-rrb-cen-03-2025-paramedical",
+      "title": "Railway Recruitment Boards CEN 03/2025 -- Paramedical categories",
+      "slug": "rrb-cen-03-2025-paramedical",
+      "recruitingBodyName": "Railway Recruitment Boards",
+      "recruitingBodyType": "recruitment_board",
+      "recruitingBodyUrl": "https://www.rrbcdg.gov.in/employment-notices.php",
+      "employerName": "Indian Railways",
+      "noticeNumber": "CEN 03/2025",
+      "noticeTitle": "Centralised Employment Notice No. 03/2025 -- Recruitment of various categories of Para-Medical",
+      "noticeDate": "2025-08-08",
+      "noticeUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2025-08-08",
+          "endDate": null,
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        },
+        {
+          "stage": "application",
+          "startDate": "2025-08-09",
+          "endDate": "2025-09-08",
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": "2025-08-09",
+      "applicationEnd": "2025-09-08",
+      "applicationStatus": "closed",
+      "applicationUrl": null,
+      "officialUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "sourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Closed recruitment cycle. Do not display as open.",
+        "The official notice records application submission from 2025-08-09 through 2025-09-08 and a separate fee-payment deadline of 2025-09-10."
+      ],
+      "notes": "Archived official recruitment cycle; individual post details should be represented in jobs.json only after the notice and job IDs are reconciled.",
+      "verificationStatus": "verified",
+      "verifiedAt": "2026-10-20T00:00:00Z",
+      "verifiedBy": "MedOrbits editorial review (official RRB notice checked)",
+      "reviewDueAt": null,
+      "publicationStatus": "archived",
+      "active": false,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-zahrawi-driver-uae-abu-dhabi-2026",
+      "title": "Driver -- Zahrawi, Abu Dhabi, UAE",
+      "slug": "zahrawi-driver-abu-dhabi-uae-2026",
+      "recruitingBodyName": "Zahrawi Group",
+      "recruitingBodyType": "private_employer",
+      "recruitingBodyUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "employerName": "Zahrawi Group",
+      "noticeNumber": null,
+      "noticeTitle": "Driver",
+      "noticeDate": "2026-09-25",
+      "noticeUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "advertisementType": "regular",
+      "countryCode": "AE",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": "2026-10-25",
+      "applicationStatus": "open",
+      "applicationUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "officialUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "sourceUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "The employer careers portal search listing displayed the Driver role in UAE - Abu Dhabi, posted 25 September 2026, with expiration 25 October 2026.",
+        "Confirm the listing is still accepting applications and review the complete job description on the employer portal before applying."
+      ],
+      "notes": "Role title, location, posting date and displayed expiration date are sourced from the employer's official careers portal listing. Vacancy count, requirements, salary, fee and application details beyond the portal link were not established. Public-facing listing may be shown with the schema's unverified/pending-review warning; recheck the official portal before treating it as confirmed.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "published",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-efs-light-vehicle-driver-uae-2026",
+      "title": "Driver -- Light Vehicle, EFS Facilities Services, UAE",
+      "slug": "efs-light-vehicle-driver-uae-2026",
+      "recruitingBodyName": "EFS Facilities Services",
+      "recruitingBodyType": "private_employer",
+      "recruitingBodyUrl": "https://s1.guardian.ae/career/",
+      "employerName": "EFS Facilities Services",
+      "noticeNumber": null,
+      "noticeTitle": "Driver - Light Vehicle",
+      "noticeDate": null,
+      "noticeUrl": "https://s1.guardian.ae/career/",
+      "advertisementType": "regular",
+      "countryCode": "AE",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": "https://s1.guardian.ae/career/",
+      "officialUrl": "https://s1.guardian.ae/career/",
+      "sourceUrl": "https://s1.guardian.ae/career/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "The employer careers page lists a Driver - Light Vehicle role with UAE locations, including Fujairah and Dubai.",
+        "The page extract does not establish a closing date or confirm that the role is still open; check the employer portal before applying."
+      ],
+      "notes": "Pending editorial confirmation of current availability and the complete vacancy details. Not presented as an open vacancy.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    }
+  ]
+}
+{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2026-10-20T00:00:00Z",
+  "metadata": {
+    "title": "MedOrbits Recruitment Drives",
+    "description": "Recruitment drives and cycles run by public bodies, hospitals and employers for health roles and other job categories, including Gulf-region driving roles. Drives group one or more posts and link to individual job records.",
+    "defaultCountryCode": "IN",
+    "defaultCurrency": "INR",
+    "dateFormat": "YYYY-MM-DD",
+    "relationToJobs": "jobs.json holds individual posts. This file holds the drive or notice that advertises them; each drive lists jobIds.",
+    "verificationPolicy": "Publish only from the official recruitment notice. Verify dates, posts, eligibility, fees and application channel before publication. Never invent them."
+  },
+  "fields": [
+    "id",
+    "title",
+    "slug",
+    "recruitingBodyName",
+    "recruitingBodyType",
+    "recruitingBodyUrl",
+    "employerName",
+    "noticeNumber",
+    "noticeTitle",
+    "noticeDate",
+    "noticeUrl",
+    "advertisementType",
+    "countryCode",
+    "stateIds",
+    "jobIds",
+    "courseIds",
+    "totalVacancies",
+    "vacancyBreakdown",
+    "eligibilitySummary",
+    "eligibilitySourceUrl",
+    "ageLimit",
+    "applicationFee",
+    "stages",
+    "selectionProcess",
+    "requiredDocumentIds",
+    "applicationMode",
+    "applicationStart",
+    "applicationEnd",
+    "applicationStatus",
+    "applicationUrl",
+    "officialUrl",
+    "sourceUrl",
+    "helpdeskEmail",
+    "helpdeskPhone",
+    "corrigendumIds",
+    "supersedesId",
+    "importantNotes",
+    "notes",
+    "verificationStatus",
+    "verifiedAt",
+    "verifiedBy",
+    "reviewDueAt",
+    "publicationStatus",
+    "active",
+    "createdAt",
+    "updatedAt"
+  ],
+  "fieldDefinitions": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "example": "recruit-body-notice-2026"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "recruitingBodyType": {
+      "type": "string",
+      "enum": "recruitingBodyCatalogue[].type"
+    },
+    "employerName": {
+      "type": "string",
+      "nullable": true,
+      "note": "The employer when different from the recruiting body."
+    },
+    "advertisementType": {
+      "type": "string",
+      "enum": "allowedValues.advertisementType"
+    },
+    "jobIds": {
+      "type": "array",
+      "references": "jobs.id"
+    },
+    "courseIds": {
+      "type": "array",
+      "references": "courses.id"
+    },
+    "totalVacancies": {
+      "type": "integer",
+      "nullable": true,
+      "note": "Only as published; do not sum unless the notice does."
+    },
+    "vacancyBreakdown": {
+      "type": "array",
+      "itemShape": {
+        "postName": "string",
+        "vacancies": "integer or null",
+        "reservationNote": "string or null",
+        "payLevelNote": "string or null"
+      }
+    },
+    "ageLimit": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "minYears": "integer or null",
+        "maxYears": "integer or null",
+        "asOnDate": "YYYY-MM-DD or null",
+        "relaxationNote": "string or null"
+      }
+    },
+    "applicationFee": {
+      "type": "object",
+      "nullable": true,
+      "shape": {
+        "amount": "number or null",
+        "currency": "ISO 4217 or null",
+        "exemptionNote": "string or null",
+        "refundable": "boolean or null"
+      }
+    },
+    "stages": {
+      "type": "array",
+      "itemShape": {
+        "stage": "enum stageCatalogue[].key",
+        "startDate": "YYYY-MM-DD or null",
+        "endDate": "YYYY-MM-DD or null",
+        "status": "enum allowedValues.stageStatus",
+        "noticeUrl": "https URL or null"
+      }
+    },
+    "selectionProcess": {
+      "type": "array",
+      "itemEnum": "stageCatalogue[].key"
+    },
+    "requiredDocumentIds": {
+      "type": "array",
+      "references": "documents.id",
+      "note": "Only as listed in the official notice."
+    },
+    "applicationStatus": {
+      "type": "string",
+      "enum": "allowedValues.applicationStatus",
+      "default": "awaiting_notification"
+    },
+    "corrigendumIds": {
+      "type": "array",
+      "references": "recruitment.id",
+      "note": "Records that amend this drive."
+    },
+    "supersedesId": {
+      "type": "string",
+      "nullable": true,
+      "references": "recruitment.id"
+    }
+  },
+  "allowedValues": {
+    "advertisementType": [
+      "regular",
+      "contract",
+      "walk_in",
+      "campus",
+      "apprenticeship",
+      "corrigendum",
+      "other"
+    ],
+    "applicationMode": [
+      "online",
+      "offline",
+      "hybrid",
+      "walk_in",
+      "not_applicable"
+    ],
+    "applicationStatus": [
+      "upcoming",
+      "open",
+      "closed",
+      "extended",
+      "awaiting_notification",
+      "not_applicable"
+    ],
+    "stageStatus": [
+      "scheduled",
+      "ongoing",
+      "completed",
+      "postponed",
+      "cancelled",
+      "unknown"
+    ],
+    "publicationStatus": [
+      "draft",
+      "in_review",
+      "published",
+      "archived"
+    ],
+    "verificationStatus": [
+      "unverified",
+      "pending_review",
+      "verified",
+      "outdated",
+      "rejected"
+    ]
+  },
+  "recruitingBodyCatalogue": [
+    {
+      "type": "public_service_commission",
+      "label": "Public service commission",
+      "description": "Constitutional or statutory body recruiting for government posts."
+    },
+    {
+      "type": "recruitment_board",
+      "label": "Recruitment board or selection board",
+      "description": "Dedicated board conducting recruitment for departments or services."
+    },
+    {
+      "type": "health_department",
+      "label": "Health department or directorate",
+      "description": "Government health department recruiting directly."
+    },
+    {
+      "type": "national_health_programme",
+      "label": "National or state health programme",
+      "description": "Programme or mission recruiting on contract."
+    },
+    {
+      "type": "hospital_or_medical_college",
+      "label": "Hospital or medical college",
+      "description": "Government or private hospital or college recruiting directly."
+    },
+    {
+      "type": "armed_forces_medical",
+      "label": "Armed forces medical services",
+      "description": "Defence medical recruitment channels."
+    },
+    {
+      "type": "research_organisation",
+      "label": "Research organisation",
+      "description": "Research bodies recruiting scientists and staff."
+    },
+    {
+      "type": "university",
+      "label": "University",
+      "description": "University recruiting teaching and non-teaching staff."
+    },
+    {
+      "type": "private_employer",
+      "label": "Private employer",
+      "description": "Private hospital, company or chain recruiting directly."
+    },
+    {
+      "type": "ngo_or_international_body",
+      "label": "NGO or international organisation",
+      "description": "Non-profit or international recruiters."
+    },
+    {
+      "type": "other",
+      "label": "Other",
+      "description": "Other recruiting body."
+    }
+  ],
+  "stageCatalogue": [
+    {
+      "key": "notification",
+      "label": "Notification published",
+      "description": "Official recruitment notice released by the recruiting body."
+    },
+    {
+      "key": "registration",
+      "label": "Online registration",
+      "description": "Candidates register on the official portal."
+    },
+    {
+      "key": "application",
+      "label": "Application submission",
+      "description": "Application form and fee submission, where applicable."
+    },
+    {
+      "key": "application_correction",
+      "label": "Correction window",
+      "description": "Period to correct application details, where offered."
+    },
+    {
+      "key": "admit_card",
+      "label": "Admit card release",
+      "description": "Admit card or call letter issued."
+    },
+    {
+      "key": "written_test",
+      "label": "Written or computer-based test",
+      "description": "Screening or main examination."
+    },
+    {
+      "key": "skill_or_practical_test",
+      "label": "Skill or practical test",
+      "description": "Practical assessment, where applicable."
+    },
+    {
+      "key": "interview",
+      "label": "Interview or personality test",
+      "description": "Panel interview or viva."
+    },
+    {
+      "key": "document_verification",
+      "label": "Document verification",
+      "description": "Original document check."
+    },
+    {
+      "key": "medical_examination",
+      "label": "Medical examination",
+      "description": "Fitness check, where required."
+    },
+    {
+      "key": "merit_list",
+      "label": "Merit or selection list",
+      "description": "Provisional or final list published."
+    },
+    {
+      "key": "appointment",
+      "label": "Appointment or joining",
+      "description": "Offer or appointment letter and joining formalities."
+    }
+  ],
+  "commonDocumentIds": [
+    "doc-class-10-marksheet",
+    "doc-class-12-marksheet",
+    "doc-photo-id",
+    "doc-passport-photograph",
+    "doc-signature",
+    "doc-category-certificate",
+    "doc-ews-certificate",
+    "doc-disability-certificate",
+    "doc-domicile-certificate",
+    "doc-address-proof",
+    "doc-medical-fitness-certificate",
+    "doc-undertaking-affidavit",
+    "doc-fee-payment-receipt"
+  ],
+  "commonDocumentNote": "Indicative only. The official notice decides which documents are required for a given drive.",
+  "dataRules": [
+    "Every drive must have a unique id and slug; jobIds, courseIds, stateIds, requiredDocumentIds, corrigendumIds and supersedesId must reference existing records.",
+    "Publish only from the recruiting body's official notice; noticeUrl or officialUrl is required, and noticeNumber must be copied exactly when present.",
+    "Never invent vacancies, posts, pay levels, age limits, fees, dates, helpdesk details or links; use null when unknown.",
+    "totalVacancies must be as published; do not compute or round it.",
+    "applicationEnd must not precede applicationStart; stage dates must be consistent with the notice; dates use YYYY-MM-DD or null.",
+    "When a corrigendum, extension or revised schedule is issued, create a record with supersedesId and mark the earlier record outdated rather than silently editing.",
+    "Closed or expired drives must be reviewed before display, and must not appear as open.",
+    "Show the official application channel only; never link to third parties who offer to 'guarantee' selection or charge to apply.",
+    "Application fees must be shown exactly as published with currency and exemptions; never imply a fee is required unless the notice says so.",
+    "Age limits and eligibility must be quoted from the notice, with asOnDate where stated; never infer eligibility.",
+    "Reservation and category rules must be stated only as published, without interpretation.",
+    "Do not publish personal data of candidates or officials beyond official helpdesk contacts printed in the notice.",
+    "verifiedAt and verifiedBy must be null until verified, and set together; 'verified' requires noticeUrl or sourceUrl.",
+    "The active field controls display only; it does not mean applications are open."
+  ],
+  "displayRules": {
+    "alwaysShow": [
+      "recruitingBodyName",
+      "noticeNumber",
+      "applicationEnd",
+      "verificationStatus"
+    ],
+    "hideFromPublicWhen": [
+      "active == false",
+      "verificationStatus == 'rejected'",
+      "publicationStatus != 'published'"
+    ],
+    "showStaleWarningWhen": [
+      "applicationEnd < today",
+      "reviewDueAt < today",
+      "verificationStatus == 'outdated'"
+    ],
+    "unverifiedLabel": "Unverified - confirm this recruitment with the official notice.",
+    "scamWarning": "Genuine recruitment never requires payment to 'secure' a job. Apply only through the official channel named in the notice.",
+    "disclaimer": "Recruitment details are informational and can change. MedOrbits does not recruit, guarantee selection, or replace the official notice."
+  },
+  "recruitments": [
+    {
+      "id": "recruit-aiims-new-delhi-junior-resident-special-drive-oct-2026",
+      "title": "AIIMS New Delhi Junior Resident special recruitment drive (July 2026 session)",
+      "slug": "aiims-new-delhi-junior-resident-special-drive-july-2026",
+      "recruitingBodyName": "All India Institute of Medical Sciences, New Delhi",
+      "recruitingBodyType": "hospital_or_medical_college",
+      "recruitingBodyUrl": "https://aiimsexams.ac.in/",
+      "employerName": "All India Institute of Medical Sciences, New Delhi",
+      "noticeNumber": null,
+      "noticeTitle": "Special recruitment drive for the post of Junior Resident for the remaining period up to 31.12.2026",
+      "noticeDate": "2026-10-19",
+      "noticeUrl": "https://aiimsexams.ac.in/",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [
+        "IN-DL"
+      ],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2026-10-19",
+          "endDate": null,
+          "status": "unknown",
+          "noticeUrl": "https://aiimsexams.ac.in/"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": null,
+      "officialUrl": "https://aiimsexams.ac.in/",
+      "sourceUrl": "https://aiimsexams.ac.in/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Official AIIMS examination portal listed this notice on 2026-10-19. Confirm the detailed notice and application dates on the portal before applying.",
+        "This record is not eligible for public display until the direct notice URL and details are reviewed."
+      ],
+      "notes": "Search result confirms the official portal listing, but the linked detailed notice URL, eligibility, vacancies, fee and application dates were not independently extracted in this record.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-rrb-cen-03-2025-paramedical",
+      "title": "Railway Recruitment Boards CEN 03/2025 -- Paramedical categories",
+      "slug": "rrb-cen-03-2025-paramedical",
+      "recruitingBodyName": "Railway Recruitment Boards",
+      "recruitingBodyType": "recruitment_board",
+      "recruitingBodyUrl": "https://www.rrbcdg.gov.in/employment-notices.php",
+      "employerName": "Indian Railways",
+      "noticeNumber": "CEN 03/2025",
+      "noticeTitle": "Centralised Employment Notice No. 03/2025 -- Recruitment of various categories of Para-Medical",
+      "noticeDate": "2025-08-08",
+      "noticeUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [
+        {
+          "stage": "notification",
+          "startDate": "2025-08-08",
+          "endDate": null,
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        },
+        {
+          "stage": "application",
+          "startDate": "2025-08-09",
+          "endDate": "2025-09-08",
+          "status": "completed",
+          "noticeUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf"
+        }
+      ],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": "2025-08-09",
+      "applicationEnd": "2025-09-08",
+      "applicationStatus": "closed",
+      "applicationUrl": null,
+      "officialUrl": "https://www.rrbcdg.gov.in/2025-03-pmed.php",
+      "sourceUrl": "https://www.rrbcdg.gov.in/uploads/2025/03-PMED/CEN%2003_2025.pdf",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Closed recruitment cycle. Do not display as open.",
+        "The official notice records application submission from 2025-08-09 through 2025-09-08 and a separate fee-payment deadline of 2025-09-10."
+      ],
+      "notes": "Archived official recruitment cycle; individual post details should be represented in jobs.json only after the notice and job IDs are reconciled.",
+      "verificationStatus": "verified",
+      "verifiedAt": "2026-10-20T00:00:00Z",
+      "verifiedBy": "MedOrbits editorial review (official RRB notice checked)",
+      "reviewDueAt": null,
+      "publicationStatus": "archived",
+      "active": false,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-zahrawi-driver-uae-abu-dhabi-2026",
+      "title": "Driver -- Zahrawi, Abu Dhabi, UAE",
+      "slug": "zahrawi-driver-abu-dhabi-uae-2026",
+      "recruitingBodyName": "Zahrawi Group",
+      "recruitingBodyType": "private_employer",
+      "recruitingBodyUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "employerName": "Zahrawi Group",
+      "noticeNumber": null,
+      "noticeTitle": "Driver",
+      "noticeDate": "2026-09-25",
+      "noticeUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "advertisementType": "regular",
+      "countryCode": "AE",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": "2026-10-25",
+      "applicationStatus": "open",
+      "applicationUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "officialUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "sourceUrl": "https://careers.zahrawigroup.com/jobs/search",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "The employer careers portal search listing displayed the Driver role in UAE - Abu Dhabi, posted 25 September 2026, with expiration 25 October 2026.",
+        "Confirm the listing is still accepting applications and review the complete job description on the employer portal before applying."
+      ],
+      "notes": "Role title, location, posting date and displayed expiration date are sourced from the employer's official careers portal listing. Vacancy count, requirements, salary, fee and application details beyond the portal link were not established. Public-facing listing may be shown with the schema's unverified/pending-review warning; recheck the official portal before treating it as confirmed.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "published",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-efs-light-vehicle-driver-uae-2026",
+      "title": "Driver -- Light Vehicle, EFS Facilities Services, UAE",
+      "slug": "efs-light-vehicle-driver-uae-2026",
+      "recruitingBodyName": "EFS Facilities Services",
+      "recruitingBodyType": "private_employer",
+      "recruitingBodyUrl": "https://s1.guardian.ae/career/",
+      "employerName": "EFS Facilities Services",
+      "noticeNumber": null,
+      "noticeTitle": "Driver - Light Vehicle",
+      "noticeDate": null,
+      "noticeUrl": "https://s1.guardian.ae/career/",
+      "advertisementType": "regular",
+      "countryCode": "AE",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": null,
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": "https://s1.guardian.ae/career/",
+      "officialUrl": "https://s1.guardian.ae/career/",
+      "sourceUrl": "https://s1.guardian.ae/career/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "The employer careers page lists a Driver - Light Vehicle role with UAE locations, including Fujairah and Dubai.",
+        "The page extract does not establish a closing date or confirm that the role is still open; check the employer portal before applying."
+      ],
+      "notes": "Pending editorial confirmation of current availability and the complete vacancy details. Not presented as an open vacancy.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-zahrawi-driver-assistant-uae-dubai-2026",
+      "title": "Driver Assistant -- Zahrawi Group, Dubai, UAE",
+      "slug": "zahrawi-driver-assistant-dubai-uae-2026",
+      "recruitingBodyName": "Zahrawi Group",
+      "recruitingBodyType": "private_employer",
+      "recruitingBodyUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "employerName": "Zahrawi Group",
+      "noticeNumber": null,
+      "noticeTitle": "Driver Assistant",
+      "noticeDate": "2026-02-16",
+      "noticeUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "advertisementType": "regular",
+      "countryCode": "AE",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": "The employer listing states a high-school qualification, 2–3 years of experience and a valid UAE manual driving licence; candidates should be based in the UAE and willing to move to a company visa.",
+      "eligibilitySourceUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "officialUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "sourceUrl": "https://careers.zahrawigroup.com/jobs/show/236",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "Official employer page gives the location as UAE - Dubai and posting date 16 February 2026.",
+        "Current availability and any closing date are not confirmed; check the employer page before applying."
+      ],
+      "notes": "Real employer listing; availability is not confirmed as of the dataset update. Do not label as open without checking the official page.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-india-post-drivers-ordinary-grade-2026",
+      "title": "Drivers (Ordinary Grade) -- India Post, deputation/absorption",
+      "slug": "india-post-drivers-ordinary-grade-deputation-2026",
+      "recruitingBodyName": "Department of Posts, India Post",
+      "recruitingBodyType": "health_department",
+      "recruitingBodyUrl": "https://www.indiapost.gov.in/vacancies",
+      "employerName": "Department of Posts, India Post",
+      "noticeNumber": null,
+      "noticeTitle": "Notification for filling up of Drivers (Ordinary Grade) through deputation/absorption basis",
+      "noticeDate": "2026-08-01",
+      "noticeUrl": "https://www.indiapost.gov.in/vacancies",
+      "advertisementType": "regular",
+      "countryCode": "IN",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": null,
+      "eligibilitySourceUrl": "https://www.indiapost.gov.in/vacancies",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "offline",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "awaiting_notification",
+      "applicationUrl": "https://www.indiapost.gov.in/vacancies",
+      "officialUrl": "https://www.indiapost.gov.in/vacancies",
+      "sourceUrl": "https://www.indiapost.gov.in/vacancies",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "India Post's official vacancies page lists a driver notification dated 1 August 2026 for deputation/absorption.",
+        "This is not confirmed as an open general-public recruitment. Check the linked official notice for eligible feeder cadres, submission method and deadline."
+      ],
+      "notes": "Official vacancy index confirms the notification title and publication date. Direct PDF details, eligibility, vacancy count and deadline need review before public display.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-10-21",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    },
+    {
+      "id": "recruit-ncs-international-jobs-directory-2026",
+      "title": "International jobs directory -- National Career Service (India)",
+      "slug": "national-career-service-international-jobs-directory",
+      "recruitingBodyName": "National Career Service, Ministry of Labour & Employment",
+      "recruitingBodyType": "other",
+      "recruitingBodyUrl": "https://www.ncs.gov.in/",
+      "employerName": null,
+      "noticeNumber": null,
+      "noticeTitle": "International Jobs search and matching service",
+      "noticeDate": null,
+      "noticeUrl": "https://www.ncs.gov.in/",
+      "advertisementType": "other",
+      "countryCode": "IN",
+      "stateIds": [],
+      "jobIds": [],
+      "courseIds": [],
+      "totalVacancies": null,
+      "vacancyBreakdown": [],
+      "eligibilitySummary": "Search the official NCS portal by occupation and destination country; eligibility is specific to each employer's listing.",
+      "eligibilitySourceUrl": "https://www.ncs.gov.in/",
+      "ageLimit": null,
+      "applicationFee": null,
+      "stages": [],
+      "selectionProcess": [],
+      "requiredDocumentIds": [],
+      "applicationMode": "online",
+      "applicationStart": null,
+      "applicationEnd": null,
+      "applicationStatus": "not_applicable",
+      "applicationUrl": "https://www.ncs.gov.in/",
+      "officialUrl": "https://www.ncs.gov.in/",
+      "sourceUrl": "https://www.ncs.gov.in/",
+      "helpdeskEmail": null,
+      "helpdeskPhone": null,
+      "corrigendumIds": [],
+      "supersedesId": null,
+      "importantNotes": [
+        "This is a government job-search service, not a single recruitment drive or vacancy.",
+        "Check employer identity, destination, salary, visa terms and application deadline on each individual listing."
+      ],
+      "notes": "Included as a verified official discovery portal only. It must not be presented as a specific vacancy or included in live vacancy counts.",
+      "verificationStatus": "pending_review",
+      "verifiedAt": null,
+      "verifiedBy": null,
+      "reviewDueAt": "2026-11-20",
+      "publicationStatus": "in_review",
+      "active": true,
+      "createdAt": "2026-10-20T00:00:00Z",
+      "updatedAt": "2026-10-20T00:00:00Z"
+    }
+  ]
+}

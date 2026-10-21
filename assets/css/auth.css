@@ -1,0 +1,586 @@
+
+/* ==========================================================================
+   MedOrbits -- Authentication Styles
+   File: assets/css/auth.css
+   Theme: Luxury Aubergine & Champagne Gold
+   Version: 1.3.0
+
+   Covers:
+   - Login and registration
+   - Password recovery and reset
+   - Email and OTP verification
+   - Accessible forms and feedback messages
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. Authentication Page
+   ========================================================================== */
+
+.auth-page {
+  display: grid;
+  place-items: center;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  padding: 36px 18px;
+
+  background:
+    radial-gradient(
+      ellipse at 15% 10%,
+      rgba(87, 57, 105, 0.2),
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at 90% 90%,
+      rgba(201, 169, 110, 0.06),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      var(--bg, #100a17),
+      var(--bg-2, #191023)
+    );
+}
+
+
+/* ==========================================================================
+   2. Authentication Shell
+   ========================================================================== */
+
+.auth-shell {
+  width: min(100%, 480px);
+  min-width: 0;
+
+  padding: clamp(24px, 5vw, 42px);
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 20px;
+
+  background: var(--panel, #21172b);
+  box-shadow: var(--shadow, 0 22px 65px rgba(0, 0, 0, 0.25));
+
+  overflow-wrap: anywhere;
+}
+
+.auth-shell > :first-child {
+  margin-top: 0;
+}
+
+.auth-shell > :last-child {
+  margin-bottom: 0;
+}
+
+/* Optional wider layout for registration forms. */
+.auth-shell.auth-shell-wide {
+  width: min(100%, 620px);
+}
+
+
+/* ==========================================================================
+   3. Brand Header
+   ========================================================================== */
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-width: 0;
+  margin-bottom: 28px;
+
+  text-decoration: none;
+}
+
+.auth-brand img {
+  display: block;
+
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+
+  object-fit: contain;
+}
+
+.auth-brand-name {
+  margin: 0;
+
+  color: var(--gold-light, #e4d0a1);
+
+  font-family: var(
+    --font-heading,
+    "Playfair Display",
+    Georgia,
+    serif
+  );
+
+  font-size: 1.2rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.3;
+
+  overflow-wrap: anywhere;
+}
+
+.auth-brand-caption {
+  display: block;
+  margin-top: 3px;
+
+  color: var(--muted, #b7acbf);
+
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   4. Authentication Heading
+   ========================================================================== */
+
+.auth-title {
+  margin: 0 0 10px;
+
+  color: var(--white, #f7f1fa);
+
+  font-family: var(
+    --font-heading,
+    "Playfair Display",
+    Georgia,
+    serif
+  );
+
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+
+  overflow-wrap: anywhere;
+}
+
+.auth-subtitle {
+  margin: 0 0 24px;
+
+  color: var(--muted, #b7acbf);
+
+  font-size: 0.85rem;
+  line-height: 1.75;
+}
+
+
+/* ==========================================================================
+   5. Authentication Form
+   ========================================================================== */
+
+.auth-form {
+  display: grid;
+  gap: 17px;
+
+  min-width: 0;
+}
+
+.auth-form .form-group,
+.auth-form .form-field {
+  display: grid;
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.auth-form label {
+  display: block;
+  margin: 0;
+
+  color: var(--lav, #d9cce4);
+
+  font-size: 0.82rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.5;
+}
+
+.auth-form .field,
+.auth-form .form-control,
+.auth-form input:not([type="checkbox"]):not([type="radio"]),
+.auth-form select,
+.auth-form textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Preserve visible browser validation and invalid states. */
+.auth-form input:invalid:not(:placeholder-shown),
+.auth-form select:invalid,
+.auth-form textarea:invalid {
+  border-color: var(--error, #e58b9a);
+}
+
+/* Use aria-invalid when validation is controlled by JavaScript. */
+.auth-form [aria-invalid="true"] {
+  border-color: var(--error, #e58b9a);
+}
+
+.auth-form [aria-invalid="true"]:focus-visible {
+  outline-color: var(--error, #e58b9a);
+}
+
+
+/* ==========================================================================
+   6. Password Field Helpers
+   ========================================================================== */
+
+.auth-password-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.auth-password-wrap input {
+  padding-right: 48px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+
+  display: inline-grid;
+  place-items: center;
+
+  min-width: 36px;
+  min-height: 36px;
+  padding: 5px;
+
+  transform: translateY(-50%);
+
+  border: 0;
+  border-radius: 6px;
+
+  background: transparent;
+  color: var(--muted, #b7acbf);
+
+  cursor: pointer;
+
+  transition: color var(--transition-base, 240ms ease);
+}
+
+.auth-password-toggle:hover {
+  color: var(--gold-light, #e4d0a1);
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid var(--gold-light, #e4d0a1);
+  outline-offset: 2px;
+}
+
+.auth-password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+
+/* ==========================================================================
+   7. Authentication Actions
+   ========================================================================== */
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-actions > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 48px;
+}
+
+.auth-form button[type="submit"] {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* Visually distinguish disabled submission controls. */
+.auth-form button:disabled,
+.auth-form button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+
+/* ==========================================================================
+   8. Authentication Links
+   ========================================================================== */
+
+.auth-link {
+  color: var(--gold-light, #e4d0a1);
+
+  font-size: 0.82rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.6;
+
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  transition: color var(--transition-base, 240ms ease);
+}
+
+.auth-link:hover {
+  color: var(--gold, #c9a96e);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-link:focus-visible {
+  outline: 2px solid var(--gold-light, #e4d0a1);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+
+/* ==========================================================================
+   9. Authentication Divider and Footer
+   ========================================================================== */
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin: 22px 0;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.75rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+
+  background: var(--line, rgba(201, 169, 110, 0.24));
+  content: "";
+}
+
+.auth-footer {
+  margin: 22px 0 0;
+  padding-top: 18px;
+
+  border-top: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+
+  color: var(--muted, #b7acbf);
+
+  font-size: 0.82rem;
+  line-height: 1.7;
+  text-align: center;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   10. Verification and Feedback Messages
+   ========================================================================== */
+
+.auth-message {
+  padding: 12px 14px;
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 9px;
+
+  background: var(--panel-2, #2b1d36);
+  color: var(--lav, #d9cce4);
+
+  font-size: 0.84rem;
+  line-height: 1.7;
+
+  overflow-wrap: anywhere;
+}
+
+.auth-message.is-success {
+  border-color: rgba(119, 190, 148, 0.45);
+  background: rgba(119, 190, 148, 0.08);
+  color: #a9d9bd;
+}
+
+.auth-message.is-error {
+  border-color: rgba(229, 139, 154, 0.45);
+  background: rgba(229, 139, 154, 0.08);
+  color: #f0a5b0;
+}
+
+.auth-message.is-warning {
+  border-color: rgba(230, 185, 110, 0.45);
+  background: rgba(230, 185, 110, 0.08);
+  color: #f0d09a;
+}
+
+
+/* ==========================================================================
+   11. Verification Code Inputs
+   ========================================================================== */
+
+.auth-code-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.auth-code-input {
+  box-sizing: border-box;
+
+  width: 48px !important;
+  min-width: 0;
+  min-height: 54px;
+
+  padding: 8px !important;
+
+  text-align: center;
+  font-size: 1.2rem !important;
+  font-weight: var(--weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Do not disable autocomplete or input assistance globally.
+   Configure autocomplete and inputmode in the HTML for the OTP flow. */
+
+
+/* ==========================================================================
+   12. Responsive Authentication Layout
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 20px 14px;
+  }
+
+  .auth-shell {
+    padding: 24px 18px;
+    border-radius: 15px;
+  }
+
+  .auth-brand {
+    margin-bottom: 23px;
+  }
+
+  .auth-brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .auth-title {
+    font-size: clamp(27px, 7vw, 34px);
+  }
+
+  .auth-actions {
+    align-items: flex-start;
+  }
+
+  .auth-code-group {
+    gap: 6px;
+  }
+
+  .auth-code-input {
+    width: min(13vw, 44px) !important;
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 340px) {
+  .auth-page {
+    padding: 14px 10px;
+  }
+
+  .auth-shell {
+    padding: 20px 14px;
+  }
+
+  .auth-code-group {
+    gap: 4px;
+  }
+
+  .auth-code-input {
+    width: min(12vw, 36px) !important;
+    min-height: 44px;
+    padding: 5px !important;
+    font-size: 1rem !important;
+  }
+}
+
+
+/* ==========================================================================
+   13. Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-link,
+  .auth-password-toggle {
+    transition: none;
+  }
+}
+
+
+/* ==========================================================================
+   14. Forced Colors and High Contrast
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .auth-shell {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .auth-brand-name,
+  .auth-title,
+  .auth-subtitle,
+  .auth-brand-caption,
+  .auth-form label,
+  .auth-footer,
+  .auth-divider,
+  .auth-link {
+    color: CanvasText;
+  }
+
+  .auth-link {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .auth-password-toggle {
+    color: ButtonText;
+  }
+
+  .auth-message,
+  .auth-message.is-success,
+  .auth-message.is-error,
+  .auth-message.is-warning {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .auth-form input:focus-visible,
+  .auth-form select:focus-visible,
+  .auth-form textarea:focus-visible,
+  .auth-password-toggle:focus-visible,
+  .auth-link:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}
+
+
+/* ==========================================================================
+   End of MedOrbits Authentication Styles
+   ========================================================================== */

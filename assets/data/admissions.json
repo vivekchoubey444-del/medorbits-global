@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "1.2.0",
+  "updatedAt": "2026-10-20",
+  "metadata": {
+    "title": "MedOrbits Admissions Database",
+    "description": "Structured admission records for courses, institutions, countries and academic cycles, with source evidence, review workflows and publication controls.",
+    "defaultCountryCode": "IN",
+    "supportedCountryCodes": [
+      "IN"
+    ],
+    "dateFormat": "YYYY-MM-DD",
+    "timezonePolicy": "Use the official timezone applicable to the admission authority.",
+    "verificationPolicy": "Verify eligibility, deadlines, application status and instructions against current authoritative sources before publication.",
+    "recordPolicy": "Only current-cycle records verified against authoritative sources may be displayed as confirmed. Unverified records remain drafts or review items.",
+    "lastReviewedAt": "2026-10-20",
+    "recordCount": 0,
+    "guidanceOnly": true
+  },
+  "admissions": [],
+  "fields": [
+    "id",
+    "courseId",
+    "institutionId",
+    "countryCode",
+    "academicYear",
+    "admissionType",
+    "eligibilitySummary",
+    "eligibilitySourceUrl",
+    "applicationStart",
+    "applicationEnd",
+    "applicationStatus",
+    "applicationUrl",
+    "officialUrl",
+    "sourceUrl",
+    "notificationTitle",
+    "notificationDate",
+    "verifiedAt",
+    "verifiedBy",
+    "verificationStatus",
+    "active",
+    "createdAt",
+    "updatedAt"
+  ],
+  "allowedValues": {
+    "admissionType": [
+      "entrance_exam",
+      "merit_based",
+      "counselling",
+      "direct_application",
+      "international_admission",
+      "other"
+    ],
+    "applicationStatus": [
+      "upcoming",
+      "open",
+      "closed",
+      "extended",
+      "awaiting_notification",
+      "not_applicable"
+    ],
+    "verificationStatus": [
+      "unverified",
+      "pending_review",
+      "verified",
+      "outdated",
+      "rejected"
+    ]
+  },
+  "recordDefaults": {
+    "institutionId": null,
+    "eligibilitySummary": null,
+    "eligibilitySourceUrl": null,
+    "applicationStart": null,
+    "applicationEnd": null,
+    "applicationStatus": "awaiting_notification",
+    "applicationUrl": null,
+    "officialUrl": null,
+    "sourceUrl": null,
+    "notificationTitle": null,
+    "notificationDate": null,
+    "verifiedAt": null,
+    "verifiedBy": null,
+    "verificationStatus": "unverified",
+    "active": false,
+    "createdAt": null,
+    "updatedAt": null
+  },
+  "displaySettings": {
+    "showAcademicYear": true,
+    "showApplicationStatus": true,
+    "showDeadline": true,
+    "showEligibilitySummary": true,
+    "showOfficialLinks": true,
+    "showVerificationStatus": true,
+    "showLastVerifiedDate": true,
+    "hideUnverifiedAsConfirmed": true,
+    "hideExpiredAsCurrent": true,
+    "allowStatusFiltering": true,
+    "allowCountryFiltering": true,
+    "allowCourseFiltering": true,
+    "showAcademicYearFilter": true,
+    "showAdmissionTypeFilter": true,
+    "showSourceEvidence": true,
+    "showLastUpdated": true
+  },
+  "statusPolicy": {
+    "verified": "Display as verified only after current-cycle source evidence and material details are reviewed.",
+    "pending_review": "Keep in review workflow; do not present as confirmed.",
+    "unverified": "Store as a draft or clearly labelled unverified item; exclude from confirmed results.",
+    "outdated": "Do not present as current; refresh from an authoritative source.",
+    "rejected": "Exclude from normal display and retain only when needed for audit purposes."
+  },
+  "dataRules": [
+    "Every admission record must have a unique id.",
+    "courseId must reference an existing course record; unresolved references must be held for review.",
+    "institutionId may be null when admission is managed by a central authority rather than one institution.",
+    "countryCode must be an ISO 3166-1 alpha-2 code or null only when genuinely unspecified.",
+    "academicYear must identify the applicable cycle consistently, for example 2026-2027.",
+    "Dates must use YYYY-MM-DD or null when unknown or not applicable.",
+    "applicationEnd must not precede applicationStart when both dates are supplied.",
+    "applicationStatus must reflect the latest official notice; active does not mean open.",
+    "officialUrl must point to an authoritative institution, regulator, examination authority or counselling portal.",
+    "sourceUrl must identify evidence supporting the record; a homepage alone does not substantiate a specific deadline.",
+    "verifiedAt must remain null until the record has actually been checked.",
+    "verifiedBy must identify an authorized reviewer or verification system when verification is recorded.",
+    "verificationStatus=verified requires current-cycle source evidence and review of material details.",
+    "Unverified and pending-review records must not be presented as officially confirmed.",
+    "Expired deadlines and outdated notifications must be reviewed before display.",
+    "Application links must be checked and confirmed to belong to the relevant authority before publication.",
+    "Unresolved course or institution references must be flagged for review rather than invented.",
+    "createdAt and updatedAt must be ISO 8601 timestamps with timezone or null if not recorded.",
+    "Do not store passwords, OTPs, payment credentials or unnecessary sensitive applicant data in this public dataset.",
+    "Do not infer deadlines, eligibility, status or verification from previous cycles."
+  ],
+  "statusTransitions": {
+    "unverified": [
+      "pending_review",
+      "rejected"
+    ],
+    "pending_review": [
+      "verified",
+      "unverified",
+      "rejected"
+    ],
+    "verified": [
+      "outdated",
+      "rejected",
+      "pending_review"
+    ],
+    "outdated": [
+      "pending_review",
+      "rejected"
+    ],
+    "rejected": [
+      "pending_review"
+    ]
+  },
+  "dataIntegrity": {
+    "uniqueAdmissionIds": true,
+    "allowedEnumsOnly": true,
+    "validIsoCountryCodes": true,
+    "validDateFormat": true,
+    "dateRangesMustBeValid": true,
+    "courseReferencesMustResolve": true,
+    "institutionReferencesMustResolveWhenProvided": true,
+    "verifiedRecordsRequireSourceEvidence": true,
+    "unverifiedRecordsMustNotAppearAsConfirmed": true,
+    "applicationLinksMustBeCheckedBeforePublication": true,
+    "unknownValuesMustRemainNull": true,
+    "academicYearMustMatchSourceCycle": true,
+    "statusTransitionsMustBeAllowed": true,
+    "recordCountMustMatchMetadata": true
+  },
+  "note": "Use current official notifications to verify eligibility, dates, application status and instructions. MedOrbits provides informational guidance and does not replace official admission authorities."
+}

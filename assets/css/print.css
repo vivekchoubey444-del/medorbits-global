@@ -1,0 +1,503 @@
+
+/* ==========================================================================
+   MedOrbits -- Print Styles
+   File: assets/css/print.css
+   Theme: Clean, readable paper output
+   Version: 1.3.0
+
+   Purpose:
+   - Print-friendly document presentation
+   - Readable typography and tables
+   - Controlled page breaks
+   - Remove screen-only navigation and effects
+   - Preserve useful links and document content
+   ========================================================================== */
+
+@media print {
+
+  /* ========================================================================
+     1. Printed Page Setup
+     ======================================================================== */
+
+  @page {
+    size: auto;
+    margin: 15mm;
+  }
+
+  :root {
+    color-scheme: light;
+
+    /* Printed color tokens */
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f5f5f5;
+
+    --white: #111111;
+    --lav: #292929;
+    --muted: #555555;
+
+    --gold: #765b28;
+    --gold-light: #765b28;
+
+    --line: #d6d6d6;
+    --shadow: none;
+  }
+
+
+  /* ========================================================================
+     2. Page and Body
+     ======================================================================== */
+
+  html,
+  body {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: #ffffff !important;
+    color: #111111 !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 11pt;
+    line-height: 1.5;
+
+    overflow: visible !important;
+
+    -webkit-print-color-adjust: economy;
+    print-color-adjust: economy;
+  }
+
+  body {
+    max-width: none !important;
+  }
+
+
+  /* ========================================================================
+     3. Hide Screen-Only Elements
+     ======================================================================== */
+
+  .header,
+  .announcement,
+  .menu-toggle,
+  .nav,
+  .nav-cta,
+  .hero-actions,
+  .search-band,
+  .footer,
+  .skip-link,
+  .no-print,
+  .print-hidden,
+  .intro-screen,
+  button:not(.print-visible),
+  video,
+  audio,
+  iframe,
+  .video-frame {
+    display: none !important;
+  }
+
+
+  /* ========================================================================
+     4. Reset Dark Backgrounds and Effects
+     ======================================================================== */
+
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html,
+  body,
+  main,
+  article,
+  section,
+  .section,
+  .section.alt,
+  .hero,
+  .cta,
+  .card,
+  .card-body,
+  .dashboard-panel,
+  .dashboard-sidebar,
+  .dashboard-stat,
+  .faq,
+  .video-card,
+  .about-visual,
+  .hero-visual,
+  .pillars,
+  .pillar {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .hero,
+  .cta {
+    background-image: none !important;
+  }
+
+
+  /* ========================================================================
+     5. Layout and Width
+     ======================================================================== */
+
+  .container,
+  .section,
+  .hero,
+  .cta,
+  .dashboard-layout,
+  .dashboard-main,
+  .dashboard-content,
+  .about-grid,
+  .hero-grid {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+
+    overflow: visible !important;
+  }
+
+  .hero-grid,
+  .about-grid,
+  .dashboard-layout {
+    display: block !important;
+  }
+
+  .section {
+    padding-block: 12pt !important;
+    border-color: #d6d6d6 !important;
+  }
+
+  .section-head {
+    display: block !important;
+    margin-bottom: 12pt !important;
+  }
+
+
+  /* ========================================================================
+     6. Typography
+     ======================================================================== */
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #111111 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    line-height: 1.25;
+
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  h1 {
+    font-size: 23pt !important;
+  }
+
+  h2 {
+    font-size: 18pt !important;
+  }
+
+  h3 {
+    font-size: 14pt !important;
+  }
+
+  p,
+  li,
+  dd,
+  dt,
+  blockquote,
+  .body-copy,
+  .hero-copy,
+  .section-head p,
+  .card p,
+  .faq p {
+    color: #222222 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.55 !important;
+  }
+
+  p,
+  li {
+    orphans: 3;
+    widows: 3;
+  }
+
+
+  /* ========================================================================
+     7. Links
+     ======================================================================== */
+
+  a,
+  a:visited {
+    color: #111111 !important;
+    text-decoration: underline !important;
+    overflow-wrap: anywhere;
+  }
+
+  /*
+   * Print absolute HTTP(S) destinations for reference.
+   * Internal anchors, email links and telephone links are excluded.
+   */
+
+  a[href^="http://"]::after,
+  a[href^="https://"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    font-weight: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  a[href^="#"]::after,
+  a[href^="mailto:"]::after,
+  a[href^="tel:"]::after,
+  a[href^="javascript:"]::after {
+    content: none !important;
+  }
+
+  /*
+   * Avoid printing duplicate destinations for image-only links.
+   */
+
+  a:has(img)::after {
+    content: none !important;
+  }
+
+
+  /* ========================================================================
+     8. Cards, Panels and Dashboard Content
+     ======================================================================== */
+
+  .cards,
+  .video-grid,
+  .dashboard-grid,
+  .check-list {
+    display: block !important;
+  }
+
+  .card,
+  .faq,
+  .dashboard-panel,
+  .dashboard-stat,
+  .dashboard-list-item,
+  .video-card,
+  .pillar {
+    margin-bottom: 12pt !important;
+    padding: 10pt !important;
+
+    border: 1px solid #d6d6d6 !important;
+    border-radius: 0 !important;
+
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .card h3,
+  .video-copy h3,
+  .dashboard-panel-title,
+  .dashboard-stat strong,
+  .pillar strong,
+  .cta h2 {
+    color: #111111 !important;
+  }
+
+  .card .card-link,
+  .video-copy small,
+  .dashboard-status,
+  .dashboard-stat span,
+  .pillar span {
+    color: #333333 !important;
+  }
+
+  .card:hover,
+  .dashboard-stat:hover {
+    transform: none !important;
+  }
+
+
+  /* ========================================================================
+     9. Tables
+     ======================================================================== */
+
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    border-collapse: collapse !important;
+    font-size: 9pt;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    padding: 6pt !important;
+
+    border: 1px solid #bdbdbd !important;
+
+    background: #ffffff !important;
+    color: #111111 !important;
+
+    text-align: left;
+    vertical-align: top;
+
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-table-wrapper,
+  .admin-table-wrap {
+    max-width: 100% !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  .dashboard-table th,
+  .admin-table th {
+    background: #eeeeee !important;
+    color: #111111 !important;
+  }
+
+
+  /* ========================================================================
+     10. Images and Media
+     ======================================================================== */
+
+  img,
+  svg {
+    max-width: 100% !important;
+
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  img {
+    height: auto;
+    object-fit: contain !important;
+  }
+
+  .hero-visual img,
+  .about-visual img,
+  .card-media img {
+    max-height: 180pt;
+  }
+
+
+  /* ========================================================================
+     11. FAQ and Disclosure Content
+     ======================================================================== */
+
+  details,
+  .faq {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  details > * {
+    color: #111111 !important;
+  }
+
+  /*
+   * Expand closed native details for print where supported.
+   */
+
+  details:not([open]) > :not(summary) {
+    display: block !important;
+  }
+
+  details > summary {
+    color: #111111 !important;
+    font-weight: bold;
+  }
+
+  .faq summary {
+    color: #111111 !important;
+    font-weight: bold;
+  }
+
+
+  /* ========================================================================
+     12. Form Controls
+     ======================================================================== */
+
+  input,
+  select,
+  textarea {
+    max-width: 100% !important;
+
+    border: 1px solid #999999 !important;
+
+    background: #ffffff !important;
+    color: #111111 !important;
+
+    box-shadow: none !important;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    print-color-adjust: economy;
+  }
+
+
+  /* ========================================================================
+     13. Page Break Utilities
+     ======================================================================== */
+
+  .print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-keep-together {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .print-break-after {
+    break-after: page;
+    page-break-after: always;
+  }
+
+
+  /* ========================================================================
+     14. Remove Decorative Overlays
+     ======================================================================== */
+
+  .hero::before,
+  .hero::after,
+  .hero-visual::before,
+  .hero-visual::after,
+  .card::before,
+  .card::after {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   End of MedOrbits Print Styles
+   ========================================================================== */
