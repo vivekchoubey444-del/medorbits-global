@@ -1,0 +1,172 @@
+# ============================================================
+# MEDORBITS -- PRODUCTION DOCKER COMPOSE
+# Docker Compose v2
+# ============================================================
+name: medorbits
+services:
+  # ----------------------------------------------------------
+  # 1. MEDORBITS APPLICATION
+  # ----------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: medorbits:latest
+    restart: unless-stopped
+    init: true
+    read_only: true
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      APP_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      API_PREFIX: /api/v1
+      DB_CLIENT: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-medorbits}
+      DB_USER: ${DB_USER:-medorbits_app}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    ports:
+      - "${APP_BIND_IP:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - app-private-storage:/app/storage/private
+      - app-temporary-storage:/app/storage/temporary
+      - app-logs:/app/storage/logs
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 768m
+    cpus: 1.50
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    stop_grace_period: 25s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+  # ----------------------------------------------------------
+  # 2. MYSQL DATABASE
+  # ----------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    stop_grace_period: 60s
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-medorbits}
+      MYSQL_USER: ${DB_USER:-medorbits_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+    expose:
+      - "3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    cpus: 2.00
+    pids_limit: 256
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+  # ----------------------------------------------------------
+  # 3. REDIS
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    # Require authentication and persist Redis data.
+    command:
+      - sh
+      - -c
+      - 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 1.00
+    pids_limit: 128
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping 2>/dev/null | grep -q PONG'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+# ------------------------------------------------------------
+# 4. PERSISTENT VOLUMES
+# ------------------------------------------------------------
+volumes:
+  mysql-data:
+    name: medorbits-mysql-data
+  redis-data:
+    name: medorbits-redis-data
+  app-private-storage:
+    name: medorbits-private-storage
+  app-temporary-storage:
+    name: medorbits-temporary-storage
+  app-logs:
+    name: medorbits-logs
+# ------------------------------------------------------------
+# 5. NETWORK SEGMENTATION
+# ------------------------------------------------------------
+networks:
+  frontend:
+    name: medorbits-frontend
+    driver: bridge
+  backend:
+    name: medorbits-backend
+    driver: bridge
+    internal: true
