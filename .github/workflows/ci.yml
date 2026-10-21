@@ -1,0 +1,79 @@
+
+name: MedOrbits CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: medorbits-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Unit and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate package.json
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('package.json is valid')"
+
+      - name: Repair missing or invalid lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f package-lock.json ] || ! node -e "JSON.parse(require('fs').readFileSync('package-lock.json','utf8'))" 2>/dev/null; then
+            echo "Generating package-lock.json..."
+            rm -f package-lock.json
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Verify lockfile
+        run: |
+          node -e "const p=require('./package.json'); const l=require('./package-lock.json'); if (!l.lockfileVersion) throw new Error('Missing lockfileVersion'); if (l.name && p.name && l.name !== p.name) throw new Error('Package name mismatch'); console.log('Lockfile is valid')"
+
+      - name: Commit repaired lockfile
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: repair npm lockfile"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "No lockfile changes."
+          fi
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Validate JSON files
+        run: npm run validate:json
+
+      - name: Validate application data
+        run: npm run check:data --if-present
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Build application
+        run: npm run build --if-present
