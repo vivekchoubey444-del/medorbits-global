@@ -1,0 +1,34 @@
+"runtime": {
+  "platform": "Node.js",
+  "minimumNodeVersion": ">=20.19.0",
+  "versionSource": "package.json engines and the repository runtime-version file, if present.",
+  "packageManager": "npm",
+  "packageManifest": "package.json",
+  "lockfile": "package-lock.json",
+  "nodeVersionFile": ".nvmrc",
+  "environmentTemplate": ".env.example",
+  "entryPoints": {
+    "server": {
+      "path": "server.js",
+      "purpose": "Production HTTP server bootstrap, if confirmed by implementation.",
+      "status": "planned"
+    },
+    "application": {
+      "path": "src/app.js",
+      "purpose": "Express app construction and middleware/route registration, if confirmed by implementation.",
+      "status": "planned"
+    },
+    "frontend": {
+      "path": "index.html",
+      "purpose": "Public website entry page, if served directly by the configured frontend architecture.",
+      "status": "planned"
+    }
+  },
+  "startupPolicy": {
+    "singleDocumentedProductionCommand": true,
+    "entryPointMustBeVerified": true,
+    "frontendServingStrategyMustBeDocumented": true,
+    "environmentVariablesMustBeValidated": true,
+    "runtimeVersionMustMatchDeployment": true
+  }
+}
