@@ -1,0 +1,768 @@
+/**
+
+* MedOrbits -- Homepage Accessibility Tests
+* File: tests/accessibility/homepage.accessibility.test.js
+* Runtime: Node.js >= 20; package.json uses "type": "module".
+* Run:
+* node –test tests/accessibility/homepage.accessibility.test.js
+* Dependency:
+* npm install –save-dev jsdom
+* Limitations:
+* Static DOM and CSS checks are heuristic. They do not establish complete
+* WCAG 2.2 conformance or replace browser and assistive-technology testing.
+    */
+
+import test from ‘node:test’;
+import assert from ‘node:assert/strict’;
+import fs from ‘node:fs’;
+import path from ‘node:path’;
+import { fileURLToPath } from ‘node:url’;
+import { JSDOM } from ‘jsdom’;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.resolve(__dirname, ‘../..’);
+
+const HOMEPAGE_CANDIDATES = [
+‘index.html’,
+‘pages/index.html’,
+‘public/index.html’,
+];
+
+const CSS_CANDIDATES = [
+‘style.css’,
+‘css/style.css’,
+‘assets/css/style.css’,
+‘assets/css/accessibility.css’,
+‘css/accessibility.css’,
+];
+
+function findExistingFile(candidates) {
+return candidates
+.map((relativePath) => path.join(PROJECT_ROOT, relativePath))
+.find((absolutePath) => fs.existsSync(absolutePath));
+}
+
+function loadHomepage() {
+const homepagePath = findExistingFile(HOMEPAGE_CANDIDATES);
+
+if (!homepagePath) {
+throw new Error(
+Homepage not found. Checked: ${HOMEPAGE_CANDIDATES.join(', ')}
+);
+}
+
+return {
+path: homepagePath,
+html: fs.readFileSync(homepagePath, ‘utf8’),
+};
+}
+
+function loadCss() {
+return CSS_CANDIDATES
+.map((relativePath) => path.join(PROJECT_ROOT, relativePath))
+.filter((absolutePath) => fs.existsSync(absolutePath))
+.map((absolutePath) => fs.readFileSync(absolutePath, ‘utf8’))
+.join(’\n’);
+}
+
+function parseHomepage() {
+const homepage = loadHomepage();
+
+return {
+…homepage,
+dom: new JSDOM(homepage.html, {
+url: ‘https://medorbits.in/’,
+pretendToBeVisual: true,
+}),
+};
+}
+
+function getAccessibleName(element) {
+const ariaLabel = element.getAttribute(‘aria-label’);
+
+if (ariaLabel?.trim()) {
+return ariaLabel.trim();
+}
+
+const labelledBy = element.getAttribute(‘aria-labelledby’);
+
+if (labelledBy) {
+const name = labelledBy
+.split(/\s+/)
+.map((id) => element.ownerDocument.getElementById(id))
+.filter(Boolean)
+.map((node) => node.textContent.trim())
+.filter(Boolean)
+.join(’ ’);
+
+if (name) {
+  return name;
+}
+
+}
+
+if (element.labels?.length) {
+const labelText = […element.labels]
+.map((label) => label.textContent.trim())
+.filter(Boolean)
+.join(’ ’);
+
+if (labelText) {
+  return labelText;
+}
+
+}
+
+if (element.tagName === ‘INPUT’) {
+const type = (element.getAttribute(‘type’) || ‘text’).toLowerCase();
+
+if (type === 'hidden') {
+  return '';
+}
+return (
+  element.getAttribute('value') ||
+  element.getAttribute('title') ||
+  ''
+).trim();
+
+}
+
+if (element.tagName === ‘IMG’) {
+return (element.getAttribute(‘alt’) || ‘’).trim();
+}
+
+return (
+element.getAttribute(‘title’) ||
+element.textContent ||
+‘’
+).trim();
+}
+
+function parseColor(value) {
+if (!value || typeof value !== ‘string’) {
+return null;
+}
+
+const normalized = value.trim().toLowerCase();
+
+const namedColors = {
+black: [0, 0, 0],
+white: [255, 255, 255],
+red: [255, 0, 0],
+green: [0, 128, 0],
+blue: [0, 0, 255],
+gray: [128, 128, 128],
+grey: [128, 128, 128],
+silver: [192, 192, 192],
+maroon: [128, 0, 0],
+navy: [0, 0, 128],
+teal: [0, 128, 128],
+purple: [128, 0, 128],
+orange: [255, 165, 0],
+yellow: [255, 255, 0],
+rebeccapurple: [102, 51, 153],
+};
+
+if (namedColors[normalized]) {
+return namedColors[normalized];
+}
+
+const hex = normalized.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+
+if (hex) {
+let digits = hex[1];
+
+if (digits.length === 3) {
+  digits = [...digits].map((digit) => digit + digit).join('');
+}
+return [
+  Number.parseInt(digits.slice(0, 2), 16),
+  Number.parseInt(digits.slice(2, 4), 16),
+  Number.parseInt(digits.slice(4, 6), 16),
+];
+
+}
+
+const rgb = normalized.match(
+/^rgba?(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*)$/i
+);
+
+if (rgb) {
+const alpha = rgb[4]
+? rgb[4].endsWith(’%’)
+? Number.parseFloat(rgb[4]) / 100
+: Number.parseFloat(rgb[4])
+: 1;
+
+if (alpha < 0.999) {
+  return null;
+}
+return [
+  Number(rgb[1]),
+  Number(rgb[2]),
+  Number(rgb[3]),
+];
+
+}
+
+return null;
+}
+
+function relativeLuminance(rgb) {
+const channels = rgb.map((channel) => {
+const value = channel / 255;
+
+return value <= 0.04045
+  ? value / 12.92
+  : ((value + 0.055) / 1.055) ** 2.4;
+
+});
+
+return (
+0.2126 * channels[0] +
+0.7152 * channels[1] +
+0.0722 * channels[2]
+);
+}
+
+function contrastRatio(foreground, background) {
+const fg = parseColor(foreground);
+const bg = parseColor(background);
+
+if (!fg || !bg) {
+return null;
+}
+
+const luminanceA = relativeLuminance(fg);
+const luminanceB = relativeLuminance(bg);
+
+return (
+(Math.max(luminanceA, luminanceB) + 0.05) /
+(Math.min(luminanceA, luminanceB) + 0.05)
+);
+}
+
+function hasAccessibleFocusRule(css) {
+const rules = css.matchAll(/([^{}]+){([^{}]*)}/g);
+
+for (const [, selector, declarations] of rules) {
+if (!/:focus-visible\b/i.test(selector)) {
+continue;
+}
+
+if (
+  /outline\s*:\s*(?!none\b|0(?:\s|;|$))[^;]+/i.test(declarations) ||
+  /outline-(?:style|width)\s*:\s*(?!none\b|0(?:\s|;|$))[^;]+/i.test(declarations) ||
+  /box-shadow\s*:\s*(?!none\b)[^;]+/i.test(declarations) ||
+  /border\s*:\s*(?!none\b|0(?:\s|;|$))[^;]+/i.test(declarations)
+) {
+  return true;
+}
+
+}
+
+return false;
+}
+
+function getAllCss() {
+const homepage = loadHomepage();
+const dom = new JSDOM(homepage.html);
+const inlineCss = […dom.window.document.querySelectorAll(‘style’)]
+.map((style) => style.textContent)
+.join(’\n’);
+
+dom.window.close();
+
+return ${loadCss()}\n${inlineCss};
+}
+
+function getIds(document) {
+return […document.querySelectorAll(’[id]’)].map((element) => element.id);
+}
+
+function getDuplicateIds(document) {
+const counts = new Map();
+
+for (const id of getIds(document)) {
+counts.set(id, (counts.get(id) || 0) + 1);
+}
+
+return […counts.entries()]
+.filter(([, count]) => count > 1)
+.map(([id, count]) => ({ id, count }));
+}
+
+function hasAccessibleLabel(element) {
+const id = element.id;
+
+const associatedLabel = Boolean(
+id &&
+[…element.ownerDocument.querySelectorAll(‘label[for]’)].some(
+(label) =>
+label.getAttribute(‘for’) === id &&
+label.textContent.trim()
+)
+);
+
+const wrappingLabel = Boolean(
+element.closest(‘label’)?.textContent.trim()
+);
+
+const ariaLabel = Boolean(
+element.getAttribute(‘aria-label’)?.trim()
+);
+
+const labelledBy = element.getAttribute(‘aria-labelledby’);
+const validLabelledBy = Boolean(
+labelledBy &&
+labelledBy
+.split(/\s+/)
+.filter(Boolean)
+.every((reference) => {
+const target = element.ownerDocument.getElementById(reference);
+return Boolean(target?.textContent.trim());
+})
+);
+
+return (
+associatedLabel ||
+wrappingLabel ||
+ariaLabel ||
+validLabelledBy
+);
+}
+
+function isLargeTextRule(declarations) {
+const sizeMatch = declarations.match(/font-size\s*:\s*([\d.]+)(px|rem|em|pt)/i);
+
+if (!sizeMatch) {
+return false;
+}
+
+const size = Number(sizeMatch[1]);
+const unit = sizeMatch[2].toLowerCase();
+const pixels =
+unit === ‘px’
+? size
+: unit === ‘pt’
+? size * (4 / 3)
+: size * 16;
+
+const weight = Number(
+declarations.match(/font-weight\s*:\s*(\d+)/i)?.[1] || 400
+);
+
+return pixels >= 24 || (pixels >= 18.67 && weight >= 700);
+}
+
+let dom;
+let document;
+let homepageHtml;
+let homepagePath;
+let css;
+
+test.before(() => {
+const homepage = parseHomepage();
+
+dom = homepage.dom;
+document = dom.window.document;
+homepageHtml = homepage.html;
+homepagePath = homepage.path;
+css = getAllCss();
+});
+
+test.after(() => {
+dom?.window.close();
+});
+
+test(‘homepage exists and contains HTML content’, () => {
+assert.ok(fs.existsSync(homepagePath));
+assert.ok(homepageHtml.trim().length > 0);
+assert.ok(document.documentElement);
+assert.ok(document.body);
+});
+
+test(‘document declares its language’, () => {
+assert.ok(document.documentElement.getAttribute(‘lang’)?.trim());
+});
+
+test(‘document includes a meaningful title’, () => {
+assert.ok(document.title.trim().length > 0);
+});
+
+test(‘document includes a responsive viewport declaration’, () => {
+const viewport = document.querySelector(‘meta[name="viewport"]’);
+
+assert.ok(viewport);
+assert.match(viewport.getAttribute(‘content’) || ‘’, /width\s*=\s*device-width/i);
+
+const content = (viewport.getAttribute(‘content’) || ‘’).toLowerCase();
+
+assert.doesNotMatch(content, /user-scalable\s*=\sno/);
+assert.doesNotMatch(content, /maximum-scale\s=\s*1(?:.0+)?(?:\s|,|$)/);
+});
+
+test(‘homepage has exactly one non-empty h1’, () => {
+const headings = document.querySelectorAll(‘h1’);
+
+assert.equal(headings.length, 1);
+assert.ok(headings[0].textContent.trim().length > 0);
+});
+
+test(‘heading levels do not skip hierarchy’, () => {
+const headings = […document.querySelectorAll(‘h1, h2, h3, h4, h5, h6’)];
+let previousLevel = 0;
+
+for (const heading of headings) {
+const level = Number(heading.tagName.slice(1));
+
+assert.ok(heading.textContent.trim().length > 0);
+if (previousLevel > 0) {
+  assert.ok(
+    level <= previousLevel + 1,
+    `${heading.tagName} skips a heading level after H${previousLevel}`
+  );
+}
+previousLevel = level;
+
+}
+});
+
+test(‘homepage exposes a main landmark’, () => {
+assert.ok(document.querySelector(‘main, [role="main"]’));
+});
+
+test(‘multiple navigation landmarks have accessible names’, () => {
+const navigation = […document.querySelectorAll(‘nav, [role="navigation"]’)];
+
+if (navigation.length > 1) {
+for (const element of navigation) {
+assert.ok(
+getAccessibleName(element).length > 0,
+‘Each navigation landmark should have a distinguishing accessible name’
+);
+}
+}
+});
+
+test(‘landmarks are not nested redundantly’, () => {
+assert.equal(document.querySelector(‘main main’), null);
+assert.equal(document.querySelector(‘header header’), null);
+assert.equal(document.querySelector(‘footer footer’), null);
+});
+
+test(‘images have alt attributes’, () => {
+for (const image of document.querySelectorAll(‘img’)) {
+assert.ok(
+image.hasAttribute(‘alt’),
+Image is missing alt text: ${image.getAttribute('src') || '(no src)'}
+);
+}
+});
+
+test(‘images used as meaningful content have non-empty alt text’, () => {
+for (const image of document.querySelectorAll(‘img:not([alt=""])’)) {
+assert.ok(image.getAttribute(‘alt’)?.trim());
+}
+});
+
+test(‘links have accessible names’, () => {
+for (const link of document.querySelectorAll(‘a[href]’)) {
+assert.ok(
+getAccessibleName(link).length > 0,
+Link has no detectable accessible name: ${link.outerHTML.slice(0, 180)}
+);
+}
+});
+
+test(‘buttons and button-like controls have accessible names’, () => {
+const selector = [
+‘button’,
+‘input[type="button"]’,
+‘input[type="submit"]’,
+‘input[type="reset"]’,
+‘[role="button"]’,
+].join(’,’);
+
+for (const button of document.querySelectorAll(selector)) {
+assert.ok(
+getAccessibleName(button).length > 0,
+Button has no detectable accessible name: ${button.outerHTML.slice(0, 180)}
+);
+}
+});
+
+test(‘icon-only controls have accessible names’, () => {
+const selector = [
+‘button:has(svg)’,
+‘a[href]:has(svg)’,
+‘button:has(i[class*="icon"])’,
+‘a[href]:has(i[class*="icon"])’,
+].join(’,’);
+
+for (const control of document.querySelectorAll(selector)) {
+const hasText = Boolean(control.textContent.trim());
+const hasImageAlternative = Boolean(
+control.querySelector(‘img[alt]:not([alt=""])’)
+);
+
+assert.ok(
+  hasText ||
+  hasImageAlternative ||
+  getAccessibleName(control).length > 0,
+  `Icon-only control needs an accessible name: ${control.outerHTML.slice(0, 180)}`
+);
+
+}
+});
+
+test(‘interactive controls do not use positive tabindex values’, () => {
+for (const element of document.querySelectorAll(
+‘a, button, input, select, textarea, [tabindex]’
+)) {
+const tabindex = element.getAttribute(‘tabindex’);
+
+if (tabindex !== null) {
+  assert.ok(
+    Number(tabindex) <= 0,
+    `Positive tabindex found: ${element.outerHTML.slice(0, 150)}`
+  );
+}
+
+}
+});
+
+test(‘form controls have programmatic labels’, () => {
+const selector = [
+‘input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"])’,
+‘select’,
+‘textarea’,
+].join(’,’);
+
+for (const control of document.querySelectorAll(selector)) {
+assert.ok(
+hasAccessibleLabel(control),
+Form control lacks a detectable label: ${control.outerHTML.slice(0, 180)}
+);
+}
+});
+
+test(‘required fields expose their required state’, () => {
+for (const field of document.querySelectorAll(
+‘input[required], select[required], textarea[required], [aria-required="true"]’
+)) {
+assert.ok(
+field.hasAttribute(‘required’) ||
+field.getAttribute(‘aria-required’) === ‘true’
+);
+
+assert.notEqual(field.getAttribute('aria-required'), 'false');
+
+}
+});
+
+test(‘invalid fields reference an error description’, () => {
+for (const field of document.querySelectorAll(’[aria-invalid="true"]’)) {
+const references = (
+field.getAttribute(‘aria-describedby’) || ‘’
+).split(/\s+/).filter(Boolean);
+
+const hasDescription = references.some((id) => {
+  const target = document.getElementById(id);
+  return Boolean(target?.textContent.trim());
+});
+const hasInlineError = Boolean(
+  field.parentElement?.querySelector(
+    '[role="alert"], .error, .error-message, .field-error'
+  )
+);
+assert.ok(
+  hasDescription || hasInlineError,
+  `Invalid field lacks an associated error description: ${field.outerHTML.slice(0, 180)}`
+);
+
+}
+});
+
+test(‘placeholder text is not the only label’, () => {
+for (const control of document.querySelectorAll(
+‘input[placeholder], textarea[placeholder]’
+)) {
+assert.ok(
+hasAccessibleLabel(control),
+Placeholder-only field: ${control.outerHTML.slice(0, 180)}
+);
+}
+});
+
+test(‘CSS defines a visible focus indicator’, () => {
+assert.ok(
+hasAccessibleFocusRule(css),
+‘Add a visible :focus-visible rule using outline, border, or box-shadow.’
+);
+});
+
+test(‘CSS respects reduced-motion preferences’, () => {
+assert.match(css, /prefers-reduced-motion\s*:\s*reduce/i);
+});
+
+test(‘CSS includes a responsive layout mechanism’, () => {
+const hasResponsiveRules =
+/@media\s*(/i.test(css) ||
+/max-width\s*:\s100%/i.test(css) ||
+/width\s:\smin(/i.test(css) ||
+/grid-template-columns\s:\srepeat(\sauto-fit/i.test(css) ||
+/grid-template-columns\s*:\srepeat(\sauto-fill/i.test(css);
+
+assert.ok(hasResponsiveRules);
+});
+
+test(‘CSS includes safeguards against common horizontal overflow’, () => {
+const hasOverflowSafeguard =
+/overflow-wrap\s*:\s*(?:anywhere|break-word)/i.test(css) ||
+/word-break\s*:\sbreak-word/i.test(css) ||
+/max-width\s:\s100%/i.test(css) ||
+/overflow-x\s:\s*(?:hidden|clip|auto)/i.test(css);
+
+assert.ok(hasOverflowSafeguard);
+});
+
+test(‘ARIA ID references point to existing elements’, () => {
+const attributes = [
+‘aria-labelledby’,
+‘aria-describedby’,
+‘aria-controls’,
+‘aria-owns’,
+‘aria-details’,
+‘aria-errormessage’,
+];
+
+for (const attribute of attributes) {
+for (const element of document.querySelectorAll([${attribute}])) {
+const ids = element.getAttribute(attribute).split(/\s+/).filter(Boolean);
+
+  for (const id of ids) {
+    assert.ok(
+      document.getElementById(id),
+      `${attribute} references missing ID "${id}"`
+    );
+  }
+}
+
+}
+});
+
+test(‘HTML IDs are unique’, () => {
+assert.deepEqual(getDuplicateIds(document), []);
+});
+
+test(‘elements hidden from assistive technology are not focusable’, () => {
+const focusableSelector = [
+‘a[href]’,
+‘button’,
+‘input’,
+‘select’,
+‘textarea’,
+‘[tabindex]:not([tabindex="-1"])’,
+].join(’,’);
+
+for (const hidden of document.querySelectorAll(’[aria-hidden="true"]’)) {
+assert.equal(
+hidden.matches(focusableSelector),
+false,
+‘An aria-hidden element must not itself be focusable.’
+);
+
+assert.equal(
+  hidden.querySelector(focusableSelector),
+  null,
+  'An aria-hidden subtree contains focusable descendants.'
+);
+
+}
+});
+
+test(‘data tables have headers and an accessible name or caption’, () => {
+for (const table of document.querySelectorAll(‘table’)) {
+assert.ok(
+table.querySelector(‘th, [role="columnheader"]’),
+‘Table is missing header cells.’
+);
+
+assert.ok(
+  table.querySelector('caption') ||
+  table.getAttribute('aria-label') ||
+  table.getAttribute('aria-labelledby'),
+  'Table should have a caption or accessible name.'
+);
+
+}
+});
+
+test(‘WCAG contrast helper returns expected reference values’, () => {
+assert.equal(contrastRatio(’#000000’, ‘#ffffff’), 21);
+assert.ok(contrastRatio(’#767676’, ‘#ffffff’) >= 4.5);
+assert.ok(contrastRatio(’#777777’, ‘#ffffff’) < 4.5);
+});
+
+test(‘statically resolvable explicit CSS color pairs meet WCAG AA’, () => {
+const rules = css.matchAll(/([^{}]+){([^{}]+)}/g);
+let checkedPairs = 0;
+const failures = [];
+
+for (const [, selector, declarations] of rules) {
+if (/^\s*@/i.test(selector)) {
+continue;
+}
+
+const foregroundMatch = declarations.match(
+  /(?:^|;)\s*color\s*:\s*([^;!]+)/i
+);
+const backgroundMatch = declarations.match(
+  /(?:^|;)\s*background-color\s*:\s*([^;!]+)/i
+);
+if (!foregroundMatch || !backgroundMatch) {
+  continue;
+}
+const foreground = foregroundMatch[1].trim();
+const background = backgroundMatch[1].trim();
+if (
+  /var\(|currentcolor|inherit|transparent/i.test(
+    `${foreground} ${background}`
+  )
+) {
+  continue;
+}
+const ratio = contrastRatio(foreground, background);
+if (ratio === null) {
+  continue;
+}
+const largeText = isLargeTextRule(declarations);
+const minimum = largeText ? 3 : 4.5;
+checkedPairs += 1;
+if (ratio < minimum) {
+  failures.push({
+    selector: selector.trim(),
+    foreground,
+    background,
+    ratio: Number(ratio.toFixed(2)),
+    minimum,
+  });
+}
+
+}
+
+if (checkedPairs === 0) {
+assert.ok(
+checkedPairs >= 0,
+‘Static contrast analysis could not resolve any explicit color pairs.’
+);
+}
+
+assert.deepEqual(
+failures,
+[],
+Static contrast failures:\n${JSON.stringify(failures, null, 2)}
+);
+});

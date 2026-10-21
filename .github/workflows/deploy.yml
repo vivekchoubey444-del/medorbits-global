@@ -1,0 +1,185 @@
+
+# File: .github/workflows/deploy.yml
+
+name: MedOrbits Deployment
+
+on:
+  workflow_dispatch:
+
+  workflow_run:
+    workflows:
+      - MedOrbits CI
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: medorbits-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify deployment eligibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    if: >-
+      ${{
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main'
+        ) ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      }}
+
+    outputs:
+      deployment_sha: ${{ steps.target.outputs.sha }}
+
+    steps:
+      - name: Resolve deployment commit
+        id: target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          MANUAL_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            SHA="$WORKFLOW_RUN_SHA"
+          else
+            SHA="$MANUAL_SHA"
+          fi
+
+          if [[ ! "$SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Invalid deployment commit SHA."
+            exit 1
+          fi
+
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Deployment target: $SHA"
+
+      - name: Confirm deployment eligibility
+        run: |
+          echo "Deployment eligibility checks passed."
+          echo "Target commit resolved successfully."
+
+  deploy:
+    name: Production deployment preflight
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment:
+      name: production
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.verify.outputs.deployment_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify required project files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in package.json package-lock.json server.js; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+
+      - name: Verify package metadata
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+
+          const lock = JSON.parse(
+            fs.readFileSync('package-lock.json', 'utf8')
+          );
+
+          if (
+            lock.lockfileVersion !== 3 ||
+            pkg.name !== lock.name ||
+            pkg.version !== lock.version
+          ) {
+            throw new Error(
+              'Invalid or mismatched package-lock metadata.'
+            );
+          }
+
+          if (
+            !pkg.engines ||
+            !pkg.engines.node ||
+            !pkg.scripts
+          ) {
+            throw new Error(
+              'Missing Node.js engine or scripts configuration.'
+            );
+          }
+
+          console.log(`Validated ${pkg.name}@${pkg.version}`);
+          console.log(`Node.js requirement: ${pkg.engines.node}`);
+          NODE
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev --no-audit --no-fund
+
+      - name: Check server syntax
+        run: node --check server.js
+
+      - name: Verify deployment provider configuration
+        shell: bash
+        env:
+          DEPLOYMENT_PROVIDER: ${{ vars.DEPLOYMENT_PROVIDER }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DEPLOYMENT_PROVIDER:-}" ]]; then
+            echo "::error::DEPLOYMENT_PROVIDER is not configured."
+            echo "Set it in Settings > Environments > production."
+            exit 1
+          fi
+
+          case "$DEPLOYMENT_PROVIDER" in
+            render|cloudflare|vercel|railway|other)
+              echo "Provider configured: $DEPLOYMENT_PROVIDER"
+              ;;
+            *)
+              echo "::error::Unsupported DEPLOYMENT_PROVIDER value."
+              exit 1
+              ;;
+          esac
+
+          echo "::error::Provider-specific deployment is not configured."
+          echo "Preflight completed; no production deployment was performed."
+          exit 1

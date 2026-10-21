@@ -1,0 +1,91 @@
+
+# File: .github/workflows/validate-documents.yml
+
+name: Validate MedOrbits Documents
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "assets/documents/**"
+      - "scripts/validate-document-manifests.mjs"
+      - "scripts/build-document-catalogue.mjs"
+      - ".github/workflows/validate-documents.yml"
+      - "package.json"
+      - "package-lock.json"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "assets/documents/**"
+      - "scripts/validate-document-manifests.mjs"
+      - "scripts/build-document-catalogue.mjs"
+      - ".github/workflows/validate-documents.yml"
+      - "package.json"
+      - "package-lock.json"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-documents-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate document manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify required files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in package.json package-lock.json \
+            scripts/validate-document-manifests.mjs \
+            scripts/build-document-catalogue.mjs; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+
+          if [[ ! -d assets/documents ]]; then
+            echo "::error::assets/documents directory is missing."
+            exit 1
+          fi
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Check validator syntax
+        run: |
+          node --check scripts/validate-document-manifests.mjs
+          node --check scripts/build-document-catalogue.mjs
+
+      - name: Validate document manifests
+        run: node scripts/validate-document-manifests.mjs --strict
+
+      - name: Preview document catalogue
+        run: node scripts/build-document-catalogue.mjs --dry-run

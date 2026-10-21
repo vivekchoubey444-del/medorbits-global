@@ -1,0 +1,92 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MedOrbits College Fixture",
+  "description": "Validates synthetic MedOrbits college fixtures for development and automated testing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "colleges"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "colleges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/college"
+      }
+    }
+  },
+  "$defs": {
+    "college": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "slug",
+        "name",
+        "type",
+        "location",
+        "metadata"
+      ],
+      "properties": {
+        "id": {
+          "type": ["string", "integer"]
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "object",
+              "additionalProperties": true
+            }
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "synthetic",
+        "verified"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "verified": {
+          "const": false
+        }
+      }
+    }
+  }
+}

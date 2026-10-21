@@ -1,0 +1,211 @@
+
+'use strict';
+
+/**
+ * MedOrbits -- Application Constants
+ *
+ * File: src/config/constants.js
+ * Runtime: Node.js >= 20
+ *
+ * Centralizes HTTP status codes, application error codes, domain states,
+ * role identifiers, pagination limits, security defaults, API settings,
+ * and environment names.
+ *
+ * Security:
+ * - Role identifiers do not grant permissions.
+ * - Enforce authorization in middleware and service-level policies.
+ * - Treat configuration defaults as fallbacks, not production secrets.
+ */
+
+const HTTP_STATUS = Object.freeze({
+  OK: 200,
+  CREATED: 201,
+  ACCEPTED: 202,
+  NO_CONTENT: 204,
+
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  NOT_ACCEPTABLE: 406,
+  REQUEST_TIMEOUT: 408,
+  CONFLICT: 409,
+  GONE: 410,
+  LENGTH_REQUIRED: 411,
+  PRECONDITION_FAILED: 412,
+  CONTENT_TOO_LARGE: 413,
+  URI_TOO_LONG: 414,
+  UNSUPPORTED_MEDIA_TYPE: 415,
+  RANGE_NOT_SATISFIABLE: 416,
+  EXPECTATION_FAILED: 417,
+  UNPROCESSABLE_ENTITY: 422,
+  LOCKED: 423,
+  FAILED_DEPENDENCY: 424,
+  TOO_EARLY: 425,
+  UPGRADE_REQUIRED: 426,
+  PRECONDITION_REQUIRED: 428,
+  TOO_MANY_REQUESTS: 429,
+  REQUEST_HEADER_FIELDS_TOO_LARGE: 431,
+  UNAVAILABLE_FOR_LEGAL_REASONS: 451,
+
+  INTERNAL_SERVER_ERROR: 500,
+  NOT_IMPLEMENTED: 501,
+  BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504,
+  HTTP_VERSION_NOT_SUPPORTED: 505,
+});
+
+const ERROR_CODES = Object.freeze({
+  BAD_REQUEST: 'BAD_REQUEST',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_JSON: 'INVALID_JSON',
+  INVALID_REQUEST: 'INVALID_REQUEST',
+  INVALID_PARAMETER: 'INVALID_PARAMETER',
+
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+  NOT_ACCEPTABLE: 'NOT_ACCEPTABLE',
+  CONFLICT: 'CONFLICT',
+  GONE: 'GONE',
+  PRECONDITION_FAILED: 'PRECONDITION_FAILED',
+
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
+  UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
+  CORS_ORIGIN_DENIED: 'CORS_ORIGIN_DENIED',
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
+
+  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  TOKEN_INVALID: 'TOKEN_INVALID',
+  SESSION_EXPIRED: 'SESSION_EXPIRED',
+  SESSION_REVOKED: 'SESSION_REVOKED',
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  ACCOUNT_DISABLED: 'ACCOUNT_DISABLED',
+
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  PAYMENT_REQUIRED: 'PAYMENT_REQUIRED',
+  PAYMENT_SIGNATURE_INVALID: 'PAYMENT_SIGNATURE_INVALID',
+  PAYMENT_EVENT_ALREADY_PROCESSED: 'PAYMENT_EVENT_ALREADY_PROCESSED',
+  REFUND_FAILED: 'REFUND_FAILED',
+
+  REQUEST_SERVICE_NOT_CONFIGURED: 'REQUEST_SERVICE_NOT_CONFIGURED',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  NOT_IMPLEMENTED: 'NOT_IMPLEMENTED',
+
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+});
+
+const USER_ROLES = Object.freeze({
+  USER: 'user',
+  STUDENT: 'student',
+  CANDIDATE: 'candidate',
+  EMPLOYER: 'employer',
+  COUNSELLOR: 'counsellor',
+  STAFF: 'staff',
+  ADMIN: 'admin',
+  SUPER_ADMIN: 'super_admin',
+});
+
+const APPLICATION_STATUS = Object.freeze({
+  DRAFT: 'draft',
+  SUBMITTED: 'submitted',
+  UNDER_REVIEW: 'under_review',
+  DOCUMENTS_REQUIRED: 'documents_required',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  WITHDRAWN: 'withdrawn',
+});
+
+const PAYMENT_STATUS = Object.freeze({
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  SUCCEEDED: 'succeeded',
+  FAILED: 'failed',
+  CANCELLED: 'cancelled',
+  REFUND_PENDING: 'refund_pending',
+  REFUNDED: 'refunded',
+  PARTIALLY_REFUNDED: 'partially_refunded',
+});
+
+const JOB_STATUS = Object.freeze({
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  PAUSED: 'paused',
+  CLOSED: 'closed',
+  ARCHIVED: 'archived',
+});
+
+const SUBSCRIPTION_STATUS = Object.freeze({
+  PENDING: 'pending',
+  ACTIVE: 'active',
+  PAST_DUE: 'past_due',
+  CANCELLED: 'cancelled',
+  EXPIRED: 'expired',
+  SUSPENDED: 'suspended',
+});
+
+const REQUEST_STATUS = Object.freeze({
+  NEW: 'new',
+  OPEN: 'open',
+  IN_PROGRESS: 'in_progress',
+  WAITING_FOR_USER: 'waiting_for_user',
+  RESOLVED: 'resolved',
+  CLOSED: 'closed',
+  REJECTED: 'rejected',
+});
+
+const DOCUMENT_STATUS = Object.freeze({
+  PENDING: 'pending',
+  UPLOADED: 'uploaded',
+  UNDER_REVIEW: 'under_review',
+  VERIFIED: 'verified',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired',
+});
+
+const PAGINATION = Object.freeze({
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 100,
+});
+
+const SECURITY = Object.freeze({
+  MIN_SESSION_SECRET_LENGTH: 32,
+  DEFAULT_TOKEN_BYTES: 32,
+  MAX_REQUEST_ID_LENGTH: 128,
+  MAX_ERROR_MESSAGE_LENGTH: 1000,
+});
+
+const API = Object.freeze({
+  PREFIX: '/api/v1',
+  DEFAULT_PORT: 3000,
+  DEFAULT_BODY_LIMIT: '1mb',
+  DEFAULT_RATE_LIMIT: 300,
+});
+
+const ENVIRONMENTS = Object.freeze({
+  DEVELOPMENT: 'development',
+  TEST: 'test',
+  PRODUCTION: 'production',
+});
+
+module.exports = Object.freeze({
+  HTTP_STATUS,
+  ERROR_CODES,
+  USER_ROLES,
+  APPLICATION_STATUS,
+  PAYMENT_STATUS,
+  JOB_STATUS,
+  SUBSCRIPTION_STATUS,
+  REQUEST_STATUS,
+  DOCUMENT_STATUS,
+  PAGINATION,
+  SECURITY,
+  API,
+  ENVIRONMENTS,
+});
