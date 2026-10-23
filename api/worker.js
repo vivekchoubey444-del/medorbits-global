@@ -1,0 +1,1 @@
+export default { async fetch(request) { const url = new URL(request.url); if (url.pathname === "/api/health" && request.method === "GET") return Response.json({status:"ok",service:"medorbits-api-scaffold"}); return Response.json({error:"Not implemented"},{status:501}); } };
