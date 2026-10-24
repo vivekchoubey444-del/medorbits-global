@@ -1,1 +1,906 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+   MEDORBITS | TOPIC-BASED TYPOGRAPHY SYSTEM
+   File: assets/css/font.css
+   Brand: MedOrbits
+   Style: Royal Aubergine + Champagne Gold
+   Fonts: DM Sans + Playfair Display
+   Supports:
+   - Home and general pages
+   - Education and courses
+   - Admissions and counselling
+   - Medical and college directories
+   - Official documents and resources
+   - Study abroad
+   - Careers, jobs and internships
+   - Applications and multi-step forms
+   - Accounts and admin dashboards
+   - Responsive layouts and accessibility
+   Note:
+   Load this stylesheet after tokens.css.
+   ========================================================= */
+/* =========================================================
+   1. FONT IMPORTS
+   ========================================================= */
+/*
+   Recommended production setup:
+   Download font files and place them in /assets/fonts/.
+   Suggested files:
+   /assets/fonts/dm-sans-regular.woff2
+   /assets/fonts/dm-sans-medium.woff2
+   /assets/fonts/dm-sans-semibold.woff2
+   /assets/fonts/dm-sans-bold.woff2
+   /assets/fonts/playfair-display-regular.woff2
+   /assets/fonts/playfair-display-medium.woff2
+   /assets/fonts/playfair-display-semibold.woff2
+*/
+@font-face {
+  font-family: "DM Sans";
+  src: url("../fonts/dm-sans-regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Sans";
+  src: url("../fonts/dm-sans-medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Sans";
+  src: url("../fonts/dm-sans-semibold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Sans";
+  src: url("../fonts/dm-sans-bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("../fonts/playfair-display-regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("../fonts/playfair-display-medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("../fonts/playfair-display-semibold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+/* =========================================================
+   2. GLOBAL FONT TOKENS
+   ========================================================= */
+:root {
+  --font-primary:
+    "DM Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  --font-display:
+    "Playfair Display",
+    Georgia,
+    "Times New Roman",
+    serif;
+  --font-monospace:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    monospace;
+  --font-size-caption: 0.75rem;
+  --font-size-small: 0.875rem;
+  --font-size-body: 1rem;
+  --font-size-large: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-heading: 1.3;
+  --line-height-body: 1.65;
+  --line-height-readable: 1.8;
+  --letter-spacing-tight: -0.035em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.045em;
+  --letter-spacing-label: 0.09em;
+  --heading-1: clamp(2.25rem, 5vw, 4.5rem);
+  --heading-2: clamp(1.9rem, 3.5vw, 3rem);
+  --heading-3: clamp(1.5rem, 2.5vw, 2.15rem);
+  --heading-4: clamp(1.2rem, 1.8vw, 1.55rem);
+  --heading-5: 1.0625rem;
+  --heading-6: 0.9375rem;
+  --font-body-color: var(--text, #f7f1fa);
+  --font-muted-color: var(--muted, #b7acbf);
+  --font-heading-color: var(--text-strong, #fffaff);
+  --font-accent-color: var(--mo-brand-light, #e4d0a1);
+}
+/* =========================================================
+   3. GLOBAL TYPOGRAPHY
+   ========================================================= */
+html {
+  font-family: var(--font-primary);
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-body);
+  color: var(--font-body-color);
+  font-kerning: normal;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+input,
+select,
+textarea,
+option {
+  letter-spacing: inherit;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-block: 0 0.75em;
+  color: var(--font-heading-color);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-tight);
+  text-wrap: balance;
+}
+h1 {
+  font-size: var(--heading-1);
+  line-height: var(--line-height-tight);
+}
+h2 {
+  font-size: var(--heading-2);
+}
+h3 {
+  font-size: var(--heading-3);
+}
+h4 {
+  font-size: var(--heading-4);
+}
+h5 {
+  font-size: var(--heading-5);
+}
+h6 {
+  font-family: var(--font-primary);
+  font-size: var(--heading-6);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+}
+p,
+li,
+dd,
+blockquote {
+  overflow-wrap: anywhere;
+}
+p {
+  margin-block: 0 1.15em;
+}
+strong,
+b {
+  font-weight: var(--font-weight-bold);
+}
+small,
+.small-text {
+  font-size: var(--font-size-small);
+}
+.muted,
+.text-muted,
+.secondary-text {
+  color: var(--font-muted-color);
+}
+.eyebrow,
+.section-eyebrow,
+.overline {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.eyebrow,
+.section-eyebrow {
+  color: var(--font-accent-color);
+}
+.lead,
+.intro-text {
+  max-width: 68ch;
+  font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+  line-height: var(--line-height-readable);
+  color: var(--font-muted-color);
+}
+.display-title {
+  font-family: var(--font-display);
+  font-size: var(--heading-1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+.display-title .accent,
+.text-gold {
+  color: var(--font-accent-color);
+}
+.label,
+.field-label,
+.form-label {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.45;
+}
+.caption,
+.helper-text,
+.field-help {
+  font-size: var(--font-size-caption);
+  line-height: 1.6;
+  color: var(--font-muted-color);
+}
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-monospace);
+  font-size: 0.92em;
+}
+pre {
+  overflow-x: auto;
+  line-height: 1.6;
+}
+a {
+  text-underline-offset: 0.2em;
+}
+blockquote {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  line-height: 1.6;
+}
+/* =========================================================
+   4. TOPIC CONFIGURATION
+   Use data-page on the body or main wrapper.
+   Example: <body data-page="education">
+   ========================================================= */
+/* Default: MedOrbits premium typography */
+[data-page] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.035em;
+  --topic-line-height: 1.65;
+  --topic-label-spacing: 0.09em;
+}
+[data-page] body,
+body[data-page] {
+  font-family: var(--topic-font-body);
+  line-height: var(--topic-line-height);
+}
+[data-page] h1,
+[data-page] h2,
+[data-page] h3,
+[data-page] h4,
+[data-page] h5 {
+  font-family: var(--topic-font-heading);
+  font-weight: var(--topic-heading-weight);
+  letter-spacing: var(--topic-letter-spacing);
+}
+/* =========================================================
+   5. HOME PAGE
+   Elegant, premium, editorial typography
+   ========================================================= */
+[data-page="home"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 500;
+  --topic-letter-spacing: -0.045em;
+}
+[data-page="home"] .hero-title,
+[data-page="home"] .home-hero h1,
+[data-page="home"] .hero h1 {
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.7rem, 7vw, 5.6rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+}
+[data-page="home"] .hero-description,
+[data-page="home"] .home-hero .lead {
+  max-width: 58ch;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.8;
+}
+[data-page="home"] .hero-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+/* =========================================================
+   6. EDUCATION
+   Clear, welcoming, knowledge-focused
+   ========================================================= */
+[data-page="education"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.03em;
+}
+[data-page="education"] .course-title,
+[data-page="education"] .subject-title,
+[data-page="education"] .education-card h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  line-height: 1.3;
+}
+[data-page="education"] .course-code,
+[data-page="education"] .subject-tag {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+/* =========================================================
+   7. ADMISSIONS AND COUNSELLING
+   Structured, precise, process-oriented
+   ========================================================= */
+[data-page="admissions"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.025em;
+}
+[data-page="admissions"] .process-title,
+[data-page="admissions"] .counselling-title,
+[data-page="admissions"] .step-title {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-page="admissions"] .step-number,
+[data-page="admissions"] .round-number {
+  font-family: var(--font-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+[data-page="admissions"] .deadline,
+[data-page="admissions"] .important-date {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+/* =========================================================
+   8. MEDICAL AND HEALTH-RELATED EDUCATION
+   Clinical clarity and readable technical content
+   ========================================================= */
+[data-page="medical"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.025em;
+  --topic-line-height: 1.7;
+}
+[data-page="medical"] .medical-title,
+[data-page="medical"] .speciality-title {
+  font-family: var(--font-display);
+  line-height: 1.3;
+}
+[data-page="medical"] .medical-data,
+[data-page="medical"] .clinical-term,
+[data-page="medical"] .course-duration {
+  font-family: var(--font-primary);
+  font-variant-numeric: tabular-nums;
+}
+[data-page="medical"] .medical-note,
+[data-page="medical"] .eligibility-note {
+  max-width: 75ch;
+  line-height: 1.8;
+}
+/* =========================================================
+   9. COLLEGES AND INSTITUTIONS
+   Formal, academic, information-dense
+   ========================================================= */
+[data-page="colleges"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.03em;
+}
+[data-page="colleges"] .college-name,
+[data-page="colleges"] .institution-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  line-height: 1.35;
+}
+[data-page="colleges"] .college-location,
+[data-page="colleges"] .college-type,
+[data-page="colleges"] .college-code {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-small);
+}
+[data-page="colleges"] .fee-amount,
+[data-page="colleges"] .seat-count,
+[data-page="colleges"] .ranking-number {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* =========================================================
+   10. DOCUMENTS AND OFFICIAL RESOURCES
+   Highly readable, neutral, document-focused
+   ========================================================= */
+[data-page="documents"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-primary);
+  --topic-heading-weight: 700;
+  --topic-letter-spacing: -0.02em;
+  --topic-line-height: 1.75;
+}
+[data-page="documents"] h1,
+[data-page="documents"] h2,
+[data-page="documents"] h3 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+[data-page="documents"] .document-title,
+[data-page="documents"] .official-resource-title {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  line-height: 1.4;
+}
+[data-page="documents"] .document-body,
+[data-page="documents"] .official-content {
+  max-width: 78ch;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+[data-page="documents"] .document-reference,
+[data-page="documents"] .document-date {
+  font-size: var(--font-size-small);
+  color: var(--font-muted-color);
+  font-variant-numeric: tabular-nums;
+}
+/* =========================================================
+   11. STUDY ABROAD
+   Editorial, international, aspirational
+   ========================================================= */
+[data-page="study-abroad"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 500;
+  --topic-letter-spacing: -0.04em;
+}
+[data-page="study-abroad"] .country-name,
+[data-page="study-abroad"] .destination-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1.25;
+}
+[data-page="study-abroad"] .country-code,
+[data-page="study-abroad"] .language-tag {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* =========================================================
+   12. CAREERS, JOBS AND INTERNSHIPS
+   Modern, confident, action-focused
+   ========================================================= */
+[data-page="careers"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.03em;
+}
+[data-page="careers"] .job-title,
+[data-page="careers"] .role-title,
+[data-page="careers"] .career-title {
+  font-family: var(--font-primary);
+  font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.4;
+}
+[data-page="careers"] .company-name {
+  font-weight: 600;
+}
+[data-page="careers"] .salary,
+[data-page="careers"] .job-location,
+[data-page="careers"] .employment-type {
+  font-size: var(--font-size-small);
+}
+[data-page="careers"] .salary {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* =========================================================
+   13. APPLICATIONS AND FORMS
+   Clear labels, readable instructions, precise status text
+   ========================================================= */
+[data-page="applications"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.025em;
+  --topic-line-height: 1.7;
+}
+[data-page="applications"] h1,
+[data-page="applications"] h2,
+[data-page="applications"] h3 {
+  line-height: 1.35;
+}
+[data-page="applications"] label,
+[data-page="applications"] .form-label,
+[data-page="applications"] legend {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+[data-page="applications"] input,
+[data-page="applications"] select,
+[data-page="applications"] textarea {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+[data-page="applications"] .form-help,
+[data-page="applications"] .form-instructions {
+  max-width: 72ch;
+  font-size: var(--font-size-small);
+  line-height: 1.75;
+  color: var(--font-muted-color);
+}
+[data-page="applications"] .application-id,
+[data-page="applications"] .application-date,
+[data-page="applications"] .application-status {
+  font-variant-numeric: tabular-nums;
+}
+/* =========================================================
+   14. ACCOUNTS AND AUTHENTICATION
+   Minimal, focused, trustworthy
+   ========================================================= */
+[data-page="accounts"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-display);
+  --topic-heading-weight: 600;
+  --topic-letter-spacing: -0.03em;
+}
+[data-page="accounts"] .auth-title,
+[data-page="accounts"] .login-title,
+[data-page="accounts"] .register-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.2;
+}
+[data-page="accounts"] .auth-description {
+  max-width: 46ch;
+  color: var(--font-muted-color);
+  line-height: 1.75;
+}
+[data-page="accounts"] .security-note {
+  font-size: var(--font-size-small);
+  line-height: 1.7;
+}
+/* =========================================================
+   15. ADMIN AND DASHBOARDS
+   Information-dense, analytical, highly scannable
+   ========================================================= */
+[data-page="admin"] {
+  --topic-font-body: var(--font-primary);
+  --topic-font-heading: var(--font-primary);
+  --topic-heading-weight: 700;
+  --topic-letter-spacing: -0.025em;
+  --topic-line-height: 1.6;
+}
+[data-page="admin"] h1,
+[data-page="admin"] h2,
+[data-page="admin"] h3,
+[data-page="admin"] h4 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+[data-page="admin"] .metric-value,
+[data-page="admin"] .stat-value,
+[data-page="admin"] .table-number,
+[data-page="admin"] .dashboard-number {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+[data-page="admin"] .table-heading,
+[data-page="admin"] th {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+[data-page="admin"] .activity-time,
+[data-page="admin"] .audit-timestamp {
+  font-size: 0.8rem;
+  color: var(--font-muted-color);
+  font-variant-numeric: tabular-nums;
+}
+/* =========================================================
+   16. OPTIONAL TOPIC: CAREER SUB-PAGES
+   ========================================================= */
+[data-topic="jobs"] .topic-title,
+[data-topic="internships"] .topic-title,
+[data-topic="employers"] .topic-title {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+[data-topic="jobs"] .topic-title,
+[data-topic="internships"] .topic-title {
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+}
+/* =========================================================
+   17. OPTIONAL TOPIC: MEDICAL SUB-PAGES
+   ========================================================= */
+[data-topic="mbbs"] .topic-title,
+[data-topic="bds"] .topic-title,
+[data-topic="nursing"] .topic-title,
+[data-topic="pharmacy"] .topic-title,
+[data-topic="paramedical"] .topic-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.3;
+}
+/* =========================================================
+   18. NUMBERS, FEES, DATES AND IDENTIFIERS
+   ========================================================= */
+.numeric,
+.amount,
+.fee,
+.percentage,
+.date-value,
+.reference-number,
+.application-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.amount,
+.fee {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.reference-number,
+.application-number {
+  overflow-wrap: anywhere;
+}
+/* =========================================================
+   19. BADGES, BUTTONS AND NAVIGATION
+   ========================================================= */
+button,
+.button,
+.btn,
+[role="button"] {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.badge,
+.status-badge,
+.tag,
+.chip {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+}
+.site-nav,
+.primary-navigation,
+.dashboard-nav {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.site-brand,
+.brand-name,
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+/* =========================================================
+   20. TABLES AND DENSE INFORMATION
+   ========================================================= */
+table {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+th {
+  font-weight: 700;
+  text-align: start;
+}
+td {
+  font-weight: 400;
+}
+caption {
+  font-size: var(--font-size-small);
+  line-height: 1.6;
+  color: var(--font-muted-color);
+  text-align: start;
+}
+/* =========================================================
+   21. MULTILINGUAL FALLBACKS
+   Supports English, Hindi, Bengali and Nepali content.
+   Add locally hosted Noto fonts if required.
+   ========================================================= */
+:lang(hi),
+:lang(ne) {
+  font-family:
+    "Noto Sans Devanagari",
+    var(--font-primary);
+  line-height: 1.8;
+}
+:lang(bn) {
+  font-family:
+    "Noto Sans Bengali",
+    var(--font-primary);
+  line-height: 1.85;
+}
+/*
+  If the Noto fonts are not installed or loaded,
+  the browser will use the remaining fallback stack.
+*/
+/* =========================================================
+   22. RESPONSIVE TYPOGRAPHY
+   ========================================================= */
+@media (max-width: 768px) {
+  :root {
+    --heading-1: clamp(2rem, 8vw, 3.25rem);
+    --heading-2: clamp(1.65rem, 6vw, 2.35rem);
+    --heading-3: clamp(1.35rem, 4.5vw, 1.8rem);
+    --heading-4: clamp(1.12rem, 3.5vw, 1.4rem);
+  }
+  body {
+    line-height: 1.7;
+  }
+  [data-page="home"] .hero-title,
+  [data-page="home"] .home-hero h1,
+  [data-page="home"] .hero h1 {
+    max-width: 16ch;
+    font-size: clamp(2.35rem, 10vw, 3.75rem);
+  }
+  .lead,
+  .intro-text {
+    font-size: 1rem;
+  }
+  [data-page="documents"] .document-body,
+  [data-page="documents"] .official-content {
+    font-size: 0.98rem;
+  }
+  table {
+    font-size: 0.85rem;
+  }
+}
+@media (max-width: 420px) {
+  body {
+    font-size: 0.95rem;
+  }
+  .eyebrow,
+  .section-eyebrow,
+  .overline {
+    font-size: 0.68rem;
+  }
+  .caption,
+  .helper-text,
+  .field-help {
+    font-size: 0.75rem;
+  }
+}
+/* =========================================================
+   23. ACCESSIBILITY AND USER PREFERENCES
+   ========================================================= */
+:where(p, li, dd, .document-body, .official-content) {
+  text-wrap: pretty;
+}
+:where(h1, h2, h3, h4, h5, h6) {
+  overflow-wrap: break-word;
+}
+:where(button, input, select, textarea) {
+  font-kerning: normal;
+}
+@media (prefers-contrast: more) {
+  .muted,
+  .text-muted,
+  .secondary-text,
+  .caption,
+  .helper-text,
+  .field-help {
+    color: var(--text, #f7f1fa);
+  }
+}
+/* =========================================================
+   24. PRINT AND PDF TYPOGRAPHY
+   Useful for official guides and printable applications.
+   ========================================================= */
+@media print {
+  html,
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #111;
+    background: #fff;
+    -webkit-font-smoothing: auto;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #111;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  p,
+  li,
+  td,
+  th {
+    color: #111;
+  }
+  .eyebrow,
+  .section-eyebrow,
+  .overline,
+  .text-gold {
+    color: #333;
+  }
+  a {
+    color: #111;
+    text-decoration: underline;
+  }
+  .no-print,
+  .screen-only {
+    display: none !important;
+  }
+  [data-page="documents"] .document-body,
+  [data-page="documents"] .official-content {
+    max-width: none;
+    font-size: 10.5pt;
+    line-height: 1.65;
+  }
+}

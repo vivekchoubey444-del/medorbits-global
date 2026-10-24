@@ -1,1 +1,924 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+MEDORBITS | ROYAL ADAPTIVE THEME SYSTEM
+File: /assets/css/theme.css
+
+VERSION: 2.0.0
+TYPE: CSS only
+DEPENDENCIES: reset.css, tokens.css
+
+DESIGN DIRECTION
+
+* Royal Burgundy
+* Midnight Aubergine
+* Champagne Gold
+* Royal Sapphire
+* Professional Light
+* Accessible Dark and Light Variants
+
+SUPPORTED PAGE TOPICS
+
+* Home
+* Education
+* Admissions
+* Medical
+* Colleges
+* Documents
+* Study Abroad
+* Careers
+* Applications
+* Accounts
+* Admin
+* Legal and Official Documents
+
+DESIGN POLICY
+
+* Page themes can differ without changing HTML structure.
+* Topic accents are customizable.
+* Theme variables are centralized.
+* No JavaScript or backend required.
+* Theme switching requires a data-theme attribute change.
+    ========================================================= */
+
+/* --------------------------------------
+
+1. ROYAL DESIGN TOKENS
+    Default values are MedOrbits’ royal dark palette.
+    Individual pages can override them below.
+    -------------------------------------- */
+
+:root {
+color-scheme: dark;
+
+/* Royal foundations */
+–theme-bg: #100a17;
+–theme-bg-soft: #171020;
+–theme-surface: #21172b;
+–theme-surface-raised: #2b1d36;
+–theme-surface-hover: #352440;
+–theme-surface-inset: #190f22;
+
+/* Royal borders */
+–theme-border: #493751;
+–theme-border-strong: #66516f;
+–theme-border-subtle: rgb(228 208 161 / 14%);
+
+/* Champagne gold */
+–theme-gold: #c9a96e;
+–theme-gold-light: #e4d0a1;
+–theme-gold-deep: #a9874d;
+–theme-gold-contrast: #100a17;
+
+/* Typography colors */
+–theme-text: #f7f1fa;
+–theme-text-secondary: #d9cce4;
+–theme-text-muted: #b7acbf;
+–theme-text-inverse: #100a17;
+
+/* Interactive states */
+–theme-link: #e4d0a1;
+–theme-link-hover: #f0dfb5;
+–theme-focus: #e4d0a1;
+–theme-selection-bg: #c9a96e;
+–theme-selection-text: #100a17;
+
+/* Feedback colors */
+–theme-success: #79c9a1;
+–theme-success-bg: #142c24;
+–theme-warning: #f0c878;
+–theme-warning-bg: #342713;
+–theme-danger: #f29a9a;
+–theme-danger-bg: #381c25;
+–theme-info: #9cc7f5;
+–theme-info-bg: #17283b;
+
+/* Shadows */
+–theme-shadow-sm: 0 2px 8px rgb(0 0 0 / 14%);
+–theme-shadow-md: 0 10px 30px rgb(0 0 0 / 20%);
+–theme-shadow-lg: 0 20px 55px rgb(0 0 0 / 30%);
+–theme-shadow-gold: 0 8px 24px rgb(201 169 110 / 12%);
+
+/* Borders and shape */
+–theme-radius-sm: 8px;
+–theme-radius-md: 12px;
+–theme-radius-lg: 18px;
+–theme-radius-xl: 24px;
+–theme-radius-pill: 999px;
+
+/* Spacing */
+–theme-space-1: 0.25rem;
+–theme-space-2: 0.5rem;
+–theme-space-3: 0.75rem;
+–theme-space-4: 1rem;
+–theme-space-5: 1.25rem;
+–theme-space-6: 1.5rem;
+–theme-space-8: 2rem;
+–theme-space-10: 2.5rem;
+–theme-space-12: 3rem;
+
+/* Typography */
+–theme-font-body: "DM Sans", system-ui, sans-serif;
+–theme-font-display: "Playfair Display", Georgia, serif;
+–theme-font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+
+/* Motion */
+–theme-duration-fast: 140ms;
+–theme-duration-normal: 220ms;
+–theme-duration-slow: 360ms;
+–theme-ease: cubic-bezier(0.2, 0.65, 0.3, 1);
+
+/* Layout */
+–theme-content-width: 1200px;
+–theme-content-wide: 1440px;
+–theme-content-narrow: 800px;
+
+/* Topic accent defaults */
+–theme-accent: var(–theme-gold);
+–theme-accent-soft: rgb(201 169 110 / 12%);
+–theme-accent-border: rgb(201 169 110 / 35%);
+–theme-accent-text: var(–theme-gold-light);
+
+/* Component tokens */
+–theme-button-bg: var(–theme-gold);
+–theme-button-text: var(–theme-gold-contrast);
+–theme-button-hover: var(–theme-gold-light);
+–theme-input-bg: var(–theme-surface-inset);
+–theme-input-border: var(–theme-border);
+–theme-table-border: var(–theme-border);
+–theme-overlay: rgb(8 5 13 / 72%);
+
+/* Optional gradients */
+–theme-gradient-royal:
+linear-gradient(135deg, #100a17 0%, #26152f 55%, #382344 100%);
+
+–theme-gradient-gold:
+linear-gradient(135deg, #a9874d 0%, #e4d0a1 50%, #c9a96e 100%);
+
+–theme-gradient-burgundy:
+linear-gradient(135deg, #210d20 0%, #45152f 55%, #6a2946 100%);
+
+–theme-gradient-sapphire:
+linear-gradient(135deg, #081426 0%, #122d51 55%, #244c7c 100%);
+}
+
+/* --------------------------------------
+2. ROYAL DARK THEME
+Explicitly activate with data-theme="royal".
+-------------------------------------- */
+
+:root[data-theme="royal"],
+[data-theme="royal"] {
+color-scheme: dark;
+
+–theme-bg: #100a17;
+–theme-bg-soft: #171020;
+–theme-surface: #21172b;
+–theme-surface-raised: #2b1d36;
+–theme-surface-hover: #352440;
+–theme-surface-inset: #190f22;
+
+–theme-border: #493751;
+–theme-border-strong: #66516f;
+
+–theme-gold: #c9a96e;
+–theme-gold-light: #e4d0a1;
+–theme-gold-deep: #a9874d;
+–theme-gold-contrast: #100a17;
+
+–theme-text: #f7f1fa;
+–theme-text-secondary: #d9cce4;
+–theme-text-muted: #b7acbf;
+–theme-text-inverse: #100a17;
+
+–theme-link: #e4d0a1;
+–theme-link-hover: #f0dfb5;
+–theme-focus: #e4d0a1;
+–theme-accent: #c9a96e;
+–theme-accent-soft: rgb(201 169 110 / 12%);
+–theme-accent-border: rgb(201 169 110 / 35%);
+–theme-accent-text: #e4d0a1;
+
+–theme-button-bg: #c9a96e;
+–theme-button-text: #100a17;
+–theme-button-hover: #e4d0a1;
+–theme-input-bg: #190f22;
+–theme-input-border: #493751;
+–theme-table-border: #493751;
+–theme-overlay: rgb(8 5 13 / 72%);
+}
+
+/* --------------------------------------
+3. ROYAL BURGUNDY THEME
+-------------------------------------- */
+
+:root[data-theme="burgundy"],
+[data-theme="burgundy"] {
+color-scheme: dark;
+
+–theme-bg: #160a12;
+–theme-bg-soft: #21101b;
+–theme-surface: #2d1724;
+–theme-surface-raised: #3a1e2e;
+–theme-surface-hover: #482438;
+–theme-surface-inset: #1e1019;
+
+–theme-border: #573247;
+–theme-border-strong: #75465e;
+
+–theme-gold: #d4b477;
+–theme-gold-light: #ead7a9;
+–theme-gold-deep: #a98448;
+–theme-gold-contrast: #160a12;
+
+–theme-text: #fbf3f6;
+–theme-text-secondary: #e7d1dc;
+–theme-text-muted: #c5adbb;
+–theme-text-inverse: #160a12;
+
+–theme-link: #ead7a9;
+–theme-link-hover: #f4e5c3;
+–theme-focus: #ead7a9;
+–theme-accent: #d4b477;
+–theme-accent-soft: rgb(212 180 119 / 12%);
+–theme-accent-border: rgb(212 180 119 / 35%);
+–theme-accent-text: #ead7a9;
+
+–theme-button-bg: #d4b477;
+–theme-button-text: #160a12;
+–theme-button-hover: #ead7a9;
+–theme-input-bg: #1e1019;
+–theme-input-border: #573247;
+–theme-table-border: #573247;
+
+–theme-gradient-royal:
+linear-gradient(135deg, #160a12 0%, #351528 55%, #55243b 100%);
+}
+
+/* --------------------------------------
+4. ROYAL SAPPHIRE THEME
+-------------------------------------- */
+
+:root[data-theme="sapphire"],
+[data-theme="sapphire"] {
+color-scheme: dark;
+
+–theme-bg: #091321;
+–theme-bg-soft: #0d1b2d;
+–theme-surface: #13243a;
+–theme-surface-raised: #1b304b;
+–theme-surface-hover: #25405f;
+–theme-surface-inset: #0b192a;
+
+–theme-border: #304862;
+–theme-border-strong: #496785;
+
+–theme-gold: #d1b777;
+–theme-gold-light: #ecdbad;
+–theme-gold-deep: #a58a4d;
+–theme-gold-contrast: #091321;
+
+–theme-text: #f1f5fc;
+–theme-text-secondary: #cfdaeb;
+–theme-text-muted: #aabbd2;
+–theme-text-inverse: #091321;
+
+–theme-link: #ecdbad;
+–theme-link-hover: #f5e9c9;
+–theme-focus: #ecdbad;
+–theme-accent: #d1b777;
+–theme-accent-soft: rgb(209 183 119 / 12%);
+–theme-accent-border: rgb(209 183 119 / 35%);
+–theme-accent-text: #ecdbad;
+
+–theme-button-bg: #d1b777;
+–theme-button-text: #091321;
+–theme-button-hover: #ecdbad;
+–theme-input-bg: #0b192a;
+–theme-input-border: #304862;
+–theme-table-border: #304862;
+
+–theme-gradient-royal:
+linear-gradient(135deg, #091321 0%, #142947 55%, #1e3d63 100%);
+}
+
+/* --------------------------------------
+5. LIGHT THEME
+Suitable for official forms, data tables and document pages.
+-------------------------------------- */
+
+:root[data-theme="light"],
+[data-theme="light"] {
+color-scheme: light;
+
+–theme-bg: #ffffff;
+–theme-bg-soft: #f7f5f1;
+–theme-surface: #ffffff;
+–theme-surface-raised: #f8f6f2;
+–theme-surface-hover: #f0ece5;
+–theme-surface-inset: #f6f4f0;
+
+–theme-border: #ddd6ca;
+–theme-border-strong: #b8ad9d;
+–theme-border-subtle: rgb(60 45 30 / 12%);
+
+–theme-gold: #8c6b32;
+–theme-gold-light: #71521f;
+–theme-gold-deep: #62471d;
+–theme-gold-contrast: #ffffff;
+
+–theme-text: #201b24;
+–theme-text-secondary: #48404c;
+–theme-text-muted: #68606b;
+–theme-text-inverse: #ffffff;
+
+–theme-link: #654b80;
+–theme-link-hover: #42285e;
+–theme-focus: #71521f;
+–theme-selection-bg: #e7d5ad;
+–theme-selection-text: #201b24;
+
+–theme-success: #176c45;
+–theme-success-bg: #e8f5ed;
+–theme-warning: #815200;
+–theme-warning-bg: #fff4d9;
+–theme-danger: #a52232;
+–theme-danger-bg: #fcebed;
+–theme-info: #225d91;
+–theme-info-bg: #eaf3fc;
+
+–theme-shadow-sm: 0 2px 8px rgb(31 24 36 / 6%);
+–theme-shadow-md: 0 10px 30px rgb(31 24 36 / 9%);
+–theme-shadow-lg: 0 20px 55px rgb(31 24 36 / 12%);
+–theme-shadow-gold: 0 8px 24px rgb(140 107 50 / 10%);
+
+–theme-accent: #8c6b32;
+–theme-accent-soft: rgb(140 107 50 / 9%);
+–theme-accent-border: rgb(140 107 50 / 30%);
+–theme-accent-text: #71521f;
+
+–theme-button-bg: #654b80;
+–theme-button-text: #ffffff;
+–theme-button-hover: #503768;
+–theme-input-bg: #ffffff;
+–theme-input-border: #cfc5b7;
+–theme-table-border: #ddd6ca;
+–theme-overlay: rgb(20 15 25 / 55%);
+
+–theme-gradient-royal:
+linear-gradient(135deg, #ffffff 0%, #f7f3ec 60%, #efe6d5 100%);
+}
+
+/* --------------------------------------
+6. WARM IVORY THEME
+Suitable for editorial pages and official reading material.
+-------------------------------------- */
+
+:root[data-theme="ivory"],
+[data-theme="ivory"] {
+color-scheme: light;
+
+–theme-bg: #faf7f0;
+–theme-bg-soft: #f2ede2;
+–theme-surface: #fffdf8;
+–theme-surface-raised: #f5efe3;
+–theme-surface-hover: #eee4d3;
+–theme-surface-inset: #f7f2e8;
+
+–theme-border: #ded2bd;
+–theme-border-strong: #bca787;
+
+–theme-gold: #86632d;
+–theme-gold-light: #705022;
+–theme-gold-deep: #5e421c;
+–theme-gold-contrast: #ffffff;
+
+–theme-text: #29211a;
+–theme-text-secondary: #504438;
+–theme-text-muted: #716557;
+–theme-text-inverse: #ffffff;
+
+–theme-link: #674b76;
+–theme-link-hover: #483156;
+–theme-focus: #705022;
+–theme-accent: #86632d;
+–theme-accent-soft: rgb(134 99 45 / 9%);
+–theme-accent-border: rgb(134 99 45 / 30%);
+–theme-accent-text: #705022;
+
+–theme-button-bg: #674b76;
+–theme-button-text: #ffffff;
+–theme-button-hover: #50365f;
+–theme-input-bg: #fffdf8;
+–theme-input-border: #ded2bd;
+–theme-table-border: #ded2bd;
+–theme-overlay: rgb(25 18 12 / 55%);
+}
+
+/* --------------------------------------
+7. TOPIC ACCENTS
+Topic attributes customize accents without dictating layout.
+Use data-page on the body or a page-level wrapper.
+-------------------------------------- */
+
+/* Home */
+
+[data-page="home"] {
+–theme-accent: var(–theme-gold);
+–theme-accent-soft: rgb(201 169 110 / 12%);
+–theme-accent-border: rgb(201 169 110 / 35%);
+–theme-accent-text: var(–theme-gold-light);
+}
+
+/* Education */
+
+[data-page="education"] {
+–theme-accent: #8e80dc;
+–theme-accent-soft: rgb(142 128 220 / 12%);
+–theme-accent-border: rgb(142 128 220 / 35%);
+–theme-accent-text: #c9c1ff;
+}
+
+/* Admissions */
+
+[data-page="admissions"] {
+–theme-accent: #d2b16f;
+–theme-accent-soft: rgb(210 177 111 / 12%);
+–theme-accent-border: rgb(210 177 111 / 35%);
+–theme-accent-text: #ead6a6;
+}
+
+/* Medical */
+
+[data-page="medical"] {
+–theme-accent: #69bfa8;
+–theme-accent-soft: rgb(105 191 168 / 12%);
+–theme-accent-border: rgb(105 191 168 / 35%);
+–theme-accent-text: #a8e2d1;
+}
+
+/* Colleges */
+
+[data-page="colleges"] {
+–theme-accent: #d1b477;
+–theme-accent-soft: rgb(209 180 119 / 12%);
+–theme-accent-border: rgb(209 180 119 / 35%);
+–theme-accent-text: #ead8ad;
+}
+
+/* Documents */
+
+[data-page="documents"] {
+–theme-accent: #a7b7cb;
+–theme-accent-soft: rgb(167 183 203 / 12%);
+–theme-accent-border: rgb(167 183 203 / 35%);
+–theme-accent-text: #d1dbe8;
+}
+
+/* Study abroad */
+
+[data-page="study-abroad"] {
+–theme-accent: #79b9e7;
+–theme-accent-soft: rgb(121 185 231 / 12%);
+–theme-accent-border: rgb(121 185 231 / 35%);
+–theme-accent-text: #b8ddf7;
+}
+
+/* Careers */
+
+[data-page="careers"] {
+–theme-accent: #83c39b;
+–theme-accent-soft: rgb(131 195 155 / 12%);
+–theme-accent-border: rgb(131 195 155 / 35%);
+–theme-accent-text: #b5e4c3;
+}
+
+/* Applications */
+
+[data-page="applications"] {
+–theme-accent: #d8ad83;
+–theme-accent-soft: rgb(216 173 131 / 12%);
+–theme-accent-border: rgb(216 173 131 / 35%);
+–theme-accent-text: #f0d0ad;
+}
+
+/* Accounts */
+
+[data-page="accounts"] {
+–theme-accent: #b7a1e8;
+–theme-accent-soft: rgb(183 161 232 / 12%);
+–theme-accent-border: rgb(183 161 232 / 35%);
+–theme-accent-text: #d9ccff;
+}
+
+/* Admin */
+
+[data-page="admin"] {
+–theme-accent: #c7a9d9;
+–theme-accent-soft: rgb(199 169 217 / 12%);
+–theme-accent-border: rgb(199 169 217 / 35%);
+–theme-accent-text: #e3d1ee;
+}
+
+/* Legal and official pages */
+
+[data-page="legal"],
+[data-page="official-documents"] {
+–theme-accent: #b9ad9a;
+–theme-accent-soft: rgb(185 173 154 / 12%);
+–theme-accent-border: rgb(185 173 154 / 35%);
+–theme-accent-text: #ddd1bd;
+}
+
+/* --------------------------------------
+8. LIGHT-THEME TOPIC ACCENT OVERRIDES
+Maintain readable contrast on light backgrounds.
+-------------------------------------- */
+
+[data-theme="light"] [data-page="education"],
+[data-theme="ivory"] [data-page="education"] {
+–theme-accent: #6455b2;
+–theme-accent-text: #514398;
+}
+
+[data-theme="light"] [data-page="medical"],
+[data-theme="ivory"] [data-page="medical"] {
+–theme-accent: #176c58;
+–theme-accent-text: #145745;
+}
+
+[data-theme="light"] [data-page="careers"],
+[data-theme="ivory"] [data-page="careers"] {
+–theme-accent: #286b42;
+–theme-accent-text: #205535;
+}
+
+[data-theme="light"] [data-page="study-abroad"],
+[data-theme="ivory"] [data-page="study-abroad"] {
+–theme-accent: #245e92;
+–theme-accent-text: #194b78;
+}
+
+[data-theme="light"] [data-page="accounts"],
+[data-theme="ivory"] [data-page="accounts"] {
+–theme-accent: #654b96;
+–theme-accent-text: #523a80;
+}
+
+/* --------------------------------------
+9. THEME-AWARE PAGE UTILITIES
+Opt-in helpers only. Existing layouts remain unchanged.
+-------------------------------------- */
+
+.theme-surface {
+background-color: var(–theme-surface);
+color: var(–theme-text);
+}
+
+.theme-surface-raised {
+background-color: var(–theme-surface-raised);
+color: var(–theme-text);
+}
+
+.theme-surface-inset {
+background-color: var(–theme-surface-inset);
+color: var(–theme-text);
+}
+
+.theme-page-background {
+background-color: var(–theme-bg);
+color: var(–theme-text);
+}
+
+.theme-accent-surface {
+background-color: var(–theme-accent-soft);
+border: 1px solid var(–theme-accent-border);
+color: var(–theme-text);
+}
+
+.theme-accent-text {
+color: var(–theme-accent-text);
+}
+
+.theme-muted-text {
+color: var(–theme-text-muted);
+}
+
+.theme-border {
+border: 1px solid var(–theme-border);
+}
+
+.theme-divider {
+border: 0;
+border-block-start: 1px solid var(–theme-border);
+}
+
+.theme-shadow {
+box-shadow: var(–theme-shadow-md);
+}
+
+.theme-shadow-gold {
+box-shadow: var(–theme-shadow-gold);
+}
+
+.theme-gradient-royal {
+background: var(–theme-gradient-royal);
+color: var(–theme-text);
+}
+
+.theme-gradient-gold {
+background: var(–theme-gradient-gold);
+color: var(–theme-gold-contrast);
+}
+
+.theme-gradient-burgundy {
+background: var(–theme-gradient-burgundy);
+color: var(–theme-text);
+}
+
+.theme-gradient-sapphire {
+background: var(–theme-gradient-sapphire);
+color: var(–theme-text);
+}
+
+/* --------------------------------------
+10. THEME-AWARE LINKS
+Only applies to elements opting into the theme-link class.
+-------------------------------------- */
+
+.theme-link {
+color: var(–theme-link);
+text-decoration-thickness: from-font;
+text-underline-offset: 0.18em;
+}
+
+.theme-link:hover {
+color: var(–theme-link-hover);
+}
+
+.theme-link:focus-visible {
+outline: 2px solid var(–theme-focus);
+outline-offset: 3px;
+}
+
+/* --------------------------------------
+11. THEME-AWARE BUTTONS
+Does not restyle all buttons globally.
+-------------------------------------- */
+
+.theme-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+max-width: 100%;
+padding: 0.7rem 1.1rem;
+border: 1px solid transparent;
+border-radius: var(–theme-radius-md);
+background: var(–theme-button-bg);
+color: var(–theme-button-text);
+font: inherit;
+font-weight: 600;
+line-height: 1.4;
+text-align: center;
+text-decoration: none;
+cursor: pointer;
+transition:
+background-color var(–theme-duration-normal) var(–theme-ease),
+border-color var(–theme-duration-normal) var(–theme-ease),
+transform var(–theme-duration-normal) var(–theme-ease);
+}
+
+.theme-button:hover {
+background: var(–theme-button-hover);
+}
+
+.theme-button:focus-visible {
+outline: 2px solid var(–theme-focus);
+outline-offset: 3px;
+}
+
+.theme-button:disabled,
+.theme-button[aria-disabled="true"] {
+opacity: 0.65;
+cursor: not-allowed;
+}
+
+.theme-button–outline {
+border-color: var(–theme-accent-border);
+background: transparent;
+color: var(–theme-text);
+}
+
+.theme-button–outline:hover {
+background: var(–theme-accent-soft);
+}
+
+.theme-button–subtle {
+border-color: var(–theme-border);
+background: var(–theme-surface);
+color: var(–theme-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+.theme-button {
+transition: none;
+}
+}
+
+/* --------------------------------------
+12. THEME-AWARE FORM CONTROLS
+Opt-in class; forms.css can provide more specific styling.
+-------------------------------------- */
+
+.theme-input {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+padding: 0.7rem 0.85rem;
+border: 1px solid var(–theme-input-border);
+border-radius: var(–theme-radius-md);
+background: var(–theme-input-bg);
+color: var(–theme-text);
+font: inherit;
+}
+
+.theme-input::placeholder {
+color: var(–theme-text-muted);
+opacity: 1;
+}
+
+.theme-input:focus-visible {
+outline: 2px solid var(–theme-focus);
+outline-offset: 2px;
+}
+
+.theme-input:disabled {
+opacity: 0.65;
+cursor: not-allowed;
+}
+
+/* --------------------------------------
+13. THEME-AWARE CARDS
+Opt-in class; cards.css owns card layouts and variants.
+-------------------------------------- */
+
+.theme-card {
+min-width: 0;
+border: 1px solid var(–theme-border);
+border-radius: var(–theme-radius-lg);
+background: var(–theme-surface);
+color: var(–theme-text);
+}
+
+.theme-card–raised {
+background: var(–theme-surface-raised);
+box-shadow: var(–theme-shadow-sm);
+}
+
+.theme-card–accent {
+border-color: var(–theme-accent-border);
+background:
+linear-gradient(
+145deg,
+var(–theme-accent-soft),
+var(–theme-surface)
+);
+}
+
+/* --------------------------------------
+14. THEME-AWARE TABLES
+Tables.css remains responsible for table structure.
+-------------------------------------- */
+
+.theme-table {
+width: 100%;
+max-width: 100%;
+border-collapse: collapse;
+color: var(–theme-text);
+}
+
+.theme-table th,
+.theme-table td {
+border-bottom: 1px solid var(–theme-table-border);
+}
+
+.theme-table thead th {
+background: var(–theme-surface-raised);
+color: var(–theme-text);
+}
+
+.theme-table tbody tr:hover {
+background: var(–theme-accent-soft);
+}
+
+/* --------------------------------------
+15. FEEDBACK AND STATUS SURFACES
+-------------------------------------- */
+
+.theme-status {
+padding: 0.75rem 1rem;
+border: 1px solid var(–theme-border);
+border-radius: var(–theme-radius-md);
+background: var(–theme-surface);
+color: var(–theme-text);
+}
+
+.theme-status–success {
+border-color: var(–theme-success);
+background: var(–theme-success-bg);
+color: var(–theme-success);
+}
+
+.theme-status–warning {
+border-color: var(–theme-warning);
+background: var(–theme-warning-bg);
+color: var(–theme-warning);
+}
+
+.theme-status–danger {
+border-color: var(–theme-danger);
+background: var(–theme-danger-bg);
+color: var(–theme-danger);
+}
+
+.theme-status–info {
+border-color: var(–theme-info);
+background: var(–theme-info-bg);
+color: var(–theme-info);
+}
+
+/* --------------------------------------
+16. THEME-AWARE OVERLAYS
+-------------------------------------- */
+
+.theme-overlay {
+background: var(–theme-overlay);
+}
+
+/* --------------------------------------
+17. TEXT SELECTION
+-------------------------------------- */
+
+::selection {
+background: var(–theme-selection-bg);
+color: var(–theme-selection-text);
+}
+
+/* --------------------------------------
+18. ACCESSIBILITY AND FORCED COLORS
+-------------------------------------- */
+
+:where(.theme-button, .theme-input, .theme-link):focus-visible {
+outline-color: var(–theme-focus);
+}
+
+@media (forced-colors: active) {
+.theme-button,
+.theme-input,
+.theme-card,
+.theme-status {
+forced-color-adjust: auto;
+}
+
+.theme-button:focus-visible,
+.theme-input:focus-visible,
+.theme-link:focus-visible {
+outline: 2px solid Highlight;
+}
+}
+
+/* --------------------------------------
+19. REDUCED MOTION
+-------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+*,
+*::before,
+*::after {
+scroll-behavior: auto !important;
+}
+
+.theme-button {
+transition: none;
+}
+}
+
+/* --------------------------------------
+20. PRINT OVERRIDES
+Dedicated print.css controls the final printed appearance.
+-------------------------------------- */
+
+@media print {
+.theme-shadow,
+.theme-shadow-gold,
+.theme-card–raised {
+box-shadow: none !important;
+}
+
+.theme-button {
+transition: none;
+}
+}
+
+/* =========================================================
+END OF MEDORBITS ROYAL ADAPTIVE THEME SYSTEM
+========================================================= */

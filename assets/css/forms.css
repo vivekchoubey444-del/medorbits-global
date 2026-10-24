@@ -1,1 +1,1388 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+   MEDORBITS | OFFICIAL FORM DESIGN SYSTEM
+   File: assets/css/forms.css
+   Design:
+   Royal Aubergine + Champagne Gold
+   Formal • Professional • Accessible • Responsive
+   Supports:
+   - Admissions and counselling forms
+   - MBBS / BDS / medical application preparation
+   - Applicant information and contact details
+   - Document checklists and upload controls
+   - Multi-step forms and progress indicators
+   - Job and internship registration
+   - Consent and declaration sections
+   - Review and submission screens
+   - Validation messages and status notices
+   - Mobile, tablet, desktop and print layouts
+   Requires:
+   assets/css/tokens.css
+   assets/css/font.css
+   assets/css/accessibility.css
+   This file provides presentation only.
+   Validation, secure uploads, persistence, authentication,
+   authorization and submission handling require separate code.
+   ========================================================= */
+/* =========================================================
+   1. FORM DESIGN TOKENS
+   ========================================================= */
+:root {
+  --form-bg: var(--bg, #100a17);
+  --form-surface: var(--panel, #21172b);
+  --form-surface-raised: var(--panel-2, #2b1d36);
+  --form-surface-soft: var(--bg-elevated, #191023);
+  --form-text: var(--text, #f7f1fa);
+  --form-heading: var(--text-strong, #fffaff);
+  --form-muted: var(--muted, #b7acbf);
+  --form-border: var(--border, #493751);
+  --form-border-strong: var(--border-strong, #705a7f);
+  --form-gold: var(--mo-brand, #c9a96e);
+  --form-gold-light: var(--mo-brand-light, #e4d0a1);
+  --form-gold-dark: var(--mo-brand-dark, #967642);
+  --form-success: var(--success, #a8d7b1);
+  --form-success-bg: var(--success-bg, #17291f);
+  --form-warning: var(--warning, #f0cc83);
+  --form-warning-bg: var(--warning-bg, #302516);
+  --form-danger: var(--danger, #ffaaaa);
+  --form-danger-bg: var(--danger-bg, #351b24);
+  --form-info: var(--info, #a8c9f5);
+  --form-info-bg: var(--info-bg, #192638);
+  --form-radius-sm: 8px;
+  --form-radius-md: 12px;
+  --form-radius-lg: 18px;
+  --form-radius-xl: 24px;
+  --form-control-height: 48px;
+  --form-control-min-height: 48px;
+  --form-control-padding-x: 14px;
+  --form-control-padding-y: 12px;
+  --form-section-gap: 28px;
+  --form-field-gap: 8px;
+  --form-grid-gap: 20px;
+  --form-focus-ring: 0 0 0 3px rgb(228 208 161 / 28%);
+  --form-shadow: 0 16px 40px rgb(0 0 0 / 18%);
+  --form-transition: 180ms ease;
+  --form-content-width: 960px;
+  --form-wide-width: 1120px;
+}
+/* =========================================================
+   2. FORM CONTAINERS
+   ========================================================= */
+.form-page,
+.application-page,
+.registration-page,
+.enquiry-page {
+  width: 100%;
+  min-width: 0;
+  color: var(--form-text);
+  font-family: var(--font-primary, "DM Sans", sans-serif);
+}
+.form-container {
+  width: min(
+    calc(100% - 2 * var(--page-gutter, 24px)),
+    var(--form-content-width)
+  );
+  margin-inline: auto;
+}
+.form-container--wide {
+  max-width: var(--form-wide-width);
+}
+.form-container--narrow {
+  max-width: 720px;
+}
+.form-shell {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(18px, 4vw, 38px);
+  background: var(--form-surface);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-xl);
+  box-shadow: var(--form-shadow);
+}
+.form-shell--plain {
+  box-shadow: none;
+}
+.form-shell--elevated {
+  background:
+    linear-gradient(
+      145deg,
+      rgb(201 169 110 / 5%),
+      transparent 45%
+    ),
+    var(--form-surface);
+}
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-section-gap);
+  min-width: 0;
+}
+.form-section {
+  min-width: 0;
+  padding: clamp(16px, 2.5vw, 26px);
+  background: var(--form-surface-soft);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-lg);
+}
+.form-section + .form-section {
+  margin-block-start: 0;
+}
+.form-section--highlight {
+  border-color: rgb(201 169 110 / 45%);
+}
+.form-section--plain {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+/* =========================================================
+   3. FORM HEADER AND OFFICIAL-STYLE INTRODUCTION
+   ========================================================= */
+.form-header {
+  margin-block-end: clamp(24px, 4vw, 38px);
+  text-align: center;
+}
+.form-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-block-end: 16px;
+  color: var(--form-gold-light);
+  background: var(--form-surface-raised);
+  border: 1px solid rgb(201 169 110 / 48%);
+  border-radius: 16px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+.form-kicker {
+  display: block;
+  margin-block-end: 10px;
+  color: var(--form-gold-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+.form-title {
+  max-width: 22ch;
+  margin: 0 auto 12px;
+  color: var(--form-heading);
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.form-description {
+  max-width: 68ch;
+  margin: 0 auto;
+  color: var(--form-muted);
+  font-size: 0.98rem;
+  line-height: 1.8;
+}
+.form-reference {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 18px;
+  margin-block-start: 18px;
+  color: var(--form-muted);
+  font-size: 0.8rem;
+}
+.form-reference strong {
+  color: var(--form-text);
+  font-weight: 700;
+}
+/* =========================================================
+   4. SECTION HEADINGS
+   ========================================================= */
+.form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-block-end: 24px;
+  padding-block-end: 17px;
+  border-block-end: 1px solid var(--form-border);
+}
+.form-section-number {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--form-gold-light);
+  background: rgb(201 169 110 / 10%);
+  border: 1px solid rgb(201 169 110 / 35%);
+  border-radius: 11px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.form-section-title {
+  margin: 0;
+  color: var(--form-heading);
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.2rem, 2.5vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+.form-section-description {
+  margin: 5px 0 0;
+  color: var(--form-muted);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+/* =========================================================
+   5. RESPONSIVE FIELD GRID
+   ========================================================= */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--form-grid-gap);
+  min-width: 0;
+}
+.form-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.form-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.form-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--form-field-gap);
+  min-width: 0;
+}
+.form-field--full {
+  grid-column: 1 / -1;
+}
+.form-field--compact {
+  gap: 5px;
+}
+.form-field label,
+.form-field-label,
+.form-label,
+.form-field legend {
+  color: var(--form-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+.form-field label .required,
+.form-required {
+  color: var(--form-danger);
+}
+.form-field label .optional,
+.form-optional {
+  margin-inline-start: 5px;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.form-help,
+.form-hint,
+.form-field small {
+  display: block;
+  margin: 0;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.form-help a,
+.form-hint a {
+  color: var(--form-gold-light);
+  text-underline-offset: 3px;
+}
+/* =========================================================
+   6. TEXT INPUTS AND SELECT CONTROLS
+   ========================================================= */
+.form-control,
+.form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.form-field select,
+.form-field textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--form-control-min-height);
+  padding: var(--form-control-padding-y) var(--form-control-padding-x);
+  color: var(--form-text);
+  background: var(--form-bg);
+  border: 1px solid var(--form-border-strong);
+  border-radius: var(--form-radius-md);
+  outline: none;
+  font-family: var(--font-primary, "DM Sans", sans-serif);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 10%);
+  transition:
+    border-color var(--form-transition),
+    box-shadow var(--form-transition),
+    background-color var(--form-transition);
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder,
+.form-control::placeholder {
+  color: var(--form-muted);
+  opacity: 0.85;
+}
+.form-field input:hover,
+.form-field select:hover,
+.form-field textarea:hover,
+.form-control:hover {
+  border-color: var(--form-gold-dark);
+}
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus,
+.form-control:focus {
+  border-color: var(--form-gold-light);
+  box-shadow: var(--form-focus-ring);
+}
+.form-field input:disabled,
+.form-field select:disabled,
+.form-field textarea:disabled,
+.form-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.form-field textarea,
+textarea.form-control {
+  min-height: 130px;
+  resize: vertical;
+}
+.form-field select,
+select.form-control {
+  cursor: pointer;
+}
+.form-field select option,
+select.form-control option {
+  color: var(--form-text);
+  background: var(--form-surface);
+}
+.form-field input[type="date"],
+.form-field input[type="datetime-local"],
+.form-field input[type="month"],
+.form-field input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
+.form-field input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+.form-field input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--form-muted);
+  font: inherit;
+  font-size: 0.875rem;
+}
+.form-field input[type="file"]::file-selector-button {
+  min-height: 38px;
+  margin-inline-end: 12px;
+  padding: 8px 12px;
+  color: var(--form-gold-light);
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border-strong);
+  border-radius: var(--form-radius-sm);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--form-transition),
+    border-color var(--form-transition);
+}
+.form-field input[type="file"]::file-selector-button:hover {
+  background: var(--form-surface);
+  border-color: var(--form-gold);
+}
+/* =========================================================
+   7. INPUT ADDONS
+   For phone codes, currency, search and reference prefixes
+   ========================================================= */
+.form-input-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+.form-input-addon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  color: var(--form-muted);
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border-strong);
+  border-radius: var(--form-radius-md) 0 0 var(--form-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.form-input-group input,
+.form-input-group select {
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+  border-radius: 0 var(--form-radius-md) var(--form-radius-md) 0;
+}
+.form-input-group--reverse .form-input-addon {
+  order: 2;
+  border-radius: 0 var(--form-radius-md) var(--form-radius-md) 0;
+}
+.form-input-group--reverse input {
+  border-radius: var(--form-radius-md) 0 0 var(--form-radius-md);
+}
+/* =========================================================
+   8. CHECKBOXES AND RADIO BUTTONS
+   ========================================================= */
+.form-choice-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.form-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--form-transition),
+    background-color var(--form-transition);
+}
+.form-choice:hover {
+  background: var(--form-surface-raised);
+  border-color: var(--form-gold-dark);
+}
+.form-choice input[type="checkbox"],
+.form-choice input[type="radio"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: var(--form-gold);
+  cursor: pointer;
+}
+.form-choice-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--form-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.form-choice-description {
+  color: var(--form-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.65;
+}
+.form-inline-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.form-inline-choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--form-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.form-inline-choice input {
+  accent-color: var(--form-gold);
+}
+/* =========================================================
+   9. DOCUMENT UPLOAD CARDS
+   Presentation only; backend must validate uploaded files.
+   ========================================================= */
+.document-upload-list {
+  display: grid;
+  gap: 14px;
+}
+.document-upload {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  min-width: 0;
+  padding: 18px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-lg);
+}
+.document-upload-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--form-gold-light);
+  background: rgb(201 169 110 / 10%);
+  border: 1px solid rgb(201 169 110 / 28%);
+  border-radius: 12px;
+  font-size: 1.05rem;
+}
+.document-upload-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.document-upload-title {
+  margin: 0 0 5px;
+  color: var(--form-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.document-upload-description {
+  margin: 0 0 12px;
+  color: var(--form-muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.document-upload input[type="file"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.8rem;
+}
+.document-upload-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-block-start: 10px;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.document-upload-status.is-complete {
+  color: var(--form-success);
+}
+.document-upload-status.is-pending {
+  color: var(--form-warning);
+}
+.document-upload.is-invalid {
+  border-color: var(--form-danger);
+}
+/* =========================================================
+   10. DOCUMENT CHECKLIST
+   ========================================================= */
+.document-checklist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.document-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-md);
+}
+.document-checklist-item input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-block-start: 3px;
+  accent-color: var(--form-gold);
+}
+.document-checklist-item label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--form-text);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.document-checklist-item .document-note {
+  display: block;
+  margin-block-start: 4px;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+}
+/* =========================================================
+   11. FORM NOTICES AND DECLARATIONS
+   ========================================================= */
+.form-notice {
+  padding: 15px 17px;
+  color: var(--form-text);
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border);
+  border-inline-start: 4px solid var(--form-info);
+  border-radius: var(--form-radius-md);
+  font-size: 0.875rem;
+  line-height: 1.75;
+}
+.form-notice strong {
+  display: block;
+  margin-block-end: 4px;
+  color: var(--form-heading);
+}
+.form-notice--info {
+  border-inline-start-color: var(--form-info);
+  background: var(--form-info-bg);
+}
+.form-notice--warning {
+  border-inline-start-color: var(--form-warning);
+  background: var(--form-warning-bg);
+}
+.form-notice--success {
+  border-inline-start-color: var(--form-success);
+  background: var(--form-success-bg);
+}
+.form-notice--danger {
+  border-inline-start-color: var(--form-danger);
+  background: var(--form-danger-bg);
+}
+.form-declaration {
+  padding: 18px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-border-strong);
+  border-radius: var(--form-radius-lg);
+}
+.form-declaration-title {
+  margin: 0 0 10px;
+  color: var(--form-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.form-declaration-text {
+  margin: 0;
+  color: var(--form-muted);
+  font-size: 0.85rem;
+  line-height: 1.85;
+}
+.form-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-block-start: 15px;
+}
+.form-consent input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-block-start: 3px;
+  accent-color: var(--form-gold);
+}
+.form-consent label {
+  color: var(--form-text);
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+.form-consent a {
+  color: var(--form-gold-light);
+  text-underline-offset: 3px;
+}
+/* =========================================================
+   12. VALIDATION STATES
+   Apply .is-invalid or .is-valid through application logic.
+   ========================================================= */
+.form-field.is-invalid input,
+.form-field.is-invalid select,
+.form-field.is-invalid textarea,
+.form-field input.is-invalid,
+.form-field select.is-invalid,
+.form-field textarea.is-invalid {
+  border-color: var(--form-danger);
+}
+.form-field.is-invalid input:focus,
+.form-field.is-invalid select:focus,
+.form-field.is-invalid textarea:focus,
+.form-field input.is-invalid:focus,
+.form-field select.is-invalid:focus,
+.form-field textarea.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgb(255 170 170 / 18%);
+}
+.form-field.is-valid input,
+.form-field.is-valid select,
+.form-field.is-valid textarea {
+  border-color: var(--form-success);
+}
+.form-error {
+  display: block;
+  margin: 0;
+  color: var(--form-danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.form-success-message {
+  display: block;
+  margin: 0;
+  color: var(--form-success);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.form-error-summary {
+  padding: 17px;
+  color: var(--form-danger);
+  background: var(--form-danger-bg);
+  border: 1px solid rgb(255 170 170 / 40%);
+  border-radius: var(--form-radius-md);
+}
+.form-error-summary h2,
+.form-error-summary h3 {
+  margin: 0 0 10px;
+  color: var(--form-danger);
+  font-family: var(--font-primary, "DM Sans", sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.form-error-summary ul {
+  margin: 0;
+  padding-inline-start: 22px;
+}
+.form-error-summary a {
+  color: var(--form-danger);
+  text-underline-offset: 3px;
+}
+/* =========================================================
+   13. MULTI-STEP APPLICATION FORMS
+   ========================================================= */
+.form-progress {
+  margin-block-end: 30px;
+}
+.form-progress-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-block-end: 10px;
+}
+.form-progress-title {
+  margin: 0;
+  color: var(--form-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.form-progress-value {
+  color: var(--form-gold-light);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.form-progress-track {
+  overflow: hidden;
+  width: 100%;
+  height: 7px;
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-pill, 999px);
+}
+.form-progress-fill {
+  display: block;
+  width: var(--progress, 0%);
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--form-gold-dark),
+    var(--form-gold-light)
+  );
+  border-radius: inherit;
+  transition: width 240ms ease;
+}
+.form-step-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.form-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--form-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-md);
+}
+.form-step-number {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--form-muted);
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.form-step-label {
+  display: block;
+  min-width: 0;
+  color: var(--form-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.form-step.is-active {
+  border-color: var(--form-gold);
+  background: rgb(201 169 110 / 6%);
+}
+.form-step.is-active .form-step-number {
+  color: var(--form-bg);
+  background: var(--form-gold-light);
+  border-color: var(--form-gold-light);
+}
+.form-step.is-active .form-step-label {
+  color: var(--form-gold-light);
+}
+.form-step.is-complete .form-step-number {
+  color: var(--form-bg);
+  background: var(--form-success);
+  border-color: var(--form-success);
+}
+.form-step.is-complete .form-step-label {
+  color: var(--form-success);
+}
+/* =========================================================
+   14. REVIEW AND SUMMARY PANEL
+   ========================================================= */
+.form-review {
+  overflow: hidden;
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-lg);
+}
+.form-review-heading {
+  padding: 15px 18px;
+  color: var(--form-heading);
+  background: var(--form-surface-raised);
+  border-block-end: 1px solid var(--form-border);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.form-review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+.form-review-item {
+  min-width: 0;
+  padding: 15px 18px;
+  border-block-end: 1px solid var(--form-border);
+}
+.form-review-item:nth-child(odd) {
+  border-inline-end: 1px solid var(--form-border);
+}
+.form-review-item dt {
+  margin-block-end: 5px;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.form-review-item dd {
+  margin: 0;
+  color: var(--form-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+/* =========================================================
+   15. FORM ACTIONS AND BUTTONS
+   ========================================================= */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block-start: 22px;
+  border-block-start: 1px solid var(--form-border);
+}
+.form-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.form-button,
+.form-actions button,
+.form-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  max-width: 100%;
+  padding: 12px 20px;
+  color: var(--form-text);
+  background: var(--form-surface-raised);
+  border: 1px solid var(--form-border-strong);
+  border-radius: var(--form-radius-md);
+  font-family: var(--font-primary, "DM Sans", sans-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--form-transition),
+    background-color var(--form-transition),
+    border-color var(--form-transition),
+    box-shadow var(--form-transition);
+}
+.form-button:hover,
+.form-actions button:hover,
+.form-actions .button:hover {
+  border-color: var(--form-gold);
+  transform: translateY(-1px);
+}
+.form-button:active,
+.form-actions button:active {
+  transform: translateY(0);
+}
+.form-button--primary {
+  color: #17101b;
+  background: linear-gradient(
+    135deg,
+    var(--form-gold-light),
+    var(--form-gold)
+  );
+  border-color: var(--form-gold);
+}
+.form-button--primary:hover {
+  color: #17101b;
+  background: var(--form-gold-light);
+}
+.form-button--secondary {
+  color: var(--form-text);
+  background: transparent;
+}
+.form-button--danger {
+  color: var(--form-danger);
+  background: var(--form-danger-bg);
+  border-color: rgb(255 170 170 / 35%);
+}
+.form-button:disabled,
+.form-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+.form-submit-note {
+  margin: 12px 0 0;
+  color: var(--form-muted);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+/* =========================================================
+   16. SUCCESS / CONFIRMATION SCREEN
+   ========================================================= */
+.form-confirmation {
+  padding: clamp(24px, 5vw, 44px);
+  text-align: center;
+  background: var(--form-surface);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius-xl);
+}
+.form-confirmation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  margin-block-end: 18px;
+  color: var(--form-success);
+  background: var(--form-success-bg);
+  border: 1px solid rgb(168 215 177 / 35%);
+  border-radius: 50%;
+  font-size: 1.5rem;
+}
+.form-confirmation h2 {
+  margin: 0 0 10px;
+  color: var(--form-heading);
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  line-height: 1.3;
+}
+.form-confirmation p {
+  max-width: 60ch;
+  margin: 0 auto 16px;
+  color: var(--form-muted);
+  line-height: 1.8;
+}
+.form-confirmation-reference {
+  display: inline-block;
+  margin-block: 8px 18px;
+  padding: 10px 16px;
+  color: var(--form-gold-light);
+  background: var(--form-bg);
+  border: 1px dashed var(--form-border-strong);
+  border-radius: var(--form-radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+/* =========================================================
+   17. TOPIC-SPECIFIC FORM ACCENTS
+   Set data-page on body or a wrapper element.
+   ========================================================= */
+[data-page="home"],
+[data-page="education"] {
+  --form-topic-accent: #bca7f5;
+}
+[data-page="admissions"],
+[data-page="applications"] {
+  --form-topic-accent: var(--form-gold-light);
+}
+[data-page="medical"],
+[data-page="colleges"] {
+  --form-topic-accent: #8ed7c2;
+}
+[data-page="documents"] {
+  --form-topic-accent: #d9c1f0;
+}
+[data-page="study-abroad"] {
+  --form-topic-accent: #8fc8ef;
+}
+[data-page="careers"] {
+  --form-topic-accent: #e7b68c;
+}
+[data-page="accounts"] {
+  --form-topic-accent: #c4b5fd;
+}
+[data-page="admin"] {
+  --form-topic-accent: #f0b4b4;
+}
+[data-page] .form-kicker {
+  color: var(--form-topic-accent, var(--form-gold-light));
+}
+[data-page] .form-section-number {
+  color: var(--form-topic-accent, var(--form-gold-light));
+  border-color: color-mix(
+    in srgb,
+    var(--form-topic-accent, var(--form-gold-light)) 40%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--form-topic-accent, var(--form-gold-light)) 9%,
+    transparent
+  );
+}
+/* =========================================================
+   18. ACCESSIBILITY AND KEYBOARD FOCUS
+   ========================================================= */
+.form-shell :focus-visible,
+.form-page :focus-visible,
+.application-page :focus-visible,
+.registration-page :focus-visible {
+  outline: 3px solid var(--form-gold-light);
+  outline-offset: 3px;
+}
+.form-field input:focus-visible,
+.form-field select:focus-visible,
+.form-field textarea:focus-visible,
+.form-choice input:focus-visible,
+.form-consent input:focus-visible {
+  outline: none;
+  box-shadow: var(--form-focus-ring);
+}
+.form-field label,
+.form-choice label,
+.form-consent label {
+  cursor: pointer;
+}
+.form-field input[type="checkbox"],
+.form-field input[type="radio"] {
+  accent-color: var(--form-gold);
+}
+.form-field [aria-invalid="true"] {
+  border-color: var(--form-danger);
+}
+.form-error[role="alert"] {
+  scroll-margin-block: 20px;
+}
+/* =========================================================
+   19. RESPONSIVE LAYOUT
+   ========================================================= */
+@media (max-width: 900px) {
+  .form-grid--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .form-grid--three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .form-step-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .form-container {
+    width: min(calc(100% - 28px), var(--form-content-width));
+  }
+  .form-shell {
+    padding: 16px;
+    border-radius: var(--form-radius-lg);
+  }
+  .form-section {
+    padding: 16px;
+    border-radius: var(--form-radius-md);
+  }
+  .form-header {
+    margin-block-end: 24px;
+  }
+  .form-grid,
+  .form-grid--three,
+  .form-grid--four,
+  .form-review-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-grid {
+    gap: 17px;
+  }
+  .form-section-heading {
+    gap: 11px;
+    margin-block-end: 19px;
+  }
+  .form-section-number {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+  .form-step-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-review-item:nth-child(odd) {
+    border-inline-end: 0;
+  }
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .form-actions-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .form-button,
+  .form-actions button,
+  .form-actions .button {
+    width: 100%;
+    padding-inline: 12px;
+  }
+  .document-upload {
+    padding: 14px;
+    gap: 11px;
+  }
+  .document-upload-icon {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (max-width: 380px) {
+  .form-container {
+    width: calc(100% - 20px);
+  }
+  .form-shell {
+    padding: 12px;
+  }
+  .form-section {
+    padding: 12px;
+  }
+  .form-actions-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-reference {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+/* =========================================================
+   20. REDUCED MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .form-button,
+  .form-actions button,
+  .form-control,
+  .form-field input,
+  .form-field select,
+  .form-field textarea,
+  .form-progress-fill,
+  .form-choice {
+    transition: none;
+  }
+  .form-button:hover,
+  .form-actions button:hover {
+    transform: none;
+  }
+}
+/* =========================================================
+   21. HIGH-CONTRAST MODE
+   ========================================================= */
+@media (forced-colors: active) {
+  .form-shell,
+  .form-section,
+  .form-choice,
+  .document-upload,
+  .form-notice,
+  .form-review,
+  .form-confirmation {
+    border: 1px solid CanvasText;
+  }
+  .form-field input,
+  .form-field select,
+  .form-field textarea,
+  .form-control,
+  .form-button,
+  .form-actions button {
+    border: 1px solid ButtonText;
+  }
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus,
+  .form-control:focus {
+    outline: 2px solid Highlight;
+  }
+  .form-progress-fill {
+    background: Highlight;
+  }
+}
+/* =========================================================
+   22. PRINT AND SAVE AS PDF
+   Produces a formal white document layout.
+   ========================================================= */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  .form-page,
+  .application-page,
+  .registration-page,
+  .enquiry-page,
+  .form-shell,
+  .form-section,
+  .form-confirmation {
+    color: #111 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .form-container,
+  .form-container--wide,
+  .form-container--narrow {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  .form-shell {
+    padding: 0;
+    border: 0;
+  }
+  .form-section {
+    margin-block-end: 16px;
+    padding: 14px;
+    border: 1px solid #bbb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .form-title,
+  .form-section-title,
+  .form-field label,
+  .form-label,
+  .form-declaration-title,
+  .form-review-item dd {
+    color: #111 !important;
+  }
+  .form-description,
+  .form-help,
+  .form-hint,
+  .form-field small,
+  .form-section-description,
+  .form-declaration-text,
+  .form-consent label {
+    color: #333 !important;
+  }
+  .form-field input,
+  .form-field select,
+  .form-field textarea,
+  .form-control {
+    color: #111 !important;
+    background: #fff !important;
+    border: 1px solid #777 !important;
+    box-shadow: none !important;
+  }
+  .form-field input::placeholder,
+  .form-field textarea::placeholder {
+    color: #666 !important;
+  }
+  .form-button,
+  .form-actions,
+  .form-progress,
+  .form-step-list,
+  .no-print,
+  .screen-only {
+    display: none !important;
+  }
+  .form-notice,
+  .form-declaration,
+  .form-review,
+  .document-upload,
+  .document-checklist-item {
+    color: #111 !important;
+    background: #fff !important;
+    border-color: #aaa !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .form-section-heading {
+    border-block-end-color: #bbb;
+  }
+  .form-section-number {
+    color: #111 !important;
+    background: #fff !important;
+    border-color: #777 !important;
+  }
+  .form-review-item {
+    border-color: #ccc !important;
+  }
+  a {
+    color: #111 !important;
+    text-decoration: underline;
+  }
+  input,
+  select,
+  textarea {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

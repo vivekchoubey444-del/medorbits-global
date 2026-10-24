@@ -1,13 +1,47 @@
+MedOrbits -- Python Project Configuration
+
+File: pyproject.toml
+
 [project]
 name = "medorbits"
 version = "0.1.0"
+description = "Python utilities, data validation, and quality checks for MedOrbits."
 requires-python = ">=3.12"
 dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
 pythonpath = ["."]
+addopts = [
+"-ra",
+"–strict-config",
+"–strict-markers",
+]
+strict_markers = true
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+src = ["python"]
+
+[tool.ruff.lint]
+select = [
+"E",    # pycodestyle errors
+"F",    # Pyflakes
+"W",    # pycodestyle warnings
+"I",    # Import sorting
+"UP",   # Python modernization
+"B",    # Common bug patterns
+"S",    # Security-oriented static checks
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"python/tests/**/*.py" = [
+"S101",  # Allow assert statements in tests
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

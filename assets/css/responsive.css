@@ -1,1 +1,753 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+MEDORBITS | UNIVERSAL RESPONSIVE SYSTEM
+File: /assets/css/responsive.css
+
+VERSION: 2.0.0
+TYPE: CSS only
+DEPENDENCIES: reset.css
+
+PURPOSE
+
+* Adapt pages to phones, tablets and desktop screens
+* Prevent horizontal overflow and clipped content
+* Support portrait and landscape orientations
+* Improve responsive images, tables and embedded media
+* Support navigation, forms, dashboards and document pages
+* Preserve individual page themes and topic-specific layouts
+* Respect accessibility and reduced-motion preferences
+
+DESIGN POLICY
+
+* No global theme or color scheme
+* No forced font family or typography scale
+* No universal page layout
+* No forced card, grid or sidebar design
+* No JavaScript or backend dependencies
+
+IMPORTANT
+This stylesheet provides responsive safeguards and
+opt-in utilities. Existing component styles remain in control.
+========================================================= */
+
+/* --------------------------------------
+
+1. RESPONSIVE VIEWPORT FOUNDATION
+    -------------------------------------- */
+
+html {
+max-width: 100%;
+min-width: 0;
+}
+
+body {
+max-width: 100%;
+min-width: 0;
+}
+
+:where(main, header, footer, nav, section, article, aside) {
+min-width: 0;
+max-width: 100%;
+}
+
+:where(img, video, canvas, iframe, embed, object) {
+max-width: 100%;
+}
+
+/* --------------------------------------
+2. FLEX AND GRID OVERFLOW PROTECTION
+Apply only to common layout primitives.
+Does not define their display mode or column count.
+-------------------------------------- */
+
+:where(.row, .grid, .flex, .stack, .cluster, .layout) {
+min-width: 0;
+}
+
+:where(.row > *, .grid > *, .flex > *, .stack > *,
+.cluster > *, .layout > *) {
+min-width: 0;
+overflow-wrap: break-word;
+}
+
+:where(.grid, [data-responsive-grid]) {
+max-width: 100%;
+}
+
+:where(.flex, [data-responsive-flex]) {
+max-width: 100%;
+}
+
+/* --------------------------------------
+3. OPT-IN RESPONSIVE CONTAINERS
+Use these classes only when a page needs them.
+-------------------------------------- */
+
+.responsive-container {
+width: min(100% - 2rem, 1200px);
+margin-inline: auto;
+min-width: 0;
+}
+
+.responsive-container–wide {
+width: min(100% - 2rem, 1440px);
+margin-inline: auto;
+min-width: 0;
+}
+
+.responsive-container–narrow {
+width: min(100% - 2rem, 800px);
+margin-inline: auto;
+min-width: 0;
+}
+
+.responsive-container–fluid {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+margin-inline: auto;
+}
+
+/* --------------------------------------
+4. OPT-IN RESPONSIVE GRID UTILITIES
+These utilities do not alter existing .grid elements.
+-------------------------------------- */
+
+.responsive-grid {
+display: grid;
+grid-template-columns: minmax(0, 1fr);
+gap: 1rem;
+min-width: 0;
+}
+
+.responsive-grid > * {
+min-width: 0;
+}
+
+.responsive-grid–2 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.responsive-grid–3 {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.responsive-grid–4 {
+grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.responsive-grid–auto {
+grid-template-columns: repeat(
+auto-fit,
+minmax(min(100%, 240px), 1fr)
+);
+}
+
+.responsive-grid–auto-small {
+grid-template-columns: repeat(
+auto-fit,
+minmax(min(100%, 180px), 1fr)
+);
+}
+
+/* --------------------------------------
+5. OPT-IN FLEX UTILITIES
+-------------------------------------- */
+
+.responsive-flex {
+display: flex;
+flex-wrap: wrap;
+gap: 1rem;
+min-width: 0;
+}
+
+.responsive-flex > * {
+min-width: 0;
+}
+
+.responsive-flex–between {
+justify-content: space-between;
+align-items: center;
+}
+
+.responsive-flex–center {
+justify-content: center;
+align-items: center;
+}
+
+.responsive-flex–start {
+justify-content: flex-start;
+align-items: flex-start;
+}
+
+.responsive-flex–stretch {
+align-items: stretch;
+}
+
+/* --------------------------------------
+6. IMAGES AND RESPONSIVE MEDIA
+Do not force cropping or aspect ratios on existing images.
+-------------------------------------- */
+
+.responsive-image {
+display: block;
+max-width: 100%;
+height: auto;
+}
+
+.responsive-image–cover {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.responsive-image–contain {
+width: 100%;
+height: 100%;
+object-fit: contain;
+}
+
+.responsive-media {
+position: relative;
+width: 100%;
+min-width: 0;
+overflow: hidden;
+}
+
+.responsive-media–16x9 {
+aspect-ratio: 16 / 9;
+}
+
+.responsive-media–4x3 {
+aspect-ratio: 4 / 3;
+}
+
+.responsive-media–1x1 {
+aspect-ratio: 1 / 1;
+}
+
+.responsive-media > img,
+.responsive-media > video,
+.responsive-media > iframe {
+display: block;
+width: 100%;
+height: 100%;
+border: 0;
+}
+
+.responsive-media–cover > img,
+.responsive-media–cover > video {
+object-fit: cover;
+}
+
+.responsive-media–contain > img,
+.responsive-media–contain > video {
+object-fit: contain;
+}
+
+/* --------------------------------------
+7. TABLES AND WIDE DATA
+Wrap tables in .responsive-table when horizontal scrolling
+is preferable to squeezing columns.
+-------------------------------------- */
+
+.responsive-table {
+display: block;
+width: 100%;
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+-webkit-overflow-scrolling: touch;
+}
+
+.responsive-table > table {
+width: 100%;
+max-width: 100%;
+}
+
+.responsive-table–wide > table {
+min-width: 640px;
+}
+
+.responsive-table–large > table {
+min-width: 800px;
+}
+
+.responsive-table–compact > table {
+min-width: 480px;
+}
+
+/* --------------------------------------
+8. LONG TEXT, URLS AND CODE
+-------------------------------------- */
+
+:where(.responsive-text, .article-content, .document-content) {
+min-width: 0;
+overflow-wrap: anywhere;
+}
+
+:where(.responsive-code, pre, .code-block) {
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+-webkit-overflow-scrolling: touch;
+}
+
+:where(.responsive-code) {
+white-space: pre;
+}
+
+:where(.responsive-embed) {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+overflow: hidden;
+}
+
+.responsive-embed iframe {
+display: block;
+width: 100%;
+max-width: 100%;
+}
+
+/* --------------------------------------
+9. FORMS AND APPLICATION PAGES
+Visual appearance remains controlled by forms.css.
+-------------------------------------- */
+
+.responsive-form {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+}
+
+.responsive-form :where(input, select, textarea, button) {
+max-width: 100%;
+}
+
+.responsive-form :where(input, select, textarea) {
+min-width: 0;
+}
+
+.responsive-form :where(textarea) {
+width: 100%;
+resize: vertical;
+}
+
+.responsive-form :where(input[type="file"]) {
+width: 100%;
+min-width: 0;
+}
+
+.responsive-form__row {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 1rem;
+min-width: 0;
+}
+
+.responsive-form__row > * {
+min-width: 0;
+}
+
+.responsive-form__actions {
+display: flex;
+flex-wrap: wrap;
+gap: 0.75rem;
+min-width: 0;
+}
+
+.responsive-form__actions > * {
+max-width: 100%;
+}
+
+/* --------------------------------------
+10. NAVIGATION AND HEADER SAFETY
+Does not implement a mobile menu or hide navigation.
+Those behaviors belong to navigation.css and JavaScript.
+-------------------------------------- */
+
+.responsive-nav,
+.responsive-header {
+min-width: 0;
+max-width: 100%;
+}
+
+.responsive-nav__items {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+min-width: 0;
+max-width: 100%;
+gap: 0.5rem;
+}
+
+.responsive-nav__items > * {
+min-width: 0;
+}
+
+.responsive-search {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+}
+
+.responsive-search :where(input, button, select) {
+max-width: 100%;
+min-width: 0;
+}
+
+/* --------------------------------------
+11. DASHBOARD AND SIDEBAR UTILITIES
+Opt-in only. No global sidebar dimensions are imposed.
+-------------------------------------- */
+
+.responsive-dashboard {
+display: grid;
+grid-template-columns: minmax(0, 1fr);
+gap: 1.25rem;
+min-width: 0;
+}
+
+.responsive-dashboard__main,
+.responsive-dashboard__sidebar {
+min-width: 0;
+max-width: 100%;
+}
+
+.responsive-sidebar {
+min-width: 0;
+max-width: 100%;
+}
+
+.responsive-metrics {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 1rem;
+min-width: 0;
+}
+
+.responsive-metrics > * {
+min-width: 0;
+}
+
+/* --------------------------------------
+12. DOCUMENTS AND PRINT-PREVIEW CONTENT
+Actual paper layout and print rules remain in print.css.
+-------------------------------------- */
+
+.responsive-document {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+overflow-wrap: anywhere;
+}
+
+.responsive-document img {
+max-width: 100%;
+height: auto;
+}
+
+.responsive-document table {
+max-width: 100%;
+}
+
+.responsive-document__actions {
+display: flex;
+flex-wrap: wrap;
+gap: 0.75rem;
+}
+
+/* --------------------------------------
+13. RESPONSIVE VISIBILITY UTILITIES
+Use these only when a content element is intentionally
+designed to appear or disappear at the specified breakpoint.
+-------------------------------------- */
+
+.show-mobile,
+.show-tablet,
+.show-desktop {
+display: none;
+}
+
+/* --------------------------------------
+14. SMALL PHONES: UP TO 359px
+-------------------------------------- */
+
+@media (max-width: 359px) {
+.responsive-container,
+.responsive-container–wide,
+.responsive-container–narrow {
+width: calc(100% - 1rem);
+}
+
+.responsive-grid–2,
+.responsive-grid–3,
+.responsive-grid–4 {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-form__row {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-metrics {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-flex–between {
+align-items: flex-start;
+}
+}
+
+/* --------------------------------------
+15. PHONES: UP TO 599px
+-------------------------------------- */
+
+@media (max-width: 599px) {
+.responsive-container,
+.responsive-container–wide,
+.responsive-container–narrow {
+width: calc(100% - 1.5rem);
+}
+
+.responsive-grid–3,
+.responsive-grid–4 {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-grid–2 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.responsive-form__row {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-dashboard {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-nav__items {
+flex-wrap: wrap;
+}
+
+.responsive-form__actions > * {
+min-width: 0;
+}
+
+.responsive-document__actions {
+align-items: stretch;
+}
+
+.responsive-document__actions > * {
+max-width: 100%;
+}
+
+.show-mobile {
+display: initial;
+}
+
+.hide-mobile {
+display: none !important;
+}
+}
+
+/* --------------------------------------
+16. LARGE PHONES AND SMALL TABLETS: 600px–767px
+-------------------------------------- */
+
+@media (min-width: 600px) and (max-width: 767px) {
+.responsive-container,
+.responsive-container–wide,
+.responsive-container–narrow {
+width: calc(100% - 2rem);
+}
+
+.responsive-grid–4 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.responsive-dashboard {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.show-tablet {
+display: initial;
+}
+
+.hide-tablet {
+display: none !important;
+}
+}
+
+/* --------------------------------------
+17. TABLETS: 768px–1023px
+-------------------------------------- */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+.responsive-container,
+.responsive-container–wide,
+.responsive-container–narrow {
+width: calc(100% - 2.5rem);
+}
+
+.responsive-grid–4 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.responsive-dashboard {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.responsive-metrics {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.show-tablet {
+display: initial;
+}
+
+.hide-tablet {
+display: none !important;
+}
+}
+
+/* --------------------------------------
+18. DESKTOP: 1024px–1439px
+-------------------------------------- */
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+.responsive-container {
+width: min(100% - 3rem, 1200px);
+}
+
+.responsive-container–wide {
+width: min(100% - 3rem, 1440px);
+}
+
+.responsive-container–narrow {
+width: min(100% - 3rem, 800px);
+}
+
+.responsive-dashboard {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.show-desktop {
+display: initial;
+}
+
+.hide-desktop {
+display: none !important;
+}
+}
+
+/* --------------------------------------
+19. LARGE DESKTOP: 1440px AND ABOVE
+-------------------------------------- */
+
+@media (min-width: 1440px) {
+.responsive-container {
+width: min(100% - 4rem, 1200px);
+}
+
+.responsive-container–wide {
+width: min(100% - 4rem, 1440px);
+}
+
+.responsive-container–narrow {
+width: min(100% - 4rem, 800px);
+}
+
+.show-desktop {
+display: initial;
+}
+
+.hide-desktop {
+display: none !important;
+}
+}
+
+/* --------------------------------------
+20. LANDSCAPE PHONE SAFETY
+Avoid changing the layout of unrelated pages.
+-------------------------------------- */
+
+@media (max-height: 500px) and (orientation: landscape) {
+:where(dialog, [role="dialog"]) {
+max-height: 90vh;
+max-height: 90dvh;
+overflow-y: auto;
+}
+}
+
+/* --------------------------------------
+21. TOUCHSCREEN SAFETY
+Keep controls usable without changing their visual design.
+-------------------------------------- */
+
+@media (pointer: coarse) {
+.responsive-touch-target {
+min-width: 44px;
+min-height: 44px;
+}
+}
+
+/* --------------------------------------
+22. REDUCED MOTION
+-------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+.responsive-scroll {
+scroll-behavior: auto !important;
+}
+}
+
+/* --------------------------------------
+23. HIGH CONTRAST / FORCED COLORS
+-------------------------------------- */
+
+@media (forced-colors: active) {
+:where(.responsive-table, .responsive-embed) {
+forced-color-adjust: auto;
+}
+}
+
+/* --------------------------------------
+24. PRINT
+The dedicated print.css remains authoritative.
+-------------------------------------- */
+
+@media print {
+.responsive-container,
+.responsive-container–wide,
+.responsive-container–narrow {
+width: 100%;
+max-width: 100%;
+margin-inline: 0;
+}
+
+.responsive-table,
+.responsive-code {
+max-width: 100%;
+overflow: visible;
+}
+
+.responsive-document {
+width: 100%;
+max-width: 100%;
+overflow: visible;
+}
+
+.hide-print {
+display: none !important;
+}
+
+.show-print {
+display: block !important;
+}
+}
+
+/* =========================================================
+END OF MEDORBITS RESPONSIVE SYSTEM
+========================================================= */

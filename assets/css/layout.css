@@ -1,1 +1,1270 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+   MEDORBITS | RESPONSIVE MASTER LAYOUT SYSTEM
+   File: assets/css/layout.css
+   Brand: MedOrbits
+   Design: Royal Aubergine + Champagne Gold
+   RESPONSIVE SUPPORT
+   - iPhone and Android phones
+   - Small and large tablets
+   - Laptops and desktop screens
+   - Portrait and landscape orientation
+   - Long text and multilingual content
+   PAGE TOPICS
+   - home
+   - education
+   - admissions
+   - medical
+   - colleges
+   - documents
+   - study-abroad
+   - careers
+   - applications
+   - accounts
+   - admin
+   DEPENDENCIES
+   tokens.css
+   font.css
+   typography.css
+   components.css
+   IMPORTANT
+   Layout only. Navigation behavior, authentication,
+   data loading and form submission require separate logic.
+   ========================================================= */
+/* =========================================================
+   1. MASTER LAYOUT TOKENS
+   ========================================================= */
+:root {
+  --layout-page-max: 1320px;
+  --layout-content-max: 1120px;
+  --layout-reading-max: 760px;
+  --layout-form-max: 960px;
+  --layout-dashboard-max: 1600px;
+  --layout-gutter: clamp(16px, 3.5vw, 42px);
+  --layout-gutter-small: clamp(12px, 2vw, 22px);
+  --layout-section-space: clamp(42px, 7vw, 88px);
+  --layout-section-space-small: clamp(28px, 4vw, 48px);
+  --layout-header-height: 76px;
+  --layout-mobile-header-height: 64px;
+  --layout-sidebar-width: 270px;
+  --layout-sidebar-collapsed-width: 76px;
+  --layout-grid-gap: clamp(16px, 2.2vw, 26px);
+  --layout-card-gap: clamp(12px, 1.8vw, 20px);
+  --layout-radius-small: 10px;
+  --layout-radius-medium: 16px;
+  --layout-radius-large: 22px;
+  --layout-radius-xl: 30px;
+  --layout-border: var(--border, #493751);
+  --layout-background: var(--bg, #100a17);
+  --layout-surface: var(--panel, #21172b);
+  --layout-text: var(--text, #f7f1fa);
+  --layout-muted: var(--muted, #b7acbf);
+  --layout-gold: var(--mo-brand, #c9a96e);
+  --layout-sticky-z: 100;
+  --layout-dropdown-z: 200;
+  --layout-overlay-z: 900;
+  --layout-sidebar-z: 950;
+  --layout-modal-z: 1000;
+}
+/* =========================================================
+   2. UNIVERSAL BOX SIZING AND OVERFLOW PROTECTION
+   ========================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  width: 100%;
+  min-width: 0;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--layout-header-height) + 20px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  overflow-wrap: break-word;
+}
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+img,
+picture,
+video {
+  height: auto;
+}
+iframe {
+  max-width: 100%;
+  border: 0;
+}
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+pre,
+.code-block,
+.table-scroll {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+body,
+main,
+section,
+article,
+aside,
+header,
+footer,
+nav,
+div {
+  min-width: 0;
+}
+/* =========================================================
+   3. SHARED PAGE WRAPPERS
+   ========================================================= */
+.site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+}
+.site-main {
+  flex: 1 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+.page-container {
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-page-max)
+  );
+  margin-inline: auto;
+}
+.container,
+.content-container {
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-content-max)
+  );
+  margin-inline: auto;
+}
+.container--wide,
+.content-container--wide {
+  max-width: var(--layout-page-max);
+}
+.container--narrow,
+.content-container--narrow {
+  max-width: var(--layout-reading-max);
+}
+.container--form {
+  max-width: var(--layout-form-max);
+}
+.container--dashboard {
+  max-width: var(--layout-dashboard-max);
+}
+.container--full {
+  width: 100%;
+  max-width: none;
+}
+.container--left {
+  margin-inline: 0 auto;
+}
+.container--right {
+  margin-inline: auto 0;
+}
+.content-width {
+  width: 100%;
+  max-width: var(--layout-content-max);
+}
+.reading-width {
+  width: 100%;
+  max-width: var(--layout-reading-max);
+}
+/* =========================================================
+   4. PAGE SECTION SPACING
+   ========================================================= */
+.page-section {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding-block: var(--layout-section-space);
+}
+.page-section--compact {
+  padding-block: var(--layout-section-space-small);
+}
+.page-section--small {
+  padding-block: 24px;
+}
+.page-section--large {
+  padding-block: clamp(60px, 9vw, 120px);
+}
+.page-section--no-top {
+  padding-block-start: 0;
+}
+.page-section--no-bottom {
+  padding-block-end: 0;
+}
+.section-inner {
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-content-max)
+  );
+  margin-inline: auto;
+}
+.section-header {
+  max-width: 760px;
+  margin: 0 auto clamp(24px, 4vw, 42px);
+  text-align: center;
+}
+.section-header--left {
+  margin-inline: 0;
+  text-align: start;
+}
+.section-title {
+  max-width: 24ch;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+.section-header--left .section-title {
+  margin-inline: 0;
+}
+.section-description {
+  max-width: 68ch;
+  margin-inline: auto;
+  color: var(--layout-muted);
+  line-height: 1.8;
+}
+.section-header--left .section-description {
+  margin-inline: 0;
+}
+/* =========================================================
+   5. GLOBAL HEADER AND NAVIGATION LAYOUT
+   ========================================================= */
+.site-header {
+  position: relative;
+  z-index: var(--layout-sticky-z);
+  width: 100%;
+  min-width: 0;
+  background: var(--layout-background);
+  border-block-end: 1px solid var(--layout-border);
+}
+.site-header--sticky {
+  position: sticky;
+  top: 0;
+}
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-page-max)
+  );
+  min-height: var(--layout-header-height);
+  margin-inline: auto;
+}
+.site-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-decoration: none;
+}
+.site-brand img,
+.site-logo {
+  display: block;
+  width: auto;
+  max-width: 190px;
+  max-height: 46px;
+  object-fit: contain;
+}
+.site-brand__text {
+  overflow: hidden;
+  color: var(--layout-text);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2vw, 26px);
+  min-width: 0;
+}
+.site-nav__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(10px, 1.5vw, 22px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 2px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+.site-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+/* =========================================================
+   6. UNIVERSAL GRID SYSTEM
+   ========================================================= */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+  align-items: start;
+  width: 100%;
+}
+.grid-col-1  { grid-column: span 1; }
+.grid-col-2  { grid-column: span 2; }
+.grid-col-3  { grid-column: span 3; }
+.grid-col-4  { grid-column: span 4; }
+.grid-col-5  { grid-column: span 5; }
+.grid-col-6  { grid-column: span 6; }
+.grid-col-7  { grid-column: span 7; }
+.grid-col-8  { grid-column: span 8; }
+.grid-col-9  { grid-column: span 9; }
+.grid-col-10 { grid-column: span 10; }
+.grid-col-11 { grid-column: span 11; }
+.grid-col-12 { grid-column: span 12; }
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 240px), 1fr)
+  );
+  gap: var(--layout-grid-gap);
+}
+.grid-auto--small {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 190px), 1fr)
+  );
+}
+.grid-auto--large {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 300px), 1fr)
+  );
+}
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+}
+.grid-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+}
+.grid-four {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+}
+/* =========================================================
+   7. FLEXIBLE ALIGNMENT UTILITIES
+   ========================================================= */
+.layout-flex {
+  display: flex;
+  gap: var(--layout-grid-gap);
+  min-width: 0;
+}
+.layout-flex--center {
+  align-items: center;
+}
+.layout-flex--start {
+  align-items: flex-start;
+}
+.layout-flex--end {
+  align-items: flex-end;
+}
+.layout-flex--between {
+  align-items: center;
+  justify-content: space-between;
+}
+.layout-flex--wrap {
+  flex-wrap: wrap;
+}
+.layout-flex--column {
+  flex-direction: column;
+}
+.layout-center {
+  display: grid;
+  place-items: center;
+}
+.align-start {
+  align-items: start;
+}
+.align-center {
+  align-items: center;
+}
+.align-end {
+  align-items: end;
+}
+.justify-start {
+  justify-content: start;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-end {
+  justify-content: end;
+}
+.text-center {
+  text-align: center;
+}
+.text-start {
+  text-align: start;
+}
+.text-end {
+  text-align: end;
+}
+/* =========================================================
+   8. HERO LAYOUT
+   ========================================================= */
+.hero {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  padding-block: clamp(54px, 8vw, 108px);
+}
+.hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: clamp(30px, 5vw, 72px);
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-page-max)
+  );
+  margin-inline: auto;
+}
+.hero__content {
+  width: 100%;
+  min-width: 0;
+}
+.hero__media {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--layout-radius-xl);
+}
+.hero__media img,
+.hero__media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+.hero--centered .hero__inner {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 900px;
+  text-align: center;
+}
+.hero--centered .hero__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hero--centered .hero__media {
+  max-width: 780px;
+  margin-inline: auto;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-start: 26px;
+}
+.hero--centered .hero__actions {
+  justify-content: center;
+}
+/* =========================================================
+   9. SIDEBAR + MAIN CONTENT
+   For dashboards and account areas
+   ========================================================= */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns:
+    var(--layout-sidebar-width)
+    minmax(0, 1fr);
+  align-items: start;
+  gap: var(--layout-grid-gap);
+  width: 100%;
+  max-width: var(--layout-dashboard-max);
+  margin-inline: auto;
+  padding: var(--layout-gutter);
+}
+.dashboard-sidebar {
+  position: sticky;
+  top: calc(var(--layout-header-height) + 16px);
+  width: 100%;
+  min-width: 0;
+  max-height: calc(100dvh - var(--layout-header-height) - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dashboard-main {
+  width: 100%;
+  min-width: 0;
+}
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-grid-gap);
+  width: 100%;
+  min-width: 0;
+}
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  min-width: 0;
+}
+.dashboard-header__content {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.dashboard-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--layout-grid-gap);
+}
+.dashboard-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  align-items: start;
+  gap: var(--layout-grid-gap);
+}
+.dashboard-sidebar.is-collapsed {
+  width: var(--layout-sidebar-collapsed-width);
+}
+/* =========================================================
+   10. FORM AND APPLICATION LAYOUT
+   ========================================================= */
+.application-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+  align-items: start;
+  gap: var(--layout-grid-gap);
+  width: 100%;
+  max-width: var(--layout-page-max);
+  margin-inline: auto;
+}
+.application-main {
+  width: 100%;
+  min-width: 0;
+}
+.application-aside {
+  position: sticky;
+  top: calc(var(--layout-header-height) + 20px);
+  width: 100%;
+  min-width: 0;
+}
+.form-layout {
+  width: 100%;
+  max-width: var(--layout-form-max);
+  margin-inline: auto;
+}
+.form-layout--wide {
+  max-width: var(--layout-page-max);
+}
+.form-layout--narrow {
+  max-width: var(--layout-reading-max);
+}
+/* =========================================================
+   11. DATA TABLE RESPONSIVENESS
+   ========================================================= */
+.table-container,
+.table-scroll {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.table-container table,
+.table-scroll table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+.table-container th,
+.table-container td,
+.table-scroll th,
+.table-scroll td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.table-responsive-cards {
+  width: 100%;
+  min-width: 0;
+}
+/* =========================================================
+   12. SEARCH AND FILTER LAYOUT
+   ========================================================= */
+.search-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.search-filter {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.search-results-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--layout-grid-gap);
+}
+.search-results-main {
+  min-width: 0;
+}
+.search-results-sidebar {
+  min-width: 0;
+}
+/* =========================================================
+   13. CARD AND RESOURCE LAYOUTS
+   ========================================================= */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--layout-card-gap);
+  width: 100%;
+}
+.card-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.card-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.card-grid--auto {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 260px), 1fr)
+  );
+}
+.card-grid > *,
+.grid-auto > *,
+.grid-two > *,
+.grid-three > *,
+.grid-four > * {
+  min-width: 0;
+}
+.card-grid > * {
+  height: 100%;
+}
+.resource-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--layout-grid-gap);
+}
+/* =========================================================
+   14. ARTICLE AND DOCUMENT READING LAYOUT
+   ========================================================= */
+.article-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  align-items: start;
+  gap: clamp(24px, 4vw, 54px);
+  width: 100%;
+  max-width: var(--layout-page-max);
+  margin-inline: auto;
+}
+.article-content {
+  width: 100%;
+  max-width: 820px;
+  min-width: 0;
+}
+.article-sidebar {
+  position: sticky;
+  top: calc(var(--layout-header-height) + 24px);
+  min-width: 0;
+}
+.article-content img,
+.article-content video,
+.article-content iframe {
+  max-width: 100%;
+}
+.article-content p,
+.article-content li {
+  max-width: 75ch;
+}
+.document-layout {
+  width: 100%;
+  max-width: 850px;
+  margin-inline: auto;
+}
+.document-page {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(20px, 4vw, 48px);
+  background: var(--layout-surface);
+  border: 1px solid var(--layout-border);
+  border-radius: var(--layout-radius-large);
+}
+/* =========================================================
+   15. ACCOUNTS AND AUTHENTICATION
+   ========================================================= */
+.auth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 1080px;
+  min-height: 560px;
+  margin: clamp(24px, 5vw, 64px) auto;
+  overflow: hidden;
+  background: var(--layout-surface);
+  border: 1px solid var(--layout-border);
+  border-radius: var(--layout-radius-xl);
+}
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: clamp(24px, 5vw, 56px);
+}
+.auth-panel--form {
+  background: var(--layout-surface);
+}
+.auth-panel--brand {
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgb(201 169 110 / 12%),
+      transparent 42%
+    ),
+    var(--layout-background);
+}
+.auth-form {
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+}
+/* =========================================================
+   16. FOOTER LAYOUT
+   ========================================================= */
+.site-footer {
+  width: 100%;
+  min-width: 0;
+  margin-block-start: auto;
+  border-block-start: 1px solid var(--layout-border);
+}
+.site-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 52px);
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-page-max)
+  );
+  margin-inline: auto;
+  padding-block: clamp(38px, 6vw, 68px);
+}
+.site-footer__column {
+  min-width: 0;
+}
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  width: min(
+    calc(100% - 2 * var(--layout-gutter)),
+    var(--layout-page-max)
+  );
+  margin-inline: auto;
+  padding-block: 18px;
+  border-block-start: 1px solid var(--layout-border);
+}
+/* =========================================================
+   17. TOPIC-SPECIFIC LAYOUT ACCENTS
+   Consistent structure; only selected details adapt.
+   ========================================================= */
+[data-page="home"] {
+  --topic-layout-accent: #e4d0a1;
+}
+[data-page="education"] {
+  --topic-layout-accent: #bca7f5;
+}
+[data-page="admissions"] {
+  --topic-layout-accent: #e4d0a1;
+}
+[data-page="medical"] {
+  --topic-layout-accent: #8ed7c2;
+}
+[data-page="colleges"] {
+  --topic-layout-accent: #b6c8ff;
+}
+[data-page="documents"] {
+  --topic-layout-accent: #d9c1f0;
+}
+[data-page="study-abroad"] {
+  --topic-layout-accent: #8fc8ef;
+}
+[data-page="careers"] {
+  --topic-layout-accent: #e7b68c;
+}
+[data-page="applications"] {
+  --topic-layout-accent: #d6c0a1;
+}
+[data-page="accounts"] {
+  --topic-layout-accent: #c4b5fd;
+}
+[data-page="admin"] {
+  --topic-layout-accent: #f0b4b4;
+}
+[data-page] .section-eyebrow,
+[data-page] .layout-accent {
+  color: var(--topic-layout-accent, var(--layout-gold));
+}
+[data-page] .layout-accent-border {
+  border-color: var(--topic-layout-accent, var(--layout-gold));
+}
+/* =========================================================
+   18. TABLET RESPONSIVENESS
+   ========================================================= */
+@media (max-width: 1100px) {
+  :root {
+    --layout-sidebar-width: 235px;
+    --layout-grid-gap: 18px;
+  }
+  .grid-four,
+  .card-grid--four,
+  .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-layout {
+    grid-template-columns: 225px minmax(0, 1fr);
+  }
+  .dashboard-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-header__inner {
+    gap: 14px;
+  }
+  .site-nav__list {
+    gap: 12px;
+  }
+  .site-brand img,
+  .site-logo {
+    max-width: 155px;
+  }
+  .site-footer__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* =========================================================
+   19. TABLET AND MOBILE NAVIGATION
+   CSS visibility only. JavaScript must toggle .is-open.
+   ========================================================= */
+@media (max-width: 820px) {
+  :root {
+    --layout-header-height: var(--layout-mobile-header-height);
+  }
+  .site-header__inner {
+    min-height: var(--layout-mobile-header-height);
+  }
+  .site-menu-toggle {
+    display: inline-flex;
+  }
+  .site-nav {
+    display: none;
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline: 0;
+    z-index: var(--layout-dropdown-z);
+    align-items: stretch;
+    justify-content: flex-start;
+    max-height: calc(100dvh - var(--layout-mobile-header-height));
+    overflow-y: auto;
+    padding: 16px var(--layout-gutter);
+    background: var(--layout-background);
+    border-block-end: 1px solid var(--layout-border);
+    box-shadow: 0 18px 32px rgb(0 0 0 / 22%);
+  }
+  .site-nav.is-open {
+    display: flex;
+    flex-direction: column;
+  }
+  .site-nav__list {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+  .site-nav__link {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    white-space: normal;
+    border-radius: var(--layout-radius-small);
+  }
+  .site-header__actions {
+    gap: 8px;
+  }
+  .hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+  .hero__media {
+    max-width: 720px;
+  }
+  .application-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-aside {
+    position: static;
+  }
+  .search-results-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .article-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .article-sidebar {
+    position: static;
+  }
+  .auth-layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 620px;
+    min-height: auto;
+  }
+  .auth-panel--brand {
+    min-height: 220px;
+  }
+  .dashboard-layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--layout-gutter);
+  }
+  .dashboard-sidebar {
+    position: static;
+    max-height: none;
+  }
+  .dashboard-sidebar.is-collapsed {
+    width: 100%;
+  }
+  .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* =========================================================
+   20. MOBILE PHONES
+   ========================================================= */
+@media (max-width: 600px) {
+  :root {
+    --layout-gutter: 16px;
+    --layout-gutter-small: 12px;
+    --layout-section-space: 42px;
+    --layout-section-space-small: 28px;
+    --layout-grid-gap: 14px;
+    --layout-card-gap: 12px;
+  }
+  .page-container,
+  .container,
+  .content-container,
+  .section-inner {
+    width: calc(100% - 2 * var(--layout-gutter));
+  }
+  .grid-two,
+  .grid-three,
+  .grid-four,
+  .card-grid,
+  .card-grid--two,
+  .resource-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid-auto,
+  .grid-auto--large {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero {
+    padding-block: 42px;
+  }
+  .hero__actions {
+    width: 100%;
+  }
+  .hero__actions > * {
+    flex: 1 1 auto;
+  }
+  .section-header {
+    margin-block-end: 24px;
+    text-align: start;
+  }
+  .section-title,
+  .section-description {
+    margin-inline: 0;
+  }
+  .dashboard-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .dashboard-header__actions {
+    width: 100%;
+  }
+  .dashboard-header__actions > * {
+    flex: 1 1 auto;
+  }
+  .site-footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .site-footer__bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .table-container table,
+  .table-scroll table {
+    min-width: 580px;
+  }
+  .auth-panel {
+    padding: 24px 18px;
+  }
+  .document-page {
+    padding: 18px;
+    border-radius: var(--layout-radius-medium);
+  }
+  .layout-flex--mobile-column {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+/* =========================================================
+   21. VERY SMALL SCREENS
+   ========================================================= */
+@media (max-width: 380px) {
+  :root {
+    --layout-gutter: 12px;
+    --layout-grid-gap: 12px;
+    --layout-card-gap: 10px;
+  }
+  .site-brand img,
+  .site-logo {
+    max-width: 125px;
+    max-height: 38px;
+  }
+  .site-header__inner {
+    gap: 8px;
+  }
+  .site-header__actions {
+    gap: 6px;
+  }
+  .hero__actions {
+    flex-direction: column;
+  }
+  .hero__actions > * {
+    width: 100%;
+  }
+  .dashboard-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-layout,
+  .form-container {
+    width: 100%;
+  }
+}
+/* =========================================================
+   22. LANDSCAPE PHONES
+   ========================================================= */
+@media (max-height: 500px) and (orientation: landscape) {
+  .site-nav {
+    max-height: calc(100dvh - var(--layout-mobile-header-height));
+    overflow-y: auto;
+  }
+  .hero {
+    padding-block: 28px;
+  }
+  .auth-layout {
+    margin-block: 16px;
+  }
+}
+/* =========================================================
+   23. LARGE DESKTOP SCREENS
+   ========================================================= */
+@media (min-width: 1600px) {
+  :root {
+    --layout-page-max: 1440px;
+    --layout-content-max: 1200px;
+    --layout-gutter: 48px;
+  }
+}
+/* =========================================================
+   24. ACCESSIBILITY AND MOTION
+   ========================================================= */
+:where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [tabindex]
+):focus-visible {
+  outline: 3px solid var(--border-focus, #e4d0a1);
+  outline-offset: 3px;
+}
+[id] {
+  scroll-margin-top: calc(var(--layout-header-height) + 16px);
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* =========================================================
+   25. PRINT AND PDF LAYOUT
+   ========================================================= */
+@media print {
+  :root {
+    --layout-gutter: 0;
+    --layout-section-space: 18px;
+    --layout-grid-gap: 12px;
+  }
+  html,
+  body,
+  .site-shell,
+  .site-main {
+    width: 100%;
+    min-height: 0;
+    color: #111 !important;
+    background: #fff !important;
+  }
+  .page-container,
+  .container,
+  .content-container,
+  .section-inner,
+  .hero__inner,
+  .site-footer__inner,
+  .site-footer__bottom {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+  .site-header,
+  .site-nav,
+  .site-menu-toggle,
+  .site-footer,
+  .dashboard-sidebar,
+  .application-aside,
+  .article-sidebar,
+  .no-print,
+  .screen-only {
+    display: none !important;
+  }
+  .page-section,
+  .hero {
+    padding-block: 16px;
+  }
+  .hero__inner,
+  .dashboard-layout,
+  .application-layout,
+  .article-layout,
+  .auth-layout {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+  .grid-auto,
+  .grid-two,
+  .grid-three,
+  .grid-four,
+  .card-grid,
+  .resource-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .table-container,
+  .table-scroll {
+    overflow: visible;
+  }
+  .table-container table,
+  .table-scroll table {
+    width: 100%;
+    min-width: 0;
+  }
+  .document-page,
+  .form-shell,
+  .form-section,
+  .card {
+    color: #111 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  a {
+    color: #111 !important;
+    text-decoration: underline;
+  }
+}

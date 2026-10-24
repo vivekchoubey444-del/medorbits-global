@@ -1,1 +1,507 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+MEDORBITS | UNIVERSAL CSS RESET
+File: /assets/css/reset.css
+
+VERSION: 2.0.0
+TYPE: CSS only
+DEPENDENCIES: None
+
+PURPOSE
+
+* Normalize browser defaults consistently
+* Support mobile, tablet, laptop and desktop
+* Preserve page-specific layouts and visual themes
+* Improve media, form and table behavior
+* Support keyboard navigation and accessible controls
+* Respect reduced-motion and high-contrast preferences
+* Provide safe foundations for printing
+
+DESIGN POLICY
+This file does not define:
+
+* A default color scheme
+* Brand colors or backgrounds
+* Font families or typography scales
+* Page widths or component layouts
+* Navigation, card or dashboard appearance
+
+Individual pages and component stylesheets own those rules.
+========================================================= */
+
+/* --------------------------------------
+
+1. BOX SIZING
+    -------------------------------------- */
+
+*,
+*::before,
+*::after {
+box-sizing: border-box;
+}
+
+/* --------------------------------------
+2. ROOT DOCUMENT NORMALIZATION
+No forced theme, font, color or background.
+-------------------------------------- */
+
+html {
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+tab-size: 2;
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+margin: 0;
+min-width: 0;
+min-height: 100vh;
+min-height: 100dvh;
+overflow-wrap: break-word;
+}
+
+:where(html, body) {
+width: 100%;
+}
+
+:where(main, header, footer, nav, section, article, aside) {
+min-width: 0;
+}
+
+:where([hidden]) {
+display: none !important;
+}
+
+/* --------------------------------------
+3. TYPOGRAPHY NORMALIZATION
+Fonts, sizes, colors and line heights remain page-specific.
+-------------------------------------- */
+
+:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd) {
+margin: 0;
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+font: inherit;
+}
+
+:where(p, li, dd, blockquote, figcaption) {
+overflow-wrap: anywhere;
+}
+
+:where(small) {
+font-size: 0.875em;
+}
+
+:where(strong, b) {
+font-weight: 700;
+}
+
+:where(em, i) {
+font-style: italic;
+}
+
+:where(abbr[title]) {
+text-decoration: underline dotted;
+text-underline-offset: 0.15em;
+cursor: help;
+}
+
+:where(sub, sup) {
+position: relative;
+font-size: 0.75em;
+line-height: 0;
+vertical-align: baseline;
+}
+
+:where(sup) {
+top: -0.5em;
+}
+
+:where(sub) {
+bottom: -0.25em;
+}
+
+/* --------------------------------------
+4. CODE AND PREFORMATTED CONTENT
+-------------------------------------- */
+
+:where(pre, code, kbd, samp) {
+font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+:where(pre) {
+max-width: 100%;
+overflow: auto;
+white-space: pre;
+tab-size: 2;
+}
+
+:where(code, kbd, samp) {
+overflow-wrap: anywhere;
+}
+
+/* --------------------------------------
+5. LINKS
+Link colors and visual states belong to page stylesheets.
+-------------------------------------- */
+
+:where(a) {
+color: inherit;
+text-decoration-thickness: from-font;
+text-underline-offset: 0.18em;
+}
+
+:where(a:not([class])) {
+text-decoration-skip-ink: auto;
+}
+
+:where(a, button, input, select, textarea, summary) {
+touch-action: manipulation;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]) {
+scroll-margin-block: 1rem;
+}
+
+/* --------------------------------------
+6. LIST NORMALIZATION
+Preserve native markers unless explicitly reset by a component.
+-------------------------------------- */
+
+:where(ul, ol) {
+margin: 0;
+padding-inline-start: 1.5em;
+}
+
+:where(ul[role="list"], ol[role="list"]) {
+padding: 0;
+list-style: none;
+}
+
+:where(li) {
+min-width: 0;
+}
+
+:where(menu) {
+margin: 0;
+padding: 0;
+}
+
+/* --------------------------------------
+7. MEDIA NORMALIZATION
+Does not force image aspect ratios or crop behavior.
+-------------------------------------- */
+
+:where(img, picture, video, canvas, svg, iframe, embed, object) {
+max-width: 100%;
+}
+
+:where(img, picture, video, canvas) {
+display: block;
+}
+
+:where(img, video) {
+height: auto;
+}
+
+:where(img) {
+font-style: italic;
+}
+
+:where(figure, picture) {
+min-width: 0;
+}
+
+:where(figcaption) {
+margin-block-start: 0.5rem;
+}
+
+:where(iframe) {
+border: 0;
+}
+
+:where(audio) {
+display: block;
+max-width: 100%;
+}
+
+:where(svg) {
+vertical-align: middle;
+}
+
+/* --------------------------------------
+8. FORM CONTROL NORMALIZATION
+Does not impose colors, backgrounds, borders or dimensions.
+-------------------------------------- */
+
+:where(button, input, optgroup, select, textarea) {
+margin: 0;
+color: inherit;
+font: inherit;
+letter-spacing: inherit;
+}
+
+:where(button, input, select, textarea) {
+max-width: 100%;
+}
+
+:where(button, select) {
+text-transform: none;
+}
+
+:where(button, [type="button"], [type="reset"], [type="submit"]) {
+cursor: pointer;
+}
+
+:where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+cursor: not-allowed;
+}
+
+:where(input, select, textarea) {
+min-width: 0;
+}
+
+:where(textarea) {
+overflow: auto;
+resize: vertical;
+}
+
+:where(input[type="search"]) {
+-webkit-appearance: textfield;
+appearance: textfield;
+}
+
+:where(input[type="search"]::-webkit-search-decoration) {
+-webkit-appearance: none;
+}
+
+:where(input[type="number"]) {
+font-variant-numeric: tabular-nums;
+}
+
+:where(input[type="checkbox"], input[type="radio"]) {
+width: auto;
+height: auto;
+}
+
+:where(input[type="file"]) {
+max-width: 100%;
+font: inherit;
+}
+
+:where(input[type="file"]::file-selector-button) {
+font: inherit;
+cursor: pointer;
+}
+
+:where(fieldset) {
+min-width: 0;
+margin: 0;
+padding: 0;
+}
+
+:where(legend) {
+display: table;
+max-width: 100%;
+padding: 0;
+}
+
+:where(label) {
+cursor: pointer;
+}
+
+:where(output) {
+display: inline-block;
+}
+
+:where(option) {
+font: inherit;
+}
+
+:where(::placeholder) {
+font: inherit;
+}
+
+/* --------------------------------------
+9. TABLE NORMALIZATION
+Does not define table widths, colors or visual borders.
+-------------------------------------- */
+
+:where(table) {
+border-collapse: collapse;
+border-spacing: 0;
+max-width: 100%;
+text-indent: 0;
+}
+
+:where(th, td) {
+padding: 0;
+text-align: start;
+vertical-align: top;
+}
+
+:where(th) {
+font-weight: 700;
+}
+
+:where(caption) {
+text-align: start;
+}
+
+/* --------------------------------------
+10. SEMANTIC AND INTERACTIVE ELEMENTS
+-------------------------------------- */
+
+:where(summary) {
+display: list-item;
+cursor: pointer;
+}
+
+:where(dialog:not([open])) {
+display: none;
+}
+
+:where(progress) {
+vertical-align: baseline;
+}
+
+:where(hr) {
+box-sizing: content-box;
+height: 0;
+overflow: visible;
+}
+
+/* --------------------------------------
+11. OPT-IN OVERFLOW UTILITIES
+These rules apply only when the relevant class or attribute
+is present. They do not change every container on the site.
+-------------------------------------- */
+
+:where(.table-responsive, [data-overflow="scroll"]) {
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+-webkit-overflow-scrolling: touch;
+}
+
+:where(.code-block) {
+max-width: 100%;
+overflow-x: auto;
+}
+
+/* --------------------------------------
+12. SCREEN-READER-ONLY UTILITIES
+Keep visually hidden content available to assistive technology.
+-------------------------------------- */
+
+:where(.sr-only, .visually-hidden) {
+position: absolute !important;
+width: 1px !important;
+height: 1px !important;
+padding: 0 !important;
+margin: -1px !important;
+overflow: hidden !important;
+clip: rect(0, 0, 0, 0) !important;
+white-space: nowrap !important;
+border: 0 !important;
+}
+
+/* --------------------------------------
+13. FOCUS NORMALIZATION
+Preserve browser focus indicators and allow page-specific
+focus-visible styles to define their appearance.
+-------------------------------------- */
+
+:where(:focus) {
+outline-offset: 3px;
+}
+
+:where(:focus:not(:focus-visible)) {
+outline: none;
+}
+
+/* --------------------------------------
+14. REDUCED MOTION
+Respect the visitor’s system accessibility preference.
+-------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+*,
+*::before,
+*::after {
+scroll-behavior: auto !important;
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
+transition-delay: 0ms !important;
+}
+}
+
+/* --------------------------------------
+15. SMALL SCREEN SAFETY
+No forced columns, widths, font sizes or component layouts.
+-------------------------------------- */
+
+@media (max-width: 480px) {
+:where(img, video, canvas, iframe) {
+max-width: 100%;
+}
+
+:where(input, select, textarea, button) {
+max-width: 100%;
+}
+
+:where(pre) {
+overflow-x: auto;
+}
+}
+
+/* --------------------------------------
+16. HIGH CONTRAST AND FORCED COLORS
+Let the operating system render accessible system colors.
+-------------------------------------- */
+
+@media (forced-colors: active) {
+:where(button, input, select, textarea, a, summary) {
+forced-color-adjust: auto;
+}
+}
+
+/* --------------------------------------
+17. PRINT FOUNDATIONS
+Detailed print layouts belong in /assets/css/print.css.
+-------------------------------------- */
+
+@media print {
+html,
+body {
+width: auto;
+min-width: 0;
+min-height: 0;
+overflow: visible;
+}
+
+*,
+*::before,
+*::after {
+animation: none !important;
+transition: none !important;
+}
+
+:where(img, svg, canvas, video) {
+max-width: 100%;
+break-inside: avoid;
+}
+
+:where(pre, blockquote, table, figure) {
+break-inside: avoid;
+}
+
+:where(a) {
+overflow-wrap: anywhere;
+}
+}
+
+/* =========================================================
+END OF MEDORBITS UNIVERSAL CSS RESET
+========================================================= */

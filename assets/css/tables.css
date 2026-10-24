@@ -1,1 +1,708 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+MEDORBITS | UNIVERSAL TABLE SYSTEM
+File: /assets/css/tables.css
+
+VERSION: 2.0.0
+TYPE: CSS only
+DEPENDENCIES: reset.css
+
+PURPOSE
+
+* Standardize table behavior across MedOrbits pages
+* Support college, course, fee and admission comparisons
+* Support documents, career, application and admin tables
+* Improve responsive behavior on phones and tablets
+* Support long text, URLs and large datasets
+* Provide accessible table interaction and focus states
+* Improve print and PDF readability
+
+DESIGN POLICY
+
+* No default theme, background or text color
+* No forced brand palette
+* No forced global font family or typography scale
+* No assumptions about page-specific layouts
+* Optional visual variants are available through classes
+
+IMPORTANT
+Load this file after reset.css and before print.css.
+========================================================= */
+
+/* --------------------------------------
+
+1. TABLE FOUNDATION
+    -------------------------------------- */
+
+:where(table) {
+width: 100%;
+max-width: 100%;
+border-collapse: collapse;
+border-spacing: 0;
+text-align: start;
+}
+
+:where(th, td) {
+min-width: 0;
+padding: 0.75rem;
+text-align: start;
+vertical-align: top;
+overflow-wrap: anywhere;
+}
+
+:where(th) {
+font-weight: 700;
+}
+
+:where(caption) {
+padding-block: 0.5rem;
+text-align: start;
+font-weight: 600;
+}
+
+:where(thead, tbody, tfoot, tr) {
+min-width: 0;
+}
+
+:where(td img, th img) {
+max-width: 100%;
+height: auto;
+}
+
+/* --------------------------------------
+2. TABLE WRAPPERS
+Wrap wide tables to prevent page-level horizontal overflow.
+-------------------------------------- */
+
+.table-responsive,
+.table-wrapper {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+-webkit-overflow-scrolling: touch;
+}
+
+.table-responsive > table,
+.table-wrapper > table {
+margin-block: 0;
+}
+
+.table-responsive–compact > table {
+min-width: 480px;
+}
+
+.table-responsive–standard > table {
+min-width: 640px;
+}
+
+.table-responsive–wide > table {
+min-width: 800px;
+}
+
+.table-responsive–extra-wide > table {
+min-width: 1000px;
+}
+
+.table-responsive:focus-visible,
+.table-wrapper:focus-visible {
+outline: 2px solid currentColor;
+outline-offset: 3px;
+}
+
+/* --------------------------------------
+3. OPT-IN TABLE VARIANTS
+Use classes to opt into borders, spacing and visual treatments.
+-------------------------------------- */
+
+/* Basic bordered table */
+
+.table-bordered {
+border: 1px solid;
+}
+
+.table-bordered th,
+.table-bordered td {
+border: 1px solid;
+}
+
+/* Horizontal dividers */
+
+.table-divided th,
+.table-divided td {
+border-bottom: 1px solid;
+}
+
+.table-divided thead th {
+border-bottom-width: 2px;
+}
+
+/* Compact table */
+
+.table-compact th,
+.table-compact td {
+padding: 0.4rem 0.55rem;
+}
+
+/* Spacious table */
+
+.table-spacious th,
+.table-spacious td {
+padding: 1rem;
+}
+
+/* Centered content, excluding the first column */
+
+.table-center th:not(:first-child),
+.table-center td:not(:first-child) {
+text-align: center;
+}
+
+/* Fully centered table */
+
+.table-centered th,
+.table-centered td {
+text-align: center;
+}
+
+/* Vertical alignment */
+
+.table-middle th,
+.table-middle td {
+vertical-align: middle;
+}
+
+/* Auto-sized columns */
+
+.table-auto {
+table-layout: auto;
+}
+
+/* Fixed layout for predictable column sizing */
+
+.table-fixed {
+table-layout: fixed;
+}
+
+/* --------------------------------------
+4. TABLE HEADER OPTIONS
+-------------------------------------- */
+
+.table-header-bordered thead th {
+border-bottom: 2px solid;
+}
+
+.table-header-separated thead th + th {
+border-inline-start: 1px solid;
+}
+
+.table-header-wrap th {
+white-space: normal;
+overflow-wrap: anywhere;
+}
+
+.table-header-nowrap th {
+white-space: nowrap;
+}
+
+/* --------------------------------------
+5. OPTIONAL ROW STRIPING AND HOVER
+No colors are imposed. Page styles can supply them.
+-------------------------------------- */
+
+.table-striped tbody tr:nth-child(even) {
+background-color: transparent;
+}
+
+.table-hover tbody tr {
+transition: background-color 120ms ease;
+}
+
+.table-hover tbody tr:hover {
+background-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.table-hover tbody tr {
+transition: none;
+}
+}
+
+/* --------------------------------------
+6. COLUMN WIDTH UTILITIES
+Use on individual th or td elements.
+-------------------------------------- */
+
+.table-col-5 {
+width: 5%;
+}
+
+.table-col-10 {
+width: 10%;
+}
+
+.table-col-15 {
+width: 15%;
+}
+
+.table-col-20 {
+width: 20%;
+}
+
+.table-col-25 {
+width: 25%;
+}
+
+.table-col-30 {
+width: 30%;
+}
+
+.table-col-35 {
+width: 35%;
+}
+
+.table-col-40 {
+width: 40%;
+}
+
+.table-col-50 {
+width: 50%;
+}
+
+.table-col-auto {
+width: auto;
+}
+
+.table-col-nowrap {
+white-space: nowrap;
+}
+
+.table-col-wrap {
+white-space: normal;
+overflow-wrap: anywhere;
+}
+
+/* --------------------------------------
+7. TEXT ALIGNMENT UTILITIES
+-------------------------------------- */
+
+.table-text-start {
+text-align: start !important;
+}
+
+.table-text-center {
+text-align: center !important;
+}
+
+.table-text-end {
+text-align: end !important;
+}
+
+.table-text-wrap {
+white-space: normal !important;
+overflow-wrap: anywhere;
+}
+
+.table-text-nowrap {
+white-space: nowrap !important;
+}
+
+.table-text-break {
+overflow-wrap: anywhere;
+word-break: normal;
+}
+
+/* --------------------------------------
+8. NUMERIC DATA
+Useful for fees, seat counts, rankings and statistics.
+-------------------------------------- */
+
+.table-numeric {
+font-variant-numeric: tabular-nums;
+}
+
+.table-numeric th,
+.table-numeric td {
+font-variant-numeric: tabular-nums;
+}
+
+.table-numeric-end th:not(:first-child),
+.table-numeric-end td:not(:first-child) {
+text-align: end;
+}
+
+.table-currency {
+white-space: nowrap;
+font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------
+9. COLLEGE AND COURSE COMPARISON TABLES
+Optional structural variants for education pages.
+-------------------------------------- */
+
+.college-comparison-table,
+.course-comparison-table {
+width: 100%;
+max-width: 100%;
+table-layout: auto;
+}
+
+.college-comparison-table th,
+.college-comparison-table td,
+.course-comparison-table th,
+.course-comparison-table td {
+vertical-align: top;
+overflow-wrap: anywhere;
+}
+
+.college-comparison-table .college-name,
+.course-comparison-table .course-name {
+min-width: 10rem;
+}
+
+.college-comparison-table .college-location {
+min-width: 8rem;
+}
+
+.college-comparison-table .college-fees,
+.course-comparison-table .course-fees {
+white-space: nowrap;
+font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------
+10. FEE AND ADMISSION TABLES
+Keep financial and date values easy to scan.
+-------------------------------------- */
+
+.fee-table,
+.admission-table {
+width: 100%;
+max-width: 100%;
+}
+
+.fee-table th,
+.fee-table td,
+.admission-table th,
+.admission-table td {
+vertical-align: top;
+}
+
+.fee-table .fee-amount,
+.admission-table .date-value {
+white-space: nowrap;
+font-variant-numeric: tabular-nums;
+}
+
+.fee-table .fee-description,
+.admission-table .process-description {
+min-width: 10rem;
+white-space: normal;
+overflow-wrap: anywhere;
+}
+
+/* --------------------------------------
+11. DOCUMENT CHECKLIST TABLES
+-------------------------------------- */
+
+.document-table {
+width: 100%;
+max-width: 100%;
+}
+
+.document-table .document-name {
+min-width: 10rem;
+}
+
+.document-table .document-status {
+white-space: nowrap;
+}
+
+.document-table input[type="checkbox"] {
+vertical-align: middle;
+}
+
+.document-table label {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+max-width: 100%;
+}
+
+/* --------------------------------------
+12. APPLICATION AND ADMIN TABLES
+-------------------------------------- */
+
+.application-table,
+.admin-table,
+.jobs-table {
+width: 100%;
+max-width: 100%;
+}
+
+.application-table th,
+.application-table td,
+.admin-table th,
+.admin-table td,
+.jobs-table th,
+.jobs-table td {
+vertical-align: middle;
+overflow-wrap: anywhere;
+}
+
+.application-table .application-id,
+.admin-table .record-id {
+white-space: nowrap;
+font-variant-numeric: tabular-nums;
+}
+
+.application-table .application-actions,
+.admin-table .record-actions,
+.jobs-table .job-actions {
+white-space: nowrap;
+}
+
+.application-table :where(button, a),
+.admin-table :where(button, a),
+.jobs-table :where(button, a) {
+max-width: 100%;
+}
+
+/* --------------------------------------
+13. STATUS AND BADGE CELLS
+Appearance is inherited from the existing badge components.
+-------------------------------------- */
+
+.table-status {
+min-width: 0;
+white-space: normal;
+overflow-wrap: anywhere;
+}
+
+.table-status .badge,
+.table-status [class*="badge"] {
+max-width: 100%;
+white-space: normal;
+overflow-wrap: anywhere;
+}
+
+/* --------------------------------------
+14. EMPTY TABLE STATES
+-------------------------------------- */
+
+.table-empty,
+.table-empty-state {
+padding: 1.5rem;
+text-align: center;
+vertical-align: middle;
+}
+
+.table-empty-state p {
+margin: 0;
+}
+
+.table-empty-state > * + * {
+margin-block-start: 0.5rem;
+}
+
+/* --------------------------------------
+15. SORTABLE TABLE HEADERS
+CSS styles only. Sorting requires HTML and JavaScript.
+-------------------------------------- */
+
+.table-sort-button {
+display: inline-flex;
+align-items: center;
+gap: 0.4rem;
+max-width: 100%;
+padding: 0;
+border: 0;
+background: transparent;
+color: inherit;
+font: inherit;
+text-align: inherit;
+cursor: pointer;
+}
+
+.table-sort-button:focus-visible {
+outline: 2px solid currentColor;
+outline-offset: 3px;
+}
+
+.table-sort-indicator {
+display: inline-block;
+flex: 0 0 auto;
+min-width: 0.75em;
+}
+
+/* --------------------------------------
+16. STICKY HEADER OPTION
+Use only when the table wrapper has a constrained scroll area.
+-------------------------------------- */
+
+.table-sticky-header thead th {
+position: sticky;
+top: 0;
+z-index: 1;
+}
+
+/* --------------------------------------
+17. RESPONSIVE BEHAVIOR: SMALL PHONES
+-------------------------------------- */
+
+@media (max-width: 359px) {
+.table-responsive,
+.table-wrapper {
+max-width: 100%;
+}
+
+.table-compact th,
+.table-compact td {
+padding: 0.35rem;
+}
+
+.table-spacious th,
+.table-spacious td {
+padding: 0.6rem;
+}
+
+.table-col-nowrap {
+white-space: normal;
+overflow-wrap: anywhere;
+}
+}
+
+/* --------------------------------------
+18. RESPONSIVE BEHAVIOR: PHONES
+-------------------------------------- */
+
+@media (max-width: 599px) {
+.table-responsive,
+.table-wrapper {
+overflow-x: auto;
+}
+
+.table-responsive–standard > table,
+.table-responsive–wide > table,
+.table-responsive–extra-wide > table {
+min-width: 640px;
+}
+
+.college-comparison-table,
+.course-comparison-table,
+.fee-table,
+.admission-table,
+.document-table,
+.application-table,
+.admin-table,
+.jobs-table {
+max-width: 100%;
+}
+
+.application-table .application-actions,
+.admin-table .record-actions,
+.jobs-table .job-actions {
+white-space: normal;
+}
+}
+
+/* --------------------------------------
+19. TABLET ADJUSTMENTS
+-------------------------------------- */
+
+@media (min-width: 600px) and (max-width: 1023px) {
+.table-responsive,
+.table-wrapper {
+max-width: 100%;
+}
+}
+
+/* --------------------------------------
+20. KEYBOARD ACCESSIBILITY
+-------------------------------------- */
+
+.table-responsive:focus-visible,
+.table-wrapper:focus-visible,
+.table-sort-button:focus-visible {
+outline-offset: 3px;
+}
+
+/* --------------------------------------
+21. HIGH CONTRAST SUPPORT
+-------------------------------------- */
+
+@media (forced-colors: active) {
+.table-bordered,
+.table-bordered th,
+.table-bordered td,
+.table-divided th,
+.table-divided td {
+border-color: CanvasText;
+}
+
+.table-sort-button:focus-visible,
+.table-responsive:focus-visible,
+.table-wrapper:focus-visible {
+outline-color: Highlight;
+}
+}
+
+/* --------------------------------------
+22. PRINT AND PDF FOUNDATIONS
+Detailed print rules remain in print.css.
+-------------------------------------- */
+
+@media print {
+.table-responsive,
+.table-wrapper {
+width: 100%;
+max-width: 100%;
+overflow: visible !important;
+}
+
+.table-responsive > table,
+.table-wrapper > table {
+width: 100%;
+min-width: 0 !important;
+max-width: 100%;
+table-layout: auto;
+}
+
+.table-responsive–compact > table,
+.table-responsive–standard > table,
+.table-responsive–wide > table,
+.table-responsive–extra-wide > table {
+min-width: 0 !important;
+}
+
+:where(table) {
+break-inside: auto;
+}
+
+:where(thead) {
+display: table-header-group;
+}
+
+:where(tfoot) {
+display: table-footer-group;
+}
+
+:where(tr) {
+break-inside: avoid;
+page-break-inside: avoid;
+}
+
+:where(th, td) {
+overflow-wrap: anywhere;
+}
+
+.table-sort-button {
+color: inherit;
+text-decoration: none;
+}
+}
+
+/* =========================================================
+END OF MEDORBITS UNIVERSAL TABLE SYSTEM
+========================================================= */

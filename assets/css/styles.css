@@ -1,2 +1,1553 @@
+/* ============================================================
+MEDORBITS | COMPLETE SHARED STYLESHEET
+File: /assets/css/styles.css
+Version: 3.0.0
+
+Purpose:
+
+* Shared public website styling
+* Royal premium visual foundation
+* Responsive layouts and navigation
+* Reusable components, forms and tables
+* Page-specific accent customization
+* Accessibility, reduced motion and printing
+
+Existing HTML classes are preserved.
+
+Integration:
+reset.css -> variables.css -> tokens.css -> theme.css
+-> font.css -> typography.css -> styles.css
+-> layout.css -> components.css -> navigation.css
+-> cards.css -> forms.css -> tables.css -> dashboard.css
+-> accessibility.css -> animations.css -> responsive.css
+-> print.css
+
+This stylesheet does not replace the specialized files above.
+============================================================ */
+
 @import url("./variables.css");
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--gold-light)}a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.container{width:min(calc(100% - 2rem),var(--content-width));margin:auto;padding:2rem 0}.site-header,.site-footer{padding:1rem max(1rem,calc((100% - var(--content-width))/2));border-bottom:1px solid var(--border)}.site-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}.brand{font-size:1.3rem;font-weight:800;text-decoration:none;color:var(--gold-light)}nav{display:flex;gap:1rem;flex-wrap:wrap}nav a{text-decoration:none}.site-footer{border-top:1px solid var(--border);border-bottom:0}.eyebrow{color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-size:.8rem}.notice{padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);color:var(--muted)}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.15}.skip-link{position:absolute;left:-9999px}.skip-link:focus{left:1rem;top:1rem;z-index:99;background:var(--panel);padding:.75rem}@media(max-width:600px){nav{gap:.6rem}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ============================================================
+
+1. FALLBACK DESIGN TOKENS
+    ============================================================ */
+
+:root {
+–bg: #100a17;
+–bg-secondary: #191023;
+–panel: #21172b;
+–panel-raised: #2b1d36;
+–panel-hover: #34233f;
+
+–text: #f7f1fa;
+–heading: #fffaf4;
+–muted: #b7acbf;
+
+–gold: #c9a96e;
+–gold-light: #e4d0a1;
+–gold-hover: #f0ddb0;
+
+–accent: var(–gold);
+–accent-hover: var(–gold-hover);
+–accent-text: var(–gold-light);
+–accent-soft: rgb(201 169 110 / 12%);
+–accent-border: rgb(201 169 110 / 42%);
+
+–link: var(–gold-light);
+–link-hover: var(–gold-hover);
+
+–border: rgb(228 208 161 / 18%);
+–border-strong: rgb(228 208 161 / 38%);
+–border-subtle: rgb(255 255 255 / 8%);
+
+–header-bg: rgb(16 10 23 / 96%);
+–footer-bg: #0b0710;
+–nav-link: var(–text);
+–nav-link-hover: var(–gold-light);
+–nav-hover-bg: rgb(201 169 110 / 10%);
+
+–button-bg: linear-gradient(135deg, #e4d0a1, #c9a96e);
+–button-border: #c9a96e;
+–button-text: #21172b;
+–button-hover-bg: linear-gradient(135deg, #f0ddb0, #d7b77a);
+–button-hover-text: #160e1c;
+
+–input-bg: #17101f;
+–input-border: rgb(228 208 161 / 30%);
+–placeholder: #a99caf;
+
+–table-row-hover: rgb(201 169 110 / 6%);
+–selection-bg: #c9a96e;
+–selection-text: #160e1c;
+–focus: #e4d0a1;
+
+–success-bg: rgb(42 145 97 / 13%);
+–success-border: rgb(74 190 132 / 55%);
+–success-text: #a6edc5;
+
+–warning-bg: rgb(202 143 43 / 13%);
+–warning-border: rgb(225 173 75 / 55%);
+–warning-text: #f3d49a;
+
+–danger-bg: rgb(202 63 77 / 13%);
+–danger-border: rgb(239 107 120 / 55%);
+–danger-text: #ffb6bd;
+
+–info-bg: rgb(81 142 211 / 13%);
+–info-border: rgb(106 168 234 / 55%);
+–info-text: #b9d9ff;
+
+–code-bg: #0b0710;
+–code-text: #f1dfb6;
+
+–footer-link: #e4d0a1;
+–footer-link-hover: #fff0c5;
+
+–font-body: "DM Sans", system-ui, -apple-system,
+"Segoe UI", sans-serif;
+–font-display: "Playfair Display", Georgia, serif;
+
+–content-width: 1200px;
+–content-wide: 1440px;
+–content-narrow: 800px;
+–page-gutter: 1rem;
+
+–radius-xs: 5px;
+–radius-sm: 8px;
+–radius-md: 12px;
+–radius-lg: 18px;
+–radius-xl: 24px;
+–radius-pill: 999px;
+
+–shadow-sm: 0 2px 8px rgb(0 0 0 / 12%);
+–shadow-md: 0 8px 24px rgb(0 0 0 / 18%);
+–shadow-lg: 0 16px 42px rgb(0 0 0 / 25%);
+–shadow-gold: 0 8px 24px rgb(201 169 110 / 12%);
+
+–duration-fast: 150ms;
+–duration-normal: 220ms;
+–duration-slow: 350ms;
+–ease: ease;
+
+–stack-gap: 1rem;
+–grid-gap: 1.25rem;
+–cluster-gap: 0.75rem;
+
+color-scheme: dark;
+}
+
+/* ============================================================
+02. OPTIONAL THEME OVERRIDES
+Set data-theme on html or body.
+============================================================ */
+
+:root[data-theme="royal"],
+body[data-theme="royal"] {
+–bg: #100a17;
+–bg-secondary: #191023;
+–panel: #21172b;
+–panel-raised: #2b1d36;
+–panel-hover: #34233f;
+–text: #f7f1fa;
+–heading: #fffaf4;
+–muted: #b7acbf;
+–gold: #c9a96e;
+–gold-light: #e4d0a1;
+–accent: #c9a96e;
+–accent-hover: #f0ddb0;
+–accent-text: #e4d0a1;
+–accent-soft: rgb(201 169 110 / 12%);
+–accent-border: rgb(201 169 110 / 42%);
+–border: rgb(228 208 161 / 18%);
+–header-bg: rgb(16 10 23 / 96%);
+–footer-bg: #0b0710;
+color-scheme: dark;
+}
+
+:root[data-theme="burgundy"],
+body[data-theme="burgundy"] {
+–bg: #17090f;
+–bg-secondary: #240d17;
+–panel: #301320;
+–panel-raised: #3b1929;
+–panel-hover: #482032;
+–text: #fbf1f3;
+–heading: #fff8f4;
+–muted: #cbb2bb;
+–gold: #d6b57b;
+–gold-light: #eed8a8;
+–accent: #d6b57b;
+–accent-hover: #f4dfb1;
+–accent-text: #eed8a8;
+–accent-soft: rgb(214 181 123 / 12%);
+–accent-border: rgb(214 181 123 / 42%);
+–border: rgb(238 216 168 / 20%);
+–header-bg: rgb(23 9 15 / 96%);
+–footer-bg: #10060a;
+color-scheme: dark;
+}
+
+:root[data-theme="sapphire"],
+body[data-theme="sapphire"] {
+–bg: #07111f;
+–bg-secondary: #0c1a2c;
+–panel: #12243a;
+–panel-raised: #19314c;
+–panel-hover: #214061;
+–text: #edf5ff;
+–heading: #ffffff;
+–muted: #afc2d8;
+–gold: #9fc6f2;
+–gold-light: #c7e0ff;
+–accent: #8cb8ef;
+–accent-hover: #b5d5ff;
+–accent-text: #c7e0ff;
+–accent-soft: rgb(140 184 239 / 12%);
+–accent-border: rgb(140 184 239 / 42%);
+–border: rgb(159 198 242 / 20%);
+–header-bg: rgb(7 17 31 / 96%);
+–footer-bg: #040b14;
+color-scheme: dark;
+}
+
+:root[data-theme="light"],
+body[data-theme="light"],
+:root[data-theme="ivory"],
+body[data-theme="ivory"] {
+–bg: #faf8f4;
+–bg-secondary: #f1ede5;
+–panel: #ffffff;
+–panel-raised: #f5f0e7;
+–panel-hover: #eee7db;
+–text: #28212b;
+–heading: #201625;
+–muted: #6f6674;
+–gold: #8a672e;
+–gold-light: #73501c;
+–accent: #9a763d;
+–accent-hover: #75501e;
+–accent-text: #73501c;
+–accent-soft: rgb(154 118 61 / 10%);
+–accent-border: rgb(154 118 61 / 35%);
+–border: #ded5c7;
+–border-strong: #bba98d;
+–border-subtle: #eae4da;
+–header-bg: rgb(250 248 244 / 96%);
+–footer-bg: #f0ebe2;
+–nav-link: #28212b;
+–nav-link-hover: #73501c;
+–nav-hover-bg: rgb(154 118 61 / 9%);
+–button-bg: #8a672e;
+–button-border: #8a672e;
+–button-text: #ffffff;
+–button-hover-bg: #73501c;
+–button-hover-text: #ffffff;
+–input-bg: #ffffff;
+–input-border: #cfc3b2;
+–placeholder: #786f79;
+–table-row-hover: rgb(154 118 61 / 6%);
+–selection-bg: #8a672e;
+–selection-text: #ffffff;
+–focus: #73501c;
+–success-bg: #eaf6ee;
+–success-border: #86bd98;
+–success-text: #205c35;
+–warning-bg: #fff4db;
+–warning-border: #d8b566;
+–warning-text: #735017;
+–danger-bg: #fff0f0;
+–danger-border: #d99199;
+–danger-text: #8a2631;
+–info-bg: #eaf3ff;
+–info-border: #9abbe8;
+–info-text: #244f86;
+–code-bg: #f1ece4;
+–code-text: #392d1b;
+–footer-link: #73501c;
+–footer-link-hover: #4b3210;
+–shadow-sm: 0 2px 8px rgb(39 29 18 / 6%);
+–shadow-md: 0 8px 24px rgb(39 29 18 / 9%);
+–shadow-lg: 0 16px 42px rgb(39 29 18 / 13%);
+color-scheme: light;
+}
+
+/* ============================================================
+03. PAGE ACCENTS
+Accent only; no forced page layout.
+============================================================ */
+
+[data-page="home"] {
+–accent: #c9a96e;
+–accent-hover: #e4d0a1;
+}
+
+[data-page="education"] {
+–accent: #80b8a4;
+–accent-hover: #a4d8c4;
+}
+
+[data-page="admissions"],
+[data-page="applications"] {
+–accent: #d6b57b;
+–accent-hover: #f4dfb1;
+}
+
+[data-page="medical"],
+[data-page="colleges"] {
+–accent: #78bca6;
+–accent-hover: #a0d9c5;
+}
+
+[data-page="documents"],
+[data-page="official-documents"] {
+–accent: #a9a2df;
+–accent-hover: #c8c3f4;
+}
+
+[data-page="study-abroad"] {
+–accent: #8cb8ef;
+–accent-hover: #b5d5ff;
+}
+
+[data-page="careers"],
+[data-page="jobs"],
+[data-page="internships"] {
+–accent: #e0ad76;
+–accent-hover: #f4c99b;
+}
+
+[data-page="accounts"],
+[data-page="admin"] {
+–accent: #c4a4e8;
+–accent-hover: #ddc6f5;
+}
+
+[data-page="legal"] {
+–accent: #9d8c75;
+–accent-hover: #c1ad91;
+}
+
+/* ============================================================
+04. GLOBAL RESET AND BASE
+============================================================ */
+
+*,
+*::before,
+*::after {
+box-sizing: border-box;
+}
+
+html {
+min-width: 0;
+scroll-behavior: smooth;
+scroll-padding-top: 6rem;
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+min-width: 0;
+min-height: 100vh;
+min-height: 100dvh;
+margin: 0;
+background: var(–bg);
+color: var(–text);
+font-family: var(–font-body);
+font-size: 16px;
+line-height: 1.65;
+overflow-wrap: break-word;
+}
+
+img,
+picture,
+video,
+canvas,
+svg,
+iframe {
+max-width: 100%;
+}
+
+img,
+picture,
+video,
+canvas {
+display: block;
+}
+
+img,
+video {
+height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+max-width: 100%;
+font: inherit;
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+cursor: not-allowed;
+}
+
+[hidden] {
+display: none !important;
+}
+
+::selection {
+background: var(–selection-bg);
+color: var(–selection-text);
+}
+
+/* ============================================================
+05. TYPOGRAPHY
+============================================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote {
+margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+color: var(–heading);
+font-family: var(–font-display);
+font-weight: 700;
+line-height: 1.2;
+overflow-wrap: anywhere;
+}
+
+h1 {
+font-size: clamp(2rem, 5vw, 3.75rem);
+letter-spacing: -0.035em;
+}
+
+h2 {
+font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+letter-spacing: -0.025em;
+}
+
+h3 {
+font-size: clamp(1.2rem, 2.5vw, 1.65rem);
+}
+
+h4 {
+font-size: 1.125rem;
+}
+
+p {
+overflow-wrap: anywhere;
+}
+
+p + p {
+margin-top: 0.9rem;
+}
+
+small {
+font-size: 0.875em;
+}
+
+strong,
+b {
+font-weight: 700;
+}
+
+.eyebrow {
+margin-bottom: 0.65rem;
+color: var(–accent);
+font-size: 0.78rem;
+font-weight: 700;
+letter-spacing: 0.14em;
+line-height: 1.5;
+text-transform: uppercase;
+}
+
+.section-heading {
+margin-bottom: 0.75rem;
+}
+
+.section-description,
+.text-muted {
+color: var(–muted);
+}
+
+.text-accent,
+.royal-heading {
+color: var(–accent-text);
+}
+
+.text-center {
+text-align: center;
+}
+
+.text-start {
+text-align: start;
+}
+
+.text-end {
+text-align: end;
+}
+
+/* ============================================================
+06. LINKS AND ACCESSIBILITY
+============================================================ */
+
+a {
+color: var(–link);
+text-underline-offset: 0.2em;
+text-decoration-thickness: from-font;
+}
+
+a:hover {
+color: var(–link-hover);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+outline: 3px solid var(–focus);
+outline-offset: 3px;
+}
+
+a,
+button {
+touch-action: manipulation;
+}
+
+.skip-link {
+position: fixed;
+z-index: 9999;
+top: 0.75rem;
+left: 0.75rem;
+max-width: calc(100vw - 1.5rem);
+padding: 0.8rem 1rem;
+transform: translateY(-180%);
+border: 1px solid var(–border-strong);
+border-radius: var(–radius-sm);
+background: var(–panel-raised);
+color: var(–text);
+font-weight: 700;
+text-decoration: none;
+box-shadow: var(–shadow-lg);
+}
+
+.skip-link:focus {
+transform: translateY(0);
+}
+
+.sr-only,
+.visually-hidden {
+position: absolute !important;
+width: 1px !important;
+height: 1px !important;
+padding: 0 !important;
+margin: -1px !important;
+overflow: hidden !important;
+clip: rect(0, 0, 0, 0) !important;
+white-space: nowrap !important;
+border: 0 !important;
+}
+
+/* ============================================================
+07. CONTAINERS AND LAYOUT
+============================================================ */
+
+.container,
+.container–wide,
+.container–narrow {
+width: min(calc(100% - 2rem), var(–content-width));
+min-width: 0;
+margin-inline: auto;
+padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+.container–wide {
+max-width: var(–content-wide);
+}
+
+.container–narrow {
+max-width: var(–content-narrow);
+}
+
+.container–fluid {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+margin-inline: auto;
+padding-inline: var(–page-gutter);
+}
+
+.section {
+padding-block: clamp(2rem, 5vw, 4.5rem);
+}
+
+.section + .section {
+border-top: 1px solid var(–border-subtle);
+}
+
+.stack > * + * {
+margin-block-start: var(–stack-gap, 1rem);
+}
+
+.cluster {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: var(–cluster-gap, 0.75rem);
+}
+
+.cluster–between {
+justify-content: space-between;
+}
+
+.cluster–center {
+justify-content: center;
+}
+
+.grid {
+display: grid;
+grid-template-columns: minmax(0, 1fr);
+gap: var(–grid-gap, 1.25rem);
+min-width: 0;
+}
+
+.grid > * {
+min-width: 0;
+}
+
+.grid–2 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid–3 {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid–4 {
+grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid–auto {
+grid-template-columns: repeat(
+auto-fit,
+minmax(min(100%, 240px), 1fr)
+);
+}
+
+.flex {
+display: flex;
+min-width: 0;
+}
+
+.flex-wrap {
+flex-wrap: wrap;
+}
+
+.flex-center {
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.gap-sm {
+gap: 0.5rem;
+}
+
+.gap-md {
+gap: 1rem;
+}
+
+.gap-lg {
+gap: 1.5rem;
+}
+
+.width-full {
+width: 100%;
+}
+
+.max-width-readable {
+max-width: 75ch;
+}
+
+.min-width-0 {
+min-width: 0;
+}
+
+/* ============================================================
+08. SITE HEADER AND BRAND
+============================================================ */
+
+.site-header {
+position: relative;
+z-index: 100;
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 1rem;
+padding: 1rem max(1rem, calc((100% - var(–content-width)) / 2));
+border-bottom: 1px solid var(–border);
+background: var(–header-bg);
+color: var(–text);
+}
+
+.site-header__inner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 1rem;
+width: 100%;
+max-width: var(–content-width);
+margin-inline: auto;
+}
+
+.brand {
+display: inline-flex;
+align-items: center;
+gap: 0.65rem;
+min-width: 0;
+color: var(–gold-light);
+font-family: var(–font-display);
+font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+font-weight: 700;
+letter-spacing: -0.025em;
+text-decoration: none;
+}
+
+.brand:hover {
+color: var(–gold-hover);
+}
+
+.brand img,
+.brand__logo {
+display: block;
+width: auto;
+max-width: 100%;
+max-height: 2.75rem;
+object-fit: contain;
+}
+
+.brand__text {
+overflow-wrap: anywhere;
+}
+
+/* ============================================================
+09. NAVIGATION
+============================================================ */
+
+.site-header nav,
+.site-nav {
+display: flex;
+align-items: center;
+flex-wrap: wrap;
+gap: 0.45rem;
+min-width: 0;
+max-width: 100%;
+}
+
+.site-header nav a,
+.site-nav a {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-height: 2.5rem;
+padding: 0.5rem 0.75rem;
+border: 1px solid transparent;
+border-radius: var(–radius-sm);
+color: var(–nav-link);
+font-size: 0.94rem;
+font-weight: 500;
+text-align: center;
+text-decoration: none;
+transition:
+color var(–duration-fast) var(–ease),
+background-color var(–duration-fast) var(–ease),
+border-color var(–duration-fast) var(–ease);
+}
+
+.site-header nav a:hover,
+.site-nav a:hover {
+background: var(–nav-hover-bg);
+color: var(–nav-link-hover);
+}
+
+.site-header nav a[aria-current="page"],
+.site-nav a[aria-current="page"] {
+border-color: var(–accent-border);
+background: var(–accent-soft);
+color: var(–accent-text);
+}
+
+/* ============================================================
+10. BUTTONS
+============================================================ */
+
+.button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+max-width: 100%;
+min-height: 2.75rem;
+padding: 0.7rem 1.1rem;
+border: 1px solid var(–button-border);
+border-radius: var(–radius-md);
+background: var(–button-bg);
+color: var(–button-text);
+font-weight: 700;
+line-height: 1.35;
+text-align: center;
+text-decoration: none;
+cursor: pointer;
+transition:
+background-color var(–duration-normal) var(–ease),
+border-color var(–duration-normal) var(–ease),
+color var(–duration-normal) var(–ease),
+transform var(–duration-fast) var(–ease);
+}
+
+.button:hover {
+background: var(–button-hover-bg);
+color: var(–button-hover-text);
+}
+
+.button:active {
+transform: translateY(1px);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+opacity: 0.6;
+cursor: not-allowed;
+transform: none;
+}
+
+.button–secondary {
+border-color: var(–border-strong);
+background: var(–panel);
+color: var(–text);
+}
+
+.button–secondary:hover {
+background: var(–panel-hover);
+color: var(–text);
+}
+
+.button–outline {
+border-color: var(–accent-border);
+background: transparent;
+color: var(–accent-text);
+}
+
+.button–outline:hover {
+background: var(–accent-soft);
+color: var(–accent-text);
+}
+
+.button–full {
+width: 100%;
+}
+
+.button-group {
+display: flex;
+flex-wrap: wrap;
+gap: 0.75rem;
+}
+
+/* ============================================================
+11. PANELS AND NOTICES
+============================================================ */
+
+.panel {
+min-width: 0;
+padding: clamp(1rem, 3vw, 1.5rem);
+border: 1px solid var(–border);
+border-radius: var(–radius-lg);
+background: var(–panel);
+color: var(–text);
+}
+
+.panel–raised {
+background: var(–panel-raised);
+box-shadow: var(–shadow-md);
+}
+
+.panel–accent,
+.royal-surface {
+border: 1px solid var(–accent-border);
+border-radius: var(–radius-lg);
+background: linear-gradient(
+135deg,
+var(–panel-raised),
+var(–panel)
+);
+box-shadow: var(–shadow-md);
+}
+
+.notice {
+padding: 1rem;
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+background: var(–panel);
+color: var(–muted);
+}
+
+.notice–success {
+border-color: var(–success-border);
+background: var(–success-bg);
+color: var(–success-text);
+}
+
+.notice–warning {
+border-color: var(–warning-border);
+background: var(–warning-bg);
+color: var(–warning-text);
+}
+
+.notice–danger {
+border-color: var(–danger-border);
+background: var(–danger-bg);
+color: var(–danger-text);
+}
+
+.notice–info {
+border-color: var(–info-border);
+background: var(–info-bg);
+color: var(–info-text);
+}
+
+/* ============================================================
+12. GENERIC CARDS
+Use cards.css for specialized card designs.
+============================================================ */
+
+.card {
+min-width: 0;
+overflow: hidden;
+border: 1px solid var(–border);
+border-radius: var(–radius-lg);
+background: var(–panel);
+color: var(–text);
+box-shadow: var(–shadow-sm);
+}
+
+.card__body {
+padding: 1.25rem;
+}
+
+.card__title {
+margin-bottom: 0.5rem;
+color: var(–heading);
+}
+
+.card__description {
+color: var(–muted);
+}
+
+.card__actions {
+display: flex;
+flex-wrap: wrap;
+gap: 0.65rem;
+margin-top: 1rem;
+}
+
+.hover-lift {
+transition:
+transform var(–duration-normal) var(–ease),
+box-shadow var(–duration-normal) var(–ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+.hover-lift:hover {
+transform: translateY(-3px);
+box-shadow: var(–shadow-lg);
+}
+}
+
+/* ============================================================
+13. FORMS AND INPUTS
+Detailed application-specific rules belong in forms.css.
+============================================================ */
+
+.form {
+display: grid;
+gap: 1rem;
+min-width: 0;
+}
+
+.form-group {
+display: grid;
+gap: 0.4rem;
+min-width: 0;
+}
+
+.form label,
+.form-label {
+color: var(–heading);
+font-weight: 600;
+}
+
+.form input,
+.form select,
+.form textarea,
+.form-control {
+display: block;
+width: 100%;
+min-width: 0;
+max-width: 100%;
+padding: 0.75rem 0.85rem;
+border: 1px solid var(–input-border);
+border-radius: var(–radius-sm);
+background: var(–input-bg);
+color: var(–text);
+line-height: 1.5;
+}
+
+.form textarea,
+textarea.form-control {
+min-height: 8rem;
+resize: vertical;
+}
+
+.form input::placeholder,
+.form textarea::placeholder,
+.form-control::placeholder {
+color: var(–placeholder);
+opacity: 1;
+}
+
+.form input:disabled,
+.form select:disabled,
+.form textarea:disabled,
+.form-control:disabled {
+opacity: 0.65;
+cursor: not-allowed;
+}
+
+.form-help,
+.form-error {
+font-size: 0.9rem;
+}
+
+.form-help {
+color: var(–muted);
+}
+
+.form-error {
+color: var(–danger-text);
+}
+
+.form input[aria-invalid="true"],
+.form select[aria-invalid="true"],
+.form textarea[aria-invalid="true"] {
+border-color: var(–danger-border);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+width: 1rem;
+min-width: 1rem;
+height: 1rem;
+accent-color: var(–accent);
+}
+
+input[type="file"] {
+max-width: 100%;
+color: var(–text);
+}
+
+fieldset {
+min-width: 0;
+padding: 1rem;
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+}
+
+legend {
+padding-inline: 0.4rem;
+color: var(–heading);
+font-weight: 700;
+}
+
+/* ============================================================
+14. TABLES
+Detailed data-table variants belong in tables.css.
+============================================================ */
+
+.table-responsive {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+overflow-x: auto;
+overscroll-behavior-x: contain;
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+border-spacing: 0;
+}
+
+th,
+td {
+padding: 0.8rem 1rem;
+border-bottom: 1px solid var(–border);
+text-align: start;
+vertical-align: top;
+}
+
+th {
+background: var(–panel-raised);
+color: var(–heading);
+font-weight: 700;
+}
+
+tbody tr:hover {
+background: var(–table-row-hover);
+}
+
+tbody tr:last-child td {
+border-bottom: 0;
+}
+
+/* ============================================================
+15. STATUS LABELS
+============================================================ */
+
+.status {
+display: inline-flex;
+align-items: center;
+gap: 0.35rem;
+max-width: 100%;
+padding: 0.25rem 0.65rem;
+border: 1px solid var(–border);
+border-radius: var(–radius-pill);
+background: var(–panel);
+color: var(–muted);
+font-size: 0.8rem;
+font-weight: 700;
+line-height: 1.4;
+overflow-wrap: anywhere;
+}
+
+.status–success {
+border-color: var(–success-border);
+background: var(–success-bg);
+color: var(–success-text);
+}
+
+.status–warning {
+border-color: var(–warning-border);
+background: var(–warning-bg);
+color: var(–warning-text);
+}
+
+.status–danger {
+border-color: var(–danger-border);
+background: var(–danger-bg);
+color: var(–danger-text);
+}
+
+.status–info {
+border-color: var(–info-border);
+background: var(–info-bg);
+color: var(–info-text);
+}
+
+/* ============================================================
+16. LISTS AND READING CONTENT
+============================================================ */
+
+.content-list {
+padding-inline-start: 1.35rem;
+}
+
+.content-list li + li {
+margin-top: 0.45rem;
+}
+
+.divider {
+height: 1px;
+margin-block: 1.5rem;
+border: 0;
+background: var(–border);
+}
+
+.prose {
+max-width: 75ch;
+}
+
+.prose > * + * {
+margin-block-start: 1rem;
+}
+
+.prose ul,
+.prose ol {
+padding-inline-start: 1.5rem;
+}
+
+.prose li + li {
+margin-block-start: 0.4rem;
+}
+
+.prose blockquote {
+padding: 1rem 1.25rem;
+border-inline-start: 3px solid var(–accent);
+background: var(–panel);
+color: var(–muted);
+}
+
+.prose pre,
+.prose code {
+overflow-wrap: anywhere;
+}
+
+.prose pre {
+max-width: 100%;
+padding: 1rem;
+overflow-x: auto;
+border: 1px solid var(–border);
+border-radius: var(–radius-md);
+background: var(–code-bg);
+color: var(–code-text);
+}
+
+.royal-divider {
+height: 1px;
+border: 0;
+background: linear-gradient(
+90deg,
+transparent,
+var(–accent),
+transparent
+);
+}
+
+/* ============================================================
+17. IMAGES AND MEDIA
+============================================================ */
+
+.media-frame {
+min-width: 0;
+overflow: hidden;
+border: 1px solid var(–border);
+border-radius: var(–radius-lg);
+background: var(–panel);
+}
+
+.media-frame img,
+.media-frame video {
+width: 100%;
+height: auto;
+object-fit: cover;
+}
+
+.aspect-video {
+aspect-ratio: 16 / 9;
+}
+
+.aspect-square {
+aspect-ratio: 1;
+}
+
+.aspect-video img,
+.aspect-square img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.logo-image {
+width: auto;
+max-width: 100%;
+max-height: 3rem;
+object-fit: contain;
+}
+
+/* ============================================================
+18. FOOTER
+============================================================ */
+
+.site-footer {
+padding: 2rem max(1rem, calc((100% - var(–content-width)) / 2));
+border-top: 1px solid var(–border);
+background: var(–footer-bg);
+color: var(–muted);
+}
+
+.site-footer a {
+color: var(–footer-link);
+}
+
+.site-footer a:hover {
+color: var(–footer-link-hover);
+}
+
+.site-footer__inner {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 1.5rem;
+width: 100%;
+max-width: var(–content-width);
+margin-inline: auto;
+}
+
+.site-footer__heading {
+margin-bottom: 0.65rem;
+color: var(–heading);
+font-size: 1rem;
+}
+
+.site-footer__links {
+display: grid;
+gap: 0.5rem;
+}
+
+.site-footer__links a {
+width: fit-content;
+max-width: 100%;
+overflow-wrap: anywhere;
+text-decoration: none;
+}
+
+.site-footer__bottom {
+width: 100%;
+max-width: var(–content-width);
+margin: 1.5rem auto 0;
+padding-top: 1rem;
+border-top: 1px solid var(–border);
+font-size: 0.875rem;
+}
+
+/* ============================================================
+19. RESPONSIVE LAYOUTS
+============================================================ */
+
+@media (min-width: 768px) {
+.grid–auto-md {
+grid-template-columns: repeat(
+auto-fit,
+minmax(min(100%, 260px), 1fr)
+);
+}
+}
+
+@media (max-width: 900px) {
+.grid–4 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.site-footer__inner {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+
+@media (max-width: 767px) {
+html {
+scroll-padding-top: 1rem;
+}
+
+.container,
+.container–wide,
+.container–narrow {
+width: min(calc(100% - 1.5rem), var(–content-width));
+padding-block: 1.5rem;
+}
+
+.container–fluid {
+padding-inline: 0.75rem;
+}
+
+.site-header {
+gap: 0.75rem;
+padding: 0.85rem 1rem;
+}
+
+.site-header nav,
+.site-nav {
+gap: 0.3rem;
+}
+
+.site-header nav a,
+.site-nav a {
+min-height: 2.65rem;
+padding: 0.5rem 0.65rem;
+font-size: 0.9rem;
+}
+
+.grid–3,
+.grid–4 {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.site-footer__inner {
+grid-template-columns: minmax(0, 1fr);
+}
+}
+
+@media (max-width: 480px) {
+body {
+font-size: 15px;
+}
+
+.grid–2,
+.grid–3,
+.grid–4 {
+grid-template-columns: minmax(0, 1fr);
+}
+
+.button-group .button {
+width: 100%;
+}
+
+.site-header nav,
+.site-nav {
+width: 100%;
+}
+
+.site-header nav a,
+.site-nav a {
+flex: 1 1 auto;
+}
+
+th,
+td {
+padding: 0.65rem 0.75rem;
+}
+
+.notice {
+padding: 0.85rem;
+}
+}
+
+/* ============================================================
+20. REDUCED MOTION
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+html {
+scroll-behavior: auto;
+}
+
+*,
+*::before,
+*::after {
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+scroll-behavior: auto !important;
+transition-duration: 0.01ms !important;
+}
+}
+
+/* ============================================================
+21. HIGH CONTRAST
+============================================================ */
+
+@media (forced-colors: active) {
+a,
+button,
+input,
+select,
+textarea,
+.panel,
+.notice,
+.status {
+forced-color-adjust: auto;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+outline: 2px solid Highlight;
+}
+}
+
+/* ============================================================
+22. PRINT BASELINE
+Detailed document rules belong in print.css.
+============================================================ */
+
+@media print {
+html,
+body {
+min-width: 0;
+background: #fff !important;
+color: #000 !important;
+box-shadow: none !important;
+}
+
+.site-header,
+.site-footer {
+background: #fff !important;
+color: #000 !important;
+box-shadow: none !important;
+}
+
+.skip-link,
+.no-print,
+.button,
+button {
+display: none !important;
+}
+
+a {
+color: #000 !important;
+text-decoration: underline;
+}
+
+.container,
+.container–wide,
+.container–narrow {
+width: 100%;
+max-width: none;
+padding: 0;
+}
+
+.panel,
+.notice,
+.media-frame {
+break-inside: avoid;
+box-shadow: none !important;
+}
+
+table {
+break-inside: auto;
+}
+
+tr,
+img {
+break-inside: avoid;
+}
+}

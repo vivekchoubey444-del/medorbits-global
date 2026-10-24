@@ -1,1 +1,825 @@
-/* MedOrbits stylesheet starter. */
+/*
+
+* ============================================================
+* MedOrbits | Motion & Opening Experience System
+* File: assets/css/animations.css
+* Version: 1.0.0
+* ============================================================
+* Brand:
+* MedOrbits -- Education · Admissions · Careers · Recruitment
+* Visual direction:
+* Royal Aubergine • Champagne Gold • Soft Lavender
+* Designed for:
+* ●	Main homepage: /index.html
+* ●	Education index pages
+* ●	Admissions and medical index pages
+* ●	College directories
+* ●	Official documents
+* ●	Study-abroad pages
+* ●	Careers and recruitment
+* ●	Applications, accounts and admin
+* Dependencies:
+* ●	assets/css/tokens.css
+* ●	assets/css/typography.css
+* ●	assets/css/accessibility.css
+* Load this stylesheet after the shared design tokens.
+* IMPORTANT:
+* CSS provides visual motion only. JavaScript is required for
+* scroll-triggered reveals, one-time intro completion, and
+* functional loading states. The optional JavaScript hooks are
+* described after this stylesheet.
+    */
+
+/* ============================================================
+
+1. MOTION TOKENS
+    ============================================================ */
+
+:root {
+–motion-gold: var(–mo-brand-light, #e4d0a1);
+–motion-gold-deep: var(–mo-brand, #c9a96e);
+–motion-bg: var(–bg, #100a17);
+–motion-panel: var(–panel, #21172b);
+–motion-text: var(–text, #f7f1fa);
+
+–motion-fast: 160ms;
+–motion-normal: 280ms;
+–motion-slow: 520ms;
+–motion-opening: 900ms;
+
+–motion-ease-standard: cubic-bezier(.2, 0, 0, 1);
+–motion-ease-luxury: cubic-bezier(.16, 1, .3, 1);
+–motion-ease-spring: cubic-bezier(.2, .8, .2, 1);
+
+–motion-distance-sm: 12px;
+–motion-distance-md: 28px;
+–motion-distance-lg: 48px;
+
+–motion-stagger: 90ms;
+}
+
+/* ============================================================
+02. GLOBAL MOTION SAFETY
+============================================================ */
+
+html {
+scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+html {
+scroll-behavior: auto !important;
+}
+}
+
+.motion-safe,
+[data-motion="safe"] {
+animation-duration: var(–motion-normal);
+animation-timing-function: var(–motion-ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+*,
+*::before,
+*::after {
+scroll-behavior: auto !important;
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
+transition-delay: 0ms !important;
+}
+}
+
+/* ============================================================
+03. KEYFRAME LIBRARY
+============================================================ */
+
+@keyframes mo-fade-in {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+@keyframes mo-rise-in {
+from {
+opacity: 0;
+transform: translate3d(0, 26px, 0);
+}
+to {
+opacity: 1;
+transform: translate3d(0, 0, 0);
+}
+}
+
+@keyframes mo-rise-in-soft {
+from {
+opacity: 0;
+transform: translate3d(0, 12px, 0);
+}
+to {
+opacity: 1;
+transform: translate3d(0, 0, 0);
+}
+}
+
+@keyframes mo-slide-from-left {
+from {
+opacity: 0;
+transform: translate3d(-32px, 0, 0);
+}
+to {
+opacity: 1;
+transform: translate3d(0, 0, 0);
+}
+}
+
+@keyframes mo-slide-from-right {
+from {
+opacity: 0;
+transform: translate3d(32px, 0, 0);
+}
+to {
+opacity: 1;
+transform: translate3d(0, 0, 0);
+}
+}
+
+@keyframes mo-scale-in {
+from {
+opacity: 0;
+transform: scale(.965);
+}
+to {
+opacity: 1;
+transform: scale(1);
+}
+}
+
+@keyframes mo-gold-sweep {
+from {
+transform: translateX(-110%);
+}
+to {
+transform: translateX(110%);
+}
+}
+
+@keyframes mo-gold-line {
+from { transform: scaleX(0); }
+to { transform: scaleX(1); }
+}
+
+@keyframes mo-orbit-turn {
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
+}
+
+@keyframes mo-orbit-reverse {
+from { transform: rotate(360deg); }
+to { transform: rotate(0deg); }
+}
+
+@keyframes mo-soft-glow {
+0%, 100% {
+box-shadow: 0 0 0 rgb(201 169 110 / 0%);
+}
+50% {
+box-shadow: 0 0 28px rgb(201 169 110 / 13%);
+}
+}
+
+@keyframes mo-float {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-7px); }
+}
+
+@keyframes mo-pulse-ring {
+0% {
+opacity: .55;
+transform: scale(.94);
+}
+100% {
+opacity: 0;
+transform: scale(1.24);
+}
+}
+
+@keyframes mo-typing-caret {
+0%, 45% { opacity: 1; }
+46%, 100% { opacity: 0; }
+}
+
+@keyframes mo-progress {
+from { transform: scaleX(0); }
+to { transform: scaleX(1); }
+}
+
+/* ============================================================
+04. OPENING SYSTEM -- SHARED PAGE INTRO
+============================================================ */
+
+/*
+
+* Add data-opening="true" to body to enable the automatic
+* opening choreography.
+* The page content remains visible by default. JavaScript may
+* add .motion-ready after confirming motion is allowed.
+* This avoids a blank page when JavaScript fails or is disabled.
+    */
+
+[data-opening="true"] .opening-eyebrow {
+animation: mo-rise-in-soft 600ms var(–motion-ease-luxury) both;
+animation-delay: 80ms;
+}
+
+[data-opening="true"] .opening-title {
+animation: mo-rise-in 780ms var(–motion-ease-luxury) both;
+animation-delay: 160ms;
+}
+
+[data-opening="true"] .opening-description {
+animation: mo-rise-in-soft 680ms var(–motion-ease-luxury) both;
+animation-delay: 300ms;
+}
+
+[data-opening="true"] .opening-actions {
+animation: mo-rise-in 700ms var(–motion-ease-luxury) both;
+animation-delay: 420ms;
+}
+
+[data-opening="true"] .opening-visual {
+animation: mo-scale-in 900ms var(–motion-ease-luxury) both;
+animation-delay: 220ms;
+}
+
+[data-opening="true"] .opening-divider {
+transform-origin: left center;
+animation: mo-gold-line 700ms var(–motion-ease-luxury) both;
+animation-delay: 360ms;
+}
+
+/* ============================================================
+05. MAIN HOMEPAGE -- ROYAL ORBIT OPENING
+============================================================ */
+
+/*
+
+* Use:
+
+<body data-page="home" data-opening="true">
+
+* Suggested classes:
+* .home-hero
+* .home-hero__content
+* .home-hero__visual
+* .home-hero__orbit
+* .home-hero__spark
+    */
+
+[data-page="home"] .home-hero {
+position: relative;
+isolation: isolate;
+}
+
+[data-page="home"] .home-hero__content {
+animation: mo-slide-from-left 850ms var(–motion-ease-luxury) both;
+}
+
+[data-page="home"] .home-hero__visual {
+animation: mo-scale-in 1050ms var(–motion-ease-luxury) both;
+animation-delay: 180ms;
+}
+
+[data-page="home"] .home-hero__orbit {
+transform-origin: center;
+animation: mo-orbit-turn 36s linear infinite;
+}
+
+[data-page="home"] .home-hero__orbit–reverse {
+animation-name: mo-orbit-reverse;
+animation-duration: 48s;
+}
+
+[data-page="home"] .home-hero__spark {
+animation: mo-soft-glow 4s ease-in-out infinite;
+}
+
+[data-page="home"] .home-hero__badge {
+animation: mo-float 5s ease-in-out infinite;
+}
+
+[data-page="home"] .home-hero__title {
+text-wrap: balance;
+}
+
+[data-page="home"] .home-hero__title .gold-text {
+color: var(–motion-gold);
+}
+
+/* ============================================================
+06. EDUCATION INDEX -- KNOWLEDGE REVEAL
+============================================================ */
+
+[data-page="education"] .education-hero {
+animation: mo-fade-in 650ms ease both;
+}
+
+[data-page="education"] .education-hero__title {
+animation: mo-rise-in 760ms var(–motion-ease-luxury) both;
+animation-delay: 100ms;
+}
+
+[data-page="education"] .education-hero__description {
+animation: mo-rise-in-soft 700ms var(–motion-ease-luxury) both;
+animation-delay: 240ms;
+}
+
+[data-page="education"] .education-category {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease,
+background-color var(–motion-normal) ease;
+}
+
+[data-page="education"] .education-category:hover {
+transform: translateY(-4px);
+}
+
+/* ============================================================
+07. ADMISSIONS INDEX -- STEP-BY-STEP MOTION
+============================================================ */
+
+[data-page="admissions"] .admission-hero {
+animation: mo-fade-in 600ms ease both;
+}
+
+[data-page="admissions"] .admission-step {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease;
+}
+
+[data-page="admissions"] .admission-step:hover {
+transform: translateY(-3px);
+}
+
+[data-page="admissions"] .admission-step__number {
+transition:
+color var(–motion-fast) ease,
+background-color var(–motion-fast) ease,
+transform var(–motion-fast) ease;
+}
+
+[data-page="admissions"] .admission-step:hover .admission-step__number {
+transform: scale(1.05);
+}
+
+/* ============================================================
+08. MEDICAL INDEX -- CALM, PRECISE REVEALS
+============================================================ */
+
+[data-page="medical"] .medical-hero {
+animation: mo-fade-in 700ms ease both;
+}
+
+[data-page="medical"] .medical-feature {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease;
+}
+
+[data-page="medical"] .medical-feature:hover {
+transform: translateY(-3px);
+}
+
+[data-page="medical"] .medical-feature__icon {
+transition: transform var(–motion-normal) var(–motion-ease-standard);
+}
+
+[data-page="medical"] .medical-feature:hover .medical-feature__icon {
+transform: scale(1.04);
+}
+
+/* ============================================================
+09. COLLEGES INDEX -- EDITORIAL CARD REVEAL
+============================================================ */
+
+[data-page="colleges"] .college-card {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease,
+box-shadow var(–motion-normal) ease;
+}
+
+[data-page="colleges"] .college-card:hover {
+transform: translateY(-4px);
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+[data-page="colleges"] .college-card__image {
+overflow: hidden;
+}
+
+[data-page="colleges"] .college-card__image img {
+transition: transform 500ms var(–motion-ease-standard);
+}
+
+[data-page="colleges"] .college-card:hover .college-card__image img {
+transform: scale(1.035);
+}
+
+/* ============================================================
+10. DOCUMENTS INDEX -- ORDER AND CLARITY
+============================================================ */
+
+[data-page="documents"] .document-card {
+transition:
+border-color var(–motion-normal) ease,
+background-color var(–motion-normal) ease,
+transform var(–motion-normal) var(–motion-ease-standard);
+}
+
+[data-page="documents"] .document-card:hover {
+transform: translateY(-2px);
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+[data-page="documents"] .document-status {
+transition: background-color var(–motion-fast) ease;
+}
+
+[data-page="documents"] .document-progress {
+transform-origin: left center;
+}
+
+[data-page="documents"] .document-progress.is-animated {
+animation: mo-progress 700ms var(–motion-ease-luxury) both;
+}
+
+/* ============================================================
+11. STUDY-ABROAD INDEX -- HORIZON MOTION
+============================================================ */
+
+[data-page="study-abroad"] .abroad-hero {
+animation: mo-fade-in 700ms ease both;
+}
+
+[data-page="study-abroad"] .country-card {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease;
+}
+
+[data-page="study-abroad"] .country-card:hover {
+transform: translateY(-4px);
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+[data-page="study-abroad"] .country-card__image {
+overflow: hidden;
+}
+
+[data-page="study-abroad"] .country-card__image img {
+transition: transform 500ms var(–motion-ease-standard);
+}
+
+[data-page="study-abroad"] .country-card:hover .country-card__image img {
+transform: scale(1.035);
+}
+
+/* ============================================================
+12. CAREERS INDEX -- PROFESSIONAL ENTRANCE
+============================================================ */
+
+[data-page="careers"] .career-hero {
+animation: mo-fade-in 650ms ease both;
+}
+
+[data-page="careers"] .career-hero__content {
+animation: mo-slide-from-left 800ms var(–motion-ease-luxury) both;
+}
+
+[data-page="careers"] .career-opportunity {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease;
+}
+
+[data-page="careers"] .career-opportunity:hover {
+transform: translateY(-3px);
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+/* ============================================================
+13. APPLICATIONS INDEX -- GUIDED FLOW
+============================================================ */
+
+[data-page="applications"] .application-hero {
+animation: mo-fade-in 600ms ease both;
+}
+
+[data-page="applications"] .application-step {
+transition:
+border-color var(–motion-normal) ease,
+background-color var(–motion-normal) ease;
+}
+
+[data-page="applications"] .application-step[aria-current="step"] {
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+[data-page="applications"] .application-step__indicator {
+transition:
+transform var(–motion-fast) ease,
+background-color var(–motion-fast) ease;
+}
+
+[data-page="applications"] .application-step[aria-current="step"]
+.application-step__indicator {
+transform: scale(1.05);
+}
+
+/* ============================================================
+14. ACCOUNTS INDEX -- QUIET, TRUSTED INTERACTION
+============================================================ */
+
+[data-page="accounts"] .account-panel {
+animation: mo-scale-in 550ms var(–motion-ease-luxury) both;
+}
+
+[data-page="accounts"] .account-action {
+transition:
+background-color var(–motion-fast) ease,
+border-color var(–motion-fast) ease;
+}
+
+/* ============================================================
+15. ADMIN INDEX -- FUNCTIONAL, LOW-DISTRACTION MOTION
+============================================================ */
+
+[data-page="admin"] .admin-panel {
+animation: mo-fade-in 400ms ease both;
+}
+
+[data-page="admin"] .admin-row {
+transition: background-color var(–motion-fast) ease;
+}
+
+[data-page="admin"] .admin-action {
+transition:
+border-color var(–motion-fast) ease,
+background-color var(–motion-fast) ease;
+}
+
+/*
+
+* Avoid continuous decoration, large parallax effects and
+* distracting pulsing in dashboards or time-sensitive workflows.
+    */
+
+/* ============================================================
+16. SHARED CARD AND BUTTON INTERACTIONS
+============================================================ */
+
+.motion-card,
+.page-card,
+.feature-card,
+.category-card {
+transition:
+transform var(–motion-normal) var(–motion-ease-standard),
+border-color var(–motion-normal) ease,
+box-shadow var(–motion-normal) ease;
+}
+
+.motion-card:hover,
+.page-card:hover,
+.feature-card:hover,
+.category-card:hover {
+border-color: var(–page-accent, var(–motion-gold));
+}
+
+.motion-button,
+.button,
+.btn {
+transition:
+transform var(–motion-fast) var(–motion-ease-standard),
+background-color var(–motion-fast) ease,
+border-color var(–motion-fast) ease,
+color var(–motion-fast) ease;
+}
+
+.motion-button:active,
+.button:active,
+.btn:active {
+transform: translateY(1px);
+}
+
+/*
+
+* Hover effects should not be the only way to reveal content.
+* All essential controls must remain accessible by keyboard.
+    */
+
+/* ============================================================
+17. STAGGERED CONTENT
+============================================================ */
+
+/*
+
+* Use .motion-stagger on a container and .motion-item on its
+* children. The items animate only when the container is given
+* .is-entering by your HTML or JavaScript.
+* The first twelve items have predefined delays.
+    */
+
+.motion-stagger.is-entering > .motion-item {
+animation: mo-rise-in-soft 650ms var(–motion-ease-luxury) both;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(1) {
+animation-delay: 50ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(2) {
+animation-delay: 110ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(3) {
+animation-delay: 170ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(4) {
+animation-delay: 230ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(5) {
+animation-delay: 290ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(6) {
+animation-delay: 350ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(7) {
+animation-delay: 410ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(8) {
+animation-delay: 470ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(9) {
+animation-delay: 530ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(10) {
+animation-delay: 590ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(11) {
+animation-delay: 650ms;
+}
+
+.motion-stagger.is-entering > .motion-item:nth-child(12) {
+animation-delay: 710ms;
+}
+
+/* ============================================================
+18. OPTIONAL SCROLL-REVEAL HOOKS
+============================================================ */
+
+/*
+
+* Add data-reveal="up", "left", "right", or "fade" to elements.
+* The CSS intentionally does not hide these elements by default.
+* A small JavaScript controller can add .motion-enabled to body
+* and .is-visible to elements as they enter the viewport.
+* This prevents content from remaining invisible when JavaScript
+* is blocked, fails, or is disabled.
+    */
+
+.motion-enabled [data-reveal] {
+opacity: 0;
+transition:
+opacity 650ms var(–motion-ease-luxury),
+transform 650ms var(–motion-ease-luxury);
+}
+
+.motion-enabled [data-reveal="up"] {
+transform: translateY(22px);
+}
+
+.motion-enabled [data-reveal="left"] {
+transform: translateX(-22px);
+}
+
+.motion-enabled [data-reveal="right"] {
+transform: translateX(22px);
+}
+
+.motion-enabled [data-reveal="fade"] {
+transform: none;
+}
+
+.motion-enabled [data-reveal].is-visible {
+opacity: 1;
+transform: none;
+}
+
+/* ============================================================
+19. TYPING INDICATOR
+============================================================ */
+
+/*
+
+* Use a real text string in HTML. This caret is decorative only.
+* A CSS animation alone does not implement a typing effect.
+    */
+
+.typing-caret::after {
+display: inline-block;
+width: 1px;
+height: 1em;
+margin-inline-start: 0.15em;
+background: currentColor;
+content: "";
+vertical-align: -0.08em;
+animation: mo-typing-caret 900ms steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.typing-caret::after {
+animation: none;
+opacity: 1;
+}
+}
+
+/* ============================================================
+20. OPTIONAL LOADING INDICATOR
+============================================================ */
+
+.motion-loader {
+display: inline-block;
+width: 1rem;
+height: 1rem;
+border: 2px solid currentColor;
+border-inline-end-color: transparent;
+border-radius: 50%;
+animation: mo-orbit-turn 800ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.motion-loader {
+animation: none;
+border-inline-end-color: currentColor;
+}
+}
+
+/* ============================================================
+21. PERFORMANCE AND STABILITY
+============================================================ */
+
+/*
+
+* Animate transform and opacity where possible.
+* Avoid blanket will-change declarations because they can waste
+* memory. Add will-change only to elements with measured needs.
+    */
+
+[data-motion="disabled"] *,
+[data-motion="disabled"] *::before,
+[data-motion="disabled"] *::after {
+animation: none !important;
+transition: none !important;
+scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.motion-stagger.is-entering > .motion-item,
+[data-opening="true"] .opening-eyebrow,
+[data-opening="true"] .opening-title,
+[data-opening="true"] .opening-description,
+[data-opening="true"] .opening-actions,
+[data-opening="true"] .opening-visual,
+[data-opening="true"] .opening-divider {
+animation: none !important;
+opacity: 1 !important;
+transform: none !important;
+}
+
+.motion-enabled [data-reveal] {
+opacity: 1 !important;
+transform: none !important;
+transition: none !important;
+}
+
+[data-page="home"] .home-hero__orbit,
+[data-page="home"] .home-hero__orbit–reverse,
+[data-page="home"] .home-hero__spark,
+[data-page="home"] .home-hero__badge {
+animation: none !important;
+}
+}
+
+/* ============================================================
+END -- MedOrbits Motion System
+============================================================ */

@@ -1,645 +1,221 @@
-# MedOrbits Scaffold Inventory
+MedOrbits — Scaffold Inventory
 
-Files created: **640** including this inventory.
+Project: MedOrbits
+Document: docs/SCAFFOLD_INVENTORY.md
+Inventory scope: Repository scaffold and starter templates
+Reported file count: 640, including this inventory
+Status: Initial scaffold — integration and verification required
 
-Pages are starter templates, not finished services. Verify facts and links; integrate selectively and preserve existing repository files.
+1. Purpose
 
-- `.editorconfig`
-- `.github/ISSUE_TEMPLATE/bug_report.md`
-- `.github/ISSUE_TEMPLATE/feature_request.md`
-- `.github/ISSUE_TEMPLATE/security_report.md`
-- `.github/PULL_REQUEST_TEMPLATE.md`
-- `.github/workflows/deploy-pages.yml`
-- `.github/workflows/html-css-js.yml`
-- `.github/workflows/python-tests.yml`
-- `.github/workflows/security-scan.yml`
-- `.github/workflows/sql-validation.yml`
-- `.gitignore`
-- `.nvmrc`
-- `.pre-commit-config.yaml`
-- `.python-version`
-- `CHANGELOG.md`
-- `CODE_OF_CONDUCT.md`
-- `CONTRIBUTING.md`
-- `LICENSE`
-- `README.md`
-- `SECURITY.md`
-- `SUPPORT_GUIDE.md`
-- `account/application-details.html`
-- `account/change-password.html`
-- `account/dashboard.html`
-- `account/delete-account.html`
-- `account/edit-profile.html`
-- `account/forgot-password.html`
-- `account/index.html`
-- `account/login.html`
-- `account/logout.html`
-- `account/messages.html`
-- `account/my-applications.html`
-- `account/my-documents.html`
-- `account/notifications.html`
-- `account/payment-history.html`
-- `account/privacy-settings.html`
-- `account/profile.html`
-- `account/receipts.html`
-- `account/register.html`
-- `account/reset-password.html`
-- `account/saved-colleges.html`
-- `account/saved-courses.html`
-- `account/saved-jobs.html`
-- `account/security-settings.html`
-- `account/sessions.html`
-- `account/verify-email.html`
-- `account/verify-phone.html`
-- `admin/access-control.html`
-- `admin/admissions.html`
-- `admin/announcements.html`
-- `admin/api-settings.html`
-- `admin/application-details.html`
-- `admin/application-review.html`
-- `admin/application-status.html`
-- `admin/applications.html`
-- `admin/audit-log.html`
-- `admin/backup-status.html`
-- `admin/blog-management.html`
-- `admin/candidates.html`
-- `admin/college-details.html`
-- `admin/colleges.html`
-- `admin/content-management.html`
-- `admin/counselling.html`
-- `admin/courses.html`
-- `admin/dashboard.html`
-- `admin/data-export.html`
-- `admin/data-import.html`
-- `admin/document-review.html`
-- `admin/documents.html`
-- `admin/employers.html`
-- `admin/error-reports.html`
-- `admin/form-control.html`
-- `admin/index.html`
-- `admin/job-details.html`
-- `admin/jobs.html`
-- `admin/login.html`
-- `admin/maintenance.html`
-- `admin/official-resources.html`
-- `admin/payments.html`
-- `admin/permissions.html`
-- `admin/receipts.html`
-- `admin/recruitment.html`
-- `admin/refunds.html`
-- `admin/roles.html`
-- `admin/security-events.html`
-- `admin/system-settings.html`
-- `admin/user-details.html`
-- `admin/users.html`
-- `api/README.md`
-- `api/middleware/authentication.js`
-- `api/middleware/authorization.js`
-- `api/middleware/error-handler.js`
-- `api/middleware/rate-limit.js`
-- `api/middleware/validation.js`
-- `api/openapi.yaml`
-- `api/routes/admissions.js`
-- `api/routes/applications.js`
-- `api/routes/documents.js`
-- `api/routes/health.js`
-- `api/routes/jobs.js`
-- `api/routes/support.js`
-- `api/routes/users.js`
-- `api/schemas/application.schema.json`
-- `api/schemas/job.schema.json`
-- `api/schemas/user.schema.json`
-- `api/services/application-service.js`
-- `api/services/audit-service.js`
-- `api/services/notification-service.js`
-- `api/worker.js`
-- `assets/css/accessibility.css`
-- `assets/css/animations.css`
-- `assets/css/cards.css`
-- `assets/css/components.css`
-- `assets/css/dashboard.css`
-- `assets/css/font.css`
-- `assets/css/forms.css`
-- `assets/css/layout.css`
-- `assets/css/navigation.css`
-- `assets/css/print.css`
-- `assets/css/reset.css`
-- `assets/css/responsive.css`
-- `assets/css/styles.css`
-- `assets/css/tables.css`
-- `assets/css/theme.css`
-- `assets/css/typography.css`
-- `assets/css/variables.css`
-- `assets/data/admission-processes.json`
-- `assets/data/college-fees.json`
-- `assets/data/colleges.json`
-- `assets/data/countries.json`
-- `assets/data/courses.json`
-- `assets/data/documents.json`
-- `assets/data/entrance-exams.json`
-- `assets/data/job-categories.json`
-- `assets/data/jobs.json`
-- `assets/data/locations.json`
-- `assets/data/medical-colleges.json`
-- `assets/data/official-resources.json`
-- `assets/data/scholarships.json`
-- `assets/data/seat-matrix.json`
-- `assets/data/universities.json`
-- `assets/documents/.gitkeep`
-- `assets/fonts/.gitkeep`
-- `assets/images/banners/.gitkeep`
-- `assets/images/careers/.gitkeep`
-- `assets/images/colleges/.gitkeep`
-- `assets/images/courses/.gitkeep`
-- `assets/images/hero/.gitkeep`
-- `assets/images/icons/.gitkeep`
-- `assets/images/logo/.gitkeep`
-- `assets/images/logo/medorbits-logo.svg`
-- `assets/images/logo/medorbits-monogram.svg`
-- `assets/js/accessibility.js`
-- `assets/js/account.js`
-- `assets/js/admissions.js`
-- `assets/js/api-client.js`
-- `assets/js/app.js`
-- `assets/js/auth-ui.js`
-- `assets/js/college-directory.js`
-- `assets/js/config.js`
-- `assets/js/document-preview.js`
-- `assets/js/file-validation.js`
-- `assets/js/filters.js`
-- `assets/js/form-steps.js`
-- `assets/js/form-validation.js`
-- `assets/js/forms.js`
-- `assets/js/job-search.js`
-- `assets/js/main.js`
-- `assets/js/navigation.js`
-- `assets/js/notifications.js`
-- `assets/js/pagination.js`
-- `assets/js/search.js`
-- `assets/js/theme.js`
-- `assets/js/utils.js`
-- `assets/js/validation.js`
-- `career/application-form.html`
-- `career/application-preparation/application-status.html`
-- `career/application-preparation/consent.html`
-- `career/application-preparation/document-upload.html`
-- `career/application-preparation/education-details.html`
-- `career/application-preparation/eligibility.html`
-- `career/application-preparation/fee-and-refund.html`
-- `career/application-preparation/index.html`
-- `career/application-preparation/instructions.html`
-- `career/application-preparation/payment-instructions.html`
-- `career/application-preparation/personal-details.html`
-- `career/application-preparation/privacy-notice.html`
-- `career/application-preparation/receipt.html`
-- `career/application-preparation/review.html`
-- `career/application-preparation/submission-confirmation.html`
-- `career/application-preparation/support.html`
-- `career/application-preparation/work-experience.html`
-- `career/apprenticeships.html`
-- `career/candidate-registration.html`
-- `career/career-guidance.html`
-- `career/cover-letter-builder.html`
-- `career/employer-registration.html`
-- `career/employers.html`
-- `career/engineering-jobs.html`
-- `career/experienced-jobs.html`
-- `career/fresher-jobs.html`
-- `career/government-jobs.html`
-- `career/healthcare-jobs.html`
-- `career/index.html`
-- `career/international-jobs.html`
-- `career/internships.html`
-- `career/interview-preparation.html`
-- `career/it-jobs.html`
-- `career/job-application-status.html`
-- `career/job-categories.html`
-- `career/job-details.html`
-- `career/job-fairs.html`
-- `career/job-search.html`
-- `career/jobs-by-experience.html`
-- `career/jobs-by-industry.html`
-- `career/jobs-by-location.html`
-- `career/jobs-by-qualification.html`
-- `career/jobs-in-australia.html`
-- `career/jobs-in-bahrain.html`
-- `career/jobs-in-canada.html`
-- `career/jobs-in-dubai.html`
-- `career/jobs-in-germany.html`
-- `career/jobs-in-india.html`
-- `career/jobs-in-kuwait.html`
-- `career/jobs-in-oman.html`
-- `career/jobs-in-qatar.html`
-- `career/jobs-in-saudi-arabia.html`
-- `career/jobs-in-singapore.html`
-- `career/jobs-in-uae.html`
-- `career/jobs-in-uk.html`
-- `career/jobs.html`
-- `career/management-jobs.html`
-- `career/medical-jobs.html`
-- `career/nursing-jobs.html`
-- `career/pharmacy-jobs.html`
-- `career/post-a-job.html`
-- `career/private-jobs.html`
-- `career/recruitment-services.html`
-- `career/remote-jobs.html`
-- `career/resume-builder.html`
-- `career/salary-guide.html`
-- `career/teaching-jobs.html`
-- `career/walk-in-interviews.html`
-- `career/work-from-home.html`
-- `database/README.md`
-- `database/constraints.sql`
-- `database/indexes.sql`
-- `database/queries/admissions.sql`
-- `database/queries/applications.sql`
-- `database/queries/audit-log.sql`
-- `database/queries/jobs.sql`
-- `database/queries/users.sql`
-- `database/schema.sql`
-- `database/seed-development.sql`
-- `database/views/application-summary.sql`
-- `database/views/job-summary.sql`
-- `docs/API_REFERENCE.md`
-- `docs/ARCHITECTURE.md`
-- `docs/CONTRIBUTING.md`
-- `docs/DATABASE_SCHEMA.md`
-- `docs/DATA_VERIFICATION.md`
-- `docs/DEPLOYMENT.md`
-- `docs/PRIVACY.md`
-- `docs/SECURITY.md`
-- `docs/SUPPORT_GUIDE.md`
-- `docs/TESTING.md`
-- `education/abroad/georgia.html`
-- `education/abroad/index.html`
-- `education/abroad/kazakhstan.html`
-- `education/abroad/kyrgyzstan.html`
-- `education/abroad/russia.html`
-- `education/abroad/uae.html`
-- `education/abroad/uzbekistan.html`
-- `education/academic-calendar.html`
-- `education/admission-process.html`
-- `education/admissions/admission-appeals.html`
-- `education/admissions/admission-status.html`
-- `education/admissions/application-help.html`
-- `education/admissions/application-process.html`
-- `education/admissions/application-tracker.html`
-- `education/admissions/choice-filling.html`
-- `education/admissions/college-preferences.html`
-- `education/admissions/document-verification.html`
-- `education/admissions/eligibility.html`
-- `education/admissions/fee-payment-guidance.html`
-- `education/admissions/how-to-apply.html`
-- `education/admissions/index.html`
-- `education/admissions/mop-up-round.html`
-- `education/admissions/refund-and-withdrawal.html`
-- `education/admissions/registration.html`
-- `education/admissions/reporting-and-enrolment.html`
-- `education/admissions/round-1.html`
-- `education/admissions/round-2.html`
-- `education/admissions/seat-allotment.html`
-- `education/admissions/stray-vacancy-round.html`
-- `education/admit-cards.html`
-- `education/answer-keys.html`
-- `education/college-predictor.html`
-- `education/counselling.html`
-- `education/course-details.html`
-- `education/courses.html`
-- `education/cutoff-predictor.html`
-- `education/documents.html`
-- `education/education-guides.html`
-- `education/education-loans.html`
-- `education/education-news.html`
-- `education/eligibility-checker.html`
-- `education/entrance-exams.html`
-- `education/exam-calendar.html`
-- `education/exams/counselling.html`
-- `education/exams/neet-pg.html`
-- `education/exams/neet-ug.html`
-- `education/fee-comparison.html`
-- `education/glossary.html`
-- `education/index.html`
-- `education/india/ayush.html`
-- `education/india/bds.html`
-- `education/india/engineering.html`
-- `education/india/index.html`
-- `education/india/management.html`
-- `education/india/mbbs.html`
-- `education/india/nursing.html`
-- `education/india/pharmacy.html`
-- `education/kolkata-medical-colleges/cnmc.html`
-- `education/kolkata-medical-colleges/fees.html`
-- `education/kolkata-medical-colleges/index.html`
-- `education/kolkata-medical-colleges/mch.html`
-- `education/kolkata-medical-colleges/nrs.html`
-- `education/kolkata-medical-colleges/official-document.html`
-- `education/kolkata-medical-colleges/rgkar.html`
-- `education/kolkata-medical-colleges/sskm.html`
-- `education/medical/ayush-admission.html`
-- `education/medical/bds-admission.html`
-- `education/medical/colleges/aiims-kalyani.html`
-- `education/medical/colleges/andhra-pradesh.html`
-- `education/medical/colleges/arunachal-pradesh.html`
-- `education/medical/colleges/assam.html`
-- `education/medical/colleges/bankura-sammilani-medical-college.html`
-- `education/medical/colleges/barasat-government-medical-college.html`
-- `education/medical/colleges/bihar.html`
-- `education/medical/colleges/burdwan-medical-college.html`
-- `education/medical/colleges/calcutta-national-medical-college.html`
-- `education/medical/colleges/chandigarh.html`
-- `education/medical/colleges/chhattisgarh.html`
-- `education/medical/colleges/cnmc.html`
-- `education/medical/colleges/college-of-medicine-and-sagore-dutta-hospital.html`
-- `education/medical/colleges/cooch-behar-government-medical-college.html`
-- `education/medical/colleges/delhi.html`
-- `education/medical/colleges/diamond-harbour-government-medical-college.html`
-- `education/medical/colleges/goa.html`
-- `education/medical/colleges/gujarat.html`
-- `education/medical/colleges/haryana.html`
-- `education/medical/colleges/himachal-pradesh.html`
-- `education/medical/colleges/index.html`
-- `education/medical/colleges/iq-city-medical-college.html`
-- `education/medical/colleges/jalpaiguri-government-medical-college.html`
-- `education/medical/colleges/jammu-and-kashmir.html`
-- `education/medical/colleges/jharkhand.html`
-- `education/medical/colleges/jis-school-of-medical-science.html`
-- `education/medical/colleges/jnm-medical-college.html`
-- `education/medical/colleges/karnataka.html`
-- `education/medical/colleges/kerala.html`
-- `education/medical/colleges/kpc-medical-college.html`
-- `education/medical/colleges/ladakh.html`
-- `education/medical/colleges/madhya-pradesh.html`
-- `education/medical/colleges/maharashtra.html`
-- `education/medical/colleges/malda-medical-college.html`
-- `education/medical/colleges/manipur.html`
-- `education/medical/colleges/medical-college-kolkata.html`
-- `education/medical/colleges/meghalaya.html`
-- `education/medical/colleges/midnapore-medical-college.html`
-- `education/medical/colleges/mizoram.html`
-- `education/medical/colleges/murshidabad-medical-college.html`
-- `education/medical/colleges/nagaland.html`
-- `education/medical/colleges/north-bengal-medical-college.html`
-- `education/medical/colleges/nrs.html`
-- `education/medical/colleges/odisha.html`
-- `education/medical/colleges/puducherry.html`
-- `education/medical/colleges/punjab.html`
-- `education/medical/colleges/purulia-government-medical-college.html`
-- `education/medical/colleges/raiganj-government-medical-college.html`
-- `education/medical/colleges/rajasthan.html`
-- `education/medical/colleges/rampurhat-government-medical-college.html`
-- `education/medical/colleges/rg-kar.html`
-- `education/medical/colleges/santiniketan-medical-college.html`
-- `education/medical/colleges/sikkim.html`
-- `education/medical/colleges/sskm-ipgmer.html`
-- `education/medical/colleges/tamil-nadu.html`
-- `education/medical/colleges/telangana.html`
-- `education/medical/colleges/tripura.html`
-- `education/medical/colleges/uttar-pradesh.html`
-- `education/medical/colleges/uttarakhand.html`
-- `education/medical/colleges/west-bengal.html`
-- `education/medical/dnb-courses.html`
-- `education/medical/index.html`
-- `education/medical/mbbs-admission-timeline.html`
-- `education/medical/mbbs-admission.html`
-- `education/medical/mbbs-all-india-quota.html`
-- `education/medical/mbbs-bond-policy.html`
-- `education/medical/mbbs-college-predictor.html`
-- `education/medical/mbbs-counselling.html`
-- `education/medical/mbbs-document-checklist.html`
-- `education/medical/mbbs-eligibility.html`
-- `education/medical/mbbs-fees.html`
-- `education/medical/mbbs-government-colleges.html`
-- `education/medical/mbbs-management-quota.html`
-- `education/medical/mbbs-nri-quota.html`
-- `education/medical/mbbs-private-colleges.html`
-- `education/medical/mbbs-seat-matrix.html`
-- `education/medical/mbbs-state-quota.html`
-- `education/medical/md-ms-courses.html`
-- `education/medical/medical-college-comparison.html`
-- `education/medical/medical-college-directory.html`
-- `education/medical/medical-college-recognition.html`
-- `education/medical/medical-pg-admission.html`
-- `education/medical/neet-cutoff.html`
-- `education/medical/neet-pg.html`
-- `education/medical/neet-ug.html`
-- `education/medical/west-bengal-college-comparison.html`
-- `education/medical/west-bengal-document-checklist.html`
-- `education/medical/west-bengal-mbbs-admission.html`
-- `education/medical/west-bengal-mbbs-fees.html`
-- `education/medical/west-bengal-medical-colleges.html`
-- `education/medical/west-bengal-neet-counselling.html`
-- `education/medical/west-bengal-seat-matrix.html`
-- `education/results.html`
-- `education/scholarships.html`
-- `education/seat-matrix.html`
-- `education/streams.html`
-- `education/study-abroad/admission-process.html`
-- `education/study-abroad/australia.html`
-- `education/study-abroad/bangladesh.html`
-- `education/study-abroad/canada.html`
-- `education/study-abroad/country-comparison.html`
-- `education/study-abroad/document-checklist.html`
-- `education/study-abroad/eligibility.html`
-- `education/study-abroad/fees.html`
-- `education/study-abroad/foreign-medical-graduate-exam.html`
-- `education/study-abroad/georgia.html`
-- `education/study-abroad/germany.html`
-- `education/study-abroad/index.html`
-- `education/study-abroad/ireland.html`
-- `education/study-abroad/kazakhstan.html`
-- `education/study-abroad/kyrgyzstan.html`
-- `education/study-abroad/mbbs-abroad.html`
-- `education/study-abroad/nepal.html`
-- `education/study-abroad/philippines.html`
-- `education/study-abroad/recognition-and-licensing.html`
-- `education/study-abroad/russia.html`
-- `education/study-abroad/scholarships.html`
-- `education/study-abroad/uk.html`
-- `education/study-abroad/united-arab-emirates.html`
-- `education/study-abroad/usa.html`
-- `education/study-abroad/uzbekistan.html`
-- `education/study-abroad/visa-guidance.html`
-- `education/study-india/allied-health-sciences.html`
-- `education/study-india/arts-humanities.html`
-- `education/study-india/ayush.html`
-- `education/study-india/bams.html`
-- `education/study-india/bds.html`
-- `education/study-india/bhms.html`
-- `education/study-india/bnys.html`
-- `education/study-india/bsms.html`
-- `education/study-india/bums.html`
-- `education/study-india/commerce.html`
-- `education/study-india/diploma-courses.html`
-- `education/study-india/distance-education.html`
-- `education/study-india/engineering.html`
-- `education/study-india/government-colleges.html`
-- `education/study-india/index.html`
-- `education/study-india/law.html`
-- `education/study-india/management.html`
-- `education/study-india/mbbs.html`
-- `education/study-india/nursing.html`
-- `education/study-india/online-courses.html`
-- `education/study-india/paramedical.html`
-- `education/study-india/pharmacy.html`
-- `education/study-india/physiotherapy.html`
-- `education/study-india/private-colleges.html`
-- `education/study-india/science.html`
-- `education/study-planner.html`
-- `education/subjects.html`
-- `index.html`
-- `infrastructure/cloudflare/README.md`
-- `infrastructure/cloudflare/wrangler.toml`
-- `infrastructure/environments/development.md`
-- `infrastructure/environments/production.md`
-- `infrastructure/environments/staging.md`
-- `infrastructure/github/deployment.md`
-- `legal/acceptable-use.html`
-- `legal/accessibility.html`
-- `legal/anti-fraud-policy.html`
-- `legal/cancellation-policy.html`
-- `legal/contact-details.html`
-- `legal/cookie-policy.html`
-- `legal/data-protection.html`
-- `legal/data-retention.html`
-- `legal/disclaimer.html`
-- `legal/education-services-disclaimer.html`
-- `legal/fee-disclosure.html`
-- `legal/grievance-redressal.html`
-- `legal/independent-application-preparation.html`
-- `legal/index.html`
-- `legal/intellectual-property.html`
-- `legal/medical-admissions-disclaimer.html`
-- `legal/payment-policy.html`
-- `legal/privacy-policy.html`
-- `legal/recruitment-services-disclaimer.html`
-- `legal/refund-policy.html`
-- `legal/terms.html`
-- `legal/third-party-links.html`
-- `migrations/main/.gitkeep`
-- `migrations/main/README.md`
-- `mypy.ini`
-- `official-document.html`
-- `official-documents/admission-notices.html`
-- `official-documents/important-dates.html`
-- `official-documents/index.html`
-- `official-documents/mcc-counselling.html`
-- `official-documents/neet-pg-information-bulletin.html`
-- `official-documents/neet-ug-information-bulletin.html`
-- `official-documents/nmc-college-permissions.html`
-- `official-documents/nmc-guidelines.html`
-- `official-documents/nmc-recognized-colleges.html`
-- `official-documents/official-fee-notifications.html`
-- `official-documents/scholarship-notifications.html`
-- `official-documents/state-counselling-authorities.html`
-- `official-documents/verification-checklist.html`
-- `official-documents/wbmcc-counselling.html`
-- `official-documents/wbmcc-document-verification.html`
-- `official-documents/wbmcc-fee-notifications.html`
-- `official-documents/wbmcc-information-bulletin.html`
-- `official-documents/wbmcc-seat-matrix.html`
-- `package-lock.json`
-- `package.json`
-- `pages/404.html`
-- `pages/500.html`
-- `pages/about.html`
-- `pages/accessibility.html`
-- `pages/admissions.html`
-- `pages/announcements.html`
-- `pages/blog-article.html`
-- `pages/blog.html`
-- `pages/career-at-medorbits.html`
-- `pages/careers.html`
-- `pages/colleges.html`
-- `pages/consultancy.html`
-- `pages/contact.html`
-- `pages/corporate-services.html`
-- `pages/education.html`
-- `pages/entrance-exams.html`
-- `pages/faq.html`
-- `pages/how-it-works.html`
-- `pages/institutional-partners.html`
-- `pages/leadership.html`
-- `pages/news.html`
-- `pages/our-mission.html`
-- `pages/our-team.html`
-- `pages/our-vision.html`
-- `pages/partners.html`
-- `pages/recruitment.html`
-- `pages/search.html`
-- `pages/services.html`
-- `pages/sitemap.html`
-- `pages/study-abroad.html`
-- `pages/support.html`
-- `public/404.html`
-- `public/500.html`
-- `public/robots.txt`
-- `public/sitemap.xml`
-- `pyproject.toml`
-- `pytest.ini`
-- `python/README.md`
-- `python/integrations/api_client.py`
-- `python/integrations/storage_client.py`
-- `python/scripts/check_duplicate_ids.py`
-- `python/scripts/export_applications.py`
-- `python/scripts/generate_reports.py`
-- `python/scripts/import_colleges.py`
-- `python/scripts/validate_json.py`
-- `python/scripts/validate_links.py`
-- `python/tests/test_import_export.py`
-- `python/tests/test_json_data.py`
-- `python/tests/test_validators.py`
-- `requirements-dev.txt`
-- `requirements.txt`
-- `ruff.toml`
-- `schemas/application.schema.json`
-- `schemas/college.schema.json`
-- `schemas/course.schema.json`
-- `schemas/exam.schema.json`
-- `schemas/job.schema.json`
-- `scripts/build-site.mjs`
-- `scripts/check-json.mjs`
-- `scripts/check-links.mjs`
-- `scripts/check-security.mjs`
-- `scripts/clean-output.mjs`
-- `scripts/validate-data.mjs`
-- `scripts/validate-html.mjs`
-- `src/js/security/input-validation.js`
-- `src/js/security/safe-errors.js`
-- `src/js/services/api.service.js`
-- `src/js/services/application.service.js`
-- `src/js/services/auth.service.js`
-- `src/js/services/document.service.js`
-- `src/js/utils/constants.js`
-- `src/js/utils/formatters.js`
-- `src/js/utils/validators.js`
-- `src/python/cli.py`
-- `src/python/medorbits/__init__.py`
-- `src/python/medorbits/config.py`
-- `src/python/medorbits/data_export.py`
-- `src/python/medorbits/data_import.py`
-- `src/python/medorbits/healthcheck.py`
-- `src/python/medorbits/logging_config.py`
-- `src/python/medorbits/validators.py`
-- `support/account-recovery.html`
-- `support/complaints.html`
-- `support/contact.html`
-- `support/document-upload-help.html`
-- `support/faq.html`
-- `support/help-centre.html`
-- `support/index.html`
-- `support/payment-support.html`
-- `support/refund-request.html`
-- `support/submit-ticket.html`
-- `support/ticket-status.html`
-- `tests/accessibility/.gitkeep`
-- `tests/e2e/.gitkeep`
-- `tests/fixtures/.gitkeep`
-- `tests/integration/.gitkeep`
-- `tests/security/auth.security.test.js`
-- `tests/security/authorization.security.test.js`
-- `tests/security/idor.security.test.js`
-- `tests/security/mass-assignment.security.test.js`
-- `tests/security/payment-webhook.security.test.js`
-- `tests/security/validation.security.test.js`
-- `tests/unit/javascript/.gitkeep`
-- `tests/unit/python/.gitkeep`
+This inventory documents the planned repository structure for MedOrbits, covering website pages, educational resources, career services, application workflows, administrative interfaces, API scaffolding, data files, database resources, security controls, testing, and deployment configuration.
+
+It serves as a repository reference for integration, maintenance, quality assurance, and release planning.
+
+2. Important Status Notice
+
+The reported count of 640 files is an inventory claim and must be confirmed against the actual repository.
+
+Files listed here may be starter templates, examples, configuration files, placeholders, or partially implemented components. Their presence does not establish that a feature is functional, secure, complete, or production-ready.
+
+Before integrating existing or newly generated files:
+
+* Preserve existing repository files and established application behavior.
+* Review changes before overwriting existing content.
+* Verify HTML links, asset paths, imports, routes, and configuration.
+* Validate educational facts and official links against authoritative sources.
+* Test security controls on the server, not only in browser interfaces.
+* Confirm deployment compatibility with the actual hosting architecture.
+
+3. Repository Structure
+
+The following directories define the major functional areas of the scaffold.
+
+Directory	Responsibility
+.github/	Issue templates, pull-request template, and automation workflows
+account/	Applicant account and profile page templates
+admin/	Administrative interface templates
+api/	API routes, middleware, schemas, services, and OpenAPI documentation
+assets/css/	Stylesheets, layout, themes, accessibility, and print styles
+assets/data/	Structured education, college, admission, and career data
+assets/images/	Logo, banner, icon, college, and career asset locations
+assets/js/	Browser-side navigation, forms, search, validation, and UI modules
+career/	Jobs, recruitment, career guidance, and application-preparation pages
+database/	SQL schema, queries, indexes, constraints, views, and development seeds
+docs/	Architecture, API, deployment, data verification, privacy, security, and testing documentation
+education/	Education discovery, admissions, medical education, counselling, and study-abroad pages
+infrastructure/	Cloudflare configuration and environment/deployment documentation
+legal/	Legal notices, privacy policies, terms, and service disclaimers
+migrations/main/	Database migration directory and migration guidance
+official-documents/	Official notices, bulletins, fee notifications, and counselling resources
+pages/	General company, service, information, and support pages
+public/	Public error pages, crawler instructions, and sitemap files
+python/	Python integrations, utility scripts, and tests
+schemas/	Reusable JSON schemas for structured application and education data
+scripts/	Build, validation, data-checking, and security-check scripts
+src/	Shared JavaScript and Python application modules
+support/	Support, complaints, account recovery, payment assistance, and help pages
+tests/	Security, integration, end-to-end, accessibility, and unit-test locations
+
+Root-level configuration and documentation include README.md, CONTRIBUTING.md, SECURITY.md, SUPPORT_GUIDE.md, CHANGELOG.md, package.json, package-lock.json, pyproject.toml, pytest.ini, ruff.toml, requirements.txt, and requirements-dev.txt.
+
+4. Core Implementation Areas
+
+4.1 Website and navigation
+
+Primary entry point: index.html
+
+Related areas: pages/, assets/css/, assets/js/, public/
+
+Acceptance criteria:
+
+* The homepage loads without missing local resources.
+* Internal links resolve to the intended pages.
+* Navigation works on mobile and desktop.
+* Keyboard focus and form labels are accessible.
+* Public error pages are configured for the selected hosting platform.
+* No local development server URLs are required in production pages.
+
+4.2 Accounts and application preparation
+
+Related areas: account/ and career/application-preparation/
+
+Acceptance criteria:
+
+* Forms have documented submission destinations.
+* Protected operations require server-side authentication and authorization.
+* Applicants can access only records they are authorized to view.
+* Sensitive documents are handled through verified private storage.
+* Application states and confirmation messages reflect actual backend results.
+* Privacy notices and consent language match implemented practices.
+
+A static form or browser-side validation script does not, by itself, securely process or store applicant information.
+
+4.3 Administrative interfaces
+
+Related area: admin/
+
+Acceptance criteria:
+
+* Administrative access is enforced on the server.
+* Permissions are checked for every privileged operation.
+* Data exports and document access are restricted.
+* Destructive operations require appropriate safeguards.
+* Audit records exclude unnecessary secrets and sensitive payloads.
+* Administrative pages do not expose production data through public static hosting.
+
+4.4 API and backend scaffolding
+
+Related areas: api/, src/js/services/, database/, and migrations/main/
+
+Acceptance criteria:
+
+* Routes, middleware, schemas, and service interfaces agree.
+* Input validation and authorization are enforced server-side.
+* Error handling avoids leaking secrets or internal implementation details.
+* Database changes are versioned and tested.
+* Payment notifications, if supported, are verified using the payment provider’s documented mechanism.
+* Production secrets are supplied through an appropriate secrets-management process.
+
+4.5 Education and career data
+
+Related areas: assets/data/, education/, career/, schemas/, and official-documents/
+
+Acceptance criteria:
+
+* JSON data passes syntax and schema validation.
+* Important factual claims have traceable authoritative sources.
+* Fees, seat matrices, eligibility requirements, and deadlines are dated and verified.
+* Unknown or unverified values are not presented as established facts.
+* External links are checked before publication.
+* Information controlled by third-party authorities is clearly distinguished from MedOrbits guidance.
+
+5. Quality Assurance and Security
+
+Relevant resources include:
+
+* tests/security/
+* tests/integration/
+* tests/e2e/
+* tests/accessibility/
+* python/tests/
+* scripts/validate-html.mjs
+* scripts/check-links.mjs
+* scripts/check-json.mjs
+* scripts/check-security.mjs
+* .github/workflows/
+
+The presence of a test file or workflow is not proof that it executes successfully or provides complete coverage.
+
+Release verification should include:
+
+1. HTML and internal-link validation.
+2. JSON syntax and schema validation.
+3. Python tests and linting.
+4. JavaScript validation and security tests.
+5. SQL and migration checks.
+6. Dependency and secret scanning.
+7. Authorization and document-access testing.
+8. Build and deployment verification.
+
+Record actual results, failures, skipped checks, and outstanding risks.
+
+6. Configuration Consistency
+
+Keep the toolchain configuration aligned:
+
+* .nvmrc and package.json must specify compatible Node.js requirements.
+* .python-version, pyproject.toml, ruff.toml, and CI must agree on the supported Python version.
+* pytest.ini must match the actual test directory layout.
+* requirements.txt must reflect runtime dependencies; requirements-dev.txt must contain development and testing dependencies.
+* package-lock.json must correspond to the committed package.json.
+* Cloudflare configuration must match the chosen Pages or Workers deployment architecture.
+
+Do not introduce dependencies or overwrite existing configuration merely to make the scaffold resemble a generic project template.
+
+7. Inventory Validation Procedure
+
+Validate the inventory against the repository checkout.
+
+1. Enumerate tracked and relevant untracked files.
+2. Compare actual paths with the inventory.
+3. Identify missing, unexpected, duplicate, and obsolete entries.
+4. Check for case-sensitive path errors.
+5. Confirm that referenced files are not unintentionally excluded by .gitignore.
+6. Review generated files and ensure secrets, private documents, and production data are absent.
+7. Update the inventory after verified changes.
+
+Distinguish tracked files, untracked working files, ignored files, and generated build artifacts when reporting counts.
+
+8. Release Readiness
+
+Do not declare the scaffold production-ready until the relevant implementation and deployment checks have been completed.
+
+Status	Meaning
+Planned	The file or feature is intended but has not been verified
+Scaffolded	A starter file or initial implementation exists
+Integrated	The component is connected to the relevant application workflow
+Tested	Documented tests have been executed and their results recorded
+Verified	Required functional, security, and operational checks have passed
+Production-ready	Approved for deployment following the applicable release review
+
+Assign these statuses using actual repository evidence, not file names or assumptions.
+
+9. Maintenance Rules
+
+* Preserve existing working files and migration history.
+* Review file changes before committing.
+* Continue migration numbering from the latest existing migration.
+* Do not add duplicate pages or configuration files without a defined need.
+* Verify external facts and links before publication.
+* Keep security and privacy claims consistent with the implemented system.
+* Record significant changes in CHANGELOG.md.
+* Update this inventory when the repository structure changes.
+
+10. Final Status
+
+Current classification: Scaffold inventory requiring repository verification.
+
+The reported total of 640 files, implementation completeness, test status, and deployment readiness remain unverified until checked against the actual repository and execution results.
+
+The objective is a maintainable, accessible, accurate, and secure MedOrbits platform—not simply a large collection of files.

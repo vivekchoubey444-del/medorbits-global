@@ -2,595 +2,756 @@ MedOrbits — Website Page Directory
 
 Brand: MedOrbits — Education · Admissions · Careers · Recruitment
 Website: https://www.medorbits.in/
-Purpose: Proposed directory of HTML pages, shared assets, JSON data, and technical resources for the MedOrbits static website.
-
-> **Important:** This README is a planning inventory, not proof that every listed file already exists or is deployed. Create only pages that the project will support. Verify admission, college, fee, seat, recognition, job, and other factual information against authoritative sources before publishing. Do not imply official affiliation or endorsement without verifiable authorization.
-
-Repository conventions
-
-• Keep the website entry point at /index.html.
-• Store supporting pages in the folders below.
-• Use .html file paths unless clean URLs are explicitly configured in Cloudflare Pages or redirect rules.
-• Keep private applicant documents and secrets out of public static assets and the Git repository.
-• Protect admin functionality with server-side authentication and authorization; hiding links or checking access only in browser JavaScript is not sufficient.
-• This directory intentionally excludes the page kolkata-medical-colleges.html and does not list it as a page.
-
-1. Main website and company pages
-
-• /index.html
-• /pages/about.html
-• /pages/our-team.html
-• /pages/leadership.html
-• /pages/our-mission.html
-• /pages/our-vision.html
-• /pages/services.html
-• /pages/consultancy.html
-• /pages/contact.html
-• /pages/faq.html
-• /pages/how-it-works.html
-• /pages/partners.html
-• /pages/institutional-partners.html
-• /pages/corporate-services.html
-• /pages/career-at-medorbits.html
-• /pages/news.html
-• /pages/announcements.html
-• /pages/blog.html
-• /pages/blog-article.html
-• /pages/sitemap.html
-• /pages/search.html
-• /pages/404.html
-• /pages/500.html
-
-2. Education homepage and academic resources
-
-• /education/index.html
-• /education/courses.html
-• /education/course-details.html
-• /education/streams.html
-• /education/subjects.html
-• /education/academic-calendar.html
-• /education/education-news.html
-• /education/education-guides.html
-• /education/study-planner.html
-• /education/eligibility-checker.html
-• /education/college-predictor.html
-• /education/cutoff-predictor.html
-• /education/seat-matrix.html
-• /education/fee-comparison.html
-• /education/scholarships.html
-• /education/education-loans.html
-• /education/entrance-exams.html
-• /education/exam-calendar.html
-• /education/results.html
-• /education/admit-cards.html
-• /education/answer-keys.html
-• /education/counselling.html
-• /education/admission-process.html
-• /education/documents.html
-• /education/glossary.html
-
-3. Study in India
-
-• /education/study-india/index.html
-• /education/study-india/mbbs.html
-• /education/study-india/bds.html
-• /education/study-india/ayush.html
-• /education/study-india/bams.html
-• /education/study-india/bhms.html
-• /education/study-india/bums.html
-• /education/study-india/bnys.html
-• /education/study-india/bsms.html
-• /education/study-india/nursing.html
-• /education/study-india/pharmacy.html
-• /education/study-india/paramedical.html
-• /education/study-india/allied-health-sciences.html
-• /education/study-india/physiotherapy.html
-• /education/study-india/engineering.html
-• /education/study-india/management.html
-• /education/study-india/law.html
-• /education/study-india/arts-humanities.html
-• /education/study-india/science.html
-• /education/study-india/commerce.html
-• /education/study-india/diploma-courses.html
-• /education/study-india/online-courses.html
-• /education/study-india/distance-education.html
-• /education/study-india/private-colleges.html
-• /education/study-india/government-colleges.html
-
-4. Medical education and MBBS admissions
-
-• /education/medical/index.html
-• /education/medical/mbbs-admission.html
-• /education/medical/mbbs-eligibility.html
-• /education/medical/neet-ug.html
-• /education/medical/neet-pg.html
-• /education/medical/neet-cutoff.html
-• /education/medical/mbbs-fees.html
-• /education/medical/mbbs-seat-matrix.html
-• /education/medical/mbbs-college-predictor.html
-• /education/medical/mbbs-counselling.html
-• /education/medical/mbbs-state-quota.html
-• /education/medical/mbbs-all-india-quota.html
-• /education/medical/mbbs-private-colleges.html
-• /education/medical/mbbs-government-colleges.html
-• /education/medical/mbbs-nri-quota.html
-• /education/medical/mbbs-management-quota.html
-• /education/medical/mbbs-document-checklist.html
-• /education/medical/mbbs-admission-timeline.html
-• /education/medical/mbbs-bond-policy.html
-• /education/medical/medical-college-recognition.html
-• /education/medical/medical-college-comparison.html
-• /education/medical/medical-college-directory.html
-• /education/medical/bds-admission.html
-• /education/medical/ayush-admission.html
-• /education/medical/medical-pg-admission.html
-• /education/medical/md-ms-courses.html
-• /education/medical/dnb-courses.html
-
-5. Medical colleges by state and territory
-
-• /education/medical/colleges/index.html
-• /education/medical/colleges/andhra-pradesh.html
-• /education/medical/colleges/arunachal-pradesh.html
-• /education/medical/colleges/assam.html
-• /education/medical/colleges/bihar.html
-• /education/medical/colleges/chhattisgarh.html
-• /education/medical/colleges/goa.html
-• /education/medical/colleges/gujarat.html
-• /education/medical/colleges/haryana.html
-• /education/medical/colleges/himachal-pradesh.html
-• /education/medical/colleges/jharkhand.html
-• /education/medical/colleges/karnataka.html
-• /education/medical/colleges/kerala.html
-• /education/medical/colleges/madhya-pradesh.html
-• /education/medical/colleges/maharashtra.html
-• /education/medical/colleges/manipur.html
-• /education/medical/colleges/meghalaya.html
-• /education/medical/colleges/mizoram.html
-• /education/medical/colleges/nagaland.html
-• /education/medical/colleges/odisha.html
-• /education/medical/colleges/punjab.html
-• /education/medical/colleges/rajasthan.html
-• /education/medical/colleges/sikkim.html
-• /education/medical/colleges/tamil-nadu.html
-• /education/medical/colleges/telangana.html
-• /education/medical/colleges/tripura.html
-• /education/medical/colleges/uttar-pradesh.html
-• /education/medical/colleges/uttarakhand.html
-• /education/medical/colleges/west-bengal.html
-• /education/medical/colleges/delhi.html
-• /education/medical/colleges/jammu-and-kashmir.html
-• /education/medical/colleges/ladakh.html
-• /education/medical/colleges/chandigarh.html
-• /education/medical/colleges/puducherry.html
-
-6. West Bengal medical college and admission pages
-
-• /education/medical/west-bengal-medical-colleges.html
-• /education/medical/west-bengal-mbbs-admission.html
-• /education/medical/west-bengal-neet-counselling.html
-• /education/medical/west-bengal-seat-matrix.html
-• /education/medical/west-bengal-mbbs-fees.html
-• /education/medical/west-bengal-document-checklist.html
-• /education/medical/west-bengal-college-comparison.html
-
-Individual college pages
-
-• /education/medical/colleges/cnmc.html
-• /education/medical/colleges/sskm-ipgmer.html
-• /education/medical/colleges/nrs.html
-• /education/medical/colleges/rg-kar.html
-• /education/medical/colleges/medical-college-kolkata.html
-• /education/medical/colleges/calcutta-national-medical-college.html
-• /education/medical/colleges/college-of-medicine-and-sagore-dutta-hospital.html
-• /education/medical/colleges/diamond-harbour-government-medical-college.html
-• /education/medical/colleges/barasat-government-medical-college.html
-• /education/medical/colleges/burdwan-medical-college.html
-• /education/medical/colleges/north-bengal-medical-college.html
-• /education/medical/colleges/bankura-sammilani-medical-college.html
-• /education/medical/colleges/midnapore-medical-college.html
-• /education/medical/colleges/murshidabad-medical-college.html
-• /education/medical/colleges/malda-medical-college.html
-• /education/medical/colleges/jalpaiguri-government-medical-college.html
-• /education/medical/colleges/raiganj-government-medical-college.html
-• /education/medical/colleges/purulia-government-medical-college.html
-• /education/medical/colleges/rampurhat-government-medical-college.html
-• /education/medical/colleges/cooch-behar-government-medical-college.html
-• /education/medical/colleges/aiims-kalyani.html
-• /education/medical/colleges/jnm-medical-college.html
-• /education/medical/colleges/kpc-medical-college.html
-• /education/medical/colleges/iq-city-medical-college.html
-• /education/medical/colleges/jis-school-of-medical-science.html
-• /education/medical/colleges/santiniketan-medical-college.html
-
-> Verify each institution’s official name, current recognition, approved courses, intake, fees, and admission route before publishing. This is a proposed path list, not confirmation of current course approval.
-
-7. Official documents and admission resources
-
-• /official-document.html
-• /official-documents/index.html
-• /official-documents/neet-ug-information-bulletin.html
-• /official-documents/neet-pg-information-bulletin.html
-• /official-documents/nmc-guidelines.html
-• /official-documents/nmc-recognized-colleges.html
-• /official-documents/nmc-college-permissions.html
-• /official-documents/mcc-counselling.html
-• /official-documents/wbmcc-counselling.html
-• /official-documents/wbmcc-information-bulletin.html
-• /official-documents/wbmcc-seat-matrix.html
-• /official-documents/wbmcc-fee-notifications.html
-• /official-documents/wbmcc-document-verification.html
-• /official-documents/state-counselling-authorities.html
-• /official-documents/admission-notices.html
-• /official-documents/official-fee-notifications.html
-• /official-documents/scholarship-notifications.html
-• /official-documents/important-dates.html
-• /official-documents/verification-checklist.html
-
-8. Study abroad
-
-• /education/study-abroad/index.html
-• /education/study-abroad/mbbs-abroad.html
-• /education/study-abroad/admission-process.html
-• /education/study-abroad/eligibility.html
-• /education/study-abroad/fees.html
-• /education/study-abroad/scholarships.html
-• /education/study-abroad/visa-guidance.html
-• /education/study-abroad/document-checklist.html
-• /education/study-abroad/recognition-and-licensing.html
-• /education/study-abroad/foreign-medical-graduate-exam.html
-• /education/study-abroad/russia.html
-• /education/study-abroad/georgia.html
-• /education/study-abroad/kazakhstan.html
-• /education/study-abroad/kyrgyzstan.html
-• /education/study-abroad/uzbekistan.html
-• /education/study-abroad/united-arab-emirates.html
-• /education/study-abroad/philippines.html
-• /education/study-abroad/nepal.html
-• /education/study-abroad/bangladesh.html
-• /education/study-abroad/uk.html
-• /education/study-abroad/usa.html
-• /education/study-abroad/canada.html
-• /education/study-abroad/australia.html
-• /education/study-abroad/germany.html
-• /education/study-abroad/ireland.html
-• /education/study-abroad/country-comparison.html
-
-9. Admissions, applications, and counselling
-
-• /education/admissions/index.html
-• /education/admissions/how-to-apply.html
-• /education/admissions/application-process.html
-• /education/admissions/eligibility.html
-• /education/admissions/registration.html
-• /education/admissions/document-verification.html
-• /education/admissions/choice-filling.html
-• /education/admissions/seat-allotment.html
-• /education/admissions/round-1.html
-• /education/admissions/round-2.html
-• /education/admissions/mop-up-round.html
-• /education/admissions/stray-vacancy-round.html
-• /education/admissions/reporting-and-enrolment.html
-• /education/admissions/fee-payment-guidance.html
-• /education/admissions/admission-status.html
-• /education/admissions/application-tracker.html
-• /education/admissions/application-help.html
-• /education/admissions/college-preferences.html
-• /education/admissions/admission-appeals.html
-• /education/admissions/refund-and-withdrawal.html
-
-10. Careers, jobs, and recruitment
-
-• /career/index.html
-• /career/jobs.html
-• /career/job-details.html
-• /career/job-categories.html
-• /career/job-search.html
-• /career/jobs-by-location.html
-• /career/jobs-by-industry.html
-• /career/jobs-by-qualification.html
-• /career/jobs-by-experience.html
-• /career/government-jobs.html
-• /career/private-jobs.html
-• /career/healthcare-jobs.html
-• /career/medical-jobs.html
-• /career/nursing-jobs.html
-• /career/pharmacy-jobs.html
-• /career/engineering-jobs.html
-• /career/it-jobs.html
-• /career/management-jobs.html
-• /career/teaching-jobs.html
-• /career/international-jobs.html
-• /career/jobs-in-india.html
-• /career/jobs-in-dubai.html
-• /career/jobs-in-uae.html
-• /career/jobs-in-saudi-arabia.html
-• /career/jobs-in-qatar.html
-• /career/jobs-in-oman.html
-• /career/jobs-in-kuwait.html
-• /career/jobs-in-bahrain.html
-• /career/jobs-in-singapore.html
-• /career/jobs-in-germany.html
-• /career/jobs-in-canada.html
-• /career/jobs-in-uk.html
-• /career/jobs-in-australia.html
-• /career/internships.html
-• /career/apprenticeships.html
-• /career/fresher-jobs.html
-• /career/experienced-jobs.html
-• /career/remote-jobs.html
-• /career/work-from-home.html
-• /career/walk-in-interviews.html
-• /career/job-fairs.html
-• /career/recruitment-services.html
-• /career/employers.html
-• /career/post-a-job.html
-• /career/employer-registration.html
-• /career/candidate-registration.html
-• /career/application-form.html
-• /career/resume-builder.html
-• /career/cover-letter-builder.html
-• /career/interview-preparation.html
-• /career/career-guidance.html
-• /career/salary-guide.html
-• /career/job-application-status.html
-
-11. Job application preparation portal
-
-• /career/application-preparation/index.html
-• /career/application-preparation/instructions.html
-• /career/application-preparation/eligibility.html
-• /career/application-preparation/personal-details.html
-• /career/application-preparation/education-details.html
-• /career/application-preparation/work-experience.html
-• /career/application-preparation/document-upload.html
-• /career/application-preparation/consent.html
-• /career/application-preparation/review.html
-• /career/application-preparation/fee-and-refund.html
-• /career/application-preparation/payment-instructions.html
-• /career/application-preparation/receipt.html
-• /career/application-preparation/submission-confirmation.html
-• /career/application-preparation/application-status.html
-• /career/application-preparation/privacy-notice.html
-• /career/application-preparation/support.html
-
-12. User account pages
-
-• /account/index.html
-• /account/login.html
-• /account/register.html
-• /account/verify-email.html
-• /account/verify-phone.html
-• /account/forgot-password.html
-• /account/reset-password.html
-• /account/change-password.html
-• /account/dashboard.html
-• /account/profile.html
-• /account/edit-profile.html
-• /account/my-applications.html
-• /account/application-details.html
-• /account/saved-colleges.html
-• /account/saved-jobs.html
-• /account/saved-courses.html
-• /account/my-documents.html
-• /account/notifications.html
-• /account/messages.html
-• /account/payment-history.html
-• /account/receipts.html
-• /account/privacy-settings.html
-• /account/security-settings.html
-• /account/sessions.html
-• /account/delete-account.html
-• /account/logout.html
-
-13. Admin dashboard pages
-
-• /admin/index.html
-• /admin/login.html
-• /admin/dashboard.html
-• /admin/users.html
-• /admin/user-details.html
-• /admin/roles.html
-• /admin/permissions.html
-• /admin/applications.html
-• /admin/application-details.html
-• /admin/application-review.html
-• /admin/application-status.html
-• /admin/documents.html
-• /admin/document-review.html
-• /admin/colleges.html
-• /admin/college-details.html
-• /admin/courses.html
-• /admin/admissions.html
-• /admin/counselling.html
-• /admin/jobs.html
-• /admin/job-details.html
-• /admin/employers.html
-• /admin/candidates.html
-• /admin/recruitment.html
-• /admin/payments.html
-• /admin/refunds.html
-• /admin/receipts.html
-• /admin/content-management.html
-• /admin/blog-management.html
-• /admin/announcements.html
-• /admin/official-resources.html
-• /admin/data-import.html
-• /admin/data-export.html
-• /admin/audit-log.html
-• /admin/security-events.html
-• /admin/access-control.html
-• /admin/api-settings.html
-• /admin/system-settings.html
-• /admin/form-control.html
-• /admin/maintenance.html
-• /admin/backup-status.html
-• /admin/error-reports.html
-
-> Admin pages must be protected by server-side authentication and authorization. Do not expose admin tokens, API secrets, or private data in browser JavaScript or public files.
-
-14. Legal, privacy, policies, and support
-
-Legal and policies
-
-• /legal/index.html
-• /legal/privacy-policy.html
-• /legal/terms.html
-• /legal/refund-policy.html
-• /legal/cancellation-policy.html
-• /legal/disclaimer.html
-• /legal/cookie-policy.html
-• /legal/data-protection.html
-• /legal/data-retention.html
-• /legal/acceptable-use.html
-• /legal/anti-fraud-policy.html
-• /legal/payment-policy.html
-• /legal/fee-disclosure.html
-• /legal/third-party-links.html
-• /legal/intellectual-property.html
-• /legal/accessibility.html
-• /legal/grievance-redressal.html
-• /legal/contact-details.html
-• /legal/education-services-disclaimer.html
-• /legal/recruitment-services-disclaimer.html
-• /legal/medical-admissions-disclaimer.html
-• /legal/independent-application-preparation.html
-
-Support
-
-• /support/index.html
-• /support/contact.html
-• /support/help-centre.html
-• /support/faq.html
-• /support/submit-ticket.html
-• /support/ticket-status.html
-• /support/complaints.html
-• /support/payment-support.html
-• /support/refund-request.html
-• /support/document-upload-help.html
-• /support/account-recovery.html
-
-15. Shared CSS, JavaScript, images, and fonts
-
-CSS
-
-• /assets/css/styles.css
-• /assets/css/responsive.css
-• /assets/css/forms.css
-• /assets/css/print.css
-• /assets/css/accessibility.css
-• /assets/css/theme.css
-• /assets/css/font.css
-
-JavaScript
-
-• /assets/js/main.js
-• /assets/js/navigation.js
-• /assets/js/search.js
-• /assets/js/forms.js
-• /assets/js/validation.js
-• /assets/js/admissions.js
-• /assets/js/college-directory.js
-• /assets/js/job-search.js
-• /assets/js/account.js
-• /assets/js/accessibility.js
-
-Images and fonts
-
-• /assets/images/logo/medorbits-logo.png
-• /assets/images/logo/medorbits-logo.svg
-• /assets/images/logo/medorbits-monogram.svg
-• /assets/images/hero/
-• /assets/images/colleges/
-• /assets/images/courses/
-• /assets/images/careers/
-• /assets/images/icons/
-• /assets/fonts/
-• /assets/documents/
-
-Do not place confidential documents in publicly served asset directories.
-
-16. JSON data and schemas
-
-JSON data
-
-• /assets/data/courses.json
-• /assets/data/entrance-exams.json
-• /assets/data/colleges.json
-• /assets/data/universities.json
-• /assets/data/medical-colleges.json
-• /assets/data/college-fees.json
-• /assets/data/seat-matrix.json
-• /assets/data/admission-processes.json
-• /assets/data/documents.json
-• /assets/data/scholarships.json
-• /assets/data/countries.json
-• /assets/data/jobs.json
-• /assets/data/job-categories.json
-• /assets/data/locations.json
-• /assets/data/official-resources.json
-
-JSON schemas
-
-• /schemas/course.schema.json
-• /schemas/college.schema.json
-• /schemas/job.schema.json
-• /schemas/admission.schema.json
-• /schemas/document.schema.json
-
-Recommended data conventions
-
-• Include metadata and a clear data version where appropriate.
-• Use “verificationStatus”: “unverified” until a record has been checked.
-• Use null for unknown values; do not invent missing fees, seats, dates, or eligibility rules.
-• Include an official source URL and a last-verified date for time-sensitive records.
-• Use YYYY-MM-DD dates, INR for Indian currency, and IN as the default country code where relevant.
-• Do not treat a data file as an official source simply because it is hosted on MedOrbits.
-
-17. Public files and technical directories
-
-Public files
-
-• /public/404.html
-• /public/500.html
-• /public/robots.txt
-• /public/favicon.ico
-• /sitemap.xml
-• /robots.txt
-
-Technical directories
-
-• /schemas/
-• /docs/
-• /scripts/
-• /tests/
-• /tests/unit/
-• /tests/integration/
-• /tests/security/
-• /.github/workflows/
-
-Check the hosting platform’s static-file conventions before relying on /public/ as a source directory. With a root-served static site, files may need to live at the repository paths that map directly to their intended public URLs.
-
-18. Suggested implementation order
-
-1. Core site: root homepage, About, Services, Contact, shared navigation, and footer.
-2. Education: courses, exams, admissions, documents, and college directories.
-3. Medical admissions: MBBS admission guidance, state pages, college profiles, fees, and official resources.
-4. Careers: job search, job details, candidate registration, and employer services.
-5. Policies: privacy, terms, refund policy, disclaimers, and application-preparation notices.
-6. Accounts and admin: implement only alongside secure server-side authentication, authorization, audit logging, and private storage.
-7. Data quality: validate JSON schemas, verify official sources, add sitemap entries, and check internal links.
-
-19. Deployment and URL notes
-
-• A file at /education/medical/mbbs-admission.html normally maps to https://www.medorbits.in/education/medical/mbbs-admission.html when deployed at the domain root.
-• A clean URL such as /education/medical/mbbs-admission requires compatible hosting configuration, routing, or redirect rules.
-• Ensure internal links match the real filenames and case exactly.
-• Confirm the actual repository structure before linking every proposed page from the navigation.
-• Do not publish personal documents, access tokens, API secrets, or private application records in the public static directory.
-
-20. Official-source and service disclaimer
-
-MedOrbits provides education, admission-information, career, and recruitment resources. Admission rules, eligibility, counselling schedules, seat matrices, recognition, fees, and document requirements can change. Verify current details through the responsible official authority before taking action.
-
-Unless separately and verifiably authorized, MedOrbits must not claim to be affiliated with or endorsed by a government counselling authority, regulator, college, university, employer, or other third party. No guidance or service fee should be represented as guaranteeing admission, allotment, employment, visa approval, or any other outcome.
+Document: README.md
+Purpose: Repository directory, page registry, shared-resource reference, and implementation roadmap.
+
+Status: Planning inventory. This document describes proposed paths and conventions; it does not prove that every file exists, is functional, or has been deployed.
+
+1. Project objectives
+
+MedOrbits brings together education discovery, admissions information, college resources, application preparation, career guidance, jobs, and recruitment resources.
+
+The website directory should support:
+
+* Clear and predictable navigation.
+* Reusable HTML, CSS, JavaScript, and JSON resources.
+* Traceable, authoritative educational information.
+* Accessible and responsive page templates.
+* Secure handling of applicant information.
+* Reliable validation, testing, and deployment.
+* Maintainable URLs and a documented source of truth for page paths.
+
+Create and integrate pages according to actual product requirements. Avoid generating duplicate pages merely to increase the repository’s file count.
+
+2. Repository conventions
+
+Entry point and URLs
+
+* Keep the main website entry point at /index.html.
+* Store supporting pages in the directories defined below.
+* Use .html paths unless the deployment explicitly configures clean URLs.
+* Use consistent lowercase filenames and hyphen-separated words.
+* Resolve internal links relative to the correct page or use a verified site-root path.
+* Keep navigation, page metadata, shared assets, and redirects consistent with the actual deployment.
+* Do not assume a public/ directory is automatically the static document root.
+
+Security and privacy
+
+* Never commit credentials, private keys, production database exports, or applicant documents.
+* Do not place confidential documents in publicly served asset directories.
+* Enforce authentication and authorization on the server for protected operations.
+* Do not treat hidden navigation links or browser-side role checks as access controls.
+* Keep security reporting private through a verified process documented in SECURITY.md.
+* Publish only contact channels, policies, and service commitments that have been verified.
+
+Content integrity
+
+* Verify admission rules, college recognition, approved courses, intake, fees, seat matrices, deadlines, and eligibility against current authoritative sources.
+* Record source URLs and verification dates for time-sensitive data.
+* Distinguish official facts from MedOrbits explanations and recommendations.
+* Do not imply official affiliation, endorsement, or authorization without verifiable evidence.
+* Do not promise admission, seat allotment, employment, scholarships, or visa approval.
+
+Scope exclusion
+
+This directory intentionally excludes the standalone page kolkata-medical-colleges.html. Do not create or add that path as a separate page. The individual college pages and other medical-college resources listed below remain within scope.
+
+3. Canonical page directory
+
+The paths below define the proposed information architecture. They should be reconciled with the actual repository before implementation.
+
+3.1 Main website and company pages
+
+index.html
+pages/
+├── about.html
+├── our-team.html
+├── leadership.html
+├── our-mission.html
+├── our-vision.html
+├── services.html
+├── consultancy.html
+├── contact.html
+├── faq.html
+├── how-it-works.html
+├── partners.html
+├── institutional-partners.html
+├── corporate-services.html
+├── career-at-medorbits.html
+├── news.html
+├── announcements.html
+├── blog.html
+├── blog-article.html
+├── sitemap.html
+├── search.html
+├── 404.html
+└── 500.html
+
+3.2 Education homepage and academic resources
+
+education/
+├── index.html
+├── courses.html
+├── course-details.html
+├── streams.html
+├── subjects.html
+├── academic-calendar.html
+├── education-news.html
+├── education-guides.html
+├── study-planner.html
+├── eligibility-checker.html
+├── college-predictor.html
+├── cutoff-predictor.html
+├── seat-matrix.html
+├── fee-comparison.html
+├── scholarships.html
+├── education-loans.html
+├── entrance-exams.html
+├── exam-calendar.html
+├── results.html
+├── admit-cards.html
+├── answer-keys.html
+├── counselling.html
+├── admission-process.html
+├── documents.html
+└── glossary.html
+
+3.3 Study in India
+
+education/study-india/
+├── index.html
+├── mbbs.html
+├── bds.html
+├── ayush.html
+├── bams.html
+├── bhms.html
+├── bums.html
+├── bnys.html
+├── bsms.html
+├── nursing.html
+├── pharmacy.html
+├── paramedical.html
+├── allied-health-sciences.html
+├── physiotherapy.html
+├── engineering.html
+├── management.html
+├── law.html
+├── arts-humanities.html
+├── science.html
+├── commerce.html
+├── diploma-courses.html
+├── online-courses.html
+├── distance-education.html
+├── private-colleges.html
+└── government-colleges.html
+
+3.4 Medical education and MBBS admissions
+
+education/medical/
+├── index.html
+├── mbbs-admission.html
+├── mbbs-eligibility.html
+├── neet-ug.html
+├── neet-pg.html
+├── neet-cutoff.html
+├── mbbs-fees.html
+├── mbbs-seat-matrix.html
+├── mbbs-college-predictor.html
+├── mbbs-counselling.html
+├── mbbs-state-quota.html
+├── mbbs-all-india-quota.html
+├── mbbs-private-colleges.html
+├── mbbs-government-colleges.html
+├── mbbs-nri-quota.html
+├── mbbs-management-quota.html
+├── mbbs-document-checklist.html
+├── mbbs-admission-timeline.html
+├── mbbs-bond-policy.html
+├── medical-college-recognition.html
+├── medical-college-comparison.html
+├── medical-college-directory.html
+├── bds-admission.html
+├── ayush-admission.html
+├── medical-pg-admission.html
+├── md-ms-courses.html
+└── dnb-courses.html
+
+3.5 Medical colleges by state and territory
+
+education/medical/colleges/
+├── index.html
+├── andhra-pradesh.html
+├── arunachal-pradesh.html
+├── assam.html
+├── bihar.html
+├── chhattisgarh.html
+├── goa.html
+├── gujarat.html
+├── haryana.html
+├── himachal-pradesh.html
+├── jharkhand.html
+├── karnataka.html
+├── kerala.html
+├── madhya-pradesh.html
+├── maharashtra.html
+├── manipur.html
+├── meghalaya.html
+├── mizoram.html
+├── nagaland.html
+├── odisha.html
+├── punjab.html
+├── rajasthan.html
+├── sikkim.html
+├── tamil-nadu.html
+├── telangana.html
+├── tripura.html
+├── uttar-pradesh.html
+├── uttarakhand.html
+├── west-bengal.html
+├── delhi.html
+├── jammu-and-kashmir.html
+├── ladakh.html
+├── chandigarh.html
+└── puducherry.html
+
+3.6 West Bengal medical education
+
+education/medical/
+├── west-bengal-medical-colleges.html
+├── west-bengal-mbbs-admission.html
+├── west-bengal-neet-counselling.html
+├── west-bengal-seat-matrix.html
+├── west-bengal-mbbs-fees.html
+├── west-bengal-document-checklist.html
+└── west-bengal-college-comparison.html
+
+3.7 Individual medical college pages
+
+education/medical/colleges/
+├── cnmc.html
+├── sskm-ipgmer.html
+├── nrs.html
+├── rg-kar.html
+├── medical-college-kolkata.html
+├── calcutta-national-medical-college.html
+├── college-of-medicine-and-sagore-dutta-hospital.html
+├── diamond-harbour-government-medical-college.html
+├── barasat-government-medical-college.html
+├── burdwan-medical-college.html
+├── north-bengal-medical-college.html
+├── bankura-sammilani-medical-college.html
+├── midnapore-medical-college.html
+├── murshidabad-medical-college.html
+├── malda-medical-college.html
+├── jalpaiguri-government-medical-college.html
+├── raiganj-government-medical-college.html
+├── purulia-government-medical-college.html
+├── rampurhat-government-medical-college.html
+├── cooch-behar-government-medical-college.html
+├── aiims-kalyani.html
+├── jnm-medical-college.html
+├── kpc-medical-college.html
+├── iq-city-medical-college.html
+├── jis-school-of-medical-science.html
+└── santiniketan-medical-college.html
+
+Verify each institution’s official name, current recognition, approved courses, intake, fees, and admission route before publication. Similar or legacy names must be reconciled against authoritative institution records to avoid duplicate profiles.
+
+3.8 Official documents and admission resources
+
+official-document.html
+official-documents/
+├── index.html
+├── neet-ug-information-bulletin.html
+├── neet-pg-information-bulletin.html
+├── nmc-guidelines.html
+├── nmc-recognized-colleges.html
+├── nmc-college-permissions.html
+├── mcc-counselling.html
+├── wbmcc-counselling.html
+├── wbmcc-information-bulletin.html
+├── wbmcc-seat-matrix.html
+├── wbmcc-fee-notifications.html
+├── wbmcc-document-verification.html
+├── state-counselling-authorities.html
+├── admission-notices.html
+├── official-fee-notifications.html
+├── scholarship-notifications.html
+├── important-dates.html
+└── verification-checklist.html
+
+Link to the applicable official source wherever possible. Record publication dates and distinguish the original issuing authority from MedOrbits summaries or copies.
+
+3.9 Study abroad
+
+education/study-abroad/
+├── index.html
+├── mbbs-abroad.html
+├── admission-process.html
+├── eligibility.html
+├── fees.html
+├── scholarships.html
+├── visa-guidance.html
+├── document-checklist.html
+├── recognition-and-licensing.html
+├── foreign-medical-graduate-exam.html
+├── russia.html
+├── georgia.html
+├── kazakhstan.html
+├── kyrgyzstan.html
+├── uzbekistan.html
+├── united-arab-emirates.html
+├── philippines.html
+├── nepal.html
+├── bangladesh.html
+├── uk.html
+├── usa.html
+├── canada.html
+├── australia.html
+├── germany.html
+├── ireland.html
+└── country-comparison.html
+
+Country pages must explain relevant admission conditions, costs, recognition, licensing, visa requirements, and limitations using current authoritative sources.
+
+3.10 Admissions, applications, and counselling
+
+education/admissions/
+├── index.html
+├── how-to-apply.html
+├── application-process.html
+├── eligibility.html
+├── registration.html
+├── document-verification.html
+├── choice-filling.html
+├── seat-allotment.html
+├── round-1.html
+├── round-2.html
+├── mop-up-round.html
+├── stray-vacancy-round.html
+├── reporting-and-enrolment.html
+├── fee-payment-guidance.html
+├── admission-status.html
+├── application-tracker.html
+├── application-help.html
+├── college-preferences.html
+├── admission-appeals.html
+└── refund-and-withdrawal.html
+
+Round names, counselling sequences, and deadlines must reflect the relevant authority and admission cycle. Do not present a generic workflow as universal.
+
+3.11 Careers, jobs, and recruitment
+
+career/
+├── index.html
+├── jobs.html
+├── job-details.html
+├── job-categories.html
+├── job-search.html
+├── jobs-by-location.html
+├── jobs-by-industry.html
+├── jobs-by-qualification.html
+├── jobs-by-experience.html
+├── government-jobs.html
+├── private-jobs.html
+├── healthcare-jobs.html
+├── medical-jobs.html
+├── nursing-jobs.html
+├── pharmacy-jobs.html
+├── engineering-jobs.html
+├── it-jobs.html
+├── management-jobs.html
+├── teaching-jobs.html
+├── international-jobs.html
+├── jobs-in-india.html
+├── jobs-in-dubai.html
+├── jobs-in-uae.html
+├── jobs-in-saudi-arabia.html
+├── jobs-in-qatar.html
+├── jobs-in-oman.html
+├── jobs-in-kuwait.html
+├── jobs-in-bahrain.html
+├── jobs-in-singapore.html
+├── jobs-in-germany.html
+├── jobs-in-canada.html
+├── jobs-in-uk.html
+├── jobs-in-australia.html
+├── internships.html
+├── apprenticeships.html
+├── fresher-jobs.html
+├── experienced-jobs.html
+├── remote-jobs.html
+├── work-from-home.html
+├── walk-in-interviews.html
+├── job-fairs.html
+├── recruitment-services.html
+├── employers.html
+├── post-a-job.html
+├── employer-registration.html
+├── candidate-registration.html
+├── application-form.html
+├── resume-builder.html
+├── cover-letter-builder.html
+├── interview-preparation.html
+├── career-guidance.html
+├── salary-guide.html
+└── job-application-status.html
+
+Job listings should distinguish verified vacancies from general career information. Include employer identity, location, publication date, application deadline, and source information where applicable. Never invent live vacancies, salaries, or recruitment relationships.
+
+3.12 Application-preparation portal
+
+career/application-preparation/
+├── index.html
+├── instructions.html
+├── eligibility.html
+├── personal-details.html
+├── education-details.html
+├── work-experience.html
+├── document-upload.html
+├── consent.html
+├── review.html
+├── fee-and-refund.html
+├── payment-instructions.html
+├── receipt.html
+├── submission-confirmation.html
+├── application-status.html
+├── privacy-notice.html
+└── support.html
+
+These paths describe a proposed workflow, not a functioning application service. Submission, document storage, consent recording, payment verification, and status updates require verified backend implementations.
+
+3.13 Applicant account pages
+
+account/
+├── index.html
+├── login.html
+├── register.html
+├── verify-email.html
+├── verify-phone.html
+├── forgot-password.html
+├── reset-password.html
+├── change-password.html
+├── dashboard.html
+├── profile.html
+├── edit-profile.html
+├── my-applications.html
+├── application-details.html
+├── saved-colleges.html
+├── saved-jobs.html
+├── saved-courses.html
+├── my-documents.html
+├── notifications.html
+├── messages.html
+├── payment-history.html
+├── receipts.html
+├── privacy-settings.html
+├── security-settings.html
+├── sessions.html
+├── delete-account.html
+└── logout.html
+
+Every account feature must be connected to the relevant authenticated service. A page must not imply that account details, sessions, or documents are securely stored when no such implementation exists.
+
+3.14 Administrative pages
+
+admin/
+├── index.html
+├── login.html
+├── dashboard.html
+├── users.html
+├── user-details.html
+├── roles.html
+├── permissions.html
+├── applications.html
+├── application-details.html
+├── application-review.html
+├── application-status.html
+├── documents.html
+├── document-review.html
+├── colleges.html
+├── college-details.html
+├── courses.html
+├── admissions.html
+├── counselling.html
+├── jobs.html
+├── job-details.html
+├── employers.html
+├── candidates.html
+├── recruitment.html
+├── payments.html
+├── refunds.html
+├── receipts.html
+├── content-management.html
+├── blog-management.html
+├── announcements.html
+├── official-resources.html
+├── data-import.html
+├── data-export.html
+├── audit-log.html
+├── security-events.html
+├── access-control.html
+├── api-settings.html
+├── system-settings.html
+├── form-control.html
+├── maintenance.html
+├── backup-status.html
+└── error-reports.html
+
+Admin routes must enforce server-side authentication and authorization. Data export, document access, user management, and payment operations require explicit permission checks and appropriate audit controls.
+
+3.15 Legal, privacy, and support
+
+Legal pages:
+
+legal/
+├── index.html
+├── privacy-policy.html
+├── terms.html
+├── refund-policy.html
+├── cancellation-policy.html
+├── disclaimer.html
+├── cookie-policy.html
+├── data-protection.html
+├── data-retention.html
+├── acceptable-use.html
+├── anti-fraud-policy.html
+├── payment-policy.html
+├── fee-disclosure.html
+├── third-party-links.html
+├── intellectual-property.html
+├── accessibility.html
+├── grievance-redressal.html
+├── contact-details.html
+├── education-services-disclaimer.html
+├── recruitment-services-disclaimer.html
+├── medical-admissions-disclaimer.html
+└── independent-application-preparation.html
+
+Support pages:
+
+support/
+├── index.html
+├── contact.html
+├── help-centre.html
+├── faq.html
+├── submit-ticket.html
+├── ticket-status.html
+├── complaints.html
+├── payment-support.html
+├── refund-request.html
+├── document-upload-help.html
+└── account-recovery.html
+
+Verify all published contact details, reporting channels, policy links, retention statements, refund terms, and service commitments before publication.
+
+4. Shared assets and data
+
+4.1 Shared stylesheets
+
+assets/css/
+├── styles.css
+├── responsive.css
+├── forms.css
+├── print.css
+├── accessibility.css
+├── theme.css
+└── font.css
+
+Keep shared design tokens, typography, navigation, forms, and responsive behavior consistent. Avoid duplicated CSS when an existing shared component can be reused.
+
+4.2 Shared JavaScript
+
+assets/js/
+├── main.js
+├── navigation.js
+├── search.js
+├── forms.js
+├── validation.js
+├── admissions.js
+├── college-directory.js
+├── job-search.js
+├── account.js
+└── accessibility.js
+
+Browser JavaScript should manage presentation and safe client-side interactions. Sensitive business rules, access controls, payment verification, and data authorization must remain server-side.
+
+4.3 Brand assets
+
+assets/
+├── images/
+│   ├── logo/
+│   │   ├── medorbits-logo.svg
+│   │   └── medorbits-monogram.svg
+│   ├── hero/
+│   ├── colleges/
+│   ├── courses/
+│   ├── careers/
+│   └── icons/
+├── fonts/
+└── documents/
+
+Add image assets only when they are required. Use accessible alternative text and confirm licensing and permission for third-party images and logos.
+
+4.4 Structured data
+
+assets/data/
+├── courses.json
+├── entrance-exams.json
+├── colleges.json
+├── universities.json
+├── medical-colleges.json
+├── college-fees.json
+├── seat-matrix.json
+├── admission-processes.json
+├── documents.json
+├── scholarships.json
+├── countries.json
+├── jobs.json
+├── job-categories.json
+├── locations.json
+└── official-resources.json
+
+Reusable schemas belong in schemas/. Before adding a new data file, check whether an existing schema and data source already cover the requirement.
+
+Recommended record conventions:
+
+* Use a defined schema and versioned structure.
+* Mark unverified records with “verificationStatus”: “unverified”.
+* Represent unknown values as null, not invented estimates.
+* Record the authoritative source URL and lastVerified date for consequential, changing information.
+* Use YYYY-MM-DD dates and INR for Indian currency where applicable.
+* Preserve the distinction between an official source and a MedOrbits summary.
+
+5. Technical and quality resources
+
+docs/
+scripts/
+schemas/
+tests/
+.github/workflows/
+database/
+migrations/main/
+infrastructure/
+
+Expected responsibilities:
+
+* docs/: architecture, API, data verification, deployment, privacy, security, and testing documentation.
+* scripts/: build and validation tools.
+* schemas/: reusable data contracts.
+* tests/: unit, integration, end-to-end, accessibility, and security checks.
+* .github/workflows/: continuous integration and approved deployment workflows.
+* database/: database definitions and queries.
+* migrations/main/: ordered, versioned database changes.
+* infrastructure/: hosting configuration and environment documentation.
+
+Ensure package.json and package-lock.json agree, Python configuration is consistent across local development and CI, and deployment files match the selected hosting architecture.
+
+6. Page registry and validation
+
+Maintain one authoritative page registry to track:
+
+Field	Purpose
+path	Canonical repository-relative path
+section	Website section
+status	Planned, scaffolded, integrated, tested, or verified
+owner	Responsible maintainer or team
+sourcePolicy	Required source-verification approach
+lastReviewed	Date of the last relevant review
+
+The registry should be derived from the actual repository where possible. Do not mark a page as deployed or verified merely because it appears in this README.
+
+Before a release:
+
+1. Compare registered paths with the actual repository.
+2. Detect missing, unexpected, duplicate, and case-mismatched paths.
+3. Check internal links and local assets.
+4. Validate JSON syntax and schemas.
+5. Run the applicable HTML, JavaScript, Python, SQL, and security checks.
+6. Verify consequential facts and external links.
+7. Confirm deployment output and error-page routing.
+
+Record real test results and outstanding issues.
+
+7. Implementation roadmap
+
+Phase 1 — Core website
+
+* Root homepage and shared navigation.
+* Company, service, contact, and support pages.
+* Shared CSS and accessible responsive layouts.
+* Working internal links and error-page configuration.
+
+Phase 2 — Education and official resources
+
+* Education landing page and course resources.
+* Admission guidance and document checklists.
+* Medical-college directory and profiles.
+* Source verification for facts, fees, seats, and deadlines.
+
+Phase 3 — Career and recruitment
+
+* Job search and job-detail pages.
+* Candidate and employer workflows.
+* Verified vacancy information and clear recruitment disclaimers.
+
+Phase 4 — Application workflows
+
+* Applicant-facing form pages.
+* Server-side validation and authorization.
+* Private document storage, consent handling, and accurate status tracking.
+
+Phase 5 — Accounts and administration
+
+* Authentication and account recovery.
+* Role-based authorization.
+* Administrative operations, audit controls, and protected data exports.
+
+Phase 6 — Release verification
+
+* Automated validation and security testing.
+* Accessibility and mobile testing.
+* Verified production configuration.
+* Final policy and content review.
+
+8. Deployment conventions
+
+For a root-deployed static website, a file such as:
+
+education/medical/mbbs-admission.html
+
+normally maps to:
+
+https://www.medorbits.in/education/medical/mbbs-admission.html
+
+Clean URLs require compatible hosting configuration, routing, or redirects.
+
+Before deployment, verify:
+
+* The actual static document root.
+* Asset paths and page-relative links.
+* The hosting platform’s error-page conventions.
+* Redirect behavior and canonical URLs.
+* Sitemap and robots.txt locations.
+* That private application data and credentials are excluded from public output.
+
+9. Publication and affiliation policy
+
+MedOrbits provides education, admissions-information, application-preparation, career, and recruitment resources. Requirements and outcomes may be controlled by external authorities, institutions, employers, or service providers.
+
+Verify current eligibility, fees, recognition, counselling rules, seat availability, and deadlines through the responsible official source.
+
+Do not claim affiliation, endorsement, accreditation, or authorization without verifiable evidence. Do not present application-preparation assistance as a guarantee of admission, employment, seat allotment, scholarship, or visa approval.
+
+10. Maintenance policy
+
+* Preserve existing repository files and working functionality.
+* Review changes before overwriting existing files.
+* Avoid duplicate pages and redundant data structures.
+* Continue existing database migration numbering.
+* Update the page registry when paths change.
+* Document meaningful changes in CHANGELOG.md.
+* Keep security and privacy documentation aligned with actual implementation.
+* Update this README when the directory structure changes.
+
+Final status: This document defines the intended website structure. Repository existence, feature completeness, factual accuracy, test success, and deployment status must be verified independently.

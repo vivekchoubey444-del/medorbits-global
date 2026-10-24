@@ -1,1 +1,997 @@
-/* MedOrbits stylesheet starter. */
+/* =========================================================
+   MEDORBITS | UNIVERSAL PRINT & PDF DESIGN SYSTEM
+   File: assets/css/print.css
+   Purpose:
+   Convert MedOrbits web pages into clean printable documents.
+   Supports:
+   - Education and course guides
+   - Admissions and counselling information
+   - Medical and college directories
+   - Documents and official-resource guides
+   - Study-abroad guides
+   - Careers, jobs and internships
+   - Application and registration forms
+   - Applicant review and checklist pages
+   - Administrative reports and data tables
+   - Print and browser Save as PDF
+   Design:
+   Professional white paper
+   Black / charcoal typography
+   Neutral borders
+   Consistent page spacing
+   Readable tables and forms
+   Load AFTER other CSS files.
+   IMPORTANT:
+   CSS cannot guarantee identical PDF output in every browser.
+   Browser print settings, printer margins, fonts and HTML
+   structure also affect the final result.
+   ========================================================= */
+/* =========================================================
+   1. PRINT DESIGN TOKENS
+   ========================================================= */
+:root {
+  --print-paper: #ffffff;
+  --print-text: #171717;
+  --print-heading: #111111;
+  --print-muted: #4b4b4b;
+  --print-border: #b8b8b8;
+  --print-border-light: #dddddd;
+  --print-surface: #ffffff;
+  --print-accent: #755a2a;
+  --print-page-margin: 16mm;
+  --print-content-width: 100%;
+  --print-font-body:
+    Arial,
+    Helvetica,
+    sans-serif;
+  --print-font-heading:
+    Georgia,
+    "Times New Roman",
+    serif;
+  --print-font-mono:
+    Consolas,
+    "Courier New",
+    monospace;
+  --print-body-size: 10pt;
+  --print-small-size: 8.5pt;
+  --print-table-size: 8.5pt;
+  --print-line-height: 1.5;
+  --print-border-width: 0.5pt;
+}
+/* =========================================================
+   2. UNIVERSAL PRINT RESET
+   ========================================================= */
+@media print {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box !important;
+    color: var(--print-text) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  html {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--print-text) !important;
+    background: var(--print-paper) !important;
+    font-family: var(--print-font-body) !important;
+    font-size: 10pt !important;
+    scroll-behavior: auto !important;
+    -webkit-text-size-adjust: 100% !important;
+    print-color-adjust: economy;
+  }
+  body {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    color: var(--print-text) !important;
+    background: var(--print-paper) !important;
+    font-family: var(--print-font-body) !important;
+    font-size: var(--print-body-size) !important;
+    font-weight: 400 !important;
+    line-height: var(--print-line-height) !important;
+  }
+  main,
+  article,
+  section,
+  aside,
+  div,
+  header,
+  footer {
+    min-width: 0;
+    max-width: 100%;
+  }
+  main,
+  article,
+  section {
+    overflow: visible !important;
+  }
+  /* =======================================================
+     3. HIDE WEBSITE-ONLY ELEMENTS
+     ======================================================= */
+  .no-print,
+  .screen-only,
+  .print-hidden,
+  [data-print="hide"],
+  .site-header,
+  .navigation-header,
+  .site-nav,
+  .navigation,
+  .navigation__mobile-panel,
+  .navigation__toggle,
+  .site-menu-toggle,
+  .site-footer,
+  .cookie-banner,
+  .cookie-consent,
+  .chat-widget,
+  .chatbot,
+  .floating-action,
+  .floating-button,
+  .back-to-top,
+  .scroll-to-top,
+  .toast,
+  .notification-toast,
+  .modal-backdrop,
+  .modal-overlay,
+  .dropdown-menu,
+  .navigation__search,
+  .search-toolbar,
+  .filter-toolbar,
+  .filter-panel,
+  .pagination,
+  .carousel-controls,
+  .slider-controls,
+  .video-controls,
+  .loading-spinner,
+  .skeleton-loader,
+  .animation-overlay,
+  .intro-animation,
+  .page-transition,
+  .dashboard-sidebar,
+  .sidebar-overlay,
+  .mobile-only,
+  button[data-print="hide"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  /* =======================================================
+     4. PAGE WIDTH AND ALIGNMENT
+     ======================================================= */
+  .site-shell,
+  .site-main,
+  .page-container,
+  .container,
+  .content-container,
+  .content-width,
+  .reading-width,
+  .section-inner,
+  .hero__inner,
+  .form-container,
+  .form-layout,
+  .document-layout,
+  .article-layout,
+  .article-content,
+  .dashboard-layout,
+  .dashboard-main,
+  .dashboard-content,
+  .application-layout,
+  .application-main,
+  .auth-layout,
+  .auth-panel,
+  .site-footer__inner {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+  }
+  .site-shell,
+  .site-main,
+  .dashboard-content,
+  .form-stack {
+    display: block !important;
+  }
+  .page-section,
+  .section-inner,
+  .hero,
+  .content-section {
+    margin: 0 !important;
+    padding-block: 5mm !important;
+  }
+  .hero__inner,
+  .dashboard-layout,
+  .application-layout,
+  .article-layout,
+  .auth-layout {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+  .hero__content,
+  .hero__media,
+  .dashboard-main,
+  .application-main,
+  .application-aside,
+  .article-content,
+  .article-sidebar {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 0 5mm !important;
+    padding: 0 !important;
+    position: static !important;
+    inset: auto !important;
+  }
+  /* =======================================================
+     5. TYPOGRAPHY
+     ======================================================= */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--print-heading) !important;
+    background: transparent !important;
+    font-family: var(--print-font-heading) !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: normal !important;
+    text-align: start;
+    margin-block: 0 3mm !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h1 {
+    font-size: 21pt !important;
+  }
+  h2 {
+    font-size: 16pt !important;
+  }
+  h3 {
+    font-size: 12pt !important;
+  }
+  h4 {
+    font-size: 10.5pt !important;
+  }
+  h5,
+  h6 {
+    font-size: 10pt !important;
+  }
+  p,
+  li,
+  dd,
+  dt,
+  blockquote,
+  figcaption,
+  label,
+  legend {
+    color: var(--print-text) !important;
+    font-family: var(--print-font-body) !important;
+    font-size: var(--print-body-size) !important;
+    line-height: var(--print-line-height) !important;
+    overflow-wrap: anywhere;
+    text-wrap: initial;
+  }
+  p {
+    margin-block: 0 3mm !important;
+    orphans: 3;
+    widows: 3;
+  }
+  small,
+  .caption,
+  .helper-text,
+  .form-help,
+  .form-hint,
+  .muted,
+  .text-muted,
+  .secondary-text,
+  .eyebrow,
+  .section-eyebrow,
+  .overline {
+    color: var(--print-muted) !important;
+    font-size: var(--print-small-size) !important;
+  }
+  strong,
+  b {
+    color: var(--print-heading) !important;
+    font-weight: 700 !important;
+  }
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--print-font-mono) !important;
+    font-size: 8.5pt !important;
+  }
+  pre {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+  }
+  blockquote {
+    margin: 4mm 0 !important;
+    padding: 3mm 4mm !important;
+    border-inline-start: 2pt solid var(--print-border) !important;
+  }
+  /* =======================================================
+     6. LINKS AND URLS
+     ======================================================= */
+  a,
+  a:visited,
+  a:hover {
+    color: #111111 !important;
+    background: transparent !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2px;
+  }
+  a[href^="http"]::after {
+    content: none;
+  }
+  a[href^="#"]::after,
+  a[href^="javascript:"]::after {
+    content: none !important;
+  }
+  .print-show-links a[href^="http"]::after {
+    content: " (" attr(href) ")" !important;
+    font-size: 8pt !important;
+    font-weight: 400 !important;
+    overflow-wrap: anywhere !important;
+  }
+  /* =======================================================
+     7. BRANDING AND DOCUMENT HEADER
+     ======================================================= */
+  .print-header {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 7mm !important;
+    padding: 0 0 4mm !important;
+    background: transparent !important;
+    border-block-end: 1.5pt solid #333333 !important;
+  }
+  .print-brand {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6mm !important;
+  }
+  .print-brand-logo {
+    display: block !important;
+    width: auto !important;
+    max-width: 42mm !important;
+    max-height: 18mm !important;
+    object-fit: contain !important;
+  }
+  .print-brand-name {
+    margin: 0 !important;
+    color: #111111 !important;
+    font-family: var(--print-font-heading) !important;
+    font-size: 18pt !important;
+    font-weight: 700 !important;
+  }
+  .print-document-title {
+    margin-block: 6mm 2mm !important;
+    font-size: 21pt !important;
+    text-align: center !important;
+  }
+  .print-document-subtitle {
+    margin-block-end: 5mm !important;
+    color: #444444 !important;
+    font-size: 10pt !important;
+    text-align: center !important;
+  }
+  .print-document-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: 3mm 8mm !important;
+    padding-block: 3mm !important;
+    border-block-start: 0.5pt solid var(--print-border) !important;
+    border-block-end: 0.5pt solid var(--print-border) !important;
+  }
+  .print-document-meta > * {
+    font-size: 8.5pt !important;
+  }
+  /* =======================================================
+     8. CARDS AND PANELS
+     ======================================================= */
+  .card,
+  .panel,
+  .content-card,
+  .resource-card,
+  .course-card,
+  .college-card,
+  .job-card,
+  .summary-card,
+  .dashboard-card,
+  .form-shell,
+  .form-section,
+  .form-declaration,
+  .form-review,
+  .form-confirmation,
+  .document-page,
+  .document-upload,
+  .form-notice,
+  .info-panel,
+  .alert,
+  .notice {
+    color: #111111 !important;
+    background: #ffffff !important;
+    border: 0.5pt solid var(--print-border) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .card,
+  .panel,
+  .content-card,
+  .resource-card,
+  .course-card,
+  .college-card,
+  .job-card,
+  .summary-card,
+  .dashboard-card {
+    margin-block-end: 4mm !important;
+    padding: 4mm !important;
+  }
+  .form-shell {
+    padding: 0 !important;
+  }
+  .form-section {
+    margin-block-end: 5mm !important;
+    padding: 4mm !important;
+  }
+  .form-notice,
+  .notice,
+  .alert,
+  .info-panel {
+    padding: 3mm !important;
+  }
+  /* =======================================================
+     9. GRID AND FLEX LAYOUTS
+     ======================================================= */
+  .layout-grid,
+  .grid-auto,
+  .grid-auto--small,
+  .grid-auto--large,
+  .grid-two,
+  .grid-three,
+  .grid-four,
+  .card-grid,
+  .card-grid--two,
+  .card-grid--four,
+  .resource-layout,
+  .dashboard-stats,
+  .dashboard-panels,
+  .form-grid,
+  .form-grid--three,
+  .form-grid--four,
+  .form-review-list,
+  .site-footer__inner {
+    display: block !important;
+    width: 100% !important;
+  }
+  .layout-grid > *,
+  .grid-auto > *,
+  .grid-two > *,
+  .grid-three > *,
+  .grid-four > *,
+  .card-grid > *,
+  .resource-layout > *,
+  .dashboard-stats > *,
+  .dashboard-panels > *,
+  .form-grid > *,
+  .form-review-list > * {
+    width: 100% !important;
+    max-width: none !important;
+    margin-block-end: 4mm !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .layout-flex {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 3mm !important;
+  }
+  .layout-flex--column {
+    flex-direction: column !important;
+  }
+  /* =======================================================
+     10. TABLES
+     ======================================================= */
+  table {
+    display: table !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-block: 4mm !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    table-layout: auto !important;
+    color: #111111 !important;
+    background: #ffffff !important;
+    font-family: var(--print-font-body) !important;
+    font-size: var(--print-table-size) !important;
+    break-inside: auto;
+  }
+  thead {
+    display: table-header-group !important;
+  }
+  tfoot {
+    display: table-footer-group !important;
+  }
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  th,
+  td {
+    padding: 2.2mm !important;
+    color: #111111 !important;
+    background: #ffffff !important;
+    border: 0.5pt solid var(--print-border) !important;
+    font-size: var(--print-table-size) !important;
+    line-height: 1.4 !important;
+    text-align: start !important;
+    vertical-align: top !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+  th {
+    font-weight: 700 !important;
+  }
+  caption {
+    margin-block-end: 2mm !important;
+    color: #222222 !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    text-align: start !important;
+  }
+  .table-container,
+  .table-scroll,
+  .table-responsive {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+  .table-container table,
+  .table-scroll table,
+  .table-responsive table {
+    min-width: 0 !important;
+  }
+  /* =======================================================
+     11. FORMS AND APPLICATION FIELDS
+     ======================================================= */
+  form {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  fieldset {
+    min-width: 0 !important;
+    margin: 0 0 5mm !important;
+    padding: 4mm !important;
+    border: 0.5pt solid var(--print-border) !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  legend {
+    padding-inline: 2mm !important;
+    font-weight: 700 !important;
+  }
+  label,
+  .form-label,
+  .field-label {
+    display: block !important;
+    margin-block-end: 1.5mm !important;
+    color: #111111 !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+  }
+  input,
+  select,
+  textarea,
+  .form-control {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 8mm !important;
+    margin-block: 1mm 3mm !important;
+    padding: 2mm !important;
+    color: #111111 !important;
+    background: #ffffff !important;
+    border: 0.5pt solid #777777 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-family: var(--print-font-body) !important;
+    font-size: 9pt !important;
+    opacity: 1 !important;
+  }
+  textarea {
+    min-height: 22mm !important;
+    resize: none !important;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #666666 !important;
+    opacity: 1 !important;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    display: inline-block !important;
+    width: 4mm !important;
+    min-width: 4mm !important;
+    height: 4mm !important;
+    min-height: 4mm !important;
+    margin: 0 2mm 0 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+  }
+  input[type="file"],
+  input[type="password"],
+  input[type="hidden"],
+  input[type="submit"],
+  input[type="reset"],
+  button,
+  .form-button,
+  .form-actions {
+    display: none !important;
+  }
+  input[type="image"] {
+    display: none !important;
+  }
+  .form-field {
+    margin-block-end: 4mm !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .form-grid .form-field {
+    width: 100% !important;
+  }
+  .form-help,
+  .form-hint,
+  .form-error,
+  .form-success-message {
+    color: #333333 !important;
+    font-size: 8pt !important;
+  }
+  /* =======================================================
+     12. CHECKLISTS AND DECLARATIONS
+     ======================================================= */
+  .document-checklist,
+  .checklist,
+  .form-choice-list {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+  .document-checklist-item,
+  .checklist-item,
+  .form-choice {
+    margin-block-end: 2mm !important;
+    padding: 2.5mm !important;
+    border: 0.5pt solid var(--print-border-light) !important;
+    border-radius: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .document-checklist-item label,
+  .form-choice-text,
+  .form-consent label {
+    color: #111111 !important;
+    font-size: 9pt !important;
+  }
+  .form-declaration {
+    margin-block: 4mm !important;
+    padding: 4mm !important;
+    border: 0.5pt solid var(--print-border) !important;
+  }
+  .form-declaration-text {
+    color: #222222 !important;
+    font-size: 9pt !important;
+    line-height: 1.6 !important;
+  }
+  /* =======================================================
+     13. DOCUMENT UPLOADS
+     ======================================================= */
+  .document-upload-list {
+    display: block !important;
+  }
+  .document-upload {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 3mm !important;
+    margin-block-end: 3mm !important;
+    padding: 3mm !important;
+    border: 0.5pt solid var(--print-border) !important;
+  }
+  .document-upload-icon {
+    display: none !important;
+  }
+  .document-upload-content {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  .document-upload-title {
+    color: #111111 !important;
+    font-size: 9pt !important;
+  }
+  .document-upload-description,
+  .document-upload-status {
+    color: #333333 !important;
+    font-size: 8pt !important;
+  }
+  /* =======================================================
+     14. STATUS BADGES
+     ======================================================= */
+  .badge,
+  .status-badge,
+  .tag,
+  .chip,
+  .application-status,
+  .document-upload-status {
+    display: inline-block !important;
+    padding: 1mm 2mm !important;
+    color: #222222 !important;
+    background: #ffffff !important;
+    border: 0.5pt solid #999999 !important;
+    border-radius: 0 !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+  }
+  /* =======================================================
+     15. IMAGES AND MEDIA
+     ======================================================= */
+  img,
+  picture img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-logo,
+  .print-brand-logo {
+    display: block !important;
+  }
+  video,
+  audio,
+  iframe,
+  canvas,
+  .video-player,
+  .media-controls {
+    display: none !important;
+  }
+  figure {
+    margin: 4mm 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  figcaption {
+    margin-block-start: 2mm !important;
+    font-size: 8pt !important;
+  }
+  /* =======================================================
+     16. PAGE BREAK UTILITIES
+     ======================================================= */
+  .print-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+  .print-page-break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+  .print-no-break,
+  .print-keep-together {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .print-break-auto {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .print-avoid-break-before {
+    break-before: avoid !important;
+    page-break-before: avoid !important;
+  }
+  .print-avoid-break-after {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+  /* =======================================================
+     17. TOPIC-SPECIFIC PRINT SUPPORT
+     ======================================================= */
+  /* Education and course guides */
+  [data-page="education"] .course-card,
+  [data-page="education"] .subject-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Admissions and counselling */
+  [data-page="admissions"] .process-step,
+  [data-page="admissions"] .counselling-step {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Medical colleges */
+  [data-page="medical"] .medical-card,
+  [data-page="colleges"] .college-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Official-resource pages */
+  [data-page="documents"] .document-body,
+  [data-page="documents"] .official-content {
+    width: 100% !important;
+    max-width: none !important;
+    color: #111111 !important;
+    font-size: 10pt !important;
+    line-height: 1.7 !important;
+  }
+  /* Study abroad */
+  [data-page="study-abroad"] .country-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Jobs and internships */
+  [data-page="careers"] .job-card,
+  [data-page="careers"] .internship-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Application preparation */
+  [data-page="applications"] .form-section {
+    break-inside: auto;
+  }
+  [data-page="applications"] .form-section-heading {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  /* Accounts and administration */
+  [data-page="accounts"] .auth-panel,
+  [data-page="admin"] .dashboard-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* =======================================================
+     18. OPTIONAL PRINT-ONLY NOTES
+     ======================================================= */
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
+  }
+  .print-only-inline {
+    display: inline !important;
+    visibility: visible !important;
+  }
+  .print-only-flex {
+    display: flex !important;
+    visibility: visible !important;
+  }
+  .print-small {
+    font-size: 8pt !important;
+  }
+  .print-large {
+    font-size: 12pt !important;
+  }
+  .print-center {
+    text-align: center !important;
+  }
+  .print-left {
+    text-align: left !important;
+  }
+  .print-right {
+    text-align: right !important;
+  }
+  .print-border {
+    border: 0.5pt solid var(--print-border) !important;
+  }
+  .print-border-bottom {
+    border-block-end: 0.5pt solid var(--print-border) !important;
+  }
+  /* =======================================================
+     19. SIGNATURE AND DECLARATION AREAS
+     ======================================================= */
+  .signature-area {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12mm !important;
+    margin-block-start: 12mm !important;
+  }
+  .signature-box {
+    min-height: 22mm !important;
+    padding-block-start: 12mm !important;
+    border-block-start: 0.5pt solid #555555 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .signature-label {
+    display: block !important;
+    color: #222222 !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+  }
+  /* =======================================================
+     20. FOOTER AND DOCUMENT METADATA
+     ======================================================= */
+  .print-footer {
+    display: block !important;
+    margin-block-start: 8mm !important;
+    padding-block-start: 3mm !important;
+    border-block-start: 0.5pt solid var(--print-border) !important;
+    color: #333333 !important;
+    font-size: 8pt !important;
+  }
+  .print-footer p {
+    color: #333333 !important;
+    font-size: 8pt !important;
+  }
+  .print-disclaimer {
+    margin-block-start: 5mm !important;
+    padding-block-start: 3mm !important;
+    border-block-start: 0.5pt solid var(--print-border-light) !important;
+    color: #333333 !important;
+    font-size: 8pt !important;
+    line-height: 1.6 !important;
+  }
+  /* =======================================================
+     21. PAGE SIZE AND MARGINS
+     ======================================================= */
+  @page {
+    size: A4 portrait;
+    margin: 16mm 14mm 18mm;
+  }
+  @page :first {
+    margin-block-start: 14mm;
+  }
+  /* =======================================================
+     22. LANDSCAPE TABLE REPORTS
+     Apply class="print-landscape" to a dedicated report.
+     ======================================================= */
+  .print-landscape {
+    page: medorbits-landscape;
+  }
+  @page medorbits-landscape {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+}
+/* =========================================================
+   23. SCREEN PREVIEW HELPERS
+   Normal screen appearance remains controlled by the other
+   MedOrbits stylesheets. These helpers are neutral by default.
+   ========================================================= */
+.print-only,
+.print-only-inline,
+.print-only-flex {
+  display: none;
+}
+@media screen {
+  .print-preview {
+    width: min(100%, 210mm);
+    min-height: 297mm;
+    margin: 24px auto;
+    padding: 18mm;
+    color: #171717;
+    background: #ffffff;
+    border: 1px solid #dddddd;
+    box-shadow: 0 12px 36px rgb(0 0 0 / 16%);
+  }
+  .print-preview * {
+    color: inherit;
+  }
+}

@@ -1,1 +1,1032 @@
-/* MedOrbits stylesheet starter. */
+/*
+
+* ============================================================
+* MedOrbits | Accessibility Design System
+* File: assets/css/accessibility.css
+* Version: 1.0.0
+* ============================================================
+* Purpose:
+* ●	Shared accessibility rules for all MedOrbits pages
+* ●	Keyboard navigation and visible focus states
+* ●	Screen-reader-only content utilities
+* ●	Reduced-motion and contrast preferences
+* ●	Accessible forms, tables, dialogs and navigation
+* ●	Responsive layouts, zoom and touch interaction
+* ●	Education, admissions, documents, careers and admin support
+* Recommended stylesheet order:
+* 1.	tokens.css
+* 2.	typography.css
+* 3.	accessibility.css
+* 4.	components.css
+* 5.	page-specific stylesheet
+* Important:
+* This stylesheet supports accessibility but does not, by itself,
+* guarantee WCAG conformance. Semantic HTML, correct ARIA,
+* JavaScript behavior, content and testing are also required.
+    */
+
+/* ============================================================
+
+1. ACCESSIBILITY TOKENS
+    ============================================================ */
+
+:root {
+–a11y-focus-color: var(–border-focus, #e4d0a1);
+–a11y-focus-width: 3px;
+–a11y-focus-offset: 3px;
+
+–a11y-text-min-size: 1rem;
+–a11y-control-min-height: 44px;
+–a11y-control-min-width: 44px;
+
+–a11y-outline:
+0 0 0 var(–a11y-focus-width)
+var(–a11y-focus-color);
+
+–a11y-outline-offset: var(–a11y-focus-offset);
+
+–a11y-error-color: #ffaaaa;
+–a11y-success-color: #a8d7b1;
+–a11y-warning-color: #f0cc83;
+–a11y-info-color: #a8c9f5;
+
+–a11y-border-strong: #b7acbf;
+–a11y-surface-contrast: #100a17;
+–a11y-text-contrast: #ffffff;
+}
+
+/* ============================================================
+02. DOCUMENT AND PAGE FOUNDATIONS
+============================================================ */
+
+html {
+min-height: 100%;
+scroll-padding-top: calc(
+var(–header-height, 76px) + 1rem
+);
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+}
+
+body {
+min-height: 100%;
+}
+
+/*
+
+* Keep focus targets visible when a sticky header is present.
+    */
+
+[id],
+:target {
+scroll-margin-top: calc(
+var(–header-height, 76px) + 1rem
+);
+}
+
+/*
+
+* Do not globally remove outlines.
+* Keyboard focus must remain visible.
+    */
+
+/* ============================================================
+03. KEYBOARD FOCUS
+============================================================ */
+
+:where(
+a,
+button,
+input,
+select,
+textarea,
+summary,
+iframe,
+audio,
+video,
+[tabindex]:not([tabindex="-1"]),
+[contenteditable="true"]
+):focus-visible {
+outline: var(–a11y-focus-width) solid var(–a11y-focus-color);
+outline-offset: var(–a11y-focus-offset);
+}
+
+/*
+
+* Provide a fallback for browsers without :focus-visible.
+    */
+
+:where(
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex]:not([tabindex="-1"])
+):focus {
+scroll-margin-block: 1rem;
+}
+
+/*
+
+* Avoid double focus rings for browsers supporting :focus-visible.
+    */
+
+@supports selector(:focus-visible) {
+:where(
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex]:not([tabindex="-1"])
+):focus:not(:focus-visible) {
+outline: none;
+}
+}
+
+/*
+
+* Never use tabindex greater than zero.
+* Use natural document order and semantic controls instead.
+    */
+
+/* ============================================================
+04. SKIP NAVIGATION
+============================================================ */
+
+/*
+
+* Add this as the first focusable element inside body:
+
+<a class="skip-link" href="#main-content">
+
+* Skip to main content
+
+</a>
+
+* Give the main landmark id="main-content".
+    */
+
+.skip-link {
+position: fixed;
+z-index: var(–z-toast, 1100);
+inset-block-start: 0.75rem;
+inset-inline-start: 0.75rem;
+
+display: inline-flex;
+align-items: center;
+justify-content: center;
+
+min-height: 44px;
+max-width: calc(100vw - 1.5rem);
+padding: 0.75rem 1rem;
+
+transform: translateY(calc(-100% - 1.5rem));
+
+border: 2px solid var(–a11y-focus-color);
+border-radius: var(–radius-sm, 8px);
+
+background: var(–a11y-surface-contrast);
+color: var(–a11y-text-contrast);
+
+font-size: 1rem;
+font-weight: 700;
+line-height: 1.4;
+text-decoration: none;
+
+box-shadow: var(–shadow-md, 0 12px 32px rgb(0 0 0 / 20%));
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+transform: translateY(0);
+outline: 3px solid var(–a11y-focus-color);
+outline-offset: 3px;
+}
+
+/* ============================================================
+05. SCREEN-READER UTILITIES
+============================================================ */
+
+/*
+
+* Visually hide content while preserving it for assistive
+* technologies. Do not use this on content that must be visible.
+    */
+
+.sr-only,
+.visually-hidden {
+position: absolute !important;
+width: 1px !important;
+height: 1px !important;
+padding: 0 !important;
+margin: -1px !important;
+overflow: hidden !important;
+clip: rect(0, 0, 0, 0) !important;
+clip-path: inset(50%) !important;
+white-space: nowrap !important;
+border: 0 !important;
+}
+
+/*
+
+* Make visually hidden content visible when it receives focus.
+    */
+
+.sr-only-focusable:not(:focus):not(:focus-visible),
+.visually-hidden-focusable:not(:focus):not(:focus-visible) {
+position: absolute !important;
+width: 1px !important;
+height: 1px !important;
+padding: 0 !important;
+margin: -1px !important;
+overflow: hidden !important;
+clip: rect(0, 0, 0, 0) !important;
+clip-path: inset(50%) !important;
+white-space: nowrap !important;
+border: 0 !important;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-visible,
+.visually-hidden-focusable:focus,
+.visually-hidden-focusable:focus-visible {
+position: static !important;
+width: auto !important;
+height: auto !important;
+padding: 0.75rem 1rem !important;
+margin: 0 !important;
+overflow: visible !important;
+clip: auto !important;
+clip-path: none !important;
+white-space: normal !important;
+}
+
+/*
+
+* Use only for supplementary descriptions or labels.
+* Accessible names should normally come from visible labels,
+* native HTML, or aria-label/aria-labelledby when appropriate.
+    */
+
+/* ============================================================
+06. LANDMARKS AND READING STRUCTURE
+============================================================ */
+
+main,
+[role="main"] {
+min-width: 0;
+}
+
+header,
+nav,
+main,
+aside,
+footer,
+section,
+article {
+scroll-margin-block-start: calc(
+var(–header-height, 76px) + 1rem
+);
+}
+
+main:focus {
+outline: none;
+}
+
+/*
+
+* Add tabindex="-1" to a main landmark only when JavaScript
+* needs to move focus there after navigation or form submission.
+    */
+
+hr {
+border: 0;
+border-block-start: 1px solid var(–border, #493751);
+margin-block: 1.5rem;
+}
+
+/* ============================================================
+07. LINKS AND NAVIGATION
+============================================================ */
+
+a {
+text-underline-offset: 0.2em;
+text-decoration-thickness: 0.08em;
+}
+
+a:hover {
+text-decoration-thickness: 0.12em;
+}
+
+/*
+
+* Underline content links so color is not the only cue.
+* Navigation links and button-like links may be styled separately.
+    */
+
+main p a,
+main li a,
+main blockquote a,
+main td a {
+text-decoration-line: underline;
+}
+
+nav a,
+.breadcrumbs a,
+.pagination a,
+.button-link {
+text-decoration-line: none;
+}
+
+/*
+
+* Indicate the current navigation page semantically:
+* Education
+    */
+
+[aria-current="page"] {
+font-weight: 700;
+text-decoration-thickness: 0.12em;
+}
+
+/*
+
+* External links should say where they go when that context
+* is not already clear. Do not rely on an icon alone.
+    */
+
+.external-link-icon,
+.icon-only {
+flex-shrink: 0;
+}
+
+.breadcrumbs {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 0.5rem;
+min-width: 0;
+font-size: 0.875rem;
+line-height: 1.6;
+}
+
+.breadcrumbs > * {
+min-width: 0;
+overflow-wrap: anywhere;
+}
+
+/* ============================================================
+08. INTERACTIVE CONTROLS AND TOUCH TARGETS
+============================================================ */
+
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+accent-color: var(–mo-brand, #c9a96e);
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+min-height: var(–a11y-control-min-height);
+}
+
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+touch-action: manipulation;
+}
+
+button,
+input,
+select,
+textarea {
+max-width: 100%;
+}
+
+/*
+
+* A visually small icon can use a larger interactive wrapper:
+
+<button class="icon-button" aria-label="Close dialog">
+
+* …
+
+</button>
+
+*/
+
+.icon-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-width: var(–a11y-control-min-width);
+min-height: var(–a11y-control-min-height);
+padding: 0.5rem;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+cursor: not-allowed;
+}
+
+/*
+
+* aria-disabled does not disable interaction by itself.
+* JavaScript must prevent activation where required.
+    */
+
+/* ============================================================
+09. FORMS AND FIELD VALIDATION
+============================================================ */
+
+fieldset {
+min-width: 0;
+margin: 0;
+padding: 1rem;
+border: 1px solid var(–border, #493751);
+border-radius: var(–radius-md, 12px);
+}
+
+legend {
+max-width: 100%;
+padding-inline: 0.35rem;
+font-weight: 700;
+}
+
+label {
+display: inline-block;
+line-height: 1.5;
+}
+
+input,
+select,
+textarea {
+line-height: 1.5;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+width: 1.125rem;
+height: 1.125rem;
+vertical-align: middle;
+}
+
+input[type="file"] {
+max-width: 100%;
+padding: 0.5rem;
+border: 1px solid var(–border, #493751);
+border-radius: var(–radius-sm, 8px);
+color: var(–text, #f7f1fa);
+}
+
+textarea {
+min-height: 7rem;
+resize: vertical;
+}
+
+[aria-invalid="true"] {
+border-color: var(–a11y-error-color) !important;
+}
+
+[aria-invalid="true"]:focus-visible {
+outline-color: var(–a11y-error-color);
+}
+
+.field-error,
+.form-error,
+[role="alert"].form-error {
+color: var(–a11y-error-color);
+}
+
+.field-help,
+.field-hint {
+color: var(–muted, #b7acbf);
+}
+
+.required-indicator {
+color: var(–a11y-error-color);
+font-weight: 700;
+}
+
+/*
+
+* Mark required fields in visible text as well as with the
+* required attribute. Never rely on color alone.
+* Example:
+* Email address (required)
+* <input id="email" name="email" type="email" required
+
+   aria-describedby="email-help">
+<p id="email-help" class="field-hint">
+
+* Use an email address you can access.
+
+</p>
+
+* For errors, connect the message with aria-describedby and
+* set aria-invalid="true" on the affected field.
+    */
+
+/* ============================================================
+10. APPLICATION AND DOCUMENT UPLOADS
+============================================================ */
+
+/*
+
+* Suitable for admission forms, job applications, and document
+* checklists. Keep labels and status text visible.
+    */
+
+.upload-zone {
+min-width: 0;
+padding: 1.25rem;
+border: 2px dashed var(–border-strong, #705a7f);
+border-radius: var(–radius-md, 12px);
+background: var(–panel, #21172b);
+overflow-wrap: anywhere;
+}
+
+.upload-zone:focus-within {
+outline: var(–a11y-focus-width) solid var(–a11y-focus-color);
+outline-offset: var(–a11y-focus-offset);
+}
+
+.upload-status,
+.document-status {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 0.5rem;
+line-height: 1.5;
+}
+
+.document-name {
+overflow-wrap: anywhere;
+word-break: normal;
+}
+
+/*
+
+* Do not communicate upload success, failure, or verification
+* using color or an icon alone. Include descriptive text.
+* This CSS does not upload files, validate file types, secure
+* storage, or protect personal documents. Those require logic
+* and server-side security controls.
+    */
+
+/* ============================================================
+11. STATUS, ALERTS AND NOTIFICATIONS
+============================================================ */
+
+.status,
+.notice,
+.alert {
+min-width: 0;
+padding: 0.875rem 1rem;
+border: 1px solid var(–border, #493751);
+border-radius: var(–radius-md, 12px);
+overflow-wrap: anywhere;
+}
+
+.status-success,
+.alert-success {
+border-color: var(–a11y-success-color);
+}
+
+.status-warning,
+.alert-warning {
+border-color: var(–a11y-warning-color);
+}
+
+.status-error,
+.alert-error {
+border-color: var(–a11y-error-color);
+}
+
+.status-info,
+.alert-info {
+border-color: var(–a11y-info-color);
+}
+
+/*
+
+* Pair each visual style with clear text, such as:
+* "Application submitted", "Action required", or
+* "Verification pending".
+* Use role="status" for non-urgent dynamic updates and
+* role="alert" for urgent messages. Avoid announcing the same
+* content multiple times.
+    */
+
+/* ============================================================
+12. TABLES AND DATA DENSE PAGES
+============================================================ */
+
+.table-container,
+.table-scroll {
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+}
+
+.table-container:focus-visible,
+.table-scroll:focus-visible {
+outline: var(–a11y-focus-width) solid var(–a11y-focus-color);
+outline-offset: var(–a11y-focus-offset);
+}
+
+table {
+max-width: 100%;
+border-collapse: collapse;
+}
+
+th {
+text-align: start;
+}
+
+th,
+td {
+overflow-wrap: anywhere;
+}
+
+/*
+
+* Keep meaningful table headers in HTML using 
+* or . Do not use tables solely for layout.
+* For very wide tables, provide a visible explanation that
+* the table can scroll horizontally.
+    */
+
+/* ============================================================
+13. DIALOGS, DRAWERS AND MENUS
+============================================================ */
+
+dialog {
+max-width: min(42rem, calc(100vw - 2rem));
+max-height: min(85dvh, 50rem);
+overflow: auto;
+overscroll-behavior: contain;
+color: var(–text, #f7f1fa);
+background: var(–bg-elevated, #191023);
+border: 1px solid var(–border, #493751);
+border-radius: var(–radius-lg, 24px);
+}
+
+dialog::backdrop {
+background: rgb(0 0 0 / 72%);
+}
+
+[role="dialog"],
+[role="menu"],
+[role="listbox"] {
+max-width: 100%;
+}
+
+/*
+
+* CSS does not implement focus trapping, Escape-key behavior,
+* menu keyboard navigation, or focus restoration.
+* Prefer native  where appropriate and implement the
+* required focus behavior in JavaScript.
+    */
+
+/* ============================================================
+14. EDUCATION, ADMISSIONS AND CAREERS
+============================================================ */
+
+/*
+
+* Keep category differences visual but consistent.
+* Text, labels, and interaction behavior remain familiar.
+    */
+
+[data-page="education"],
+[data-page="admissions"],
+[data-page="medical"],
+[data-page="colleges"],
+[data-page="study-abroad"],
+[data-page="documents"],
+[data-page="careers"],
+[data-page="applications"],
+[data-page="accounts"],
+[data-page="admin"] {
+–a11y-page-accent:
+var(–page-accent, var(–mo-brand-light, #e4d0a1));
+}
+
+[data-page] .section-accent,
+[data-page] .eyebrow {
+color: var(–a11y-page-accent);
+}
+
+[data-page] .accent-border {
+border-color: var(–a11y-page-accent);
+}
+
+/*
+
+* Keep all important status wording explicit:
+* Education: "Official source", "Last verified"
+* Admissions: "Eligibility", "Application deadline"
+* Documents: "Required", "Optional", "Pending verification"
+* Careers: "Open", "Closed", "Application submitted"
+* Accounts: "Signed in", "Password reset required"
+* Admin: "Pending review", "Approved", "Rejected"
+* These are examples of wording, not claims about actual
+* application or verification states.
+    */
+
+/* ============================================================
+15. RESPONSIVE LAYOUT AND ZOOM
+============================================================ */
+
+img,
+video,
+canvas,
+svg {
+max-width: 100%;
+}
+
+iframe {
+max-width: 100%;
+}
+
+pre,
+code {
+overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+.skip-link {
+inset-block-start: 0.5rem;
+inset-inline-start: 0.5rem;
+}
+
+fieldset {
+padding: 0.75rem;
+}
+
+.upload-zone {
+padding: 1rem;
+}
+
+dialog {
+max-width: calc(100vw - 1rem);
+max-height: 90dvh;
+}
+}
+
+/*
+
+* Do not disable browser zoom.
+* Do not set user-scalable=no in the viewport meta tag.
+* Keep page content usable at 200% text zoom and at narrow
+* viewport widths. Test complex tables and navigation separately.
+    */
+
+/* ============================================================
+16. REDUCED MOTION
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+html {
+scroll-behavior: auto !important;
+}
+
+*,
+*::before,
+*::after {
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
+scroll-behavior: auto !important;
+}
+}
+
+/*
+
+* If JavaScript controls typing effects, carousels, auto-rotating
+* banners or animated counters, it must also respect
+* prefers-reduced-motion. CSS alone cannot stop every script.
+    */
+
+/* ============================================================
+17. HIGH CONTRAST AND FORCED COLORS
+============================================================ */
+
+@media (forced-colors: active) {
+:where(
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex]:not([tabindex="-1"])
+):focus-visible {
+outline: 2px solid Highlight;
+outline-offset: 3px;
+}
+
+button,
+input,
+select,
+textarea,
+fieldset,
+.upload-zone,
+.status,
+.notice,
+.alert {
+border: 1px solid ButtonText;
+}
+
+.skip-link {
+color: CanvasText;
+background: Canvas;
+border-color: Highlight;
+}
+
+.status-success,
+.status-warning,
+.status-error,
+.status-info,
+.alert-success,
+.alert-warning,
+.alert-error,
+.alert-info {
+border: 2px solid CanvasText;
+}
+
+svg[aria-hidden="true"] {
+forced-color-adjust: auto;
+}
+}
+
+/* ============================================================
+18. INCREASED CONTRAST PREFERENCE
+============================================================ */
+
+@media (prefers-contrast: more) {
+:root {
+–border: var(–a11y-border-strong);
+–border-strong: #e0d7e5;
+}
+
+a {
+text-decoration-line: underline;
+text-decoration-thickness: 0.12em;
+}
+
+button,
+input,
+select,
+textarea,
+fieldset,
+.upload-zone,
+.status,
+.notice,
+.alert {
+border-width: 2px;
+}
+}
+
+/* ============================================================
+19. COLOR SCHEME OVERRIDE
+============================================================ */
+
+/*
+
+* The brand is designed around a dark theme. This opt-in class
+* strengthens contrast without automatically changing the
+* brand’s full color palette.
+* Example:
+
+<body class="a11y-high-contrast">
+
+*/
+
+.a11y-high-contrast {
+–text: #ffffff;
+–text-strong: #ffffff;
+–muted: #e1d8e6;
+–muted-strong: #f0eaf3;
+–border: #b7acbf;
+–border-strong: #ffffff;
+–border-focus: #ffffff;
+}
+
+.a11y-high-contrast a,
+.a11y-high-contrast button,
+.a11y-high-contrast label {
+text-decoration-thickness: 0.12em;
+}
+
+/* ============================================================
+20. PRINT AND PDF ACCESSIBILITY
+============================================================ */
+
+@media print {
+*,
+*::before,
+*::after {
+animation: none !important;
+transition: none !important;
+box-shadow: none !important;
+text-shadow: none !important;
+}
+
+html,
+body {
+min-height: auto;
+color: #000 !important;
+background: #fff !important;
+font-size: 11pt;
+line-height: 1.5;
+}
+
+a,
+a:visited {
+color: #000 !important;
+text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+color: #000 !important;
+break-after: avoid;
+}
+
+p,
+li,
+td,
+th,
+label,
+.muted,
+.text-muted,
+.caption,
+.helper-text {
+color: #000 !important;
+}
+
+.skip-link,
+.no-print,
+[data-print="hide"] {
+display: none !important;
+}
+
+.table-container,
+.table-scroll {
+overflow: visible !important;
+}
+
+tr,
+img,
+figure,
+blockquote {
+break-inside: avoid;
+}
+
+input,
+select,
+textarea {
+color: #000 !important;
+background: #fff !important;
+border: 1px solid #555 !important;
+}
+
+.status,
+.notice,
+.alert,
+.upload-zone {
+color: #000 !important;
+background: #fff !important;
+border: 1px solid #555 !important;
+}
+
+/*
+
+* Browser print-to-PDF does not automatically guarantee a
+* tagged, accessible PDF. Verify the resulting PDF separately.
+    */
+    }
+
+/* ============================================================
+END -- MedOrbits Accessibility Design System
+============================================================ */
