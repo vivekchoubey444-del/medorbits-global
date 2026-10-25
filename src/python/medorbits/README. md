@@ -1,0 +1,446 @@
+
+# MedOrbits Python Package
+
+**Package:** `medorbits`  
+**Version:** `0.1.0`  
+**Purpose:** Shared Python utilities for MedOrbits education, medical admissions, career guidance, recruitment, applications, and document workflows.
+
+---
+
+## 1. Overview
+
+The `medorbits` package provides reusable modules for application configuration, structured logging, data import/export, health checks, and input validation.
+
+The package is designed to keep common infrastructure logic separate from web frameworks, database drivers, and business-specific application services.
+
+### Core objectives
+
+- Centralize environment-based configuration.
+- Provide consistent, privacy-conscious logging.
+- Validate user-submitted application and job data.
+- Support controlled CSV, JSON, and JSONL import/export.
+- Provide health and readiness checks for application services.
+- Establish reusable building blocks for future Python services.
+
+---
+
+## 2. Directory Structure
+
+```text
+src/
+└── python/
+    └── medorbits/
+        ├── __init__.py
+        ├── README.md
+        ├── config.py
+        ├── data_export.py
+        ├── data_import.py
+        ├── healthcheck.py
+        ├── logging_config.py
+        └── validators.py
+```
+
+Keep this README alongside the package modules. Add new modules to this directory only when they provide reusable functionality.
+
+---
+
+## 3. Module Reference
+
+| Module | Responsibility |
+|---|---|
+| `__init__.py` | Package metadata and version information |
+| `config.py` | Environment settings, type conversion, and configuration validation |
+| `logging_config.py` | Logging setup, JSON formatting, request context, and redaction |
+| `validators.py` | Validation of text, email, phone, URLs, identifiers, applications, and jobs |
+| `data_import.py` | Controlled import of CSV, JSON, and JSONL records |
+| `data_export.py` | CSV, JSON, and JSONL export with sensitive-field filtering |
+| `healthcheck.py` | Health probes, readiness reports, and probe status management |
+
+### `config.py`
+
+Centralizes application settings, including:
+
+- Application environment and server configuration
+- CORS origins and credentials policy
+- Database configuration
+- Redis and queue settings
+- SMTP and email settings
+- Payment configuration
+- File storage and upload restrictions
+- AI provider configuration
+
+Configuration loading does not automatically establish database, Redis, email, payment, or AI connections.
+
+### `logging_config.py`
+
+Provides:
+
+- Environment-based log levels
+- JSON and readable console formatters
+- Request and correlation ID context
+- Structured log fields
+- Basic redaction of common credentials and personal information
+
+Redaction is a defensive measure, not a guarantee that every sensitive value will be detected. Avoid logging secrets or complete personal records.
+
+### `validators.py`
+
+Provides reusable validation helpers for:
+
+- Email addresses and phone numbers
+- Password policy enforcement
+- Identifiers and names
+- Text, numeric values, booleans, and dates
+- URLs and enumeration values
+- Required fields and object schemas
+- Pagination
+- Declared MIME types and upload sizes
+- Application and job payloads
+
+These validators do not replace authorization, database constraints, eligibility rules, malware scanning, or business logic.
+
+### `data_import.py`
+
+Provides controlled import utilities for structured records, with input-size limits, row and field constraints, parsing checks, and optional record validation.
+
+Review its implementation before using it for very large datasets; bounded input size does not necessarily mean constant-memory streaming.
+
+### `data_export.py`
+
+Provides CSV, JSON, and JSONL export helpers with options for selecting columns, controlling output formats, and reducing common spreadsheet-formula and sensitive-field risks.
+
+Check export permissions before generating files containing personal or confidential data.
+
+### `healthcheck.py`
+
+Provides health probe registration and execution, probe result reporting, and readiness-related utilities.
+
+Use independent connection timeouts in database, Redis, and HTTP probe callbacks. A thread-level timeout cannot forcibly stop a blocking operation that is already running.
+
+---
+
+## 4. Requirements
+
+Recommended runtime:
+
+- Python 3.10 or later
+- Standard library for the package modules described here
+
+Some optional integrations may require additional dependencies. Install the dependencies specified by the relevant service or project dependency manifest.
+
+---
+
+## 5. Importing the Package
+
+Assuming the repository root contains `src/python/medorbits/`, add `src/python` to the Python import path.
+
+### Linux or macOS
+
+```bash
+export PYTHONPATH="$PWD/src/python:$PYTHONPATH"
+```
+
+### Windows PowerShell
+
+```powershell
+$env:PYTHONPATH = "$PWD/src/python;$env:PYTHONPATH"
+```
+
+You can then import package modules:
+
+```python
+from medorbits.config import get_settings
+from medorbits.logging_config import configure_logging, get_logger
+from medorbits.validators import ValidationError
+```
+
+For a permanent installation, add appropriate packaging metadata such as `pyproject.toml` at the Python package root and install the package in the project's virtual environment.
+
+---
+
+## 6. Configuration
+
+The `config.py` module reads settings from environment variables. Use environment-specific configuration outside the source code.
+
+Example development configuration:
+
+```dotenv
+NODE_ENV=development
+DEBUG=false
+HOST=127.0.0.1
+PORT=8000
+API_PREFIX=/api
+LOG_LEVEL=INFO
+
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+CORS_ALLOW_CREDENTIALS=false
+
+DB_ENGINE=postgresql
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
+DB_CONNECT_TIMEOUT_SECONDS=10
+DB_POOL_MIN_SIZE=1
+DB_POOL_MAX_SIZE=10
+
+QUEUE_ENABLED=false
+REDIS_URL=redis://localhost:6379/0
+
+EMAIL_ENABLED=false
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_FROM_ADDRESS=
+EMAIL_FROM_NAME=MedOrbits
+
+PAYMENTS_ENABLED=false
+PAYMENT_MODE=test
+PAYMENT_CURRENCY=INR
+
+STORAGE_DRIVER=local
+STORAGE_LOCAL_PATH=./var/uploads
+STORAGE_TEMP_PATH=./var/tmp
+
+AI_ENABLED=false
+AI_API_URL=
+AI_API_KEY=
+AI_MODEL=
+```
+
+This is an illustrative template, not a production-ready configuration. Confirm the accepted values and defaults against the current `config.py` implementation before deploying.
+
+**Security requirements**
+
+- Never commit real credentials to Git.
+- Use a secrets manager or the deployment platform's environment settings for production secrets.
+- Use HTTPS for production origins and public endpoints.
+- Do not expose debug mode in production.
+- Keep database credentials and API keys out of log output.
+- Ensure the configured database engine matches the actual database adapter installed by the application.
+
+---
+
+## 7. Logging Example
+
+```python
+from medorbits.logging_config import (
+    configure_logging,
+    get_logger,
+    log_context,
+)
+
+configure_logging()
+
+logger = get_logger("medorbits.app")
+
+with log_context(
+    request_id="req-example-001",
+    correlation_id="corr-example-001",
+):
+    logger.info(
+        "Application processed",
+        extra={
+            "application_id": "APP-1001",
+            "status": "received",
+        },
+    )
+```
+
+Select the logging format through environment configuration:
+
+```dotenv
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+```
+
+Use `LOG_FORMAT=text` for readable console output when appropriate.
+
+---
+
+## 8. Validation Example
+
+```python
+from medorbits.validators import (
+    ValidationError,
+    validate_application_payload,
+)
+
+payload = {
+    "full_name": "Aarav Sharma",
+    "email": "aarav@example.com",
+    "course": "MBBS",
+    "consent": True,
+}
+
+try:
+    validated = validate_application_payload(payload)
+except ValidationError as exc:
+    error_response = {
+        "success": False,
+        "error": exc.to_dict(),
+    }
+else:
+    # Pass validated data to the authorized service layer.
+    print(validated)
+```
+
+The application service must still enforce business rules, user permissions, eligibility requirements, and database constraints.
+
+---
+
+## 9. Data Import and Export
+
+Typical workflow:
+
+1. Check file size and format.
+2. Parse the input with the import module.
+3. Validate the imported records.
+4. Apply authorization and business rules.
+5. Persist approved data through the service or repository layer.
+6. Record a sanitized audit event.
+7. Export only the fields the requesting user is authorized to access.
+
+Do not treat an uploaded filename, file extension, or declared MIME type as proof of file safety.
+
+---
+
+## 10. Health Checks
+
+Register probes for dependencies that are required for the relevant service to operate.
+
+Example usage pattern:
+
+```python
+from medorbits.healthcheck import (
+    HealthChecker,
+    readiness_report,
+)
+
+checker = HealthChecker()
+
+checker.register(
+    "database",
+    lambda: True,  # Replace with a real, bounded connectivity check.
+    required=True,
+)
+
+try:
+    report = readiness_report(checker)
+    print(report)
+finally:
+    checker.close()
+```
+
+The example callback is a placeholder and does not test a database. Replace it with a real probe that uses the application's database adapter and has a finite connection timeout.
+
+Keep liveness checks lightweight. Readiness checks should verify the dependencies required to accept traffic.
+
+---
+
+## 11. Testing
+
+Create tests under the repository's test directory.
+
+Recommended test coverage:
+
+```text
+tests/
+└── python/
+    └── medorbits/
+        ├── test_config.py
+        ├── test_logging_config.py
+        ├── test_validators.py
+        ├── test_data_import.py
+        ├── test_data_export.py
+        └── test_healthcheck.py
+```
+
+Run the tests with the project's configured test runner. If using `pytest`, install it as a development dependency and execute:
+
+```bash
+python -m pytest tests/python/medorbits -q
+```
+
+Important cases include:
+
+- Missing or malformed environment variables
+- Invalid email addresses, URLs, identifiers, and payloads
+- Oversized import files and malformed records
+- Sensitive-field redaction
+- CSV formula injection handling
+- Health probe exceptions and timeouts
+- Required versus optional dependency failures
+- Authorization and access control at the service layer
+
+Do not consider this package production-ready until its modules have been tested together with the actual application configuration and integrations.
+
+---
+
+## 12. Security and Privacy
+
+Follow these requirements when integrating the package:
+
+1. **Input validation:** Validate data on the server before business processing.
+2. **Authorization:** Enforce permissions independently of validation.
+3. **Database safety:** Use parameterized queries and database constraints.
+4. **Secrets:** Keep credentials in environment-based secret management.
+5. **Logging:** Avoid passwords, tokens, full documents, and unnecessary personal information.
+6. **Uploads:** Verify file signatures, enforce size limits, and scan files where appropriate.
+7. **Exports:** Apply field allowlists, authorization checks, and retention rules.
+8. **Network access:** Protect server-side URL fetching against SSRF.
+9. **Health checks:** Avoid exposing stack traces, secrets, or internal topology in public responses.
+10. **Production configuration:** Fail closed when required security settings are missing or invalid.
+
+---
+
+## 13. Integration with MedOrbits
+
+Recommended dependency direction:
+
+```text
+API / Web Layer
+      |
+      v
+Application Services
+      |
+      +----> Validation Utilities
+      +----> Configuration
+      +----> Logging
+      +----> Import / Export
+      +----> Health Checks
+      |
+      v
+Repositories / External Integrations
+      |
+      +----> Database
+      +----> Email Provider
+      +----> Queue / Redis
+      +----> Storage
+      +----> Payment Provider
+      +----> AI Provider
+```
+
+Keep the package independent of HTTP request objects and framework-specific response types. Convert `ValidationError` and health reports into API responses at the web layer.
+
+If MedOrbits also uses a Node.js backend, keep the Python package's environment variable names, schemas, database settings, and error contracts aligned with the Node implementation.
+
+---
+
+## 14. Versioning and Maintenance
+
+- Keep `__version__` synchronized with the package's release metadata.
+- Introduce breaking changes deliberately.
+- Maintain backward-compatible validation contracts where practical.
+- Add tests whenever a validator or configuration option changes.
+- Document new environment variables in both the configuration module and deployment documentation.
+- Review third-party dependencies and security advisories regularly.
+
+---
+
+## 15. License
+
+Copyright MedOrbits. All rights reserved.
+
+Unless otherwise authorized in writing, this package is proprietary and may not be redistributed or commercially reused outside the applicable MedOrbits license or agreement.
+```
+
+**Implementation note:** Keep this README synchronized with the actual Python modules. In particular, verify the health-check method signatures and configuration variable names against the implementations before using the examples in production.

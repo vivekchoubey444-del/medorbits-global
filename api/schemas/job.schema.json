@@ -1,1 +1,579 @@
-{}
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/api/schemas/job.schema.json",
+  "title": "MedOrbits Job Posting",
+  "description": "Validation schema for job listings published through the MedOrbits API.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Unique job identifier."
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 20000
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "healthcare",
+        "medical",
+        "nursing",
+        "pharmacy",
+        "allied-health",
+        "education",
+        "research",
+        "administration",
+        "information-technology",
+        "engineering",
+        "management",
+        "sales-marketing",
+        "customer-support",
+        "finance",
+        "human-resources",
+        "operations",
+        "government",
+        "other"
+      ]
+    },
+    "department": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "employmentType": {
+      "type": "string",
+      "enum": [
+        "full-time",
+        "part-time",
+        "contract",
+        "temporary",
+        "internship",
+        "apprenticeship",
+        "freelance",
+        "volunteer"
+      ]
+    },
+    "workplace": {
+      "type": "string",
+      "enum": [
+        "on-site",
+        "remote",
+        "hybrid"
+      ]
+    },
+    "experienceLevel": {
+      "type": "string",
+      "enum": [
+        "entry-level",
+        "junior",
+        "mid-level",
+        "senior",
+        "lead",
+        "manager",
+        "director",
+        "executive",
+        "any"
+      ]
+    },
+    "experience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "maximumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "organization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "hospital",
+            "clinic",
+            "medical-college",
+            "university",
+            "pharmaceutical-company",
+            "diagnostic-center",
+            "research-institute",
+            "government-agency",
+            "private-company",
+            "non-profit",
+            "recruitment-agency",
+            "other"
+          ]
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "state": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "district": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "remoteEligibleCountries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "maxItems": 100
+        }
+      }
+    },
+    "salary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code, such as INR or USD."
+        },
+        "period": {
+          "type": "string",
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "year",
+            "project"
+          ]
+        },
+        "negotiable": {
+          "type": "boolean"
+        },
+        "disclosed": {
+          "type": "boolean"
+        },
+        "additionalBenefits": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 30
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 1000
+      },
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "responsibilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 1000
+      },
+      "maxItems": 100
+    },
+    "qualifications": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 1000
+      },
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "secondary",
+              "higher-secondary",
+              "diploma",
+              "undergraduate",
+              "graduate",
+              "postgraduate",
+              "doctorate",
+              "professional",
+              "other"
+            ]
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "level",
+          "mandatory"
+        ]
+      },
+      "maxItems": 20
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "uniqueItems": true,
+      "maxItems": 100
+    },
+    "licensesAndCertifications": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 300
+      },
+      "uniqueItems": true,
+      "maxItems": 50,
+      "description": "Required professional registrations or certifications, where applicable."
+    },
+    "benefits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      },
+      "maxItems": 50
+    },
+    "openings": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "applicationMethod": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "external",
+        "email",
+        "walk-in"
+      ]
+    },
+    "applicationUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "applicationEmail": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "applicationInstructions": {
+      "type": "string",
+      "maxLength": 5000
+    },
+    "applicationDeadline": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requiredDocuments": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      },
+      "uniqueItems": true,
+      "maxItems": 50
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending-review",
+        "published",
+        "paused",
+        "closed",
+        "rejected",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "uniqueItems": true,
+      "maxItems": 30
+    },
+    "recruiter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "organizationId": {
+          "type": "string",
+          "maxLength": 100
+        }
+      }
+    },
+    "moderation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reviewed": {
+          "type": "boolean",
+          "default": false
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewerId": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "rejectionReason": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdBy": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "updatedBy": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional application-specific metadata.",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "employmentType",
+    "workplace",
+    "category",
+    "organization",
+    "status"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "salary": {
+            "type": "object",
+            "required": [
+              "minimum",
+              "maximum"
+            ]
+          }
+        },
+        "required": [
+          "salary"
+        ]
+      },
+      "then": {
+        "properties": {
+          "salary": {
+            "properties": {
+              "minimum": {
+                "type": "number"
+              },
+              "maximum": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "applicationMethod": {
+            "const": "external"
+          }
+        },
+        "required": [
+          "applicationMethod"
+        ]
+      },
+      "then": {
+        "required": [
+          "applicationUrl"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "applicationMethod": {
+            "const": "email"
+          }
+        },
+        "required": [
+          "applicationMethod"
+        ]
+      },
+      "then": {
+        "required": [
+          "applicationEmail"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "published"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "publishedAt"
+        ]
+      }
+    }
+  ]
+}
+

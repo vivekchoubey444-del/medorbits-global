@@ -1,12 +1,1209 @@
 openapi: 3.1.0
 info:
   title: MedOrbits API
-  version: 0.1.0
-  description: Starter specification; implement and secure endpoints before use.
+  version: 1.0.0
+  summary: API specification for the MedOrbits platform
+  description: |
+    OpenAPI specification for MedOrbits application management,
+    authentication, notifications, audit records, and supporting
+    platform services.
+    Security-sensitive operations require authentication and
+    authorization. Application ownership must be enforced by the
+    server. Administrative endpoints must use server-verified roles.
+    IMPORTANT:
+    Endpoint paths and request schemas are proposed integration
+    contracts. Reconcile them with the actual Express routers,
+    controllers, database schema, and middleware before release.
+  contact:
+    name: MedOrbits API Support
+  license:
+    name: Proprietary
+servers:
+  - url: /api
+    description: Same-origin API deployment
+  - url: https://api.example.com/api
+    description: Example production URL; replace before deployment
+tags:
+  - name: Health
+    description: Service health and readiness
+  - name: Authentication
+    description: Authentication and account access
+  - name: Applications
+    description: Application lifecycle management
+  - name: Notifications
+    description: User-specific in-app notifications
+  - name: Audit
+    description: Restricted audit-event access
+security:
+  - bearerAuth: []
 paths:
   /health:
     get:
-      summary: Health check
+      tags:
+        - Health
+      summary: Check API health
+      operationId: getApiHealth
+      security: []
       responses:
         "200":
-          description: Service health response
+          description: API process is responding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                success: true
+                status: healthy
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate a user
+      description: |
+        Proposed contract. Implement the corresponding route and
+        ensure credentials are verified using the configured identity
+        provider or authentication service.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get the authenticated user's profile
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /applications:
+    get:
+      tags:
+        - Applications
+      summary: List applications
+      operationId: listApplications
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          description: Filter by application status
+          schema:
+            $ref: "#/components/schemas/ApplicationStatus"
+        - name: applicationType
+          in: query
+          description: Filter by application type
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: Paginated applications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags:
+        - Applications
+      summary: Create a draft application
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /applications/{applicationId}:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    get:
+      tags:
+        - Applications
+      summary: Get an application
+      operationId: getApplication
+      description: |
+        Applicants may access their own applications. Privileged
+        staff may access applications permitted by their role.
+      responses:
+        "200":
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Applications
+      summary: Update a draft application
+      operationId: updateDraftApplication
+      description: Only supported fields may be changed, and the
+        application must remain in draft status.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApplicationRequest"
+      responses:
+        "200":
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags:
+        - Applications
+      summary: Delete a draft application
+      operationId: deleteDraftApplication
+      description: Deletes an eligible draft owned by the authenticated applicant.
+      responses:
+        "200":
+          description: Draft deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /applications/{applicationId}/submit:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      tags:
+        - Applications
+      summary: Submit an application
+      operationId: submitApplication
+      responses:
+        "200":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /applications/{applicationId}/withdraw:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      tags:
+        - Applications
+      summary: Withdraw an application
+      operationId: withdrawApplication
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                note:
+                  type: string
+                  maxLength: 1000
+      responses:
+        "200":
+          description: Application withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /applications/{applicationId}/status:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    patch:
+      tags:
+        - Applications
+      summary: Change application status
+      operationId: transitionApplicationStatus
+      description: |
+        Restricted workflow operation. The server must enforce role
+        permissions, allowed transitions, ownership rules, and audit
+        history. This endpoint is intended for authorized workflow
+        operations; it must not let an applicant approve or reject
+        an application.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusTransitionRequest"
+      responses:
+        "200":
+          description: Application status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /applications/{applicationId}/history:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    get:
+      tags:
+        - Applications
+      summary: Get application status history
+      operationId: getApplicationHistory
+      responses:
+        "200":
+          description: Application status history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationHistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List the authenticated user's notifications
+      operationId: listNotifications
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/NotificationType"
+      responses:
+        "200":
+          description: Paginated notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count
+      operationId: getUnreadNotificationCount
+      responses:
+        "200":
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    type: boolean
+                    const: true
+                  data:
+                    type: object
+                    required:
+                      - unreadCount
+                    properties:
+                      unreadCount:
+                        type: integer
+                        minimum: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /notifications/read-all:
+    post:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      responses:
+        "200":
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    type: boolean
+                    const: true
+                  data:
+                    type: object
+                    required:
+                      - updatedCount
+                    properties:
+                      updatedCount:
+                        type: integer
+                        minimum: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /notifications/{notificationId}:
+    parameters:
+      - $ref: "#/components/parameters/NotificationId"
+    get:
+      tags:
+        - Notifications
+      summary: Get a notification
+      operationId: getNotification
+      responses:
+        "200":
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      operationId: deleteNotification
+      responses:
+        "200":
+          description: Notification deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /notifications/{notificationId}/read:
+    parameters:
+      - $ref: "#/components/parameters/NotificationId"
+    post:
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      operationId: markNotificationRead
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /notifications/{notificationId}/unread:
+    parameters:
+      - $ref: "#/components/parameters/NotificationId"
+    post:
+      tags:
+        - Notifications
+      summary: Mark a notification as unread
+      operationId: markNotificationUnread
+      responses:
+        "200":
+          description: Notification marked as unread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/audit-logs:
+    get:
+      tags:
+        - Audit
+      summary: Search audit logs
+      operationId: listAuditLogs
+      description: |
+        Restricted endpoint. The server must authorize audit access
+        using trusted roles and permissions. Do not rely on this
+        specification alone to enforce access control.
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: actorId
+          in: query
+          schema:
+            type: string
+            maxLength: 128
+        - name: action
+          in: query
+          schema:
+            type: string
+            maxLength: 150
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+            maxLength: 128
+        - name: outcome
+          in: query
+          schema:
+            $ref: "#/components/schemas/AuditOutcome"
+        - name: requestId
+          in: query
+          schema:
+            type: string
+            maxLength: 128
+        - name: from
+          in: query
+          description: Inclusive ISO 8601 start timestamp
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: Inclusive ISO 8601 end timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Paginated audit records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Supply a valid access token in the Authorization header.
+        Example: Authorization: Bearer <access-token>
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: One-based page number
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of results per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    NotificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invalid request or validation failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Please correct the invalid request fields.
+              details:
+                - field: body.title
+                  message: This field is required.
+                  code: VALIDATION_ERROR
+    Unauthorized:
+      description: Authentication is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: UNAUTHENTICATED
+              message: Authentication is required.
+    Forbidden:
+      description: The authenticated user is not permitted to perform the operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The resource was not found or its existence is concealed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with the current resource state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Suggested delay before retrying, in seconds
+          schema:
+            type: integer
+            minimum: 0
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: Service or required dependency is unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - success
+        - status
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - unhealthy
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/ValidationIssue"
+            requestId:
+              type: string
+    ValidationIssue:
+      type: object
+      required:
+        - field
+        - message
+        - code
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+    Pagination:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+        - hasNextPage
+        - hasPreviousPage
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        hasNextPage:
+          type: boolean
+        hasPreviousPage:
+          type: boolean
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    LoginResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - accessToken
+            - user
+          properties:
+            accessToken:
+              type: string
+              description: Short-lived access token; never log this value.
+            tokenType:
+              type: string
+              const: Bearer
+              default: Bearer
+            expiresIn:
+              type: integer
+              minimum: 1
+              description: Token lifetime in seconds
+            user:
+              $ref: "#/components/schemas/User"
+    User:
+      type: object
+      required:
+        - id
+        - role
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+    CurrentUserResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/User"
+    ApplicationStatus:
+      type: string
+      enum:
+        - draft
+        - submitted
+        - under_review
+        - documents_required
+        - approved
+        - rejected
+        - withdrawn
+    Application:
+      type: object
+      required:
+        - id
+        - applicant_id
+        - application_type
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          maxLength: 128
+        applicant_id:
+          type: string
+          maxLength: 128
+          description: Applicant identifier; assigned by the server.
+        application_type:
+          type: string
+          maxLength: 100
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        title:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 5000
+        metadata:
+          type: object
+          additionalProperties: true
+        submitted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateApplicationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - applicationType
+      properties:
+        applicationType:
+          type: string
+          minLength: 1
+          maxLength: 100
+        title:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 5000
+        metadata:
+          type: object
+          maxProperties: 100
+          additionalProperties: true
+    UpdateApplicationRequest:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        applicationType:
+          type: string
+          minLength: 1
+          maxLength: 100
+        title:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 5000
+        metadata:
+          type: object
+          maxProperties: 100
+          additionalProperties: true
+    StatusTransitionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+    ApplicationResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/Application"
+    ApplicationListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - items
+            - pagination
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Application"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+    ApplicationHistoryEntry:
+      type: object
+      required:
+        - application_id
+        - changed_by
+        - new_status
+        - created_at
+      properties:
+        id:
+          type:
+            - integer
+            - string
+        application_id:
+          type: string
+        changed_by:
+          type: string
+        previous_status:
+          type:
+            - string
+            - "null"
+        new_status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        note:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+    ApplicationHistoryResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApplicationHistoryEntry"
+    NotificationType:
+      type: string
+      enum:
+        - general
+        - account
+        - application
+        - admission
+        - document
+        - payment
+        - security
+        - system
+        - support
+        - career
+    NotificationPriority:
+      type: string
+      enum:
+        - low
+        - normal
+        - high
+        - urgent
+    Notification:
+      type: object
+      required:
+        - id
+        - recipient_id
+        - type
+        - priority
+        - title
+        - message
+        - metadata
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipient_id:
+          type: string
+          description: Authenticated recipient; not a client-selectable filter.
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        priority:
+          $ref: "#/components/schemas/NotificationPriority"
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+          maxLength: 10000
+        action_url:
+          type:
+            - string
+            - "null"
+          maxLength: 2048
+        metadata:
+          type: object
+          additionalProperties: true
+        read_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    NotificationResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/Notification"
+    NotificationListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - items
+            - pagination
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Notification"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+    DeleteResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - id
+            - deleted
+          properties:
+            id:
+              type: string
+            deleted:
+              type: boolean
+              const: true
+    AuditOutcome:
+      type: string
+      enum:
+        - success
+        - failure
+        - denied
+        - error
+    AuditLog:
+      type: object
+      required:
+        - event_id
+        - action
+        - outcome
+        - metadata
+        - created_at
+      properties:
+        id:
+          type:
+            - integer
+            - string
+        event_id:
+          type: string
+          format: uuid
+        actor_id:
+          type:
+            - string
+            - "null"
+        action:
+          type: string
+          maxLength: 150
+        resource_type:
+          type:
+            - string
+            - "null"
+        resource_id:
+          type:
+            - string
+            - "null"
+        outcome:
+          $ref: "#/components/schemas/AuditOutcome"
+        request_id:
+          type:
+            - string
+            - "null"
+        ip_address:
+          type:
+            - string
+            - "null"
+        user_agent:
+          type:
+            - string
+            - "null"
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+    AuditListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - items
+            - pagination
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AuditLog"
+            pagination:
+              $ref: "#/components/schemas/Pagination"

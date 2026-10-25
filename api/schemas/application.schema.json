@@ -1,1 +1,348 @@
-{}
+{
+"$schema": "https://json-schema.org/draft/2020-12/schema",
+"$id": "https://medorbits.in/api/schemas/application.schema.json",
+"title": "MedOrbits Application",
+"description": "Validation schema for MedOrbits education, admission, and consultancy applications.",
+"type": "object",
+"additionalProperties": false,
+"required": [
+"applicant",
+"application"
+],
+"properties": {
+"applicant": {
+"$ref": "#/$defs/applicant"
+},
+"application": {
+"$ref": "#/$defs/application"
+},
+"education": {
+"$ref": "#/$defs/education"
+},
+"preferences": {
+"$ref": "#/$defs/preferences"
+},
+"consents": {
+"$ref": "#/$defs/consents"
+},
+"documents": {
+"type": "array",
+"description": "References to documents already uploaded through a secure upload endpoint.",
+"maxItems": 30,
+"items": {
+"$ref": "#/$defs/documentReference"
+}
+},
+"additionalInformation": {
+"type": "string",
+"maxLength": 5000,
+"description": "Optional applicant-provided information relevant to the application."
+}
+},
+"$defs": {
+"nonEmptyString": {
+"type": "string",
+"minLength": 1,
+"maxLength": 200,
+"pattern": "\S"
+},
+"email": {
+"type": "string",
+"format": "email",
+"maxLength": 254
+},
+"phone": {
+"type": "string",
+"minLength": 7,
+"maxLength": 20,
+"pattern": "^[0-9+() .-]+$"
+},
+"applicant": {
+"type": "object",
+"additionalProperties": false,
+"required": [
+"fullName",
+"email",
+"phone"
+],
+"properties": {
+"fullName": {
+"$ref": "#/$defs/nonEmptyString"
+},
+"email": {
+"$ref": "#/$defs/email"
+},
+"phone": {
+"$ref": "#/$defs/phone"
+},
+"alternatePhone": {
+"$ref": "#/$defs/phone"
+},
+"dateOfBirth": {
+"type": "string",
+"format": "date"
+},
+"address": {
+"type": "object",
+"additionalProperties": false,
+"properties": {
+"addressLine1": {
+"$ref": "#/$defs/nonEmptyString"
+},
+"addressLine2": {
+"type": "string",
+"maxLength": 200
+},
+"city": {
+"$ref": "#/$defs/nonEmptyString"
+},
+"state": {
+"$ref": "#/$defs/nonEmptyString"
+},
+"postalCode": {
+"type": "string",
+"minLength": 3,
+"maxLength": 12,
+"pattern": "^[A-Za-z0-9 -]+$"
+},
+"country": {
+"type": "string",
+"minLength": 2,
+"maxLength": 100
+}
+}
+}
+}
+},
+"application": {
+"type": "object",
+"additionalProperties": false,
+"required": [
+"courseCategory",
+"courseName",
+"admissionYear"
+],
+"properties": {
+"applicationType": {
+"type": "string",
+"enum": [
+"admission",
+"counselling",
+"study-abroad",
+"career-guidance",
+"consultancy",
+"document-assistance",
+"other"
+]
+},
+"courseCategory": {
+"type": "string",
+"enum": [
+"MBBS",
+"BDS",
+"BAMS",
+"BHMS",
+"BUMS",
+"BSc",
+"BTech",
+"BBA",
+"MBA",
+"MD",
+"MS",
+"PG",
+"PARAMEDICAL",
+"NURSING",
+"PHARMACY",
+"DIPLOMA",
+"OTHER"
+]
+},
+"courseName": {
+"$ref": "#/$defs/nonEmptyString"
+},
+"admissionYear": {
+"type": "integer",
+"minimum": 2020,
+"maximum": 2100
+},
+"preferredCountry": {
+"type": "string",
+"maxLength": 100
+},
+"preferredState": {
+"type": "string",
+"maxLength": 100
+},
+"preferredCollege": {
+"type": "string",
+"maxLength": 200
+},
+"entranceExam": {
+"type": "string",
+"enum": [
+"NEET-UG",
+"NEET-PG",
+"CUET",
+"JEE",
+"CAT",
+"GMAT",
+"GRE",
+"IELTS",
+"TOEFL",
+"OTHER",
+"NOT-APPLICABLE"
+]
+},
+"entranceExamScore": {
+"type": "number",
+"minimum": 0
+},
+"entranceExamRank": {
+"type": "integer",
+"minimum": 1
+},
+"budget": {
+"type": "object",
+"additionalProperties": false,
+"properties": {
+"minimum": {
+"type": "number",
+"minimum": 0
+},
+"maximum": {
+"type": "number",
+"minimum": 0
+},
+"currency": {
+"type": "string",
+"pattern": "^[A-Z]{3}$"
+}
+}
+},
+"notes": {
+"type": "string",
+"maxLength": 3000
+}
+}
+},
+"education": {
+"type": "object",
+"additionalProperties": false,
+"properties": {
+"qualification": {
+"type": "string",
+"enum": [
+"CLASS_10",
+"CLASS_12",
+"DIPLOMA",
+"UNDERGRADUATE",
+"POSTGRADUATE",
+"DOCTORATE",
+"OTHER"
+]
+},
+"boardOrUniversity": {
+"type": "string",
+"maxLength": 200
+},
+"passingYear": {
+"type": "integer",
+"minimum": 1950,
+"maximum": 2100
+},
+"percentage": {
+"type": "number",
+"minimum": 0,
+"maximum": 100
+},
+"cgpa": {
+"type": "number",
+"minimum": 0,
+"maximum": 10
+},
+"subjects": {
+"type": "array",
+"maxItems": 30,
+"items": {
+"$ref": "#/$defs/nonEmptyString"
+}
+}
+}
+},
+"preferences": {
+"type": "object",
+"additionalProperties": false,
+"properties": {
+"preferredContactMethod": {
+"type": "string",
+"enum": [
+"email",
+"phone",
+"whatsapp"
+]
+},
+"preferredLanguage": {
+"type": "string",
+"maxLength": 50
+},
+"contactTime": {
+"type": "string",
+"enum": [
+"morning",
+"afternoon",
+"evening",
+"anytime"
+]
+}
+}
+},
+"consents": {
+"type": "object",
+"additionalProperties": false,
+"properties": {
+"privacyPolicyAccepted": {
+"type": "boolean"
+},
+"termsAccepted": {
+"type": "boolean"
+},
+"communicationsOptIn": {
+"type": "boolean"
+}
+}
+},
+"documentReference": {
+"type": "object",
+"additionalProperties": false,
+"required": [
+"documentType",
+"documentId"
+],
+"properties": {
+"documentType": {
+"type": "string",
+"enum": [
+"PHOTO",
+"IDENTITY_PROOF",
+"CLASS_10_MARKSHEET",
+"CLASS_12_MARKSHEET",
+"GRADUATION_CERTIFICATE",
+"ENTRANCE_SCORECARD",
+"TRANSFER_CERTIFICATE",
+"MIGRATION_CERTIFICATE",
+"CATEGORY_CERTIFICATE",
+"INCOME_CERTIFICATE",
+"PASSPORT",
+"OTHER"
+]
+},
+"documentId": {
+"type": "string",
+"minLength": 1,
+"maxLength": 128,
+"pattern": "^[A-Za-z0-9_-]+$"
+}
+}
+}
+}
+}

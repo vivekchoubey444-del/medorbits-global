@@ -1,3 +1,4 @@
+
 {
   "name": "medorbits",
   "version": "0.1.0",
@@ -11,20 +12,30 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+
     "check": "npm run check:syntax && npm run check:json && npm run check:python",
     "check:syntax": "node --check server.js && node --check scripts/check-json.mjs",
+
     "check:json": "node scripts/check-json.mjs",
     "check:json:strict": "node scripts/check-json.mjs --strict",
+    "check:json:api": "node scripts/check-json.mjs --root ./api",
+    "check:json:all": "node scripts/check-json.mjs --include-hidden",
+    "check:json:large": "node scripts/check-json.mjs --max-size 25",
+
     "check:python": "python -m pytest",
     "lint:python": "python -m ruff check .",
     "lint:python:fix": "python -m ruff check --fix .",
     "format:python": "python -m ruff format .",
     "format:python:check": "python -m ruff format --check .",
+
     "check:quality": "npm run lint:python && npm run format:python:check",
     "check:all": "npm run check && npm run check:quality",
+
     "test": "python -m pytest",
     "test:verbose": "python -m pytest -v",
-    "validate": "npm run check:all"
+
+    "validate": "npm run check:all",
+    "validate:strict": "npm run check:syntax && npm run check:json:strict && npm run check:python && npm run check:quality"
   },
   "dependencies": {
     "compression": "^1.8.1",

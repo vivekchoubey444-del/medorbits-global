@@ -1,174 +1,193 @@
 
-name: Feature request
-description: Suggest an improvement or new capability for MedOrbits
+
+
+
+⸻
+
+name: “💡 Feature Request”
+about: “Propose a feature, enhancement, or new capability for MedOrbits.”
 title: “[Feature]: “
-labels:
-  - enhancement
-  - triage
-assignees: []
+labels: enhancement
+assignees: “”
 
-body:
-  - type: markdown
-    attributes:
-      value: |
-        Thank you for helping improve MedOrbits.
+💡 Feature Summary
 
-        Describe the problem, the users affected, and the outcome you want to achieve. Feature requests are reviewed for user value, feasibility, security, accessibility, and alignment with the project roadmap.
+What would you like MedOrbits to do?
 
-  - type: textarea
-    id: problem
-    attributes:
-      label: Problem or opportunity
-      description: What problem are you trying to solve, or what opportunity do you see?
-      placeholder: |
-        Currently, users…
-        This creates the following problem or opportunity…
-    validations:
-      required: true
+Provide a concise description of the proposed feature or improvement.
 
-  - type: textarea
-    id: proposed_solution
-    attributes:
-      label: Proposed solution
-      description: Describe the feature, improvement, or behavior you would like to see.
-      placeholder: Explain your proposed solution and how it addresses the problem.
-    validations:
-      required: true
+🎯 Problem or Opportunity
 
-  - type: textarea
-    id: intended_users
-    attributes:
-      label: Intended users and use case
-      description: Identify who benefits, when the feature is needed, and the outcome it should enable.
-      placeholder: |
-        - Intended users:
-        - When or why it is needed:
-        - Desired outcome:
-    validations:
-      required: true
+What problem does this feature solve?
 
-  - type: dropdown
-    id: affected_area
-    attributes:
-      label: Affected area
-      description: Select all areas relevant to this request.
-      multiple: true
-      options:
-        - Website / user interface
-        - Authentication or account
-        - Education / admissions
-        - Applications or documents
-        - Careers / jobs
-        - Payments or subscriptions
-        - Notifications or email
-        - Admin dashboard
-        - API / backend
-        - Database
-        - Deployment / infrastructure
-        - Security or privacy
-        - Accessibility
-        - Other
-    validations:
-      required: true
+Describe the current limitation, user difficulty, or opportunity for improvement.
 
-  - type: textarea
-    id: expected_behavior
-    attributes:
-      label: Expected behavior
-      description: Explain how the feature should work from the user’s perspective.
-      placeholder: |
-        When a user…
-        The system should…
-        The user should then be able to…
-    validations:
-      required: true
+* What is difficult or missing today?
+* Who is affected?
+* How is the problem currently handled?
 
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives considered
-      description: Describe alternative solutions, existing tools, or workarounds you have considered.
-      placeholder: Explain the alternatives and why they may or may not be suitable.
-    validations:
-      required: false
+👥 Target Users
 
-  - type: textarea
-    id: acceptance_criteria
-    attributes:
-      label: Acceptance criteria
-      description: List observable conditions that must be satisfied for the feature to be considered complete.
-      placeholder: |
-        - [ ] Criterion 1
-        - [ ] Criterion 2
-        - [ ] Criterion 3
-    validations:
-      required: true
+Who would benefit from this feature?
 
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Impact and priority
-      description: Choose the closest description of the expected user impact.
-      options:
-        - Critical workflow
-        - Significant improvement
-        - Quality-of-life improvement
-        - Optional enhancement
-        - Needs further assessment
-    validations:
-      required: true
+* [ ]	Students and applicants
+* [ ]	Medical admission aspirants
+* [ ]	Educational institutions
+* [ ]	Counsellors and consultants
+* [ ]	Job seekers and professionals
+* [ ]	Website administrators
+* [ ]	Developers and contributors
+* [ ]	Other: specify below
 
-  - type: textarea
-    id: expected_impact
-    attributes:
-      label: Expected impact
-      description: Explain the expected benefits for users or the project.
-      placeholder: Describe the expected improvement, affected users, or measurable outcome.
-    validations:
-      required: true
+Additional details:
 
-  - type: textarea
-    id: additional_context
-    attributes:
-      label: Additional context
-      description: Add mockups, examples, relevant links, related issues, or other useful details. Remove confidential information.
-      placeholder: Add supporting context here.
-    validations:
-      required: false
+Describe the relevant users or use cases.
 
-  - type: textarea
-    id: security_privacy_accessibility
-    attributes:
-      label: Security, privacy, and accessibility considerations
-      description: Consider personal data, permissions, payments, document handling, accessibility, and abuse prevention. Enter “None known” if not applicable.
-      placeholder: |
-        - Personal data or permissions:
-        - Payment or document handling:
-        - Accessibility:
-        - Abuse prevention:
-        - Other considerations:
-    validations:
-      required: true
+✨ Proposed Solution
 
-  - type: checkboxes
-    id: contribution
-    attributes:
-      label: Contribution
-      description: Select any options that apply.
-      options:
-        - label: I am willing to help implement or test this feature.
-          required: false
-        - label: I may be able to help with design, documentation, or feedback.
-          required: false
-        - label: I am requesting the feature only.
-          required: false
+How should the feature work?
 
-  - type: checkboxes
-    id: confirmations
-    attributes:
-      label: Submission checklist
-      options:
-        - label: I have searched existing issues for a duplicate request.
-          required: true
-        - label: I have removed confidential information from this request.
-          required: true
+Explain the expected behaviour, user journey, or technical capability.
+
+Include examples, suggested workflows, or interface ideas where useful.
+
+🧭 User Journey
+
+Describe the intended flow from the user’s perspective.
+
+1. The user opens:
+2. The user selects or enters:
+3. MedOrbits responds by:
+4. The expected outcome is:
+
+Adjust these steps to fit your proposal.
+
+🎨 Design and User Experience
+
+If the proposal involves the interface, describe the expected presentation.
+
+* [ ]	Responsive mobile design
+* [ ]	Tablet and desktop support
+* [ ]	Accessible controls and navigation
+* [ ]	Clear loading, success, and error states
+* [ ]	Consistent MedOrbits design system
+* [ ]	Reduced-motion support where applicable
+* [ ]	Not applicable
+
+Visual references or design notes:
+
+Add mockups, screenshots, sketches, or relevant references. Do not include private user information.
+
+🧩 Proposed Scope
+
+Which areas might this feature affect?
+
+* [ ]	Frontend pages and components
+* [ ]	CSS, styling, and animations
+* [ ]	JavaScript interactions
+* [ ]	Public JSON datasets
+* [ ]	Backend services or APIs
+* [ ]	Database or data models
+* [ ]	Authentication and permissions
+* [ ]	Documents and file handling
+* [ ]	Payments or refunds
+* [ ]	Notifications and support
+* [ ]	Documentation
+* [ ]	Testing and quality assurance
+* [ ]	Deployment and operations
+* [ ]	Other: specify below
+
+These selections describe possible areas of impact, not a required implementation.
+
+📈 Expected Benefits
+
+Explain how the feature would improve MedOrbits.
+
+* What user outcome would improve?
+* Would it reduce manual work or repeated support requests?
+* Would it improve accuracy, accessibility, reliability, or performance?
+* How could the improvement be evaluated?
+
+🔗 Alternatives Considered
+
+Have you considered other approaches?
+
+Describe alternative solutions and why the proposed approach may be preferable. Enter None considered yet if you have not evaluated alternatives.
+
+⚠️ Risks and Considerations
+
+Identify potential concerns.
+
+* [ ]	Privacy or personal-data handling
+* [ ]	Security or access control
+* [ ]	Educational information accuracy
+* [ ]	Accessibility
+* [ ]	Performance or scalability
+* [ ]	API or database compatibility
+* [ ]	External service or dependency
+* [ ]	Operational or maintenance cost
+* [ ]	No known concerns
+* [ ]	Other: specify below
+
+Explain any relevant risks, dependencies, or limitations.
+
+🧪 Acceptance Criteria
+
+How will reviewers determine that the feature is complete?
+
+* [ ]	The intended user problem is addressed.
+* [ ]	The expected behaviour is documented.
+* [ ]	Relevant validation and error handling are included.
+* [ ]	Responsive and accessibility requirements are considered.
+* [ ]	Relevant tests are added or updated.
+* [ ]	Documentation is updated where necessary.
+* [ ]	Security and privacy implications are addressed where applicable.
+
+Additional acceptance criteria:
+
+* [ ]	Add a specific, measurable requirement here.
+* [ ]	Add another requirement if needed.
+
+📚 Related Issues and References
+
+Link related issues, documentation, official resources, or design references.
+
+* Related issue:
+* Documentation:
+* External reference:
+
+For admissions, eligibility, fees, or other consequential educational information, prefer authoritative sources.
+
+🚀 Priority and Timing
+
+How important is this feature to the intended users?
+
+* [ ]	Critical — essential workflow is missing or seriously blocked
+* [ ]	High — substantial improvement to an important workflow
+* [ ]	Medium — useful enhancement with alternatives available
+* [ ]	Low — optional improvement or convenience
+* [ ]	Not sure
+
+This is the requester’s assessment; maintainers will determine prioritisation.
+
+🤝 Contribution
+
+Would you like to help implement or validate this proposal?
+
+* [ ]	I can help with implementation.
+* [ ]	I can help with design or user research.
+* [ ]	I can help with testing or documentation.
+* [ ]	I can provide additional requirements.
+* [ ]	I am proposing the idea only.
+
+✅ Submission Checklist
+
+* [ ]	I searched for existing issues or similar proposals.
+* [ ]	I explained the problem and intended benefit.
+* [ ]	I distinguished the proposed behaviour from existing functionality.
+* [ ]	I included relevant references where available.
+* [ ]	I removed credentials, private documents, and sensitive personal information.
+
+⸻
+
+Thank you for helping improve MedOrbits. Clear problem statements, realistic acceptance criteria, and thoughtful consideration of accessibility, data accuracy, and security help turn good ideas into reliable features.

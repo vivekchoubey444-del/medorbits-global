@@ -1,186 +1,212 @@
-
-name: Bug report
-description: Report a reproducible bug in MedOrbits
+name: "🐛 Bug Report"
+description: "Report a reproducible defect, broken feature, or unexpected behaviour in MedOrbits."
 title: "[Bug]: "
 labels:
-  - bug
-  - triage
-assignees: []
 
-body:
-  - type: markdown
+* bug
+    body:
+* type: markdown
     attributes:
-      value: |
-        Thank you for helping improve MedOrbits.
+    value: |
+    ## MedOrbits Bug Report
 
-        Provide enough detail to reproduce the issue. Do not include passwords, access tokens, payment-card details, identity documents, personal data, or other confidential information.
+Thank you for helping improve MedOrbits. Please provide accurate, reproducible details so maintainers can investigate the issue efficiently.
+**Before submitting:**
+- Search existing issues to avoid duplicates.
+- Use the latest relevant version when practical.
+- Report security vulnerabilities through a private, authorised reporting channel rather than this public form.
+- Never include passwords, OTPs, API keys, session tokens, payment-card details, private documents, or other sensitive personal information.
 
-  - type: textarea
+* type: dropdown
+    id: category
+    attributes:
+    label: Bug Category
+    description: Select the area most closely related to the problem.
+    options:
+    - Website UI / Layout
+    - Mobile Responsiveness
+    - Navigation / Routing
+    - JavaScript / Frontend Behaviour
+    - API / Backend
+    - Authentication / Account Access
+    - Applications / Admissions
+    - Official Documents / Resources
+    - JSON Dataset / Content Accuracy
+    - Database / Data Persistence
+    - Document Upload / Download
+    - Payments / Refunds
+    - Search / Filtering
+    - Accessibility
+    - Performance / Loading
+    - Deployment / Availability
+    - Other
+    validations:
+    required: true
+* type: dropdown
+    id: severity
+    attributes:
+    label: Impact and Severity
+    description: Select the closest description of the impact.
+    options:
+    - "Critical -- widespread outage or severe data/security impact"
+    - "High -- major feature unavailable or important workflow blocked"
+    - "Medium -- functionality impaired with a workaround available"
+    - "Low -- minor visual issue or limited inconvenience"
+    - "Not sure"
+    validations:
+    required: true
+* type: textarea
     id: summary
     attributes:
-      label: Bug summary
-      description: Describe the problem clearly and concisely.
-      placeholder: What happened, and what part of MedOrbits is affected?
+    label: Bug Summary
+    description: Explain what is wrong and who or what is affected.
+    placeholder: "Example: The course search filter stops updating results after selecting a category."
     validations:
-      required: true
-
-  - type: dropdown
-    id: affected_area
+    required: true
+* type: textarea
+    id: reproduction
     attributes:
-      label: Affected area
-      description: Select all areas relevant to this issue.
-      multiple: true
-      options:
-        - Website / user interface
-        - Authentication or account
-        - Education / admissions
-        - Applications or documents
-        - Careers / jobs
-        - Payments or subscriptions
-        - Notifications or email
-        - Admin dashboard
-        - API / backend
-        - Database
-        - Deployment / infrastructure
-        - Other
+    label: Steps to Reproduce
+    description: Provide clear, numbered steps that allow another person to reproduce the problem.
+    placeholder: |
+    Open the affected page.
+    Select the relevant option.
+    Submit the form.
+    Observe the unexpected result.
     validations:
-      required: true
-
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps to reproduce
-      description: List the exact steps needed to reproduce the issue.
-      placeholder: |
-        1. Open …
-        2. Navigate to …
-        3. Select …
-        4. Observe the problem.
-    validations:
-      required: true
-
-  - type: textarea
+    required: true
+* type: textarea
     id: expected
     attributes:
-      label: Expected behavior
-      description: Explain what should have happened.
-      placeholder: Describe the expected result.
+    label: Expected Behaviour
+    description: Describe what should happen.
+    placeholder: "Explain the intended result."
     validations:
-      required: true
-
-  - type: textarea
+    required: true
+* type: textarea
     id: actual
     attributes:
-      label: Actual behavior
-      description: Explain what happened instead.
-      placeholder: Describe the observed result.
+    label: Actual Behaviour
+    description: Describe what happens instead.
+    placeholder: "Explain the observed result, including any non-sensitive error message."
     validations:
-      required: true
-
-  - type: dropdown
-    id: reproducibility
+    required: true
+* type: textarea
+    id: location
     attributes:
-      label: Reproducibility
-      options:
-        - Happens every time
-        - Happens intermittently
-        - Happened once
-        - Unable to determine
+    label: Affected Page or Endpoint
+    description: Provide the page URL, route, or API endpoint. Remove private query parameters and tokens.
+    placeholder: "Example: /pages/education.html"
     validations:
-      required: true
-
-  - type: dropdown
+    required: false
+* type: dropdown
+    id: frequency
+    attributes:
+    label: Reproducibility
+    description: How consistently does the issue occur?
+    options:
+    - Every time
+    - Frequently
+    - Occasionally
+    - Happened once
+    - Not yet confirmed
+    validations:
+    required: true
+* type: dropdown
     id: environment
     attributes:
-      label: Environment
-      description: Where did the issue occur?
-      options:
-        - Local development
-        - Staging
-        - Production
-        - Other / unknown
+    label: Environment
+    description: Where did you encounter the issue?
+    options:
+    - Local development
+    - Testing environment
+    - Staging environment
+    - Production website
+    - Other / Unknown
     validations:
-      required: true
-
-  - type: input
-    id: page_endpoint
+    required: true
+* type: input
+    id: version
     attributes:
-      label: Page or API endpoint
-      description: Provide the affected page path or API route. Remove private query parameters.
-      placeholder: /education/example.html or /api/...
+    label: Version, Release, or Commit
+    description: Provide a version number, release identifier, or short Git commit hash if known.
+    placeholder: "Example: v1.2.0 or a short commit hash"
     validations:
-      required: false
-
-  - type: input
+    required: false
+* type: dropdown
+    id: device
+    attributes:
+    label: Device Type
+    options:
+    - Desktop / Laptop
+    - Mobile Phone
+    - Tablet
+    - Multiple Device Types
+    - Other / Unknown
+    validations:
+    required: true
+* type: input
+    id: operating-system
+    attributes:
+    label: Operating System
+    description: Include the operating system and version if known.
+    placeholder: "Example: Windows 11, macOS, Android, iOS, or Linux"
+    validations:
+    required: false
+* type: input
     id: browser
     attributes:
-      label: Browser and version
-      placeholder: Chrome, Safari, Firefox, or not applicable
+    label: Browser and Version
+    description: Include the browser and version when relevant.
+    placeholder: "Example: Chrome, Safari, Firefox, or Edge"
     validations:
-      required: false
-
-  - type: input
-    id: device_os
+    required: false
+* type: textarea
+    id: console-errors
     attributes:
-      label: Operating system and device
-      placeholder: Windows, Android, iOS, macOS, Linux, or not applicable
+    label: Error Messages or Logs
+    description: Paste relevant, redacted error messages. Remove credentials, tokens, personal data, and internal secrets.
+    render: text
+    placeholder: |
+    Paste only relevant non-sensitive output.
+    If there are no errors or logs, leave this field empty.
     validations:
-      required: false
-
-  - type: input
-    id: app_version
+    required: false
+* type: textarea
+    id: evidence
     attributes:
-      label: App version or commit
-      description: Include a release version or Git commit hash if known.
-      placeholder: v1.0.0 or commit SHA
+    label: Screenshots or Additional Evidence
+    description: Add screenshots, recordings, or other evidence in the issue after removing sensitive information. Do not upload private documents or production user data.
+    placeholder: "Describe any attached evidence or additional observations."
     validations:
-      required: false
-
-  - type: textarea
-    id: logs
+    required: false
+* type: textarea
+    id: workaround
     attributes:
-      label: Error messages and logs
-      description: Remove credentials, tokens, personal data, and secrets before sharing logs.
-      placeholder: Paste sanitized error messages or stack traces here.
-      render: text
+    label: Workaround
+    description: Is there a temporary way to avoid or resolve the issue?
+    placeholder: "Describe any workaround, or enter ‘None known’."
     validations:
-      required: false
-
-  - type: textarea
-    id: impact_details
+    required: false
+* type: textarea
+    id: additional-context
     attributes:
-      label: Impact and workaround
-      description: Explain who or what is affected, whether a critical workflow is blocked, and any safe workaround.
-      placeholder: Describe the practical consequences or enter Unknown.
+    label: Additional Context
+    description: Include related issue links, recent changes, or other relevant details.
+    placeholder: "Add any additional non-sensitive information."
     validations:
-      required: true
-
-  - type: textarea
-    id: additional_context
+    required: false
+* type: checkboxes
+    id: confirmation
     attributes:
-      label: Additional context
-      description: Include relevant details not covered above.
-      placeholder: Add related issues, recent changes, or other useful context.
-    validations:
-      required: false
-
-  - type: checkboxes
-    id: confirmations
-    attributes:
-      label: Submission checklist
-      options:
-        - label: I have searched existing issues for a duplicate.
-          required: true
-        - label: I have removed credentials, secrets, and confidential personal information.
-          required: true
-        - label: This report does not disclose a security vulnerability publicly.
-          required: true
-
-  - type: markdown
-    attributes:
-      value: |
-        **Security reporting**
-
-        Do not report security vulnerabilities in a public issue.
-
-        Follow the private reporting instructions in the root `SECURITY.md` file. If no private reporting channel is available, contact a maintainer through a non-public channel before sharing sensitive technical details.
+    label: Submission Checklist
+    description: Confirm the following before submitting.
+    options:
+    - label: I searched existing issues for a similar report.
+    required: true
+    - label: I provided reproducible steps and accurate information to the best of my knowledge.
+    required: true
+    - label: I removed passwords, tokens, credentials, and sensitive personal information.
+    required: true
+    - label: This report does not disclose a security vulnerability through a public issue.
+    required: true

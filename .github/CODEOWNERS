@@ -1,12 +1,91 @@
+==============================================================================
 
-# MedOrbits CODEOWNERS
-# Default owner for all repository files.
-# CODEOWNERS assigns review responsibility, not repository permissions.
-# Ensure @vivekchoubey444-del has write access to this repository.
+MEDORBITS -- CODE OWNERSHIP AND REVIEW RESPONSIBILITY
+
+File: .github/CODEOWNERS
+
+PURPOSE
+
+Establish repository-level code ownership and assign review responsibility
+
+for source code, application data, security controls, infrastructure, legal
+
+documents, dependency manifests, tests, and release automation.
+
+PRIMARY CODE OWNER
+
+@vivekchoubey444-del
+
+GOVERNANCE AND LEGAL NOTICE
+
+1. CODEOWNERS identifies reviewers; it does not independently grant access,
+
+ownership of intellectual property, administrative privileges, or write
+
+permissions.
+
+2. Repository permissions, branch protection, rulesets, required reviews,
+
+and environment approvals must be configured separately in GitHub.
+
+3. Review assignments do not constitute legal advice, regulatory approval,
+
+security certification, or a guarantee that code is compliant.
+
+4. All contributions remain subject to the repository’s applicable license,
+
+contribution terms, security policy, and governing law.
+
+5. The repository administrator is responsible for verifying that each
+
+referenced GitHub account is correct and has the necessary repository
+
+access for the intended review process.
+
+CONFIGURATION REQUIREMENTS
+
+- Keep this file at .github/CODEOWNERS or another supported CODEOWNERS path.
+
+- Ensure the designated owner has access to the repository.
+
+- Protect the default branch and require code-owner review where appropriate.
+
+- Review this file whenever ownership, maintainership, or repository structure
+
+changes.
+
+PATTERN NOTES
+
+- Patterns follow GitHub CODEOWNERS syntax, which is based on .gitignore-style
+
+patterns with CODEOWNERS-specific rules.
+
+- Paths are relative to the repository root.
+
+- The last matching pattern takes precedence for a given path.
+
+- Use valid GitHub usernames or team handles; do not use display names.
+
+==============================================================================
+
+----------------------------------------------------
+
+1. DEFAULT REPOSITORY OWNERSHIP
+
+----------------------------------------------------
+
+Default reviewer for repository files not assigned more specifically below.
 
 * @vivekchoubey444-del
 
-# Documentation and policies
+----------------------------------------------------
+
+2. GOVERNANCE, POLICIES, AND LEGAL DOCUMENTATION
+
+----------------------------------------------------
+
+Project documentation, contributor terms, policy notices, and legal materials.
+
 /README.md @vivekchoubey444-del
 /README-PRODUCTION.md @vivekchoubey444-del
 /PACKAGE-NOTES.md @vivekchoubey444-del
@@ -19,19 +98,63 @@
 /LICENSE @vivekchoubey444-del
 /docs/ @vivekchoubey444-del
 
-# GitHub workflows and configuration
+----------------------------------------------------
+
+3. GITHUB GOVERNANCE AND AUTOMATION
+
+----------------------------------------------------
+
+Workflows, issue and pull-request templates, repository automation, and policy
+
+configuration. Review changes for permission escalation, untrusted input,
+
+secret exposure, unsafe publishing, and deployment risks.
+
 /.github/ @vivekchoubey444-del
 /.editorconfig @vivekchoubey444-del
+/.gitattributes @vivekchoubey444-del
+/.gitignore @vivekchoubey444-del
 /.prettierrc.json @vivekchoubey444-del
 /.eslintrc.json @vivekchoubey444-del
-/.gitignore @vivekchoubey444-del
-/.gitattributes @vivekchoubey444-del
 
-# Backend and application source
+----------------------------------------------------
+
+4. BACKEND APPLICATION AND ENTRY POINTS
+
+----------------------------------------------------
+
+Application bootstrap, routing, runtime behavior, and server configuration.
+
 /server.js @vivekchoubey444-del
 /src/ @vivekchoubey444-del
 
-# Frontend pages and assets
+----------------------------------------------------
+
+5. AUTHENTICATION, AUTHORIZATION, AND SECURITY CONTROLS
+
+----------------------------------------------------
+
+Authentication flows, access-control middleware, validation, service logic,
+
+and request handling. Changes should receive additional scrutiny where they
+
+affect identity, permissions, sessions, tokens, or sensitive data.
+
+/src/auth/ @vivekchoubey444-del
+/src/middleware/ @vivekchoubey444-del
+/src/validators/ @vivekchoubey444-del
+/src/controllers/ @vivekchoubey444-del
+/src/services/ @vivekchoubey444-del
+/src/repositories/ @vivekchoubey444-del
+
+----------------------------------------------------
+
+6. FRONTEND PAGES, STATIC ASSETS, AND APPLICATION FEATURES
+
+----------------------------------------------------
+
+User interfaces, client-side functionality, resource files, and feature areas.
+
 /assets/ @vivekchoubey444-del
 /pages/ @vivekchoubey444-del
 /education/ @vivekchoubey444-del
@@ -40,19 +163,48 @@
 /admin/ @vivekchoubey444-del
 /legal/ @vivekchoubey444-del
 
-# Database and migrations
+----------------------------------------------------
+
+7. DATABASES, SCHEMAS, AND MIGRATIONS
+
+----------------------------------------------------
+
+Database models, schema definitions, migration scripts, and persistence
+
+configuration. Review data-loss risks, compatibility, rollback procedures,
+
+access controls, and migration ordering before approval.
+
 /database/ @vivekchoubey444-del
 /db/ @vivekchoubey444-del
 /migrations/ @vivekchoubey444-del
 /prisma/ @vivekchoubey444-del
 
-# Tests and quality assurance
+----------------------------------------------------
+
+8. TESTING AND QUALITY ASSURANCE
+
+----------------------------------------------------
+
+Unit tests, integration tests, test fixtures, and test-runner configuration.
+
 /tests/ @vivekchoubey444-del
 /test/ @vivekchoubey444-del
 /jest.config.js @vivekchoubey444-del
 /vitest.config.js @vivekchoubey444-del
 
-# Deployment and infrastructure
+----------------------------------------------------
+
+9. DEPLOYMENT, CONTAINERS, AND INFRASTRUCTURE
+
+----------------------------------------------------
+
+Deployment manifests, container definitions, infrastructure code, and runtime
+
+configuration. Review privilege boundaries, exposed ports, secret handling,
+
+resource access, deployment targets, and rollback behavior.
+
 /infrastructure/ @vivekchoubey444-del
 /Dockerfile @vivekchoubey444-del
 /docker-compose.yml @vivekchoubey444-del
@@ -60,7 +212,18 @@
 /.dockerignore @vivekchoubey444-del
 /render.yaml @vivekchoubey444-del
 
-# Dependency manifests and lockfiles
+----------------------------------------------------
+
+10. DEPENDENCY MANIFESTS AND LOCKFILES
+
+----------------------------------------------------
+
+Package definitions, reproducible installation metadata, and dependency
+
+resolution. Review unexpected dependency changes, scripts, and supply-chain
+
+risks.
+
 /package.json @vivekchoubey444-del
 /package-lock.json @vivekchoubey444-del
 /yarn.lock @vivekchoubey444-del
@@ -68,15 +231,95 @@
 /bun.lock @vivekchoubey444-del
 /bun.lockb @vivekchoubey444-del
 
-# Environment templates and application configuration
+----------------------------------------------------
+
+11. ENVIRONMENT TEMPLATES AND APPLICATION CONFIGURATION
+
+----------------------------------------------------
+
+Non-secret environment templates and application configuration directories.
+
+Never place real production credentials in tracked files.
+
 /.env.example @vivekchoubey444-del
 /.env.*.example @vivekchoubey444-del
 /config/ @vivekchoubey444-del
 
-# Security-sensitive application components
-/src/auth/ @vivekchoubey444-del
-/src/middleware/ @vivekchoubey444-del
-/src/validators/ @vivekchoubey444-del
-/src/controllers/ @vivekchoubey444-del
-/src/services/ @vivekchoubey444-del
-/src/repositories/ @vivekchoubey444-del
+----------------------------------------------------
+
+12. API CONTRACTS, DATASETS, AND RESOURCE CATALOGUES
+
+----------------------------------------------------
+
+Review schema compatibility, source provenance, data integrity, validation,
+
+and accidental disclosure of private or sensitive information.
+
+/assets/data/ @vivekchoubey444-del
+/assets/documents/ @vivekchoubey444-del
+
+----------------------------------------------------
+
+13. RELEASES, VERSIONING, AND PUBLISHING
+
+----------------------------------------------------
+
+Release definitions, versioning policy, release metadata, and package
+
+publication configuration.
+
+/.github/workflows/release.yml @vivekchoubey444-del
+/.github/workflows/publish-package.yml @vivekchoubey444-del
+/CHANGELOG.md @vivekchoubey444-del
+
+----------------------------------------------------
+
+14. SECURITY SCANNING AND DEPENDENCY GOVERNANCE
+
+----------------------------------------------------
+
+Security analysis, dependency review, credential scanning, and security gates.
+
+/.github/workflows/codeql.yml @vivekchoubey444-del
+/.github/workflows/dependency-review.yml @vivekchoubey444-del
+/.github/workflows/secret-scan.yml @vivekchoubey444-del
+/.github/workflows/security.yml @vivekchoubey444-del
+
+----------------------------------------------------
+
+15. CONTINUOUS INTEGRATION AND VALIDATION
+
+----------------------------------------------------
+
+Build checks, tests, JSON/configuration validation, and document validation.
+
+/.github/workflows/ci.yml @vivekchoubey444-del
+/.github/workflows/tests.yml @vivekchoubey444-del
+/.github/workflows/validate-config.yml @vivekchoubey444-del
+/.github/workflows/validate-documents.yml @vivekchoubey444-del
+/.github/workflows/validate-json.yml @vivekchoubey444-del
+
+----------------------------------------------------
+
+16. DEPLOYMENT AND AUTOMATED REPOSITORY UPDATES
+
+----------------------------------------------------
+
+Deployment eligibility, lockfile automation, and official release synchronization.
+
+/.github/workflows/deploy.yml @vivekchoubey444-del
+/.github/workflows/lockfile.yml @vivekchoubey444-del
+/.github/workflows/update-lockfile.yml @vivekchoubey444-del
+/.github/workflows/sync-official-releases.yml @vivekchoubey444-del
+
+----------------------------------------------------
+
+17. OWNERSHIP MAINTENANCE
+
+----------------------------------------------------
+
+Review changes to this file and any ownership policy alongside repository
+
+access, branch rules, and the active maintainer roster.
+
+/.github/CODEOWNERS @vivekchoubey444-del

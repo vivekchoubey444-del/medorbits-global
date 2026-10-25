@@ -1,1 +1,794 @@
-{}
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/job.schema.json",
+  "title": "MedOrbits Job",
+  "description": "Validation schema for MedOrbits job listings, recruitment opportunities, eligibility, compensation, employer information, application requirements, and publication workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "employmentType",
+    "workMode",
+    "location",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+      "description": "Stable, unique job identifier."
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 250,
+      "pattern": ".*\\S.*",
+      "description": "Public-facing job title."
+    },
+    "referenceCode": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 3000
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "responsibilities": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    },
+    "preferredQualifications": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1500
+      }
+    },
+    "employmentType": {
+      "type": "string",
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract",
+        "temporary",
+        "internship",
+        "apprenticeship",
+        "freelance",
+        "consultant",
+        "volunteer",
+        "other"
+      ]
+    },
+    "workMode": {
+      "type": "string",
+      "enum": [
+        "onsite",
+        "remote",
+        "hybrid",
+        "field",
+        "flexible",
+        "other"
+      ]
+    },
+    "workSchedule": {
+      "type": "string",
+      "enum": [
+        "day_shift",
+        "night_shift",
+        "rotational",
+        "flexible_hours",
+        "standard_business_hours",
+        "weekends",
+        "other"
+      ]
+    },
+    "department": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "industry": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "jobCategory": {
+      "type": "string",
+      "enum": [
+        "healthcare",
+        "medical",
+        "dental",
+        "nursing",
+        "paramedical",
+        "pharmacy",
+        "education",
+        "engineering",
+        "information_technology",
+        "management",
+        "sales",
+        "marketing",
+        "finance",
+        "human_resources",
+        "customer_support",
+        "administration",
+        "research",
+        "hospitality",
+        "government",
+        "other"
+      ]
+    },
+    "experience": {
+      "$ref": "#/$defs/experience"
+    },
+    "education": {
+      "$ref": "#/$defs/education"
+    },
+    "skills": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    },
+    "location": {
+      "$ref": "#/$defs/location"
+    },
+    "salary": {
+      "$ref": "#/$defs/salary"
+    },
+    "benefits": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 250
+      }
+    },
+    "vacancies": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "employer": {
+      "$ref": "#/$defs/employer"
+    },
+    "application": {
+      "$ref": "#/$defs/application"
+    },
+    "eligibility": {
+      "$ref": "#/$defs/eligibility"
+    },
+    "visaSponsorshipAvailable": {
+      "type": "boolean"
+    },
+    "relocationAssistance": {
+      "type": "boolean"
+    },
+    "travelRequired": {
+      "type": "boolean"
+    },
+    "applicationDeadline": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "expectedStartDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "publishedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "expiresAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "open",
+        "paused",
+        "closed",
+        "filled",
+        "archived"
+      ],
+      "description": "Job publication and recruitment status."
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "remoteEligibleCountries": {
+      "type": "array",
+      "maxItems": 200,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100
+      }
+    },
+    "applicationCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Server-maintained application count."
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "searchKeywords": {
+      "type": "array",
+      "maxItems": 150,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    },
+    "moderation": {
+      "$ref": "#/$defs/moderation"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated creation timestamp."
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated update timestamp."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "externalId": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "locale": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "lastImportedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "experience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "maximumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "entry_level",
+            "junior",
+            "mid_level",
+            "senior",
+            "lead",
+            "manager",
+            "director",
+            "executive",
+            "not_applicable",
+            "other"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "education": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumQualification": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "preferredQualification": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "acceptedQualifications": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "requiredFieldsOfStudy": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 150
+          }
+        },
+        "equivalentExperienceAccepted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "country"
+      ],
+      "properties": {
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "state": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "district": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "addressLine": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "workplaceName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "multipleLocations": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "city",
+              "country"
+            ],
+            "properties": {
+              "city": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "state": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "country": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 100
+              }
+            }
+          }
+        }
+      }
+    },
+    "salary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "disclosure": {
+          "type": "string",
+          "enum": [
+            "disclosed",
+            "negotiable",
+            "not_disclosed",
+            "competitive",
+            "unpaid"
+          ]
+        },
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "INR"
+        },
+        "period": {
+          "type": "string",
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "year",
+            "project",
+            "stipend",
+            "other"
+          ]
+        },
+        "bonusAvailable": {
+          "type": "boolean"
+        },
+        "commissionAvailable": {
+          "type": "boolean"
+        },
+        "equityAvailable": {
+          "type": "boolean"
+        },
+        "additionalDetails": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "employer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "employerId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Reference to the employer account."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "companyWebsite": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "industry": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "companySize": {
+          "type": "string",
+          "enum": [
+            "1-10",
+            "11-50",
+            "51-200",
+            "201-500",
+            "501-1000",
+            "1001-5000",
+            "5001-10000",
+            "10000_plus",
+            "not_disclosed"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "verified": {
+          "type": "boolean",
+          "default": false,
+          "description": "Employer verification state maintained by authorized server workflows."
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "applicationMethod": {
+          "type": "string",
+          "enum": [
+            "medorbits",
+            "external_website",
+            "email",
+            "walk_in",
+            "other"
+          ]
+        },
+        "applicationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "applicationEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "requiredDocuments": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "questions": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/applicationQuestion"
+          }
+        },
+        "screeningQuestionsRequired": {
+          "type": "boolean"
+        },
+        "applicationDeadlineTimeZone": {
+          "type": "string",
+          "maxLength": 100
+        }
+      }
+    },
+    "applicationQuestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "question",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "textarea",
+            "number",
+            "boolean",
+            "single_choice",
+            "multiple_choice",
+            "date"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "options": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        }
+      }
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumAge": {
+          "type": "integer",
+          "minimum": 14,
+          "maximum": 120
+        },
+        "maximumAge": {
+          "type": "integer",
+          "minimum": 14,
+          "maximum": 120
+        },
+        "workAuthorizationRequired": {
+          "type": "boolean"
+        },
+        "requiredWorkAuthorization": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "languageRequirements": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "language"
+            ],
+            "properties": {
+              "language": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "minimumLevel": {
+                "type": "string",
+                "enum": [
+                  "basic",
+                  "conversational",
+                  "professional",
+                  "fluent",
+                  "native",
+                  "other"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "professionalLicenses": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          }
+        },
+        "additionalCriteria": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1500
+          }
+        }
+      }
+    },
+    "moderation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending_review",
+            "approved",
+            "rejected",
+            "flagged",
+            "not_required"
+          ]
+        },
+        "reviewedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "reviewedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    }
+  }
+}
+

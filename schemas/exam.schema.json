@@ -1,1 +1,1237 @@
-{}
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/exam.schema.json",
+  "title": "MedOrbits Entrance Examination",
+  "description": "Validation schema for entrance examinations, eligibility, registration, schedules, syllabus, exam patterns, results, counselling, and official examination resources.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "category",
+    "examLevel",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+      "description": "Stable, unique examination identifier."
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 250,
+      "pattern": ".*\\S.*",
+      "description": "Official examination name."
+    },
+    "shortName": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "abbreviation": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "medical",
+        "dental",
+        "ayush",
+        "nursing",
+        "paramedical",
+        "engineering",
+        "management",
+        "law",
+        "science",
+        "commerce",
+        "arts",
+        "computer_science",
+        "government_jobs",
+        "teaching",
+        "defence",
+        "study_abroad",
+        "scholarship",
+        "school",
+        "university_admission",
+        "professional_certification",
+        "other"
+      ]
+    },
+    "examLevel": {
+      "type": "string",
+      "enum": [
+        "school",
+        "national",
+        "state",
+        "university",
+        "institution",
+        "international",
+        "professional",
+        "other"
+      ]
+    },
+    "examType": {
+      "type": "string",
+      "enum": [
+        "entrance",
+        "eligibility",
+        "licensing",
+        "recruitment",
+        "certification",
+        "scholarship",
+        "competitive",
+        "placement",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 15000
+    },
+    "overview": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "purpose": {
+      "type": "string",
+      "maxLength": 5000
+    },
+    "conductingAuthority": {
+      "$ref": "#/$defs/authority"
+    },
+    "officialWebsite": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "officialPortal": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "applicableCountries": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100
+      }
+    },
+    "applicableStates": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    },
+    "academicSession": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "Applicable admission or examination session, for example 2026-27."
+    },
+    "examYear": {
+      "type": "integer",
+      "minimum": 1900,
+      "maximum": 2100
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "multiple_times_year",
+        "annual",
+        "biannual",
+        "once_every_two_years",
+        "irregular",
+        "not_applicable",
+        "other"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "computer_based",
+        "offline",
+        "hybrid",
+        "online_proctored",
+        "interview",
+        "physical_test",
+        "multiple_stages",
+        "other"
+      ]
+    },
+    "examLanguages": {
+      "type": "array",
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 80
+      }
+    },
+    "eligibility": {
+      "$ref": "#/$defs/eligibility"
+    },
+    "registration": {
+      "$ref": "#/$defs/registration"
+    },
+    "schedule": {
+      "$ref": "#/$defs/schedule"
+    },
+    "examPattern": {
+      "$ref": "#/$defs/examPattern"
+    },
+    "syllabus": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/syllabusItem"
+      }
+    },
+    "applicationFee": {
+      "$ref": "#/$defs/money"
+    },
+    "admitCard": {
+      "$ref": "#/$defs/resource"
+    },
+    "answerKey": {
+      "$ref": "#/$defs/resource"
+    },
+    "result": {
+      "$ref": "#/$defs/result"
+    },
+    "cutoffs": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "$ref": "#/$defs/cutoff"
+      }
+    },
+    "counselling": {
+      "$ref": "#/$defs/counselling"
+    },
+    "participatingInstitutions": {
+      "type": "array",
+      "maxItems": 2000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": "References to college or university records."
+    },
+    "acceptedCourses": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": "References to course records."
+    },
+    "preparationResources": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/resource"
+      }
+    },
+    "importantInstructions": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    },
+    "frequentlyAskedQuestions": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/faq"
+      }
+    },
+    "officialSources": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "imageUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "brochureUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "upcoming",
+        "registration_open",
+        "registration_closed",
+        "admit_card_available",
+        "exam_scheduled",
+        "exam_completed",
+        "answer_key_available",
+        "result_declared",
+        "counselling_in_progress",
+        "completed",
+        "postponed",
+        "cancelled",
+        "archived"
+      ]
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "verification": {
+      "$ref": "#/$defs/verification"
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "searchKeywords": {
+      "type": "array",
+      "maxItems": 150,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated creation timestamp."
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated update timestamp."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "externalId": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "locale": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "lastImportedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "shortName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "contactEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "contactPhone": {
+          "type": "string",
+          "maxLength": 30,
+          "pattern": "^[+0-9() .-]+$"
+        }
+      }
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumEducation": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "acceptedQualifications": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          }
+        },
+        "minimumPercentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "requiredSubjects": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "minimumAge": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "maximumAge": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "ageAsOfDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "nationalityRequirements": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "domicileRequirements": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "categoryRequirements": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "attemptLimit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "appearingCandidatesAllowed": {
+          "type": "boolean"
+        },
+        "additionalRequirements": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 1500
+          }
+        },
+        "officialSourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_announced",
+            "upcoming",
+            "open",
+            "closed",
+            "extended",
+            "cancelled"
+          ]
+        },
+        "startDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "endDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "correctionWindowStart": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "correctionWindowEnd": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "lateRegistrationEndDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "applicationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "requiredDocuments": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "applicationFeeByCategory": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "category",
+              "fee"
+            ],
+            "properties": {
+              "category": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "fee": {
+                "$ref": "#/$defs/money"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notificationStatus": {
+          "type": "string",
+          "enum": [
+            "not_announced",
+            "tentative",
+            "confirmed",
+            "revised",
+            "postponed",
+            "cancelled"
+          ]
+        },
+        "notificationDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "examStartDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "examEndDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "admitCardReleaseDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "answerKeyDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "resultDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "examTimeZone": {
+          "type": "string",
+          "maxLength": 100,
+          "default": "Asia/Kolkata"
+        },
+        "officialScheduleUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 5000
+        }
+      }
+    },
+    "examPattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "totalQuestions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalMarks": {
+          "type": "number",
+          "minimum": 0
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10080
+        },
+        "sections": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/examSection"
+          }
+        },
+        "questionTypes": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "multiple_choice",
+              "multiple_select",
+              "numerical",
+              "descriptive",
+              "essay",
+              "practical",
+              "oral",
+              "coding",
+              "other"
+            ]
+          }
+        },
+        "markingScheme": {
+          "$ref": "#/$defs/markingScheme"
+        },
+        "negativeMarking": {
+          "type": "boolean"
+        },
+        "calculatorAllowed": {
+          "type": "boolean"
+        },
+        "sectionalTiming": {
+          "type": "boolean"
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "officialSourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "examSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "questions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "marks": {
+          "type": "number",
+          "minimum": 0
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subjects": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "markingScheme": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "correctAnswerMarks": {
+          "type": "number"
+        },
+        "incorrectAnswerMarks": {
+          "type": "number"
+        },
+        "unansweredMarks": {
+          "type": "number"
+        },
+        "partialMarking": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    },
+    "syllabusItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "topics"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "weightagePercentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "topics": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "officialSyllabusUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "INR"
+        },
+        "period": {
+          "type": "string",
+          "enum": [
+            "one_time",
+            "per_attempt",
+            "per_paper",
+            "other"
+          ]
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "resourceType": {
+          "type": "string",
+          "enum": [
+            "admit_card",
+            "answer_key",
+            "result",
+            "scorecard",
+            "syllabus",
+            "notification",
+            "prospectus",
+            "mock_test",
+            "preparation_material",
+            "counselling",
+            "other"
+          ]
+        },
+        "publishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "official": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_announced",
+            "expected",
+            "declared",
+            "revised",
+            "withheld",
+            "cancelled"
+          ]
+        },
+        "declarationDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "resultUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "scorecardUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "minimumQualifyingMarks": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "maximumMarks": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "validityPeriod": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    },
+    "cutoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "category"
+      ],
+      "properties": {
+        "year": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "round": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "openingRank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "closingRank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "minimumMarks": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "percentile": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "institutionId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "courseId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "counselling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "authority": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_applicable",
+            "not_announced",
+            "upcoming",
+            "registration_open",
+            "choice_filling",
+            "seat_allotment",
+            "reporting",
+            "completed",
+            "cancelled"
+          ]
+        },
+        "registrationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "scheduleUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "startDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "endDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "rounds": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 150
+              },
+              "startDate": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "endDate": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "upcoming",
+                  "open",
+                  "completed",
+                  "postponed",
+                  "cancelled"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "faq": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question",
+        "answer"
+      ],
+      "properties": {
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "authority": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "official_notification",
+            "official_website",
+            "government_portal",
+            "prospectus",
+            "syllabus",
+            "result_notice",
+            "counselling_notice",
+            "other"
+          ]
+        },
+        "publishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "pending_review",
+            "verified",
+            "needs_update",
+            "archived"
+          ]
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "verifiedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    }
+  }
+}
+

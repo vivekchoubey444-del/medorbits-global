@@ -1,3 +1,4 @@
+
 {
   "allowed_hosts": [
     "YOUR-TRUSTED-SOURCE-DOMAIN"
@@ -9,6 +10,250 @@
       "format": "json",
       "category": "announcement",
       "enabled": false
+    },
+    {
+      "name": "MedOrbits Notifications",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/announcements.json",
+      "format": "json",
+      "category": "notification",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits News and Updates",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/news.json",
+      "format": "json",
+      "category": "news",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Admission Updates",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/admission-process.json",
+      "format": "json",
+      "category": "admission",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits College Catalogue",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/colleges.json",
+      "format": "json",
+      "category": "college",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits University Catalogue",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/universities.json",
+      "format": "json",
+      "category": "university",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Course Catalogue",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/courses.json",
+      "format": "json",
+      "category": "course",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Entrance Examinations",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/entrance-exams.json",
+      "format": "json",
+      "category": "exam",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Scholarships",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/scholarships.json",
+      "format": "json",
+      "category": "scholarship",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Fee Structures",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/fees.json",
+      "format": "json",
+      "category": "fee",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Hostel Information",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/hostels.json",
+      "format": "json",
+      "category": "hostel",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Career Options",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/career-options.json",
+      "format": "json",
+      "category": "career",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Job Opportunities",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/jobs.json",
+      "format": "json",
+      "category": "job",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Services",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/services.json",
+      "format": "json",
+      "category": "service",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Frequently Asked Questions",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/faqs.json",
+      "format": "json",
+      "category": "faq",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Testimonials",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/testimonials.json",
+      "format": "json",
+      "category": "testimonial",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Document Resources",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/documents.json",
+      "format": "json",
+      "category": "document_resource",
+      "enabled": false
+    },
+    {
+      "name": "MedOrbits Country Catalogue",
+      "url": "https://YOUR-TRUSTED-SOURCE-DOMAIN/countries.json",
+      "format": "json",
+      "category": "country",
+      "enabled": false
     }
-  ]
+  ],
+  "settings": {
+    "enabled": true,
+    "environment": "production",
+    "request_timeout_ms": 15000,
+    "max_response_bytes": 5242880,
+    "max_redirects": 3,
+    "max_sources_per_run": 25,
+    "max_records_per_source": 500,
+    "max_concurrent_sources": 3,
+    "refresh_interval_minutes": 1440,
+    "user_agent": "MedOrbits-Live-Source-Importer/1.0",
+    "require_https": true,
+    "verify_tls_certificates": true,
+    "follow_redirects": true,
+    "allow_unlisted_hosts": false,
+    "allow_private_networks": false,
+    "block_loopback_addresses": true,
+    "block_cloud_metadata_endpoints": true,
+    "validate_redirect_destinations": true,
+    "respect_robots_txt": true
+  },
+  "validation": {
+    "enabled": true,
+    "allowed_formats": [
+      "json"
+    ],
+    "require_json_object_or_array": true,
+    "reject_empty_responses": true,
+    "reject_invalid_json": true,
+    "reject_unknown_categories": true,
+    "require_source_attribution": true,
+    "require_canonical_url": true,
+    "validate_before_import": true,
+    "validate_before_publication": true,
+    "reject_duplicate_records": true,
+    "quarantine_invalid_records": true,
+    "maximum_title_length": 500,
+    "maximum_description_length": 20000
+  },
+  "deduplication": {
+    "enabled": true,
+    "match_fields": [
+      "id",
+      "slug",
+      "canonicalUrl",
+      "url"
+    ],
+    "use_content_hash": true,
+    "preserve_existing_record_ids": true,
+    "update_changed_records": true,
+    "delete_missing_records": false
+  },
+  "publication": {
+    "enabled": true,
+    "mode": "review_required",
+    "auto_publish": false,
+    "require_human_approval": true,
+    "require_verified_source": true,
+    "preserve_manual_edits": true,
+    "allow_imported_records_to_overwrite_manual_records": false,
+    "default_status": "pending_review"
+  },
+  "retry": {
+    "enabled": true,
+    "max_attempts": 3,
+    "initial_delay_ms": 1000,
+    "max_delay_ms": 30000,
+    "backoff_multiplier": 2,
+    "respect_retry_after": true,
+    "retry_status_codes": [
+      408,
+      425,
+      429,
+      500,
+      502,
+      503,
+      504
+    ]
+  },
+  "rate_limit": {
+    "requests_per_minute_per_host": 10,
+    "minimum_delay_ms": 1000,
+    "stop_after_repeated_rate_limits": true
+  },
+  "change_detection": {
+    "enabled": true,
+    "compare_content_hash": true,
+    "track_first_seen": true,
+    "track_last_seen": true,
+    "track_last_changed": true,
+    "retain_change_history": true,
+    "important_fields": [
+      "title",
+      "description",
+      "status",
+      "applicationDeadline",
+      "registrationStartDate",
+      "registrationEndDate",
+      "examDate",
+      "resultDate",
+      "officialUrl"
+    ]
+  },
+  "storage": {
+    "store_raw_responses": false,
+    "store_normalized_records": true,
+    "store_content_hashes": true,
+    "store_source_metadata": true,
+    "store_request_headers": false,
+    "store_personal_data": false,
+    "retention_days": 90,
+    "quarantine_retention_days": 30
+  },
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "log_request_bodies": false,
+    "log_response_bodies": false,
+    "redact_authorization_headers": true,
+    "redact_cookies": true,
+    "audit_imports": true,
+    "alert_on_repeated_failures": true,
+    "alert_on_validation_failures": true,
+    "alert_on_source_domain_changes": true
+  }
 }

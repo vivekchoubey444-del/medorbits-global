@@ -1,10 +1,27 @@
-# .github/dependabot.yml
-version: 2
+File: .github/dependabot.yml
 
+# ==============================================================================
+# MedOrbits -- Dependabot Configuration
+#
+# Purpose:
+# Automate dependency version updates for npm, GitHub Actions, and Docker.
+#
+# Policy:
+# - Group compatible minor and patch updates to reduce pull-request noise.
+# - Keep major updates separate for focused compatibility review.
+# - Apply cooldowns to version updates; security updates are handled separately.
+# - Require CI and appropriate review before merging dependency changes.
+#
+# Documentation:
+# https://docs.github.com/en/code-security/dependabot
+# ==============================================================================
+version: 2
 updates:
-  # 1. NPM
+  # ---------------------------------------------------------------------------
+  # 1. NPM DEPENDENCIES
+  # ---------------------------------------------------------------------------
   - package-ecosystem: npm
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
@@ -19,32 +36,34 @@ updates:
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
-    # Cooldown applies to version updates only, not security updates.
+      include: scope
+    # Cooldown affects version updates, not security updates.
     cooldown:
       default-days: 7
       semver-major-days: 14
       semver-minor-days: 7
       semver-patch-days: 3
     groups:
-      production-dependencies:
+      production-minor-patch:
         dependency-type: production
         update-types:
           - minor
           - patch
-      development-dependencies:
+      development-minor-patch:
         dependency-type: development
         update-types:
           - minor
           - patch
-    # Major updates stay as separate PRs for focused review.
-
-  # 2. GitHub Actions
+    # Major updates remain separate for focused compatibility testing.
+  # ---------------------------------------------------------------------------
+  # 2. GITHUB ACTIONS
+  # ---------------------------------------------------------------------------
   - package-ecosystem: github-actions
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: "09:30"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
     labels:
@@ -53,23 +72,29 @@ updates:
       - ci
     commit-message:
       prefix: "ci"
+      include: scope
     cooldown:
       default-days: 7
     groups:
-      github-actions:
+      github-actions-minor-patch:
         patterns:
           - "*"
         update-types:
           - minor
           - patch
-
-  # 3. Docker (remove if there is no Dockerfile at the repo root)
+    # Major action upgrades remain separate for compatibility and security
+    # review. Review permissions, action inputs, and breaking changes.
+  # ---------------------------------------------------------------------------
+  # 3. DOCKER BASE IMAGES
+  # ---------------------------------------------------------------------------
+  # Keep this entry only if a Dockerfile exists at the repository root.
+  # For Dockerfiles in subdirectories, configure the corresponding directory.
   - package-ecosystem: docker
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: "10:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
     labels:
@@ -78,5 +103,8 @@ updates:
       - infrastructure
     commit-message:
       prefix: "docker"
+      include: scope
     cooldown:
       default-days: 7
+    # Review base-image changes for security updates, compatibility, image
+    # provenance, and deployment impact before merging.

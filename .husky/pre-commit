@@ -1,141 +1,174 @@
-
 #!/usr/bin/env sh
 # MedOrbits pre-commit quality checks
 # Purpose: Run configured quality checks before allowing a commit.
-
+#
+# Default:
+#   Run ESLint when the "lint" script is configured.
+#
+# Full mode:
+#   MEDORBITS_PRECOMMIT_FULL=1
+#   Runs lint, formatting validation, and tests when configured.
+#
+# Exit codes:
+#   0 = All configured checks passed
+#   1 = A required check failed or setup was invalid
 set -eu
-
-echo ""
-echo "MedOrbits: Running pre-commit checks..."
-echo ""
-
+printf '\n%s\n\n' "MedOrbits: Running pre-commit checks..."
 # --------------------------------------------------
 # 1. Locate the repository root
 # --------------------------------------------------
 if ! repo_root=$(git rev-parse --show-toplevel 2>/dev/null); then
-    echo "ERROR: Unable to determine the Git repository root." >&2
+    printf '%s\n' \
+        "ERROR: Unable to determine the Git repository root." >&2
     exit 1
 fi
-
-cd "$repo_root"
-
+if ! cd "$repo_root"; then
+    printf '%s\n' \
+        "ERROR: Unable to enter the repository root." >&2
+    exit 1
+fi
 # --------------------------------------------------
-# 2. Verify required project files and tools
+# 2. Validate required project files and tools
 # --------------------------------------------------
 if [ ! -f package.json ]; then
-    echo "ERROR: package.json was not found at the repository root." >&2
+    printf '%s\n' \
+        "ERROR: package.json was not found at the repository root." >&2
     exit 1
 fi
-
 if ! command -v node >/dev/null 2>&1; then
-    echo "ERROR: Node.js is required to run pre-commit checks." >&2
+    printf '%s\n' \
+        "ERROR: Node.js is required to run pre-commit checks." >&2
     exit 1
 fi
-
 if ! command -v npm >/dev/null 2>&1; then
-    echo "ERROR: npm is required to run pre-commit checks." >&2
+    printf '%s\n' \
+        "ERROR: npm is required to run pre-commit checks." >&2
     exit 1
 fi
-
 # --------------------------------------------------
-# 3. Detect configured npm scripts
+# 3. Validate package.json
+# --------------------------------------------------
+if ! node -e '
+    const fs = require("node:fs");
+    try {
+        const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+        );
+        if (
+            !pkg ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+        ) {
+            throw new Error("package.json must contain a JSON object.");
+        }
+    } catch (error) {
+        console.error(
+            "ERROR: Invalid package.json:",
+            error.message
+        );
+        process.exit(1);
+    }
+'; then
+    printf '%s\n' \
+        "ERROR: Project package metadata validation failed." >&2
+    exit 1
+fi
+# --------------------------------------------------
+# 4. Detect configured npm scripts
+#
 # Return codes:
-#   0 = script exists
-#   1 = script is not configured
+#   0 = Script exists
+#   1 = Script is not configured
 #   2 = package.json could not be inspected
 # --------------------------------------------------
 has_script() {
     node -e '
         const fs = require("node:fs");
-
         try {
             const pkg = JSON.parse(
                 fs.readFileSync("package.json", "utf8")
             );
-
             const name = process.argv[1];
-
-            process.exit(
+            if (
                 pkg.scripts &&
                 typeof pkg.scripts[name] === "string" &&
                 pkg.scripts[name].trim() !== ""
-                    ? 0
-                    : 1
-            );
+            ) {
+                process.exit(0);
+            }
+            process.exit(1);
         } catch (error) {
             console.error(
-                "ERROR: Unable to read package.json:",
+                "ERROR: Unable to inspect package.json:",
                 error.message
             );
             process.exit(2);
         }
     ' "$1"
 }
-
 # --------------------------------------------------
-# 4. Run configured quality checks
+# 5. Run configured quality checks
 # --------------------------------------------------
 checks_run=0
 checks_skipped=0
-
 run_check() {
     check_name=$1
     script_name=$2
-
     if has_script "$script_name"; then
         :
     else
         result=$?
-
         if [ "$result" -gt 1 ]; then
-            echo "ERROR: Could not inspect npm script '$script_name'." >&2
+            printf 'ERROR: Could not inspect npm script "%s".\n' \
+                "$script_name" >&2
             exit 1
         fi
-
-        echo "WARNING: Skipping $check_name."
-        echo "Reason: npm script '$script_name' is not configured."
-
+        printf '\nWARNING: Skipping %s.\n' "$check_name"
+        printf 'Reason: npm script "%s" is not configured.\n' \
+            "$script_name"
         checks_skipped=$((checks_skipped + 1))
         return 0
     fi
-
-    echo ""
-    echo "----------------------------------------"
-    echo "Running $check_name..."
-    echo "----------------------------------------"
-
+    printf '\n%s\n' "----------------------------------------"
+    printf 'Running %s (npm run %s)...\n' \
+        "$check_name" "$script_name"
+    printf '%s\n' "----------------------------------------"
     if npm run "$script_name"; then
         checks_run=$((checks_run + 1))
-        echo "PASS: $check_name"
+        printf 'PASS: %s\n' "$check_name"
     else
-        echo "FAIL: $check_name" >&2
-        echo "Commit blocked because a configured check failed." >&2
+        printf 'FAIL: %s\n' "$check_name" >&2
+        printf '%s\n' \
+            "Commit blocked because a configured check failed." >&2
         exit 1
     fi
 }
-
-# Always run ESLint when configured.
+# ESLint runs whenever the project defines "lint".
 run_check "ESLint" "lint"
-
-# Optional full checks.
-if [ "${MEDORBITS_PRECOMMIT_FULL:-0}" = "1" ]; then
-    run_check "Prettier formatting validation" "format:check"
-    run_check "Automated tests" "test"
-else
-    echo ""
-    echo "INFO: Skipping optional formatting and test checks."
-    echo "INFO: Set MEDORBITS_PRECOMMIT_FULL=1 to enable them."
-fi
-
+# Full mode enables additional checks when their scripts exist.
+case "${MEDORBITS_PRECOMMIT_FULL:-0}" in
+    1)
+        run_check "Prettier formatting validation" "format:check"
+        run_check "Automated tests" "test"
+        ;;
+    0)
+        printf '\n%s\n' \
+            "INFO: Optional formatting and test checks are disabled."
+        printf '%s\n' \
+            "INFO: Set MEDORBITS_PRECOMMIT_FULL=1 to enable them."
+        ;;
+    *)
+        printf '%s\n' \
+            "ERROR: MEDORBITS_PRECOMMIT_FULL must be 0 or 1." >&2
+        exit 1
+        ;;
+esac
 # --------------------------------------------------
-# 5. Report results
+# 6. Report results
 # --------------------------------------------------
-echo ""
-echo "========================================"
-echo "MedOrbits: Pre-commit checks completed."
-echo "Configured checks passed: $checks_run"
-echo "Checks skipped: $checks_skipped"
-echo "========================================"
-echo ""
-
+printf '\n%s\n' "========================================"
+printf '%s\n' "MedOrbits: Pre-commit checks completed."
+printf 'Configured checks passed: %s\n' "$checks_run"
+printf 'Checks skipped: %s\n' "$checks_skipped"
+printf '%s\n\n' "========================================"
 exit 0

@@ -1,1 +1,437 @@
-{}
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/api/schemas/user.schema.json",
+  "title": "MedOrbits User",
+  "description": "Validation schema for MedOrbits user accounts and profiles.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "emailVerified": {
+      "type": "boolean",
+      "default": false
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+[1-9][0-9]{7,14}$",
+      "description": "Phone number in international E.164 format."
+    },
+    "phoneVerified": {
+      "type": "boolean",
+      "default": false
+    },
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 30,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "lastName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "format": "date"
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "male",
+            "female",
+            "non-binary",
+            "prefer-not-to-say",
+            "other"
+          ]
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+        },
+        "timezone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        }
+      }
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "student",
+        "applicant",
+        "job-seeker",
+        "educator",
+        "counsellor",
+        "recruiter",
+        "institution",
+        "employer",
+        "content-editor",
+        "support-agent",
+        "admin",
+        "super-admin"
+      ],
+      "default": "student"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "student",
+          "applicant",
+          "job-seeker",
+          "educator",
+          "counsellor",
+          "recruiter",
+          "institution",
+          "employer",
+          "content-editor",
+          "support-agent",
+          "admin",
+          "super-admin"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 12
+    },
+    "accountStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "suspended",
+        "locked",
+        "deactivated",
+        "deleted"
+      ],
+      "default": "pending"
+    },
+    "authProvider": {
+      "type": "string",
+      "enum": [
+        "local",
+        "google",
+        "apple",
+        "microsoft",
+        "other"
+      ],
+      "default": "local"
+    },
+    "providerUserId": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "passwordHash": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Server-generated password hash only. Never accept a client-supplied hash."
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": [
+            "system",
+            "light",
+            "dark"
+          ],
+          "default": "system"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+          "default": "en"
+        },
+        "emailNotifications": {
+          "type": "boolean",
+          "default": true
+        },
+        "smsNotifications": {
+          "type": "boolean",
+          "default": false
+        },
+        "pushNotifications": {
+          "type": "boolean",
+          "default": true
+        },
+        "marketingEmails": {
+          "type": "boolean",
+          "default": false
+        },
+        "jobAlerts": {
+          "type": "boolean",
+          "default": true
+        },
+        "admissionAlerts": {
+          "type": "boolean",
+          "default": true
+        },
+        "newsletter": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identityStatus": {
+          "type": "string",
+          "enum": [
+            "not-required",
+            "pending",
+            "verified",
+            "rejected",
+            "expired"
+          ],
+          "default": "not-required"
+        },
+        "identityVerifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "educationStatus": {
+          "type": "string",
+          "enum": [
+            "not-submitted",
+            "pending",
+            "verified",
+            "rejected"
+          ],
+          "default": "not-submitted"
+        },
+        "professionalStatus": {
+          "type": "string",
+          "enum": [
+            "not-submitted",
+            "pending",
+            "verified",
+            "rejected"
+          ],
+          "default": "not-submitted"
+        }
+      }
+    },
+    "organization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "organizationId": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "organizationName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "designation": {
+          "type": "string",
+          "maxLength": 150
+        }
+      }
+    },
+    "subscription": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "planId": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "none",
+            "trial",
+            "active",
+            "past-due",
+            "cancelled",
+            "expired"
+          ],
+          "default": "none"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "autoRenew": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mfaEnabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "failedLoginAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 0
+        },
+        "passwordChangedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastLoginIp": {
+          "type": "string",
+          "maxLength": 45,
+          "description": "Optional IPv4 or IPv6 address recorded by the server."
+        }
+      }
+    },
+    "consents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "termsAccepted": {
+          "type": "boolean"
+        },
+        "termsAcceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "privacyAccepted": {
+          "type": "boolean"
+        },
+        "privacyAcceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "marketingConsent": {
+          "type": "boolean",
+          "default": false
+        },
+        "marketingConsentAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deactivatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdBy": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "updatedBy": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional non-sensitive application-specific metadata.",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "email",
+    "role",
+    "accountStatus"
+  ],
+  "$defs": {
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "state": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "district": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20
+        }
+      }
+    }
+  }
+}
+

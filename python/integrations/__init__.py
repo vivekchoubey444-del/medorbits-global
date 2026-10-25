@@ -1,11 +1,12 @@
+
 """
 MedOrbits Integrations Package
 ==============================
 
 Provides the package namespace and public metadata for MedOrbits integrations.
 
-This package serves as the foundation for external API clients, third-party
-service adapters, internal service connectors, and integration utilities.
+This package is the foundation for external API clients, third-party service
+adapters, internal service connectors, and integration utilities.
 
 Design principles:
     - Lightweight and deterministic package initialization.
@@ -14,14 +15,15 @@ Design principles:
     - Stable, explicitly declared package metadata.
     - Compatibility with automated testing and continuous integration.
     - Clear separation between package initialization and provider logic.
+    - Explicit public exports without importing provider implementations.
 
 Security principles:
     - Never hardcode credentials, API keys, or access tokens.
     - Load secrets from environment variables or a dedicated secrets manager.
     - Never expose credentials or sensitive personal information in logs.
     - Validate external inputs at the appropriate integration boundary.
-    - Apply timeouts, TLS verification, and safe error handling in provider
-      implementations.
+    - Apply timeouts, TLS verification, and safe error handling in providers.
+    - Treat external responses as untrusted input.
 
 Compatibility:
     Python 3.10+
@@ -49,8 +51,18 @@ __python_requires__: Final[str] = ">=3.10"
 # ---------------------------------------------------------------------------
 # Public package interface
 # ---------------------------------------------------------------------------
+#
+# Provider clients and adapters should be imported explicitly from their
+# respective modules. Avoid importing them here so that package initialization
+# remains lightweight and does not require optional dependencies.
+#
+# Example:
+#     from python.integrations.example_client import ExampleClient
+#
+# Replace the example module above with a real module when one exists.
+# ---------------------------------------------------------------------------
 
-__all__ = [
+__all__: Final[list[str]] = [
     "__title__",
     "__version__",
     "__description__",

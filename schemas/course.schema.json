@@ -1,1 +1,989 @@
-{}
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/course.schema.json",
+  "title": "MedOrbits Course",
+  "description": "Validation schema for MedOrbits education catalogue courses, eligibility criteria, admission requirements, fee structures, examinations, career outcomes, and official references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "category",
+    "level",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+      "description": "Stable, unique course identifier."
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "URL-friendly course identifier."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 250,
+      "pattern": ".*\\S.*",
+      "description": "Full course or qualification name."
+    },
+    "shortName": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "abbreviation": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "medical",
+        "dental",
+        "ayush",
+        "nursing",
+        "paramedical",
+        "pharmacy",
+        "engineering",
+        "management",
+        "law",
+        "science",
+        "arts",
+        "commerce",
+        "computer_science",
+        "information_technology",
+        "education",
+        "agriculture",
+        "architecture",
+        "design",
+        "hospitality",
+        "vocational",
+        "study_abroad",
+        "other"
+      ]
+    },
+    "subcategory": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "school",
+        "certificate",
+        "diploma",
+        "advanced_diploma",
+        "undergraduate",
+        "postgraduate_diploma",
+        "postgraduate",
+        "doctoral",
+        "postdoctoral",
+        "fellowship",
+        "professional",
+        "vocational",
+        "other"
+      ]
+    },
+    "qualificationType": {
+      "type": "string",
+      "enum": [
+        "degree",
+        "diploma",
+        "certificate",
+        "professional_qualification",
+        "fellowship",
+        "short_course",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 15000
+    },
+    "overview": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "objectives": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
+    "learningOutcomes": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
+    "duration": {
+      "$ref": "#/$defs/duration"
+    },
+    "studyModes": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "enum": [
+          "on_campus",
+          "online",
+          "hybrid",
+          "distance",
+          "part_time",
+          "full_time",
+          "weekend",
+          "self_paced"
+        ]
+      }
+    },
+    "languageOfInstruction": {
+      "type": "array",
+      "maxItems": 30,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 80
+      }
+    },
+    "eligibility": {
+      "$ref": "#/$defs/eligibility"
+    },
+    "entranceExams": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/entranceExam"
+      }
+    },
+    "admission": {
+      "$ref": "#/$defs/admission"
+    },
+    "curriculum": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/curriculumItem"
+      }
+    },
+    "specializations": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    },
+    "fees": {
+      "$ref": "#/$defs/feeStructure"
+    },
+    "scholarships": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/scholarship"
+      }
+    },
+    "careerOptions": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/careerOption"
+      }
+    },
+    "skills": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "accreditationRequirements": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "$ref": "#/$defs/accreditation"
+      }
+    },
+    "availableColleges": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": "References to college records by ID."
+    },
+    "availableUniversities": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": "References to university records by ID."
+    },
+    "countriesAvailable": {
+      "type": "array",
+      "maxItems": 200,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100
+      }
+    },
+    "relatedCourses": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "officialResources": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/resource"
+      }
+    },
+    "brochureUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "applicationUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "officialWebsite": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "imageUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "icon": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "academicSession": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "Applicable academic session, such as 2026-27."
+    },
+    "lastDateToApply": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "admissions_open",
+        "admissions_closed",
+        "upcoming",
+        "temporarily_unavailable",
+        "archived"
+      ],
+      "description": "Catalogue publication or availability status."
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the record has passed the application's verification process."
+    },
+    "verification": {
+      "$ref": "#/$defs/verification"
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "searchKeywords": {
+      "type": "array",
+      "maxItems": 150,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated creation timestamp."
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-generated update timestamp."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "externalId": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "locale": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "lastImportedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "days",
+            "weeks",
+            "months",
+            "years",
+            "semesters"
+          ]
+        },
+        "minimumMonths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximumMonths": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ]
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumEducation": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "requiredQualifications": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          }
+        },
+        "minimumPercentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "minimumAge": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "maximumAge": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "ageAsOfDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "requiredSubjects": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "nationalityRequirements": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "domicileRequirements": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "additionalRequirements": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "officialSourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "entranceExam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "shortName": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "examLevel": {
+          "type": "string",
+          "enum": [
+            "national",
+            "state",
+            "university",
+            "institution",
+            "international",
+            "other"
+          ]
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "conductingAuthority": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "officialWebsite": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "examYear": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        "minimumScore": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minimumRank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "process": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "counsellingRequired": {
+          "type": "boolean"
+        },
+        "counsellingAuthority": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "applicationStartDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "applicationEndDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "academicSession": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "applicationFee": {
+          "$ref": "#/$defs/money"
+        },
+        "requiredDocuments": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "officialAdmissionUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    },
+    "curriculumItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "year": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "semester": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "subjects": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "credits": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "feeStructure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "INR"
+        },
+        "minimumTotal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximumTotal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tuitionFee": {
+          "$ref": "#/$defs/money"
+        },
+        "registrationFee": {
+          "$ref": "#/$defs/money"
+        },
+        "examinationFee": {
+          "$ref": "#/$defs/money"
+        },
+        "laboratoryFee": {
+          "$ref": "#/$defs/money"
+        },
+        "hostelFee": {
+          "$ref": "#/$defs/money"
+        },
+        "otherFees": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "amount"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 150
+              },
+              "amount": {
+                "type": "number",
+                "minimum": 0
+              },
+              "period": {
+                "type": "string",
+                "enum": [
+                  "one_time",
+                  "per_year",
+                  "per_semester",
+                  "per_month",
+                  "total",
+                  "other"
+                ]
+              }
+            }
+          }
+        },
+        "feeNotes": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "officialFeeUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "INR"
+        },
+        "period": {
+          "type": "string",
+          "enum": [
+            "one_time",
+            "per_year",
+            "per_semester",
+            "per_month",
+            "total",
+            "per_credit",
+            "other"
+          ]
+        }
+      }
+    },
+    "scholarship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "eligibility": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "amount": {
+          "$ref": "#/$defs/money"
+        },
+        "applicationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "officialSourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "careerOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "industries": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "requiredFurtherStudy": {
+          "type": "boolean"
+        },
+        "salaryRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "currency"
+          ],
+          "properties": {
+            "minimum": {
+              "type": "number",
+              "minimum": 0
+            },
+            "maximum": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "period": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "month",
+                "year"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "accreditation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority"
+      ],
+      "properties": {
+        "authority": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "requirement": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "referenceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "resourceType": {
+          "type": "string",
+          "enum": [
+            "official_notice",
+            "prospectus",
+            "syllabus",
+            "eligibility",
+            "fee_structure",
+            "admission_portal",
+            "exam_portal",
+            "scholarship",
+            "career_information",
+            "other"
+          ]
+        },
+        "authority": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "publishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "pending_review",
+            "verified",
+            "needs_update",
+            "archived"
+          ]
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "verifiedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 3000
+        }
+      }
+    }
+  }
+}
+
