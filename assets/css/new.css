@@ -1,0 +1,731 @@
+
+/* ============================================================
+   MEDORBITS -- LUXURY DESIGN SYSTEM
+   Theme: Burgundy Noir + Champagne Gold
+   Background: /assets/images/home/medorbits-luxury-bg.jpg
+   ============================================================ */
+
+/* 01. DESIGN TOKENS */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #19040b;
+  --deep: #090207;
+  --surface: #2a0711;
+  --surface2: #45101c;
+
+  --blue: #e7b45d;
+  --blue-light: #ffe5ad;
+  --gold: #e7b45d;
+
+  --text: #fff5e8;
+  --muted: #d0b6ad;
+
+  --border: rgba(231, 180, 93, .27);
+  --shadow: 0 25px 70px rgba(0, 0, 0, .48);
+
+  --mo-burgundy: #310914;
+  --mo-burgundy-light: #651a2b;
+  --mo-champagne: #ffe5ad;
+  --mo-gold: #e7b45d;
+  --mo-cream: #fff5e8;
+
+  --mo-bg-image: url("/assets/images/home/medorbits-luxury-bg.jpg");
+
+  --mo-transition-fast: 180ms ease;
+  --mo-transition: 320ms ease;
+  --mo-transition-slow: 750ms cubic-bezier(.2, .7, .2, 1);
+}
+
+/* 02. GLOBAL BACKGROUND AND TYPOGRAPHY */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 95px;
+}
+
+body {
+  color: var(--text);
+  background-color: var(--deep);
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(12, 2, 7, .78),
+      rgba(29, 3, 12, .87) 48%,
+      rgba(8, 2, 6, .94)
+    ),
+    var(--mo-bg-image);
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+body.modal-open,
+body.intro-active {
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  color: #240711;
+  background: var(--mo-champagne);
+}
+
+:focus-visible {
+  outline: 2px solid var(--mo-champagne);
+  outline-offset: 4px;
+}
+
+.container {
+  width: min(var(--max, 1180px), calc(100% - 40px));
+  margin-inline: auto;
+}
+
+/* 03. BUTTONS AND INTERACTIVE ELEMENTS */
+
+.btn {
+  border-color: var(--mo-gold);
+  background: linear-gradient(
+    135deg,
+    var(--mo-champagne),
+    #d99a3e
+  );
+  color: #240711;
+  transition:
+    transform var(--mo-transition-fast),
+    filter var(--mo-transition-fast),
+    box-shadow var(--mo-transition-fast);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+  box-shadow: 0 9px 28px rgba(231, 180, 93, .14);
+}
+
+.btn-outline,
+.btn-quiet {
+  border-color: rgba(231, 180, 93, .36);
+  color: var(--mo-champagne);
+}
+
+.btn-outline {
+  background: rgba(231, 180, 93, .06);
+}
+
+.btn-quiet {
+  background: rgba(20, 3, 9, .32);
+}
+
+.btn-outline:hover,
+.btn-quiet:hover {
+  border-color: var(--mo-gold);
+  background: rgba(231, 180, 93, .1);
+}
+
+/* 04. CINEMATIC INTRODUCTION */
+
+.intro {
+  isolation: isolate;
+  background-color: #090207;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(12, 2, 7, .76),
+      rgba(29, 3, 12, .9)
+    ),
+    var(--mo-bg-image);
+  background-position: center;
+  background-size: cover;
+  transition:
+    opacity 700ms ease,
+    visibility 700ms ease;
+}
+
+.intro::before {
+  z-index: -1;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      transparent 0 90px,
+      rgba(231, 180, 93, .035) 91px,
+      transparent 92px 180px
+    );
+}
+
+.intro.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.emblem-ring {
+  border-color: rgba(231, 180, 93, .35);
+}
+
+.emblem-ring::before {
+  background: var(--mo-champagne);
+  box-shadow: 0 0 16px var(--mo-gold);
+}
+
+.emblem-logo,
+.hero-monogram {
+  border-color: rgba(231, 180, 93, .35);
+  background: linear-gradient(
+    145deg,
+    #651a2b,
+    #1a040c 78%
+  );
+}
+
+.intro-kicker,
+.intro-tagline,
+.intro-caption {
+  text-wrap: balance;
+}
+
+.intro-kicker {
+  color: var(--mo-gold);
+}
+
+.brand-blue,
+.intro-tagline {
+  color: var(--mo-champagne);
+}
+
+.intro-rule {
+  background: rgba(231, 180, 93, .18);
+}
+
+.intro-rule span {
+  background: var(--mo-champagne);
+}
+
+.intro-skip {
+  border-color: var(--border);
+  background: rgba(20, 3, 9, .85);
+  color: var(--mo-champagne);
+}
+
+/* 05. HEADER AND NAVIGATION */
+
+.topline {
+  background: #100208;
+  color: var(--mo-champagne);
+}
+
+.site-header {
+  border-color: var(--border);
+  background: rgba(13, 2, 7, .93);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.brand strong {
+  color: var(--mo-champagne);
+}
+
+.main-nav > a:hover,
+.nav-trigger:hover,
+.dropdown a:hover {
+  color: var(--mo-champagne);
+}
+
+.dropdown {
+  border-color: var(--border);
+  background: #260711;
+}
+
+.dropdown a:hover {
+  background: rgba(231, 180, 93, .09);
+}
+
+.menu-toggle {
+  border-color: var(--border);
+  color: var(--mo-champagne);
+}
+
+/* 06. NOTIFICATIONS */
+
+.mo-notification {
+  border-color: var(--border);
+  background: linear-gradient(
+    100deg,
+    #210610,
+    #511324 48%,
+    #210610
+  );
+  color: var(--mo-champagne);
+}
+
+.mo-notification__label,
+.mo-notification__link,
+.mo-notification__all {
+  color: var(--mo-champagne);
+}
+
+.mo-notification__pulse {
+  background: var(--mo-gold);
+  box-shadow: 0 0 0 4px rgba(231, 180, 93, .14);
+}
+
+/* 07. HERO AND ORBITAL GRAPHICS */
+
+.hero::before {
+  border-color: rgba(231, 180, 93, .12);
+  box-shadow:
+    0 0 0 70px rgba(231, 180, 93, .025),
+    0 0 0 140px rgba(231, 180, 93, .015);
+}
+
+.hero h1 span,
+.hero-proof span::before {
+  color: var(--mo-champagne);
+}
+
+.orbital {
+  border-color: rgba(231, 180, 93, .3);
+}
+
+.orbital::before {
+  border-color: rgba(231, 180, 93, .22);
+}
+
+.orbital::after {
+  background: var(--mo-champagne);
+  box-shadow: 0 0 22px var(--mo-gold);
+}
+
+.orbit-label {
+  border-color: var(--border);
+  background: rgba(22, 3, 10, .92);
+  color: var(--mo-champagne);
+}
+
+/* 08. SECTIONS AND HEADINGS */
+
+.section.alt,
+.directory-section {
+  border-color: rgba(231, 180, 93, .15);
+  background: linear-gradient(
+    180deg,
+    rgba(14, 2, 7, .78),
+    rgba(39, 6, 17, .86)
+  );
+}
+
+.section-head h2 span {
+  color: var(--mo-champagne);
+}
+
+.eyebrow {
+  color: var(--mo-champagne);
+}
+
+.eyebrow::before,
+.rule {
+  background: var(--mo-gold);
+}
+
+/* 09. SEARCH AND FILTERS */
+
+.search-band {
+  border-color: var(--border);
+  background: linear-gradient(
+    100deg,
+    rgba(43, 7, 19, .96),
+    rgba(84, 20, 39, .96),
+    rgba(43, 7, 19, .96)
+  );
+}
+
+.search-grid input,
+.search-grid select,
+.directory-tools input,
+.directory-tools select {
+  border-color: var(--border);
+  background: rgba(16, 3, 8, .92);
+  color: var(--text);
+}
+
+.search-grid input:focus-visible,
+.search-grid select:focus-visible,
+.directory-tools input:focus-visible,
+.directory-tools select:focus-visible {
+  border-color: var(--mo-gold);
+}
+
+/* 10. CATALOGUES AND CARDS */
+
+.catalog-card,
+.release-card,
+.feature-card,
+.approach-card,
+.pathway,
+.directory-group {
+  border-color: rgba(231, 180, 93, .25);
+  background: linear-gradient(
+    145deg,
+    rgba(70, 14, 31, .94),
+    rgba(17, 3, 9, .96)
+  );
+}
+
+.catalog-card:hover,
+.release-card:hover,
+.feature-card:hover,
+.approach-card:hover,
+.pathway:hover {
+  border-color: rgba(255, 213, 139, .72);
+}
+
+.catalog-tag,
+.release-kind,
+.release-link,
+.text-link {
+  color: var(--mo-champagne);
+}
+
+.catalog-tag {
+  border-color: var(--border);
+  background: rgba(16, 3, 8, .9);
+}
+
+.catalog-count,
+.release-date,
+.catalog-content p {
+  color: var(--muted);
+}
+
+.slide-btn,
+.float-btn {
+  border-color: var(--border);
+  background: #4a1023;
+  color: var(--mo-champagne);
+}
+
+.slide-btn:hover {
+  background: #651a2b;
+}
+
+.feature-icon,
+.approach-icon,
+.release-kind::before {
+  border-color: rgba(231, 180, 93, .3);
+  background: rgba(231, 180, 93, .09);
+  color: var(--mo-champagne);
+}
+
+/* 11. CTA AND CONTACT CHIPS */
+
+.cta-panel {
+  border-color: rgba(231, 180, 93, .38);
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(231, 180, 93, .16),
+      transparent 50%
+    ),
+    linear-gradient(135deg, #4a1023, #17040b);
+}
+
+.contact-chip,
+.directory-link {
+  border-color: rgba(231, 180, 93, .18);
+  background: rgba(231, 180, 93, .035);
+}
+
+.contact-chip:hover,
+.directory-link:hover {
+  border-color: rgba(231, 180, 93, .55);
+  background: rgba(231, 180, 93, .08);
+  color: var(--mo-champagne);
+}
+
+/* 12. FAQ AND DIRECTORY */
+
+.faq-item {
+  border-color: var(--border);
+  background: rgba(42, 7, 17, .8);
+}
+
+.faq-item summary {
+  color: var(--text);
+}
+
+.faq-item a {
+  color: var(--mo-champagne);
+}
+
+.directory-group h3 {
+  color: var(--mo-champagne);
+}
+
+/* 13. FOOTER */
+
+.site-footer {
+  border-color: var(--border);
+  background: rgba(8, 2, 5, .96);
+}
+
+.footer-links h2 {
+  border-color: var(--border);
+  color: var(--mo-champagne);
+}
+
+.footer-links a:hover,
+.footer-bottom strong {
+  color: var(--mo-champagne);
+}
+
+.social {
+  border-color: var(--border);
+  color: var(--mo-champagne);
+}
+
+.social:hover {
+  background: rgba(231, 180, 93, .1);
+}
+
+/* 14. MODALS AND TOASTS */
+
+.enquiry-dialog {
+  border-color: rgba(231, 180, 93, .42);
+  background: linear-gradient(145deg, #4a1023, #16040b);
+}
+
+.enquiry-heading {
+  border-color: var(--border);
+}
+
+.enquiry-close {
+  border-color: var(--border);
+  color: var(--mo-champagne);
+}
+
+#enquiryFormFrame {
+  background: #16040b;
+}
+
+.mo-toast {
+  border-color: rgba(231, 180, 93, .4);
+  background: #4a1023;
+  color: var(--mo-champagne);
+}
+
+/* 15. PAGE-SPECIFIC INTRO ANIMATIONS
+   The universal JavaScript adds a class to .intro.
+   Each page type gets a different entrance effect.
+   Default: cinematic fade and rise.
+*/
+
+/* Default / homepage: logo rise and orbital rings */
+.intro[data-intro="cinematic"] .intro-content,
+.intro.intro-cinematic .intro-content {
+  animation: moCinematicReveal 900ms cubic-bezier(.2, .7, .2, 1) both;
+}
+
+/* Admissions: gold-line reveal */
+.intro[data-intro="admissions"] .intro-content,
+.intro.intro-admissions .intro-content {
+  animation: moAdmissionsReveal 850ms ease-out both;
+}
+
+.intro[data-intro="admissions"] .intro-rule,
+.intro.intro-admissions .intro-rule {
+  animation: moGoldLine 900ms 250ms ease both;
+  transform-origin: left center;
+}
+
+/* Courses and colleges: layered card reveal */
+.intro[data-intro="catalogue"] .intro-content,
+.intro.intro-catalogue .intro-content {
+  animation: moCatalogueReveal 800ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+/* Support/contact: gentle horizontal reveal */
+.intro[data-intro="support"] .intro-content,
+.intro.intro-support .intro-content {
+  animation: moSupportReveal 750ms ease-out both;
+}
+
+/* Account/security: subtle focus reveal */
+.intro[data-intro="account"] .intro-content,
+.intro.intro-account .intro-content {
+  animation: moAccountReveal 800ms ease both;
+}
+
+/* Careers and jobs: upward stagger */
+.intro[data-intro="careers"] .intro-content,
+.intro.intro-careers .intro-content {
+  animation: moCareersReveal 800ms cubic-bezier(.2, .7, .2, 1) both;
+}
+
+/* Legal and policy pages: quiet fade */
+.intro[data-intro="legal"] .intro-content,
+.intro.intro-legal .intro-content {
+  animation: moLegalReveal 650ms ease both;
+}
+
+/* Distinct animation keyframes */
+
+@keyframes moCinematicReveal {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(.97);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes moAdmissionsReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes moGoldLine {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes moCatalogueReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(.94);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes moSupportReveal {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes moAccountReveal {
+  from {
+    opacity: 0;
+    transform: scale(.96);
+    filter: brightness(.65);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes moCareersReveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes moLegalReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 16. RESPONSIVE THEME DETAILS */
+
+@media (max-width: 1100px) {
+  .main-nav {
+    background: #16040b;
+  }
+
+  .dropdown {
+    background: #260711;
+  }
+}
+
+@media (max-width: 560px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .intro-title {
+    font-size: clamp(34px, 9vw, 52px);
+  }
+
+  .intro-tagline {
+    font-size: 9px;
+    letter-spacing: .18em;
+  }
+}
+
+/* 17. ACCESSIBILITY: REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .intro::before,
+  .emblem-ring,
+  .orbital,
+  .mo-notification__pulse,
+  .intro-rule span {
+    animation: none !important;
+  }
+
+  .intro-content,
+  .intro[data-intro] .intro-content,
+  .intro[class*="intro-"] .intro-content {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .catalog-track {
+    scroll-behavior: auto;
+  }
+}

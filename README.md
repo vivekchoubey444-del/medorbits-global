@@ -1,66 +1,228 @@
-MedOrbits — Website Page Directory
+MedOrbits Enterprise Server Starter & Website Directory
 
 Brand: MedOrbits — Education · Admissions · Careers · Recruitment
 Website: https://www.medorbits.in/
 Document: README.md
-Purpose: Repository directory, page registry, shared-resource reference, and implementation roadmap.
+Status: Architecture and implementation planning
+Runtime: Node.js 20+
+Backend: Express.js with ES modules
+Database: PostgreSQL
+Primary objectives: Maintainability, security, accessibility, data integrity, and reliable deployment
 
-Status: Planning inventory. This document describes proposed paths and conventions; it does not prove that every file exists, is functional, or has been deployed.
+⸻
 
-1. Project objectives
+1. Project Overview
 
-MedOrbits brings together education discovery, admissions information, college resources, application preparation, career guidance, jobs, and recruitment resources.
+MedOrbits is an education, admissions-information, application-preparation, career-guidance, and recruitment platform designed to provide structured access to academic resources, medical-college information, official notices, career opportunities, and related support services.
 
-The website directory should support:
+The repository combines a modular website architecture with an enterprise-oriented backend foundation.
 
-* Clear and predictable navigation.
-* Reusable HTML, CSS, JavaScript, and JSON resources.
-* Traceable, authoritative educational information.
-* Accessible and responsive page templates.
-* Secure handling of applicant information.
-* Reliable validation, testing, and deployment.
-* Maintainable URLs and a documented source of truth for page paths.
+The project is intended to support:
 
-Create and integrate pages according to actual product requirements. Avoid generating duplicate pages merely to increase the repository’s file count.
+* Education, course, examination, and college discovery.
+* Medical admissions and counselling information.
+* Official documents, notifications, and authoritative resources.
+* Study-abroad information and country comparisons.
+* Career discovery, job listings, and recruitment services.
+* Applicant preparation and document-submission workflows.
+* Secure user accounts and administrative operations.
+* Structured datasets with documented sources and verification dates.
+* Responsive, accessible, and consistent website interfaces.
+* Automated testing, database migrations, and controlled deployments.
 
-2. Repository conventions
+Implementation principle: A documented page or proposed feature is not evidence that the corresponding file, backend integration, security control, or production deployment exists. All implementation and release statuses must be verified against the actual repository and deployment environment.
 
-Entry point and URLs
+2. Technology Stack
 
-* Keep the main website entry point at /index.html.
-* Store supporting pages in the directories defined below.
-* Use .html paths unless the deployment explicitly configures clean URLs.
-* Use consistent lowercase filenames and hyphen-separated words.
-* Resolve internal links relative to the correct page or use a verified site-root path.
-* Keep navigation, page metadata, shared assets, and redirects consistent with the actual deployment.
-* Do not assume a public/ directory is automatically the static document root.
+Component	Standard
+Runtime	Node.js 20 or later
+Backend	Express.js
+Module system	ECMAScript modules
+Database	PostgreSQL
+Configuration	Environment variables
+Database evolution	Versioned SQL migrations
+Frontend	HTML, CSS, JavaScript
+Structured content	Versioned JSON datasets
+Testing	Node.js checks, pytest, and applicable integration tests
+Python quality	Ruff
+CI/CD	GitHub Actions, where configured
+Hosting	Deployment-specific configuration
+Security	Server-side validation, authentication, authorization, and audit controls
 
-Security and privacy
+The actual installed versions, scripts, dependencies, and hosting configuration must be confirmed from package.json, package-lock.json, environment configuration, and deployment files.
 
-* Never commit credentials, private keys, production database exports, or applicant documents.
-* Do not place confidential documents in publicly served asset directories.
-* Enforce authentication and authorization on the server for protected operations.
-* Do not treat hidden navigation links or browser-side role checks as access controls.
-* Keep security reporting private through a verified process documented in SECURITY.md.
-* Publish only contact channels, policies, and service commitments that have been verified.
+3. Installation and Local Development
 
-Content integrity
+Prerequisites
 
-* Verify admission rules, college recognition, approved courses, intake, fees, seat matrices, deadlines, and eligibility against current authoritative sources.
-* Record source URLs and verification dates for time-sensitive data.
-* Distinguish official facts from MedOrbits explanations and recommendations.
-* Do not imply official affiliation, endorsement, or authorization without verifiable evidence.
-* Do not promise admission, seat allotment, employment, scholarships, or visa approval.
+Install Node.js 20 or later, npm, Python, and PostgreSQL if a local database is required.
 
-Scope exclusion
+Install dependencies
 
-This directory intentionally excludes the standalone page kolkata-medical-colleges.html. Do not create or add that path as a separate page. The individual college pages and other medical-college resources listed below remain within scope.
+npm install
+python -m pip install -r requirements-dev.txt
 
-3. Canonical page directory
+Create a local environment file:
 
-The paths below define the proposed information architecture. They should be reconciled with the actual repository before implementation.
+cp .env.example .env
 
-3.1 Main website and company pages
+On Windows PowerShell, use:
+
+Copy-Item .env.example .env
+
+Configure the required environment variables locally. Never commit .env, database passwords, access tokens, private keys, production exports, or applicant documents.
+
+Start the server
+
+npm start
+
+Use the scripts actually defined in package.json. Do not assume a development or migration command exists unless it has been implemented.
+
+4. Server Architecture
+
+The enterprise server starter uses an ES-module Express application with independently mounted route modules.
+
+Recommended logical architecture:
+
+Client / Browser
+       |
+       v
+Express Application
+       |
+       +— Security Middleware
+       +— Request Validation
+       +— Authentication
+       +— Authorization
+       +— Route Modules
+       |     +— Authentication
+       |     +— Users
+       |     +— Properties / Search, if applicable
+       |     +— Visits / Offers, if applicable
+       |     +— Applications
+       |     +— Documents
+       |
+       v
+Service and Data-Access Layers
+       |
+       v
+PostgreSQL
+
+The actual application may expose only a subset of these modules. Optional route names do not imply that every module is required or that its business functionality is complete.
+
+Health endpoints
+
+Endpoint	Purpose
+GET /health	Process liveness
+GET /ready	Database readiness when configured
+GET /api	API information
+
+The readiness endpoint must return an appropriate unsuccessful status when the required database is unavailable. The liveness endpoint should report process health without exposing secrets, connection strings, internal stack traces, or sensitive infrastructure details.
+
+Optional route modules
+
+The server may load these files from routes/ when they are present:
+
+routes/
+├── auth.routes.js
+├── user.routes.js
+├── property.routes.js
+├── search.routes.js
+├── visit.routes.js
+├── offer.routes.js
+├── application.routes.js
+└── document.routes.js
+
+Each present module must default-export an Express Router.
+
+Example:
+
+import { Router } from “express”;
+const router = Router();
+router.get(“/“, (_req, res) => {
+  res.json({
+    success: true
+  });
+});
+export default router;
+
+Route-loading contract
+
+* Validate that the imported default export is an Express Router.
+* Fail startup with a clear diagnostic if a present module has an invalid export.
+* Distinguish optional modules that are absent from modules that exist but cannot be loaded.
+* Do not silently suppress syntax errors, missing dependencies, invalid exports, or configuration failures.
+* Keep route mounting and API prefixes consistent with the actual application.
+* Add authentication and authorization to protected routes rather than relying on frontend visibility.
+
+5. Database and Migration Management
+
+The application uses PostgreSQL and a dedicated medorbits schema.
+
+For example:
+
+SELECT *
+FROM medorbits.applications;
+
+Review schema.sql and apply schema changes through the project’s controlled database migration process.
+
+The server must not automatically apply production schema changes during ordinary application startup.
+
+Recommended layout:
+
+database/
+├── schema.sql
+├── queries/
+└── seeds/
+migrations/
+└── main/
+    ├── 001_initial_schema.sql
+    └── subsequent_migrations.sql
+
+The example migration filename is illustrative. Check existing migration history before adding new migrations, and never renumber previously applied migrations.
+
+Database requirements
+
+* Use parameterized queries.
+* Apply least-privilege database permissions.
+* Configure connection pooling and connection timeouts.
+* Use transactions for multi-step operations requiring atomicity.
+* Apply constraints and indexes appropriate to the actual data model.
+* Keep production credentials outside source control.
+* Use backups and test restoration procedures.
+* Avoid exposing database errors directly to clients.
+* Document migration execution and rollback limitations.
+* Verify schema ownership and permissions during deployment.
+
+The presence of schema.sql does not establish that the production database has been migrated successfully.
+
+6. Environment Configuration
+
+Maintain .env.example as a documented list of required configuration variables without real secrets.
+
+Typical configuration may include:
+
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=
+SESSION_SECRET=
+
+Add other variables only when the implemented application requires them.
+
+For production:
+
+* Supply secrets through the hosting platform’s protected environment configuration.
+* Use a strong, unique session secret.
+* Require encrypted database connections when appropriate to the hosting environment.
+* Validate mandatory configuration at startup.
+* Avoid logging environment-variable values.
+* Rotate compromised credentials promptly.
+* Ensure .env and local secret files are excluded by .gitignore.
+
+7. Canonical Website Directory
+
+The following sections define the intended information architecture. Reconcile every path with the actual repository before creating files or declaring completion.
+
+7.1 Main website
 
 index.html
 pages/
@@ -87,7 +249,9 @@ pages/
 ├── 404.html
 └── 500.html
 
-3.2 Education homepage and academic resources
+These pages establish the primary brand, service, navigation, and support experience.
+
+7.2 Education and academic resources
 
 education/
 ├── index.html
@@ -116,7 +280,7 @@ education/
 ├── documents.html
 └── glossary.html
 
-3.3 Study in India
+7.3 Study in India
 
 education/study-india/
 ├── index.html
@@ -145,7 +309,7 @@ education/study-india/
 ├── private-colleges.html
 └── government-colleges.html
 
-3.4 Medical education and MBBS admissions
+7.4 Medical education and MBBS admissions
 
 education/medical/
 ├── index.html
@@ -176,7 +340,7 @@ education/medical/
 ├── md-ms-courses.html
 └── dnb-courses.html
 
-3.5 Medical colleges by state and territory
+7.5 Medical colleges by state and territory
 
 education/medical/colleges/
 ├── index.html
@@ -214,7 +378,7 @@ education/medical/colleges/
 ├── chandigarh.html
 └── puducherry.html
 
-3.6 West Bengal medical education
+7.6 West Bengal medical education
 
 education/medical/
 ├── west-bengal-medical-colleges.html
@@ -225,7 +389,9 @@ education/medical/
 ├── west-bengal-document-checklist.html
 └── west-bengal-college-comparison.html
 
-3.7 Individual medical college pages
+Scope exclusion: Do not create a standalone kolkata-medical-colleges.html page. Individual medical-college pages and the West Bengal resources above remain within scope.
+
+7.7 Individual medical colleges
 
 education/medical/colleges/
 ├── cnmc.html
@@ -255,9 +421,9 @@ education/medical/colleges/
 ├── jis-school-of-medical-science.html
 └── santiniketan-medical-college.html
 
-Verify each institution’s official name, current recognition, approved courses, intake, fees, and admission route before publication. Similar or legacy names must be reconciled against authoritative institution records to avoid duplicate profiles.
+Verify official institution names, recognition, approved courses, intake, fees, and admission routes. Reconcile legacy names and potentially overlapping profiles before publishing.
 
-3.8 Official documents and admission resources
+7.8 Official documents and admission resources
 
 official-document.html
 official-documents/
@@ -280,9 +446,9 @@ official-documents/
 ├── important-dates.html
 └── verification-checklist.html
 
-Link to the applicable official source wherever possible. Record publication dates and distinguish the original issuing authority from MedOrbits summaries or copies.
+Clearly identify the issuing authority, original publication date, applicable admission cycle, source URL, and last verification date.
 
-3.9 Study abroad
+7.9 Study abroad
 
 education/study-abroad/
 ├── index.html
@@ -312,9 +478,9 @@ education/study-abroad/
 ├── ireland.html
 └── country-comparison.html
 
-Country pages must explain relevant admission conditions, costs, recognition, licensing, visa requirements, and limitations using current authoritative sources.
+Country-specific information must reflect applicable admission rules, tuition and living costs, recognition, licensing, visa conditions, and official requirements.
 
-3.10 Admissions, applications, and counselling
+7.10 Admissions and counselling
 
 education/admissions/
 ├── index.html
@@ -338,9 +504,9 @@ education/admissions/
 ├── admission-appeals.html
 └── refund-and-withdrawal.html
 
-Round names, counselling sequences, and deadlines must reflect the relevant authority and admission cycle. Do not present a generic workflow as universal.
+Counselling sequences, deadlines, round names, and eligibility requirements must be tied to the relevant authority and admission year.
 
-3.11 Careers, jobs, and recruitment
+7.11 Careers, jobs, and recruitment
 
 career/
 ├── index.html
@@ -397,9 +563,9 @@ career/
 ├── salary-guide.html
 └── job-application-status.html
 
-Job listings should distinguish verified vacancies from general career information. Include employer identity, location, publication date, application deadline, and source information where applicable. Never invent live vacancies, salaries, or recruitment relationships.
+Listings must distinguish verified vacancies from general career guidance. Where applicable, display employer identity, location, publication date, deadline, and source. Never invent vacancies, salary figures, or employer relationships.
 
-3.12 Application-preparation portal
+7.12 Application-preparation portal
 
 career/application-preparation/
 ├── index.html
@@ -419,9 +585,9 @@ career/application-preparation/
 ├── privacy-notice.html
 └── support.html
 
-These paths describe a proposed workflow, not a functioning application service. Submission, document storage, consent recording, payment verification, and status updates require verified backend implementations.
+These routes represent a proposed workflow. Secure submission, document storage, consent recording, payment verification, and status tracking require implemented and tested backend services.
 
-3.13 Applicant account pages
+7.13 Applicant accounts
 
 account/
 ├── index.html
@@ -451,9 +617,9 @@ account/
 ├── delete-account.html
 └── logout.html
 
-Every account feature must be connected to the relevant authenticated service. A page must not imply that account details, sessions, or documents are securely stored when no such implementation exists.
+Account pages must connect to authenticated backend services. Protected information must never be considered secure merely because a link is hidden or a page checks a role in browser-side JavaScript.
 
-3.14 Administrative pages
+7.14 Administration
 
 admin/
 ├── index.html
@@ -498,11 +664,11 @@ admin/
 ├── backup-status.html
 └── error-reports.html
 
-Admin routes must enforce server-side authentication and authorization. Data export, document access, user management, and payment operations require explicit permission checks and appropriate audit controls.
+Administrative operations require server-side authorization, least-privilege permissions, appropriate audit trails, and explicit safeguards for document access, exports, and payment-related operations.
 
-3.15 Legal, privacy, and support
+7.15 Legal, privacy, and support
 
-Legal pages:
+Legal resources:
 
 legal/
 ├── index.html
@@ -528,7 +694,7 @@ legal/
 ├── medical-admissions-disclaimer.html
 └── independent-application-preparation.html
 
-Support pages:
+Support resources:
 
 support/
 ├── index.html
@@ -543,11 +709,11 @@ support/
 ├── document-upload-help.html
 └── account-recovery.html
 
-Verify all published contact details, reporting channels, policy links, retention statements, refund terms, and service commitments before publication.
+Publish only verified contact details, reporting channels, policy terms, refund commitments, and data-retention statements.
 
-4. Shared assets and data
+8. Shared Frontend Resources
 
-4.1 Shared stylesheets
+8.1 CSS
 
 assets/css/
 ├── styles.css
@@ -558,9 +724,9 @@ assets/css/
 ├── theme.css
 └── font.css
 
-Keep shared design tokens, typography, navigation, forms, and responsive behavior consistent. Avoid duplicated CSS when an existing shared component can be reused.
+Maintain consistent design tokens, typography, navigation, form controls, responsive layouts, and accessibility states. Reuse existing components rather than duplicating styles across pages.
 
-4.2 Shared JavaScript
+8.2 JavaScript
 
 assets/js/
 ├── main.js
@@ -574,9 +740,9 @@ assets/js/
 ├── account.js
 └── accessibility.js
 
-Browser JavaScript should manage presentation and safe client-side interactions. Sensitive business rules, access controls, payment verification, and data authorization must remain server-side.
+Browser scripts should handle presentation and non-sensitive interactions. Authentication, authorization, eligibility enforcement, payment verification, and access to protected data must remain server-side.
 
-4.3 Brand assets
+8.3 Brand assets
 
 assets/
 ├── images/
@@ -591,9 +757,11 @@ assets/
 ├── fonts/
 └── documents/
 
-Add image assets only when they are required. Use accessible alternative text and confirm licensing and permission for third-party images and logos.
+Add assets only where needed. Use accessible alternative text, optimize file sizes, and verify permissions for third-party images, fonts, and logos. Do not store confidential applicant documents in publicly served directories.
 
-4.4 Structured data
+9. Structured Data and Schemas
+
+Recommended datasets:
 
 assets/data/
 ├── courses.json
@@ -612,18 +780,90 @@ assets/data/
 ├── locations.json
 └── official-resources.json
 
-Reusable schemas belong in schemas/. Before adding a new data file, check whether an existing schema and data source already cover the requirement.
+Use schemas/ for reusable validation contracts.
 
-Recommended record conventions:
+Record conventions
 
-* Use a defined schema and versioned structure.
-* Mark unverified records with “verificationStatus”: “unverified”.
-* Represent unknown values as null, not invented estimates.
-* Record the authoritative source URL and lastVerified date for consequential, changing information.
-* Use YYYY-MM-DD dates and INR for Indian currency where applicable.
-* Preserve the distinction between an official source and a MedOrbits summary.
+* Define and version each dataset schema.
+* Use verificationStatus: “unverified” for unverified records.
+* Represent unknown values as null rather than fabricated estimates.
+* Record authoritative source URLs and lastVerified dates for consequential, changing information.
+* Use ISO-formatted YYYY-MM-DD dates.
+* Use INR for Indian-currency fields where applicable.
+* Distinguish official-source data from MedOrbits explanations.
+* Avoid creating overlapping datasets when an existing authoritative structure already meets the requirement.
 
-5. Technical and quality resources
+Example metadata:
+
+{
+  “schemaVersion”: “1.0.0”,
+  “dataset”: “official-resources”,
+  “generatedOn”: “2026-10-25”,
+  “verificationPolicy”: “Verify consequential information against the responsible official authority.”
+}
+
+Metadata alone does not establish the accuracy or verification of individual records.
+
+10. Quality Assurance and Validation
+
+Run the checks supported by the current project configuration:
+
+node —check server.js
+npm run check:json
+python -m pytest
+python -m ruff check .
+
+The check:json script depends on scripts/check-json.mjs and its registration in package.json. Add or repair the script if it is missing; do not assume the command succeeds merely because it is documented.
+
+For local development, use:
+
+npm install
+
+For a controlled production or CI installation, prefer the appropriate lockfile-based installation process, such as:
+
+npm ci
+
+Run Python checks only after installing the dependencies declared by the project.
+
+Additional recommended checks
+
+* Express route registration and startup validation.
+* PostgreSQL connection and readiness tests.
+* Database migration verification.
+* HTML validation and internal-link checking.
+* JSON schema validation.
+* Unit and integration tests.
+* Authentication and authorization tests.
+* Document-upload and file-access security tests.
+* Accessibility and responsive-layout testing.
+* Dependency and secret scanning.
+* Production build and deployment smoke tests.
+
+Report actual results, failures, skipped tests, and outstanding issues. Never report a check as passing unless it has been executed successfully.
+
+11. Page Registry
+
+Maintain one authoritative registry of canonical pages, preferably derived from the actual repository.
+
+Field	Purpose
+path	Canonical repository-relative path
+section	Website section
+status	Planned, scaffolded, integrated, tested, or verified
+owner	Responsible maintainer or team
+sourcePolicy	Required content-verification policy
+lastReviewed	Date of the most recent relevant review
+
+Suggested status meanings:
+
+* Planned: Documented but not confirmed as implemented.
+* Scaffolded: A page file exists but may contain incomplete functionality.
+* Integrated: Connected to the applicable shared resources or backend.
+* Tested: The relevant tests have passed.
+* Verified: The page has passed its defined implementation, content, and release checks.
+
+Deployment status should be tracked separately where appropriate. A tested local page is not automatically deployed or publicly accessible.
+
+12. Documentation and Engineering Resources
 
 docs/
 scripts/
@@ -634,89 +874,23 @@ database/
 migrations/main/
 infrastructure/
 
-Expected responsibilities:
+Responsibilities:
 
-* docs/: architecture, API, data verification, deployment, privacy, security, and testing documentation.
-* scripts/: build and validation tools.
-* schemas/: reusable data contracts.
-* tests/: unit, integration, end-to-end, accessibility, and security checks.
-* .github/workflows/: continuous integration and approved deployment workflows.
-* database/: database definitions and queries.
-* migrations/main/: ordered, versioned database changes.
-* infrastructure/: hosting configuration and environment documentation.
+Directory	Responsibility
+docs/	Architecture, APIs, security, privacy, deployment, and data verification
+scripts/	Build, validation, and maintenance utilities
+schemas/	Reusable data contracts
+tests/	Unit, integration, end-to-end, accessibility, and security tests
+.github/workflows/	Continuous integration and approved deployment workflows
+database/	Schema definitions, queries, and database utilities
+migrations/main/	Ordered database changes
+infrastructure/	Hosting and infrastructure configuration
 
-Ensure package.json and package-lock.json agree, Python configuration is consistent across local development and CI, and deployment files match the selected hosting architecture.
+Keep package.json and package-lock.json synchronized. Align Python development dependencies, local commands, and CI configuration. Ensure deployment settings match the actual hosting architecture.
 
-6. Page registry and validation
+13. Deployment Standards
 
-Maintain one authoritative page registry to track:
-
-Field	Purpose
-path	Canonical repository-relative path
-section	Website section
-status	Planned, scaffolded, integrated, tested, or verified
-owner	Responsible maintainer or team
-sourcePolicy	Required source-verification approach
-lastReviewed	Date of the last relevant review
-
-The registry should be derived from the actual repository where possible. Do not mark a page as deployed or verified merely because it appears in this README.
-
-Before a release:
-
-1. Compare registered paths with the actual repository.
-2. Detect missing, unexpected, duplicate, and case-mismatched paths.
-3. Check internal links and local assets.
-4. Validate JSON syntax and schemas.
-5. Run the applicable HTML, JavaScript, Python, SQL, and security checks.
-6. Verify consequential facts and external links.
-7. Confirm deployment output and error-page routing.
-
-Record real test results and outstanding issues.
-
-7. Implementation roadmap
-
-Phase 1 — Core website
-
-* Root homepage and shared navigation.
-* Company, service, contact, and support pages.
-* Shared CSS and accessible responsive layouts.
-* Working internal links and error-page configuration.
-
-Phase 2 — Education and official resources
-
-* Education landing page and course resources.
-* Admission guidance and document checklists.
-* Medical-college directory and profiles.
-* Source verification for facts, fees, seats, and deadlines.
-
-Phase 3 — Career and recruitment
-
-* Job search and job-detail pages.
-* Candidate and employer workflows.
-* Verified vacancy information and clear recruitment disclaimers.
-
-Phase 4 — Application workflows
-
-* Applicant-facing form pages.
-* Server-side validation and authorization.
-* Private document storage, consent handling, and accurate status tracking.
-
-Phase 5 — Accounts and administration
-
-* Authentication and account recovery.
-* Role-based authorization.
-* Administrative operations, audit controls, and protected data exports.
-
-Phase 6 — Release verification
-
-* Automated validation and security testing.
-* Accessibility and mobile testing.
-* Verified production configuration.
-* Final policy and content review.
-
-8. Deployment conventions
-
-For a root-deployed static website, a file such as:
+For a root-deployed static website, the path:
 
 education/medical/mbbs-admission.html
 
@@ -724,34 +898,133 @@ normally maps to:
 
 https://www.medorbits.in/education/medical/mbbs-admission.html
 
-Clean URLs require compatible hosting configuration, routing, or redirects.
+This mapping depends on the configured static document root, routing, and hosting rules. Clean URLs require compatible server configuration or redirects.
 
-Before deployment, verify:
+Pre-deployment checklist
 
-* The actual static document root.
-* Asset paths and page-relative links.
-* The hosting platform’s error-page conventions.
-* Redirect behavior and canonical URLs.
-* Sitemap and robots.txt locations.
-* That private application data and credentials are excluded from public output.
+* [ ]	Confirm the static website’s document root.
+* [ ]	Confirm backend and frontend deployment targets.
+* [ ]	Validate environment variables and production secrets.
+* [ ]	Apply approved database migrations.
+* [ ]	Verify route-module loading and startup behavior.
+* [ ]	Check internal links, assets, and case-sensitive paths.
+* [ ]	Validate JSON files and applicable schemas.
+* [ ]	Run required automated tests.
+* [ ]	Verify authentication and authorization controls.
+* [ ]	Confirm error-page routing and redirect behavior.
+* [ ]	Check sitemap, robots.txt, and canonical URLs.
+* [ ]	Confirm that secrets and private applicant files are excluded from public output.
+* [ ]	Run production health and readiness checks.
+* [ ]	Document deployment results and unresolved issues.
 
-9. Publication and affiliation policy
+14. Security and Privacy
 
-MedOrbits provides education, admissions-information, application-preparation, career, and recruitment resources. Requirements and outcomes may be controlled by external authorities, institutions, employers, or service providers.
+Security controls must match the actual implementation and threat model.
 
-Verify current eligibility, fees, recognition, counselling rules, seat availability, and deadlines through the responsible official source.
+Minimum engineering requirements include:
 
-Do not claim affiliation, endorsement, accreditation, or authorization without verifiable evidence. Do not present application-preparation assistance as a guarantee of admission, employment, seat allotment, scholarship, or visa approval.
+* Server-side authentication and authorization.
+* Input validation and output encoding appropriate to each context.
+* Parameterized SQL queries.
+* Secure session and cookie configuration where sessions are used.
+* Rate limiting for sensitive or abuse-prone endpoints.
+* Restricted document storage and controlled download access.
+* File-type, size, and content validation for uploads.
+* CSRF protection where applicable to the authentication architecture.
+* Appropriate security headers and CORS configuration.
+* Audit logging for sensitive administrative actions.
+* Secret management and dependency vulnerability review.
+* Backup, recovery, retention, and deletion procedures.
+* Generic client-facing errors without exposed internal details.
 
-10. Maintenance policy
+Document actual security controls and gaps in SECURITY.md. Provide a security reporting channel only after verifying that the channel is active and monitored.
 
-* Preserve existing repository files and working functionality.
-* Review changes before overwriting existing files.
-* Avoid duplicate pages and redundant data structures.
+15. Content Integrity and Publication Policy
+
+MedOrbits provides education, admissions-information, application-preparation, career, and recruitment resources. Decisions may be controlled by independent educational authorities, institutions, employers, or other service providers.
+
+Before publishing consequential information, verify:
+
+* Admission eligibility and deadlines.
+* College recognition and approved courses.
+* Intake, seat matrices, fees, and refund rules.
+* Counselling procedures and quota conditions.
+* Examination notifications and official documents.
+* Scholarships and funding eligibility.
+* Recruitment listings and employer information.
+* Country-specific licensing, visa, and education requirements.
+
+Use authoritative sources wherever possible. Record source URLs, publication dates, applicable cycles, and verification dates.
+
+Do not claim institutional affiliation, endorsement, accreditation, or authorization without verifiable evidence. Do not guarantee admission, seat allotment, employment, scholarships, or visa approval.
+
+16. Implementation Roadmap
+
+Phase 1 — Core website
+
+* Homepage and shared navigation.
+* Company, service, contact, and support pages.
+* Shared design system and accessible responsive layouts.
+* Internal links and error-page routing.
+
+Phase 2 — Education and official resources
+
+* Education landing pages and course resources.
+* Admissions guidance and document checklists.
+* Medical-college directory and individual profiles.
+* Source verification for fees, seats, recognition, and deadlines.
+
+Phase 3 — Careers and recruitment
+
+* Job search and job-detail pages.
+* Candidate and employer workflows.
+* Verified vacancy information and recruitment disclaimers.
+
+Phase 4 — Application preparation
+
+* Applicant-facing form workflows.
+* Server-side validation and authorization.
+* Private document storage and consent management.
+* Payment verification and reliable application-status tracking.
+
+Phase 5 — Accounts and administration
+
+* Authentication and account recovery.
+* Role-based authorization.
+* Administrative operations and audit controls.
+* Protected data exports and account-security features.
+
+Phase 6 — Release verification
+
+* Automated testing and security review.
+* Accessibility and mobile testing.
+* Production configuration verification.
+* Policy and content review.
+* Deployment smoke tests and release documentation.
+
+Prioritize working, tested functionality over creating large numbers of empty pages.
+
+17. Maintenance and Change Management
+
+* Preserve existing files and working functionality.
+* Review repository state before replacing files.
+* Avoid duplicate pages, routes, and datasets.
 * Continue existing database migration numbering.
-* Update the page registry when paths change.
+* Update the page registry when canonical paths change.
 * Document meaningful changes in CHANGELOG.md.
-* Keep security and privacy documentation aligned with actual implementation.
-* Update this README when the directory structure changes.
+* Keep privacy and security documentation aligned with implemented controls.
+* Maintain dependency lockfiles and reproducible development instructions.
+* Remove obsolete links and configurations through reviewed changes.
+* Document test results and known limitations for each release.
 
-Final status: This document defines the intended website structure. Repository existence, feature completeness, factual accuracy, test success, and deployment status must be verified independently.
+18. Final Repository Status
+
+This README defines the intended MedOrbits website architecture and the baseline conventions for the enterprise server starter.
+
+It does not certify that all listed pages exist, all route modules are functional, the database has been migrated, security controls are complete, automated checks have passed, or the production website has been deployed.
+
+Verify these conditions independently against the repository, test results, database environment, and production deployment before describing the platform as production-ready.
+
+MedOrbits — Education · Admissions · Careers · Recruitment
+
+Official website: https://www.medorbits.in/

@@ -1,158 +1,202 @@
 =============================================================================
 
-MEDORBITS -- DEVELOPMENT & TESTING DEPENDENCIES
+MEDORBITS | DEVELOPMENT & TESTING DEPENDENCIES
 
 =============================================================================
 
-File:          requirements-dev.txt
+File:        requirements-dev.txt
 
-Project:       MedOrbits
+Project:     MedOrbits
 
-Website:       https://medorbits.in
+Website:     https://www.medorbits.in/
 
-Purpose:       Local development, automated testing, linting and code quality
+Purpose:     Automated testing, linting, formatting and code quality
 
-INSTALLATION
+Python:      3.10+
+
+=============================================================================
+
+QUICK START
+
+=============================================================================
+
+1. Create a virtual environment:
+
+python -m venv .venv
+
+2. Activate the environment:
+
+Windows PowerShell:
+
+..venv\Scripts\Activate.ps1
+
+Windows Command Prompt:
+
+.venv\Scripts\activate.bat
+
+Linux / macOS:
+
+source .venv/bin/activate
+
+3. Install development dependencies:
 
 python -m pip install -r requirements-dev.txt
 
-RUN TESTS
+=============================================================================
 
-python -m pytest
-
-RUN LINTING
-
-python -m ruff check .
-
-CHECK FORMATTING
-
-python -m ruff format –check .
-
-AUTO-FORMAT CODE
-
-python -m ruff format .
-
-SECURITY NOTES
-
-1. Install dependencies inside an isolated virtual environment.
-
-2. Review dependency updates before accepting them.
-
-3. Pin exact versions in a generated lock file for reproducible CI builds.
-
-4. Review transitive dependencies and security advisories regularly.
-
-5. Keep development-only packages out of the production installation.
-
-COMPATIBILITY
-
-Target Python version: 3.10+
-
-Verify package compatibility against the Python version used in CI.
-
-VERSION POLICY
-
-The ranges below define supported major-version boundaries; they do not
-
-provide fully reproducible installations. Use a reviewed lock file when
-
-deterministic builds are required.
+TESTING, LINTING & FORMATTING
 
 =============================================================================
 
---------------------------------------------------–
+Run automated tests:
 
-01. AUTOMATED TESTING
+python -m pytest
 
---------------------------------------------------–
+Run Python linting:
 
-Python testing framework
+python -m ruff check .
+
+Check formatting without modifying files:
+
+python -m ruff format –check .
+
+Automatically format Python files:
+
+python -m ruff format .
+
+Apply supported automatic lint fixes:
+
+python -m ruff check –fix .
+
+=============================================================================
+
+01 | AUTOMATED TESTING
+
+=============================================================================
 
 pytest>=8.0,<9.0
 
---------------------------------------------------–
+=============================================================================
 
-02. LINTING & STATIC ANALYSIS
+02 | LINTING & CODE FORMATTING
 
---------------------------------------------------–
-
-Fast Python linter and code-quality analyzer
+=============================================================================
 
 ruff>=0.6,<1.0
 
---------------------------------------------------–
+=============================================================================
 
-03. OPTIONAL TESTING UTILITIES
+03 | OPTIONAL TESTING UTILITIES
 
---------------------------------------------------–
+=============================================================================
 
-Uncomment a package only when the test suite uses it.
+Uncomment a dependency only when the project actually uses it.
 
-Review compatibility and pin resolved versions in the project’s lock file.
+Keep resolved versions in a reviewed lock file for reproducible builds.
 
-Property-based testing
+Property-based testing:
 
 hypothesis>=6.100,<7.0
 
-Mocking and HTTP request testing
+Mocking HTTP requests:
 
 responses>=0.25,<1.0
 
-HTTP client for API integration tests
+HTTP client for API integration tests:
 
 httpx>=0.27,<1.0
 
-Coverage reporting
+Coverage reporting:
 
 coverage>=7.6,<8.0
 
-Pytest coverage integration
+Pytest coverage integration:
 
 pytest-cov>=5.0,<7.0
 
---------------------------------------------------–
+=============================================================================
 
-04. OPTIONAL SECURITY & DEPENDENCY AUDITING
+04 | OPTIONAL SECURITY & DEPENDENCY AUDITING
 
---------------------------------------------------–
+=============================================================================
 
-Install separately or enable after reviewing the project’s security workflow.
+Uncomment when dependency auditing is included in the development workflow.
 
-Python dependency vulnerability auditing
+Python dependency vulnerability auditing:
 
 pip-audit>=2.7,<3.0
 
---------------------------------------------------–
+=============================================================================
 
-05. OPTIONAL TYPE CHECKING
+05 | OPTIONAL STATIC TYPE CHECKING
 
---------------------------------------------------–
+=============================================================================
 
-Uncomment if MedOrbits adopts static type checking in its Python codebase.
+Uncomment if static type checking is adopted by the Python codebase.
 
-Static type checker
+Static type checker:
 
 mypy>=1.11,<2.0
 
 =============================================================================
 
-MAINTENANCE REQUIREMENTS
+INSTALLATION & SECURITY POLICY
 
 =============================================================================
 
-- Add only dependencies required by the development and testing workflow.
+1. Install development packages inside an isolated virtual environment.
 
-- Prefer actively maintained packages with compatible Python support.
+2. Review dependency releases, changelogs and security advisories before
 
-- Review changelogs and security advisories before upgrading dependencies.
+upgrading packages.
 
-- Do not store credentials, API keys or private repository tokens in this file.
+3. Generate and maintain a reviewed dependency lock file when deterministic
 
-- Do not treat a successful installation as proof that the application is secure.
+CI and local installations are required.
 
-- Keep production dependencies in the appropriate production requirements file.
+4. Review transitive dependencies and vulnerability reports regularly.
 
-- Validate this file in CI using the same supported Python version as the project.
+5. Keep development-only dependencies separate from production dependencies.
+
+6. Do not store passwords, API keys, access tokens or private credentials
+
+in this file.
+
+7. A successful installation or test run does not prove that the application
+
+is secure or production-ready.
+
+8. Run CI checks against the Python version supported by the project.
+
+9. Configure pytest, Ruff and coverage settings centrally where appropriate,
+
+using pyproject.toml or the project’s established configuration.
+
+10. Keep optional packages commented out until required by actual tests
+
+or engineering workflows.
+
+=============================================================================
+
+VERSION & COMPATIBILITY POLICY
+
+=============================================================================
+
+The version ranges above define supported release boundaries; they do not
+
+guarantee fully reproducible installations.
+
+For reproducible CI builds:
+
+- Resolve and review exact dependency versions.
+
+- Maintain an appropriate lock or fully pinned requirements file.
+
+- Validate installations against the supported Python version.
+
+- Review dependency changes before merging.
+
+Target Python version: 3.10+
 
 =============================================================================
 

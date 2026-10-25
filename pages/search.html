@@ -1,24 +1,2727 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Search | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#260d19">
+  <meta name="description" content="Search MedOrbits education resources, courses, colleges, universities, admissions, career guidance, jobs and recruitment services.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Search Resources | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/pages/search.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SearchResultsPage",
+    "name": "Search Resources | MedOrbits",
+    "url": "https://medorbits.in/pages/search.html",
+    "description": "Search education, admission, course, college, university, career and recruitment resources from MedOrbits.",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "MedOrbits",
+      "url": "https://medorbits.in/"
+    },
+    "about": {
+      "@type": "Organization",
+      "name": "MedOrbits",
+      "url": "https://medorbits.in/",
+      "logo": "https://medorbits.in/assets/images/logo/medorbits-logo.png"
+    },
+    "inLanguage": "en"
+  }
+  </script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+
+      --bg: #190c12;
+      --bg-deep: #0b0609;
+      --bg-soft: #29121d;
+      --surface: #351923;
+      --surface-2: #492330;
+
+      --wine: #672c40;
+      --wine-bright: #a75a70;
+      --wine-light: #e4b9c5;
+      --wine-deep: #35101f;
+
+      --smoke: #b9a5ad;
+      --smoke-light: #e8dce1;
+      --smoke-dark: #78636c;
+
+      --rose: #d18a9e;
+      --rose-light: #f5d9e2;
+      --rose-deep: #8d4059;
+
+      --gold: #c9aa79;
+      --gold-bright: #f1d8aa;
+      --gold-light: #fff0d1;
+
+      --text: #fff6f8;
+      --text-soft: #e8d9df;
+      --muted: #c1aeb7;
+
+      --border: rgba(209, 138, 158, .23);
+      --border-gold: rgba(201, 170, 121, .32);
+
+      --container: 1180px;
+      --radius: 20px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .42);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 105px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 5% 5%, rgba(103, 44, 64, .3), transparent 38%),
+        radial-gradient(ellipse at 95% 28%, rgba(177, 106, 130, .15), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(201, 170, 121, .07), transparent 43%),
+        linear-gradient(135deg, #0b0609 0%, #29121d 51%, #1b0c13 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      font: 400 14px/1.75 "DM Sans", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select {
+      color: inherit;
+      font: inherit;
+    }
+
+    a, button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--gold-bright);
+      outline-offset: 4px;
+    }
+
+    ::selection {
+      background: var(--wine-bright);
+      color: #fff;
+    }
+
+    .container {
+      width: min(var(--container), calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -80px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--gold-light);
+      color: var(--bg-deep);
+      font-weight: 800;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    /* Background effects */
+
+    .star-field {
+      position: fixed;
+      z-index: 0;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 8% 16%, rgba(241, 216, 170, .8) 50%, transparent 100%),
+        radial-gradient(2px 2px at 23% 38%, rgba(209, 138, 158, .7) 50%, transparent 100%),
+        radial-gradient(1px 1px at 47% 12%, rgba(232, 220, 225, .8) 50%, transparent 100%),
+        radial-gradient(2px 2px at 68% 28%, rgba(167, 90, 112, .7) 50%, transparent 100%),
+        radial-gradient(1px 1px at 85% 15%, rgba(241, 216, 170, .7) 50%, transparent 100%),
+        radial-gradient(1px 1px at 92% 57%, rgba(228, 185, 197, .7) 50%, transparent 100%);
+      background-size: 440px 350px;
+      animation: star-drift 70s linear infinite;
+    }
+
+    .emoji-field {
+      position: fixed;
+      z-index: 2;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      contain: layout paint;
+    }
+
+    .floating-emoji {
+      position: absolute;
+      left: var(--left);
+      bottom: -90px;
+      font-size: var(--size);
+      opacity: 0;
+      filter: drop-shadow(0 0 12px var(--glow));
+      animation: emoji-rise var(--duration) linear var(--delay) infinite;
+      will-change: transform, opacity;
+    }
+
+    @keyframes emoji-rise {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0) rotate(-12deg) scale(.8);
+      }
+      12% { opacity: .35; }
+      45% {
+        opacity: .27;
+        transform: translate3d(32px, -48vh, 0) rotate(8deg) scale(1);
+      }
+      80% { opacity: .16; }
+      100% {
+        opacity: 0;
+        transform: translate3d(-22px, -115vh, 0) rotate(-8deg) scale(.85);
+      }
+    }
+
+    @keyframes star-drift {
+      from { background-position: 0 0; }
+      to { background-position: 440px 350px; }
+    }
+
+    /* Announcement */
+
+    .announcement {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid var(--border-gold);
+      background: linear-gradient(90deg, #0b0609, #492330, #672c40, #0b0609);
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement-symbol {
+      color: var(--gold-bright);
+      text-shadow: 0 0 14px rgba(201, 170, 121, .5);
+    }
+
+    /* Header and navigation */
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(25, 12, 18, .94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: background .25s ease, box-shadow .25s ease;
+    }
+
+    .site-header.scrolled {
+      background: rgba(11, 6, 9, .98);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .42);
+    }
+
+    .nav-wrap {
+      position: relative;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(177, 106, 130, .2));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--gold-light);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(103, 44, 64, .18);
+      color: var(--rose-light);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+
+    .main-nav > a,
+    .nav-trigger {
+      color: var(--text-soft);
+    }
+
+    .main-nav > a:hover,
+    .nav-trigger:hover {
+      color: var(--gold-bright);
+    }
+
+    .nav-group {
+      position: relative;
+    }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--gold);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: #211018;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown {
+      display: grid;
+    }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(177, 106, 130, .12);
+      color: var(--gold-bright);
+    }
+
+    /* Buttons */
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 45px;
+      padding: 11px 18px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: linear-gradient(115deg, #fff0d1, #c9aa79 55%, #99764c);
+      color: #211018 !important;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 7px 23px rgba(201, 170, 121, .12);
+      cursor: pointer;
+      transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+      box-shadow: 0 11px 28px rgba(201, 170, 121, .2);
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(103, 44, 64, .18);
+      color: var(--gold-light) !important;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(201, 170, 121, .65);
+      background: rgba(103, 44, 64, .3);
+    }
+
+    /* Typography */
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--gold-bright);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 28px;
+      height: 2px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--wine-bright), var(--gold-bright), var(--rose));
+      content: "";
+    }
+
+    .gradient-text {
+      background: linear-gradient(100deg, #fff0d1 0%, #e4b9c5 36%, #a75a70 70%, #f5d9e2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-title {
+      margin: 12px 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(29px, 4vw, 43px);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -.035em;
+      text-wrap: balance;
+    }
+
+    .section-intro {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    /* Hero */
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      isolation: isolate;
+      padding: 35px 0 55px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      position: absolute;
+      z-index: -2;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(11, 6, 9, .96), rgba(41, 18, 29, .8) 55%, rgba(25, 12, 18, .5)),
+        linear-gradient(0deg, #190c12, transparent 42%),
+        radial-gradient(ellipse at 78% 25%, rgba(167, 90, 112, .23), transparent 44%),
+        radial-gradient(ellipse at 94% 75%, rgba(103, 44, 64, .28), transparent 48%),
+        linear-gradient(135deg, #29121d, #1b0c13);
+      content: "";
+      pointer-events: none;
+    }
+
+    .hero::after {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 82% 24%, rgba(209, 138, 158, .08), transparent 40%),
+        linear-gradient(180deg, transparent 65%, rgba(11, 6, 9, .75));
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 27px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a {
+      color: var(--gold-bright);
+    }
+
+    .breadcrumbs a:hover {
+      color: var(--rose-light);
+    }
+
+    .hero-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+      align-items: center;
+      gap: clamp(30px, 5vw, 70px);
+    }
+
+    .hero-copy {
+      min-width: 0;
+    }
+
+    .hero-copy h1 {
+      margin: 18px 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(40px, 5.4vw, 68px);
+      font-weight: 700;
+      line-height: 1.09;
+      letter-spacing: -.045em;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
+    }
+
+    .hero-copy > p {
+      max-width: 620px;
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 2.05;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 11px;
+      margin-top: 25px;
+    }
+
+    .hero-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin-top: 22px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .hero-note span:first-child {
+      color: var(--gold-bright);
+      font-size: 16px;
+    }
+
+    /* Hero search artwork */
+
+    .hero-art {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 380px;
+      border: 1px solid rgba(201, 170, 121, .3);
+      border-radius: 30px;
+      background:
+        linear-gradient(145deg, rgba(25, 12, 18, .78), rgba(41, 18, 29, .8)),
+        radial-gradient(circle at 50% 42%, rgba(167, 90, 112, .17), transparent 42%);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .42), inset 0 0 65px rgba(201, 170, 121, .035);
+      overflow: hidden;
+      animation: panel-breathe 8s ease-in-out infinite;
+    }
+
+    .art-glow {
+      position: absolute;
+      z-index: -2;
+      top: 50%;
+      left: 50%;
+      width: 72%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: rgba(103, 44, 64, .5);
+      filter: blur(55px);
+      transform: translate(-50%, -50%);
+      animation: core-glow 6s ease-in-out infinite;
+    }
+
+    .orbit {
+      position: absolute;
+      top: 47%;
+      left: 50%;
+      border: 1px solid rgba(201, 170, 121, .22);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .orbit-one {
+      width: 190px;
+      height: 190px;
+      border-color: rgba(201, 170, 121, .38);
+      transform: translate(-50%, -50%);
+      animation: orbit-spin 24s linear infinite;
+    }
+
+    .orbit-two {
+      width: 270px;
+      height: 270px;
+      border-style: dashed;
+      border-color: rgba(209, 138, 158, .27);
+      transform: translate(-50%, -50%);
+      animation: orbit-reverse 34s linear infinite;
+    }
+
+    .orbit-three {
+      width: 335px;
+      height: 335px;
+      border-color: rgba(167, 90, 112, .2);
+      transform: translate(-50%, -50%);
+      animation: orbit-spin 45s linear infinite;
+    }
+
+    .orbit-dot {
+      position: absolute;
+      top: 47%;
+      left: 50%;
+      z-index: 2;
+      width: 9px;
+      height: 9px;
+      border: 1px solid #fff;
+      border-radius: 50%;
+      background: var(--gold-bright);
+      box-shadow: 0 0 10px var(--gold-bright), 0 0 22px rgba(201, 170, 121, .4);
+      pointer-events: none;
+    }
+
+    .orbit-dot-one {
+      animation: dot-one 9s linear infinite;
+    }
+
+    .orbit-dot-two {
+      width: 7px;
+      height: 7px;
+      background: var(--rose-light);
+      box-shadow: 0 0 12px var(--rose-light);
+      animation: dot-two 13s linear infinite;
+    }
+
+    .art-crosshair {
+      position: absolute;
+      z-index: -1;
+      top: 47%;
+      left: 50%;
+      width: 76%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201, 170, 121, .22), transparent);
+      transform: translate(-50%, -50%);
+    }
+
+    .art-crosshair::after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1px;
+      height: 250px;
+      background: linear-gradient(180deg, transparent, rgba(209, 138, 158, .22), transparent);
+      content: "";
+      transform: translate(-50%, -50%);
+    }
+
+    .hero-emoji {
+      position: relative;
+      z-index: 3;
+      font-size: clamp(100px, 13vw, 145px);
+      line-height: 1;
+      filter: drop-shadow(0 15px 22px rgba(0, 0, 0, .35));
+      animation: hero-float 5s ease-in-out infinite;
+    }
+
+    .art-emoji {
+      position: absolute;
+      z-index: 3;
+      font-size: 26px;
+      filter: drop-shadow(0 0 14px rgba(209, 138, 158, .25));
+      animation: emoji-bob 4s ease-in-out infinite;
+    }
+
+    .art-emoji-one { top: 18%; right: 18%; }
+    .art-emoji-two { bottom: 25%; left: 16%; animation-delay: -.9s; }
+    .art-emoji-three { top: 26%; left: 15%; font-size: 21px; animation-delay: -1.7s; }
+    .art-emoji-four { right: 19%; bottom: 24%; font-size: 22px; animation-delay: -2.2s; }
+
+    .art-label {
+      position: absolute;
+      z-index: 4;
+      bottom: 22px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 15px;
+      border: 1px solid var(--border-gold);
+      border-radius: 100px;
+      background: linear-gradient(120deg, rgba(11, 6, 9, .96), rgba(41, 18, 29, .95));
+      color: var(--gold-light);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, .4);
+      animation: label-pulse 4s ease-in-out infinite;
+    }
+
+    /* Main search panel */
+
+    .search-section {
+      position: relative;
+      z-index: 3;
+      margin-top: -20px;
+      padding-bottom: 25px;
+    }
+
+    .search-panel {
+      padding: clamp(19px, 3vw, 30px);
+      border: 1px solid var(--border-gold);
+      border-radius: 22px;
+      background:
+        radial-gradient(ellipse at 0% 0%, rgba(103, 44, 64, .22), transparent 52%),
+        linear-gradient(140deg, rgba(53, 25, 35, .98), rgba(11, 6, 9, .98));
+      box-shadow: 0 22px 60px rgba(0, 0, 0, .32);
+    }
+
+    .search-panel-heading {
+      margin-bottom: 18px;
+    }
+
+    .search-panel-heading h2 {
+      margin: 8px 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.25;
+    }
+
+    .search-panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .search-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      min-width: 0;
+    }
+
+    .search-input-icon {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      color: var(--gold-bright);
+      font-size: 20px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 57px;
+      padding: 14px 16px 14px 47px;
+      border: 1px solid rgba(209, 138, 158, .32);
+      border-radius: 12px;
+      background: rgba(11, 6, 9, .8);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .search-input::placeholder {
+      color: #a9929b;
+    }
+
+    .search-input:focus {
+      border-color: var(--gold);
+      outline: 2px solid rgba(201, 170, 121, .13);
+      outline-offset: 1px;
+    }
+
+    .search-submit {
+      min-width: 125px;
+      min-height: 57px;
+    }
+
+    .quick-searches {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 17px;
+    }
+
+    .quick-search-label {
+      margin-right: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .quick-search {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: rgba(103, 44, 64, .15);
+      color: var(--text-soft);
+      font-size: 10px;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease;
+    }
+
+    .quick-search:hover {
+      border-color: var(--border-gold);
+      background: rgba(103, 44, 64, .32);
+      color: var(--gold-light);
+    }
+
+    /* Shared sections */
+
+    .section {
+      position: relative;
+      z-index: 1;
+      padding: 58px 0;
+    }
+
+    .section-heading {
+      margin-bottom: 26px;
+    }
+
+    .royal-section {
+      border-top: 1px solid rgba(201, 170, 121, .15);
+      border-bottom: 1px solid rgba(201, 170, 121, .15);
+      background:
+        radial-gradient(ellipse at 0% 50%, rgba(103, 44, 64, .2), transparent 42%),
+        radial-gradient(ellipse at 100% 50%, rgba(177, 106, 130, .12), transparent 42%),
+        rgba(11, 6, 9, .48);
+    }
+
+    /* Category filters */
+
+    .category-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 24px;
+    }
+
+    .category-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .category-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 7px;
+      min-height: 39px;
+      padding: 8px 13px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: rgba(53, 25, 35, .55);
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .category-button:hover {
+      border-color: var(--border-gold);
+      color: var(--gold-light);
+    }
+
+    .category-button[aria-pressed="true"] {
+      border-color: var(--gold);
+      background: linear-gradient(120deg, rgba(103, 44, 64, .8), rgba(53, 25, 35, .96));
+      color: var(--gold-light);
+      box-shadow: inset 0 0 0 1px rgba(201, 170, 121, .08);
+    }
+
+    .sort-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .sort-select {
+      min-height: 39px;
+      max-width: 100%;
+      padding: 8px 30px 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #211018;
+      color: var(--text-soft);
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .sort-select option {
+      background: #211018;
+      color: var(--text);
+    }
+
+    .results-meta {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .results-meta strong {
+      color: var(--gold-light);
+    }
+
+    /* Resource cards */
+
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .resource-card {
+      position: relative;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background:
+        radial-gradient(ellipse at top left, rgba(103, 44, 64, .19), transparent 60%),
+        linear-gradient(145deg, rgba(53, 25, 35, .92), rgba(11, 6, 9, .98));
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .2);
+      overflow: hidden;
+      transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+
+    .resource-card:nth-child(3n + 2) {
+      border-color: rgba(201, 170, 121, .25);
+      background:
+        radial-gradient(ellipse at top left, rgba(177, 106, 130, .16), transparent 60%),
+        linear-gradient(145deg, rgba(41, 18, 29, .95), rgba(11, 6, 9, .98));
+    }
+
+    .resource-card:nth-child(3n) {
+      border-color: rgba(209, 138, 158, .23);
+      background:
+        radial-gradient(ellipse at top left, rgba(209, 138, 158, .12), transparent 60%),
+        linear-gradient(145deg, rgba(46, 21, 31, .95), rgba(11, 6, 9, .98));
+    }
+
+    .resource-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--gold);
+      box-shadow: 0 22px 48px rgba(0, 0, 0, .32);
+    }
+
+    .resource-card[hidden] {
+      display: none !important;
+    }
+
+    .resource-card-top {
+      position: relative;
+      min-height: 125px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px;
+      border-bottom: 1px solid rgba(201, 170, 121, .16);
+      background:
+        radial-gradient(circle at 25% 40%, rgba(167, 90, 112, .16), transparent 55%),
+        linear-gradient(135deg, rgba(103, 44, 64, .2), rgba(25, 12, 18, .55));
+      overflow: hidden;
+    }
+
+    .resource-card-top::after {
+      position: absolute;
+      right: -30px;
+      bottom: -80px;
+      width: 180px;
+      height: 180px;
+      border: 1px solid rgba(201, 170, 121, .12);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    .resource-icon {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 65px;
+      height: 65px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(201, 170, 121, .36);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(103, 44, 64, .55), rgba(25, 12, 18, .95));
+      box-shadow: 0 8px 25px rgba(0, 0, 0, .22);
+      font-size: 30px;
+    }
+
+    .resource-top-copy {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      text-align: right;
+    }
+
+    .resource-top-copy strong {
+      display: block;
+      color: var(--gold-light);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 21px;
+      line-height: 1.2;
+    }
+
+    .resource-top-copy span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .resource-card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 19px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: fit-content;
+      max-width: 100%;
+      padding: 6px 10px;
+      border: 1px solid transparent;
+      border-radius: 100px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .055em;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .badge-wine {
+      border-color: rgba(167, 90, 112, .4);
+      background: rgba(103, 44, 64, .25);
+      color: #eac2ce;
+    }
+
+    .badge-gold {
+      border-color: rgba(201, 170, 121, .4);
+      background: rgba(201, 170, 121, .1);
+      color: var(--gold-light);
+    }
+
+    .badge-rose {
+      border-color: rgba(209, 138, 158, .36);
+      background: rgba(209, 138, 158, .1);
+      color: var(--rose-light);
+    }
+
+    .resource-card h3 {
+      margin: 12px 0 7px;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 22px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .resource-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .resource-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: auto;
+      padding-top: 5px;
+    }
+
+    .resource-tags span {
+      padding: 5px 8px;
+      border: 1px solid rgba(209, 138, 158, .17);
+      border-radius: 7px;
+      background: rgba(103, 44, 64, .08);
+      color: var(--text-soft);
+      font-size: 9px;
+    }
+
+    .resource-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 19px;
+      border-top: 1px solid rgba(209, 138, 158, .14);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .resource-card-footer a {
+      color: var(--gold-bright);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .resource-card-footer a:hover {
+      color: var(--rose-light);
+    }
+
+    .no-results {
+      display: none;
+      margin-top: 18px;
+      padding: 35px 20px;
+      border: 1px dashed var(--border-gold);
+      border-radius: 16px;
+      background: rgba(11, 6, 9, .55);
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .no-results.visible {
+      display: block;
+    }
+
+    .no-results > span {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 35px;
+    }
+
+    .no-results h3 {
+      margin: 0 0 7px;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 24px;
+    }
+
+    .no-results p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* Search guidance */
+
+    .guidance-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .guidance-card {
+      min-width: 0;
+      padding: 23px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(53, 25, 35, .86), rgba(11, 6, 9, .96));
+    }
+
+    .guidance-card:nth-child(2) {
+      border-color: var(--border-gold);
+      background: linear-gradient(145deg, rgba(41, 18, 29, .88), rgba(11, 6, 9, .97));
+    }
+
+    .guidance-icon {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border-gold);
+      border-radius: 14px;
+      background: rgba(103, 44, 64, .12);
+      font-size: 23px;
+    }
+
+    .guidance-card h3 {
+      margin: 10px 0 8px;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    .guidance-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    /* CTA */
+
+    .cta-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 25px;
+      padding: clamp(27px, 5vw, 48px);
+      border: 1px solid var(--border-gold);
+      border-radius: 24px;
+      background:
+        radial-gradient(ellipse at 0% 0%, rgba(103, 44, 64, .3), transparent 52%),
+        radial-gradient(ellipse at 100% 100%, rgba(177, 106, 130, .15), transparent 52%),
+        linear-gradient(130deg, #351923, #1b0c13);
+      box-shadow: 0 25px 65px rgba(0, 0, 0, .32);
+      overflow: hidden;
+    }
+
+    .cta-panel h2 {
+      max-width: 720px;
+      margin: 12px 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(29px, 4.5vw, 45px);
+      line-height: 1.2;
+      letter-spacing: -.035em;
+      text-wrap: balance;
+    }
+
+    .cta-panel p {
+      max-width: 700px;
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 2;
+    }
+
+    .cta-emoji {
+      font-size: clamp(70px, 11vw, 120px);
+      filter: drop-shadow(0 0 24px rgba(177, 106, 130, .15));
+      animation: hero-float 5s ease-in-out infinite;
+    }
+
+    .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 11px;
+      margin-top: 23px;
+    }
+
+    /* Footer */
+
+    .site-footer {
+      position: relative;
+      z-index: 3;
+      margin-top: auto;
+      padding: 35px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 0% 0%, rgba(103, 44, 64, .18), transparent 48%),
+        radial-gradient(ellipse at 100% 0%, rgba(177, 106, 130, .1), transparent 48%),
+        #0b0609;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+      gap: 23px;
+      padding-bottom: 26px;
+    }
+
+    .footer-brand p {
+      max-width: 280px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-light);
+    }
+
+    .footer-disclaimer {
+      margin: 0 0 15px;
+      padding: 14px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: linear-gradient(90deg, rgba(103, 44, 64, .14), rgba(177, 106, 130, .06));
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    /* Motion */
+
+    @keyframes orbit-spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @keyframes orbit-reverse {
+      from { transform: translate(-50%, -50%) rotate(360deg); }
+      to { transform: translate(-50%, -50%) rotate(0deg); }
+    }
+
+    @keyframes hero-float {
+      0%, 100% { transform: translateY(-5px) rotate(-3deg); }
+      50% { transform: translateY(-15px) rotate(3deg); }
+    }
+
+    @keyframes emoji-bob {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50% { transform: translateY(-10px) rotate(5deg); }
+    }
+
+    @keyframes panel-breathe {
+      0%, 100% {
+        border-color: rgba(201, 170, 121, .25);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, .42), 0 0 28px rgba(177, 106, 130, .04);
+      }
+      50% {
+        border-color: rgba(177, 106, 130, .4);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, .42), 0 0 42px rgba(201, 170, 121, .08);
+      }
+    }
+
+    @keyframes core-glow {
+      0%, 100% {
+        opacity: .55;
+        transform: translate(-50%, -50%) scale(.88);
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+    }
+
+    @keyframes dot-one {
+      from { transform: translate(-50%, -50%) rotate(0deg) translateX(95px); }
+      to { transform: translate(-50%, -50%) rotate(360deg) translateX(95px); }
+    }
+
+    @keyframes dot-two {
+      from { transform: translate(-50%, -50%) rotate(0deg) translateX(135px); }
+      to { transform: translate(-50%, -50%) rotate(-360deg) translateX(135px); }
+    }
+
+    @keyframes label-pulse {
+      0%, 100% {
+        box-shadow: 0 6px 25px rgba(0, 0, 0, .3), 0 0 12px rgba(201, 170, 121, .03);
+      }
+      50% {
+        box-shadow: 0 6px 25px rgba(0, 0, 0, .3), 0 0 23px rgba(177, 106, 130, .12);
+      }
+    }
+
+    /* Responsive */
+
+    @media (max-width: 1100px) {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100dvh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 15px 15px;
+        background: rgba(25, 12, 18, .99);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, .4);
+      }
+
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .footer-brand {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .resource-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-layout {
+        gap: 30px;
+      }
+
+      .guidance-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 800px) {
+      .container {
+        width: calc(100% - 30px);
+      }
+
+      .hero {
+        padding: 28px 0 45px;
+      }
+
+      .hero::before {
+        background:
+          linear-gradient(180deg, rgba(11, 6, 9, .65), rgba(11, 6, 9, .92) 50%, #190c12 100%),
+          radial-gradient(ellipse at 50% 20%, rgba(103, 44, 64, .34), transparent 60%),
+          linear-gradient(135deg, #29121d, #1b0c13);
+      }
+
+      .hero-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+      }
+
+      .hero-art {
+        order: -1;
+        min-height: 310px;
+      }
+
+      .hero-emoji {
+        font-size: clamp(120px, 26vw, 155px);
+      }
+
+      .orbit-one {
+        width: 175px;
+        height: 175px;
+      }
+
+      .orbit-two {
+        width: 240px;
+        height: 240px;
+      }
+
+      .orbit-three {
+        width: 300px;
+        height: 300px;
+      }
+
+      .search-section {
+        margin-top: -12px;
+      }
+
+      .cta-panel {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .cta-emoji {
+        display: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: calc(100% - 26px);
+      }
+
+      .announcement {
+        gap: 6px;
+        padding: 8px 10px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .hero-art {
+        min-height: 250px;
+        border-radius: 23px;
+      }
+
+      .hero-emoji {
+        font-size: clamp(100px, 29vw, 135px);
+      }
+
+      .orbit-one {
+        width: 145px;
+        height: 145px;
+      }
+
+      .orbit-two {
+        width: 195px;
+        height: 195px;
+      }
+
+      .orbit-three {
+        width: 245px;
+        height: 245px;
+      }
+
+      .art-label {
+        bottom: 14px;
+        padding: 8px 12px;
+        font-size: 8px;
+      }
+
+      .hero-copy h1 {
+        font-size: clamp(36px, 9vw, 47px);
+      }
+
+      .hero-copy > p {
+        font-size: 12px;
+      }
+
+      .hero-actions,
+      .cta-actions {
+        flex-direction: column;
+      }
+
+      .hero-actions .btn,
+      .cta-actions .btn {
+        width: 100%;
+      }
+
+      .search-form {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .search-submit {
+        width: 100%;
+      }
+
+      .section {
+        padding: 43px 0;
+      }
+
+      .section-title {
+        font-size: 30px;
+      }
+
+      .resource-grid,
+      .guidance-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .resource-card-top {
+        min-height: 115px;
+      }
+
+      .category-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .category-list {
+        width: 100%;
+      }
+
+      .category-button {
+        flex: 1 1 auto;
+      }
+
+      .sort-wrap {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .sort-select {
+        flex: 1;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1 / -1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand {
+        gap: 7px;
+      }
+
+      .brand img {
+        width: 37px;
+        height: 37px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .footer-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .footer-brand {
+        grid-column: auto;
+      }
+
+      .hero-art {
+        min-height: 220px;
+      }
+
+      .hero-emoji {
+        font-size: 100px;
+      }
+
+      .orbit-one {
+        width: 125px;
+        height: 125px;
+      }
+
+      .orbit-two {
+        width: 165px;
+        height: 165px;
+      }
+
+      .orbit-three {
+        width: 205px;
+        height: 205px;
+      }
+
+      .resource-card-top {
+        padding: 15px;
+      }
+
+      .resource-card-body {
+        padding: 16px;
+      }
+    }
+
+    @media (hover: none) {
+      .resource-card:hover,
+      .btn:hover {
+        transform: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .emoji-field,
+      .star-field {
+        display: none;
+      }
+
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .gradient-text {
+        color: CanvasText;
+        background: none;
+        -webkit-text-fill-color: currentColor;
+      }
+
+      .badge,
+      .btn,
+      .btn-outline,
+      .resource-card {
+        border: 1px solid ButtonText;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Search</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about search. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="star-field" aria-hidden="true"></div>
+
+  <div class="emoji-field" aria-hidden="true">
+    <span class="floating-emoji" style="--left:4%;--size:24px;--duration:23s;--delay:-3s;--glow:rgba(177,106,130,.3)">🔎</span>
+    <span class="floating-emoji" style="--left:13%;--size:19px;--duration:29s;--delay:-16s;--glow:rgba(201,170,121,.3)">✨</span>
+    <span class="floating-emoji" style="--left:22%;--size:22px;--duration:26s;--delay:-9s;--glow:rgba(209,138,158,.3)">🎓</span>
+    <span class="floating-emoji" style="--left:32%;--size:20px;--duration:31s;--delay:-22s;--glow:rgba(201,170,121,.3)">📚</span>
+    <span class="floating-emoji" style="--left:42%;--size:25px;--duration:24s;--delay:-12s;--glow:rgba(177,106,130,.3)">💼</span>
+    <span class="floating-emoji" style="--left:53%;--size:19px;--duration:30s;--delay:-25s;--glow:rgba(209,138,158,.3)">🌹</span>
+    <span class="floating-emoji" style="--left:63%;--size:23px;--duration:25s;--delay:-7s;--glow:rgba(201,170,121,.3)">🌟</span>
+    <span class="floating-emoji" style="--left:73%;--size:20px;--duration:32s;--delay:-19s;--glow:rgba(177,106,130,.3)">🧭</span>
+    <span class="floating-emoji" style="--left:83%;--size:25px;--duration:27s;--delay:-13s;--glow:rgba(209,138,158,.3)">📖</span>
+    <span class="floating-emoji" style="--left:93%;--size:19px;--duration:34s;--delay:-28s;--glow:rgba(201,170,121,.3)">💫</span>
+  </div>
+
+  <div class="announcement">
+    <span>Find your next opportunity</span>
+    <span class="announcement-symbol" aria-hidden="true">✦</span>
+    <span>MedOrbits · Search resources</span>
+    <span aria-hidden="true">🌹</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img
+          src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo"
+          width="48"
+          height="48"
+        >
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Education · Career · Opportunities</small>
+        </span>
+      </a>
+
+      <button
+        class="menu-toggle"
+        id="menuToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mainNav"
+        aria-label="Open navigation menu"
+      >
+        <span class="menu-symbol" aria-hidden="true">☰</span>
+        <span class="menu-label">MENU</span>
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false" aria-controls="educationDropdown">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="educationDropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/pages/study-abroad.html">Study abroad</a>
+            <a href="/pages/admissions.html">Admissions</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false" aria-controls="careerDropdown">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="careerDropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Job resources</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/pages/career-at-medorbits.html">Careers at MedOrbits</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false" aria-controls="helpDropdown">
+            Help <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="helpDropdown">
+            <a href="/pages/search.html" aria-current="page">Search resources</a>
+            <a href="/pages/support.html">Support centre</a>
+            <a href="/pages/contact.html">Contact us</a>
+            <a href="/pages/about.html">About MedOrbits</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="btn" href="#resourceDirectory">Explore resources ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="container">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="/index.html">Home</a>
+          <span aria-hidden="true">›</span>
+          <span aria-current="page">Search</span>
+        </nav>
+
+        <div class="hero-layout">
+          <div class="hero-copy">
+            <span class="eyebrow">Explore · Discover · Move forward</span>
+
+            <h1 id="heroTitle">
+              The right information.
+              <span class="gradient-text">A clearer next step.</span>
+            </h1>
+
+            <p>
+              Search MedOrbits for education resources, courses, colleges,
+              universities, admission information, career resources,
+              internships and recruitment services. Start with a keyword
+              and explore the available resource directories.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn" href="#searchResources">Start searching 🔎</a>
+              <a class="btn btn-outline" href="#resourceDirectory">Browse categories ↗</a>
+            </div>
+
+            <div class="hero-note">
+              <span aria-hidden="true">✦</span>
+              <span>Use official institutional and government sources to verify important admission, examination and employment information.</span>
+            </div>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="art-glow"></div>
+            <div class="art-crosshair"></div>
+            <span class="orbit orbit-one"></span>
+            <span class="orbit orbit-two"></span>
+            <span class="orbit orbit-three"></span>
+            <span class="orbit-dot orbit-dot-one"></span>
+            <span class="orbit-dot orbit-dot-two"></span>
+
+            <span class="art-emoji art-emoji-one">📚</span>
+            <span class="art-emoji art-emoji-two">🎓</span>
+            <span class="art-emoji art-emoji-three">✨</span>
+            <span class="art-emoji art-emoji-four">💼</span>
+
+            <div class="hero-emoji">🔎</div>
+
+            <div class="art-label">✦ Discover your next step</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search interface -->
+
+    <section class="search-section" id="searchResources" aria-labelledby="searchTitle">
+      <div class="container">
+        <div class="search-panel">
+          <div class="search-panel-heading">
+            <span class="eyebrow">Search MedOrbits</span>
+            <h2 id="searchTitle">What are you looking for?</h2>
+            <p>Search by keyword, subject, resource type or career interest.</p>
+          </div>
+
+          <form class="search-form" id="searchForm" role="search">
+            <div class="search-input-wrap">
+              <span class="search-input-icon" aria-hidden="true">⌕</span>
+              <input
+                class="search-input"
+                id="globalSearch"
+                type="search"
+                name="q"
+                placeholder="Try MBBS, colleges, scholarships, jobs..."
+                autocomplete="off"
+                aria-label="Search education and career resources"
+              >
+            </div>
+            <button class="btn search-submit" type="submit">Search resources ↗</button>
+          </form>
+
+          <div class="quick-searches" aria-label="Popular searches">
+            <span class="quick-search-label">Popular searches:</span>
+            <button class="quick-search" type="button" data-query="MBBS">MBBS</button>
+            <button class="quick-search" type="button" data-query="colleges">Colleges</button>
+            <button class="quick-search" type="button" data-query="scholarships">Scholarships</button>
+            <button class="quick-search" type="button" data-query="jobs">Jobs</button>
+            <button class="quick-search" type="button" data-query="internships">Internships</button>
+            <button class="quick-search" type="button" data-query="study abroad">Study abroad</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resource directory -->
+
+    <section class="section" id="resourceDirectory" aria-labelledby="directoryTitle">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Explore our directories</span>
+          <h2 class="section-title" id="directoryTitle">
+            Find your <span class="gradient-text">next resource.</span>
+          </h2>
+          <p class="section-intro">
+            Browse education and career resources using the category
+            filters, or enter a keyword above. The directory links below
+            take you to the corresponding MedOrbits sections.
+          </p>
+        </div>
+
+        <div class="category-toolbar">
+          <div class="category-list" role="group" aria-label="Filter resources by category">
+            <button class="category-button" type="button" data-category="all" aria-pressed="true">✦ All resources</button>
+            <button class="category-button" type="button" data-category="education" aria-pressed="false">🎓 Education</button>
+            <button class="category-button" type="button" data-category="admissions" aria-pressed="false">📝 Admissions</button>
+            <button class="category-button" type="button" data-category="career" aria-pressed="false">💼 Careers</button>
+            <button class="category-button" type="button" data-category="support" aria-pressed="false">🤝 Support</button>
+          </div>
+
+          <label class="sort-wrap" for="sortResources">
+            Sort by
+            <select class="sort-select" id="sortResources">
+              <option value="default">Recommended</option>
+              <option value="az">Name: A–Z</option>
+              <option value="za">Name: Z–A</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="results-meta" aria-live="polite">
+          <span id="resultCount"><strong>12</strong> resources available</span>
+          <span id="activeFilterLabel">Showing all categories</span>
+        </div>
+
+        <div class="resource-grid" id="resourceGrid">
+
+          <article class="resource-card" data-category="education" data-title="Education Hub" data-keywords="education study learning academics courses colleges universities schools students">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🎓</div>
+              <div class="resource-top-copy">
+                <strong>01</strong>
+                <span>Learn and explore</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-wine">EDUCATION</span>
+              <h3>Education Hub</h3>
+              <p>Explore education resources and discover pathways for your academic interests and future plans.</p>
+              <div class="resource-tags">
+                <span>Learning</span><span>Study options</span><span>Resources</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Explore education</span>
+              <a href="/education/index.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="education" data-title="Courses Directory" data-keywords="courses degree diploma undergraduate postgraduate MBBS BDS BAMS BUMS paramedical science management technology">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">📚</div>
+              <div class="resource-top-copy">
+                <strong>02</strong>
+                <span>Choose a course</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-gold">COURSES</span>
+              <h3>Courses Directory</h3>
+              <p>Browse course options, study pathways and subject areas to help narrow down your choices.</p>
+              <div class="resource-tags">
+                <span>Degrees</span><span>Diplomas</span><span>Subjects</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Find courses</span>
+              <a href="/education/courses.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="education" data-title="Colleges Directory" data-keywords="colleges college institute campus medical college engineering nursing admission India">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🏛️</div>
+              <div class="resource-top-copy">
+                <strong>03</strong>
+                <span>Compare institutions</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-rose">INSTITUTIONS</span>
+              <h3>Colleges Directory</h3>
+              <p>Explore college-related resources and review institutional information before making decisions.</p>
+              <div class="resource-tags">
+                <span>Colleges</span><span>Institutes</span><span>Campus</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Explore colleges</span>
+              <a href="/education/colleges.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="education" data-title="Universities Directory" data-keywords="universities university higher education public private undergraduate postgraduate research">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🏫</div>
+              <div class="resource-top-copy">
+                <strong>04</strong>
+                <span>Higher education</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-wine">UNIVERSITIES</span>
+              <h3>Universities Directory</h3>
+              <p>Discover university-related resources for higher education, academic planning and further study.</p>
+              <div class="resource-tags">
+                <span>Higher education</span><span>Research</span><span>Study</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Explore universities</span>
+              <a href="/education/universities.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="admissions" data-title="Admissions Guidance" data-keywords="admissions application counselling eligibility documents entrance exams deadlines MBBS NEET UG">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">📝</div>
+              <div class="resource-top-copy">
+                <strong>05</strong>
+                <span>Plan your application</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-gold">ADMISSIONS</span>
+              <h3>Admissions Guidance</h3>
+              <p>Explore admission-related resources and application preparation information for your chosen pathway.</p>
+              <div class="resource-tags">
+                <span>Applications</span><span>Eligibility</span><span>Documents</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Admission resources</span>
+              <a href="/pages/admissions.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="education" data-title="Study Abroad" data-keywords="study abroad international education overseas universities foreign countries visa applications">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🌍</div>
+              <div class="resource-top-copy">
+                <strong>06</strong>
+                <span>Global pathways</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-rose">INTERNATIONAL</span>
+              <h3>Study Abroad</h3>
+              <p>Explore international study resources and research the requirements of your destination country.</p>
+              <div class="resource-tags">
+                <span>International</span><span>Universities</span><span>Planning</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Global study options</span>
+              <a href="/pages/study-abroad.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="career" data-title="Career Hub" data-keywords="career careers professional development skills occupations jobs employment career planning">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🧭</div>
+              <div class="resource-top-copy">
+                <strong>07</strong>
+                <span>Plan your future</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-wine">CAREERS</span>
+              <h3>Career Hub</h3>
+              <p>Explore career-related resources, professional pathways and information to support your next move.</p>
+              <div class="resource-tags">
+                <span>Career planning</span><span>Skills</span><span>Growth</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Career resources</span>
+              <a href="/career/index.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="career" data-title="Job Resources" data-keywords="jobs job openings employment vacancy vacancies hiring work opportunities recruitment listings">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">💼</div>
+              <div class="resource-top-copy">
+                <strong>08</strong>
+                <span>Explore employment</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-gold">JOBS</span>
+              <h3>Job Resources</h3>
+              <p>Find job-related information and resources to help organise your employment search.</p>
+              <div class="resource-tags">
+                <span>Employment</span><span>Opportunities</span><span>Job search</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Explore job resources</span>
+              <a href="/career/jobs.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="career" data-title="Internships" data-keywords="internships internship trainees students work experience placement training entry level">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🚀</div>
+              <div class="resource-top-copy">
+                <strong>09</strong>
+                <span>Build experience</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-rose">INTERNSHIPS</span>
+              <h3>Internships</h3>
+              <p>Explore internship resources and practical experience pathways for students and early-career candidates.</p>
+              <div class="resource-tags">
+                <span>Experience</span><span>Training</span><span>Students</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Explore internships</span>
+              <a href="/career/internships.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="career" data-title="Resume Support" data-keywords="resume CV curriculum vitae cover letter application interview professional profile">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">📄</div>
+              <div class="resource-top-copy">
+                <strong>10</strong>
+                <span>Prepare your profile</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-wine">CAREER TOOLS</span>
+              <h3>Resume Support</h3>
+              <p>Explore resume-related resources and practical guidance for presenting your skills and experience.</p>
+              <div class="resource-tags">
+                <span>Resume</span><span>CV</span><span>Applications</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Resume resources</span>
+              <a href="/career/resume-support.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="career" data-title="Recruitment Services" data-keywords="recruitment employer hiring candidates talent staffing workforce human resources">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">🤝</div>
+              <div class="resource-top-copy">
+                <strong>11</strong>
+                <span>Connect talent</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-gold">RECRUITMENT</span>
+              <h3>Recruitment Services</h3>
+              <p>Learn about recruitment-related services and ways to contact MedOrbits regarding hiring requirements.</p>
+              <div class="resource-tags">
+                <span>Employers</span><span>Candidates</span><span>Hiring</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Recruitment resources</span>
+              <a href="/career/recruitment.html">Open page ↗</a>
+            </div>
+          </article>
+
+          <article class="resource-card" data-category="support" data-title="Support Centre" data-keywords="support help assistance frequently asked questions contact enquiry website guidance">
+            <div class="resource-card-top">
+              <div class="resource-icon" aria-hidden="true">💬</div>
+              <div class="resource-top-copy">
+                <strong>12</strong>
+                <span>Get assistance</span>
+              </div>
+            </div>
+            <div class="resource-card-body">
+              <span class="badge badge-rose">SUPPORT</span>
+              <h3>Support Centre</h3>
+              <p>Find support information or contact MedOrbits if you need help locating a resource or understanding a service.</p>
+              <div class="resource-tags">
+                <span>Help</span><span>Enquiries</span><span>Guidance</span>
+              </div>
+            </div>
+            <div class="resource-card-footer">
+              <span>Get support</span>
+              <a href="/pages/support.html">Open page ↗</a>
+            </div>
+          </article>
+
+        </div>
+
+        <div class="no-results" id="noResults" role="status">
+          <span aria-hidden="true">🔎</span>
+          <h3>No matching resources found.</h3>
+          <p>Try another keyword or select a different category.</p>
+          <button class="btn btn-outline" id="clearSearch" type="button">Clear search and filters ↺</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Helpful guidance -->
+
+    <section class="section royal-section" aria-labelledby="guidanceTitle">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Search with confidence</span>
+          <h2 class="section-title" id="guidanceTitle">
+            Find information. <span class="gradient-text">Verify the details.</span>
+          </h2>
+          <p class="section-intro">
+            Use search as a starting point. Check the relevant official
+            source before making decisions about admissions, examinations,
+            fees, employment or other time-sensitive matters.
+          </p>
+        </div>
+
+        <div class="guidance-grid">
+          <article class="guidance-card">
+            <div class="guidance-icon" aria-hidden="true">🎯</div>
+            <span class="badge badge-wine">01 · BE SPECIFIC</span>
+            <h3>Use focused keywords</h3>
+            <p>
+              Include a course name, institution type, subject or career
+              keyword to narrow your search and find more relevant pages.
+            </p>
+          </article>
+
+          <article class="guidance-card">
+            <div class="guidance-icon" aria-hidden="true">🔎</div>
+            <span class="badge badge-gold">02 · CHECK SOURCES</span>
+            <h3>Verify official details</h3>
+            <p>
+              Confirm deadlines, eligibility, fees, counselling schedules
+              and vacancies with the relevant institution or official
+              government portal.
+            </p>
+          </article>
+
+          <article class="guidance-card">
+            <div class="guidance-icon" aria-hidden="true">🤝</div>
+            <span class="badge badge-rose">03 · ASK FOR HELP</span>
+            <h3>Contact our team</h3>
+            <p>
+              If you cannot locate a resource or need clarification about
+              a MedOrbits service, use our support or contact pages.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+
+    <section class="section" aria-labelledby="ctaTitle">
+      <div class="container">
+        <div class="cta-panel">
+          <div>
+            <span class="eyebrow">Need help finding something?</span>
+            <h2 id="ctaTitle">
+              Let’s find your
+              <span class="gradient-text">next step.</span>
+            </h2>
+            <p>
+              Contact MedOrbits if you need help navigating our resources
+              or want to enquire about education guidance, career support
+              or recruitment-related services.
+            </p>
+
+            <div class="cta-actions">
+              <a class="btn" href="/pages/contact.html">Contact MedOrbits ↗</a>
+              <a class="btn btn-outline" href="/pages/support.html">Visit support centre</a>
+              <a class="btn btn-outline" href="/pages/about.html">About MedOrbits</a>
+            </div>
+          </div>
+
+          <div class="cta-emoji" aria-hidden="true">🌹</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="48"
+              height="48"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Education · Career · Opportunities</small>
+            </span>
+          </a>
+
+          <p>
+            MedOrbits brings together education resources, admission
+            information, career guidance and recruitment-related services.
+            Explore our resources and connect with us. 🌹
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/index.html">Education hub</a>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/pages/study-abroad.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/index.html">Career hub</a>
+          <a href="/career/jobs.html">Job resources</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment services</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Company</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/our-team.html">Our team</a>
+          <a href="/pages/services.html">Our services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/pages/support.html">Support centre</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Policies</h2>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/pages/disclaimer.html">Disclaimer</a>
+          <a href="/pages/sitemap.html">Website sitemap</a>
+        </div>
+      </div>
+
+      <p class="footer-disclaimer">
+        This page provides navigation to MedOrbits resource directories.
+        The listed pages are not a live search index of every record or
+        vacancy. Availability, fees, admission rules, deadlines and job
+        details may change. Verify important information through the
+        relevant official institution, employer or government source.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved. 🌹</span>
+        <span>SEARCH · DISCOVER · PROGRESS</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const header = document.getElementById("siteHeader");
+      const menuToggle = document.getElementById("menuToggle");
+      const menuLabel = menuToggle.querySelector(".menu-label");
+      const menuSymbol = menuToggle.querySelector(".menu-symbol");
+      const mainNav = document.getElementById("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+      const searchForm = document.getElementById("searchForm");
+      const globalSearch = document.getElementById("globalSearch");
+      const searchSection = document.getElementById("searchResources");
+      const categoryButtons = [...document.querySelectorAll(".category-button")];
+      const quickSearchButtons = [...document.querySelectorAll(".quick-search")];
+      const resourceGrid = document.getElementById("resourceGrid");
+      const resourceCards = [...resourceGrid.querySelectorAll(".resource-card")];
+      const sortSelect = document.getElementById("sortResources");
+      const noResults = document.getElementById("noResults");
+      const resultCount = document.getElementById("resultCount");
+      const activeFilterLabel = document.getElementById("activeFilterLabel");
+      const clearSearchButton = document.getElementById("clearSearch");
+
+      let activeCategory = "all";
+
+      const categoryNames = {
+        all: "Showing all categories",
+        education: "Showing education resources",
+        admissions: "Showing admission resources",
+        career: "Showing career resources",
+        support: "Showing support resources"
+      };
+
+      document.getElementById("currentYear").textContent =
+        String(new Date().getFullYear());
+
+      /* Navigation */
+
+      function setMenuState(isOpen) {
+        mainNav.classList.toggle("open", isOpen);
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.setAttribute(
+          "aria-label",
+          isOpen ? "Close navigation menu" : "Open navigation menu"
+        );
+
+        menuLabel.textContent = isOpen ? "CLOSE" : "MENU";
+        menuSymbol.textContent = isOpen ? "×" : "☰";
+      }
+
+      function closeDropdowns(exceptGroup = null) {
+        navGroups.forEach(group => {
+          if (group === exceptGroup) return;
+
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            .setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function closeNavigation() {
+        setMenuState(false);
+        closeDropdowns();
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = !mainNav.classList.contains("open");
+        setMenuState(isOpen);
+
+        if (!isOpen) closeDropdowns();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+          closeDropdowns();
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          closeDropdowns();
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeNavigation();
+        }
+      });
+
+      function updateHeader() {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }
+
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+
+      function handleDesktopChange(event) {
+        if (event.matches) closeNavigation();
+      }
+
+      if (typeof desktopQuery.addEventListener === "function") {
+        desktopQuery.addEventListener("change", handleDesktopChange);
+      } else {
+        desktopQuery.addListener(handleDesktopChange);
+      }
+
+      /* Search, filters and sorting */
+
+      function normalise(value) {
+        return String(value || "")
+          .toLocaleLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+      }
+
+      function updateCategoryButtons() {
+        categoryButtons.forEach(button => {
+          const isActive = button.dataset.category === activeCategory;
+          button.setAttribute("aria-pressed", String(isActive));
+        });
+      }
+
+      function sortCards() {
+        const mode = sortSelect.value;
+        const sortedCards = [...resourceCards];
+
+        if (mode === "az") {
+          sortedCards.sort((a, b) =>
+            (a.dataset.title || "").localeCompare(b.dataset.title || "")
+          );
+        } else if (mode === "za") {
+          sortedCards.sort((a, b) =>
+            (b.dataset.title || "").localeCompare(a.dataset.title || "")
+          );
+        } else {
+          sortedCards.sort((a, b) =>
+            resourceCards.indexOf(a) - resourceCards.indexOf(b)
+          );
+        }
+
+        sortedCards.forEach(card => resourceGrid.appendChild(card));
+      }
+
+      function filterResources() {
+        const query = normalise(globalSearch.value);
+        let visibleCount = 0;
+
+        resourceCards.forEach(card => {
+          const searchableText = normalise([
+            card.dataset.title,
+            card.dataset.keywords,
+            card.innerText
+          ].join(" "));
+
+          const cardCategory = card.dataset.category || "";
+          const matchesQuery = !query || searchableText.includes(query);
+          const matchesCategory =
+            activeCategory === "all" || cardCategory === activeCategory;
+
+          const isVisible = matchesQuery && matchesCategory;
+          card.hidden = !isVisible;
+
+          if (isVisible) visibleCount++;
+        });
+
+        noResults.classList.toggle("visible", visibleCount === 0);
+
+        resultCount.innerHTML =
+          "<strong>" + visibleCount + "</strong> " +
+          (visibleCount === 1 ? "resource" : "resources") + " found";
+
+        activeFilterLabel.textContent =
+          categoryNames[activeCategory] || categoryNames.all;
+
+        updateCategoryButtons();
+      }
+
+      function runSearch({ scrollToResults = false } = {}) {
+        filterResources();
+
+        if (scrollToResults) {
+          document.getElementById("resourceDirectory").scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+            block: "start"
+          });
+        }
+      }
+
+      searchForm.addEventListener("submit", event => {
+        event.preventDefault();
+        runSearch({ scrollToResults: true });
+      });
+
+      globalSearch.addEventListener("input", () => {
+        runSearch();
+      });
+
+      categoryButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          activeCategory = button.dataset.category || "all";
+          runSearch();
+        });
+      });
+
+      quickSearchButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          globalSearch.value = button.dataset.query || "";
+          runSearch({ scrollToResults: true });
+          globalSearch.focus({ preventScroll: true });
+        });
+      });
+
+      sortSelect.addEventListener("change", () => {
+        sortCards();
+        filterResources();
+      });
+
+      clearSearchButton.addEventListener("click", () => {
+        globalSearch.value = "";
+        activeCategory = "all";
+        sortSelect.value = "default";
+        sortCards();
+        filterResources();
+        globalSearch.focus();
+      });
+
+      /* URL query support: /pages/search.html?q=MBBS */
+
+      const params = new URLSearchParams(window.location.search);
+      const initialQuery = params.get("q");
+
+      if (initialQuery) {
+        globalSearch.value = initialQuery.slice(0, 200);
+      }
+
+      sortCards();
+      filterResources();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+
+/* ==========================================================================
+   MedOrbits Enhancement
+   Dual-tone sapphire + champagne | 2-column mobile card grid
+   Compatible with existing official-documents.js and HTML classes
+   ========================================================================== */
+
+/* 1. Dual-tone design accents */
+
+:root {
+  --doc-sapphire-deep: #061326;
+  --doc-sapphire-mid: #12365b;
+  --doc-sapphire-light: #8bbcff;
+  --doc-champagne: #e8c98a;
+  --doc-champagne-soft: #f4e7c8;
+  --doc-card-gradient:
+    linear-gradient(145deg, #102e4e 0%, #091a30 58%, #171b2a 100%);
+}
+
+/* Refined dual-tone section backgrounds */
+
+.hero {
+  background:
+    radial-gradient(
+      ellipse at 85% 15%,
+      rgba(139, 188, 255, 0.19),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 10% 95%,
+      rgba(232, 201, 138, 0.09),
+      transparent 38%
+    ),
+    linear-gradient(135deg, #061326 0%, #0b2340 55%, #171b2a 100%);
+}
+
+.section.alt {
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(232, 201, 138, 0.07),
+      transparent 42%
+    ),
+    linear-gradient(145deg, #0b2039, #101a2b 70%, #091629);
+}
+
+.section-heading h2 span,
+.hero h1 span {
+  background: linear-gradient(
+    100deg,
+    var(--doc-blue-light) 0%,
+    var(--doc-champagne-soft) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 2. Premium dual-tone resource cards */
+
+.resource-card {
+  border-color: rgba(139, 188, 255, 0.24);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18, 54, 91, 0.96) 0%,
+      rgba(8, 25, 45, 0.99) 58%,
+      rgba(34, 31, 38, 0.98) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.resource-card:nth-child(even) {
+  border-color: rgba(232, 201, 138, 0.23);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(48, 48, 57, 0.98) 0%,
+      rgba(18, 36, 57, 0.98) 48%,
+      rgba(7, 22, 41, 0.99) 100%
+    );
+}
+
+.resource-card:hover {
+  border-color: var(--doc-blue);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(139, 188, 255, 0.07);
+}
+
+.resource-card:nth-child(even):hover {
+  border-color: var(--doc-champagne);
+}
+
+/* 3. Image presentation: works with existing HTML images */
+
+.resource-image {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(232, 201, 138, 0.22),
+      transparent 38%
+    ),
+    linear-gradient(135deg, #17416b, #071629);
+}
+
+.resource-image::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-bottom: 1px solid rgba(232, 201, 138, 0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 188, 255, 0.1),
+    transparent 45%,
+    rgba(232, 201, 138, 0.12)
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.resource-image::after {
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 9, 20, 0.02) 20%,
+    rgba(3, 9, 20, 0.58) 100%
+  );
+}
+
+.resource-image img {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 350ms ease, filter 350ms ease;
+}
+
+.resource-card:hover .resource-image img {
+  transform: scale(1.045);
+  filter: saturate(1.08);
+}
+
+/* Champagne accent for resource labels */
+
+.resource-category {
+  border-color: rgba(232, 201, 138, 0.3);
+  background: rgba(232, 201, 138, 0.06);
+  color: var(--doc-champagne-soft);
+}
+
+.resource-card:nth-child(odd) .resource-category {
+  border-color: rgba(139, 188, 255, 0.34);
+  background: rgba(139, 188, 255, 0.07);
+  color: var(--doc-blue-light);
+}
+
+.resource-link {
+  color: var(--doc-champagne-soft);
+}
+
+.resource-card:nth-child(odd) .resource-link {
+  color: var(--doc-blue-light);
+}
+
+/* 4. Premium filter panel */
+
+.filter-panel {
+  border-color: rgba(232, 201, 138, 0.2);
+  background:
+    linear-gradient(
+      120deg,
+      rgba(16, 43, 73, 0.98),
+      rgba(20, 27, 41, 0.98)
+    );
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--doc-champagne);
+  box-shadow: 0 0 0 3px rgba(232, 201, 138, 0.09);
+}
+
+/* 5. Two-column card grid on mobile and small tablets */
+
+@media (max-width: 560px) {
+  .resource-rails {
+    gap: 28px;
+  }
+
+  .resource-rail {
+    min-width: 0;
+  }
+
+  /* Replace the horizontal carousel with a two-column grid.
+     Existing JS can continue filtering the same resource cards. */
+
+  .resource-track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    padding: 3px 1px 8px;
+    overflow: visible;
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+    scrollbar-width: none;
+  }
+
+  .resource-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .resource-card {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    flex-direction: column;
+    border-radius: 13px;
+    scroll-snap-align: none;
+  }
+
+  .resource-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Keep images consistent across both columns. */
+
+  .resource-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    flex: 0 0 auto;
+  }
+
+  .resource-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .resource-image .image-fallback {
+    font-size: 30px;
+  }
+
+  .resource-card-body {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 11px;
+  }
+
+  .resource-category {
+    margin-bottom: 8px;
+    padding: 4px 6px;
+    font-size: 8px;
+    letter-spacing: 0.035em;
+    line-height: 1.45;
+  }
+
+  .resource-card h4 {
+    margin-bottom: 7px;
+    font-size: clamp(13px, 3.7vw, 16px);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .resource-card p {
+    margin-bottom: 12px;
+    font-size: 10px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+
+  .resource-link {
+    gap: 5px;
+    padding-top: 5px;
+    font-size: 10px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  /* Arrows are unnecessary because cards are displayed as a grid. */
+
+  .rail-controls {
+    display: none;
+  }
+
+  .rail-heading {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .rail-heading h3 {
+    font-size: 20px;
+  }
+
+  .rail-heading p {
+    font-size: 10px;
+  }
+
+  /* Keep empty-state messages across the full grid width. */
+
+  .empty-state {
+    grid-column: 1 / -1;
+    padding: 20px 12px;
+    font-size: 11px;
+  }
+}
+
+/* 6. Extra-small phones: preserve two columns */
+
+@media (max-width: 350px) {
+  .resource-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .resource-card {
+    border-radius: 11px;
+  }
+
+  .resource-card-body {
+    padding: 9px;
+  }
+
+  .resource-card h4 {
+    font-size: 13px;
+  }
+
+  .resource-card p,
+  .resource-link {
+    font-size: 9px;
+  }
+
+  .resource-category {
+    font-size: 7px;
+  }
+}
+
+/* 7. Accessible motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+  .resource-card,
+  .resource-image img {
+    transition: none !important;
+  }
+
+  .resource-card:hover,
+  .resource-card:hover .resource-image img {
+    transform: none;
+  }
+}

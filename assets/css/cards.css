@@ -1,1252 +1,1563 @@
-/*
+/* =========================================================
+MEDORBITS -- PREMIUM CARDS DESIGN SYSTEM
+Version: 3.0.0
+File: /assets/css/cards.css
 
-* ================================================================
-* MedOrbits | Unified Cards & Responsive Collections
-* File: assets/css/cards.css
-* Version: 1.0.0
-* ================================================================
-* Brand: MedOrbits
-* Theme: Royal Aubergine + Champagne Gold
-* Supports:
-* ●	Responsive card grids with consistent alignment
-* ●	Equal-height cards and aligned card footers
-* ●	Horizontal swipe / slide collections
-* ●	Education and course cards
-* ●	Medical college and university cards
-* ●	Admission process cards
-* ●	Official document and resource cards
-* ●	Study-abroad destination cards
-* ●	Careers and recruitment cards
-* ●	Application and account summary cards
-* ●	Admin dashboard and data cards
-* Recommended stylesheet order:
-* tokens.css
-* typography.css
-* accessibility.css
-* animations.css
-* cards.css
-* This file styles presentation only. It does not implement
-* JavaScript carousels, data retrieval, or application workflows.
-    */
+Theme:
+Royal Aubergine + Champagne Gold + Soft Lavender
 
-/* ================================================================
+FEATURES
 
-1. CARD DESIGN TOKENS
-    ================================================================ */
+1. Correct CSS syntax and design tokens
+2. Premium general-purpose cards
+3. Image-first cards with overlays
+4. Responsive 2 / 3 / 4-column grids
+5. Three independent horizontal card rails
+6. Course, college, job, process and resource cards
+7. Skeleton loading and empty states
+8. Responsive controls and touch scrolling
+9. Keyboard accessibility and reduced motion
+10. Print and high-contrast support
+
+IMPORTANT:
+CSS styles the slider controls and scrolling tracks.
+JavaScript is required to make previous/next buttons work.
+========================================================= */
+
+/* =========================================================
+
+1. DESIGN TOKENS
+    ========================================================= */
 
 :root {
-–card-bg: var(–panel, #21172b);
-–card-bg-raised: var(–panel-2, #2b1d36);
-–card-bg-deep: var(–bg-elevated, #191023);
+–card-bg: #241226;
+–card-bg-deep: #180b1d;
+–card-bg-soft: #302039;
+–card-bg-hover: #392442;
 
-–card-text: var(–text, #f7f1fa);
-–card-muted: var(–muted, #b7acbf);
-–card-border-color: var(–border, #493751);
-–card-accent: var(–page-accent, var(–mo-brand, #c9a96e));
+–card-gold: #e5c58a;
+–card-gold-light: #f3dfb2;
+–card-gold-dark: #b99558;
 
-–card-radius: var(–radius, 18px);
-–card-radius-small: var(–radius-md, 12px);
-–card-padding: var(–card-padding, clamp(1rem, 2.5vw, 1.5rem));
+–card-lavender: #c9b8df;
+–card-lavender-soft: #e5d9f1;
+
+–card-text: #f8f0f7;
+–card-text-muted: #c8b7cc;
+
+–card-border: rgba(229, 197, 138, 0.22);
+–card-border-hover: rgba(229, 197, 138, 0.62);
+
+–card-radius-sm: 12px;
+–card-radius-md: 18px;
+–card-radius-lg: 24px;
 
 –card-shadow:
-var(–shadow-sm, 0 4px 12px rgb(0 0 0 / 14%));
+0 12px 34px rgba(8, 2, 12, 0.25);
 
 –card-shadow-hover:
-var(–shadow-md, 0 12px 32px rgb(0 0 0 / 20%));
+0 20px 44px rgba(8, 2, 12, 0.42);
 
-–card-transition:
-200ms cubic-bezier(.2, 0, 0, 1);
+–card-transition: 220ms ease;
 
-–card-grid-min: 250px;
-–card-grid-gap: clamp(1rem, 2vw, 1.5rem);
+–card-image-height: 210px;
+–card-grid-gap: 22px;
+–card-rail-gap: 18px;
 
-–card-slide-gap: 1rem;
-–card-slide-width: clamp(260px, 30vw, 340px);
+–card-focus-ring:
+0 0 0 3px rgba(229, 197, 138, 0.45);
 }
 
-/* ================================================================
-02. RESPONSIVE CARD GRID
-================================================================ */
+/* =========================================================
+02. BASE AND RESET
+========================================================= */
 
-.card-grid {
-display: grid;
-grid-template-columns:
-repeat(auto-fit, minmax(min(100%, var(–card-grid-min)), 1fr));
-align-items: stretch;
-gap: var(–card-grid-gap);
+.card,
+.image-card,
+.course-card,
+.college-card,
+.process-card,
+.resource-card,
+.job-card,
+.summary-card,
+.card-skeleton {
+box-sizing: border-box;
 min-width: 0;
 }
 
-.card-grid–2 {
-grid-template-columns: repeat(2, minmax(0, 1fr));
+.card *,
+.image-card *,
+.course-card *,
+.college-card *,
+.process-card *,
+.resource-card *,
+.job-card *,
+.summary-card * {
+box-sizing: border-box;
 }
 
-.card-grid–3 {
-grid-template-columns: repeat(3, minmax(0, 1fr));
+.card img,
+.image-card img,
+.course-card img,
+.college-card img,
+.process-card img,
+.resource-card img,
+.job-card img {
+display: block;
+max-width: 100%;
 }
 
-.card-grid–4 {
-grid-template-columns: repeat(4, minmax(0, 1fr));
+.card a,
+.image-card a,
+.course-card a,
+.college-card a,
+.resource-card a,
+.job-card a {
+color: inherit;
 }
 
-.card-grid–wide {
-–card-grid-min: 290px;
+.card button,
+.image-card button,
+.course-card button,
+.college-card button,
+.resource-card button,
+.job-card button {
+font: inherit;
 }
 
-.card-grid–compact {
-–card-grid-min: 210px;
-–card-grid-gap: 0.875rem;
+.card p,
+.image-card p,
+.course-card p,
+.college-card p,
+.process-card p,
+.resource-card p,
+.job-card p {
+overflow-wrap: anywhere;
 }
 
-.card-grid > *,
-.card-grid > .card {
-min-width: 0;
-height: 100%;
+.card img,
+.image-card img,
+.course-card img,
+.college-card img {
+color: var(–card-text-muted);
 }
 
-/* ================================================================
-03. UNIVERSAL CARD
-================================================================ */
+/* =========================================================
+03. GENERAL CARD
+========================================================= */
 
 .card {
 position: relative;
 display: flex;
 flex-direction: column;
+
+width: 100%;
 min-width: 0;
 min-height: 100%;
-
-padding: var(–card-padding);
+overflow: hidden;
 
 color: var(–card-text);
-background: var(–card-bg);
 
-border: 1px solid var(–card-border-color);
-border-radius: var(–card-radius);
+background:
+linear-gradient(
+145deg,
+rgba(57, 36, 66, 0.98),
+rgba(30, 15, 36, 0.98)
+);
 
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
 box-shadow: var(–card-shadow);
-
-overflow-wrap: anywhere;
 
 transition:
 transform var(–card-transition),
 border-color var(–card-transition),
-background-color var(–card-transition),
-box-shadow var(–card-transition);
+box-shadow var(–card-transition),
+background var(–card-transition);
 }
 
-.card > :first-child {
-margin-block-start: 0;
+.card:hover {
+transform: translateY(-4px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow-hover);
 }
 
-.card > :last-child {
-margin-block-end: 0;
-}
-
-.card__header {
-display: flex;
-align-items: flex-start;
-justify-content: space-between;
-gap: 0.875rem;
-min-width: 0;
-margin-block-end: 1rem;
+.card:focus-within {
+border-color: var(–card-gold);
 }
 
 .card__body {
-flex: 1 1 auto;
-min-width: 0;
-}
-
-.card__footer {
 display: flex;
-align-items: center;
-flex-wrap: wrap;
-gap: 0.75rem;
-
+flex: 1;
+flex-direction: column;
+gap: 12px;
 min-width: 0;
-margin-block-start: auto;
-padding-block-start: 1rem;
+padding: 20px;
 }
 
 .card__title {
-margin: 0 0 0.5rem;
-color: var(–card-text);
-font-family: var(–font-body, "DM Sans", sans-serif);
-font-size: 1.125rem;
-font-weight: 700;
+margin: 0;
+
+color: var(–card-gold-light);
+
+font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+font-weight: 750;
 line-height: 1.4;
-letter-spacing: -0.015em;
+
 overflow-wrap: anywhere;
 }
 
 .card__description {
 margin: 0;
-color: var(–card-muted);
-font-size: 0.9375rem;
-line-height: 1.7;
-}
 
-.card__eyebrow {
-margin: 0 0 0.625rem;
-color: var(–card-accent);
-font-size: 0.75rem;
-font-weight: 700;
-line-height: 1.4;
-letter-spacing: 0.12em;
-text-transform: uppercase;
-}
+color: var(–card-text-muted);
 
-.card__icon {
-display: inline-flex;
-flex: 0 0 auto;
-align-items: center;
-justify-content: center;
+font-size: 0.94rem;
+line-height: 1.75;
 
-width: 44px;
-height: 44px;
-
-color: var(–card-accent);
-background: color-mix(in srgb, var(–card-accent) 10%, transparent);
-border: 1px solid color-mix(in srgb, var(–card-accent) 25%, transparent);
-border-radius: 14px;
+overflow-wrap: anywhere;
 }
 
 .card__meta {
 display: flex;
-align-items: center;
 flex-wrap: wrap;
-gap: 0.5rem 0.875rem;
+align-items: center;
+gap: 8px;
 
-color: var(–card-muted);
-font-size: 0.8125rem;
-line-height: 1.5;
+color: var(–card-text-muted);
+font-size: 0.82rem;
 }
 
-.card__divider {
-width: 100%;
-height: 1px;
-margin-block: 1rem;
-background: var(–card-border-color);
-border: 0;
+.card__footer {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+
+margin-top: auto;
+padding-top: 14px;
+
+border-top: 1px solid var(–card-border);
 }
 
-/* ================================================================
-04. CARD VARIANTS
-================================================================ */
-
-.card–raised {
-background: var(–card-bg-raised);
-}
-
-.card–deep {
-background: var(–card-bg-deep);
-}
-
-.card–outlined {
-background: transparent;
-box-shadow: none;
-}
-
-.card–flat {
-box-shadow: none;
-}
-
-.card–compact {
-padding: 1rem;
-border-radius: var(–card-radius-small);
-}
-
-.card–large {
-padding: clamp(1.5rem, 3vw, 2.25rem);
-}
-
-.card–gold {
-border-color: color-mix(in srgb, var(–mo-brand, #c9a96e) 55%, transparent);
-}
-
-.card–featured {
-background:
-linear-gradient(
-145deg,
-color-mix(in srgb, var(–card-accent) 9%, var(–card-bg)),
-var(–card-bg) 65%
-);
-border-color: color-mix(in srgb, var(–card-accent) 45%, transparent);
-}
-
-.card–featured::before {
-position: absolute;
-inset-block-start: -1px;
-inset-inline: 1.25rem;
-height: 2px;
-
-background: linear-gradient(
-90deg,
-transparent,
-var(–card-accent),
-transparent
-);
-
-content: "";
-pointer-events: none;
-}
-
-.card–interactive {
-cursor: pointer;
-}
-
-.card–interactive:focus-within {
-border-color: var(–border-focus, #e4d0a1);
-}
-
-/* ================================================================
-05. HOVER AND POINTER BEHAVIOR
-================================================================ */
-
-/*
-
-* Only apply hover movement when the device has a real,
-* hover-capable pointer. Touchscreens should not get sticky
-* hover states or unintended card movement.
-    */
-
-@media (hover: hover) and (pointer: fine) {
-.card–interactive:hover,
-.card-grid .card:hover {
-border-color: color-mix(
-in srgb,
-var(–card-accent) 65%,
-var(–card-border-color)
-);
-
-box-shadow: var(--card-shadow-hover);
-
-}
-
-.card–interactive:hover {
-transform: translateY(-3px);
-}
-}
-
-@media (prefers-reduced-motion: reduce) {
-.card,
-.card *,
-.card::before,
-.card::after {
-transition: none !important;
-animation: none !important;
-}
-
-.card–interactive:hover {
-transform: none;
-}
-}
-
-/* ================================================================
-06. CLICKABLE CARD LINKS
-================================================================ */
-
-/*
-
-* Preferred pattern:
-
-<article class="card card--interactive">
-<h3 class="card__title">
-<a class="card__link" href="/education/">Education</a>
-</h3>
-<p class="card__description">Explore courses.</p>
-</article>
-
-* Keep the actual link visible and keyboard accessible.
-* Do not put multiple interactive controls inside one link.
-    */
+/* =========================================================
+04. CARD LINKS AND BUTTONS
+========================================================= */
 
 .card__link {
-color: inherit;
-text-decoration: none;
-text-decoration-thickness: 0.08em;
-text-underline-offset: 0.2em;
-}
-
-.card__link:hover {
-color: var(–card-accent);
-text-decoration: underline;
-}
-
-.card__link:focus-visible {
-border-radius: 3px;
-outline: 3px solid var(–border-focus, #e4d0a1);
-outline-offset: 4px;
-}
-
-.card__action {
 display: inline-flex;
 align-items: center;
 justify-content: center;
-gap: 0.5rem;
+gap: 8px;
 
-min-height: 44px;
+min-height: 42px;
 max-width: 100%;
-padding: 0.65rem 0.9rem;
+padding: 10px 16px;
 
-color: var(–card-text);
-background: var(–card-bg-raised);
+color: #241226;
 
-border: 1px solid var(–card-border-color);
-border-radius: var(–radius-sm, 8px);
+background:
+linear-gradient(
+135deg,
+var(–card-gold-light),
+var(–card-gold)
+);
 
-font-size: 0.875rem;
-font-weight: 700;
+border: 1px solid transparent;
+border-radius: 10px;
+
+font-size: 0.87rem;
+font-weight: 750;
 line-height: 1.4;
 text-align: center;
 text-decoration: none;
-overflow-wrap: anywhere;
+
+cursor: pointer;
 
 transition:
-background-color var(–card-transition),
-border-color var(–card-transition),
-color var(–card-transition);
+transform var(–card-transition),
+filter var(–card-transition),
+box-shadow var(–card-transition);
 }
 
-.card__action:hover {
-color: var(–card-text);
-border-color: var(–card-accent);
-background: color-mix(in srgb, var(–card-accent) 9%, var(–card-bg));
+.card__link:hover {
+filter: brightness(1.07);
+transform: translateY(-1px);
 }
 
-.card__action:focus-visible {
-outline: 3px solid var(–border-focus, #e4d0a1);
-outline-offset: 3px;
+.card__link:active {
+transform: translateY(0);
 }
 
-/* ================================================================
-07. IMAGE CARDS
-================================================================ */
-
-.card__media {
-position: relative;
-width: 100%;
-aspect-ratio: 16 / 9;
-margin-block-end: 1rem;
-
-overflow: hidden;
-border: 1px solid var(–card-border-color);
-border-radius: var(–card-radius-small);
-background: var(–card-bg-deep);
+.card__link:focus-visible {
+outline: none;
+box-shadow: var(–card-focus-ring);
 }
 
-.card__media img,
-.card__media video {
-display: block;
-width: 100%;
-height: 100%;
-object-fit: cover;
+.card__link–secondary {
+color: var(–card-gold-light);
+
+background: rgba(229, 197, 138, 0.08);
+border-color: var(–card-border);
 }
 
-.card__media–portrait {
-aspect-ratio: 4 / 5;
+.card__link–secondary:hover {
+background: rgba(229, 197, 138, 0.15);
 }
 
-.card__media–square {
-aspect-ratio: 1;
+.card__link–lavender {
+color: var(–card-lavender-soft);
+
+background: rgba(201, 184, 223, 0.12);
+border-color: rgba(201, 184, 223, 0.3);
 }
 
-.card__media–wide {
-aspect-ratio: 21 / 9;
-}
-
-.card__media–contain img {
-object-fit: contain;
-}
-
-.card__media–contain {
-background: var(–card-bg-raised);
-}
-
-@media (hover: hover) and (pointer: fine) {
-.card__media img {
-transition: transform 450ms cubic-bezier(.2, 0, 0, 1);
-}
-
-.card:hover .card__media img {
-transform: scale(1.025);
-}
-}
-
-/* ================================================================
-08. BADGES AND STATUS LABELS
-================================================================ */
-
-.card__badges {
-display: flex;
-align-items: center;
-flex-wrap: wrap;
-gap: 0.5rem;
-min-width: 0;
-margin-block-end: 0.875rem;
-}
+/* =========================================================
+05. CARD BADGES
+========================================================= */
 
 .card__badge {
 display: inline-flex;
 align-items: center;
 justify-content: center;
 
+width: fit-content;
 max-width: 100%;
-min-height: 26px;
-padding: 0.25rem 0.6rem;
+padding: 6px 11px;
 
-color: var(–card-muted);
-background: var(–card-bg-deep);
-border: 1px solid var(–card-border-color);
-border-radius: var(–radius-pill, 999px);
+color: var(–card-gold-light);
 
-font-size: 0.75rem;
-font-weight: 700;
-line-height: 1.35;
+background: rgba(229, 197, 138, 0.12);
+border: 1px solid var(–card-border);
+border-radius: 999px;
+
+font-size: 0.74rem;
+font-weight: 750;
+line-height: 1.4;
+
 overflow-wrap: anywhere;
 }
 
-.card__badge–accent {
-color: var(–card-accent);
-border-color: color-mix(in srgb, var(–card-accent) 40%, transparent);
+.card__badge–lavender {
+color: var(–card-lavender-soft);
+
+background: rgba(201, 184, 223, 0.12);
+border-color: rgba(201, 184, 223, 0.25);
 }
 
 .card__badge–success {
-color: var(–success, #a8d7b1);
+color: #c4e8c9;
+
+background: rgba(91, 166, 108, 0.12);
+border-color: rgba(91, 166, 108, 0.3);
 }
 
-.card__badge–warning {
-color: var(–warning, #f0cc83);
+.card__badge–muted {
+color: var(–card-text-muted);
+
+background: rgba(200, 183, 204, 0.08);
+border-color: rgba(200, 183, 204, 0.2);
 }
 
-.card__badge–danger {
-color: var(–danger, #ffaaaa);
-}
+/* =========================================================
+06. IMAGE-FIRST CARDS
+========================================================= */
 
-/*
-
-* Use explicit text such as "Pending review" or "Official source".
-* Never communicate status through color alone.
-    */
-
-/* ================================================================
-09. EDUCATION AND COURSE CARDS
-================================================================ */
-
-.course-card {
-display: flex;
-flex-direction: column;
-gap: 0.875rem;
-}
-
-.course-card__title {
-margin: 0;
-font-family: var(–font-body, "DM Sans", sans-serif);
-font-size: 1.125rem;
-font-weight: 700;
-line-height: 1.4;
-}
-
-.course-card__details {
-display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 0.75rem;
-}
-
-.course-card__detail {
-min-width: 0;
-padding: 0.75rem;
-border: 1px solid var(–card-border-color);
-border-radius: var(–card-radius-small);
-background: var(–card-bg-deep);
-}
-
-.course-card__label {
-display: block;
-margin-block-end: 0.3rem;
-color: var(–card-muted);
-font-size: 0.75rem;
-line-height: 1.45;
-}
-
-.course-card__value {
-display: block;
-font-size: 0.9375rem;
-font-weight: 700;
-line-height: 1.5;
-overflow-wrap: anywhere;
-}
-
-/* ================================================================
-10. MEDICAL COLLEGE AND UNIVERSITY CARDS
-================================================================ */
-
-.college-card {
-display: flex;
-flex-direction: column;
-min-width: 0;
-}
-
-.college-card__identity {
-display: flex;
-align-items: flex-start;
-gap: 0.875rem;
-min-width: 0;
-}
-
-.college-card__logo {
-display: flex;
-flex: 0 0 60px;
-align-items: center;
-justify-content: center;
-
-width: 60px;
-height: 60px;
-padding: 0.35rem;
-
-background: var(–card-bg-raised);
-border: 1px solid var(–card-border-color);
-border-radius: 14px;
-}
-
-.college-card__logo img {
-max-width: 100%;
-max-height: 100%;
-object-fit: contain;
-}
-
-.college-card__identity-text {
-flex: 1 1 auto;
-min-width: 0;
-}
-
-.college-card__name {
-margin: 0 0 0.35rem;
-font-size: 1rem;
-font-weight: 700;
-line-height: 1.45;
-overflow-wrap: anywhere;
-}
-
-.college-card__location {
-color: var(–card-muted);
-font-size: 0.8125rem;
-line-height: 1.5;
-}
-
-.college-card__facts {
-display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 0.625rem;
-margin-block: 1rem;
-}
-
-.college-card__fact {
-min-width: 0;
-padding: 0.7rem;
-background: var(–card-bg-deep);
-border-radius: var(–card-radius-small);
-}
-
-.college-card__fact-label {
-display: block;
-margin-block-end: 0.25rem;
-color: var(–card-muted);
-font-size: 0.75rem;
-}
-
-.college-card__fact-value {
-display: block;
-font-weight: 700;
-font-size: 0.875rem;
-overflow-wrap: anywhere;
-}
-
-/* ================================================================
-11. ADMISSION PROCESS CARDS
-================================================================ */
-
-.process-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-align-items: stretch;
-gap: 1rem;
-}
-
-.process-card {
+.image-card {
 position: relative;
 display: flex;
 flex-direction: column;
-gap: 0.75rem;
+
+width: 100%;
+min-width: 0;
+height: 100%;
+overflow: hidden;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+box-shadow: var(–card-shadow);
+
+transition:
+transform var(–card-transition),
+border-color var(–card-transition),
+box-shadow var(–card-transition);
+}
+
+.image-card:hover {
+transform: translateY(-5px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow-hover);
+}
+
+.image-card__media {
+position: relative;
+
+width: 100%;
+aspect-ratio: 16 / 10;
+overflow: hidden;
+
+background:
+linear-gradient(
+135deg,
+#392442,
+#180b1d
+);
+}
+
+.image-card__media img {
+position: absolute;
+inset: 0;
+
+width: 100%;
+height: 100%;
+
+object-fit: cover;
+object-position: center;
+
+transition:
+transform 420ms ease,
+filter 420ms ease;
+}
+
+.image-card:hover .image-card__media img {
+transform: scale(1.055);
+}
+
+.image-card__media::after {
+content: "";
+
+position: absolute;
+inset: 35% 0 0;
+
+pointer-events: none;
+
+background:
+linear-gradient(
+to bottom,
+transparent,
+rgba(24, 11, 29, 0.72)
+);
+}
+
+.image-card__media–portrait {
+aspect-ratio: 4 / 5;
+}
+
+.image-card__media–square {
+aspect-ratio: 1 / 1;
+}
+
+.image-card__media–wide {
+aspect-ratio: 16 / 9;
+}
+
+.image-card__media .card__badge {
+position: absolute;
+z-index: 2;
+top: 12px;
+left: 12px;
+}
+
+.image-card__body {
+display: flex;
+flex: 1;
+flex-direction: column;
+gap: 11px;
+
+min-width: 0;
+padding: 18px;
+}
+
+.image-card__title {
+margin: 0;
+
+color: var(–card-gold-light);
+
+font-size: clamp(1rem, 1.6vw, 1.22rem);
+font-weight: 800;
+line-height: 1.4;
+
+overflow-wrap: anywhere;
+}
+
+.image-card__description {
+margin: 0;
+
+color: var(–card-text-muted);
+
+font-size: 0.9rem;
+line-height: 1.7;
+}
+
+.image-card__footer {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+
+margin-top: auto;
+padding-top: 12px;
+}
+
+/* =========================================================
+07. IMAGE CARD VARIANTS
+========================================================= */
+
+.image-card–featured {
+border-color: rgba(229, 197, 138, 0.38);
+}
+
+.image-card–featured .image-card__media {
+aspect-ratio: 16 / 9;
+}
+
+.image-card–compact .image-card__body {
+gap: 8px;
+padding: 14px;
+}
+
+.image-card–compact .image-card__title {
+font-size: 1rem;
+}
+
+.image-card–compact .image-card__description {
+font-size: 0.85rem;
+}
+
+.image-card–horizontal {
+display: grid;
+grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
+align-items: stretch;
+}
+
+.image-card–horizontal .image-card__media {
+height: 100%;
+min-height: 150px;
+aspect-ratio: auto;
+}
+
+.image-card–horizontal .image-card__body {
+padding: 16px;
+}
+
+/* =========================================================
+08. RESPONSIVE CARD GRIDS
+========================================================= */
+
+.card-grid {
+display: grid;
+
+grid-template-columns: minmax(0, 1fr);
+gap: var(–card-grid-gap);
+
+width: 100%;
 min-width: 0;
 }
 
-.process-card__number {
+.card-grid > * {
+min-width: 0;
+}
+
+.card-grid–2,
+.card-grid–3,
+.card-grid–4,
+.card-grid–featured {
+grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 560px) {
+.card-grid–2,
+.card-grid–3,
+.card-grid–4,
+.card-grid–featured {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+
+@media (min-width: 900px) {
+.card-grid–3,
+.card-grid–4 {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card-grid–featured {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+
+@media (min-width: 1200px) {
+.card-grid–4 {
+grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+}
+
+/* =========================================================
+09. THREE INDEPENDENT SLIDEABLE CARD RAILS
+========================================================= */
+
+.card-rails {
+display: grid;
+grid-template-columns: minmax(0, 1fr);
+gap: 34px;
+
+width: 100%;
+min-width: 0;
+}
+
+.card-rail {
+width: 100%;
+min-width: 0;
+}
+
+.card-rail__header {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+gap: 14px;
+
+margin-bottom: 16px;
+}
+
+.card-rail__heading {
+flex: 1 1 220px;
+min-width: 0;
+}
+
+.card-rail__eyebrow {
+display: block;
+
+margin: 0 0 6px;
+
+color: var(–card-gold);
+
+font-size: 0.75rem;
+font-weight: 800;
+letter-spacing: 0.13em;
+text-transform: uppercase;
+}
+
+.card-rail__title {
+margin: 0;
+
+color: var(–card-text);
+
+font-size: clamp(1.25rem, 2.2vw, 1.8rem);
+font-weight: 850;
+line-height: 1.3;
+
+overflow-wrap: anywhere;
+}
+
+.card-rail__description {
+max-width: 650px;
+margin: 8px 0 0;
+
+color: var(–card-text-muted);
+
+font-size: 0.93rem;
+line-height: 1.7;
+}
+
+/* =========================================================
+10. SLIDER CONTROLS
+========================================================= */
+
+.card-slider-controls,
+.card-rail__controls {
+display: flex;
+flex: 0 0 auto;
+align-items: center;
+gap: 8px;
+}
+
+.card-slider-control,
+.card-rail__control {
 display: inline-flex;
 align-items: center;
 justify-content: center;
 
+flex: 0 0 auto;
 width: 42px;
 height: 42px;
+padding: 0;
 
-color: var(–card-accent);
-background: var(–card-bg-deep);
-border: 1px solid color-mix(in srgb, var(–card-accent) 45%, transparent);
+color: var(–card-gold-light);
+
+background: rgba(229, 197, 138, 0.08);
+border: 1px solid var(–card-border);
 border-radius: 50%;
 
-font-size: 0.875rem;
-font-weight: 800;
-font-variant-numeric: tabular-nums;
+font-size: 1.2rem;
+line-height: 1;
+
+cursor: pointer;
+
+transition:
+color var(–card-transition),
+background var(–card-transition),
+border-color var(–card-transition),
+transform var(–card-transition);
+}
+
+.card-slider-control:hover:not(:disabled),
+.card-rail__control:hover:not(:disabled) {
+color: var(–card-bg-deep);
+
+background: var(–card-gold);
+border-color: var(–card-gold);
+
+transform: translateY(-2px);
+}
+
+.card-slider-control:focus-visible,
+.card-rail__control:focus-visible {
+outline: none;
+box-shadow: var(–card-focus-ring);
+}
+
+.card-slider-control:disabled,
+.card-rail__control:disabled {
+opacity: 0.35;
+cursor: not-allowed;
+transform: none;
+}
+
+/* =========================================================
+11. HORIZONTAL SLIDER TRACKS
+========================================================= */
+
+/*
+Supports both naming conventions:
+.card-slider
+.card-rail__track
+
+Each track scrolls independently.
+*/
+
+.card-slider,
+.card-rail__track {
+display: grid;
+
+grid-auto-flow: column;
+grid-auto-columns: calc(
+(100% - var(–card-rail-gap)) / 2
+);
+
+gap: var(–card-rail-gap);
+
+width: 100%;
+min-width: 0;
+padding: 3px 2px 18px;
+
+overflow-x: auto;
+overflow-y: hidden;
+
+overscroll-behavior-x: contain;
+scroll-snap-type: x mandatory;
+scroll-padding-inline: 2px;
+
+scrollbar-width: thin;
+scrollbar-color:
+var(–card-gold-dark)
+rgba(229, 197, 138, 0.08);
+
+-webkit-overflow-scrolling: touch;
+}
+
+.card-slider > *,
+.card-rail__track > * {
+min-width: 0;
+height: 100%;
+
+scroll-snap-align: start;
+}
+
+/* Optional scrollbar styling for Chromium and Safari */
+
+.card-slider::-webkit-scrollbar,
+.card-rail__track::-webkit-scrollbar {
+height: 7px;
+}
+
+.card-slider::-webkit-scrollbar-track,
+.card-rail__track::-webkit-scrollbar-track {
+background: rgba(229, 197, 138, 0.07);
+border-radius: 99px;
+}
+
+.card-slider::-webkit-scrollbar-thumb,
+.card-rail__track::-webkit-scrollbar-thumb {
+background: var(–card-gold-dark);
+border-radius: 99px;
+}
+
+/* =========================================================
+12. SLIDER WIDTH VARIANTS
+========================================================= */
+
+/* Two cards visible */
+
+.card-slider–two,
+.card-rail__track–two {
+grid-auto-columns: calc(
+(100% - var(–card-rail-gap)) / 2
+);
+}
+
+/* Three cards visible on wide screens */
+
+.card-slider–wide,
+.card-rail__track–wide {
+grid-auto-columns: calc(
+(100% - (var(–card-rail-gap) * 2)) / 3
+);
+}
+
+/* Smaller, compact cards */
+
+.card-slider–compact,
+.card-rail__track–compact {
+grid-auto-columns: minmax(190px, 42%);
+}
+
+/* One card per viewport */
+
+.card-slider–full,
+.card-rail__track–full {
+grid-auto-columns: 100%;
+}
+
+@media (max-width: 699px) {
+.card-slider,
+.card-rail__track {
+grid-auto-columns: minmax(0, 82%);
+}
+
+.card-slider–two,
+.card-rail__track–two {
+grid-auto-columns: minmax(0, 82%);
+}
+
+.card-slider–wide,
+.card-rail__track–wide {
+grid-auto-columns: minmax(0, 82%);
+}
+
+.card-slider–compact,
+.card-rail__track–compact {
+grid-auto-columns: minmax(0, 70%);
+}
+
+.card-slider–full,
+.card-rail__track–full {
+grid-auto-columns: 100%;
+}
+}
+
+@media (min-width: 900px) {
+.card-slider–compact,
+.card-rail__track–compact {
+grid-auto-columns: minmax(210px, 27%);
+}
+}
+
+/* =========================================================
+13. COURSE CARDS
+========================================================= */
+
+.course-card {
+display: flex;
+flex-direction: column;
+
+width: 100%;
+min-width: 0;
+height: 100%;
+overflow: hidden;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+
+transition:
+border-color var(–card-transition),
+transform var(–card-transition),
+box-shadow var(–card-transition);
+}
+
+.course-card:hover {
+transform: translateY(-4px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow-hover);
+}
+
+.course-card__image {
+display: block;
+
+width: 100%;
+aspect-ratio: 16 / 9;
+
+object-fit: cover;
+background: var(–card-bg-soft);
+}
+
+.course-card__content {
+display: flex;
+flex: 1;
+flex-direction: column;
+gap: 12px;
+
+min-width: 0;
+padding: 18px;
+}
+
+.course-card__title {
+margin: 0;
+
+color: var(–card-gold-light);
+
+font-size: 1.12rem;
+line-height: 1.4;
+}
+
+.course-card__details {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+
+color: var(–card-text-muted);
+font-size: 0.84rem;
+}
+
+/* =========================================================
+14. COLLEGE CARDS
+========================================================= */
+
+.college-card {
+display: flex;
+flex-direction: column;
+
+width: 100%;
+min-width: 0;
+height: 100%;
+overflow: hidden;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+
+transition:
+border-color var(–card-transition),
+transform var(–card-transition),
+box-shadow var(–card-transition);
+}
+
+.college-card:hover {
+transform: translateY(-4px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow-hover);
+}
+
+.college-card__image {
+display: block;
+
+width: 100%;
+aspect-ratio: 16 / 10;
+
+object-fit: cover;
+background: var(–card-bg-soft);
+}
+
+.college-card__content {
+display: flex;
+flex: 1;
+flex-direction: column;
+gap: 10px;
+
+min-width: 0;
+padding: 18px;
+}
+
+.college-card__title {
+margin: 0;
+
+color: var(–card-gold-light);
+
+font-size: 1.08rem;
+line-height: 1.45;
+}
+
+.college-card__location {
+color: var(–card-lavender);
+font-size: 0.86rem;
+}
+
+/* =========================================================
+15. ADMISSION PROCESS CARDS
+========================================================= */
+
+.process-card {
+display: flex;
+align-items: flex-start;
+gap: 16px;
+
+min-width: 0;
+padding: 20px;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+}
+
+.process-card__number {
+display: grid;
+place-items: center;
+
+flex: 0 0 44px;
+width: 44px;
+height: 44px;
+
+color: var(–card-bg-deep);
+
+background:
+linear-gradient(
+135deg,
+var(–card-gold-light),
+var(–card-gold)
+);
+
+border-radius: 14px;
+
+font-size: 1.05rem;
+font-weight: 900;
+}
+
+.process-card__content {
+min-width: 0;
 }
 
 .process-card__title {
-margin: 0;
-font-size: 1rem;
-font-weight: 700;
+margin: 0 0 8px;
+
+color: var(–card-gold-light);
+
+font-size: 1.02rem;
 line-height: 1.45;
 }
 
 .process-card__description {
 margin: 0;
-color: var(–card-muted);
-font-size: 0.875rem;
-line-height: 1.65;
+
+color: var(–card-text-muted);
+
+font-size: 0.9rem;
+line-height: 1.7;
 }
 
-/* ================================================================
-12. DOCUMENT AND RESOURCE CARDS
-================================================================ */
+/* =========================================================
+16. RESOURCE CARDS
+========================================================= */
 
 .resource-card {
 display: flex;
-flex-direction: column;
-gap: 0.875rem;
+align-items: flex-start;
+gap: 15px;
+
+min-width: 0;
+padding: 18px;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+
+transition:
+border-color var(–card-transition),
+transform var(–card-transition),
+box-shadow var(–card-transition);
 }
 
-.resource-card__heading {
-display: flex;
-align-items: flex-start;
-gap: 0.75rem;
-min-width: 0;
+.resource-card:hover {
+transform: translateY(-3px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow);
 }
 
 .resource-card__icon {
-display: inline-flex;
-flex: 0 0 42px;
-align-items: center;
-justify-content: center;
+display: grid;
+place-items: center;
 
-width: 42px;
-height: 42px;
+flex: 0 0 48px;
+width: 48px;
+height: 48px;
 
-color: var(–card-accent);
-background: var(–card-bg-deep);
-border: 1px solid var(–card-border-color);
-border-radius: 12px;
+color: var(–card-gold-light);
+
+background: rgba(229, 197, 138, 0.1);
+border: 1px solid var(–card-border);
+border-radius: 15px;
+
+font-size: 1.25rem;
 }
 
-.resource-card__heading-text {
-flex: 1 1 auto;
+.resource-card__content {
+flex: 1;
 min-width: 0;
 }
 
 .resource-card__title {
-margin: 0 0 0.35rem;
+margin: 0 0 7px;
+
+color: var(–card-gold-light);
+
 font-size: 1rem;
-font-weight: 700;
 line-height: 1.45;
 }
 
-.resource-card__source {
-color: var(–card-muted);
-font-size: 0.8125rem;
-line-height: 1.5;
-overflow-wrap: anywhere;
+.resource-card__description {
+margin: 0;
+
+color: var(–card-text-muted);
+
+font-size: 0.88rem;
+line-height: 1.65;
 }
 
-.resource-card__footer {
-display: flex;
-flex-wrap: wrap;
-align-items: center;
-justify-content: space-between;
-gap: 0.75rem;
-margin-block-start: auto;
-}
-
-/* ================================================================
-13. CAREER AND RECRUITMENT CARDS
-================================================================ */
+/* =========================================================
+17. JOB CARDS
+========================================================= */
 
 .job-card {
 display: flex;
 flex-direction: column;
-gap: 0.875rem;
+gap: 13px;
+
+width: 100%;
+min-width: 0;
+height: 100%;
+padding: 20px;
+
+color: var(–card-text);
+background: var(–card-bg);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
+
+transition:
+border-color var(–card-transition),
+transform var(–card-transition),
+box-shadow var(–card-transition);
 }
 
-.job-card__header {
-display: flex;
-align-items: flex-start;
-justify-content: space-between;
-gap: 0.75rem;
+.job-card:hover {
+transform: translateY(-4px);
+border-color: var(–card-border-hover);
+box-shadow: var(–card-shadow-hover);
 }
 
 .job-card__title {
 margin: 0;
-font-size: 1.0625rem;
-font-weight: 700;
-line-height: 1.45;
+
+color: var(–card-gold-light);
+
+font-size: 1.12rem;
+line-height: 1.4;
 }
 
 .job-card__company {
-margin-block-start: 0.35rem;
-color: var(–card-muted);
-font-size: 0.875rem;
+color: var(–card-lavender);
+font-size: 0.9rem;
 }
 
-.job-card__meta {
+.job-card__details {
 display: flex;
 flex-wrap: wrap;
-gap: 0.5rem 1rem;
-color: var(–card-muted);
-font-size: 0.8125rem;
-line-height: 1.55;
+gap: 8px;
+
+color: var(–card-text-muted);
+font-size: 0.82rem;
 }
 
-.job-card__footer {
-display: flex;
-flex-wrap: wrap;
-align-items: center;
-gap: 0.75rem;
-margin-block-start: auto;
-}
-
-/* ================================================================
-14. APPLICATION AND DASHBOARD SUMMARY CARDS
-================================================================ */
-
-.summary-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
-gap: 1rem;
-}
+/* =========================================================
+18. SUMMARY AND STATISTICS CARDS
+========================================================= */
 
 .summary-card {
 display: flex;
 flex-direction: column;
-gap: 0.5rem;
+gap: 10px;
+
 min-width: 0;
+padding: 22px;
+
+color: var(–card-text);
+
+background:
+linear-gradient(
+145deg,
+rgba(57, 36, 66, 0.98),
+rgba(30, 15, 36, 0.98)
+);
+
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
 }
 
 .summary-card__label {
-color: var(–card-muted);
-font-size: 0.8125rem;
-line-height: 1.5;
+color: var(–card-text-muted);
+
+font-size: 0.86rem;
+font-weight: 650;
 }
 
 .summary-card__value {
-color: var(–card-text);
-font-size: clamp(1.5rem, 3vw, 2rem);
-font-weight: 800;
-line-height: 1.2;
-letter-spacing: -0.035em;
-font-variant-numeric: tabular-nums;
+color: var(–card-gold-light);
+
+font-size: clamp(1.7rem, 3vw, 2.4rem);
+font-weight: 900;
+line-height: 1.15;
+
 overflow-wrap: anywhere;
 }
 
 .summary-card__note {
-color: var(–card-muted);
-font-size: 0.8125rem;
+color: var(–card-lavender);
+
+font-size: 0.82rem;
 line-height: 1.5;
 }
 
-/* ================================================================
-15. HORIZONTAL SLIDABLE COLLECTIONS
-================================================================ */
+/* =========================================================
+19. EMPTY STATES
+========================================================= */
 
-/*
+.card-empty-state {
+padding: 32px 20px;
 
-* Use for featured courses, college recommendations, career
-* categories, destination cards and related resources.
-* Native horizontal scrolling supports touch gestures and trackpads.
-* JavaScript is not required for basic swipe scrolling.
-* Example:
+color: var(–card-text-muted);
+background: rgba(36, 18, 38, 0.65);
 
-<div class="card-slider" aria-label="Featured courses">
-<article class="card-slider__item card">...</article>
-<article class="card-slider__item card">...</article>
-</div>
+border: 1px dashed var(–card-border);
+border-radius: var(–card-radius-md);
 
-*/
+text-align: center;
+}
 
-.card-slider {
-display: grid;
-grid-auto-flow: column;
-grid-auto-columns: var(–card-slide-width);
-grid-template-rows: minmax(0, 1fr);
-align-items: stretch;
-gap: var(–card-slide-gap);
+.card-empty-state__title {
+margin: 0 0 8px;
 
-width: 100%;
+color: var(–card-gold-light);
+font-weight: 800;
+}
+
+.card-empty-state__description {
+margin: 0;
+
+font-size: 0.9rem;
+line-height: 1.65;
+}
+
+/* =========================================================
+20. LOADING SKELETONS
+========================================================= */
+
+.card-skeleton {
 min-width: 0;
-padding: 0.25rem 0.125rem 1rem;
+overflow: hidden;
 
-overflow-x: auto;
-overflow-y: hidden;
-
-scroll-snap-type: x mandatory;
-scroll-padding-inline: 0.125rem;
-overscroll-behavior-inline: contain;
--webkit-overflow-scrolling: touch;
-}
-
-.card-slider > * {
-min-width: 0;
-height: 100%;
-scroll-snap-align: start;
-}
-
-.card-slider__item {
-display: flex;
-flex-direction: column;
-}
-
-.card-slider:focus-visible {
-outline: 3px solid var(–border-focus, #e4d0a1);
-outline-offset: 3px;
-}
-
-.card-slider__item > .card {
-flex: 1 1 auto;
-}
-
-/*
-
-* Use .card-slider–wide for larger college or destination cards.
-* Use .card-slider–compact for smaller topic cards.
-    */
-
-.card-slider–wide {
-–card-slide-width: clamp(300px, 36vw, 420px);
-}
-
-.card-slider–compact {
-–card-slide-width: clamp(220px, 24vw, 280px);
-}
-
-.card-slider–full {
-–card-slide-width: min(84vw, 460px);
-}
-
-/*
-
-* Optional subtle scrollbar styling. The scrollbar remains usable.
-    */
-
-.card-slider {
-scrollbar-width: thin;
-scrollbar-color: var(–card-border-color) transparent;
-}
-
-.card-slider::-webkit-scrollbar {
-height: 8px;
-}
-
-.card-slider::-webkit-scrollbar-track {
-background: transparent;
-}
-
-.card-slider::-webkit-scrollbar-thumb {
-background: var(–card-border-color);
-border-radius: 999px;
-}
-
-.card-slider::-webkit-scrollbar-thumb:hover {
-background: var(–card-accent);
-}
-
-/* ================================================================
-16. RESPONSIVE SLIDER BEHAVIOR
-================================================================ */
-
-@media (max-width: 640px) {
-.card-slider {
-–card-slide-width: min(82vw, 340px);
-gap: 0.875rem;
-scroll-padding-inline: 0.5rem;
-}
-
-.card-slider–wide {
-–card-slide-width: min(88vw, 380px);
-}
-
-.card-slider–compact {
-–card-slide-width: min(72vw, 270px);
-}
-
-.card-slider–full {
-–card-slide-width: min(88vw, 420px);
-}
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-.card-slider {
-–card-slide-width: clamp(270px, 42vw, 340px);
-}
-}
-
-/* ================================================================
-17. SLIDER CONTROLS
-================================================================ */
-
-/*
-
-* These controls are visual only until JavaScript is attached.
-* Do not show inactive buttons that appear to work but do nothing.
-    */
-
-.card-slider-controls {
-display: flex;
-flex-wrap: wrap;
-align-items: center;
-justify-content: flex-end;
-gap: 0.625rem;
-margin-block-end: 0.875rem;
-}
-
-.card-slider-control {
-display: inline-flex;
-align-items: center;
-justify-content: center;
-
-width: 44px;
-height: 44px;
-padding: 0;
-
-color: var(–card-text);
 background: var(–card-bg);
-border: 1px solid var(–card-border-color);
-border-radius: 50%;
-
-cursor: pointer;
-
-transition:
-background-color var(–card-transition),
-border-color var(–card-transition);
+border: 1px solid var(–card-border);
+border-radius: var(–card-radius-md);
 }
 
-.card-slider-control:hover:not(:disabled) {
-background: var(–card-bg-raised);
-border-color: var(–card-accent);
+.card-skeleton__image {
+width: 100%;
+aspect-ratio: 16 / 10;
+
+background:
+linear-gradient(
+100deg,
+#241226 20%,
+#3a2941 40%,
+#241226 60%
+);
+
+background-size: 200% 100%;
+
+animation:
+card-skeleton-shimmer 1.6s linear infinite;
 }
 
-.card-slider-control:disabled {
-cursor: not-allowed;
-opacity: 0.45;
+.card-skeleton__line {
+height: 12px;
+margin: 16px;
+
+background: rgba(201, 184, 223, 0.12);
+border-radius: 99px;
 }
 
-.card-slider-control:focus-visible {
-outline: 3px solid var(–border-focus, #e4d0a1);
-outline-offset: 3px;
+.card-skeleton__line:last-child {
+width: 55%;
+margin-top: -5px;
+margin-bottom: 22px;
 }
 
-/* ================================================================
-18. PAGE-SPECIFIC ACCENT THEMES
-================================================================ */
-
-/*
-
-* Set data-page on body. The card structure stays consistent;
-* each area receives its own recognizable accent.
-    */
-
-[data-page="home"] {
-–card-accent: var(–accent-home, #e4d0a1);
-}
-
-[data-page="education"] {
-–card-accent: var(–accent-education, #bca7f5);
-}
-
-[data-page="admissions"] {
-–card-accent: var(–accent-admissions, #e4d0a1);
-}
-
-[data-page="medical"] {
-–card-accent: var(–accent-medical, #8ed7c2);
-}
-
-[data-page="colleges"] {
-–card-accent: var(–accent-colleges, #b6c8ff);
-}
-
-[data-page="documents"] {
-–card-accent: var(–accent-documents, #d9c1f0);
-}
-
-[data-page="study-abroad"] {
-–card-accent: var(–accent-abroad, #8fc8ef);
-}
-
-[data-page="careers"] {
-–card-accent: var(–accent-careers, #e7b68c);
-}
-
-[data-page="applications"] {
-–card-accent: var(–accent-applications, #d6c0a1);
-}
-
-[data-page="accounts"] {
-–card-accent: var(–accent-accounts, #c4b5fd);
-}
-
-[data-page="admin"] {
-–card-accent: var(–accent-admin, #f0b4b4);
-}
-
-/* ================================================================
-19. RESPONSIVE GRID ADJUSTMENTS
-================================================================ */
-
-@media (max-width: 760px) {
-.card-grid–4,
-.card-grid–3 {
-grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.card-grid–2 {
-grid-template-columns: minmax(0, 1fr);
+@keyframes card-skeleton-shimmer {
+to {
+background-position: -200% 0;
 }
 }
 
-@media (max-width: 460px) {
-.card-grid,
+/* =========================================================
+21. RESPONSIVE ADJUSTMENTS
+========================================================= */
+
+@media (max-width: 699px) {
+:root {
+–card-grid-gap: 14px;
+–card-rail-gap: 12px;
+–card-image-height: 170px;
+}
+
+.card-rails {
+gap: 26px;
+}
+
+.card-rail__header {
+align-items: flex-start;
+gap: 12px;
+}
+
+.card-slider-control,
+.card-rail__control {
+width: 38px;
+height: 38px;
+}
+
+.card__body,
+.image-card__body {
+padding: 15px;
+}
+
+.card__footer,
+.image-card__footer {
+align-items: flex-start;
+}
+
+.image-card–horizontal {
+grid-template-columns: minmax(90px, 35%) minmax(0, 1fr);
+}
+
+.image-card–horizontal .image-card__body {
+padding: 12px;
+}
+
+.process-card {
+padding: 16px;
+}
+
+.resource-card {
+padding: 15px;
+}
+
+.job-card {
+padding: 16px;
+}
+}
+
+@media (max-width: 420px) {
 .card-grid–2,
 .card-grid–3,
-.card-grid–4 {
+.card-grid–4,
+.card-grid–featured {
 grid-template-columns: minmax(0, 1fr);
 }
 
-.card {
-border-radius: var(–radius-md, 12px);
+.card-rail__header {
+gap: 10px;
 }
 
-.card__header {
-gap: 0.75rem;
+.card-slider-controls,
+.card-rail__controls {
+gap: 6px;
 }
 
-.card__footer {
-align-items: stretch;
+.card__link {
+padding: 9px 12px;
+font-size: 0.82rem;
 }
 
-.card__footer .card__action {
-flex: 1 1 100%;
+.resource-card__icon {
+flex-basis: 40px;
+width: 40px;
+height: 40px;
 }
 
-.course-card__details,
-.college-card__facts {
-grid-template-columns: minmax(0, 1fr);
-}
-
-.college-card__identity {
-gap: 0.75rem;
+.process-card__number {
+flex-basis: 38px;
+width: 38px;
+height: 38px;
 }
 }
 
-/* ================================================================
-20. ACCESSIBILITY AND FORCED COLORS
-================================================================ */
+/* =========================================================
+22. KEYBOARD ACCESSIBILITY
+========================================================= */
+
+.card a:focus-visible,
+.image-card a:focus-visible,
+.course-card a:focus-visible,
+.college-card a:focus-visible,
+.resource-card a:focus-visible,
+.job-card a:focus-visible {
+outline: 2px solid var(–card-gold-light);
+outline-offset: 4px;
+}
+
+.card-slider,
+.card-rail__track {
+-webkit-tap-highlight-color: transparent;
+}
+
+.card-slider:focus-visible,
+.card-rail__track:focus-visible {
+outline: 2px solid var(–card-gold);
+outline-offset: 3px;
+}
+
+/* =========================================================
+23. REDUCED MOTION
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 .card,
-.card__media img,
-.card__action,
-.card-slider-control {
+.image-card,
+.image-card__media img,
+.card__link,
+.resource-card,
+.job-card,
+.course-card,
+.college-card,
+.card-slider-control,
+.card-rail__control {
+animation: none !important;
 transition: none !important;
 }
 
-.card-slider {
-scroll-behavior: auto !important;
+.card:hover,
+.image-card:hover,
+.resource-card:hover,
+.job-card:hover,
+.course-card:hover,
+.college-card:hover {
+transform: none;
+}
+
+.card-skeleton__image {
+animation: none;
 }
 }
+
+/* =========================================================
+24. HIGH-CONTRAST MODE
+========================================================= */
 
 @media (forced-colors: active) {
 .card,
-.card__icon,
-.card__media,
-.card__badge,
-.card__action,
-.course-card__detail,
-.college-card__fact,
-.process-card__number,
-.resource-card__icon,
-.card-slider-control {
+.image-card,
+.course-card,
+.college-card,
+.process-card,
+.resource-card,
+.job-card,
+.summary-card {
 border: 1px solid CanvasText;
 }
 
-.card__link:focus-visible,
-.card-slider:focus-visible,
-.card-slider-control:focus-visible {
+.card__link,
+.card-slider-control,
+.card-rail__control {
+border: 1px solid ButtonText;
+}
+
+.card a:focus-visible,
+.image-card a:focus-visible,
+.card-slider-control:focus-visible,
+.card-rail__control:focus-visible {
 outline: 2px solid Highlight;
 }
 }
 
-/* ================================================================
-21. PRINT AND PDF
-================================================================ */
+/* =========================================================
+25. PRINT
+========================================================= */
 
 @media print {
 .card,
-.card–featured,
-.card–raised,
-.card–deep {
-color: #000 !important;
-background: #fff !important;
-border: 1px solid #777 !important;
-box-shadow: none !important;
+.image-card,
+.course-card,
+.college-card,
+.process-card,
+.resource-card,
+.job-card,
+.summary-card {
+color: #111;
+background: #fff;
+
+border: 1px solid #999;
+box-shadow: none;
 break-inside: avoid;
+
 }
 
 .card__title,
+.image-card__title,
+.course-card__title,
+.college-card__title,
+.process-card__title,
+.resource-card__title,
+.job-card__title,
+.summary-card__value {
+color: #222;
+}
+
 .card__description,
-.card__meta,
-.card__label,
-.card__value,
-.card__source,
-.card__name,
-.card__location,
-.card__fact-label,
-.card__fact-value {
-color: #000 !important;
+.image-card__description,
+.process-card__description,
+.resource-card__description {
+color: #444;
+}
+
+.card-slider-controls,
+.card-rail__controls {
+display: none;
 }
 
 .card-slider,
-.card-slider–wide,
-.card-slider–compact,
-.card-slider–full {
-display: block;
-height: auto;
-padding: 0;
+.card-rail__track {
+display: grid;
+
+grid-auto-flow: row;
+grid-auto-columns: auto;
+grid-template-columns:
+  repeat(2, minmax(0, 1fr));
 overflow: visible;
-}
 
-.card-slider > *,
-.card-slider__item {
-display: block;
-width: 100%;
-margin-block-end: 1rem;
-break-inside: avoid;
-}
-
-.card-slider-controls {
-display: none !important;
-}
-
-.card__action {
-color: #000 !important;
-background: #fff !important;
-border-color: #777 !important;
 }
 }
 
-/* ================================================================
-END -- MedOrbits Cards System
-================================================================ */
+/* =========================================================
+END OF MEDORBITS CARDS DESIGN SYSTEM
+========================================================= */

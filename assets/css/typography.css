@@ -1,32 +1,104 @@
 /*
 
-* MedOrbits -- Standard Typography System
-* File: assets/css/typography.css
-* Purpose:
-* ●	Consistent typography across all website pages
-* ●	Responsive headings and readable body text
-* ●	Accessible links, labels, lists, and form text
-* ●	Compatible with assets/css/tokens.css
-* Font families:
-* ●	DM Sans: body text and interface elements
-* ●	Playfair Display: headings and editorial emphasis
-* Load this stylesheet after tokens.css.
+* =========================================================
+* MEDORBITS -- STANDARD TYPOGRAPHY SYSTEM
+* Version: 2.0.0
+* File: /assets/css/typography.css
+* Brand:
+* Royal Aubergine + Champagne Gold + Soft Lavender
+* Fonts:
+* DM Sans          -- Body, forms, interface and data
+* Playfair Display -- Headings and editorial emphasis
+* Load order:
+* 1.	tokens.css
+* 2.	font.css (if available)
+* 3.	typography.css
+* 4.	components.css
+* 5.	cards.css
+* Features:
+* ●	Responsive typography with fluid sizing
+* ●	Consistent headings and text hierarchy
+* ●	Accessible links, labels, lists and forms
+* ●	Readable code blocks and data tables
+* ●	Page-specific accent colors
+* ●	Reduced-motion and high-contrast support
+* ●	Print-friendly typography
+* =========================================================
     */
 
 /* =========================================================
 
-1. FONT DECLARATIONS
+1. TYPOGRAPHY TOKENS
     ========================================================= */
+
+:root {
+–font-body:
+"DM Sans",
+system-ui,
+-apple-system,
+BlinkMacSystemFont,
+"Segoe UI",
+sans-serif;
+
+–font-heading:
+"Playfair Display",
+Georgia,
+"Times New Roman",
+serif;
+
+–font-monospace:
+"SFMono-Regular",
+Consolas,
+"Liberation Mono",
+monospace;
+
+–text-xs: 0.75rem;
+–text-sm: 0.875rem;
+–text-base: 1rem;
+–text-md: 1.0625rem;
+–text-lg: 1.1875rem;
+–text-xl: 1.375rem;
+
+–line-tight: 1.2;
+–line-heading: 1.3;
+–line-normal: 1.6;
+–line-readable: 1.75;
+
+–text-measure: 75ch;
+–heading-measure: 22ch;
+–lead-measure: 65ch;
 
 /*
 
-* If locally hosted font files are available, define @font-face
-* in assets/css/font.css and load that stylesheet before this one.
-* Otherwise, the system fallback fonts below will be used.
+* Fallbacks are provided for installations that do not yet
+* define these tokens in assets/css/tokens.css.
     */
 
+–type-text: var(–text, #f7f1fa);
+–type-text-strong: var(–text-strong, #fffaff);
+–type-muted: var(–muted, #b7acbf);
+–type-muted-strong: var(–muted-strong, #d0c4d7);
+
+–type-accent:
+var(–page-accent, var(–mo-brand-light, #e4d0a1));
+
+–type-panel: var(–panel, #21172b);
+–type-panel-2: var(–panel-2, #2b1d36);
+–type-border: var(–border, #493751);
+
+–type-focus: var(–border-focus, #e4d0a1);
+–type-danger: var(–danger, #ffaaaa);
+–type-success: var(–success, #a8d7b1);
+
+–type-radius-xs: var(–radius-xs, 5px);
+–type-radius-sm: var(–radius-sm, 8px);
+–type-radius-md: var(–radius-md, 12px);
+
+–type-transition: var(–duration-fast, 140ms);
+}
+
 /* =========================================================
-2. TYPOGRAPHY DEFAULTS
+02. DOCUMENT DEFAULTS
 ========================================================= */
 
 html {
@@ -38,19 +110,13 @@ scroll-behavior: smooth;
 
 body {
 margin: 0;
-font-family: var(
-–font-body,
-"DM Sans",
-system-ui,
--apple-system,
-BlinkMacSystemFont,
-"Segoe UI",
-sans-serif
-);
-font-size: var(–text-base, 1rem);
+
+color: var(–type-text);
+font-family: var(–font-body);
+font-size: var(–text-base);
 font-weight: 400;
-line-height: var(–line-normal, 1.6);
-color: var(–text, #f7f1fa);
+line-height: var(–line-normal);
+
 overflow-wrap: break-word;
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
@@ -68,14 +134,41 @@ button {
 letter-spacing: inherit;
 }
 
+img,
+svg,
+video,
+canvas {
+max-width: 100%;
+}
+
+img {
+height: auto;
+}
+
+figure {
+margin: 0 0 1.25rem;
+}
+
+figcaption {
+margin-top: 0.5rem;
+color: var(–type-muted);
+font-size: var(–text-sm);
+line-height: 1.55;
+}
+
 p {
+max-width: var(–text-measure);
 margin-block: 0 1rem;
-max-width: 75ch;
+overflow-wrap: anywhere;
+}
+
+p:last-child {
+margin-block-end: 0;
 }
 
 small,
 .small-text {
-font-size: var(–text-sm, 0.875rem);
+font-size: var(–text-sm);
 line-height: 1.55;
 }
 
@@ -91,19 +184,45 @@ font-style: italic;
 
 mark {
 padding: 0.1em 0.3em;
-color: var(–text, #f7f1fa);
-background: var(–panel-2, #2b1d36);
-border-radius: var(–radius-xs, 5px);
+
+color: var(–type-text-strong);
+background: var(–type-panel-2);
+
+border-radius: var(–type-radius-xs);
 }
 
 sub,
 sup {
+position: relative;
 font-size: 0.75em;
 line-height: 0;
+vertical-align: baseline;
+}
+
+sup {
+top: -0.5em;
+}
+
+sub {
+bottom: -0.25em;
+}
+
+abbr[title] {
+text-decoration: underline dotted;
+text-underline-offset: 0.18em;
+cursor: help;
+}
+
+hr {
+height: 0;
+margin-block: 1.5rem;
+
+border: 0;
+border-top: 1px solid var(–type-border);
 }
 
 /* =========================================================
-3. HEADINGS
+03. HEADING SYSTEM
 ========================================================= */
 
 h1,
@@ -116,20 +235,19 @@ h6,
 .page-title,
 .section-title {
 margin-block: 0 0.75em;
-color: var(–text, #f7f1fa);
-font-family: var(
-–font-heading,
-"Playfair Display",
-Georgia,
-serif
-);
+
+color: var(–type-text-strong);
+font-family: var(–font-heading);
 font-weight: 600;
-line-height: var(–line-tight, 1.2);
+line-height: var(–line-tight);
 letter-spacing: -0.025em;
+
+overflow-wrap: anywhere;
 text-wrap: balance;
 }
 
 h1 {
+max-width: var(–heading-measure);
 font-size: clamp(2.15rem, 5vw, 4rem);
 letter-spacing: -0.04em;
 }
@@ -152,7 +270,7 @@ letter-spacing: -0.01em;
 }
 
 h6 {
-font-family: var(–font-body, "DM Sans", sans-serif);
+font-family: var(–font-body);
 font-size: 0.9rem;
 letter-spacing: 0.01em;
 }
@@ -160,15 +278,20 @@ letter-spacing: 0.01em;
 .page-title {
 max-width: 18ch;
 font-size: clamp(2.2rem, 5.5vw, 4.5rem);
+line-height: 1.12;
+letter-spacing: -0.045em;
 }
 
 .section-title {
+max-width: 24ch;
 font-size: clamp(1.65rem, 3.5vw, 2.6rem);
+line-height: 1.2;
 }
 
 .card-title {
 margin-block-end: 0.5rem;
-font-family: var(–font-body, "DM Sans", sans-serif);
+
+font-family: var(–font-body);
 font-size: 1.125rem;
 font-weight: 700;
 line-height: 1.35;
@@ -177,40 +300,75 @@ letter-spacing: -0.015em;
 
 .dialog-title {
 font-size: clamp(1.4rem, 3vw, 2rem);
+line-height: 1.25;
 }
 
 h1 a,
 h2 a,
 h3 a,
-h4 a {
+h4 a,
+h5 a,
+h6 a {
 color: inherit;
 text-decoration: none;
 }
 
+.heading–sans {
+font-family: var(–font-body);
+}
+
+.heading–gold {
+color: var(–mo-brand-light, #e4d0a1);
+}
+
+.heading–lavender {
+color: var(–accent-education, #c9b8df);
+}
+
+.heading–compact {
+margin-block-end: 0.4em;
+}
+
+.heading–no-wrap {
+text-wrap: nowrap;
+}
+
 /* =========================================================
-4. TEXT HIERARCHY
+04. BODY TEXT AND HIERARCHY
 ========================================================= */
 
 .lead,
 .intro-text {
-max-width: 65ch;
-color: var(–muted-strong, #d0c4d7);
+max-width: var(–lead-measure);
+
+color: var(–type-muted-strong);
+
 font-size: clamp(1.05rem, 1.6vw, 1.2rem);
-line-height: var(–line-readable, 1.75);
+line-height: var(–line-readable);
 }
 
 .body-text {
-font-size: var(–text-base, 1rem);
-line-height: var(–line-normal, 1.6);
+font-size: var(–text-base);
+line-height: var(–line-normal);
+}
+
+.body-text–large {
+font-size: var(–text-md);
+line-height: var(–line-readable);
+}
+
+.body-text–compact {
+font-size: var(–text-sm);
+line-height: 1.55;
 }
 
 .muted,
 .text-muted {
-color: var(–muted, #b7acbf);
+color: var(–type-muted);
 }
 
 .text-strong {
-color: var(–text-strong, #fffaff);
+color: var(–type-text-strong);
 font-weight: 600;
 }
 
@@ -218,11 +376,58 @@ font-weight: 600;
 color: var(–mo-brand-light, #e4d0a1);
 }
 
+.text-lavender {
+color: var(–accent-education, #c9b8df);
+}
+
+.text-success {
+color: var(–type-success);
+}
+
+.text-danger {
+color: var(–type-danger);
+}
+
+.text-center {
+text-align: center;
+}
+
+.text-start {
+text-align: start;
+}
+
+.text-end {
+text-align: end;
+}
+
+.text-uppercase {
+text-transform: uppercase;
+letter-spacing: 0.08em;
+}
+
+.text-balance {
+text-wrap: balance;
+}
+
+.text-pretty {
+text-wrap: pretty;
+}
+
+.text-break {
+overflow-wrap: anywhere;
+word-break: normal;
+}
+
+.text-no-break {
+white-space: nowrap;
+}
+
 .eyebrow,
 .overline {
 margin-block-end: 0.75rem;
-color: var(–page-accent, var(–mo-brand-light, #e4d0a1));
-font-family: var(–font-body, "DM Sans", sans-serif);
+
+color: var(–type-accent);
+font-family: var(–font-body);
 font-size: 0.75rem;
 font-weight: 700;
 line-height: 1.4;
@@ -233,7 +438,7 @@ text-transform: uppercase;
 .caption,
 .helper-text,
 .field-hint {
-color: var(–muted, #b7acbf);
+color: var(–type-muted);
 font-size: 0.8125rem;
 line-height: 1.55;
 }
@@ -247,52 +452,140 @@ line-height: 1.45;
 .price-text,
 .number-text,
 .stat-value {
-font-family: var(–font-body, "DM Sans", sans-serif);
+font-family: var(–font-body);
 font-variant-numeric: tabular-nums;
 font-feature-settings: "tnum";
 }
 
 .stat-value {
+color: var(–type-text-strong);
 font-size: clamp(1.75rem, 3vw, 2.5rem);
 font-weight: 700;
 line-height: 1.15;
 letter-spacing: -0.035em;
 }
 
+.text-gradient-gold {
+color: var(–mo-brand-light, #e4d0a1);
+background: linear-gradient(
+120deg,
+#f3dfb2,
+#c9a96e,
+#f3dfb2
+);
+background-clip: text;
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+
 /* =========================================================
-5. LINKS
+05. EYEBROWS AND EDITORIAL TEXT
+========================================================= */
+
+.editorial-text {
+max-width: 68ch;
+
+font-family: var(–font-heading);
+font-size: clamp(1.1rem, 2vw, 1.35rem);
+line-height: 1.8;
+}
+
+.editorial-quote {
+max-width: 55ch;
+
+color: var(–type-text-strong);
+font-family: var(–font-heading);
+font-size: clamp(1.35rem, 3vw, 2.1rem);
+line-height: 1.45;
+letter-spacing: -0.02em;
+text-wrap: balance;
+}
+
+.section-kicker {
+display: flex;
+align-items: center;
+gap: 10px;
+
+margin-block-end: 0.8rem;
+
+color: var(–type-accent);
+font-family: var(–font-body);
+font-size: 0.75rem;
+font-weight: 750;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+}
+
+.section-kicker::before {
+content: "";
+display: inline-block;
+
+width: 28px;
+height: 1px;
+
+background: currentColor;
+}
+
+/* =========================================================
+06. LINKS
 ========================================================= */
 
 a {
 color: var(–mo-brand-light, #e4d0a1);
+
 text-decoration-thickness: 0.08em;
 text-underline-offset: 0.2em;
+
 transition:
-color var(–duration-fast, 140ms) ease,
-text-decoration-color var(–duration-fast, 140ms) ease;
+color var(–type-transition) ease,
+text-decoration-color var(–type-transition) ease;
 }
 
 a:hover {
-color: var(–text-strong, #fffaff);
-}
-
-a:focus-visible {
-outline: 2px solid var(–border-focus, #e4d0a1);
-outline-offset: 4px;
-border-radius: 2px;
+color: var(–type-text-strong);
 }
 
 a:active {
 color: var(–mo-brand, #c9a96e);
 }
 
+a:focus-visible {
+outline: 2px solid var(–type-focus);
+outline-offset: 4px;
+border-radius: 2px;
+}
+
 a[aria-current="page"] {
-color: var(–text-strong, #fffaff);
+color: var(–type-text-strong);
 font-weight: 700;
 }
 
+.link-subtle {
+color: var(–type-muted);
+text-decoration-color: transparent;
+}
+
+.link-subtle:hover {
+color: var(–type-text-strong);
+text-decoration-color: currentColor;
+}
+
+.link-gold {
+color: var(–mo-brand-light, #e4d0a1);
+font-weight: 650;
+}
+
+.link-gold:hover {
+color: #fff0c9;
+}
+
+.link-underline {
+text-decoration: underline;
+text-underline-offset: 0.25em;
+}
+
 /* =========================================================
-6. LISTS
+07. LISTS
 ========================================================= */
 
 ul,
@@ -307,7 +600,14 @@ margin-block-end: 0.4rem;
 }
 
 li::marker {
-color: var(–page-accent, var(–mo-brand, #c9a96e));
+color: var(–type-accent);
+}
+
+ul ul,
+ol ol,
+ul ol,
+ol ul {
+margin-block: 0.5rem;
 }
 
 .list-unstyled {
@@ -321,57 +621,106 @@ margin: 0;
 padding: 0;
 }
 
+.list-spaced li {
+margin-block-end: 0.7rem;
+}
+
 .checklist-text {
 line-height: 1.55;
 }
 
+.list-check {
+padding-inline-start: 0;
+list-style: none;
+}
+
+.list-check li {
+position: relative;
+padding-inline-start: 1.65rem;
+}
+
+.list-check li::before {
+content: "✓";
+
+position: absolute;
+inset-inline-start: 0;
+
+color: var(–type-accent);
+font-weight: 800;
+}
+
 /* =========================================================
-7. QUOTES AND CODE
+08. QUOTES AND BLOCKQUOTES
 ========================================================= */
 
 blockquote {
 margin: 1.5rem 0;
 padding: 1rem 1.25rem;
-border-inline-start: 3px solid var(–page-accent, var(–mo-brand, #c9a96e));
-border-radius: 0 var(–radius-sm, 8px) var(–radius-sm, 8px) 0;
-background: var(–panel, #21172b);
-color: var(–muted-strong, #d0c4d7);
+
+border-inline-start: 3px solid var(–type-accent);
+border-radius:
+0
+var(–type-radius-sm)
+var(–type-radius-sm)
+0;
+
+background: var(–type-panel);
+color: var(–type-muted-strong);
 }
 
 blockquote > :last-child {
 margin-block-end: 0;
 }
 
+blockquote cite {
+display: block;
+margin-block-start: 0.8rem;
+
+color: var(–type-muted);
+font-size: var(–text-sm);
+font-style: normal;
+}
+
+/* =========================================================
+09. CODE AND PRE-FORMATTED TEXT
+========================================================= */
+
 code,
 kbd,
 samp,
 pre {
-font-family:
-"SFMono-Regular",
-Consolas,
-"Liberation Mono",
-monospace;
+font-family: var(–font-monospace);
 }
 
 code {
 padding: 0.12em 0.35em;
-border: 1px solid var(–border, #493751);
-border-radius: var(–radius-xs, 5px);
-background: var(–panel, #21172b);
+
+border: 1px solid var(–type-border);
+border-radius: var(–type-radius-xs);
+
+background: var(–type-panel);
 font-size: 0.9em;
+
 overflow-wrap: anywhere;
 }
 
 pre {
 max-width: 100%;
+margin-block: 1rem;
+
 padding: 1rem;
 overflow: auto;
-border: 1px solid var(–border, #493751);
-border-radius: var(–radius-md, 12px);
+
+border: 1px solid var(–type-border);
+border-radius: var(–type-radius-md);
+
 background: var(–bg-elevated, #191023);
+
 font-size: 0.875rem;
 line-height: 1.65;
 tab-size: 2;
+
+-webkit-overflow-scrolling: touch;
 }
 
 pre code {
@@ -379,15 +728,31 @@ padding: 0;
 border: 0;
 background: transparent;
 font-size: inherit;
+overflow-wrap: normal;
+}
+
+kbd {
+display: inline-block;
+
+padding: 0.15em 0.45em;
+
+color: var(–type-text-strong);
+background: var(–type-panel-2);
+
+border: 1px solid var(–type-border);
+border-radius: 5px;
+
+font-size: 0.85em;
+box-shadow: 0 1px 0 var(–type-border);
 }
 
 /* =========================================================
-8. FORMS AND INTERFACE TEXT
+10. FORMS AND INTERFACE TEXT
 ========================================================= */
 
 label,
 legend {
-color: var(–text, #f7f1fa);
+color: var(–type-text);
 font-size: 0.9rem;
 font-weight: 600;
 line-height: 1.5;
@@ -396,19 +761,20 @@ line-height: 1.5;
 input,
 select,
 textarea {
-color: var(–text, #f7f1fa);
-font-family: var(–font-body, "DM Sans", sans-serif);
+color: var(–type-text);
+font-family: var(–font-body);
 font-size: 1rem;
 line-height: 1.5;
 }
 
 input::placeholder,
 textarea::placeholder {
-color: var(–muted, #b7acbf);
+color: var(–type-muted);
 opacity: 1;
 }
 
 button {
+font-family: var(–font-body);
 font-size: 0.9375rem;
 font-weight: 600;
 line-height: 1.4;
@@ -424,14 +790,14 @@ opacity: var(–disabled-opacity, 0.55);
 
 .form-error,
 .error-text {
-color: var(–danger, #ffaaaa);
+color: var(–type-danger);
 font-size: 0.875rem;
 line-height: 1.5;
 }
 
 .form-success,
 .success-text {
-color: var(–success, #a8d7b1);
+color: var(–type-success);
 font-size: 0.875rem;
 line-height: 1.5;
 }
@@ -442,19 +808,38 @@ font-weight: 600;
 line-height: 1.45;
 }
 
+.required-indicator {
+margin-inline-start: 0.2em;
+color: var(–type-danger);
+}
+
+.field-hint {
+display: block;
+margin-block-start: 0.35rem;
+}
+
+[aria-invalid="true"] {
+border-color: var(–type-danger);
+}
+
+[aria-invalid="true"]:focus-visible {
+outline-color: var(–type-danger);
+}
+
 /* =========================================================
-9. TABLES AND DATA
+11. TABLES AND DATA
 ========================================================= */
 
 table {
 width: 100%;
 border-collapse: collapse;
+
 font-size: 0.9375rem;
 line-height: 1.55;
 }
 
 th {
-color: var(–text-strong, #fffaff);
+color: var(–type-text-strong);
 font-weight: 700;
 text-align: start;
 }
@@ -466,12 +851,12 @@ vertical-align: top;
 }
 
 td {
-color: var(–muted-strong, #d0c4d7);
+color: var(–type-muted-strong);
 }
 
 caption {
 padding-block: 0.75rem;
-color: var(–muted, #b7acbf);
+color: var(–type-muted);
 font-size: 0.875rem;
 text-align: start;
 }
@@ -481,18 +866,35 @@ text-align: end;
 font-variant-numeric: tabular-nums;
 }
 
+.table-responsive {
+width: 100%;
+max-width: 100%;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+min-width: 560px;
+}
+
+.table-responsive:focus-visible {
+outline: 2px solid var(–type-focus);
+outline-offset: 3px;
+}
+
 /* =========================================================
-10. PAGE-SPECIFIC TYPOGRAPHY ACCENTS
+12. PAGE-SPECIFIC ACCENT COLORS
 ========================================================= */
 
 /*
 
-* Apply one data-page attribute to the body.
-* The shared typography remains the same; only the accent varies.
+* Use a single data-page attribute on the body.
+* These variables override the accent only for that page.
     */
 
 [data-page="home"] {
-–page-accent: var(–accent-home, var(–mo-brand-light, #e4d0a1));
+–page-accent:
+var(–accent-home, var(–mo-brand-light, #e4d0a1));
 }
 
 [data-page="education"] {
@@ -500,7 +902,8 @@ font-variant-numeric: tabular-nums;
 }
 
 [data-page="admissions"] {
-–page-accent: var(–accent-admissions, var(–mo-brand-light, #e4d0a1));
+–page-accent:
+var(–accent-admissions, var(–mo-brand-light, #e4d0a1));
 }
 
 [data-page="medical"] {
@@ -535,8 +938,16 @@ font-variant-numeric: tabular-nums;
 –page-accent: var(–accent-admin, #f0b4b4);
 }
 
+[data-page="support"] {
+–page-accent: var(–accent-support, #b7c9ef);
+}
+
+[data-page="legal"] {
+–page-accent: var(–accent-legal, #d6c0a1);
+}
+
 /* =========================================================
-11. RESPONSIVE REFINEMENTS
+13. RESPONSIVE TYPOGRAPHY
 ========================================================= */
 
 @media (max-width: 640px) {
@@ -559,15 +970,47 @@ font-size: 1rem;
 line-height: 1.7;
 }
 
+.page-title {
+font-size: clamp(2rem, 8vw, 3.1rem);
+}
+
+.section-title {
+font-size: clamp(1.55rem, 6vw, 2.15rem);
+}
+
 td,
 th {
 padding: 0.65rem 0.75rem;
 }
+
+.editorial-quote {
+font-size: clamp(1.25rem, 5vw, 1.65rem);
+}
+}
+
+@media (max-width: 360px) {
+body {
+font-size: 0.9375rem;
+}
+
+.eyebrow,
+.overline,
+.section-kicker {
+letter-spacing: 0.1em;
+}
+
+.page-title {
+font-size: 2rem;
+}
 }
 
 /* =========================================================
-12. ACCESSIBILITY AND MOTION
+14. ACCESSIBILITY AND MOTION
 ========================================================= */
+
+:focus-visible {
+scroll-margin-block: 1rem;
+}
 
 @media (prefers-reduced-motion: reduce) {
 html {
@@ -588,13 +1031,26 @@ textarea {
 forced-color-adjust: auto;
 }
 
-a:focus-visible {
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
 outline: 2px solid Highlight;
+outline-offset: 3px;
+}
+
+mark,
+code,
+kbd,
+pre,
+blockquote {
+border: 1px solid CanvasText;
 }
 }
 
 /* =========================================================
-13. PRINT TYPOGRAPHY
+15. PRINT TYPOGRAPHY
 ========================================================= */
 
 @media print {
@@ -606,11 +1062,13 @@ scroll-behavior: auto;
 body {
 color: #000;
 background: #fff;
+
 font-family: Arial, Helvetica, sans-serif;
 font-size: 11pt;
 line-height: 1.5;
 -webkit-font-smoothing: auto;
 text-rendering: auto;
+
 }
 
 h1,
@@ -628,14 +1086,17 @@ break-after: avoid;
 
 p,
 li,
-blockquote {
+blockquote,
+td,
+th {
 color: #000;
 }
 
 a,
 .text-brand,
 .eyebrow,
-.overline {
+.overline,
+.section-kicker {
 color: #000;
 }
 
@@ -644,13 +1105,10 @@ text-decoration: underline;
 }
 
 pre,
-blockquote {
+blockquote,
+code,
+kbd {
 border-color: #999;
-background: #fff;
-}
-
-code {
-border-color: #ccc;
 background: #fff;
 }
 
@@ -661,4 +1119,22 @@ background: #fff;
 .field-hint {
 color: #333;
 }
+
+.text-gradient-gold {
+color: #000;
+background: none;
+-webkit-text-fill-color: currentColor;
 }
+
+.table-responsive {
+overflow: visible;
+}
+
+.table-responsive table {
+min-width: 0;
+}
+}
+
+/* =========================================================
+END OF MEDORBITS TYPOGRAPHY SYSTEM
+========================================================= */
