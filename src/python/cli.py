@@ -1,4 +1,4 @@
-"
+
 #!/usr/bin/env python3
 """MedOrbits command-line interface.
 
@@ -13,14 +13,16 @@ Usage:
     python src/python/cli.py export-data records.json --format csv --output records.csv
     python src/python/cli.py health
 
-The CLI uses the standard library and the local medorbits package.
-It does not start the web server or automatically connect to external services.
+The CLI uses the Python standard library and the local medorbits package.
+It does not start the web server or intentionally connect to external
+services, except where an imported local implementation explicitly does so.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import logging
 import os
@@ -29,7 +31,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-# Ensure `src/python` is importable when this script is executed directly.
+# Ensure src/python is importable when executing this script directly.
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 if str(_PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(_PACKAGE_ROOT))
@@ -44,23 +46,33 @@ from medorbits.validators import (  # noqa: E402
 )
 
 LOGGER = get_logger("medorbits.cli")
+
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_USAGE = 2
 EXIT_VALIDATION = 3
+
+DEFAULT_MAX_BYTES = 5_000_000
+MAX_CONFIGURABLE_BYTES = 100_000_000
+
+SUPPORTED_FORMATS = ("csv", "json", "jsonl")
 
 
 # ---------------------------------------------------------------------------
 # Output helpers
 # ---------------------------------------------------------------------------
 
-def _write_json(value: Any, *, stream: Any = sys.stdout) -> None:
-    """Write JSON output without leaking Python-specific objects."""
+def _write_json(value: Any, *, stream: Any = None) -> None:
+    """Write JSON output without leaking arbitrary object representations."""
+    if stream is None:
+        stream = sys.stdout
+
     print(
         json.dumps(
             value,
             ensure_ascii=False,
             indent=2,
+            allow_nan=False,
             default=str,
         ),
         file=stream,
@@ -68,7 +80,7 @@ def _write_json(value: Any, *, stream: Any = sys.stdout) -> None:
 
 
 def _error(message: str, *, code: str = "cli_error") -> int:
-    """Write a consistent, safe error response to stderr."""
+    """Write a consistent, sanitized error response to stderr."""
     _write_json(
         {
             "success": False,
@@ -83,42 +95,126 @@ def _error(message: str, *, code: str = "cli_error") -> int:
 
 
 def _validation_error(exc: ValidationError) -> int:
-    """Write a validation error without echoing submitted values."""
+    """Write validation details without echoing submitted values."""
+    try:
+        details = exc.to_dict()
+    except Exception:
+        details = {
+            "code": "validation_error",
+            "message": "Input validation failed.",
+        }
+
     _write_json(
         {
             "success": False,
-            "error": exc.to_dict(),
+            "error": details,
         },
         stream=sys.stderr,
     )
     return EXIT_VALIDATION
 
 
-def _read_json_file(path: Path, *, max_bytes: int = 5_000_000) -> Any:
-    """Read a bounded UTF-8 JSON file."""
+def _safe_error_message(exc: Exception, fallback: str) -> str:
+    """Return a safe error message without exposing arbitrary exception text."""
+    if isinstance(exc, FileNotFoundError):
+        return "Input file was not found."
+    if isinstance(exc, PermissionError):
+        return "Insufficient permissions to access the requested file."
+    if isinstance(exc, IsADirectoryError):
+        return "The specified path is a directory, not a file."
+    if isinstance(exc, UnicodeDecodeError):
+        return "Input file must contain valid UTF-8 text."
+    if isinstance(exc, json.JSONDecodeError):
+        return (
+            f"Invalid JSON at line {exc.lineno}, "
+            f"column {exc.colno}."
+        )
+    if isinstance(exc, ValueError):
+        return str(exc)
+
+    return fallback
+
+
+# ---------------------------------------------------------------------------
+# File handling
+# ---------------------------------------------------------------------------
+
+def _validate_max_bytes(max_bytes: int) -> int:
+    """Validate a configured file-size limit."""
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int):
+        raise ValueError("Maximum file size must be an integer.")
+
+    if not 1 <= max_bytes <= MAX_CONFIGURABLE_BYTES:
+        raise ValueError(
+            f"Maximum file size must be between 1 and "
+            f"{MAX_CONFIGURABLE_BYTES} bytes."
+        )
+
+    return max_bytes
+
+
+def _read_bytes_file(
+    path: Path,
+    *,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+) -> bytes:
+    """Read a bounded regular file and reject oversized inputs."""
+    max_bytes = _validate_max_bytes(max_bytes)
+
+    if not isinstance(path, Path):
+        path = Path(path)
+
     try:
-        if not path.is_file():
-            raise ValueError("Input path is not a regular file.")
+        with path.open("rb") as file:
+            data = file.read(max_bytes + 1)
+    except OSError:
+        raise
 
-        size = path.stat().st_size
-        if size > max_bytes:
-            raise ValueError(
-                f"Input file exceeds the {max_bytes}-byte limit."
-            )
+    if len(data) > max_bytes:
+        raise ValueError(
+            f"Input file exceeds the {max_bytes}-byte limit."
+        )
 
-        with path.open("r", encoding="utf-8-sig") as file:
-            return json.load(file)
+    return data
 
+
+def _read_json_file(
+    path: Path,
+    *,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+) -> Any:
+    """Read and parse a bounded UTF-8 JSON file."""
+    raw = _read_bytes_file(path, max_bytes=max_bytes)
+
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Input file must be valid UTF-8.") from exc
+
+    try:
+        return json.loads(
+            text,
+            parse_constant=_reject_json_constant,
+        )
     except json.JSONDecodeError as exc:
         raise ValueError(
             f"Invalid JSON at line {exc.lineno}, column {exc.colno}."
         ) from exc
-    except UnicodeDecodeError as exc:
-        raise ValueError("Input file must be valid UTF-8.") from exc
+
+
+def _reject_json_constant(value: str) -> None:
+    """Reject non-standard JSON constants such as NaN and Infinity."""
+    raise ValueError(f"Invalid JSON constant: {value}.")
 
 
 def _write_text_file(path: Path, content: str) -> None:
-    """Write text to a destination without creating arbitrary parent paths."""
+    """Write text to an existing directory without creating directories."""
+    if not isinstance(path, Path):
+        path = Path(path)
+
+    if not isinstance(content, str):
+        raise TypeError("Output content must be text.")
+
     parent = path.parent
 
     if not parent.exists() or not parent.is_dir():
@@ -127,8 +223,21 @@ def _write_text_file(path: Path, content: str) -> None:
     if path.exists() and path.is_dir():
         raise ValueError("Output path points to a directory.")
 
-    with path.open("w", encoding="utf-8", newline="") as file:
+    # Refuse to replace a symbolic link, avoiding unexpected redirection.
+    if path.is_symlink():
+        raise ValueError("Symbolic-link output paths are not supported.")
+
+    with path.open("x" if not path.exists() else "w", encoding="utf-8", newline="") as file:
         file.write(content)
+
+
+def _validate_input_file(path: Path) -> None:
+    """Require an existing regular input file."""
+    if not isinstance(path, Path):
+        path = Path(path)
+
+    if not path.is_file():
+        raise ValueError("Input path is not a regular file.")
 
 
 # ---------------------------------------------------------------------------
@@ -149,37 +258,44 @@ def command_version(_: argparse.Namespace) -> int:
 
 
 def command_config_check(_: argparse.Namespace) -> int:
-    """Load and validate MedOrbits settings."""
+    """Load and validate MedOrbits settings without displaying secrets."""
     try:
         from medorbits.config import get_settings
 
         settings = get_settings()
 
-        # Do not print credentials, URLs containing credentials, or API keys.
-        safe_settings = {
-            "environment": getattr(settings, "environment", None),
-            "debug": getattr(settings, "debug", None),
-            "host": getattr(settings, "host", None),
-            "port": getattr(settings, "port", None),
-            "api_prefix": getattr(settings, "api_prefix", None),
-            "log_level": getattr(settings, "log_level", None),
-            "database_engine": getattr(settings, "db_engine", None),
-            "queue_enabled": getattr(settings, "queue_enabled", None),
-            "email_enabled": getattr(settings, "email_enabled", None),
-            "payments_enabled": getattr(settings, "payments_enabled", None),
-            "storage_driver": getattr(settings, "storage_driver", None),
-            "ai_enabled": getattr(settings, "ai_enabled", None),
-        }
+        safe_fields = (
+            "environment",
+            "debug",
+            "host",
+            "port",
+            "api_prefix",
+            "log_level",
+            "db_engine",
+            "queue_enabled",
+            "email_enabled",
+            "payments_enabled",
+            "storage_driver",
+            "ai_enabled",
+        )
+
+        safe_settings = {}
+
+        for key in safe_fields:
+            value = getattr(settings, key, None)
+
+            if value is None:
+                continue
+
+            # Do not serialize arbitrary settings objects.
+            if isinstance(value, (str, int, float, bool)):
+                safe_settings[key] = value
 
         _write_json(
             {
                 "success": True,
                 "message": "Configuration loaded successfully.",
-                "settings": {
-                    key: value
-                    for key, value in safe_settings.items()
-                    if value is not None
-                },
+                "settings": safe_settings,
             }
         )
         return EXIT_OK
@@ -197,9 +313,10 @@ def command_config_check(_: argparse.Namespace) -> int:
 
 
 def command_validate_email(args: argparse.Namespace) -> int:
-    """Validate email syntax."""
+    """Validate email syntax and report the normalized address."""
     try:
         result = validate_email(args.email)
+
         _write_json(
             {
                 "success": True,
@@ -208,6 +325,7 @@ def command_validate_email(args: argparse.Namespace) -> int:
             }
         )
         return EXIT_OK
+
     except ValidationError as exc:
         return _validation_error(exc)
 
@@ -215,7 +333,11 @@ def command_validate_email(args: argparse.Namespace) -> int:
 def command_validate_application(args: argparse.Namespace) -> int:
     """Validate an application JSON payload."""
     try:
-        payload = _read_json_file(args.input)
+        payload = _read_json_file(
+            args.input,
+            max_bytes=args.max_bytes,
+        )
+
         result = validate_application_payload(
             payload,
             reject_unknown_fields=not args.allow_unknown_fields,
@@ -232,14 +354,21 @@ def command_validate_application(args: argparse.Namespace) -> int:
 
     except ValidationError as exc:
         return _validation_error(exc)
-    except (OSError, ValueError) as exc:
-        return _error(str(exc), code="input_file_error")
+    except (OSError, ValueError, TypeError) as exc:
+        return _error(
+            _safe_error_message(exc, "Unable to read application input."),
+            code="input_file_error",
+        )
 
 
 def command_validate_job(args: argparse.Namespace) -> int:
     """Validate a job JSON payload."""
     try:
-        payload = _read_json_file(args.input)
+        payload = _read_json_file(
+            args.input,
+            max_bytes=args.max_bytes,
+        )
+
         result = validate_job_payload(
             payload,
             reject_unknown_fields=not args.allow_unknown_fields,
@@ -256,50 +385,54 @@ def command_validate_job(args: argparse.Namespace) -> int:
 
     except ValidationError as exc:
         return _validation_error(exc)
-    except (OSError, ValueError) as exc:
-        return _error(str(exc), code="input_file_error")
+    except (OSError, ValueError, TypeError) as exc:
+        return _error(
+            _safe_error_message(exc, "Unable to read job input."),
+            code="input_file_error",
+        )
 
 
 def command_import_data(args: argparse.Namespace) -> int:
-    """Import and validate a supported data file."""
+    """Import supported data formats using the local import service."""
     try:
-        from medorbits.data_import import (
-            ImportOptions,
-            import_records,
+        from medorbits.data_import import ImportOptions, import_records
+
+        raw = _read_bytes_file(
+            args.input,
+            max_bytes=args.max_bytes,
         )
-
-        raw = args.input.read_bytes()
-
-        if len(raw) > args.max_bytes:
-            return _error(
-                f"Input file exceeds the {args.max_bytes}-byte limit.",
-                code="input_too_large",
-            )
 
         options = ImportOptions(format=args.format)
         records = import_records(raw, options=options)
 
-        _write_json(
-            {
-                "success": True,
-                "format": args.format,
-                "record_count": len(records),
-                "records": records if args.print_records else None,
-            }
-        )
+        if not isinstance(records, Sequence) or isinstance(
+            records, (str, bytes, bytearray)
+        ):
+            raise ValueError(
+                "Importer returned an unsupported records structure."
+            )
+
+        output = {
+            "success": True,
+            "format": args.format,
+            "record_count": len(records),
+            "records": records if args.print_records else None,
+        }
+
+        _write_json(output)
         return EXIT_OK
 
     except ValidationError as exc:
         return _validation_error(exc)
-    except (ImportError, OSError, ValueError) as exc:
+    except (ImportError, OSError, ValueError, TypeError) as exc:
         return _error(
-            f"Unable to import input file: {exc}",
+            _safe_error_message(exc, "Unable to import input file."),
             code="import_error",
         )
 
 
 def _load_export_records(value: Any) -> list[Mapping[str, Any]]:
-    """Require a JSON array of object records for export."""
+    """Require a JSON array containing only object records."""
     if not isinstance(value, list):
         raise ValueError("Export input must be a JSON array.")
 
@@ -310,14 +443,14 @@ def _load_export_records(value: Any) -> list[Mapping[str, Any]]:
 
 
 def command_export_data(args: argparse.Namespace) -> int:
-    """Export JSON records to CSV, JSON, or JSONL."""
+    """Export a JSON array to CSV, JSON, or JSONL."""
     try:
-        from medorbits.data_export import (
-            ExportOptions,
-            export_records,
-        )
+        from medorbits.data_export import ExportOptions, export_records
 
-        payload = _read_json_file(args.input)
+        payload = _read_json_file(
+            args.input,
+            max_bytes=args.max_bytes,
+        )
         records = _load_export_records(payload)
 
         options = ExportOptions(format=args.format)
@@ -325,11 +458,16 @@ def command_export_data(args: argparse.Namespace) -> int:
 
         if isinstance(exported, bytes):
             content = exported.decode("utf-8")
+        elif isinstance(exported, str):
+            content = exported
         else:
-            content = str(exported)
+            raise TypeError(
+                "Exporter must return text or UTF-8 encoded bytes."
+            )
 
         if args.output:
             _write_text_file(args.output, content)
+
             _write_json(
                 {
                     "success": True,
@@ -340,33 +478,34 @@ def command_export_data(args: argparse.Namespace) -> int:
             )
         else:
             sys.stdout.write(content)
+
             if content and not content.endswith("\n"):
                 sys.stdout.write("\n")
 
         return EXIT_OK
 
-    except (ImportError, OSError, ValueError, TypeError) as exc:
+    except (ImportError, OSError, ValueError, TypeError, UnicodeDecodeError) as exc:
         return _error(
-            f"Unable to export records: {exc}",
+            _safe_error_message(exc, "Unable to export records."),
             code="export_error",
         )
 
 
 def command_health(_: argparse.Namespace) -> int:
-    """Run a local package health check without probing external services."""
+    """Run a local liveness check without probing external services."""
     try:
         from medorbits.healthcheck import liveness_report
 
         report = liveness_report()
 
-        if hasattr(report, "to_dict"):
-            result = report.to_dict()
-        elif hasattr(report, "__dict__"):
-            result = dict(report.__dict__)
-        elif isinstance(report, Mapping):
+        if isinstance(report, Mapping):
             result = dict(report)
+        elif hasattr(report, "to_dict") and callable(report.to_dict):
+            result = report.to_dict()
         else:
-            result = {"status": str(report)}
+            raise TypeError(
+                "Health report must be a mapping or support to_dict()."
+            )
 
         _write_json(
             {
@@ -389,11 +528,28 @@ def command_health(_: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Parser
+# Parser helpers
 # ---------------------------------------------------------------------------
 
+def _positive_int(value: str) -> int:
+    """Parse a positive integer for CLI size limits."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError(
+            "Value must be an integer."
+        ) from exc
+
+    if not 1 <= parsed <= MAX_CONFIGURABLE_BYTES:
+        raise argparse.ArgumentTypeError(
+            f"Value must be between 1 and {MAX_CONFIGURABLE_BYTES}."
+        )
+
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
-    """Build the command-line parser."""
+    """Build the command-line argument parser."""
     parser = argparse.ArgumentParser(
         prog="medorbits",
         description="MedOrbits Python package command-line utilities.",
@@ -405,13 +561,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--log-level",
-        default=os.getenv("LOG_LEVEL", "WARNING"),
+        default=os.getenv("LOG_LEVEL", "WARNING").upper(),
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
         help="Logging level (default: WARNING).",
     )
+
     parser.add_argument(
         "--log-format",
-        default=os.getenv("LOG_FORMAT", "text"),
+        default=os.getenv("LOG_FORMAT", "text").lower(),
         choices=("text", "json"),
         help="Logging format (default: text).",
     )
@@ -438,7 +595,10 @@ def build_parser() -> argparse.ArgumentParser:
         "validate-email",
         help="Validate email address syntax.",
     )
-    email_parser.add_argument("email", help="Email address to validate.")
+    email_parser.add_argument(
+        "email",
+        help="Email address to validate.",
+    )
     email_parser.set_defaults(handler=command_validate_email)
 
     application_parser = subparsers.add_parser(
@@ -453,7 +613,13 @@ def build_parser() -> argparse.ArgumentParser:
     application_parser.add_argument(
         "--allow-unknown-fields",
         action="store_true",
-        help="Allow fields outside the current application allowlist.",
+        help="Allow fields outside the application's current allowlist.",
+    )
+    application_parser.add_argument(
+        "--max-bytes",
+        type=_positive_int,
+        default=DEFAULT_MAX_BYTES,
+        help="Maximum input size in bytes.",
     )
     application_parser.set_defaults(handler=command_validate_application)
 
@@ -469,7 +635,13 @@ def build_parser() -> argparse.ArgumentParser:
     job_parser.add_argument(
         "--allow-unknown-fields",
         action="store_true",
-        help="Allow fields outside the current job allowlist.",
+        help="Allow fields outside the job's current allowlist.",
+    )
+    job_parser.add_argument(
+        "--max-bytes",
+        type=_positive_int,
+        default=DEFAULT_MAX_BYTES,
+        help="Maximum input size in bytes.",
     )
     job_parser.set_defaults(handler=command_validate_job)
 
@@ -484,15 +656,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     import_parser.add_argument(
         "--format",
-        choices=("csv", "json", "jsonl"),
+        choices=SUPPORTED_FORMATS,
         required=True,
         help="Input format.",
     )
     import_parser.add_argument(
         "--max-bytes",
-        type=int,
-        default=5_000_000,
-        help="Maximum input size in bytes (default: 5000000).",
+        type=_positive_int,
+        default=DEFAULT_MAX_BYTES,
+        help="Maximum input size in bytes.",
     )
     import_parser.add_argument(
         "--print-records",
@@ -512,7 +684,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export_parser.add_argument(
         "--format",
-        choices=("csv", "json", "jsonl"),
+        choices=SUPPORTED_FORMATS,
         required=True,
         help="Output format.",
     )
@@ -520,6 +692,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         type=Path,
         help="Output path; stdout is used when omitted.",
+    )
+    export_parser.add_argument(
+        "--max-bytes",
+        type=_positive_int,
+        default=DEFAULT_MAX_BYTES,
+        help="Maximum input size in bytes.",
     )
     export_parser.set_defaults(handler=command_export_data)
 
@@ -546,14 +724,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             level=args.log_level,
             json_logs=args.log_format == "json",
         )
+
         return int(args.handler(args))
 
     except KeyboardInterrupt:
         print("Operation interrupted.", file=sys.stderr)
         return 130
+
     except Exception as exc:
-        # Do not print arbitrary exception messages, which can contain
-        # database URLs, credentials, or user-submitted values.
+        # Avoid printing exception messages that might contain credentials,
+        # database URLs, provider details, or submitted user data.
         LOGGER.error(
             "CLI command failed",
             extra={
@@ -561,6 +741,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "exception_type": type(exc).__name__,
             },
         )
+
         return _error(
             "Command failed. Review configuration and input files.",
             code="unexpected_error",
@@ -569,4 +750,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -2,311 +2,223 @@
 # MedOrbits Python Configuration
 
 **Directory:** `/python/config/`  
-**Purpose:** Centralize configuration for Python-based importers, data processing tasks, validation pipelines, and scheduled background jobs.
+**Project:** MedOrbits — Education · Admissions · Careers · Recruitment  
+**Website:** https://www.medorbits.in/  
+**Runtime:** Python 3.10+ recommended  
+**Status:** Configuration documentation
 
 ## 1. Overview
 
-This directory contains configuration files that control how MedOrbits Python services discover data sources, import external records, validate incoming data, and prepare records for review or publication.
+The `/python/config/` directory contains configuration files used by MedOrbits Python utilities, validation tools, repository analysis scripts, and automation workflows.
 
-Configuration files define operational settings. They do not implement the behavior themselves; Python modules must explicitly load, validate, and enforce the configured values.
+Configuration files should define application behavior without embedding environment-specific values, credentials, or secrets directly in source code.
 
-## 2. Directory Structure
+This directory should prioritize:
+
+- Explicit configuration schemas and versioning.
+- Secure defaults and fail-closed validation.
+- Consistent path handling across operating systems.
+- Reproducible execution and predictable error handling.
+- Environment-specific overrides without committed secrets.
+- Automated validation and regression tests.
+
+## 2. Recommended Directory Structure
 
 ```text
 python/
 ├── config/
 │   ├── README.md
-│   └── live-source-import.json
-├── ...
+│   ├── defaults.json
+│   ├── schema.json
+│   ├── development.json
+│   ├── production.json
+│   └── test.json
+├── tools/
+│   ├── README.md
+│   └── structure_adapter.py
+└── tests/
+    └── config/
+        ├── test_config_schema.py
+        ├── test_config_loading.py
+        └── fixtures/
+            └── valid-config.json
 ```
 
-Keep this README alongside the configuration files it documents. Update the directory structure when new configuration files are added.
+This is a recommended layout, not a statement that all these files already exist. Keep only files that the application actually uses.
 
-## 3. Configuration Registry
+## 3. Configuration File Responsibilities
 
-### `live-source-import.json`
+| File | Purpose |
+|—|—|
+| `defaults.json` | Safe, non-secret baseline settings |
+| `schema.json` | Defines supported fields, types, constraints, and required properties |
+| `development.json` | Local development overrides |
+| `production.json` | Production-specific non-secret settings |
+| `test.json` | Isolated test settings |
+| `.env` or deployment secrets | Sensitive environment-specific values; never commit secrets |
 
-Controls the configuration for importing approved JSON data from trusted external sources.
+If MedOrbits uses a different configuration format or loader, document the actual implementation rather than introducing a second configuration system unnecessarily.
 
-The configuration may define:
+## 4. Configuration Loading Rules
 
-- `allowed_hosts`: Explicitly trusted source hostnames.
-- `sources`: Registered import endpoints and their categories.
-- `settings`: Request limits, timeouts, concurrency, and refresh intervals.
-- `validation`: JSON parsing and record-validation requirements.
-- `deduplication`: Rules for identifying existing records.
-- `publication`: Review and publication controls.
-- `retry`: Retry limits and backoff behavior.
-- `rate_limit`: Request frequency limits.
-- `change_detection`: Record change tracking.
-- `storage`: Data retention and persistence preferences.
-- `logging`: Operational logs and audit settings.
+All configuration consumers should follow the same loading policy.
 
-Refer to `live-source-import.json` for the current configuration values.
+1. Load the baseline configuration.
+2. Apply permitted environment-specific overrides.
+3. Validate the merged configuration against the schema.
+4. Reject unknown or invalid values where strict validation is required.
+5. Resolve relative paths against an explicit project root, not an unpredictable current working directory.
+6. Never log passwords, tokens, private keys, cookies, or other sensitive values.
+7. Fail clearly when a required setting is missing.
+8. Avoid silently replacing malformed production configuration with defaults.
 
-## 4. Configuration Loading
+Configuration precedence should be documented and consistent. A recommended precedence is:
 
-Python services should load configuration from a known path and validate it before starting an import.
+1. Built-in safe defaults.
+2. Environment-specific configuration.
+3. Explicit environment-variable overrides.
+4. Explicit command-line overrides.
 
-Example:
+Only implement precedence levels that the actual loader supports.
 
-```python
-# python/config_loader.py
+## 5. Security Requirements
 
-import json
-from pathlib import Path
-from typing import Any
+### Secrets management
 
-CONFIG_DIR = Path(__file__).resolve().parent / “config”
+- Never commit production credentials or API keys.
+- Keep secret values in the deployment platform’s secret manager or environment variables.
+- Commit an `.env.example` containing placeholder values only.
+- Redact secrets from exceptions, diagnostic reports, and audit logs.
+- Restrict access to production configuration and deployment credentials.
 
+### File and path security
 
-def load_json_config(filename: str) -> dict[str, Any]:
-    “””Load a JSON configuration from the trusted config directory.”””
+- Resolve paths before accessing files.
+- Validate that configuration paths remain within approved directories when required.
+- Reject unexpected symbolic links where they could bypass security boundaries.
+- Avoid loading configuration files from untrusted user-controlled locations.
+- Use atomic writes for configuration updates where appropriate.
+- Do not overwrite an existing configuration silently.
 
-    if Path(filename).name != filename:
-        raise ValueError(“Configuration filename must not contain a path.”)
+### Remote source configuration
 
-    if not filename.endswith(“.json”):
-        raise ValueError(“Only JSON configuration files are supported.”)
+If the configuration defines external data sources, such as admissions, colleges, courses, jobs, fees, or announcements:
 
-    config_path = (CONFIG_DIR / filename).resolve()
+- Require HTTPS.
+- Use an explicit hostname allowlist.
+- Validate resolved IP addresses and every redirect destination.
+- Block loopback, private, link-local, and cloud-metadata destinations.
+- Enforce request timeouts and response-size limits.
+- Validate the returned data before importing or publishing it.
+- Keep automatic publication disabled until the review and approval workflow has been verified.
 
-    if config_path.parent != CONFIG_DIR.resolve():
-        raise ValueError(“Configuration path is outside the config directory.”)
+These protections must be implemented by the code that consumes the configuration; documenting a security setting does not enforce it.
 
-    try:
-        with config_path.open(“r”, encoding=“utf-8”) as file:
-            config = json.load(file)
-    except FileNotFoundError as exc:
-        raise RuntimeError(
-            f”Required configuration file is missing: {filename}”
-        ) from exc
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            f”Invalid JSON in configuration file: {filename}”
-        ) from exc
+## 6. Environment Configuration
 
-    if not isinstance(config, dict):
-        raise RuntimeError(
-            f”Configuration must contain a JSON object: {filename}”
-        )
+Use explicit environment names, for example:
 
-    return config
-
-
-if __name__ == “__main__”:
-    configuration = load_json_config(“live-source-import.json”)
-    print(“Configuration loaded successfully.”)
-    print(f”Registered sources: {len(configuration.get(‘sources’, []))}”)
+```text
+development
+test
+staging
+production
 ```
 
-Adjust the import path and module location to match the actual project layout.
+Production settings should not be loaded implicitly during tests. Tests must use isolated fixtures and must not contact production services or mutate production data.
 
-Do not print secrets or sensitive configuration values to the console.
+Recommended environment variables include:
 
-## 5. Environment-Specific Configuration
-
-Use environment variables for deployment-specific settings and secrets.
-
-Recommended environment names:
-
-- `development`
-- `test`
-- `staging`
-- `production`
-
-Example environment variables:
-
-```dotenv
-MEDORBITS_ENV=development
-MEDORBITS_IMPORT_ENABLED=false
-MEDORBITS_IMPORT_TIMEOUT_SECONDS=15
-MEDORBITS_IMPORT_MAX_RESPONSE_BYTES=5242880
-MEDORBITS_IMPORT_LOG_LEVEL=INFO
+```text
+MEDORBITS_ENV
+MEDORBITS_CONFIG_DIR
+MEDORBITS_LOG_LEVEL
+MEDORBITS_DATABASE_URL
 ```
 
-These are suggested names, not automatically supported settings. The Python application must explicitly read and validate each variable.
+The database URL is sensitive and must never be printed in full. Add additional variables only when they are supported by the application.
 
-### Environment rules
+## 7. JSON Schema Validation
 
-- Disable live imports during unit tests unless a test explicitly requires them.
-- Use staging to verify new sources before production.
-- Keep production publication under controlled review.
-- Do not store API keys, passwords, tokens, or database credentials in committed JSON files.
-- Keep `.env` files out of version control.
-- Provide `.env.example` with placeholder values only.
-- Never allow an untrusted environment variable or remote response to silently weaken security controls.
+For JSON configuration files, use JSON Schema or an equivalent validator to check:
 
-## 6. Live-Source Import Requirements
+- Required properties and data types.
+- Supported configuration versions.
+- Numeric bounds and string length limits.
+- Enumerated values such as environment names and log levels.
+- URL and hostname restrictions where applicable.
+- Duplicate identifiers and conflicting settings.
+- Unknown properties in security-sensitive sections.
 
-Before an import begins, the importing service should:
+A schema validates the configuration’s structure. Application-level validation must still enforce cross-field rules and runtime security requirements.
 
-1. Load the configuration from the trusted filesystem.
-2. Confirm that the overall importer is enabled.
-3. Select only registered sources with `enabled: true`.
-4. Validate source URLs and their hostnames against `allowed_hosts`.
-5. Require HTTPS where configured.
-6. Validate DNS resolutions and block prohibited network destinations.
-7. Enforce request timeouts and response-size limits.
-8. Validate redirect destinations before following redirects.
-9. Apply per-host rate limits and retry policies.
-10. Parse the response using the configured format.
-11. Validate records before persistence.
-12. Deduplicate records and preserve existing identifiers.
-13. Record source attribution and import metadata.
-14. Quarantine invalid records.
-15. Submit eligible records for review.
+## 8. Testing Requirements
 
-Configuration flags do not enforce these protections automatically. Each control must be implemented in the relevant Python module.
-
-## 7. Trusted Host Validation
-
-Treat `allowed_hosts` as an explicit hostname allowlist.
-
-Requirements:
-
-- Use real hostnames rather than placeholder domains in production.
-- Normalize hostnames consistently before comparison.
-- Match exact hostnames or explicitly approved subdomains.
-- Do not use substring matching to authorize hosts.
-- Reject URLs with unsupported schemes or embedded credentials.
-- Revalidate destinations after redirects.
-- Block loopback, private, link-local, and cloud metadata addresses when making server-side requests.
-- Validate DNS results and account for DNS rebinding risks.
-- Do not allow imported records to register additional trusted hosts automatically.
-
-The configuration’s `allowed_hosts` list must be enforced by the importer, not merely documented.
-
-## 8. Validation and Data Integrity
-
-Validate configuration and imported records independently.
-
-### Configuration validation
-
-Check that:
-
-- The root JSON value is an object.
-- `allowed_hosts` is a list of valid hostnames.
-- `sources` is a list of source objects.
-- Each source has the required fields.
-- Each source URL uses an allowed scheme.
-- Each source hostname is allowlisted.
-- `format` is supported.
-- `category` is recognized by the application.
-- Timeout, retry, and concurrency settings are within safe limits.
-- Unknown configuration properties are rejected or explicitly handled.
-
-### Imported record validation
-
-Use the appropriate canonical schema for each resource type. Where available, integrate the project’s JSON schemas for applications, colleges, courses, examinations, and jobs.
-
-Validate cross-field rules separately when they cannot be expressed reliably in JSON Schema.
-
-Do not publish a record merely because it is valid JSON.
-
-## 9. Publication and Review
-
-External data must be treated as untrusted until validated and reviewed according to the applicable workflow.
-
-Recommended defaults:
-
-- Automatic publication: disabled.
-- Human review: required.
-- Source attribution: required.
-- Invalid records: quarantined.
-- Existing manually maintained records: protected from unapproved overwrites.
-- Missing upstream records: not automatically deleted.
-- Change history: retained where supported.
-
-Imported content must never be executed as code or treated as instructions to the importer.
-
-## 10. Logging and Monitoring
-
-Record operational events such as:
-
-- Import run started or completed.
-- Source identifier and hostname.
-- Number of records discovered, imported, updated, skipped, or quarantined.
-- Request failures and retry attempts.
-- Validation failures.
-- Duplicate detection results.
-- Publication review outcomes.
-- Unexpected source changes.
-
-Do not log:
-
-- Authentication headers or cookies.
-- Secrets and credentials.
-- Complete private applicant records.
-- Uploaded document contents.
-- Unnecessary personal information.
-
-Use structured logs and avoid recording full response bodies by default.
-
-## 11. Testing
-
-Test configuration behavior without relying on live external websites.
-
-Recommended tests include:
+Configuration tests should verify:
 
 - Valid configuration loads successfully.
-- Missing configuration files produce clear errors.
-- Malformed JSON is rejected.
-- Incorrect field types are rejected.
-- Disabled sources are not contacted.
-- Unapproved hosts are rejected.
-- Redirects to unapproved hosts are blocked.
-- Private network destinations are blocked.
-- Oversized responses are rejected.
-- Request timeouts are enforced.
-- Invalid records are quarantined.
-- Duplicate records are not inserted twice.
-- Publication remains disabled unless explicitly approved.
+- Missing required settings produce clear errors.
+- Invalid JSON and unsupported schema versions are rejected.
+- Incorrect types and out-of-range values are rejected.
+- Environment overrides follow documented precedence.
+- Secrets are not included in logs or error messages.
+- Relative paths resolve consistently.
+- Production configuration cannot be loaded accidentally by tests.
+- Invalid remote source URLs and unapproved hosts are rejected.
+- Failed configuration updates do not corrupt the previous valid file.
 
-Use mocked HTTP responses or a controlled local test server. Avoid hitting production sources during ordinary unit tests.
+Run the tests using the project’s configured Python test runner. For example, if `pytest` is installed and configured:
 
-## 12. Operational Checklist
+```bash
+python -m pytest python/tests/config -q
+```
 
-Before deploying a configuration change:
+Adjust the path if the actual test suite uses a different directory structure.
 
-- [ ] JSON syntax is valid.
-- [ ] All source URLs are intentional and verified.
-- [ ] Every enabled source has an approved hostname.
-- [ ] Timeouts and response-size limits are configured.
-- [ ] Redirect and network protections are implemented.
-- [ ] Rate limits and retry policies are enforced.
-- [ ] Record validation and deduplication are tested.
-- [ ] Publication and overwrite rules are correct.
-- [ ] Logs do not expose sensitive information.
-- [ ] Tests pass in CI.
-- [ ] Changes are reviewed and committed to version control.
+## 9. Error Handling and Diagnostics
 
-## 13. Troubleshooting
+Configuration errors should identify the setting or file that failed and explain how to correct it, without exposing sensitive values.
 
-| Problem | Recommended action |
-|—|—|
-| Configuration file not found | Verify the resolved configuration directory and deployment packaging. |
-| JSON decoding error | Validate the file syntax and encoding. |
-| Source rejected | Check the URL, hostname allowlist, scheme, and source enablement. |
-| Request timeout | Check source availability and adjust timeouts only when justified. |
-| HTTP 429 response | Respect `Retry-After`, reduce request frequency, and retry with backoff. |
-| Schema validation failure | Inspect safe validation diagnostics and correct the source mapping. |
-| Duplicate records | Review canonical identifiers, URLs, and content-hash logic. |
-| Records remain unpublished | Check review requirements, source verification, and publication permissions. |
+Recommended error categories:
 
-## 14. Maintenance Policy
+- `CONFIG_NOT_FOUND`
+- `CONFIG_PARSE_ERROR`
+- `CONFIG_SCHEMA_ERROR`
+- `CONFIG_VERSION_UNSUPPORTED`
+- `CONFIG_PATH_INVALID`
+- `CONFIG_SECURITY_VALIDATION_FAILED`
+- `CONFIG_ENVIRONMENT_MISMATCH`
 
-- Keep configuration files in version control.
-- Review source ownership and access policies periodically.
-- Remove retired sources and obsolete settings.
-- Test configuration changes before production deployment.
-- Document newly introduced settings and their accepted values.
-- Keep documentation aligned with the actual Python implementation.
-- Do not claim a control is enforced until the relevant code and tests verify it.
+Use these identifiers only if the application’s error-handling implementation supports them.
 
-—
+## 10. Change Management
 
-**Project:** MedOrbits  
-**Directory:** `/python/config/`  
-**Primary configuration:** `live-source-import.json`  
-**Operational principle:** Explicit source trust, strict validation, controlled imports, and reviewed publication.
+For every configuration change:
+
+1. Update the relevant schema and documentation.
+2. Add or update tests.
+3. Review security-sensitive changes separately.
+4. Run validation before deployment.
+5. Preserve a known-good configuration for rollback.
+6. Record who approved production changes and when, using the project’s audit mechanism.
+
+Do not store secrets in version-control history, test fixtures, generated reports, or configuration backups.
+
+## 11. Definition of Done
+
+The configuration directory is ready for production use when:
+
+- [ ] All referenced configuration files exist.
+- [ ] The loader and schema agree on supported fields.
+- [ ] Environment precedence is documented and tested.
+- [ ] Secrets are managed outside committed configuration files.
+- [ ] Invalid configurations fail safely.
+- [ ] Remote-source protections are enforced by application code.
+- [ ] Tests run without accessing production resources.
+- [ ] Production changes have an auditable review and rollback process.
+
+## 12. Maintenance
+
+Keep this README aligned with the actual files, configuration loader, schema, and tests in the repository. Remove obsolete examples when the implementation changes.
+
+**Reference:** [Python Packaging User Guide — Writing `pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) for Python project metadata and tooling configuration conventions.

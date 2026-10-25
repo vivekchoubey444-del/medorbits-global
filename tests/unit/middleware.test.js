@@ -1,107 +1,151 @@
+
 'use strict';
 
 /**
  * MedOrbits -- Middleware Unit Tests
  *
  * File: tests/unit/middleware.test.js
- * Run: node --test tests/unit/middleware.test.js
+ * Runtime: Node.js >= 20
+ * Test runner: Node.js built-in test runner
  *
- * Tests the actual middleware implementations.
- * Optional integrations are skipped when their packages are unavailable.
+ * Run:
+ *   node --test tests/unit/middleware.test.js
+ *
+ * Tests actual middleware implementations. Optional integrations are skipped
+ * when their required packages or middleware modules are unavailable.
+ *
+ * Security notes:
+ * - Uses synthetic credentials and request data only.
+ * - Never connects to production services.
+ * - Does not assume that constructing middleware proves route-level security.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const crypto = require('node:crypto');
+const path = require('node:path');
 
-const middlewarePath = '../../src/middleware';
+const MIDDLEWARE_DIR = path.resolve(__dirname, '../../src/middleware');
 
-const requestId = require(`${middlewarePath}/request-id`);
-const authorize = require(`${middlewarePath}/authorize`);
-const maintenance = require(`${middlewarePath}/maintenance`);
-const requestLogger = require(`${middlewarePath}/request-logger`);
-const csrf = require(`${middlewarePath}/csrf`);
-const notFound = require(`${middlewarePath}/not-found`);
-const validate = require(`${middlewarePath}/validate`);
-const errorHandler = require(`${middlewarePath}/error-handler`);
-const verifyWebhook = require(`${middlewarePath}/verify-webhook`);
+function loadMiddleware(name) {
+  return require(path.join(MIDDLEWARE_DIR, name));
+}
 
-const TEST_SECRET = 'test-secret-with-at-least-32-characters-long';
+function packageAvailable(name) {
+  try {
+    require.resolve(name);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const TEST_SECRET = 'medorbits-test-secret-never-use-in-production-0001';
 
 function createRequest(overrides = {}) {
-  const headers = Object.fromEntries(
-    Object.entries(overrides.headers || {}).map(([key, value]) => [
-      key.toLowerCase(),
-      value,
-    ]),
-  );
+  const suppliedHeaders = overrides.headers || {};
+  const headers = Object.create(null);
 
-  return {
+  for (const [key, value] of Object.entries(suppliedHeaders)) {
+    headers[key.toLowerCase()] = value;
+  }
+
+  const req = {
     method: 'GET',
     path: '/api/v1/test',
     originalUrl: '/api/v1/test',
+    url: '/api/v1/test',
     headers,
-
+    params: {},
+    query: {},
+    body: {},
+    cookies: {},
     get(name) {
-      return headers[String(name).toLowerCase()] || '';
+      return headers[String(name).toLowerCase()] ?? '';
     },
-
     accepts() {
       return false;
     },
-
     ...overrides,
-
-    headers,
-
-    get: overrides.get || function get(name) {
-      return headers[String(name).toLowerCase()] || '';
-    },
   };
+
+  req.headers = headers;
+
+  if (!overrides.get) {
+    req.get = function get(name) {
+      return headers[String(name).toLowerCase()] ?? '';
+    };
+  }
+
+  return req;
 }
 
 function createResponse() {
-  const response = new EventEmitter();
+  const res = new EventEmitter();
 
-  response.statusCode = 200;
-  response.headers = {};
-  response.body = undefined;
-  response.locals = {};
-  response.headersSent = false;
+  res.statusCode = 200;
+  res.headers = Object.create(null);
+  res.body = undefined;
+  res.locals = {};
+  res.headersSent = false;
+  res.finished = false;
 
-  response.setHeader = function setHeader(name, value) {
-    response.headers[name.toLowerCase()] = value;
-    return response;
+  res.setHeader = function setHeader(name, value) {
+    res.headers[String(name).toLowerCase()] = value;
+    return res;
   };
 
-  response.getHeader = function getHeader(name) {
-    return response.headers[name.toLowerCase()];
+  res.getHeader = function getHeader(name) {
+    return res.headers[String(name).toLowerCase()];
   };
 
-  response.status = function status(code) {
-    response.statusCode = code;
-    return response;
+  res.removeHeader = function removeHeader(name) {
+    delete res.headers[String(name).toLowerCase()];
+    return res;
   };
 
-  response.json = function json(body) {
-    response.body = body;
-    response.headersSent = true;
-    return response;
+  res.status = function status(code) {
+    res.statusCode = code;
+    return res;
   };
 
-  response.send = function send(body) {
-    response.body = body;
-    response.headersSent = true;
-    return response;
+  res.json = function json(body) {
+    res.body = body;
+    res.headersSent = true;
+    res.finished = true;
+    return res;
   };
 
-  response.cookie = function cookie(name, value, options) {
-    response.lastCookie = { name, value, options };
-    return response;
+  res.send = function send(body) {
+    res.body = body;
+    res.headersSent = true;
+    res.finished = true;
+    return res;
   };
 
-  return response;
+  res.end = function end(body) {
+    if (body !== undefined) {
+      res.body = body;
+    }
+
+    res.headersSent = true;
+    res.finished = true;
+    res.emit('finish');
+    return res;
+  };
+
+  res.cookie = function cookie(name, value, options = {}) {
+    res.lastCookie = { name, value, options };
+    return res;
+  };
+
+  res.clearCookie = function clearCookie(name, options = {}) {
+    res.lastClearedCookie = { name, options };
+    return res;
+  };
+
+  return res;
 }
 
 async function runMiddleware(middleware, req, res) {
@@ -128,16 +172,27 @@ async function runMiddleware(middleware, req, res) {
   };
 }
 
-function packageAvailable(name) {
-  try {
-    require.resolve(name);
-    return true;
-  } catch {
-    return false;
+function expectError(result, status, code) {
+  assert.ok(
+    result.error instanceof Error,
+    `Expected an Error, received ${String(result.error)}`,
+  );
+
+  assert.equal(result.error.status, status);
+
+  if (code !== undefined) {
+    assert.equal(result.error.code, code);
   }
 }
 
-function withSuppressedConsoleError(callback) {
+function signHmac(body, secret = TEST_SECRET) {
+  return crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+}
+
+function suppressConsoleError(callback) {
   const original = console.error;
   console.error = () => {};
 
@@ -148,11 +203,27 @@ function withSuppressedConsoleError(callback) {
   }
 }
 
+function withOptionalModule(moduleName, callback) {
+  if (!packageAvailable(moduleName)) {
+    test.skip(`${moduleName} integration is unavailable`, () => {});
+    return;
+  }
+
+  callback();
+}
+
 // -----------------------------------------------------------------------------
 // Request ID
 // -----------------------------------------------------------------------------
 
+test('request-id: exports a middleware factory', () => {
+  const requestId = loadMiddleware('request-id');
+
+  assert.equal(typeof requestId, 'function');
+});
+
 test('request-id: accepts a valid incoming request ID', async () => {
+  const requestId = loadMiddleware('request-id');
   const req = createRequest({
     headers: { 'x-request-id': 'request-123_test' },
   });
@@ -162,10 +233,11 @@ test('request-id: accepts a valid incoming request ID', async () => {
 
   assert.equal(result.error, undefined);
   assert.equal(req.id, 'request-123_test');
-  assert.equal(res.headers['x-request-id'], 'request-123_test');
+  assert.equal(res.getHeader('x-request-id'), 'request-123_test');
 });
 
 test('request-id: replaces an invalid incoming request ID', async () => {
+  const requestId = loadMiddleware('request-id');
   const req = createRequest({
     headers: { 'x-request-id': 'invalid request id with spaces' },
   });
@@ -175,22 +247,29 @@ test('request-id: replaces an invalid incoming request ID', async () => {
 
   assert.equal(typeof req.id, 'string');
   assert.match(req.id, /^[0-9a-f-]{36}$/i);
-  assert.equal(res.headers['x-request-id'], req.id);
+  assert.equal(res.getHeader('x-request-id'), req.id);
 });
 
-test('request-id: generates an ID when no ID is supplied', async () => {
+test('request-id: generates an ID when none is supplied', async () => {
+  const requestId = loadMiddleware('request-id');
   const req = createRequest();
   const res = createResponse();
 
   await runMiddleware(requestId(), req, res);
 
   assert.ok(req.id);
-  assert.equal(res.headers['x-request-id'], req.id);
+  assert.equal(res.getHeader('x-request-id'), req.id);
 });
 
-test('request-id: exports the documented request ID pattern', () => {
+test('request-id: exports a functional request ID pattern', () => {
+  const requestId = loadMiddleware('request-id');
+
+  assert.ok(requestId.REQUEST_ID_PATTERN instanceof RegExp);
   assert.equal(requestId.REQUEST_ID_PATTERN.test('abc-123'), true);
-  assert.equal(requestId.REQUEST_ID_PATTERN.test('contains spaces'), false);
+  assert.equal(
+    requestId.REQUEST_ID_PATTERN.test('contains spaces'),
+    false,
+  );
   assert.equal(requestId.REQUEST_ID_PATTERN.test(''), false);
 });
 
@@ -198,21 +277,32 @@ test('request-id: exports the documented request ID pattern', () => {
 // Authorization
 // -----------------------------------------------------------------------------
 
+test('authorize: exports a middleware factory', () => {
+  const authorize = loadMiddleware('authorize');
+
+  assert.equal(typeof authorize, 'function');
+});
+
 test('authorize: rejects requests without an authenticated user', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize(),
     createRequest(),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 401);
-  assert.equal(result.error.code, 'AUTHENTICATION_REQUIRED');
+  expectError(result, 401, 'AUTHENTICATION_REQUIRED');
 });
 
 test('authorize: allows a user with a required role', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({ roles: ['admin'] }),
-    createRequest({ user: { id: 'user-1', role: 'admin' } }),
+    createRequest({
+      user: { id: 'user-test-001', role: 'admin' },
+    }),
     createResponse(),
   );
 
@@ -221,77 +311,111 @@ test('authorize: allows a user with a required role', async () => {
 });
 
 test('authorize: supports multiple roles and role arrays', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({ roles: ['admin', 'reviewer'] }),
     createRequest({
-      user: { id: 'user-1', roles: ['editor', 'reviewer'] },
+      user: {
+        id: 'user-test-002',
+        roles: ['editor', 'reviewer'],
+      },
     }),
     createResponse(),
   );
 
   assert.equal(result.error, undefined);
+  assert.equal(result.count, 1);
 });
 
 test('authorize: rejects a user without a required role', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({ roles: ['admin'] }),
-    createRequest({ user: { id: 'user-1', role: 'student' } }),
+    createRequest({
+      user: { id: 'user-test-003', role: 'student' },
+    }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 403);
-  assert.equal(result.error.code, 'FORBIDDEN');
+  expectError(result, 403, 'FORBIDDEN');
 });
 
-test('authorize: checks for at least one required permission by default', async () => {
+test('authorize: checks for at least one configured permission by default', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({
       permissions: ['courses:read', 'courses:write'],
     }),
-    createRequest({ user: { permissions: ['courses:read'] } }),
+    createRequest({
+      user: {
+        id: 'user-test-004',
+        permissions: ['courses:read'],
+      },
+    }),
     createResponse(),
   );
 
   assert.equal(result.error, undefined);
+  assert.equal(result.count, 1);
 });
 
 test('authorize: can require all configured permissions', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({
       permissions: ['courses:read', 'courses:write'],
       requireAllPermissions: true,
     }),
-    createRequest({ user: { permissions: ['courses:read'] } }),
+    createRequest({
+      user: {
+        id: 'user-test-005',
+        permissions: ['courses:read'],
+      },
+    }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 403);
+  expectError(result, 403);
 });
 
 test('authorize: awaits the ownership callback', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({
-      ownership: async (_request, user) => user.id === 'user-1',
+      ownership: async (_request, user) => user.id === 'user-test-006',
     }),
-    createRequest({ user: { id: 'user-1', role: 'student' } }),
+    createRequest({
+      user: { id: 'user-test-006', role: 'student' },
+    }),
     createResponse(),
   );
 
   assert.equal(result.error, undefined);
+  assert.equal(result.count, 1);
 });
 
 test('authorize: rejects failed ownership checks', async () => {
+  const authorize = loadMiddleware('authorize');
+
   const result = await runMiddleware(
     authorize({ ownership: () => false }),
-    createRequest({ user: { id: 'user-1' } }),
+    createRequest({
+      user: { id: 'user-test-007', role: 'student' },
+    }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 403);
+  expectError(result, 403);
 });
 
 test('authorize: forwards ownership callback errors', async () => {
-  const expectedError = new Error('Ownership lookup failed');
+  const authorize = loadMiddleware('authorize');
+  const expectedError = new Error('Synthetic ownership lookup failure');
 
   const result = await runMiddleware(
     authorize({
@@ -299,7 +423,9 @@ test('authorize: forwards ownership callback errors', async () => {
         throw expectedError;
       },
     }),
-    createRequest({ user: { id: 'user-1' } }),
+    createRequest({
+      user: { id: 'user-test-008', role: 'student' },
+    }),
     createResponse(),
   );
 
@@ -307,9 +433,26 @@ test('authorize: forwards ownership callback errors', async () => {
 });
 
 test('authorize: exposes role and permission helper factories', () => {
+  const authorize = loadMiddleware('authorize');
+
   assert.equal(typeof authorize.requireRole, 'function');
   assert.equal(typeof authorize.requirePermission, 'function');
   assert.equal(typeof authorize.forbidden, 'function');
+});
+
+test('authorize: rejects request-supplied role escalation', async () => {
+  const authorize = loadMiddleware('authorize');
+
+  const result = await runMiddleware(
+    authorize({ roles: ['admin'] }),
+    createRequest({
+      user: { id: 'user-test-009', role: 'student' },
+      body: { role: 'admin', isAdmin: true },
+    }),
+    createResponse(),
+  );
+
+  expectError(result, 403, 'FORBIDDEN');
 });
 
 // -----------------------------------------------------------------------------
@@ -317,6 +460,8 @@ test('authorize: exposes role and permission helper factories', () => {
 // -----------------------------------------------------------------------------
 
 test('maintenance: passes requests through when disabled', async () => {
+  const maintenance = loadMiddleware('maintenance');
+
   const result = await runMiddleware(
     maintenance({ enabled: false }),
     createRequest(),
@@ -324,10 +469,13 @@ test('maintenance: passes requests through when disabled', async () => {
   );
 
   assert.equal(result.count, 1);
+  assert.equal(result.error, undefined);
   assert.equal(result.res.statusCode, 200);
 });
 
 test('maintenance: allows configured health endpoints', async () => {
+  const maintenance = loadMiddleware('maintenance');
+
   const result = await runMiddleware(
     maintenance({ enabled: true }),
     createRequest({ path: '/health' }),
@@ -335,29 +483,33 @@ test('maintenance: allows configured health endpoints', async () => {
   );
 
   assert.equal(result.count, 1);
+  assert.equal(result.error, undefined);
   assert.equal(result.res.statusCode, 200);
 });
 
 test('maintenance: returns a structured 503 for API requests', async () => {
+  const maintenance = loadMiddleware('maintenance');
   const res = createResponse();
 
   await runMiddleware(
     maintenance({ enabled: true }),
     createRequest({
       path: '/api/v1/courses',
-      id: 'request-42',
+      originalUrl: '/api/v1/courses',
+      id: 'request-test-042',
     }),
     res,
   );
 
   assert.equal(res.statusCode, 503);
-  assert.equal(res.headers['retry-after'], '300');
+  assert.equal(res.getHeader('retry-after'), '300');
   assert.equal(res.body.success, false);
   assert.equal(res.body.error.code, 'MAINTENANCE_MODE');
-  assert.equal(res.body.requestId, 'request-42');
+  assert.equal(res.body.requestId, 'request-test-042');
 });
 
 test('maintenance: supports a custom retry interval and message', async () => {
+  const maintenance = loadMiddleware('maintenance');
   const res = createResponse();
 
   await runMiddleware(
@@ -370,11 +522,12 @@ test('maintenance: supports a custom retry interval and message', async () => {
     res,
   );
 
-  assert.equal(res.headers['retry-after'], '120');
+  assert.equal(res.getHeader('retry-after'), '120');
   assert.equal(res.body.error.message, 'Scheduled maintenance');
 });
 
 test('maintenance: sends a plain response for non-API requests by default', async () => {
+  const maintenance = loadMiddleware('maintenance');
   const res = createResponse();
 
   await runMiddleware(
@@ -388,12 +541,13 @@ test('maintenance: sends a plain response for non-API requests by default', asyn
 });
 
 test('maintenance: delegates non-API requests to a configured HTML handler', async () => {
+  const maintenance = loadMiddleware('maintenance');
   let called = false;
 
   await runMiddleware(
     maintenance({
       enabled: true,
-      htmlHandler: () => {
+      htmlHandler: (_req, _res) => {
         called = true;
       },
     }),
@@ -409,6 +563,8 @@ test('maintenance: delegates non-API requests to a configured HTML handler', asy
 // -----------------------------------------------------------------------------
 
 test('validate: requires a schema or validator', () => {
+  const validate = loadMiddleware('validate');
+
   assert.throws(
     () => validate(),
     /validation schema or function is required/i,
@@ -416,6 +572,7 @@ test('validate: requires a schema or validator', () => {
 });
 
 test('validate: accepts a successful custom validator', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({ body: { name: 'MedOrbits' } });
 
   const result = await runMiddleware(
@@ -428,7 +585,8 @@ test('validate: accepts a successful custom validator', async () => {
   assert.deepEqual(req.body, { name: 'MedOrbits' });
 });
 
-test('validate: replaces request input with the custom validator result', async () => {
+test('validate: replaces request input with the validator result', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({ body: { name: '  MedOrbits  ' } });
 
   await runMiddleware(
@@ -443,7 +601,9 @@ test('validate: replaces request input with the custom validator result', async 
   assert.deepEqual(req.body, { name: 'MedOrbits' });
 });
 
-test('validate: forwards a validation error for invalid custom input', async () => {
+test('validate: rejects invalid custom input', async () => {
+  const validate = loadMiddleware('validate');
+
   const result = await runMiddleware(
     validate(() => ({
       valid: false,
@@ -453,23 +613,24 @@ test('validate: forwards a validation error for invalid custom input', async () 
     createResponse(),
   );
 
-  assert.equal(result.error.status, 400);
-  assert.equal(result.error.code, 'VALIDATION_ERROR');
+  expectError(result, 400, 'VALIDATION_ERROR');
 });
 
 test('validate: supports a custom validator returning false', async () => {
+  const validate = loadMiddleware('validate');
+
   const result = await runMiddleware(
     validate(() => false),
     createRequest({ body: {} }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 400);
-  assert.equal(result.error.code, 'VALIDATION_ERROR');
+  expectError(result, 400, 'VALIDATION_ERROR');
 });
 
 test('validate: forwards an Error returned by a custom validator', async () => {
-  const expectedError = new Error('Custom validation failed');
+  const validate = loadMiddleware('validate');
+  const expectedError = new Error('Synthetic validation failure');
 
   const result = await runMiddleware(
     validate(() => expectedError),
@@ -481,6 +642,7 @@ test('validate: forwards an Error returned by a custom validator', async () => {
 });
 
 test('validate: supports validation of body, params, and query', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({
     body: { name: 'Example' },
     params: { id: '123' },
@@ -506,6 +668,7 @@ test('validate: supports validation of body, params, and query', async () => {
 });
 
 test('validate: supports asynchronous custom validators', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({ body: { active: true } });
 
   const result = await runMiddleware(
@@ -522,6 +685,7 @@ test('validate: supports asynchronous custom validators', async () => {
 });
 
 test('validate: supports Zod-compatible safeParse results', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({ body: { count: '5' } });
 
   await runMiddleware(
@@ -541,6 +705,8 @@ test('validate: supports Zod-compatible safeParse results', async () => {
 });
 
 test('validate: rejects an unsuccessful Zod-compatible result', async () => {
+  const validate = loadMiddleware('validate');
+
   const result = await runMiddleware(
     validate({
       safeParse() {
@@ -554,11 +720,11 @@ test('validate: rejects an unsuccessful Zod-compatible result', async () => {
     createResponse(),
   );
 
-  assert.equal(result.error.status, 400);
-  assert.equal(result.error.code, 'VALIDATION_ERROR');
+  expectError(result, 400, 'VALIDATION_ERROR');
 });
 
 test('validate: supports Joi-compatible validate results', async () => {
+  const validate = loadMiddleware('validate');
   const req = createRequest({ body: { count: '5' } });
 
   await runMiddleware(
@@ -577,7 +743,8 @@ test('validate: supports Joi-compatible validate results', async () => {
 });
 
 test('validate: forwards unexpected validator exceptions', async () => {
-  const expectedError = new Error('Unexpected validator failure');
+  const validate = loadMiddleware('validate');
+  const expectedError = new Error('Synthetic validator exception');
 
   const result = await runMiddleware(
     validate(() => {
@@ -595,6 +762,8 @@ test('validate: forwards unexpected validator exceptions', async () => {
 // -----------------------------------------------------------------------------
 
 test('csrf: rejects a missing or weak secret', () => {
+  const csrf = loadMiddleware('csrf');
+
   assert.throws(
     () => csrf({ secret: 'short' }),
     /at least 32 characters/i,
@@ -602,6 +771,7 @@ test('csrf: rejects a missing or weak secret', () => {
 });
 
 test('csrf: allows safe HTTP methods without a submitted token', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({ secret: TEST_SECRET });
 
   const result = await runMiddleware(
@@ -615,19 +785,23 @@ test('csrf: allows safe HTTP methods without a submitted token', async () => {
 });
 
 test('csrf: rejects a state-changing request without a token', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({ secret: TEST_SECRET });
 
   const result = await runMiddleware(
     protection.verify,
-    createRequest({ method: 'POST', cookies: {} }),
+    createRequest({
+      method: 'POST',
+      cookies: {},
+    }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 403);
-  assert.equal(result.error.code, 'CSRF_VALIDATION_FAILED');
+  expectError(result, 403, 'CSRF_VALIDATION_FAILED');
 });
 
 test('csrf: issues a signed CSRF cookie and exposes the token in locals', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({
     secret: TEST_SECRET,
     secure: true,
@@ -650,20 +824,19 @@ test('csrf: issues a signed CSRF cookie and exposes the token in locals', async 
 });
 
 test('csrf: accepts a correctly signed cookie/header token pair', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({ secret: TEST_SECRET });
   const token = crypto.randomBytes(32).toString('base64url');
-
-  const signature = crypto
-    .createHmac('sha256', TEST_SECRET)
-    .update(token)
-    .digest('hex');
-
-  const signedToken = `${token}.${signature}`;
+  const signedToken = `${token}.${signHmac(token)}`;
 
   const req = createRequest({
     method: 'POST',
-    cookies: { [protection.cookieName]: signedToken },
-    headers: { 'x-csrf-token': signedToken },
+    cookies: {
+      [protection.cookieName]: signedToken,
+    },
+    headers: {
+      'x-csrf-token': signedToken,
+    },
   });
 
   const result = await runMiddleware(
@@ -677,28 +850,29 @@ test('csrf: accepts a correctly signed cookie/header token pair', async () => {
 });
 
 test('csrf: rejects a token with an invalid signature', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({ secret: TEST_SECRET });
-
-  const token = [
-    crypto.randomBytes(32).toString('base64url'),
-    '0'.repeat(64),
-  ].join('.');
+  const token = `${crypto.randomBytes(32).toString('base64url')}.${'0'.repeat(64)}`;
 
   const result = await runMiddleware(
     protection.verify,
     createRequest({
       method: 'POST',
-      cookies: { [protection.cookieName]: token },
-      headers: { 'x-csrf-token': token },
+      cookies: {
+        [protection.cookieName]: token,
+      },
+      headers: {
+        'x-csrf-token': token,
+      },
     }),
     createResponse(),
   );
 
-  assert.equal(result.error.status, 403);
-  assert.equal(result.error.code, 'CSRF_VALIDATION_FAILED');
+  expectError(result, 403, 'CSRF_VALIDATION_FAILED');
 });
 
 test('csrf: can skip protection when shouldProtect returns false', async () => {
+  const csrf = loadMiddleware('csrf');
   const protection = csrf({
     secret: TEST_SECRET,
     shouldProtect: () => false,
@@ -714,9 +888,13 @@ test('csrf: can skip protection when shouldProtect returns false', async () => {
   assert.equal(result.count, 1);
 });
 
-test('csrf: exports its safe comparison helper', () => {
+test('csrf: exports a safe comparison helper', () => {
+  const csrf = loadMiddleware('csrf');
+
   assert.equal(csrf.safeEqual('same', 'same'), true);
   assert.equal(csrf.safeEqual('first', 'second'), false);
+  assert.equal(csrf.safeEqual('', ''), true);
+  assert.equal(csrf.safeEqual('short', 'longer'), false);
 });
 
 // -----------------------------------------------------------------------------
@@ -724,6 +902,8 @@ test('csrf: exports its safe comparison helper', () => {
 // -----------------------------------------------------------------------------
 
 test('verify-webhook: rejects an absent or weak signing secret', () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
+
   assert.throws(
     () => verifyWebhook({ secret: 'weak' }),
     /signing secret must be configured/i,
@@ -731,6 +911,8 @@ test('verify-webhook: rejects an absent or weak signing secret', () => {
 });
 
 test('verify-webhook: rejects a missing raw request body', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
+
   const result = await runMiddleware(
     verifyWebhook({ secret: TEST_SECRET }),
     createRequest({
@@ -741,11 +923,12 @@ test('verify-webhook: rejects a missing raw request body', async () => {
     createResponse(),
   );
 
-  assert.equal(result.error.status, 400);
-  assert.equal(result.error.code, 'WEBHOOK_RAW_BODY_REQUIRED');
+  expectError(result, 400, 'WEBHOOK_RAW_BODY_REQUIRED');
 });
 
 test('verify-webhook: rejects a missing signature header', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
+
   const result = await runMiddleware(
     verifyWebhook({ secret: TEST_SECRET }),
     createRequest({
@@ -757,17 +940,13 @@ test('verify-webhook: rejects a missing signature header', async () => {
     createResponse(),
   );
 
-  assert.equal(result.error.status, 401);
-  assert.equal(result.error.code, 'WEBHOOK_SIGNATURE_MISSING');
+  expectError(result, 401, 'WEBHOOK_SIGNATURE_MISSING');
 });
 
 test('verify-webhook: accepts a valid HMAC-SHA256 signature', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
   const body = Buffer.from('{"event":"payment.success"}');
-
-  const signature = crypto
-    .createHmac('sha256', TEST_SECRET)
-    .update(body)
-    .digest('hex');
+  const signature = signHmac(body);
 
   const req = createRequest({
     rawBody: body,
@@ -786,13 +965,10 @@ test('verify-webhook: accepts a valid HMAC-SHA256 signature', async () => {
   assert.equal(req.webhookVerified, true);
 });
 
-test('verify-webhook: accepts the configured signature prefix', async () => {
+test('verify-webhook: accepts a configured signature prefix', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
   const body = Buffer.from('{"event":"payment.success"}');
-
-  const signature = crypto
-    .createHmac('sha256', TEST_SECRET)
-    .update(body)
-    .digest('hex');
+  const signature = signHmac(body);
 
   const req = createRequest({
     rawBody: body,
@@ -817,6 +993,8 @@ test('verify-webhook: accepts the configured signature prefix', async () => {
 });
 
 test('verify-webhook: rejects an invalid signature', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
+
   const result = await runMiddleware(
     verifyWebhook({ secret: TEST_SECRET }),
     createRequest({
@@ -828,8 +1006,26 @@ test('verify-webhook: rejects an invalid signature', async () => {
     createResponse(),
   );
 
-  assert.equal(result.error.status, 401);
-  assert.equal(result.error.code, 'WEBHOOK_SIGNATURE_INVALID');
+  expectError(result, 401, 'WEBHOOK_SIGNATURE_INVALID');
+});
+
+test('verify-webhook: rejects a signature calculated over a different body', async () => {
+  const verifyWebhook = loadMiddleware('verify-webhook');
+  const body = Buffer.from('{"event":"payment.success"}');
+  const wrongSignature = signHmac(Buffer.from('{"event":"payment.failed"}'));
+
+  const result = await runMiddleware(
+    verifyWebhook({ secret: TEST_SECRET }),
+    createRequest({
+      rawBody: body,
+      get(name) {
+        return name === 'x-webhook-signature' ? wrongSignature : '';
+      },
+    }),
+    createResponse(),
+  );
+
+  expectError(result, 401, 'WEBHOOK_SIGNATURE_INVALID');
 });
 
 // -----------------------------------------------------------------------------
@@ -837,21 +1033,23 @@ test('verify-webhook: rejects an invalid signature', async () => {
 // -----------------------------------------------------------------------------
 
 test('not-found: returns the standard JSON 404 response', async () => {
+  const notFound = loadMiddleware('not-found');
   const res = createResponse();
 
   await runMiddleware(
     notFound(),
-    createRequest({ id: 'request-404' }),
+    createRequest({ id: 'request-test-404' }),
     res,
   );
 
   assert.equal(res.statusCode, 404);
   assert.equal(res.body.success, false);
   assert.equal(res.body.error.code, 'NOT_FOUND');
-  assert.equal(res.body.requestId, 'request-404');
+  assert.equal(res.body.requestId, 'request-test-404');
 });
 
 test('not-found: supports a custom response code and message', async () => {
+  const notFound = loadMiddleware('not-found');
   const res = createResponse();
 
   await runMiddleware(
@@ -872,6 +1070,8 @@ test('not-found: supports a custom response code and message', async () => {
 });
 
 test('not-found: can pass an HTML 404 error to next', async () => {
+  const notFound = loadMiddleware('not-found');
+
   const result = await runMiddleware(
     notFound({ apiOnly: false }),
     createRequest({
@@ -882,8 +1082,7 @@ test('not-found: can pass an HTML 404 error to next', async () => {
     createResponse(),
   );
 
-  assert.equal(result.error.status, 404);
-  assert.equal(result.error.code, 'NOT_FOUND');
+  expectError(result, 404, 'NOT_FOUND');
 });
 
 // -----------------------------------------------------------------------------
@@ -891,28 +1090,37 @@ test('not-found: can pass an HTML 404 error to next', async () => {
 // -----------------------------------------------------------------------------
 
 test('error-handler: forwards errors when response headers were already sent', () => {
+  const errorHandler = loadMiddleware('error-handler');
   const error = new Error('Already started');
   const res = createResponse();
+
   res.headersSent = true;
 
   let forwarded;
 
-  errorHandler(error, createRequest(), res, (nextError) => {
-    forwarded = nextError;
-  });
+  errorHandler(
+    error,
+    createRequest(),
+    res,
+    (nextError) => {
+      forwarded = nextError;
+    },
+  );
 
   assert.equal(forwarded, error);
 });
 
 test('error-handler: normalizes invalid status codes to 500', () => {
+  const errorHandler = loadMiddleware('error-handler');
   const res = createResponse();
-  const error = new Error('Internal details');
+  const error = new Error('Synthetic internal detail');
+
   error.status = 200;
 
-  withSuppressedConsoleError(() => {
+  suppressConsoleError(() => {
     errorHandler(
       error,
-      createRequest({ id: 'request-error' }),
+      createRequest({ id: 'request-test-error' }),
       res,
       () => {},
     );
@@ -925,12 +1133,17 @@ test('error-handler: normalizes invalid status codes to 500', () => {
     res.body.error.message,
     'An unexpected server error occurred.',
   );
-  assert.equal(res.body.requestId, 'request-error');
-  assert.equal(JSON.stringify(res.body).includes('Internal details'), false);
+  assert.equal(res.body.requestId, 'request-test-error');
+  assert.equal(
+    JSON.stringify(res.body).includes('Synthetic internal detail'),
+    false,
+  );
 });
 
 test('error-handler: classifies oversized request bodies', () => {
-  const error = new Error('Payload too large');
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic oversized request');
+
   error.type = 'entity.too.large';
 
   const res = createResponse();
@@ -942,7 +1155,9 @@ test('error-handler: classifies oversized request bodies', () => {
 });
 
 test('error-handler: classifies malformed JSON bodies', () => {
-  const error = new Error('Malformed JSON');
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic malformed JSON');
+
   error.type = 'entity.parse.failed';
 
   const res = createResponse();
@@ -954,7 +1169,9 @@ test('error-handler: classifies malformed JSON bodies', () => {
 });
 
 test('error-handler: classifies denied CORS origins', () => {
-  const error = new Error('Origin denied');
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic origin denial');
+
   error.code = 'CORS_ORIGIN_DENIED';
 
   const res = createResponse();
@@ -966,7 +1183,9 @@ test('error-handler: classifies denied CORS origins', () => {
 });
 
 test('error-handler: maps duplicate database records to 409', () => {
-  const error = new Error('Database duplicate');
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic duplicate record');
+
   error.code = '23505';
 
   const res = createResponse();
@@ -978,7 +1197,9 @@ test('error-handler: maps duplicate database records to 409', () => {
 });
 
 test('error-handler: maps invalid database values to 400', () => {
-  const error = new Error('Database input error');
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic invalid database value');
+
   error.code = '22P02';
 
   const res = createResponse();
@@ -989,11 +1210,12 @@ test('error-handler: maps invalid database values to 400', () => {
   assert.equal(res.body.error.code, 'INVALID_DATA');
 });
 
-test('error-handler: uses safe client messages for server errors', () => {
-  const error = new Error('Sensitive database connection string');
+test('error-handler: hides internal server errors from clients', () => {
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic sensitive connection details');
   const res = createResponse();
 
-  withSuppressedConsoleError(() => {
+  suppressConsoleError(() => {
     errorHandler(error, createRequest(), res, () => {});
   });
 
@@ -1004,14 +1226,16 @@ test('error-handler: uses safe client messages for server errors', () => {
   );
   assert.equal(
     JSON.stringify(res.body).includes(
-      'Sensitive database connection string',
+      'Synthetic sensitive connection details',
     ),
     false,
   );
 });
 
-test('error-handler: preserves safe client messages for ordinary request errors', () => {
-  const error = new Error('Invalid course ID');
+test('error-handler: preserves a safe public message for client errors', () => {
+  const errorHandler = loadMiddleware('error-handler');
+  const error = new Error('Synthetic internal message');
+
   error.status = 400;
   error.code = 'INVALID_COURSE_ID';
   error.publicMessage = 'The course ID is invalid.';
@@ -1030,6 +1254,7 @@ test('error-handler: preserves safe client messages for ordinary request errors'
 // -----------------------------------------------------------------------------
 
 test('request-logger: logs structured metadata without query parameters', async () => {
+  const requestLogger = loadMiddleware('request-logger');
   const entries = [];
 
   const logger = {
@@ -1038,11 +1263,11 @@ test('request-logger: logs structured metadata without query parameters', async 
   };
 
   const req = createRequest({
-    id: 'request-log-1',
+    id: 'request-log-test-001',
     method: 'GET',
     path: '/api/v1/courses',
-    originalUrl: '/api/v1/courses?secret=should-not-be-logged',
-    user: { id: 42 },
+    originalUrl: '/api/v1/courses?secret=do-not-log-this',
+    user: { id: 'user-test-010' },
   });
 
   const res = createResponse();
@@ -1060,18 +1285,19 @@ test('request-logger: logs structured metadata without query parameters', async 
   res.emit('finish');
 
   assert.equal(entries.length, 1);
-  assert.equal(entries[0].requestId, 'request-log-1');
+  assert.equal(entries[0].requestId, 'request-log-test-001');
   assert.equal(entries[0].method, 'GET');
   assert.equal(entries[0].path, '/api/v1/courses');
   assert.equal(entries[0].status, 200);
-  assert.equal(entries[0].userId, '42');
+  assert.equal(entries[0].userId, 'user-test-010');
   assert.equal(
-    JSON.stringify(entries[0]).includes('should-not-be-logged'),
+    JSON.stringify(entries[0]).includes('do-not-log-this'),
     false,
   );
 });
 
 test('request-logger: uses error-level logging for 5xx responses', async () => {
+  const requestLogger = loadMiddleware('request-logger');
   const entries = [];
 
   const logger = {
@@ -1089,7 +1315,10 @@ test('request-logger: uses error-level logging for 5xx responses', async () => {
 
   await runMiddleware(
     requestLogger({ logger }),
-    createRequest({ method: 'POST', path: '/api/v1/test' }),
+    createRequest({
+      method: 'POST',
+      path: '/api/v1/test',
+    }),
     res,
   );
 
@@ -1102,6 +1331,7 @@ test('request-logger: uses error-level logging for 5xx responses', async () => {
 });
 
 test('request-logger: respects shouldLog filtering', async () => {
+  const requestLogger = loadMiddleware('request-logger');
   const entries = [];
 
   const logger = {
@@ -1129,169 +1359,159 @@ test('request-logger: respects shouldLog filtering', async () => {
 // Optional dependency-backed middleware
 // -----------------------------------------------------------------------------
 
-test('authenticate: rejects missing or weak JWT configuration', {
-  skip: !packageAvailable('jsonwebtoken'),
-}, () => {
-  const authenticate = require(`${middlewarePath}/authenticate`);
+withOptionalModule('jsonwebtoken', () => {
+  test('authenticate: rejects missing or weak JWT configuration', () => {
+    const authenticate = loadMiddleware('authenticate');
 
-  assert.throws(
-    () => authenticate({ secret: 'short' }),
-    /at least 32 characters/i,
-  );
-});
-
-test('authenticate: rejects requests without a Bearer token', {
-  skip: !packageAvailable('jsonwebtoken'),
-}, async () => {
-  const authenticate = require(`${middlewarePath}/authenticate`);
-
-  const result = await runMiddleware(
-    authenticate({ secret: TEST_SECRET }),
-    createRequest(),
-    createResponse(),
-  );
-
-  assert.equal(result.error.status, 401);
-  assert.equal(result.error.code, 'AUTHENTICATION_REQUIRED');
-});
-
-test('authenticate: rejects invalid or expired tokens', {
-  skip: !packageAvailable('jsonwebtoken'),
-}, async () => {
-  const authenticate = require(`${middlewarePath}/authenticate`);
-
-  const result = await runMiddleware(
-    authenticate({ secret: TEST_SECRET }),
-    createRequest({
-      headers: { authorization: 'Bearer invalid-token' },
-    }),
-    createResponse(),
-  );
-
-  assert.equal(result.error.status, 401);
-  assert.equal(result.error.code, 'INVALID_OR_EXPIRED_TOKEN');
-});
-
-test('authenticate: establishes a normalized user from a valid JWT', {
-  skip: !packageAvailable('jsonwebtoken'),
-}, async () => {
-  const jwt = require('jsonwebtoken');
-  const authenticate = require(`${middlewarePath}/authenticate`);
-
-  const token = jwt.sign(
-    {
-      sub: 'user-123',
-      roles: ['student'],
-      permissions: ['courses:read'],
-    },
-    TEST_SECRET,
-    {
-      algorithm: 'HS256',
-      expiresIn: '5m',
-    },
-  );
-
-  const req = createRequest({
-    headers: { authorization: `Bearer ${token}` },
+    assert.throws(
+      () => authenticate({ secret: 'short' }),
+      /at least 32 characters/i,
+    );
   });
 
-  const result = await runMiddleware(
-    authenticate({ secret: TEST_SECRET }),
-    req,
-    createResponse(),
-  );
+  test('authenticate: rejects requests without a Bearer token', async () => {
+    const authenticate = loadMiddleware('authenticate');
 
-  assert.equal(result.error, undefined);
-  assert.equal(req.user.id, 'user-123');
-  assert.deepEqual(req.user.roles, ['student']);
-  assert.deepEqual(req.user.permissions, ['courses:read']);
-  assert.ok(req.auth);
-});
+    const result = await runMiddleware(
+      authenticate({ secret: TEST_SECRET }),
+      createRequest(),
+      createResponse(),
+    );
 
-test('rate-limit: validates limiter options', {
-  skip: !packageAvailable('express-rate-limit'),
-}, () => {
-  const createLimiter = require(`${middlewarePath}/rate-limit`);
-
-  assert.throws(
-    () => createLimiter({ windowMs: 500 }),
-    /windowMs must be an integer/i,
-  );
-
-  assert.throws(
-    () => createLimiter({ limit: 0 }),
-    /limit must be a positive integer/i,
-  );
-});
-
-test('rate-limit: exports authentication and upload limiter factories', {
-  skip: !packageAvailable('express-rate-limit'),
-}, () => {
-  const createLimiter = require(`${middlewarePath}/rate-limit`);
-
-  assert.equal(typeof createLimiter.authLimiter, 'function');
-  assert.equal(typeof createLimiter.uploadLimiter, 'function');
-
-  assert.doesNotThrow(() => createLimiter.authLimiter());
-  assert.doesNotThrow(() => createLimiter.uploadLimiter());
-});
-
-test('security-headers: creates Helmet middleware when installed', {
-  skip: !packageAvailable('helmet'),
-}, () => {
-  const securityHeaders = require(`${middlewarePath}/security-headers`);
-
-  assert.equal(typeof securityHeaders(), 'function');
-});
-
-test('upload-limits: validates upload size configuration when Multer is installed', {
-  skip: !packageAvailable('multer'),
-}, () => {
-  const createUpload = require(`${middlewarePath}/upload-limits`);
-
-  assert.throws(
-    () => createUpload({ maxFileSize: 0 }),
-    /maxFileSize must be a positive integer/i,
-  );
-
-  assert.throws(
-    () => createUpload({ maxFileSize: -1 }),
-    /maxFileSize must be a positive integer/i,
-  );
-});
-
-test('upload-limits: creates upload middleware and error handler when Multer is installed', {
-  skip: !packageAvailable('multer'),
-}, () => {
-  const createUpload = require(`${middlewarePath}/upload-limits`);
-
-  const result = createUpload({
-    maxFileSize: 1024,
-    maxFiles: 2,
-    maxFields: 3,
-    allowedMimeTypes: ['application/pdf'],
+    expectError(result, 401, 'AUTHENTICATION_REQUIRED');
   });
 
-  assert.equal(typeof result.upload.single, 'function');
-  assert.equal(typeof result.handleUploadError, 'function');
+  test('authenticate: rejects invalid tokens', async () => {
+    const authenticate = loadMiddleware('authenticate');
+
+    const result = await runMiddleware(
+      authenticate({ secret: TEST_SECRET }),
+      createRequest({
+        headers: {
+          authorization: 'Bearer invalid-test-token',
+        },
+      }),
+      createResponse(),
+    );
+
+    expectError(result, 401, 'INVALID_OR_EXPIRED_TOKEN');
+  });
+
+  test('authenticate: establishes a normalized user from a valid JWT', async () => {
+    const jwt = require('jsonwebtoken');
+    const authenticate = loadMiddleware('authenticate');
+
+    const token = jwt.sign(
+      {
+        sub: 'user-jwt-test-001',
+        roles: ['student'],
+        permissions: ['courses:read'],
+      },
+      TEST_SECRET,
+      {
+        algorithm: 'HS256',
+        expiresIn: '5m',
+      },
+    );
+
+    const req = createRequest({
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await runMiddleware(
+      authenticate({ secret: TEST_SECRET }),
+      req,
+      createResponse(),
+    );
+
+    assert.equal(result.error, undefined);
+    assert.equal(req.user.id, 'user-jwt-test-001');
+    assert.deepEqual(req.user.roles, ['student']);
+    assert.deepEqual(req.user.permissions, ['courses:read']);
+    assert.ok(req.auth);
+  });
 });
 
-test('upload-limits: passes through when there is no upload error', {
-  skip: !packageAvailable('multer'),
-}, () => {
-  const createUpload = require(`${middlewarePath}/upload-limits`);
-  const { handleUploadError } = createUpload();
+withOptionalModule('express-rate-limit', () => {
+  test('rate-limit: validates limiter options', () => {
+    const createLimiter = loadMiddleware('rate-limit');
 
-  let nextCalled = false;
+    assert.throws(
+      () => createLimiter({ windowMs: 500 }),
+      /windowMs must be an integer/i,
+    );
 
-  handleUploadError(
-    null,
-    createRequest(),
-    createResponse(),
-    () => {
-      nextCalled = true;
-    },
-  );
+    assert.throws(
+      () => createLimiter({ limit: 0 }),
+      /limit must be a positive integer/i,
+    );
+  });
 
-  assert.equal(nextCalled, true);
+  test('rate-limit: exports authentication and upload limiter factories', () => {
+    const createLimiter = loadMiddleware('rate-limit');
+
+    assert.equal(typeof createLimiter.authLimiter, 'function');
+    assert.equal(typeof createLimiter.uploadLimiter, 'function');
+
+    assert.doesNotThrow(() => createLimiter.authLimiter());
+    assert.doesNotThrow(() => createLimiter.uploadLimiter());
+  });
+});
+
+withOptionalModule('helmet', () => {
+  test('security-headers: creates Helmet middleware', () => {
+    const securityHeaders = loadMiddleware('security-headers');
+
+    assert.equal(typeof securityHeaders(), 'function');
+  });
+});
+
+withOptionalModule('multer', () => {
+  test('upload-limits: validates upload size configuration', () => {
+    const createUpload = loadMiddleware('upload-limits');
+
+    assert.throws(
+      () => createUpload({ maxFileSize: 0 }),
+      /maxFileSize must be a positive integer/i,
+    );
+
+    assert.throws(
+      () => createUpload({ maxFileSize: -1 }),
+      /maxFileSize must be a positive integer/i,
+    );
+  });
+
+  test('upload-limits: creates upload middleware and error handler', () => {
+    const createUpload = loadMiddleware('upload-limits');
+
+    const result = createUpload({
+      maxFileSize: 1024,
+      maxFiles: 2,
+      maxFields: 3,
+      allowedMimeTypes: ['application/pdf'],
+    });
+
+    assert.equal(typeof result.upload.single, 'function');
+    assert.equal(typeof result.handleUploadError, 'function');
+  });
+
+  test('upload-limits: passes through when there is no upload error', () => {
+    const createUpload = loadMiddleware('upload-limits');
+    const { handleUploadError } = createUpload();
+
+    let nextCalled = false;
+
+    handleUploadError(
+      null,
+      createRequest(),
+      createResponse(),
+      () => {
+        nextCalled = true;
+      },
+    );
+
+    assert.equal(nextCalled, true);
+  });
 });

@@ -1,34 +1,47 @@
 'use strict';
+
 /**
  * MedOrbits -- Notification Service
  * File: api/services/notification-service.js
  *
- * Responsibilities:
- * - Create in-app notifications.
- * - Notify individual users or multiple recipients.
- * - List notifications for the authenticated user.
- * - Count unread notifications.
- * - Mark notifications as read or unread.
- * - Delete notifications owned by the requesting user.
- *
  * Requirements:
  * - Node.js 20+
  * - PostgreSQL
- * - A pg-compatible database pool
+ * - A pg-compatible pool or transaction client
+ *
+ * Features:
+ * - Create notifications for individual recipients or bounded batches.
+ * - List notifications with pagination and filters.
+ * - Count unread, non-expired notifications.
+ * - Mark notifications read or unread.
+ * - Delete individual notifications or clear a user's inbox.
+ * - Sanitize metadata and validate URLs.
+ * - Support transaction-client injection.
+ * - Enforce recipient ownership for user-facing operations.
  *
  * Security:
- * - Always scope user-facing operations to the authenticated user's ID.
- * - Never accept recipient identity from an untrusted client without
- *   authorization checks.
- * - Never store passwords, access tokens, or session cookies in metadata.
- * - Use parameterized SQL for every database query.
+ * - Derive user identity from trusted authentication middleware.
+ * - Restrict notification creation to trusted internal callers or
+ *   callers authorized to notify the specified recipients.
+ * - Use parameterized SQL for all queries.
+ * - Never store credentials or tokens in notification metadata.
+ *
+ * IMPORTANT:
+ * Match table and column types to the actual MedOrbits migrations.
  */
+
 const crypto = require('node:crypto');
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
+const MAX_PAGE = 1_000_000;
 const MAX_RECIPIENTS = 500;
 const MAX_METADATA_BYTES = 16 * 1024;
+const MAX_METADATA_DEPTH = 8;
+const MAX_METADATA_ARRAY_ITEMS = 100;
+const MAX_METADATA_STRING_LENGTH = 2000;
+
 const NOTIFICATION_TYPES = Object.freeze([
   'general',
   'account',
@@ -41,14 +54,43 @@ const NOTIFICATION_TYPES = Object.freeze([
   'support',
   'career',
 ]);
+
 const NOTIFICATION_PRIORITIES = Object.freeze([
   'low',
   'normal',
   'high',
   'urgent',
 ]);
+
 const SENSITIVE_KEY_PATTERN =
-  /password|passwd|secret|token|authorization|cookie|session|api.?key|private.?key|credential/i;
+  /password|passwd|secret|token|authorization|cookie|session|api.?key|private.?key|credential|refresh.?token|access.?token|client.?secret/i;
+
+const FORBIDDEN_OBJECT_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
+
+const LIST_OPTION_KEYS = new Set([
+  'page',
+  'limit',
+  'unreadOnly',
+  'type',
+  'priority',
+]);
+
+const NOTIFICATION_INPUT_KEYS = new Set([
+  'recipientId',
+  'recipientIds',
+  'title',
+  'message',
+  'type',
+  'priority',
+  'actionUrl',
+  'expiresAt',
+  'metadata',
+]);
+
 class NotificationServiceError extends Error {
   constructor(
     message,
@@ -56,20 +98,28 @@ class NotificationServiceError extends Error {
     code = 'NOTIFICATION_SERVICE_ERROR'
   ) {
     super(message);
+
     this.name = 'NotificationServiceError';
     this.statusCode = statusCode;
     this.status = statusCode;
     this.code = code;
     this.isOperational = statusCode < 500;
+
     Error.captureStackTrace?.(this, NotificationServiceError);
   }
 }
+
 function badRequest(
   message,
   code = 'INVALID_NOTIFICATION_REQUEST'
 ) {
-  return new NotificationServiceError(message, 400, code);
+  return new NotificationServiceError(
+    message,
+    400,
+    code
+  );
 }
+
 function unauthorized() {
   return new NotificationServiceError(
     'Authentication is required.',
@@ -77,6 +127,15 @@ function unauthorized() {
     'UNAUTHENTICATED'
   );
 }
+
+function forbidden() {
+  return new NotificationServiceError(
+    'You are not authorized to perform this operation.',
+    403,
+    'FORBIDDEN'
+  );
+}
+
 function notFound() {
   return new NotificationServiceError(
     'Notification not found.',
@@ -84,16 +143,44 @@ function notFound() {
     'NOTIFICATION_NOT_FOUND'
   );
 }
-function conflict(message, code = 'NOTIFICATION_CONFLICT') {
-  return new NotificationServiceError(message, 409, code);
+
+function conflict(
+  message,
+  code = 'NOTIFICATION_CONFLICT'
+) {
+  return new NotificationServiceError(
+    message,
+    409,
+    code
+  );
 }
+
 function isPlainObject(value) {
   if (value === null || typeof value !== 'object') {
     return false;
   }
+
   const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+
+  return (
+    prototype === Object.prototype ||
+    prototype === null
+  );
 }
+
+function assertKnownFields(input, allowedFields, label) {
+  const unknownFields = Object.keys(input).filter(
+    (field) => !allowedFields.has(field)
+  );
+
+  if (unknownFields.length > 0) {
+    throw badRequest(
+      `Unsupported ${label} fields: ${unknownFields.join(', ')}.`,
+      'UNKNOWN_FIELDS'
+    );
+  }
+}
+
 function normalizeString(
   value,
   field,
@@ -106,153 +193,400 @@ function normalizeString(
     if (required) {
       throw badRequest(`${field} is required.`);
     }
+
     return null;
   }
+
   if (typeof value !== 'string') {
     throw badRequest(`${field} must be a string.`);
   }
+
   const normalized = value.trim();
+
   if (required && normalized.length === 0) {
     throw badRequest(`${field} is required.`);
   }
+
   if (normalized.length > maxLength) {
     throw badRequest(
       `${field} must not exceed ${maxLength} characters.`
     );
   }
+
   return normalized || null;
 }
+
 function normalizeUserId(value, field = 'userId') {
   if (
     value === undefined ||
     value === null ||
-    String(value).trim() === ''
+    (
+      typeof value === 'string' &&
+      value.trim() === ''
+    )
   ) {
     throw unauthorized();
   }
+
+  if (
+    typeof value !== 'string' &&
+    typeof value !== 'number'
+  ) {
+    throw badRequest(`${field} is invalid.`);
+  }
+
+  if (
+    typeof value === 'number' &&
+    !Number.isSafeInteger(value)
+  ) {
+    throw badRequest(`${field} is invalid.`);
+  }
+
   return normalizeString(String(value), field, {
     required: true,
     maxLength: 128,
   });
 }
+
 function normalizePage(value, fallback, maximum) {
-  if (value === undefined || value === null || value === '') {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
     return fallback;
   }
+
+  if (
+    typeof value === 'string' &&
+    !/^\d+$/.test(value.trim())
+  ) {
+    throw badRequest(
+      'Pagination values must be positive integers.'
+    );
+  }
+
   const parsed = Number(value);
+
   if (!Number.isSafeInteger(parsed) || parsed < 1) {
     throw badRequest(
       'Pagination values must be positive integers.'
     );
   }
+
   return Math.min(parsed, maximum);
 }
+
 function normalizeEnum(value, allowed, field, fallback) {
-  if (value === undefined || value === null || value === '') {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
     return fallback;
   }
-  if (typeof value !== 'string' || !allowed.includes(value)) {
+
+  if (
+    typeof value !== 'string' ||
+    !allowed.includes(value)
+  ) {
     throw badRequest(`${field} is invalid.`);
   }
+
   return value;
 }
-/**
- * Recursively sanitize metadata and remove sensitive fields.
- */
-function sanitizeMetadataValue(value, depth = 0) {
-  if (depth > 8) {
-    return '[MAX_DEPTH_REACHED]';
+
+function normalizeBoolean(value, field, fallback = false) {
+  if (value === undefined || value === null) {
+    return fallback;
   }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  throw badRequest(`${field} must be a boolean.`);
+}
+
+function normalizeDate(value, field) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
+    return null;
+  }
+
+  if (
+    typeof value !== 'string' &&
+    !(value instanceof Date)
+  ) {
+    throw badRequest(`${field} must be a valid date.`);
+  }
+
+  if (
+    typeof value === 'string' &&
+    value.length > 100
+  ) {
+    throw badRequest(`${field} must be a valid date.`);
+  }
+
+  const date =
+    value instanceof Date
+      ? new Date(value.getTime())
+      : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw badRequest(`${field} must be a valid date.`);
+  }
+
+  return date;
+}
+
+function normalizeMetadataValue(value, depth = 0) {
+  if (depth > MAX_METADATA_DEPTH) {
+    throw badRequest(
+      'Notification metadata is nested too deeply.'
+    );
+  }
+
   if (
     value === null ||
     typeof value === 'boolean'
   ) {
     return value;
   }
+
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
   }
+
   if (typeof value === 'string') {
-    return value.length > 2000
-      ? `${value.slice(0, 2000)}...[TRUNCATED]`
+    return value.length > MAX_METADATA_STRING_LENGTH
+      ? `${value.slice(0, MAX_METADATA_STRING_LENGTH)}...[TRUNCATED]`
       : value;
   }
+
   if (Array.isArray(value)) {
-    return value
-      .slice(0, 100)
-      .map((item) => sanitizeMetadataValue(item, depth + 1));
+    if (value.length > MAX_METADATA_ARRAY_ITEMS) {
+      throw badRequest(
+        `Notification metadata arrays may contain at most ${MAX_METADATA_ARRAY_ITEMS} items.`
+      );
+    }
+
+    return value.map((item) =>
+      normalizeMetadataValue(item, depth + 1)
+    );
   }
+
   if (!isPlainObject(value)) {
-    return '[UNSUPPORTED_VALUE]';
+    throw badRequest(
+      'Notification metadata contains an unsupported value.'
+    );
   }
-  const result = {};
+
+  const result = Object.create(null);
+
   for (const [key, child] of Object.entries(value)) {
+    if (FORBIDDEN_OBJECT_KEYS.has(key)) {
+      continue;
+    }
+
     if (SENSITIVE_KEY_PATTERN.test(key)) {
       result[key] = '[REDACTED]';
       continue;
     }
-    if (
-      key === '__proto__' ||
-      key === 'prototype' ||
-      key === 'constructor'
-    ) {
-      continue;
-    }
-    result[key] = sanitizeMetadataValue(child, depth + 1);
+
+    result[key] = normalizeMetadataValue(
+      child,
+      depth + 1
+    );
   }
+
   return result;
 }
+
 function normalizeMetadata(value) {
   if (value === undefined || value === null) {
     return {};
   }
+
   if (!isPlainObject(value)) {
-    throw badRequest('Notification metadata must be an object.');
+    throw badRequest(
+      'Notification metadata must be an object.'
+    );
   }
-  const sanitized = sanitizeMetadataValue(value);
+
+  const sanitized = normalizeMetadataValue(value);
   const serialized = JSON.stringify(sanitized);
-  if (Buffer.byteLength(serialized, 'utf8') > MAX_METADATA_BYTES) {
+
+  if (
+    Buffer.byteLength(serialized, 'utf8') >
+    MAX_METADATA_BYTES
+  ) {
     throw badRequest(
       `Notification metadata must not exceed ${MAX_METADATA_BYTES} bytes.`
     );
   }
+
   return sanitized;
 }
-function normalizeDate(value, field) {
-  if (value === undefined || value === null || value === '') {
+
+function sanitizeMetadataValue(value, depth = 0) {
+  try {
+    return normalizeMetadataValue(value, depth);
+  } catch {
+    return '[INVALID_METADATA]';
+  }
+}
+
+function normalizeActionUrl(value) {
+  const actionUrl = normalizeString(
+    value,
+    'actionUrl',
+    { maxLength: 2048 }
+  );
+
+  if (!actionUrl) {
     return null;
   }
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    throw badRequest(`${field} must be a valid date.`);
+
+  let parsed;
+
+  try {
+    parsed = new URL(actionUrl);
+  } catch {
+    throw badRequest(
+      'actionUrl must be a valid absolute URL.'
+    );
   }
-  return date;
+
+  if (
+    !['http:', 'https:'].includes(parsed.protocol) ||
+    !parsed.hostname ||
+    parsed.username ||
+    parsed.password
+  ) {
+    throw badRequest(
+      'actionUrl must be an HTTP or HTTPS URL without embedded credentials.'
+    );
+  }
+
+  return parsed.toString();
 }
+
+function normalizeNotificationInput(input) {
+  if (!isPlainObject(input)) {
+    throw badRequest(
+      'Notification data must be an object.'
+    );
+  }
+
+  assertKnownFields(
+    input,
+    NOTIFICATION_INPUT_KEYS,
+    'notification'
+  );
+
+  const title = normalizeString(
+    input.title,
+    'title',
+    { required: true, maxLength: 200 }
+  );
+
+  const message = normalizeString(
+    input.message,
+    'message',
+    { required: true, maxLength: 10000 }
+  );
+
+  const type = normalizeEnum(
+    input.type,
+    NOTIFICATION_TYPES,
+    'type',
+    'general'
+  );
+
+  const priority = normalizeEnum(
+    input.priority,
+    NOTIFICATION_PRIORITIES,
+    'priority',
+    'normal'
+  );
+
+  const actionUrl = normalizeActionUrl(input.actionUrl);
+  const expiresAt = normalizeDate(
+    input.expiresAt,
+    'expiresAt'
+  );
+
+  if (expiresAt && expiresAt <= new Date()) {
+    throw badRequest(
+      'expiresAt must be a future date.'
+    );
+  }
+
+  const metadata = normalizeMetadata(input.metadata);
+
+  return {
+    title,
+    message,
+    type,
+    priority,
+    actionUrl,
+    expiresAt,
+    metadata,
+  };
+}
+
 function mapDatabaseError(error) {
   if (error instanceof NotificationServiceError) {
     return error;
   }
+
   if (error?.code === '23503') {
     return badRequest(
       'A referenced user does not exist.',
       'INVALID_RECIPIENT'
     );
   }
+
   if (error?.code === '23505') {
     return conflict(
       'The notification conflicts with an existing record.',
       'DUPLICATE_NOTIFICATION'
     );
   }
-  // Do not expose SQL, database parameters, or internal server details.
+
+  if (
+    error?.code === '40001' ||
+    error?.code === '40P01'
+  ) {
+    return conflict(
+      'The operation conflicted with another database operation. Please retry.',
+      'TRANSACTION_CONFLICT'
+    );
+  }
+
   return new NotificationServiceError(
     'The notification service could not complete the request.',
     500,
     'NOTIFICATION_DATABASE_FAILURE'
   );
 }
+
 /**
- * Expected database table:
+ * Create the notification service.
+ *
+ * Expected schema:
  *
  * CREATE TABLE notifications (
  *   id UUID PRIMARY KEY,
@@ -262,13 +596,30 @@ function mapDatabaseError(error) {
  *   title VARCHAR(200) NOT NULL,
  *   message TEXT NOT NULL,
  *   action_url TEXT,
- *   metadata JSONB NOT NULL DEFAULT '{}',
+ *   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
  *   read_at TIMESTAMPTZ,
  *   expires_at TIMESTAMPTZ,
- *   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ *   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ *   CHECK (type IN (
+ *     'general', 'account', 'application', 'admission',
+ *     'document', 'payment', 'security', 'system',
+ *     'support', 'career'
+ *   )),
+ *   CHECK (priority IN ('low', 'normal', 'high', 'urgent'))
  * );
  *
- * The table's recipient_id type must match your users table.
+ * CREATE INDEX notifications_recipient_created_idx
+ *   ON notifications (recipient_id, created_at DESC, id DESC);
+ *
+ * CREATE INDEX notifications_unread_idx
+ *   ON notifications (recipient_id, created_at DESC)
+ *   WHERE read_at IS NULL;
+ *
+ * CREATE INDEX notifications_expiry_idx
+ *   ON notifications (expires_at)
+ *   WHERE expires_at IS NOT NULL;
+ *
+ * Ensure recipient_id matches the actual users table ID type.
  */
 function createNotificationService({ db } = {}) {
   if (!db || typeof db.query !== 'function') {
@@ -276,90 +627,107 @@ function createNotificationService({ db } = {}) {
       'createNotificationService requires a pg-compatible database pool.'
     );
   }
+
   async function execute(target, sql, values = []) {
+    const connection = target || db;
+
+    if (
+      !connection ||
+      typeof connection.query !== 'function'
+    ) {
+      throw new TypeError(
+        'Invalid notification database connection.'
+      );
+    }
+
     try {
-      return await (target || db).query(sql, values);
+      return await connection.query(sql, values);
     } catch (error) {
       throw mapDatabaseError(error);
     }
   }
-  function normalizeNotificationInput(input) {
-    if (!isPlainObject(input)) {
-      throw badRequest('Notification data must be an object.');
+
+  function validateOptions(options, allowedKeys, label) {
+    if (!isPlainObject(options)) {
+      throw badRequest(`${label} must be an object.`);
     }
-    const title = normalizeString(input.title, 'title', {
-      required: true,
-      maxLength: 200,
-    });
-    const message = normalizeString(input.message, 'message', {
-      required: true,
-      maxLength: 10000,
-    });
-    const type = normalizeEnum(
-      input.type,
-      NOTIFICATION_TYPES,
-      'type',
-      'general'
-    );
-    const priority = normalizeEnum(
-      input.priority,
-      NOTIFICATION_PRIORITIES,
-      'priority',
-      'normal'
-    );
-    const actionUrl = normalizeString(
-      input.actionUrl,
-      'actionUrl',
-      { maxLength: 2048 }
-    );
-    if (actionUrl) {
-      let parsedUrl;
-      try {
-        parsedUrl = new URL(actionUrl);
-      } catch {
-        throw badRequest('actionUrl must be a valid URL.');
-      }
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw badRequest(
-          'actionUrl must use HTTP or HTTPS.'
-        );
-      }
-    }
-    const expiresAt = normalizeDate(
-      input.expiresAt,
-      'expiresAt'
-    );
-    if (expiresAt && expiresAt <= new Date()) {
+
+    assertKnownFields(options, allowedKeys, label);
+
+    if (
+      options.dbClient !== undefined &&
+      (
+        !options.dbClient ||
+        typeof options.dbClient.query !== 'function'
+      )
+    ) {
       throw badRequest(
-        'expiresAt must be a future date.'
+        'dbClient must be a valid PostgreSQL client.'
       );
     }
-    const metadata = normalizeMetadata(input.metadata);
-    return {
-      title,
-      message,
-      type,
-      priority,
-      actionUrl,
-      expiresAt,
-      metadata,
-    };
   }
+
+  function normalizeRecipientIds(recipientIds) {
+    if (!Array.isArray(recipientIds)) {
+      throw badRequest('recipientIds must be an array.');
+    }
+
+    if (
+      recipientIds.length === 0 ||
+      recipientIds.length > MAX_RECIPIENTS
+    ) {
+      throw badRequest(
+        `recipientIds must contain between 1 and ${MAX_RECIPIENTS} users.`
+      );
+    }
+
+    const normalized = recipientIds.map((id) =>
+      normalizeUserId(id, 'recipientId')
+    );
+
+    return [...new Set(normalized)];
+  }
+
+  function assertListOptions(options) {
+    if (!isPlainObject(options)) {
+      throw badRequest(
+        'Notification list options must be an object.'
+      );
+    }
+
+    assertKnownFields(
+      options,
+      LIST_OPTION_KEYS,
+      'notification list'
+    );
+  }
+
   /**
-   * Create an in-app notification for one recipient.
+   * Create a notification for one recipient.
    *
-   * The caller must establish that it is authorized to notify the
-   * specified recipient before invoking this method.
+   * This is a trusted service operation, not an authorization boundary.
+   * Controllers must authorize the caller before specifying recipientId.
    */
   async function create(input, options = {}) {
-    if (!isPlainObject(options)) {
-      throw badRequest('Notification options must be an object.');
+    if (!isPlainObject(input)) {
+      throw badRequest(
+        'Notification data must be an object.'
+      );
     }
+
+    validateOptions(
+      options,
+      new Set(['dbClient']),
+      'Notification options'
+    );
+
     const recipientId = normalizeUserId(
-      input?.recipientId,
+      input.recipientId,
       'recipientId'
     );
+
     const notification = normalizeNotificationInput(input);
+
     const result = await execute(
       options.dbClient,
       `
@@ -403,37 +771,76 @@ function createNotificationService({ db } = {}) {
         notification.expiresAt,
       ]
     );
+
     return result.rows[0];
   }
+
   /**
-   * Create the same notification for a bounded set of recipients.
+   * Create the same notification for multiple recipients.
    *
-   * This method uses one INSERT statement. For atomic integration with
-   * another business operation, pass its transaction client.
+   * UUIDs are generated in Node.js, avoiding a dependency on
+   * PostgreSQL's gen_random_uuid() function or an extension.
    */
   async function createBulk(input, options = {}) {
     if (!isPlainObject(input)) {
-      throw badRequest('Bulk notification data must be an object.');
-    }
-    if (!Array.isArray(input.recipientIds)) {
-      throw badRequest('recipientIds must be an array.');
-    }
-    if (
-      input.recipientIds.length === 0 ||
-      input.recipientIds.length > MAX_RECIPIENTS
-    ) {
       throw badRequest(
-        `recipientIds must contain between 1 and ${MAX_RECIPIENTS} users.`
+        'Bulk notification data must be an object.'
       );
     }
-    const recipientIds = [
-      ...new Set(
-        input.recipientIds.map((id) =>
-          normalizeUserId(id, 'recipientId')
-        )
-      ),
-    ];
+
+    assertKnownFields(
+      input,
+      NOTIFICATION_INPUT_KEYS,
+      'bulk notification'
+    );
+
+    validateOptions(
+      options,
+      new Set(['dbClient']),
+      'Notification options'
+    );
+
+    const recipientIds = normalizeRecipientIds(
+      input.recipientIds
+    );
+
     const notification = normalizeNotificationInput(input);
+
+    const rows = recipientIds.map((recipientId) => ({
+      id: crypto.randomUUID(),
+      recipientId,
+    }));
+
+    const values = [];
+    const tuples = rows.map((row) => {
+      const offset = values.length;
+
+      values.push(
+        row.id,
+        row.recipientId,
+        notification.type,
+        notification.priority,
+        notification.title,
+        notification.message,
+        notification.actionUrl,
+        JSON.stringify(notification.metadata),
+        notification.expiresAt
+      );
+
+      return `(
+        $${offset + 1},
+        $${offset + 2},
+        $${offset + 3},
+        $${offset + 4},
+        $${offset + 5},
+        $${offset + 6},
+        $${offset + 7},
+        $${offset + 8}::jsonb,
+        $${offset + 9},
+        NOW()
+      )`;
+    });
+
     const result = await execute(
       options.dbClient,
       `
@@ -449,18 +856,7 @@ function createNotificationService({ db } = {}) {
           expires_at,
           created_at
         )
-        SELECT
-          gen_random_uuid(),
-          recipient_id,
-          $2,
-          $3,
-          $4,
-          $5,
-          $6,
-          $7::jsonb,
-          $8,
-          NOW()
-        FROM unnest($1::text[]) AS recipients(recipient_id)
+        VALUES ${tuples.join(', ')}
         RETURNING
           id,
           recipient_id,
@@ -474,28 +870,26 @@ function createNotificationService({ db } = {}) {
           expires_at,
           created_at
       `,
-      [
-        recipientIds,
-        notification.type,
-        notification.priority,
-        notification.title,
-        notification.message,
-        notification.actionUrl,
-        JSON.stringify(notification.metadata),
-        notification.expiresAt,
-      ]
+      values
     );
+
     return {
       createdCount: result.rowCount,
       items: result.rows,
     };
   }
+
   /**
-   * Get one notification belonging to the authenticated user.
+   * Get one notification owned by the specified authenticated user.
    */
   async function getById(notificationId, userId) {
-    const id = normalizeUserId(notificationId, 'notificationId');
+    const id = normalizeUserId(
+      notificationId,
+      'notificationId'
+    );
+
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -519,65 +913,97 @@ function createNotificationService({ db } = {}) {
       `,
       [id, recipientId]
     );
+
     if (!result.rows[0]) {
       throw notFound();
     }
+
     return result.rows[0];
   }
+
   /**
    * List notifications for one user.
    */
   async function list(userId, options = {}) {
     const recipientId = normalizeUserId(userId);
-    if (!isPlainObject(options)) {
-      throw badRequest('Notification list options must be an object.');
-    }
+
+    assertListOptions(options);
+
     const page = normalizePage(
       options.page,
       DEFAULT_PAGE,
-      1000000
+      MAX_PAGE
     );
+
     const limit = normalizePage(
       options.limit,
       DEFAULT_LIMIT,
       MAX_LIMIT
     );
-    const unreadOnly = options.unreadOnly === true;
-    const type = options.type === undefined
-      ? null
-      : normalizeEnum(
-          options.type,
-          NOTIFICATION_TYPES,
-          'type',
-          null
-        );
+
+    const unreadOnly = normalizeBoolean(
+      options.unreadOnly,
+      'unreadOnly',
+      false
+    );
+
+    const type = normalizeEnum(
+      options.type,
+      NOTIFICATION_TYPES,
+      'type',
+      null
+    );
+
+    const priority = normalizeEnum(
+      options.priority,
+      NOTIFICATION_PRIORITIES,
+      'priority',
+      null
+    );
+
     const conditions = [
       'recipient_id = $1',
       '(expires_at IS NULL OR expires_at > NOW())',
     ];
+
     const values = [recipientId];
+
     if (unreadOnly) {
       conditions.push('read_at IS NULL');
     }
+
     if (type) {
       values.push(type);
       conditions.push(`type = $${values.length}`);
     }
+
+    if (priority) {
+      values.push(priority);
+      conditions.push(`priority = $${values.length}`);
+    }
+
     const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
     const countResult = await execute(
       null,
       `
-        SELECT COUNT(*)::bigint AS total
+        SELECT COUNT(*)::text AS total
         FROM notifications
         ${whereClause}
       `,
       values
     );
+
     const offset = (page - 1) * limit;
+
     if (!Number.isSafeInteger(offset)) {
-      throw badRequest('Pagination offset is too large.');
+      throw badRequest(
+        'Pagination offset is too large.'
+      );
     }
+
     const dataValues = [...values, limit, offset];
+
     const result = await execute(
       null,
       `
@@ -601,7 +1027,19 @@ function createNotificationService({ db } = {}) {
       `,
       dataValues
     );
-    const total = Number(countResult.rows[0]?.total || 0);
+
+    const total = Number(
+      countResult.rows[0]?.total ?? '0'
+    );
+
+    if (!Number.isSafeInteger(total)) {
+      throw new NotificationServiceError(
+        'Notification pagination could not be calculated.',
+        500,
+        'NOTIFICATION_COUNT_OVERFLOW'
+      );
+    }
+
     return {
       items: result.rows,
       pagination: {
@@ -614,15 +1052,17 @@ function createNotificationService({ db } = {}) {
       },
     };
   }
+
   /**
-   * Count unread, non-expired notifications for one user.
+   * Count unread, non-expired notifications.
    */
   async function countUnread(userId) {
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
-        SELECT COUNT(*)::bigint AS unread_count
+        SELECT COUNT(*)::text AS unread_count
         FROM notifications
         WHERE recipient_id = $1
           AND read_at IS NULL
@@ -630,15 +1070,34 @@ function createNotificationService({ db } = {}) {
       `,
       [recipientId]
     );
-    return Number(result.rows[0]?.unread_count || 0);
+
+    const count = Number(
+      result.rows[0]?.unread_count ?? '0'
+    );
+
+    if (!Number.isSafeInteger(count)) {
+      throw new NotificationServiceError(
+        'Unread notification count could not be calculated.',
+        500,
+        'NOTIFICATION_COUNT_OVERFLOW'
+      );
+    }
+
+    return count;
   }
+
   /**
-   * Mark a single notification as read.
-   * A repeated request is safe and returns the existing record.
+   * Mark one notification as read.
+   * Repeated calls are idempotent.
    */
   async function markAsRead(notificationId, userId) {
-    const id = normalizeUserId(notificationId, 'notificationId');
+    const id = normalizeUserId(
+      notificationId,
+      'notificationId'
+    );
+
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -662,17 +1121,25 @@ function createNotificationService({ db } = {}) {
       `,
       [id, recipientId]
     );
+
     if (!result.rows[0]) {
       throw notFound();
     }
+
     return result.rows[0];
   }
+
   /**
-   * Mark a notification as unread.
+   * Mark one notification as unread.
    */
   async function markAsUnread(notificationId, userId) {
-    const id = normalizeUserId(notificationId, 'notificationId');
+    const id = normalizeUserId(
+      notificationId,
+      'notificationId'
+    );
+
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -696,16 +1163,20 @@ function createNotificationService({ db } = {}) {
       `,
       [id, recipientId]
     );
+
     if (!result.rows[0]) {
       throw notFound();
     }
+
     return result.rows[0];
   }
+
   /**
-   * Mark all currently unread, non-expired notifications as read.
+   * Mark all unread, non-expired notifications as read.
    */
   async function markAllAsRead(userId) {
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -717,16 +1188,23 @@ function createNotificationService({ db } = {}) {
       `,
       [recipientId]
     );
+
     return {
       updatedCount: result.rowCount,
     };
   }
+
   /**
-   * Delete one notification belonging to the authenticated user.
+   * Delete one notification owned by the specified user.
    */
   async function remove(notificationId, userId) {
-    const id = normalizeUserId(notificationId, 'notificationId');
+    const id = normalizeUserId(
+      notificationId,
+      'notificationId'
+    );
+
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -737,19 +1215,23 @@ function createNotificationService({ db } = {}) {
       `,
       [id, recipientId]
     );
+
     if (!result.rows[0]) {
       throw notFound();
     }
+
     return {
       id: result.rows[0].id,
       deleted: true,
     };
   }
+
   /**
-   * Delete all notifications belonging to one user.
+   * Delete all notifications owned by one user.
    */
   async function clearAll(userId) {
     const recipientId = normalizeUserId(userId);
+
     const result = await execute(
       null,
       `
@@ -758,10 +1240,12 @@ function createNotificationService({ db } = {}) {
       `,
       [recipientId]
     );
+
     return {
       deletedCount: result.rowCount,
     };
   }
+
   return Object.freeze({
     create,
     createBulk,
@@ -775,6 +1259,7 @@ function createNotificationService({ db } = {}) {
     clearAll,
   });
 }
+
 module.exports = {
   createNotificationService,
   NotificationServiceError,

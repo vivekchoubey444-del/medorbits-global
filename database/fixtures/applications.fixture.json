@@ -1,19 +1,21 @@
 
 {
   "$schema": "../../schemas/application-fixture.schema.json",
-  "description": "Synthetic MedOrbits application fixtures for development and automated testing only. Never use real applicant data.",
+  "description": "Synthetic MedOrbits application fixtures for development and automated testing only. Contains no real applicant data. Never load into production.",
+  "version": "1.1.0",
   "applications": [
     {
       "id": "APP-TEST-0001",
       "userEmail": "applicant-001@example.invalid",
       "applicationNumber": "DEMO-APPLICATION-0001",
+      "applicationType": "admission",
       "courseSlug": "mbbs",
       "collegeSlug": "medorbits-demo-medical-college",
       "applicantName": "MedOrbits Test Applicant",
       "applicantEmail": "applicant-001@example.invalid",
       "applicantPhone": null,
       "status": "submitted",
-      "notes": "Synthetic demonstration record. Not a real admission application.",
+      "notes": "Synthetic demonstration record for a submitted MBBS admission application.",
       "submittedAt": "2026-10-15T09:30:00.000Z",
       "documents": [
         {
@@ -24,7 +26,7 @@
       ],
       "metadata": {
         "source": "fixture",
-        "testCase": "application_submitted",
+        "testCase": "admission_application_submitted",
         "synthetic": true,
         "verified": false
       }
@@ -33,13 +35,14 @@
       "id": "APP-TEST-0002",
       "userEmail": "applicant-002@example.invalid",
       "applicationNumber": "DEMO-APPLICATION-0002",
+      "applicationType": "admission",
       "courseSlug": "bds",
       "collegeSlug": "medorbits-sample-dental-college",
       "applicantName": "MedOrbits Pending Applicant",
       "applicantEmail": "applicant-002@example.invalid",
       "applicantPhone": null,
       "status": "under_review",
-      "notes": "Synthetic test case for application review and document checks.",
+      "notes": "Synthetic test case for application review with one approved document and one rejected document.",
       "submittedAt": "2026-10-16T11:00:00.000Z",
       "documents": [
         {
@@ -55,7 +58,7 @@
       ],
       "metadata": {
         "source": "fixture",
-        "testCase": "application_under_review",
+        "testCase": "admission_application_under_review",
         "synthetic": true,
         "verified": false
       }
@@ -64,13 +67,14 @@
       "id": "APP-TEST-0003",
       "userEmail": "applicant-003@example.invalid",
       "applicationNumber": "DEMO-APPLICATION-0003",
+      "applicationType": "career",
       "courseSlug": null,
       "collegeSlug": null,
-      "applicantName": "MedOrbits Suspended Applicant",
+      "applicantName": "MedOrbits Career Test Applicant",
       "applicantEmail": "applicant-003@example.invalid",
       "applicantPhone": null,
       "status": "approved",
-      "notes": "Synthetic career-related test scenario. Course and college references are intentionally null.",
+      "notes": "Synthetic career application fixture. Course and college references are intentionally null because this is not an admission application.",
       "submittedAt": "2026-10-17T08:45:00.000Z",
       "documents": [
         {
@@ -90,13 +94,14 @@
       "id": "APP-TEST-0004",
       "userEmail": "applicant-004@example.invalid",
       "applicationNumber": "DEMO-APPLICATION-0004",
+      "applicationType": "admission",
       "courseSlug": "b-pharm",
       "collegeSlug": "medorbits-demo-medical-college",
-      "applicantName": "MedOrbits Disabled Applicant",
+      "applicantName": "MedOrbits Rejected Applicant",
       "applicantEmail": "applicant-004@example.invalid",
       "applicantPhone": null,
       "status": "rejected",
-      "notes": "Synthetic fixture note: missing required document in the test scenario.",
+      "notes": "Synthetic test case for an admission application rejected because a required document was not accepted.",
       "submittedAt": "2026-10-18T12:00:00.000Z",
       "documents": [
         {
@@ -107,7 +112,7 @@
       ],
       "metadata": {
         "source": "fixture",
-        "testCase": "application_rejected",
+        "testCase": "admission_application_rejected",
         "synthetic": true,
         "verified": false
       }

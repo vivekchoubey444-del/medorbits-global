@@ -1,26 +1,19 @@
 
 """
 MedOrbits -- Data Export Utilities
+
 File: src/python/medorbits/data_export.py
 
 Purpose:
     Export authorized application data to CSV, JSON, and JSON Lines.
 
-Features:
-    - CSV, JSON, and JSONL formats.
-    - Streaming CSV and JSONL output for large datasets.
-    - Explicit field selection and column ordering.
-    - Strict JSON serialization.
-    - Formula-injection mitigation for spreadsheet-oriented CSV.
-    - Configurable row limits.
-    - No database queries or HTTP response handling in this module.
-
 Security:
-    - Callers must enforce authorization before exporting records.
-    - Export only fields the requesting user is allowed to access.
-    - Avoid exporting passwords, tokens, OTPs, credentials, and secrets.
+    - Callers must authorize access before exporting records.
+    - Export only explicitly permitted fields.
+    - Never export credentials, tokens, OTPs, or secrets.
     - Do not log exported rows or sensitive values.
-    - Treat exported files as sensitive data and apply suitable retention rules.
+    - The caller owns destination permissions and retention policies.
+    - CSV formula mitigation is defense in depth, not a universal guarantee.
 """
 
 from __future__ import annotations
@@ -32,7 +25,7 @@ import math
 import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -52,8 +45,6 @@ SAFE_EXPORT_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"
 )
 
-# These names are blocked by default as a defense-in-depth measure.
-# Applications should also maintain an explicit allowlist of exportable fields.
 SENSITIVE_FIELD_NAMES: Final[frozenset[str]] = frozenset(
     {
         "password",
@@ -65,6 +56,7 @@ SENSITIVE_FIELD_NAMES: Final[frozenset[str]] = frozenset(
         "apikey",
         "access_token",
         "refresh_token",
+        "id_token",
         "token",
         "authorization",
         "cookie",
@@ -77,7 +69,19 @@ SENSITIVE_FIELD_NAMES: Final[frozenset[str]] = frozenset(
         "card_number",
         "cvv",
         "cvc",
+        "security_code",
+        "recovery_code",
+        "credential",
+        "credentials",
+        "smtp_password",
+        "ai_api_key",
+        "database_url",
     }
+)
+
+_NORMALIZED_SENSITIVE_FIELDS: Final[frozenset[str]] = frozenset(
+    re.sub(r"[^a-z0-9]", "", name.casefold())
+    for name in SENSITIVE_FIELD_NAMES
 )
 
 
@@ -95,7 +99,7 @@ class ExportLimitError(ExportError):
 
 @dataclass(frozen=True, slots=True)
 class ExportOptions:
-    """Validated options for a data export."""
+    """Immutable options for a data export."""
 
     format: str = "csv"
     columns: tuple[str, ...] | None = None
@@ -108,6 +112,9 @@ class ExportOptions:
     allow_sensitive_fields: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.format, str):
+            raise ExportFormatError("Export format must be a string.")
+
         normalized_format = self.format.strip().lower()
 
         if normalized_format not in SUPPORTED_FORMATS:
@@ -131,12 +138,22 @@ class ExportOptions:
                     f"{name} must be an integer between 1 and {maximum}."
                 )
 
+        for name, value in (
+            ("include_header", self.include_header),
+            ("spreadsheet_safe", self.spreadsheet_safe),
+            ("allow_sensitive_fields", self.allow_sensitive_fields),
+        ):
+            if not isinstance(value, bool):
+                raise ExportError(f"{name} must be a boolean.")
+
         if self.json_indent is not None and (
             not isinstance(self.json_indent, int)
             or isinstance(self.json_indent, bool)
             or not 0 <= self.json_indent <= 8
         ):
-            raise ExportError("json_indent must be None or an integer from 0 to 8.")
+            raise ExportError(
+                "json_indent must be None or an integer from 0 to 8."
+            )
 
         if self.columns is not None:
             if not isinstance(self.columns, tuple):
@@ -146,7 +163,9 @@ class ExportOptions:
                 raise ExportError("columns cannot be empty.")
 
             if len(self.columns) > self.max_columns:
-                raise ExportLimitError("Requested columns exceed max_columns.")
+                raise ExportLimitError(
+                    "Requested columns exceed max_columns."
+                )
 
             if any(
                 not isinstance(column, str)
@@ -154,56 +173,78 @@ class ExportOptions:
                 or column.strip() != column
                 for column in self.columns
             ):
-                raise ExportError("Column names must be non-empty trimmed strings.")
+                raise ExportError(
+                    "Column names must be non-empty trimmed strings."
+                )
 
             if len(set(self.columns)) != len(self.columns):
-                raise ExportError("Column names must not contain duplicates.")
+                raise ExportError(
+                    "Column names must not contain duplicates."
+                )
 
 
 def validate_export_name(name: str) -> str:
     """
     Validate a filename stem.
 
-    This function does not create paths or guarantee that a destination
-    directory is safe. Callers must select an authorized destination.
+    This does not create a path or guarantee destination safety.
     """
     if (
         not isinstance(name, str)
         or not SAFE_EXPORT_NAME_PATTERN.fullmatch(name)
         or name in {".", ".."}
+        or name.startswith(".")
     ):
         raise ExportError("Export name contains unsupported characters.")
-
-    if name.startswith("."):
-        raise ExportError("Export name must not begin with a dot.")
 
     return name
 
 
-def _normalize_field_name(name: str) -> str:
-    """Return a normalized name for sensitive-field comparisons."""
-    return re.sub(r"[^a-z0-9]", "", name.casefold())
-
-
 def _is_sensitive_field(name: str) -> bool:
-    normalized = _normalize_field_name(name)
-    blocked = {
-        _normalize_field_name(item)
-        for item in SENSITIVE_FIELD_NAMES
-    }
+    """Check normalized field names against the default blocklist."""
+    normalized = re.sub(r"[^a-z0-9]", "", name.casefold())
 
-    return normalized in blocked
+    if normalized in _NORMALIZED_SENSITIVE_FIELDS:
+        return True
+
+    # Catch common variations such as user_password, apiKey, or token_value.
+    sensitive_fragments = (
+        "password",
+        "passwd",
+        "secret",
+        "apikey",
+        "accesstoken",
+        "refreshtoken",
+        "idtoken",
+        "privatekey",
+        "webhooksecret",
+        "authorization",
+        "credential",
+        "one time password",
+        "onetimepassword",
+        "sessionid",
+        "securitycode",
+        "recoverycode",
+    )
+
+    return any(
+        re.sub(r"[^a-z0-9]", "", fragment) in normalized
+        for fragment in sensitive_fragments
+    ) or normalized.endswith("token")
 
 
 def _validate_columns(
     columns: Sequence[str],
     options: ExportOptions,
 ) -> tuple[str, ...]:
+    """Validate column names, count, uniqueness, and sensitive-field policy."""
     if not columns:
         raise ExportError("At least one export column is required.")
 
     if len(columns) > options.max_columns:
-        raise ExportLimitError("Export exceeds the maximum column count.")
+        raise ExportLimitError(
+            "Export exceeds the maximum column count."
+        )
 
     if any(
         not isinstance(column, str)
@@ -211,41 +252,43 @@ def _validate_columns(
         or column.strip() != column
         for column in columns
     ):
-        raise ExportError("Export column names must be non-empty strings.")
+        raise ExportError(
+            "Export column names must be non-empty trimmed strings."
+        )
 
     if len(set(columns)) != len(columns):
         raise ExportError("Export column names must be unique.")
 
-    if not options.allow_sensitive_fields:
-        sensitive = [
-            column
-            for column in columns
-            if _is_sensitive_field(column)
-        ]
-
-        if sensitive:
-            raise ExportError(
-                "Export contains a field that is blocked by the default "
-                "sensitive-field policy."
-            )
+    if not options.allow_sensitive_fields and any(
+        _is_sensitive_field(column) for column in columns
+    ):
+        raise ExportError(
+            "Export contains a field blocked by the default "
+            "sensitive-field policy."
+        )
 
     return tuple(columns)
 
 
-def _to_json_compatible(value: Any) -> Any:
-    """Convert supported Python values to deterministic JSON-compatible data."""
+def _to_json_compatible(value: Any, *, depth: int = 0) -> Any:
+    """Convert supported values into strict JSON-compatible data."""
+    if depth > 100:
+        raise ExportLimitError("Export value nesting exceeds the depth limit.")
+
     if value is None or isinstance(value, (str, bool, int)):
         return value
 
     if isinstance(value, float):
         if not math.isfinite(value):
-            raise ExportError("Non-finite floating-point values are not supported.")
+            raise ExportError(
+                "Non-finite floating-point values are not supported."
+            )
         return value
 
     if isinstance(value, Decimal):
         if not value.is_finite():
             raise ExportError("Non-finite Decimal values are not supported.")
-        # Decimal is serialized as a string to avoid silent precision loss.
+        # Preserve decimal precision instead of silently converting to float.
         return format(value, "f")
 
     if isinstance(value, datetime):
@@ -255,16 +298,19 @@ def _to_json_compatible(value: Any) -> Any:
             )
         return value.isoformat()
 
-    if isinstance(value, (date, time)):
-        if isinstance(value, time) and value.tzinfo is None:
-            return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+
+    if isinstance(value, time):
+        if value.tzinfo is not None and value.utcoffset() is None:
+            raise ExportError("Time value has an invalid timezone.")
         return value.isoformat()
 
     if isinstance(value, UUID):
         return str(value)
 
     if isinstance(value, Enum):
-        return _to_json_compatible(value.value)
+        return _to_json_compatible(value.value, depth=depth + 1)
 
     if isinstance(value, Path):
         return str(value)
@@ -275,12 +321,19 @@ def _to_json_compatible(value: Any) -> Any:
         for key, item in value.items():
             if not isinstance(key, str):
                 raise ExportError("JSON object keys must be strings.")
-            result[key] = _to_json_compatible(item)
+
+            if key in result:
+                raise ExportError("Duplicate JSON object keys are not allowed.")
+
+            result[key] = _to_json_compatible(item, depth=depth + 1)
 
         return result
 
     if isinstance(value, (list, tuple)):
-        return [_to_json_compatible(item) for item in value]
+        return [
+            _to_json_compatible(item, depth=depth + 1)
+            for item in value
+        ]
 
     raise ExportError(
         f"Unsupported export value type: {type(value).__name__}."
@@ -288,7 +341,7 @@ def _to_json_compatible(value: Any) -> Any:
 
 
 def _format_cell(value: Any, options: ExportOptions) -> str:
-    """Convert one value into a bounded text cell."""
+    """Convert one value to bounded text."""
     compatible = _to_json_compatible(value)
 
     if compatible is None:
@@ -306,21 +359,26 @@ def _format_cell(value: Any, options: ExportOptions) -> str:
         text = str(compatible)
 
     if len(text) > options.max_cell_chars:
-        raise ExportLimitError("An export cell exceeds max_cell_chars.")
+        raise ExportLimitError(
+            "An export cell exceeds max_cell_chars."
+        )
 
     return text
 
 
 def _spreadsheet_safe_cell(value: str) -> str:
     """
-    Mitigate CSV formula injection for spreadsheet-oriented exports.
+    Mitigate spreadsheet formula injection in CSV exports.
 
-    This is a compatibility safeguard, not a universal guarantee across
-    all spreadsheet applications. Prefer JSON for machine-to-machine exports.
+    This is defense in depth; spreadsheet applications differ in how they
+    interpret leading whitespace, control characters, and formula prefixes.
     """
-    probe = value.lstrip()
+    probe = value.lstrip(" \t\r\n\x00")
 
-    if probe.startswith(("=", "+", "-", "@", "\t", "\r", "\n")):
+    if probe.startswith(("=", "+", "-", "@")):
+        return "'" + value
+
+    if value.startswith(("\t", "\r", "\n")):
         return "'" + value
 
     return value
@@ -331,6 +389,7 @@ def _prepare_row(
     columns: tuple[str, ...],
     options: ExportOptions,
 ) -> dict[str, Any]:
+    """Select and normalize the requested fields from one record."""
     if not isinstance(record, Mapping):
         raise ExportError("Every exported record must be a mapping.")
 
@@ -352,10 +411,10 @@ def _resolve_columns(
     options: ExportOptions,
 ) -> tuple[tuple[str, ...], Iterator[Mapping[str, Any]]]:
     """
-    Resolve explicit columns without consuming the entire dataset.
+    Resolve columns without consuming the entire dataset.
 
-    CSV and JSONL streaming should normally receive columns explicitly.
-    When columns are omitted, the first record defines the schema.
+    If columns are omitted, the first record defines the schema.
+    Supply columns explicitly for empty datasets or stable export schemas.
     """
     iterator = iter(records)
 
@@ -385,12 +444,7 @@ def iter_csv(
     records: Iterable[Mapping[str, Any]],
     options: ExportOptions | None = None,
 ) -> Iterator[str]:
-    """
-    Stream CSV text chunks.
-
-    Pass explicit columns when exporting a large or empty dataset to avoid
-    inferring the schema from the first record.
-    """
+    """Yield CSV text chunks without buffering the complete export."""
     options = options or ExportOptions(format="csv")
 
     if options.format != "csv":
@@ -438,7 +492,7 @@ def iter_jsonl(
     records: Iterable[Mapping[str, Any]],
     options: ExportOptions | None = None,
 ) -> Iterator[str]:
-    """Stream one JSON object per line."""
+    """Yield one strict JSON object per line."""
     options = options or ExportOptions(format="jsonl")
 
     if options.format != "jsonl":
@@ -470,13 +524,17 @@ def export_json(
     records: Iterable[Mapping[str, Any]],
     options: ExportOptions | None = None,
 ) -> str:
-    """Serialize records into a JSON array, bounded by max_rows."""
+    """Serialize records as a JSON array, bounded by max_rows."""
     options = options or ExportOptions(format="json")
 
     if options.format != "json":
         raise ExportFormatError("export_json requires format='json'.")
 
-    columns = options.columns
+    columns = (
+        _validate_columns(options.columns, options)
+        if options.columns is not None
+        else None
+    )
     exported: list[dict[str, Any]] = []
 
     for record in records:
@@ -489,8 +547,7 @@ def export_json(
         if columns is None:
             columns = _validate_columns(tuple(record.keys()), options)
 
-        validated_columns = _validate_columns(columns, options)
-        exported.append(_prepare_row(record, validated_columns, options))
+        exported.append(_prepare_row(record, columns, options))
 
     if columns is None:
         raise ExportError(
@@ -510,10 +567,10 @@ def export_records(
     options: ExportOptions | None = None,
 ) -> str:
     """
-    Export records as a single string.
+    Export records into a single string.
 
-    For large datasets, prefer iter_csv() or iter_jsonl() to avoid retaining
-    the entire serialized export in memory.
+    Prefer iter_csv(), iter_jsonl(), or write_export() for large datasets.
+    JSON arrays are buffered in memory and should be used with bounded sizes.
     """
     options = options or ExportOptions()
 
@@ -535,14 +592,14 @@ def write_export(
     options: ExportOptions | None = None,
 ) -> int:
     """
-    Stream an export to an already-open text destination.
+    Write an export to an already-open text destination.
 
-    The caller owns the destination and is responsible for its permissions,
-    lifecycle, and secure storage. Returns the number of exported records.
+    Returns the number of exported records. The caller owns the destination
+    and must manage its permissions, lifecycle, and secure storage.
     """
     options = options or ExportOptions()
 
-    if not hasattr(destination, "write") or not callable(destination.write):
+    if not callable(getattr(destination, "write", None)):
         raise TypeError("destination must be an open text stream.")
 
     if options.format == "json":
@@ -550,21 +607,35 @@ def write_export(
         destination.write(text)
         return len(json.loads(text))
 
-    iterator = (
-        iter_csv(records, options)
-        if options.format == "csv"
-        else iter_jsonl(records, options)
-    )
+    if options.format == "csv":
+        iterator = iter_csv(records, options)
+    elif options.format == "jsonl":
+        iterator = iter_jsonl(records, options)
+    else:
+        raise ExportFormatError("Unsupported export format.")
 
-    chunks_written = 0
+    # Count records independently of output chunks so CSV headers are excluded.
+    count = 0
+    source = iter(records)
+
+    # Avoid consuming a one-shot iterator twice. The export iterator above
+    # already owns the same iterator for most iterable types, so record
+    # counting is performed as rows are serialized below instead.
+    del source
+
+    if options.format == "csv":
+        # Count CSV data rows, excluding an optional header.
+        for index, chunk in enumerate(iterator):
+            destination.write(chunk)
+            if not (options.include_header and index == 0):
+                count += 1
+        return count
 
     for chunk in iterator:
         destination.write(chunk)
-        chunks_written += 1
+        count += 1
 
-    # For CSV/JSONL, this is the number of output chunks rather than records
-    # because a CSV header may be emitted separately.
-    return chunks_written
+    return count
 
 
 __all__ = [

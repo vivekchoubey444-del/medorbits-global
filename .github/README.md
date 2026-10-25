@@ -1,26 +1,34 @@
-MedOrbits — GitHub Repository Governance
 
-File: .github/README.md
-Project: MedOrbits
-Purpose: Repository governance, contribution management, security controls, and development automation
+# MedOrbits — GitHub Repository Governance
 
-1. Overview
+**Project:** MedOrbits  
+**Directory:** `.github/`  
+**Purpose:** Repository governance, contribution management, security controls, and development automation.
 
-The .github/ directory contains configuration and documentation that support consistent repository management, collaborative development, automated quality assurance, and controlled software delivery for MedOrbits.
+—
+
+## 1. Overview
+
+The `.github/` directory contains configuration and documentation that support consistent repository management, collaborative development, automated quality assurance, and controlled software delivery for MedOrbits.
 
 Its objectives are to:
 
-* Standardize issue reporting and pull request submissions.
-* Assign code review responsibilities.
-* Automate testing, validation, and security checks.
-* Maintain dependency update policies.
-* Support controlled releases and deployments.
-* Establish clear expectations for contributors and maintainers.
+- Standardize issue reporting and pull request submissions.
+- Assign code review responsibilities.
+- Automate testing, validation, and security checks.
+- Maintain dependency update policies.
+- Support controlled releases and deployments.
+- Establish clear expectations for contributors and maintainers.
 
-Repository configuration provides the mechanisms for implementing these policies. Actual enforcement depends on the workflow definitions, repository settings, branch rules, permissions, and external integrations.
+Repository configuration provides mechanisms for implementing these policies. Actual enforcement depends on workflow definitions, repository settings, branch rules, permissions, and external integrations.
 
-2. Directory Structure
+**Governance principle:** Documented intent is not proof of enforcement. Verify the active configuration, repository settings, and workflow run history before relying on any control.
 
+## 2. Directory Structure
+
+The following tree is illustrative. Verify that each path exists and update this section when files are added, renamed, or removed.
+
+```text
 .github/
 ├── ISSUE_TEMPLATE/
 │   ├── bug_report.md
@@ -39,104 +47,107 @@ Repository configuration provides the mechanisms for implementing these policies
 │   ├── update-lockfile.yml
 │   ├── validate-config.yml
 │   ├── validate-documents.yml
-│   └── validate-json.yml
+│   ├── validate-json.yml
+│   └── validate-project.yml
 ├── CODEOWNERS
 ├── dependabot.yml
-├── PULL_REQUEST_TEMPLATE.md
+├── pull_request_template.md
 └── README.md
+```
 
-This tree is illustrative, not a verified inventory. Keep it synchronized with the files actually present in the repository.
+Other workflows, such as `lockfile.yml`, may exist depending on the active repository configuration. Do not retain obsolete entries merely because they appear in earlier documentation.
 
-3. Repository Governance Components
+## 3. Repository Governance Components
 
-3.1 Issue templates
+### 3.1 Issue templates
 
-The ISSUE_TEMPLATE/ directory standardizes bug reports, feature requests, and other project issues.
+The `ISSUE_TEMPLATE/` directory standardizes bug reports, feature requests, and other project issues.
 
 Contributors should provide, where applicable:
 
-* A clear description of the problem or proposed feature.
-* Reproduction steps and expected versus actual behavior.
-* Relevant environment information and sanitized logs.
-* The impact, urgency, and affected application components.
-* Supporting screenshots or references without sensitive information.
+- A clear description of the problem or proposed feature.
+- Reproduction steps and expected versus actual behavior.
+- Relevant environment information and sanitized logs.
+- Impact, urgency, and affected application components.
+- Supporting screenshots or references without sensitive information.
 
-Do not include passwords, API keys, session tokens, confidential production logs, or unnecessary personal data in public issues.
+Never include passwords, API keys, session tokens, confidential production logs, or unnecessary personal data in public issues.
 
 Templates improve report quality but do not replace issue triage, vulnerability disclosure procedures, or maintainer review.
 
-3.2 GitHub Actions workflows
+### 3.2 GitHub Actions workflows
 
-The workflows/ directory contains automation for repository validation and software delivery.
+The `workflows/` directory contains automation for repository validation and software delivery.
 
-Workflow category	Responsibility
-Continuous integration	Validate changes and run quality checks
-Automated testing	Run unit and integration tests and collect reports
-Code security	Analyze supported source code for potential vulnerabilities
-Dependency review	Inspect dependency changes in pull requests
-Secret scanning	Detect potentially exposed credentials
-Configuration validation	Validate project configuration and structured data
-Document validation	Check document manifests and resource catalogues
-Dependency maintenance	Generate or validate dependency lockfiles
-Release management	Validate release metadata and publish releases
-Deployment	Run deployment checks and provider-specific deployment steps
-Official release synchronization	Update release data from verified sources
+| Category | Responsibility |
+|—|—|
+| Continuous integration | Validate changes and run quality checks |
+| Automated testing | Run unit and integration tests and collect reports |
+| Code security | Analyze supported source code for potential vulnerabilities |
+| Dependency review | Inspect dependency changes in pull requests |
+| Secret scanning | Detect potentially exposed credentials |
+| Configuration validation | Validate project configuration and structured data |
+| Document validation | Check document manifests and resource catalogues |
+| Dependency maintenance | Generate or validate dependency lockfiles |
+| Release management | Validate release metadata and publish releases |
+| Deployment | Run deployment checks and provider-specific deployment steps |
+| Official release synchronization | Update release data from verified sources |
 
 Before enabling a workflow, verify its triggers, permissions, referenced scripts, action versions, secrets, and failure handling.
 
 A workflow that validates deployment readiness does not necessarily deploy the application. A successful security scan does not guarantee that the application is free of vulnerabilities.
 
-3.3 CODEOWNERS
+### 3.3 CODEOWNERS
 
-The CODEOWNERS file assigns review responsibility to designated GitHub users or teams.
+The `.github/CODEOWNERS` file assigns review responsibility to designated GitHub users or teams.
 
 Maintainers should:
 
-* Keep entries aligned with active accounts and repository paths.
-* Verify that designated owners have the required repository access.
-* Review ownership assignments when the project structure changes.
-* Assign specialist reviewers for sensitive changes when appropriate.
-* Configure branch protection or repository rules separately if code-owner approval is required.
+- Keep entries aligned with active accounts and repository paths.
+- Verify that designated owners have the required repository access.
+- Review ownership assignments when the project structure changes.
+- Assign specialist reviewers for sensitive changes where appropriate.
+- Configure branch protection or repository rules separately when code-owner approval is required.
 
 CODEOWNERS does not independently grant repository permissions, enforce approvals, or establish copyright ownership.
 
-3.4 Dependabot
+### 3.4 Dependabot
 
-The dependabot.yml file configures automated dependency update proposals for supported package ecosystems.
+The `.github/dependabot.yml` file configures automated dependency update proposals for supported package ecosystems.
 
 Review proposed updates for:
 
-* Compatibility with supported Node.js and npm versions.
-* Security advisories and supply-chain risks.
-* Lockfile consistency.
-* License and maintenance considerations.
-* Breaking changes and migration requirements.
-* Successful CI and test results.
+- Compatibility with supported Node.js and npm versions.
+- Security advisories and supply-chain risks.
+- Lockfile consistency.
+- License and maintenance considerations.
+- Breaking changes and migration requirements.
+- Successful CI and test results.
 
 Grouped updates reduce pull request volume but can increase the scope of individual reviews. Major upgrades should receive appropriate compatibility testing.
 
-Automated dependency proposals should not bypass required reviews or protected branch rules.
+Automated dependency proposals must not bypass required reviews or protected branch rules.
 
-3.5 Pull request template
+### 3.5 Pull request template
 
-The PULL_REQUEST_TEMPLATE.md file helps contributors document changes consistently.
+The `.github/pull_request_template.md` file helps contributors document changes consistently.
 
 A complete pull request should identify:
 
-* The problem and proposed solution.
-* The affected files, modules, and user-facing behavior.
-* Tests actually performed and their results.
-* Security, privacy, and compatibility implications.
-* Database, configuration, or deployment requirements.
-* Known limitations and outstanding follow-up work.
+- The problem and proposed solution.
+- The affected files, modules, and user-facing behavior.
+- Tests actually performed and their results.
+- Security, privacy, and compatibility implications.
+- Database, configuration, or deployment requirements.
+- Known limitations and outstanding follow-up work.
 
 Checklist items must reflect actual verification. Contributors should disclose skipped tests, unresolved failures, and untested scenarios rather than claiming that validation succeeded.
 
-4. Security and Privacy Standards
+## 4. Security and Privacy Standards
 
 All contributors and maintainers should follow these baseline practices:
 
-1. Never commit real credentials, private keys, access tokens, or .env files containing secrets.
+1. Never commit real credentials, private keys, access tokens, or `.env` files containing secrets.
 2. Store deployment credentials in GitHub Actions secrets or protected environment secrets.
 3. Use least-privilege workflow permissions and job-specific write access.
 4. Review third-party actions and dependency changes before merging.
@@ -144,29 +155,29 @@ All contributors and maintainers should follow these baseline practices:
 6. Validate untrusted input and enforce appropriate authentication and authorization.
 7. Review file-upload handling, document access, and storage permissions where applicable.
 8. Protect production deployments and releases with suitable approvals and branch rules.
-9. Rotate or revoke exposed credentials immediately and assess the potential impact.
-10. Use the process documented in SECURITY.md for reporting suspected vulnerabilities privately.
+9. Rotate or revoke exposed credentials immediately and assess potential impact.
+10. Use the process documented in `SECURITY.md` for reporting suspected vulnerabilities privately.
 
 Public issue trackers and pull requests are not appropriate places to disclose exploitable vulnerability details.
 
-5. Branch Protection and Review Requirements
+## 5. Branch Protection and Review Requirements
 
-For primary development branches such as main, configure repository rules appropriate to the project’s risk and release process.
+For primary development branches such as `main`, configure repository rules appropriate to the project’s risk and release process.
 
 Recommended controls include:
 
-* Pull requests before merging.
-* Required independent review.
-* Required CI and test checks.
-* Code-owner approval where appropriate.
-* Restrictions on force pushes and branch deletion.
-* Resolution of review conversations before merging.
-* Protected environments for production deployment.
-* Approval requirements for sensitive release operations.
+- Pull requests before merging.
+- Required independent review.
+- Required CI and test checks.
+- Code-owner approval where appropriate.
+- Restrictions on force pushes and branch deletion.
+- Resolution of review conversations before merging.
+- Protected environments for production deployment.
+- Approval requirements for sensitive release operations.
 
 Required status checks must correspond to actual workflow job names. Verify that checks run for the relevant pull request events before making them mandatory.
 
-6. Contribution Process
+## 6. Contribution Process
 
 Contributors should follow this general process:
 
@@ -183,21 +194,21 @@ Keep pull requests narrowly scoped where practical. Separate unrelated refactori
 
 Contributions remain subject to the repository’s applicable license, contribution requirements, and other governing terms.
 
-7. Dependency and Lockfile Policy
+## 7. Dependency and Lockfile Policy
 
 Dependency management should support reproducible builds and controlled updates.
 
-* Keep package.json and package-lock.json synchronized.
-* Use npm ci in CI when a valid npm lockfile is available.
-* Review changes to dependency manifests and lockfiles.
-* Investigate high- and critical-severity advisories according to actual exposure and exploitability.
-* Avoid force-pushing generated dependency changes.
-* Respect branch protection and required review policies.
-* Verify that automated dependency workflows do not overwrite concurrent changes.
+- Keep `package.json` and `package-lock.json` synchronized.
+- Use `npm ci` in CI when a valid npm lockfile is available.
+- Review changes to dependency manifests and lockfiles.
+- Investigate high- and critical-severity advisories according to actual exposure and exploitability.
+- Avoid force-pushing generated dependency changes.
+- Respect branch protection and required review policies.
+- Verify that automated dependency workflows do not overwrite concurrent changes.
 
 Lockfile generation is not a substitute for dependency security review or runtime compatibility testing.
 
-8. Deployment and Release Governance
+## 8. Deployment and Release Governance
 
 Production deployments and releases must follow the project’s approved delivery process.
 
@@ -216,79 +227,79 @@ Document whether each workflow performs preflight checks, deploys the applicatio
 
 Never assume that a successful GitHub Actions run proves that the production application is healthy. Review provider logs and application health signals.
 
-9. Database and Data Migration Safety
+## 9. Database and Data Migration Safety
 
 Database migrations require explicit review because schema and data changes can affect availability, integrity, and backward compatibility.
 
 Before a production migration:
 
-* Validate the migration files and their execution order.
-* Back up the database and verify recovery procedures.
-* Assess application compatibility with the old and new schema.
-* Review data-loss risks and migration duration.
-* Execute migrations through the project’s approved migration runner.
-* Validate database connectivity and application health afterward.
-* Follow the documented recovery plan if the migration fails.
+- Validate migration files and their execution order.
+- Back up the database and verify recovery procedures.
+- Assess application compatibility with the old and new schema.
+- Review data-loss risks and migration duration.
+- Execute migrations through the project’s approved migration runner.
+- Validate database connectivity and application health afterward.
+- Follow the documented recovery plan if the migration fails.
 
 Do not assume that all MySQL DDL operations can be rolled back automatically. Recovery must account for the actual database engine and migration operations.
 
-10. Official Release Data and Document Integrity
+## 10. Official Release Data and Document Integrity
 
 When synchronizing official release information or maintaining document catalogues:
 
-* Use authoritative sources and retain appropriate source references.
-* Validate response formats and required fields.
-* Reject malformed or duplicate records according to the data policy.
-* Confirm that referenced local resources exist.
-* Limit automated writes to the intended files.
-* Handle concurrent changes and upstream service failures safely.
-* Document the source, update policy, and validation rules.
+- Use authoritative sources and retain appropriate source references.
+- Validate response formats and required fields.
+- Reject malformed or duplicate records according to the data policy.
+- Confirm that referenced local resources exist.
+- Limit automated writes to the intended files.
+- Handle concurrent changes and upstream service failures safely.
+- Document the source, update policy, and validation rules.
 
 Automated synchronization must not silently publish unverified release information or overwrite unrelated repository changes.
 
-11. Maintenance Responsibilities
+## 11. Maintenance Responsibilities
 
 Maintainers should periodically review:
 
-* CODEOWNERS assignments and active repository access.
-* Dependabot configuration and dependency-update activity.
-* Workflow triggers, action versions, and permissions.
-* Required branch checks and environment approvals.
-* Security alerts and secret-scanning results.
-* Dependency and lockfile consistency.
-* Issue and pull request templates.
-* Deployment credentials and recovery procedures.
-* Documentation accuracy and obsolete workflow references.
+- CODEOWNERS assignments and active repository access.
+- Dependabot configuration and dependency-update activity.
+- Workflow triggers, action versions, and permissions.
+- Required branch checks and environment approvals.
+- Security alerts and secret-scanning results.
+- Dependency and lockfile consistency.
+- Issue and pull request templates.
+- Deployment credentials and recovery procedures.
+- Documentation accuracy and obsolete workflow references.
 
 When a workflow or governance policy changes, update this README and related documentation to reflect the implementation.
 
-12. Governance Verification Checklist
+## 12. Governance Verification Checklist
 
 Before relying on repository governance controls, verify that:
 
-* [ ]	The documented configuration files exist.
-* [ ]	CODEOWNERS entries reference valid users or teams.
-* [ ]	Required code-owner approvals are configured in repository rules.
-* [ ]	Mandatory CI checks correspond to actual workflow jobs.
-* [ ]	Workflow permissions are restricted to required operations.
-* [ ]	Secrets are stored securely and are not committed to the repository.
-* [ ]	Dependabot updates target the correct package ecosystems and directories.
-* [ ]	Release and deployment workflows use the intended targets.
-* [ ]	Database recovery procedures are documented and tested.
-* [ ]	Official release and document validation scripts work as documented.
-* [ ]	This README matches the repository’s current structure.
+- [ ] The documented configuration files exist.
+- [ ] CODEOWNERS entries reference valid users or teams.
+- [ ] Required code-owner approvals are configured in repository rules.
+- [ ] Mandatory CI checks correspond to actual workflow jobs.
+- [ ] Workflow permissions are restricted to required operations.
+- [ ] Secrets are stored securely and are not committed to the repository.
+- [ ] Dependabot updates target the correct package ecosystems and directories.
+- [ ] Release and deployment workflows use the intended targets.
+- [ ] Database recovery procedures are documented and tested.
+- [ ] Official release and document validation scripts work as documented.
+- [ ] This README matches the repository’s current structure.
 
-13. Limitations and Enforcement
+## 13. Limitations and Enforcement
 
 This document describes intended governance practices. It does not independently verify repository configuration, guarantee workflow execution, or enforce contribution requirements.
 
-Actual enforcement depends on the configuration of GitHub Actions, branch protection or rulesets, repository permissions, environment protection, external integrations, and the implementation of the referenced scripts.
+Actual enforcement depends on GitHub Actions, branch protection or rulesets, repository permissions, environment protection, external integrations, and the implementation of referenced scripts.
 
 The repository’s active configuration and execution history are the authoritative evidence of what is currently enforced.
 
-⸻
+—
 
-Project: MedOrbits
-Directory: .github/
-Purpose: Repository governance, automation, security, and contribution standards
-Maintenance: Update this document whenever repository structure, policies, or workflow responsibilities change.
+**Project:** MedOrbits  
+**Directory:** `.github/`  
+**Purpose:** Repository governance, automation, security, and contribution standards  
+**Maintenance:** Update this document whenever repository structure, policies, or workflow responsibilities change.

@@ -1,0 +1,638 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.medorbits.in/api/schemas/jobs.schema.json",
+  "title": "MedOrbits Job Schema",
+  "description": "Validation schema for job listings, government jobs, private-sector jobs, fresher jobs, internships, apprenticeships, remote jobs, and recruitment opportunities on MedOrbits.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Unique job identifier."
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 20000
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "jobType": {
+      "type": "string",
+      "enum": [
+        "full-time",
+        "part-time",
+        "contract",
+        "temporary",
+        "internship",
+        "apprenticeship",
+        "freelance",
+        "walk-in",
+        "work-from-home",
+        "seasonal"
+      ]
+    },
+    "employmentSector": {
+      "type": "string",
+      "enum": [
+        "government",
+        "private",
+        "public-sector",
+        "psu",
+        "non-profit",
+        "international",
+        "self-employed"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "education",
+        "healthcare",
+        "engineering",
+        "information-technology",
+        "management",
+        "finance",
+        "government",
+        "research",
+        "sales",
+        "marketing",
+        "human-resources",
+        "customer-support",
+        "administration",
+        "skilled-trades",
+        "hospitality",
+        "logistics",
+        "manufacturing",
+        "agriculture",
+        "media",
+        "design",
+        "legal",
+        "other"
+      ]
+    },
+    "industry": {
+      "type": "string",
+      "maxLength": 150
+    },
+    "experienceLevel": {
+      "type": "string",
+      "enum": [
+        "student",
+        "fresher",
+        "entry-level",
+        "junior",
+        "mid-level",
+        "senior",
+        "lead",
+        "manager",
+        "executive",
+        "any"
+      ]
+    },
+    "experience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "maximumYears": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "freshersEligible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "employer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "industry": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "verified": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "default": "India"
+        },
+        "state": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "district": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "pincode": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$"
+        },
+        "workMode": {
+          "type": "string",
+          "enum": [
+            "on-site",
+            "hybrid",
+            "remote",
+            "field-work"
+          ]
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "multipleLocations": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 250
+          }
+        }
+      }
+    },
+    "compensation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumSalary": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximumSalary": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "INR"
+        },
+        "period": {
+          "type": "string",
+          "enum": [
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly",
+            "yearly",
+            "project",
+            "stipend"
+          ]
+        },
+        "salaryType": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "range",
+            "negotiable",
+            "competitive",
+            "unpaid",
+            "not-disclosed"
+          ]
+        },
+        "salaryDescription": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "benefits": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumAge": {
+          "type": "integer",
+          "minimum": 14,
+          "maximum": 100
+        },
+        "maximumAge": {
+          "type": "integer",
+          "minimum": 14,
+          "maximum": 100
+        },
+        "minimumEducation": {
+          "type": "string",
+          "enum": [
+            "below-10th",
+            "10th-pass",
+            "12th-pass",
+            "iti",
+            "diploma",
+            "undergraduate",
+            "graduate",
+            "postgraduate",
+            "doctoral",
+            "professional",
+            "any"
+          ]
+        },
+        "qualifications": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "requiredSkills": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 150
+          }
+        },
+        "preferredSkills": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 150
+          }
+        },
+        "nationality": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "genderRequirement": {
+          "type": "string",
+          "enum": [
+            "any",
+            "as-specified-in-official-notification"
+          ],
+          "default": "any"
+        },
+        "otherRequirements": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "vacancies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "categoryWise": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxProperties": 30
+        },
+        "vacancyDescription": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "applicationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "applicationMethod": {
+          "type": "string",
+          "enum": [
+            "online",
+            "offline",
+            "email",
+            "walk-in",
+            "official-portal",
+            "other"
+          ]
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date"
+        },
+        "applicationFee": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$",
+              "default": "INR"
+            },
+            "categoryWiseFees": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxProperties": 30
+            },
+            "feeExemptions": {
+              "type": "array",
+              "maxItems": 30,
+              "items": {
+                "type": "string",
+                "maxLength": 300
+              }
+            }
+          }
+        },
+        "requiredDocuments": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "selectionProcess": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    },
+    "officialNotification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notificationNumber": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "notificationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "officialWebsite": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "publishedDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "advertisementNumber": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "pending-review",
+            "verified",
+            "rejected",
+            "expired"
+          ],
+          "default": "unverified"
+        },
+        "lastVerifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "featuredImage": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "gallery": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          }
+        },
+        "altText": {
+          "type": "string",
+          "maxLength": 300
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "seo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metaTitle": {
+          "type": "string",
+          "maxLength": 70
+        },
+        "metaDescription": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "keywords": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "canonicalUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending-review",
+        "published",
+        "paused",
+        "closed",
+        "expired",
+        "rejected",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "urgent": {
+      "type": "boolean",
+      "default": false
+    },
+    "applicationCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "viewCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "createdBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "updatedBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "description",
+    "jobType",
+    "employmentSector",
+    "category",
+    "experienceLevel",
+    "status",
+    "createdAt",
+    "updatedAt"
+  ]
+}

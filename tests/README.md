@@ -10,7 +10,7 @@ The MedOrbits test suite verifies application behavior, API contracts, database 
 
 | Directory | Purpose |
 |—|—|
-| `unit/` | Isolated functions, validators, utilities, and business rules |
+| `unit/` | Isolated functions, validators, utilities, policies, and business rules |
 | `integration/` | Interactions between controllers, services, repositories, and infrastructure |
 | `integration/payments/` | Payment webhooks, duplicate events, and concurrent refunds |
 | `api/` | HTTP endpoints, response contracts, validation, and access control |
@@ -18,11 +18,13 @@ The MedOrbits test suite verifies application behavior, API contracts, database 
 | `security/` | Authentication, authorization, IDOR, privilege escalation, and information leakage |
 | `accessibility/` | WCAG-oriented checks, forms, navigation, contrast, keyboard access, and screen-reader semantics |
 | `e2e/` | Complete user journeys across the application |
-| `fixtures/` | Reusable test data and payloads |
+| `fixtures/` | Reusable, deterministic test data and payloads |
 
-**Important:** The presence of a test file does not prove that its tests pass or that the associated application feature is implemented. Verify the inventory, configuration, and execution results before claiming coverage.
+**Important:** The presence of a test file does not prove that its tests pass or that the associated application feature is implemented. Verify the repository inventory, configuration, and execution results before claiming coverage.
 
 ## 2. Intended directory structure
+
+The following tree is the intended organization, not a verified filesystem listing. Keep only files supported by implemented modules and configured test infrastructure.
 
 ```text
 tests/
@@ -101,16 +103,25 @@ tests/
 │   ├── sensitive-data.security.test.js
 │   └── unauthorized-downloads.security.test.js
 └── unit/
-    └── validators.test.js
+    ├── README.md
+    ├── validators.test.js
+    └── services/
+        ├── README.md
+        ├── application.service.test.js
+        ├── audit.service.test.js
+        ├── auth.service.test.js
+        ├── document.service.test.js
+        ├── payment.service.test.js
+        └── subscription.service.test.js
 ```
 
-This is the intended inventory, not a verified filesystem listing. Only include files for implemented modules and configured test infrastructure.
+Add policy tests under `unit/policies/` when the corresponding policy modules and test files exist.
 
 ## 3. Test responsibilities
 
 ### 3.1 Unit tests
 
-**File:** `unit/validators.test.js`
+**Example:** `unit/validators.test.js`
 
 Verify:
 
@@ -120,6 +131,10 @@ Verify:
 - Missing, malformed, unsupported, and oversized values.
 - Consistent validation errors.
 - Deterministic behavior without unnecessary network or database dependencies.
+- Service business rules using mocked dependencies.
+- Policy decisions for permitted and denied actions.
+
+Unit tests should exercise real functions. A standalone assertion that does not import the relevant implementation is only an illustrative example, not proof that the application enforces a rule.
 
 ### 3.2 API tests
 
@@ -149,7 +164,9 @@ Tests must follow actual route definitions, authentication middleware, request s
 | `database-constraints.integration.test.js` | Real database constraints |
 | `notification.integration.test.js` | Notification dispatch and failure handling |
 | `payments.integration.test.js` | Payment lifecycle integration |
-| `repositories.integration.test.js` | Repository operations against the configured persistence layer |
+| `repositories.integration.test.js` | Repository operations against configured persistence |
+
+Integration tests should use isolated infrastructure and deterministic test data. Mock only dependencies that are outside the integration boundary being tested.
 
 ### 3.4 Database tests
 
@@ -163,7 +180,7 @@ Tests must follow actual route definitions, authentication middleware, request s
 | `transactions.test.js` | Commit, rollback, and isolation behavior |
 | `setup.js` | Test database initialization and shared helpers |
 
-Use the database driver, schema, and migration system actually configured by the application.
+Use the database driver, schema, and migration system actually configured by the application. Do not assume PostgreSQL or MySQL without checking the repository configuration.
 
 ### 3.5 Security tests
 
@@ -201,11 +218,11 @@ Target WCAG 2.2 Level AA. Automated tests must be supplemented by manual keyboar
 |—|—|
 | `admin-workflow.e2e.test.js` | Administrative workflows and protected operations |
 | `application-submission.e2e.test.js` | Form completion, submission, and confirmation |
-| `authentication.e2e.test.js` | Authentication journeys |
+| `authentication.e2e.test.js` | Registration, login, logout, and authentication journeys |
 | `document-upload.e2e.test.js` | File selection, upload, validation, and completion |
 | `payment-checkout.e2e.test.js` | Checkout, payment initiation, and result handling |
 
-Use the E2E runner configured by the repository. Do not assume it is Jest.
+Use the E2E runner configured by the repository. Do not assume that it is Jest or that browser automation dependencies are installed.
 
 ## 4. Fixture conventions
 
@@ -232,31 +249,31 @@ Requirements:
 - Clean up records created by mutation tests.
 - Ensure fixture exports match their consumers.
 
-The intended current fixture filenames are `applications.js`, `courses.js`, `payments.js`, and `users.js`, rather than their former `*.fixture.js` names. Update imports only after confirming the actual files and exports.
+Use the intended filenames only after confirming the files exist. If fixture files are renamed, update all consumers and test setup scripts.
 
 Example CommonJS imports:
 
 ```javascript
-‘use strict’;
+“use strict”;
 
-const applications = require(‘../fixtures/applications’);
-const courses = require(‘../fixtures/courses’);
-const payments = require(‘../fixtures/payments’);
-const users = require(‘../fixtures/users’);
+const applications = require(“../fixtures/applications”);
+const courses = require(“../fixtures/courses”);
+const payments = require(“../fixtures/payments”);
+const users = require(“../fixtures/users”);
 ```
 
-Adjust relative paths according to the importing file’s location.
+Adjust relative paths according to the importing file’s location. Confirm each fixture’s export shape before using it.
 
-## 5. Removed E2E filenames
+## 5. E2E filename conventions
 
-The intended current E2E inventory uses:
+The intended E2E inventory uses:
 
 - `authentication.e2e.test.js`
 - `payment-checkout.e2e.test.js`
 
-The former `login.e2e.test.js`, `payment.e2e.test.js`, and `registration.e2e.test.js` filenames should not be assumed to exist.
+Do not assume that former filenames such as `login.e2e.test.js`, `payment.e2e.test.js`, or `registration.e2e.test.js` exist.
 
-Before deleting old files, verify that their unique scenarios have been migrated. Registration coverage should remain explicitly tested within the authentication journey or a separate registration test.
+Before removing or renaming older tests, verify that their unique scenarios have been migrated. Registration coverage must remain explicitly tested within the authentication journey or a separate registration test.
 
 ## 6. Payment integration tests
 
@@ -279,7 +296,7 @@ Verify:
 - Refunds cannot exceed refundable amounts.
 - Failures do not leave inconsistent payment state.
 
-Use provider mocks or test-mode credentials. Never initiate live charges or refunds in automated tests.
+Use provider mocks or official test-mode credentials. Never initiate live charges or refunds in automated tests.
 
 ## 7. Technology and dependencies
 
@@ -288,7 +305,8 @@ Preserve the project’s existing configuration.
 Potential tools include:
 
 - Node.js 20 or later.
-- Jest for configured unit, API, and integration tests.
+- `node:test` for built-in Node.js tests.
+- Jest for suites configured to use Jest.
 - Supertest for Express HTTP tests.
 - The configured SQL database driver.
 - Browser automation for E2E testing.
@@ -297,6 +315,8 @@ Potential tools include:
 Inspect `package.json`, the lockfile, and existing test configuration before installing dependencies or changing runners.
 
 Do not replace the test runner or database adapter without an explicit architecture change.
+
+A single repository may use different runners for different suites, but each test file must be executed with a compatible runner and documented accordingly.
 
 ## 8. Test environment and database safety
 
@@ -309,7 +329,7 @@ NODE_ENV=test
 TEST_DATABASE_URL=mysql://test_user:test_password@127.0.0.1:3306/medorbits_test
 ```
 
-This example is not a claim that the repository uses this exact database or variable name. Configure the actual driver and environment variables required by MedOrbits.
+This example does not establish that MedOrbits uses MySQL or this variable name. Configure the actual driver and environment variables required by the application.
 
 Before database tests run:
 
@@ -320,24 +340,26 @@ Before database tests run:
 5. Mock or disable live payment operations.
 6. Ensure setup and cleanup are safe and repeatable.
 
-Never run destructive test setup against production data.
+Never run destructive test setup against production data. Test setup should fail closed if the database target cannot be verified as a test environment.
 
 ## 9. Authentication helpers
 
 Authentication tests should use valid credentials issued through the application’s real test authentication mechanism.
 
-A helper may return:
+An illustrative helper result might be:
 
 ```javascript
 {
-  token: ‘test-issued-access-token’,
-  userId: ‘TEST-USER-001’,
+  token: “test-issued-access-token”,
+  userId: “TEST-USER-001”,
 }
 ```
 
-This illustrates the expected interface; the token is not valid.
+This illustrates an interface only; the token is not valid.
 
-Create test users through trusted setup and assign roles server-side. Do not simulate administrator access by trusting client-supplied role fields. An unimplemented helper must be completed before its associated tests are considered runnable.
+Create test users through trusted setup and assign roles server-side. Do not simulate administrator access by trusting client-supplied role fields.
+
+An unimplemented helper must be completed before its associated tests are considered runnable.
 
 ## 10. API response contracts
 
@@ -361,7 +383,7 @@ Error:
 }
 ```
 
-Use the actual route and middleware behavior to determine expected status codes.
+Use actual route and middleware behavior to determine expected status codes.
 
 | Status | Typical meaning |
 |—|—|
@@ -390,6 +412,7 @@ Prefer exact status assertions when the contract is known. Do not accept unrelat
 - Roles and permissions are assigned by trusted server-side logic.
 - Users cannot access other users’ private resources without authorization.
 - Administrative operations require the appropriate permission.
+- Denied operations do not modify protected state.
 
 ### Input handling
 
@@ -397,26 +420,29 @@ Prefer exact status assertions when the contract is known. Do not accept unrelat
 - Injection attempts cannot alter query structure.
 - Unexpected fields cannot bypass validation.
 - File paths and identifiers cannot escape permitted storage.
+- Numeric inputs are checked for valid ranges and safe representations.
 
 ### Sensitive information
 
-Responses must not expose unnecessary:
+Responses and logs must not expose unnecessary:
 
-- Password hashes.
+- Passwords or password hashes.
 - Access or refresh tokens.
 - Private keys.
 - Database connection strings.
 - Environment variables.
-- Stack traces.
+- Stack traces in public responses.
 - Internal filesystem paths.
 - Payment gateway secrets.
+- Unnecessary personal or financial data.
 
 ### Payment integrity
 
 - Payment state is determined by trusted server-side verification.
 - Invalid webhooks cannot mark payments successful.
 - Repeated events do not duplicate financial effects.
-- Refunds are protected against concurrency errors.
+- Refunds are protected against authorization and concurrency errors.
+- Client-provided payment status is never treated as authoritative.
 
 ## 12. Accessibility requirements
 
@@ -438,12 +464,37 @@ Automated checks do not establish full WCAG conformance. Manually test important
 
 ## 13. Running tests
 
-Use the repository’s existing npm scripts when available.
+Run commands from the project root. Prefer existing `package.json` scripts when they correctly run the intended suite.
+
+### Node.js built-in test runner
+
+For files using `node:test`, for example:
+
+```bash
+# Run a specific service test
+node —test tests/unit/services/auth.service.test.js
+
+# Run all top-level unit tests
+node —test tests/unit/*.test.js
+
+# Run service unit tests
+node —test tests/unit/services/*.test.js
+
+# Run top-level and service unit tests
+node —test tests/unit/*.test.js tests/unit/services/*.test.js
+
+# Run a specific policy test
+node —test tests/unit/policies/application.policy.test.js
+```
+
+These examples assume the listed files exist. Shell glob expansion varies by environment.
 
 ### Jest
 
+Use these commands only if Jest is installed and the relevant files are compatible with the configured Jest setup.
+
 ```bash
-# Run all Jest-discovered tests
+# Run Jest-discovered tests
 npx jest —runInBand
 
 # Run individual categories
@@ -464,21 +515,35 @@ npx jest tests/e2e —runInBand
 npx jest —coverage —runInBand
 ```
 
-These commands assume the root Jest configuration discovers the relevant files and that the required test environment is available.
+These commands assume the root Jest configuration discovers the relevant files and the required test environment is available.
 
-If the project uses Node’s built-in test runner for a test file, run it using the configured Node test command rather than invoking it through Jest.
+Do not execute `node:test` files through Jest unless the repository explicitly supports that setup.
 
-Prefer `npm test` when the existing script correctly runs the intended suite.
+### npm scripts
+
+Inspect `package.json` for available scripts:
+
+```bash
+npm run
+```
+
+If the configured test script runs the intended suite, prefer:
+
+```bash
+npm test
+```
+
+A successful command must exit with a success status. Review skipped tests, test counts, and coverage output before declaring the suite complete.
 
 ## 14. Jest configuration
 
-Example reference configuration for Node-based tests:
+The following is an illustrative reference configuration for Node-based Jest tests:
 
 ```javascript
-‘use strict’;
+“use strict”;
 
 module.exports = {
-  testEnvironment: ‘node’,
+  testEnvironment: “node”,
   clearMocks: true,
   restoreMocks: true,
   verbose: true,
@@ -486,7 +551,9 @@ module.exports = {
 };
 ```
 
-Merge necessary settings into the existing configuration. Do not overwrite project-specific test discovery, setup files, coverage thresholds, or environment configuration without reviewing them.
+Merge required settings into the existing configuration. Do not overwrite project-specific test discovery, setup files, coverage thresholds, module settings, or environment configuration without reviewing them.
+
+This configuration is for Jest only; it is not required by Node’s built-in test runner.
 
 ## 15. Test isolation and cleanup
 
@@ -501,8 +568,11 @@ Every test must be deterministic and independently repeatable.
 - Close database connections and browser resources.
 - Configure reasonable asynchronous timeouts.
 - Run shared-state tests serially until isolation is reliable.
+- Restore mocks and environment changes after each test.
+- Avoid swallowing unexpected exceptions.
+- Do not silently skip essential authorization, persistence, or security assertions.
 
-Do not silently skip essential authorization, persistence, or security assertions.
+Tests that depend on a real database or browser must document prerequisites and fail clearly when required infrastructure is unavailable.
 
 ## 16. CI integration
 
@@ -520,7 +590,9 @@ Recommended CI sequence:
 10. Publish test and coverage reports.
 11. Fail the pipeline when required checks fail.
 
-CI must use test-only credentials and must not print secrets in logs.
+CI must use test-only credentials and services. Never print secrets in logs.
+
+Tests must not connect to production databases, production payment accounts, or live customer services.
 
 ## 17. Troubleshooting
 
@@ -537,6 +609,10 @@ CI must use test-only credentials and must not print secrets in logs.
 **Inconsistent results:** Investigate shared mutable fixtures, parallel execution, missing cleanup, and external dependencies.
 
 **Deleted files:** Check imports, test discovery, npm scripts, and CI configuration. Confirm scenario migration before treating a deletion as complete.
+
+**Unexpected skipped tests:** Determine why the test was skipped. Essential security and business-rule tests must not remain skipped in required CI jobs.
+
+**Runner mismatch:** Check whether the file uses `node:test` or Jest APIs, and invoke it with the compatible runner.
 
 ## 18. Definition of done
 
@@ -555,6 +631,7 @@ Before release, verify:
 - [ ] Fixtures are deterministic and cleanup is reliable.
 - [ ] Removed files are not referenced by active configuration.
 - [ ] CI uses test-only credentials and services.
+- [ ] Skipped tests have been reviewed.
 - [ ] Required checks pass before deployment.
 
 ## 19. Maintenance policy
@@ -570,3 +647,5 @@ Update this document whenever:
 - CI execution commands change.
 
 The actual implementation, route contracts, schema, test configuration, and execution results remain the authoritative sources of truth.
+
+**Documentation status:** This file defines the intended testing architecture. It does not claim that every listed test file, dependency, feature, or test environment already exists or passes.

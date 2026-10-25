@@ -5,6 +5,7 @@ Directory: /api
 Runtime: Node.js 20+
 Architecture: REST API, service-oriented backend, PostgreSQL, background jobs
 API specification: api/openapi.yaml
+Status: Architecture and operational reference
 
 ⸻
 
@@ -12,159 +13,163 @@ API specification: api/openapi.yaml
 
 The MedOrbits API provides backend functionality for education, medical admissions, student applications, notifications, document processing, authentication, and administrative operations.
 
-The API is organized into separate layers to keep routing, validation, business logic, persistence, and background processing independently maintainable.
+The API follows a layered architecture that separates routing, middleware, validation, business logic, database access, and asynchronous processing.
 
 Core objectives
 
-* Consistent REST API responses and HTTP status codes.
-* Centralized request validation and error handling.
-* Secure authentication and authorization.
-* PostgreSQL-backed data persistence.
+* Consistent REST responses and HTTP status codes.
+* Centralized validation and error handling.
+* Secure authentication and resource-level authorization.
+* PostgreSQL-backed persistence.
 * Auditable administrative and application workflows.
-* Asynchronous processing for time-consuming operations.
-* OpenAPI documentation for integration and testing.
-* Configurable deployment for development, staging, and production.
+* Reliable asynchronous job processing.
+* OpenAPI-based API documentation.
+* Configurable development, staging, and production environments.
+* Automated testing and deployment verification.
+
+Implementation rule: This README describes the intended architecture. The actual application entry point, route definitions, services, migrations, and package.json remain the source of truth for implemented behavior.
 
 2. Directory structure
 
-The following is a recommended structure. Retain existing project files and adjust paths to match the actual repository.
+The following is a recommended structure. Preserve existing project files and adapt paths to the actual repository.
 
 api/
 ├── README.md
 ├── openapi.yaml
 ├── worker.js
-│
 ├── config/
 │   ├── database.js
 │   ├── environment.js
 │   └── security.js
-│
 ├── controllers/
 │   ├── auth.controller.js
 │   ├── application.controller.js
 │   ├── notification.controller.js
 │   ├── document.controller.js
 │   └── admin.controller.js
-│
 ├── middleware/
 │   ├── auth.js
 │   ├── error-handler.js
 │   ├── rate-limit.js
 │   ├── request-id.js
 │   └── validation.js
-│
 ├── routes/
 │   ├── auth.routes.js
 │   ├── application.routes.js
 │   ├── notification.routes.js
 │   ├── document.routes.js
 │   └── admin.routes.js
-│
 ├── services/
 │   ├── application-service.js
 │   ├── audit-service.js
 │   ├── notification-service.js
 │   └── README.md
-│
 ├── validators/
 │   ├── auth.validator.js
 │   ├── application.validator.js
 │   └── document.validator.js
-│
 ├── jobs/
 │   └── README.md
-│
 ├── tests/
 │   ├── unit/
 │   ├── integration/
 │   └── security/
-│
 └── migrations/
     └── README.md
 
-Important: This is a reference layout, not a claim that every listed file already exists. Keep the filenames and module paths consistent with the actual codebase.
+Not every listed file is guaranteed to exist. Check the repository before importing modules, registering routes, or creating additional files. Keep directory names and import paths consistent with the actual codebase.
 
 3. Technology stack
 
-Component	Purpose
+Component	Responsibility
 Node.js 20+	JavaScript runtime
 Express	HTTP routing and middleware
-PostgreSQL	Relational data storage
+PostgreSQL	Relational persistence
 pg	PostgreSQL connection pooling
 OpenAPI 3.1	API contract and documentation
 Background worker	Asynchronous job execution
-Automated tests	Regression and security verification
+Automated tests	Regression, integration, and security verification
 
-Use the versions declared in the root package.json and lockfile as the source of truth.
+Use the root package.json and lockfile as the authoritative sources for dependency versions and scripts.
 
 4. API base URL
 
-Configure the base URL according to the deployment environment.
+Configure the base URL for each deployment environment.
 
 Environment	Example
 Local development	http://localhost:3000/api
 Staging	https://staging.example.com/api
 Production	https://api.example.com/api
 
-The production hostnames above are examples. Replace them with the actual configured domains.
+These hostnames are examples only. Replace them with the actual configured domains before publishing documentation.
 
-The Express application should mount API routes consistently, for example:
+Route registration
+
+Routes should be mounted consistently in the Express application. For example:
 
 app.use(‘/api/auth’, authRoutes);
 app.use(‘/api/applications’, applicationRoutes);
 app.use(‘/api/notifications’, notificationRoutes);
 
-Only mount routes that exist and export valid Express routers.
+Register only modules that exist and export valid Express routers. Verify whether the application mounts routes at /api centrally or uses complete prefixes in individual registrations; do not accidentally duplicate the prefix.
 
-5. API documentation
+5. OpenAPI documentation
 
-The OpenAPI specification is maintained at:
+The API specification is maintained at api/openapi.yaml.
 
-api/openapi.yaml
+It should document:
 
-Use it as the API contract for documenting endpoints, request bodies, response schemas, authentication, and error formats.
+* Available endpoints and HTTP methods.
+* Path and query parameters.
+* Request-body and response schemas.
+* Authentication requirements.
+* Success and error responses.
+* Pagination and filtering behavior.
+* Upload constraints where applicable.
+* Relevant security schemes and server URLs.
 
-Before publishing the specification:
+Before publishing
 
-1. Verify every documented endpoint against the Express route definitions.
-2. Confirm HTTP methods and parameter names.
-3. Match request and response schemas to the actual controllers.
-4. Confirm authentication requirements for each endpoint.
-5. Remove placeholder hostnames and examples from production documentation.
-6. Test the specification with an OpenAPI validator.
+1. Compare every documented endpoint against the actual Express routes.
+2. Verify HTTP methods, route prefixes, and parameter names.
+3. Match request and response schemas to controller behavior.
+4. Confirm authentication and authorization requirements.
+5. Replace example server URLs with environment-appropriate values.
+6. Validate the OpenAPI document using a compatible validator.
+7. Run integration tests against the documented contract.
 
-The specification documents intended API behavior; it does not automatically create Express routes.
+The OpenAPI specification describes an API contract. It does not automatically register routes or implement controller logic.
 
 6. Environment configuration
 
-Configure secrets through deployment environment variables or a secret manager. Never commit real credentials.
+Store secrets in deployment environment variables or a secret manager. Never commit real credentials to source control.
 
-Core variables
-
-Variable	Required	Purpose
+Variable	Requirement	Purpose
 NODE_ENV	Recommended	Runtime environment
 PORT	Deployment-dependent	HTTP server port
-DATABASE_URL	Yes for PostgreSQL	Database connection string
-SESSION_SECRET	If sessions are used	Signs session identifiers
-JWT_SECRET	If symmetric JWT signing is used	Signs and verifies JWTs
-JWT_PUBLIC_KEY	If asymmetric JWT verification is used	Verifies signed tokens
-ADMIN_TOKEN	Only for a specifically designed token-based admin integration	Restricted administrative authentication
-AI_API_KEY	If AI integration is enabled	External AI service authentication
+DATABASE_URL	Required for PostgreSQL access	Database connection string
+SESSION_SECRET	If session-based authentication is used	Signs session identifiers
+JWT_SECRET	If symmetric JWT signing is used	Signs and verifies tokens
+JWT_PUBLIC_KEY	If asymmetric verification is used	Verifies signed tokens
+ADMIN_TOKEN	Only for a deliberately designed token-based integration	Restricted administrative access
+AI_API_KEY	If AI integration is enabled	External AI authentication
 AI_API_URL	If AI integration is enabled	AI provider endpoint
-AI_MODEL	If AI integration is enabled	Configured AI model
-DATABASE_SSL	Optional	Enables the worker’s TLS configuration when set to true
-WORKER_CONCURRENCY	Optional	Maximum configured worker concurrency
-WORKER_POLL_INTERVAL_MS	Optional	Background-job polling interval
-WORKER_MAX_ATTEMPTS	Optional	Maximum attempts for a job
+AI_MODEL	If AI integration is enabled	Configured model identifier
+DATABASE_SSL	If supported by the implementation	Enables worker database TLS configuration
+WORKER_CONCURRENCY	Optional	Maximum concurrent worker jobs
+WORKER_POLL_INTERVAL_MS	Optional	Worker polling interval
+WORKER_MAX_ATTEMPTS	Optional	Maximum job attempts
 WORKER_RETRY_BASE_MS	Optional	Initial retry backoff
 WORKER_STALE_JOB_MS	Optional	Processing lease timeout
 WORKER_SHUTDOWN_TIMEOUT_MS	Optional	Worker shutdown wait limit
 
-Use one consistent authentication strategy. Do not assume JWT_SECRET, JWT_PUBLIC_KEY, or ADMIN_TOKEN is active merely because it exists in the environment.
+These names are configuration references, not proof that every variable is currently read by the application. Confirm the actual environment parser and worker implementation before relying on them.
 
-Example local configuration
+Use one consistent authentication strategy. Do not assume that a configured secret is active merely because it exists in the environment.
 
-Create a local .env file only if the application loads environment variables from it:
+Local environment example
+
+Create a local .env file only if the application loads environment files.
 
 NODE_ENV=development
 PORT=3000
@@ -176,25 +181,28 @@ WORKER_RETRY_BASE_MS=1000
 WORKER_STALE_JOB_MS=300000
 WORKER_SHUTDOWN_TIMEOUT_MS=30000
 
-Replace the database placeholders with local credentials. Do not use production credentials in development.
+Replace the database placeholders with local development credentials. Do not use production credentials in development or test environments.
 
 7. Database integration
 
 Connection management
 
-Use a shared PostgreSQL connection pool rather than creating a new pool for each request.
+Use a shared PostgreSQL connection pool instead of creating a new pool for every request.
 
 Recommended practices:
 
-* Parameterize all SQL queries.
-* Keep connection limits appropriate for the deployment.
+* Parameterize SQL queries to prevent SQL injection.
+* Set connection limits appropriate for the deployment.
 * Release checked-out clients in finally blocks.
-* Use transactions for operations that modify multiple related records.
+* Use transactions for related multi-record changes.
 * Apply schema changes through version-controlled migrations.
 * Enable TLS when required by the database provider.
-* Monitor connection exhaustion and query latency.
+* Monitor query latency, connection exhaustion, and database errors.
+* Use separate databases or isolated schemas for automated integration tests.
 
-Example:
+Example PostgreSQL pool
+
+Adapt this example only if the application does not already have a shared pool.
 
 ‘use strict’;
 const { Pool } = require(‘pg’);
@@ -215,11 +223,11 @@ pool.on(‘error’, (error) => {
 });
 module.exports = pool;
 
-Keep this module at the path expected by the application. If a shared pool already exists, reuse it instead of creating a duplicate.
+The example uses CommonJS. If the application uses ES modules, adapt the exports and imports to match its configured module system. Validate numeric environment variables rather than silently accepting invalid pool settings.
 
 Database objects
 
-The current service design may use the following tables, subject to the actual migrations:
+Depending on the actual migrations and services, the application may use tables such as:
 
 * applications
 * application_status_history
@@ -227,42 +235,49 @@ The current service design may use the following tables, subject to the actual m
 * notifications
 * worker_jobs
 
-Before deployment, verify the columns, indexes, constraints, foreign keys, and data types required by every service.
+Verify the required columns, indexes, constraints, foreign keys, and data types against the real schema.
 
-Do not assume that a service’s SQL automatically creates every table it needs. For example, the background worker’s schema initialization creates worker_jobs, but it does not create the application’s other tables.
+Do not assume that a service automatically creates all the tables it needs. For example, worker schema initialization may create worker_jobs without creating the application, notification, or audit tables.
+
+Transactions and migrations
+
+Use transactions for operations that must succeed or fail together. Where a transaction uses a checked-out client, execute all statements through that client and release it in a finally block.
+
+Migrations should be version-controlled, reviewed, and applied through a repeatable deployment process. Avoid ad hoc production schema changes.
 
 8. Middleware responsibilities
 
-Middleware should run in a predictable order.
+Middleware should execute in a deliberate, documented order. A typical sequence is:
 
-1. Request ID and structured request logging.
+1. Request ID generation and structured request logging.
 2. Security headers and CORS policy.
-3. Request body parsing with appropriate size limits.
+3. Request-body parsing with size limits.
 4. Rate limiting.
 5. Authentication.
 6. Role-based authorization.
 7. Request validation.
-8. Route handler.
+8. Route handlers.
 9. Centralized error handling.
 
-Validation middleware
+The exact order must reflect the application’s security model. For example, public authentication routes may use different rate limits from authenticated application routes.
 
-middleware/validation.js should validate incoming parameters, query strings, and request bodies before business logic executes.
+Validation requirements
 
-Validation requirements:
+Validation middleware should:
 
-* Reject malformed identifiers.
-* Enforce field types, lengths, and permitted values.
+* Validate path parameters, query strings, and request bodies.
+* Reject malformed identifiers and invalid data types.
+* Enforce field lengths and permitted values.
 * Reject unexpected fields where strict schemas are required.
-* Normalize input only where normalization is appropriate.
-* Avoid logging passwords, tokens, uploaded documents, or sensitive personal data.
-* Return a consistent validation-error response.
+* Normalize input only where appropriate.
+* Return consistent validation errors.
+* Avoid logging credentials, tokens, uploaded documents, or unnecessary personal data.
 
-Validation does not replace authorization. A valid user ID supplied by a client must not grant access to another user’s records.
+Validation does not replace authorization. A syntactically valid user ID supplied by a client must not grant access to another user’s records.
 
-9. Service layer
+9. Service-layer responsibilities
 
-Business logic belongs in services rather than being duplicated across controllers.
+Keep business logic in services rather than duplicating it across controllers.
 
 Application service
 
@@ -270,8 +285,8 @@ Responsibilities may include:
 
 * Creating and retrieving applications.
 * Updating editable drafts.
-* Enforcing ownership.
-* Validating allowed status transitions.
+* Enforcing resource ownership.
+* Validating permitted status transitions.
 * Recording status history.
 * Coordinating database transactions.
 
@@ -281,29 +296,27 @@ Responsibilities may include:
 
 * Recording security-relevant actions.
 * Recording application status changes.
-* Capturing actor, action, resource, timestamp, and outcome.
+* Capturing the actor, action, resource, timestamp, and outcome.
 * Restricting audit-log access to authorized personnel.
 * Redacting sensitive metadata.
 
-Audit logs should not store passwords, session cookies, bearer tokens, full payment credentials, or unnecessary document contents.
+Never store passwords, session cookies, bearer tokens, full payment credentials, or unnecessary document contents in audit logs.
 
 Notification service
 
 Responsibilities may include:
 
 * Creating notifications.
-* Listing notifications for the authenticated user.
+* Listing notifications belonging to the authenticated user.
 * Counting unread notifications.
 * Marking individual notifications read or unread.
-* Supporting bulk operations with appropriate ownership checks.
+* Supporting authorized bulk operations.
 
-Always derive the user’s identity from the authenticated request context, not from an untrusted request body.
+Derive user identity from the authenticated request context, not from an untrusted request body.
 
 10. Background worker
 
-Worker entry point:
-
-api/worker.js
+Entry point: api/worker.js
 
 The worker is intended for asynchronous operations that should not block HTTP responses.
 
@@ -315,20 +328,21 @@ Potential job types include:
 * document.process
 * webhook.deliver
 
-Only enable job types with real, tested handlers. A registered type without an implementation must not be treated as successful.
+Enable only job types with implemented and tested handlers. An unknown job type or missing handler must not be reported as successful.
 
-Worker behavior
+Expected worker behavior
 
-* Claims jobs using PostgreSQL row locking.
-* Supports multiple worker processes using FOR UPDATE SKIP LOCKED.
-* Retries failed jobs with exponential backoff and jitter.
-* Recovers jobs whose processing lease has expired.
-* Handles shutdown signals.
-* Emits structured job lifecycle logs.
+* Claim jobs using PostgreSQL row locking.
+* Support multiple worker processes with FOR UPDATE SKIP LOCKED.
+* Retry transient failures with exponential backoff and jitter.
+* Recover jobs whose processing leases have expired.
+* Handle shutdown signals and active-job cancellation where supported.
+* Emit structured lifecycle logs without exposing sensitive payloads.
+* Prevent stale workers from completing jobs after losing their leases.
 
-Run the worker
+Running the worker
 
-Add a script to the root package.json if one does not already exist:
+If a worker script is not already defined in the root package.json, add the following entry to the existing scripts object:
 
 {
   “scripts”: {
@@ -336,52 +350,64 @@ Add a script to the root package.json if one does not already exist:
   }
 }
 
-Then run:
+Merge this entry into the existing file; do not replace the complete package.json with this fragment.
+
+Run the worker from the repository root:
 
 npm run worker
 
-Run the worker as a separate background process in deployment.
+Deploy it as a separate background process when the hosting platform supports separate web and worker services.
 
-Reliability note: Background handlers must be idempotent. A process can perform an external action and crash before marking the job complete. A retry could otherwise repeat the action. Use provider idempotency keys, unique operation records, or equivalent safeguards.
+Reliability and retry safety
+
+Background handlers must be idempotent. A process can perform an external action and crash before marking the job complete, causing the action to run again after a retry.
+
+Use provider idempotency keys, unique operation records, transactional outbox patterns, or equivalent safeguards where appropriate.
+
+Distinguish transient failures from permanent failures. Do not retry invalid payloads, unsupported job types, or authorization failures indefinitely.
+
+Monitor pending-job counts, job age, retry counts, processing duration, and exhausted jobs.
 
 11. Authentication and authorization
 
-Implement authentication centrally and apply role-based access controls to restricted operations.
+Implement authentication centrally and apply authorization to every restricted operation.
 
 Security requirements:
 
-* Hash passwords using a modern password-hashing algorithm.
+* Hash passwords with a modern password-hashing algorithm and appropriate parameters.
 * Use short-lived access tokens or secure sessions.
-* Verify token signature, issuer, audience, and expiration as applicable.
-* Enforce resource ownership in database operations.
-* Apply authorization checks to administrative routes.
+* Verify token signatures and relevant claims, including issuer, audience, and expiration.
+* Enforce resource ownership in database queries or service logic.
+* Apply explicit authorization checks to administrative routes.
 * Rotate and revoke credentials where supported.
-* Never expose secrets in API responses or logs.
-* Use secure, HTTP-only cookies when cookie-based sessions are used.
-* Configure CSRF protection where applicable to the authentication design.
+* Never return secrets in API responses.
+* Use Secure, HttpOnly, and appropriate SameSite cookie attributes for cookie-based sessions.
+* Apply CSRF protection where required by the authentication design.
+* Rate-limit login, password recovery, and other abuse-prone operations.
 
-Do not trust client-supplied role names, user IDs, ownership fields, or application statuses without server-side authorization.
+Never trust client-supplied role names, user IDs, ownership fields, or application statuses without server-side verification.
 
 12. File and document handling
 
-For admissions and official documents:
+For admissions documents and other sensitive uploads:
 
-* Enforce file size limits.
-* Allow only necessary file types.
-* Validate content rather than trusting extensions or MIME headers alone.
-* Generate storage names server-side.
-* Keep private documents outside publicly served directories.
+* Enforce request and file-size limits.
+* Allow only required file types.
+* Validate file content rather than trusting extensions or client-provided MIME types.
+* Generate storage names on the server.
+* Keep private files outside publicly served directories.
 * Use authenticated downloads or short-lived signed URLs.
-* Scan uploads where an appropriate scanning service is available.
-* Record access to sensitive documents.
-* Avoid logging document content or personal identifiers.
-* Apply retention and deletion policies.
+* Scan files where an appropriate malware-scanning service is available.
+* Record access to sensitive documents where required.
+* Avoid logging document contents or unnecessary personal identifiers.
+* Define retention and deletion policies.
+* Prevent path traversal and unauthorized file replacement.
 
-Document upload routes should not be considered production-ready until storage, access control, validation, and malware-handling behavior have been verified.
+Document endpoints are not production-ready until storage, validation, access control, download behavior, and malware-handling procedures have been verified.
 
 13. Error response conventions
 
-Use a consistent JSON error format. The following is an example contract:
+Use a consistent JSON error format. For example:
 
 {
   “error”: {
@@ -391,7 +417,9 @@ Use a consistent JSON error format. The following is an example contract:
   }
 }
 
-Recommended HTTP status codes:
+The field names and structure must match the actual centralized error handler and OpenAPI schemas.
+
+Recommended status codes
 
 Status	Meaning
 200	Successful request
@@ -405,7 +433,7 @@ Status	Meaning
 409	Conflict or invalid state transition
 413	Request or upload too large
 415	Unsupported media type
-422	Semantically invalid input, if used by the API contract
+422	Semantically invalid input, if adopted by the contract
 429	Rate limit exceeded
 500	Unexpected server error
 503	Service temporarily unavailable
@@ -414,41 +442,43 @@ Do not expose stack traces, SQL statements, connection strings, internal filesys
 
 14. Health checks and observability
 
-Provide health endpoints consistent with the actual server implementation.
+Provide health endpoints that match the actual server implementation.
 
 Recommended separation:
 
-* Liveness: confirms that the process is running.
-* Readiness: confirms that required dependencies are available.
-* Worker health: reports whether the background worker is active and able to claim jobs.
+* Liveness: Confirms that the process is running.
+* Readiness: Confirms that required dependencies are available.
+* Worker health: Reports whether the worker is running and able to claim jobs, where this can be monitored reliably.
 
-A health endpoint should not reveal database credentials, secrets, internal topology, or sensitive operational details.
+Health endpoints must not reveal credentials, secrets, internal topology, or sensitive operational details.
 
-Use structured logs with fields such as:
+Structured logging
+
+Useful fields include:
 
 * timestamp
 * level
-* requestId
 * service
 * event
+* requestId
 * durationMs
 * statusCode
 
-Avoid logging full request bodies by default.
+For worker events, consider a job identifier, job type, attempt number, and processing duration. Avoid logging full request bodies, authorization headers, raw job payloads, or document contents.
+
+Configure alerts for elevated error rates, database connectivity failures, stalled workers, repeated job failures, and resource exhaustion.
 
 15. Testing strategy
 
-Organize tests by scope.
-
 Unit tests
 
-Test services and utility functions in isolation:
+Test isolated services and utility functions, including:
 
 * Input validation.
 * Application status transitions.
-* Retry delay calculation.
+* Retry-delay calculation.
 * Notification ownership checks.
-* Audit metadata sanitization.
+* Audit-metadata sanitization.
 * Error normalization.
 
 Integration tests
@@ -458,9 +488,10 @@ Use a dedicated test database to verify:
 * Database transactions and rollbacks.
 * Application creation and updates.
 * Notification read-state changes.
-* Audit event persistence.
+* Audit-event persistence.
 * Worker claiming and retry behavior.
 * Route authentication and authorization.
+* File upload and download access controls.
 
 Security tests
 
@@ -470,12 +501,13 @@ Include checks for:
 * Privilege escalation.
 * SQL injection.
 * Rate-limit enforcement.
-* Token validation failures.
+* Token-validation failures.
 * Sensitive-data leakage.
 * Malformed file uploads.
 * Cross-origin policy errors.
+* Unauthorized access to administrative operations.
 
-Run tests before merging changes or deploying.
+Run tests before merging changes or deploying. Integration tests must not run against production data.
 
 16. Local development
 
@@ -483,34 +515,46 @@ From the repository root:
 
 npm install
 
-Set up the required environment variables and database schema, then start the API using the project’s configured start script.
+Configure the required environment variables and database schema. Start the API using the scripts defined in the root package.json.
 
-For example, if the root package.json defines these scripts:
+For example, if these scripts exist:
 
 npm run dev
 npm run worker
 
-Do not assume a dev script exists until it has been verified in package.json.
+Do not assume a dev, start, migrate, or worker script exists until it has been verified.
+
+Recommended verification sequence
+
+1. Install dependencies from the lockfile.
+2. Confirm required environment variables are present.
+3. Verify database connectivity.
+4. Apply the project’s migrations.
+5. Run unit tests.
+6. Run integration tests against a dedicated test database.
+7. Validate api/openapi.yaml.
+8. Start the API and worker using their configured scripts.
+9. Test health endpoints and representative authenticated requests.
 
 17. Deployment checklist
 
 Before releasing to staging or production:
 
-* [ ]	Confirm the Node.js runtime matches the supported version.
-* [ ]	Install dependencies from the lockfile.
+* [ ]	Confirm the deployed Node.js version is supported.
+* [ ]	Install dependencies reproducibly from the lockfile.
 * [ ]	Configure environment variables and secrets.
-* [ ]	Apply database migrations.
-* [ ]	Verify database connectivity and TLS settings.
+* [ ]	Apply database migrations using the deployment process.
+* [ ]	Verify database connectivity, connection limits, and TLS settings.
 * [ ]	Validate the OpenAPI specification.
-* [ ]	Test authentication and authorization.
-* [ ]	Test rate limiting and input validation.
-* [ ]	Confirm private files are not publicly accessible.
-* [ ]	Configure the API health and readiness checks.
-* [ ]	Configure the worker as a separate process.
-* [ ]	Verify worker handlers and retry safety.
-* [ ]	Configure logging, alerts, and error monitoring.
+* [ ]	Test authentication and resource-level authorization.
+* [ ]	Test rate limiting, validation, and error responses.
+* [ ]	Confirm private documents are not publicly accessible.
+* [ ]	Configure health and readiness checks.
+* [ ]	Deploy the worker as a separate process if required.
+* [ ]	Verify job handlers, retry behavior, and idempotency safeguards.
 * [ ]	Test graceful shutdown and restart recovery.
-* [ ]	Review dependency vulnerabilities.
+* [ ]	Configure logs, alerts, and error monitoring.
+* [ ]	Review dependency vulnerabilities and assess remediation.
 * [ ]	Back up the database and verify recovery procedures.
 
 18. API change policy
@@ -519,31 +563,32 @@ For every endpoint change:
 
 1. Update the route and controller.
 2. Update validation and authorization.
-3. Update the service layer and database migrations if needed.
+3. Update service logic and database migrations if required.
 4. Update api/openapi.yaml.
 5. Add or update automated tests.
 6. Verify success and error response schemas.
-7. Document breaking changes.
+7. Review backward compatibility.
+8. Document breaking changes.
 
-Avoid silently changing response fields, status codes, or authentication requirements for existing clients.
+Avoid silently changing response fields, status codes, pagination behavior, or authentication requirements for existing clients.
 
 19. Troubleshooting
 
 Database connection failure
 
-Check DATABASE_URL, database availability, network access, TLS requirements, and connection limits.
+Check DATABASE_URL, database availability, network access, TLS requirements, credentials, and connection limits. Confirm the API and worker use the intended database.
 
 Worker starts but processes no jobs
 
-Check that pending jobs exist, their available_at timestamps have passed, their statuses are valid, and the worker is connected to the intended database.
+Check that pending jobs exist, their available_at timestamps have passed, their statuses are eligible for processing, and the worker is connected to the correct database. Confirm the configured job types have valid handlers.
 
 Jobs repeatedly fail
 
-Inspect sanitized error logs, handler registration, payload validation, external service credentials, and retry limits. Do not increase retry limits without identifying the underlying failure.
+Inspect sanitized error logs, handler registration, payload validation, external service credentials, and retry limits. Identify the underlying failure before increasing retry limits.
 
 API route returns 404
 
-Confirm the route is registered, the HTTP method is correct, and the application’s mount prefix matches the request URL.
+Verify the route is registered, the HTTP method is correct, and the application mount prefix matches the requested URL. Check for duplicated /api prefixes.
 
 Middleware callback error
 
@@ -551,21 +596,30 @@ Check that imported middleware functions exist and are exported correctly. Expre
 
 OpenAPI endpoint mismatch
 
-Compare api/openapi.yaml with the actual Express router definitions and controller behavior. The documentation alone does not register endpoints.
+Compare api/openapi.yaml with the actual Express router definitions, controllers, validation schemas, and response behavior. Documentation alone does not register endpoints.
+
+Worker repeatedly reprocesses a job
+
+Inspect lease expiration, worker shutdown behavior, heartbeat failures, and handler idempotency. Check whether the external operation succeeded before the worker recorded completion.
 
 20. Maintenance principles
 
 * Keep controllers thin and services focused.
-* Use explicit database transactions for multi-record changes.
+* Use explicit transactions for related database changes.
 * Prefer migrations over ad hoc production schema changes.
-* Validate at system boundaries.
+* Validate all untrusted input at system boundaries.
 * Enforce authorization at the resource level.
 * Keep API contracts and automated tests synchronized.
 * Use idempotent background processing.
 * Store secrets outside source control.
-* Minimize sensitive data collection and retention.
-* Document operational changes alongside code changes.
+* Minimize sensitive-data collection and retention.
+* Maintain operational documentation alongside code changes.
+* Verify implementation claims against the actual repository.
 
 ⸻
 
-Source of truth: The actual Express entry point, route files, service implementations, database migrations, and root package.json determine the behavior of the deployed API. This README describes the intended architecture and must be reconciled with those files before being treated as an exact inventory of implemented features.
+Source of truth
+
+The actual Express entry point, route files, middleware, service implementations, database migrations, worker handlers, and root package.json determine the behavior of the deployed API.
+
+This README documents the intended architecture and operational practices. Reconcile it with the actual repository before treating it as an exact inventory of implemented functionality.

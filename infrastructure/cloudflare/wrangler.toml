@@ -1,1 +1,56 @@
-# MedOrbits configuration starter.
+
+# MedOrbits -- Cloudflare Wrangler Configuration
+# File: infrastructure/cloudflare/wrangler.toml
+#
+# Purpose:
+# - Configure a Cloudflare Worker for static asset delivery.
+# - Keep staging and production deployment settings separate.
+# - Avoid storing credentials in source control.
+#
+# IMPORTANT:
+# - Verify the asset build directory before deploying.
+# - This configuration does not deploy the Express.js API.
+# - Do not expose the repository root as a public asset directory.
+
+name = "medorbits"
+compatibility_date = "2026-10-26"
+workers_dev = false
+
+# Static website build output.
+# Change this path if your frontend build uses another directory.
+# Ensure the directory contains only files intended for public access.
+assets = { directory = "../../dist", binding = "ASSETS" }
+
+# Enable Cloudflare Workers observability.
+[observability]
+enabled = true
+
+# Non-secret application settings only.
+[vars]
+APP_NAME = "MedOrbits"
+APP_ENV = "production"
+
+# Configure your actual production domain in the Cloudflare dashboard,
+# or uncomment and replace the route below after verifying DNS and zone setup.
+#
+# routes = [
+#   { pattern = "www.medorbits.in/*", zone_name = "medorbits.in" },
+#   { pattern = "medorbits.in/*", zone_name = "medorbits.in" }
+# ]
+
+# --------------------------------------------------
+# Staging environment
+# Deploy explicitly with:
+# npx wrangler deploy --env staging
+# --------------------------------------------------
+
+[env.staging]
+name = "medorbits-staging"
+workers_dev = true
+
+[env.staging.vars]
+APP_NAME = "MedOrbits"
+APP_ENV = "staging"
+
+[env.staging.observability]
+enabled = true

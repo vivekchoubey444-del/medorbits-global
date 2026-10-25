@@ -23,12 +23,14 @@
     "title": {
       "type": "string",
       "minLength": 3,
-      "maxLength": 200
+      "maxLength": 200,
+      "pattern": "\\S"
     },
     "description": {
       "type": "string",
       "minLength": 20,
-      "maxLength": 20000
+      "maxLength": 20000,
+      "pattern": "\\S"
     },
     "summary": {
       "type": "string",
@@ -99,6 +101,7 @@
     "experience": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "minimumYears": {
           "type": "number",
@@ -119,11 +122,15 @@
     "organization": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 200
+          "maxLength": 200,
+          "pattern": "\\S"
         },
         "type": {
           "type": "string",
@@ -156,19 +163,18 @@
           "type": "string",
           "maxLength": 2000
         }
-      },
-      "required": [
-        "name"
-      ]
+      }
     },
     "location": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "country": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 100
+          "maxLength": 100,
+          "pattern": "\\S"
         },
         "countryCode": {
           "type": "string",
@@ -197,18 +203,20 @@
         "remoteEligibleCountries": {
           "type": "array",
           "uniqueItems": true,
+          "maxItems": 100,
           "items": {
             "type": "string",
             "minLength": 2,
-            "maxLength": 100
-          },
-          "maxItems": 100
+            "maxLength": 100,
+            "pattern": "\\S"
+          }
         }
       }
     },
     "salary": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "minimum": {
           "type": "number",
@@ -221,7 +229,7 @@
         "currency": {
           "type": "string",
           "pattern": "^[A-Z]{3}$",
-          "description": "ISO 4217 currency code, such as INR or USD."
+          "description": "Three-letter currency code, such as INR or USD. Validate against ISO 4217 in application logic."
         },
         "period": {
           "type": "string",
@@ -243,48 +251,56 @@
         "additionalBenefits": {
           "type": "array",
           "uniqueItems": true,
+          "maxItems": 30,
           "items": {
             "type": "string",
             "maxLength": 200
-          },
-          "maxItems": 30
+          }
         }
       }
     },
     "requirements": {
       "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
       "items": {
         "type": "string",
         "minLength": 2,
-        "maxLength": 1000
-      },
-      "maxItems": 100,
-      "uniqueItems": true
+        "maxLength": 1000,
+        "pattern": "\\S"
+      }
     },
     "responsibilities": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "string",
         "minLength": 2,
-        "maxLength": 1000
-      },
-      "maxItems": 100
+        "maxLength": 1000,
+        "pattern": "\\S"
+      }
     },
     "qualifications": {
       "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
       "items": {
         "type": "string",
         "minLength": 2,
-        "maxLength": 1000
-      },
-      "maxItems": 100,
-      "uniqueItems": true
+        "maxLength": 1000,
+        "pattern": "\\S"
+      }
     },
     "education": {
       "type": "array",
+      "maxItems": 20,
       "items": {
         "type": "object",
         "additionalProperties": false,
+        "required": [
+          "level",
+          "mandatory"
+        ],
         "properties": {
           "level": {
             "type": "string",
@@ -311,42 +327,39 @@
             "type": "string",
             "maxLength": 500
           }
-        },
-        "required": [
-          "level",
-          "mandatory"
-        ]
-      },
-      "maxItems": 20
+        }
+      }
     },
     "skills": {
       "type": "array",
+      "uniqueItems": true,
+      "maxItems": 100,
       "items": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 100
-      },
-      "uniqueItems": true,
-      "maxItems": 100
+        "maxLength": 100,
+        "pattern": "\\S"
+      }
     },
     "licensesAndCertifications": {
       "type": "array",
+      "uniqueItems": true,
+      "maxItems": 50,
+      "description": "Required professional registrations or certifications, where applicable.",
       "items": {
         "type": "string",
         "minLength": 2,
-        "maxLength": 300
-      },
-      "uniqueItems": true,
-      "maxItems": 50,
-      "description": "Required professional registrations or certifications, where applicable."
+        "maxLength": 300,
+        "pattern": "\\S"
+      }
     },
     "benefits": {
       "type": "array",
+      "maxItems": 50,
       "items": {
         "type": "string",
         "maxLength": 300
-      },
-      "maxItems": 50
+      }
     },
     "openings": {
       "type": "integer",
@@ -382,12 +395,12 @@
     },
     "requiredDocuments": {
       "type": "array",
+      "uniqueItems": true,
+      "maxItems": 50,
       "items": {
         "type": "string",
         "maxLength": 200
-      },
-      "uniqueItems": true,
-      "maxItems": 50
+      }
     },
     "status": {
       "type": "string",
@@ -408,17 +421,19 @@
     },
     "tags": {
       "type": "array",
+      "uniqueItems": true,
+      "maxItems": 30,
       "items": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 50
-      },
-      "uniqueItems": true,
-      "maxItems": 30
+        "maxLength": 50,
+        "pattern": "\\S"
+      }
     },
     "recruiter": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "name": {
           "type": "string",
@@ -438,6 +453,7 @@
     "moderation": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "reviewed": {
           "type": "boolean",
@@ -479,7 +495,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Optional application-specific metadata.",
+      "description": "Optional application-specific metadata. Keep this restricted to trusted internal data.",
       "additionalProperties": true
     }
   },
@@ -496,27 +512,23 @@
     {
       "if": {
         "properties": {
-          "salary": {
-            "type": "object",
+          "experience": {
             "required": [
-              "minimum",
-              "maximum"
+              "minimumYears",
+              "maximumYears"
             ]
           }
         },
         "required": [
-          "salary"
+          "experience"
         ]
       },
       "then": {
         "properties": {
-          "salary": {
+          "experience": {
             "properties": {
-              "minimum": {
-                "type": "number"
-              },
-              "maximum": {
-                "type": "number"
+              "maximumYears": {
+                "minimum": 0
               }
             }
           }
@@ -548,7 +560,7 @@
           }
         },
         "required": [
-          "applicationMethod"
+          "applicationEmail"
         ]
       },
       "then": {
@@ -576,4 +588,3 @@
     }
   ]
 }
-

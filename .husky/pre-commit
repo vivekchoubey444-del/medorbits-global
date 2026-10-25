@@ -17,11 +17,6 @@
 #   format:check
 #   test
 #
-# Exit codes:
-#   0 = All applicable checks passed.
-#   1 = A required check failed or validation setup was invalid.
-#   2 = Invalid command-line usage.
-#
 # Requirements:
 #   - Git repository
 #   - Node.js >= 20
@@ -78,6 +73,7 @@ MedOrbits Pre-commit Validation
 
 Usage:
   $PROGRAM_NAME
+  $PROGRAM_NAME --help
 
 Environment:
   MEDORBITS_PRECOMMIT_FULL=0|1
@@ -93,7 +89,6 @@ Full mode:
 
 Examples:
   git commit -m "fix(api): validate application input"
-
   MEDORBITS_PRECOMMIT_FULL=1 git commit -m "test(api): add validation coverage"
 EOF
 }
@@ -118,7 +113,7 @@ case "$full_mode" in
     0|1)
         ;;
     *)
-        die "MEDORBITS_PRECOMMIT_FULL must be 0 or 1."
+        die "MEDORBITS_PRECOMMIT_FULL must be 0 or 1." 2
         ;;
 esac
 
@@ -148,12 +143,8 @@ info "Repository root: $repo_root"
 # 4. Validate project files and tools
 # ------------------------------------------------------------------------------
 
-if [ ! -f package.json ]; then
-    die "package.json was not found at the repository root."
-fi
-
-if [ ! -r package.json ]; then
-    die "package.json is not readable."
+if [ ! -f package.json ] || [ ! -r package.json ]; then
+    die "A readable package.json is required at the repository root."
 fi
 
 if ! command -v node >/dev/null 2>&1; then
@@ -170,8 +161,9 @@ fi
 
 section "Checking runtime"
 
-node_version=$(node -p 'process.versions.node' 2>/dev/null) ||
+if ! node_version=$(node -p 'process.versions.node' 2>/dev/null); then
     die "Unable to determine the Node.js version."
+fi
 
 node_major=${node_version%%.*}
 
@@ -185,8 +177,9 @@ if [ "$node_major" -lt 20 ]; then
     die "Node.js >= 20 is required. Current version: $node_version"
 fi
 
-npm_version=$(npm --version 2>/dev/null) ||
+if ! npm_version=$(npm --version 2>/dev/null); then
     die "Unable to determine the npm version."
+fi
 
 info "PASS: Node.js $node_version"
 info "PASS: npm $npm_version"
@@ -219,15 +212,17 @@ if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg)) {
     fail("package.json must contain a JSON object.");
 }
 
-if (
-    pkg.scripts !== undefined &&
-    (
-        pkg.scripts === null ||
-        typeof pkg.scripts !== "object" ||
-        Array.isArray(pkg.scripts)
-    )
-) {
-    fail("The scripts field must be an object when present.");
+for (const key of ["scripts", "engines"]) {
+    if (
+        pkg[key] !== undefined &&
+        (
+            pkg[key] === null ||
+            typeof pkg[key] !== "object" ||
+            Array.isArray(pkg[key])
+        )
+    ) {
+        fail(`The ${key} field must be an object when present.`);
+    }
 }
 
 if (
@@ -239,6 +234,14 @@ if (
     )
 ) {
     fail("Every npm script must have a string value.");
+}
+
+if (
+    pkg.engines &&
+    pkg.engines.node !== undefined &&
+    typeof pkg.engines.node !== "string"
+) {
+    fail("engines.node must be a string when specified.");
 }
 
 console.log("PASS: package.json is valid.");
@@ -290,9 +293,7 @@ try {
             : 1
     );
 } catch (error) {
-    console.error(
-        `ERROR: Unable to inspect package.json: ${error.message}`
-    );
+    console.error(`ERROR: Unable to inspect package.json: ${error.message}`);
     process.exit(2);
 }
 ' "$1"
@@ -342,7 +343,6 @@ run_check() {
         if [ "$required" -eq 1 ]; then
             checks_required=$((checks_required + 1))
             checks_failed=$((checks_failed + 1))
-
             error "Required npm script '$script_name' is missing."
             error "Add a real validation script to package.json."
             exit 1
@@ -360,11 +360,10 @@ run_check() {
             checks_required=$((checks_required + 1))
         fi
 
-        printf '\n%s\n' "PASS: $check_name"
+        info "PASS: $check_name"
     else
         script_status=$?
         checks_failed=$((checks_failed + 1))
-
         error "$check_name failed with exit status $script_status."
         error "Commit blocked because validation did not pass."
         exit 1
@@ -381,8 +380,6 @@ run_check "ESLint" "lint" 0
 
 # ------------------------------------------------------------------------------
 # 10. Full validation mode
-#
-# Formatting and tests are mandatory when full mode is explicitly enabled.
 # ------------------------------------------------------------------------------
 
 section "Full validation"

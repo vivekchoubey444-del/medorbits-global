@@ -14,9 +14,12 @@
  * Security:
  *   - Uses synthetic data only.
  *   - Separates normal client payloads from server-managed fields.
- *   - Does not establish ownership, permissions, or authenticated sessions.
- *   - Does not create database records or physical files.
+ *   - Does not create database records, sessions, or physical files.
+ *   - Does not establish authentication, ownership, or permissions.
  *   - Does not replace production validation or authorization.
+ *
+ * Module format:
+ *   CommonJS.
  */
 
 const CANDIDATE_STATUSES = Object.freeze({
@@ -40,11 +43,11 @@ const CANDIDATE_TYPES = Object.freeze({
 });
 
 const CANDIDATE_STATUS_VALUES = Object.freeze(
-  Object.values(CANDIDATE_STATUSES)
+  Object.values(CANDIDATE_STATUSES),
 );
 
 const CANDIDATE_TYPE_VALUES = Object.freeze(
-  Object.values(CANDIDATE_TYPES)
+  Object.values(CANDIDATE_TYPES),
 );
 
 const SERVER_MANAGED_FIELDS = Object.freeze([
@@ -111,6 +114,15 @@ const DEFAULT_RESUME = Object.freeze({
   uploadedAt: '2026-10-01T08:45:00.000Z',
 });
 
+const MAX_SET_SIZE = 1000;
+const MAX_DEPTH = 50;
+
+const FORBIDDEN_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
+
 /**
  * Assert that a value is a plain object.
  *
@@ -142,47 +154,104 @@ function assertPlainObject(value, label) {
  *
  * @param {unknown} value
  * @param {string} label
- * @returns {void}
+ * @returns {string}
  */
 function assertNonEmptyString(value, label) {
-  if (
-    typeof value !== 'string'
-    || value.trim() === ''
-  ) {
+  if (typeof value !== 'string' || value.trim() === '') {
     throw new TypeError(`${label} must be a non-empty string`);
-  }
-}
-
-/**
- * Recursively clone fixture values.
- *
- * Supports primitives, arrays, and plain objects.
- * Rejects class instances and other non-plain object values.
- *
- * @param {*} value
- * @returns {*}
- */
-function clone(value) {
-  if (Array.isArray(value)) {
-    return value.map(clone);
-  }
-
-  if (value !== null && typeof value === 'object') {
-    assertPlainObject(value, 'Fixture values');
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        clone(item),
-      ])
-    );
   }
 
   return value;
 }
 
 /**
- * Clone an array of plain-object records.
+ * Recursively clone JSON-compatible fixture data.
+ *
+ * Rejects circular references, accessors, unsupported object types,
+ * dangerous property names, non-finite numbers, and excessive depth.
+ *
+ * @param {unknown} value
+ * @param {string} [label]
+ * @param {WeakSet<object>} [ancestors]
+ * @param {number} [depth]
+ * @returns {any}
+ */
+function clone(value, label = 'Fixture value', ancestors = new WeakSet(), depth = 0) {
+  if (depth > MAX_DEPTH) {
+    throw new RangeError(`${label} exceeds maximum nesting depth`);
+  }
+
+  if (
+    value === null
+    || typeof value === 'string'
+    || typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new TypeError(`${label} contains a non-finite number`);
+    }
+
+    return value;
+  }
+
+  if (typeof value !== 'object') {
+    throw new TypeError(`${label} contains an unsupported value`);
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError(`${label} must not contain circular references`);
+  }
+
+  ancestors.add(value);
+
+  try {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => (
+        clone(item, `${label}[${index}]`, ancestors, depth + 1)
+      ));
+    }
+
+    assertPlainObject(value, label);
+
+    const result = Object.create(null);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== 'string') {
+        throw new TypeError(`${label} must not contain symbol keys`);
+      }
+
+      if (FORBIDDEN_KEYS.has(key)) {
+        throw new TypeError(`${label} contains a prohibited property name`);
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (
+        !descriptor
+        || !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+      ) {
+        throw new TypeError(`${label}.${key} must be a data property`);
+      }
+
+      result[key] = clone(
+        descriptor.value,
+        `${label}.${key}`,
+        ancestors,
+        depth + 1,
+      );
+    }
+
+    return result;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
+/**
+ * Validate and clone an array of record objects.
  *
  * @param {unknown} value
  * @param {string} label
@@ -195,14 +264,14 @@ function cloneRecordArray(value, label) {
 
   return value.map((record, index) => {
     assertPlainObject(record, `${label}[${index}]`);
-    return clone(record);
+    return clone(record, `${label}[${index}]`);
   });
 }
 
 /**
  * Validate a candidate status.
  *
- * @param {string} status
+ * @param {unknown} status
  * @returns {string}
  */
 function assertCandidateStatus(status) {
@@ -216,84 +285,86 @@ function assertCandidateStatus(status) {
 /**
  * Validate a candidate type.
  *
- * @param {string} candidateType
+ * @param {unknown} candidateType
  * @returns {string}
  */
 function assertCandidateType(candidateType) {
   if (!CANDIDATE_TYPE_VALUES.includes(candidateType)) {
-    throw new RangeError(
-      `Unsupported candidate type: ${candidateType}`
-    );
+    throw new RangeError(`Unsupported candidate type: ${candidateType}`);
   }
 
   return candidateType;
 }
 
 /**
- * Merge profile overrides and independently clone location data.
+ * Merge plain-object values without retaining mutable references.
  *
  * @param {object} base
+ * @param {object} overrides
+ * @param {string} label
+ * @returns {object}
+ */
+function mergeObject(base, overrides, label) {
+  assertPlainObject(overrides, label);
+
+  return {
+    ...clone(base, `${label} defaults`),
+    ...clone(overrides, label),
+  };
+}
+
+/**
+ * Merge profile overrides and independently clone location data.
+ *
  * @param {object} overrides
  * @param {string} [label]
  * @returns {object}
  */
-function mergeProfile(
-  base,
-  overrides,
-  label = 'Profile overrides'
-) {
+function mergeProfile(overrides = {}, label = 'Profile overrides') {
   assertPlainObject(overrides, label);
 
-  if (overrides.location !== undefined) {
-    assertPlainObject(
-      overrides.location,
-      `${label}.location`
-    );
+  const safeOverrides = clone(overrides, label);
+
+  const base = clone(DEFAULT_PROFILE, 'Default profile');
+
+  if (safeOverrides.location !== undefined) {
+    assertPlainObject(safeOverrides.location, `${label}.location`);
   }
 
   return {
-    ...clone(base),
-    ...clone(overrides),
+    ...base,
+    ...safeOverrides,
     location: {
-      ...clone(base.location || {}),
-      ...clone(overrides.location || {}),
+      ...base.location,
+      ...clone(safeOverrides.location || {}, `${label}.location`),
     },
   };
 }
 
 /**
- * Merge professional details.
+ * Merge professional details and validate known array fields.
  *
- * Nested arrays are cloned and checked for the expected array shape.
- *
- * @param {object} base
  * @param {object} overrides
  * @param {string} [label]
  * @returns {object}
  */
 function mergeProfessional(
-  base,
-  overrides,
-  label = 'Professional overrides'
+  overrides = {},
+  label = 'Professional overrides',
 ) {
-  assertPlainObject(overrides, label);
-
-  const result = {
-    ...clone(base),
-    ...clone(overrides),
-  };
+  const result = mergeObject(
+    DEFAULT_PROFESSIONAL,
+    overrides,
+    label,
+  );
 
   for (const field of [
     'skills',
     'preferredEmploymentTypes',
     'preferredLocations',
   ]) {
-    if (result[field] !== undefined && !Array.isArray(result[field])) {
+    if (!Array.isArray(result[field])) {
       throw new TypeError(`${label}.${field} must be an array`);
-    }
-
-    if (Array.isArray(result[field])) {
-      result[field] = clone(result[field]);
     }
   }
 
@@ -301,34 +372,23 @@ function mergeProfessional(
 }
 
 /**
- * Merge consent details.
+ * Merge consent metadata.
  *
  * This helper does not establish that consent was lawfully obtained.
  *
- * @param {object} base
  * @param {object} overrides
  * @param {string} [label]
  * @returns {object}
  */
-function mergeConsent(
-  base,
-  overrides,
-  label = 'Consent overrides'
-) {
-  assertPlainObject(overrides, label);
-
-  return {
-    ...clone(base),
-    ...clone(overrides),
-  };
+function mergeConsent(overrides = {}, label = 'Consent overrides') {
+  return mergeObject(DEFAULT_CONSENT, overrides, label);
 }
 
 /**
  * Create a fresh candidate record.
  *
- * Top-level overrides are supported. Profile and professional fields
- * are merged with defaults. Nested records and arrays are independently
- * copied to prevent mutations leaking between tests.
+ * This represents test data, not an API request. Server-managed fields
+ * may be overridden deliberately when building test records.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -336,61 +396,41 @@ function mergeConsent(
 function createCandidate(overrides = {}) {
   assertPlainObject(overrides, 'Candidate overrides');
 
-  const candidateType = overrides.candidateType
+  const safeOverrides = clone(overrides, 'Candidate overrides');
+
+  const candidateType = safeOverrides.candidateType
     ?? DEFAULT_CANDIDATE.candidateType;
 
-  const status = overrides.status
+  const status = safeOverrides.status
     ?? DEFAULT_CANDIDATE.status;
 
   assertCandidateType(candidateType);
   assertCandidateStatus(status);
 
   const candidate = {
-    ...clone(DEFAULT_CANDIDATE),
-    ...clone(overrides),
+    ...clone(DEFAULT_CANDIDATE, 'Default candidate'),
+    ...safeOverrides,
     candidateType,
     status,
+    profile: mergeProfile(safeOverrides.profile || {}),
+    professional: mergeProfessional(safeOverrides.professional || {}),
+    consent: mergeConsent(safeOverrides.consent || {}),
   };
 
-  candidate.profile = mergeProfile(
-    DEFAULT_PROFILE,
-    overrides.profile === undefined ? {} : overrides.profile
-  );
-
-  candidate.professional = mergeProfessional(
-    DEFAULT_PROFESSIONAL,
-    overrides.professional === undefined
-      ? {}
-      : overrides.professional
-  );
-
-  candidate.consent = mergeConsent(
-    DEFAULT_CONSENT,
-    overrides.consent === undefined
-      ? {}
-      : overrides.consent
-  );
-
-  for (const field of [
-    'education',
-    'experience',
-    'certifications',
-  ]) {
+  for (const field of ['education', 'experience', 'certifications']) {
     candidate[field] = cloneRecordArray(
-      overrides[field] === undefined
+      safeOverrides[field] === undefined
         ? DEFAULT_CANDIDATE[field]
-        : overrides[field],
-      field
+        : safeOverrides[field],
+      field,
     );
   }
 
-  if (overrides.resume === undefined || overrides.resume === null) {
-    candidate.resume = overrides.resume === null
-      ? null
-      : clone(DEFAULT_CANDIDATE.resume);
+  if (safeOverrides.resume === undefined || safeOverrides.resume === null) {
+    candidate.resume = null;
   } else {
-    assertPlainObject(overrides.resume, 'Resume metadata');
-    candidate.resume = clone(overrides.resume);
+    assertPlainObject(safeOverrides.resume, 'Resume metadata');
+    candidate.resume = clone(safeOverrides.resume, 'Resume metadata');
   }
 
   return candidate;
@@ -399,11 +439,9 @@ function createCandidate(overrides = {}) {
 /**
  * Create a normal client-submittable candidate payload.
  *
- * Server-managed fields are excluded by default:
- * id, candidateNumber, userId, status, createdAt, updatedAt.
- *
- * Explicit overrides are retained to support adversarial tests.
- * The server must enforce its own request-field allowlist.
+ * Server-managed fields are omitted by default. Explicitly supplied
+ * extra fields are retained so tests can exercise mass-assignment
+ * defenses. Production code must independently enforce an allowlist.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -411,76 +449,62 @@ function createCandidate(overrides = {}) {
 function createCandidatePayload(overrides = {}) {
   assertPlainObject(overrides, 'Candidate payload overrides');
 
+  const safeOverrides = clone(overrides, 'Candidate payload overrides');
+
   const payload = {
     candidateType: DEFAULT_CANDIDATE.candidateType,
-    profile: clone(DEFAULT_PROFILE),
-    professional: clone(DEFAULT_PROFESSIONAL),
+    profile: mergeProfile(),
+    professional: mergeProfessional(),
     education: [],
     experience: [],
     certifications: [],
     resume: null,
-    consent: clone(DEFAULT_CONSENT),
-    ...clone(overrides),
+    consent: mergeConsent(),
+    ...safeOverrides,
   };
 
-  payload.candidateType = overrides.candidateType
+  payload.candidateType = safeOverrides.candidateType
     ?? DEFAULT_CANDIDATE.candidateType;
 
   assertCandidateType(payload.candidateType);
 
   payload.profile = mergeProfile(
-    DEFAULT_PROFILE,
-    overrides.profile === undefined ? {} : overrides.profile,
-    'Profile payload overrides'
+    safeOverrides.profile || {},
+    'Profile payload overrides',
   );
 
   payload.professional = mergeProfessional(
-    DEFAULT_PROFESSIONAL,
-    overrides.professional === undefined
-      ? {}
-      : overrides.professional,
-    'Professional payload overrides'
+    safeOverrides.professional || {},
+    'Professional payload overrides',
   );
 
   payload.consent = mergeConsent(
-    DEFAULT_CONSENT,
-    overrides.consent === undefined
-      ? {}
-      : overrides.consent,
-    'Consent payload overrides'
+    safeOverrides.consent || {},
+    'Consent payload overrides',
   );
 
-  for (const field of [
-    'education',
-    'experience',
-    'certifications',
-  ]) {
+  for (const field of ['education', 'experience', 'certifications']) {
     payload[field] = cloneRecordArray(
-      overrides[field] === undefined ? [] : overrides[field],
-      field
+      safeOverrides[field] === undefined ? [] : safeOverrides[field],
+      field,
     );
   }
 
-  if (overrides.resume === undefined || overrides.resume === null) {
-    payload.resume = overrides.resume === null ? null : null;
+  if (safeOverrides.resume === undefined || safeOverrides.resume === null) {
+    payload.resume = null;
   } else {
-    assertPlainObject(
-      overrides.resume,
-      'Resume payload metadata'
-    );
-
-    payload.resume = clone(overrides.resume);
+    assertPlainObject(safeOverrides.resume, 'Resume payload metadata');
+    payload.resume = clone(safeOverrides.resume, 'Resume payload metadata');
   }
 
   return payload;
 }
 
 /**
- * Create multiple candidates with deterministic, unique identities.
+ * Create candidates with deterministic, unique identifiers.
  *
- * Generated ID, candidate number, user ID, default email, default phone,
- * and default last name remain unique within the set unless a caller
- * explicitly overrides those profile identity fields.
+ * Profile identity fields remain unique by default. Explicit profile
+ * overrides intentionally apply to every generated candidate.
  *
  * @param {number} [count=3]
  * @param {object} [overrides={}]
@@ -490,36 +514,32 @@ function createCandidateSet(count = 3, overrides = {}) {
   if (
     !Number.isInteger(count)
     || count < 0
-    || count > 1000
+    || count > MAX_SET_SIZE
   ) {
     throw new RangeError(
-      'Candidate count must be an integer from 0 to 1000'
+      `Candidate count must be an integer from 0 to ${MAX_SET_SIZE}`,
     );
   }
 
   assertPlainObject(overrides, 'Candidate set overrides');
 
-  if (overrides.profile !== undefined) {
-    assertPlainObject(
-      overrides.profile,
-      'Candidate set profile overrides'
-    );
-  }
+  const safeOverrides = clone(overrides, 'Candidate set overrides');
 
-  const commonOverrides = clone(overrides);
+  const {
+    profile: profileOverrides = {},
+    id: ignoredId,
+    candidateNumber: ignoredCandidateNumber,
+    userId: ignoredUserId,
+    ...commonOverrides
+  } = safeOverrides;
 
-  delete commonOverrides.id;
-  delete commonOverrides.candidateNumber;
-  delete commonOverrides.userId;
-
-  const profileOverrides = commonOverrides.profile || {};
-  delete commonOverrides.profile;
+  assertPlainObject(profileOverrides, 'Candidate set profile overrides');
 
   return Array.from({ length: count }, (_, index) => {
     const sequence = String(index + 1).padStart(4, '0');
 
     const profile = {
-      ...clone(profileOverrides),
+      ...profileOverrides,
       firstName: profileOverrides.firstName ?? 'Test',
       lastName: profileOverrides.lastName ?? `Candidate${index + 1}`,
       email: profileOverrides.email
@@ -541,7 +561,7 @@ function createCandidateSet(count = 3, overrides = {}) {
 /**
  * Create a candidate owned by another synthetic user.
  *
- * Useful for object-level authorization and IDOR tests.
+ * Useful for IDOR and object-level authorization tests.
  *
  * @param {string} [ownerId='user_test_foreign']
  * @param {object} [overrides={}]
@@ -549,22 +569,18 @@ function createCandidateSet(count = 3, overrides = {}) {
  */
 function createForeignCandidate(
   ownerId = 'user_test_foreign',
-  overrides = {}
+  overrides = {},
 ) {
   assertNonEmptyString(ownerId, 'Foreign candidate owner ID');
   assertPlainObject(overrides, 'Foreign candidate overrides');
 
-  const profileOverrides = overrides.profile === undefined
-    ? {}
-    : clone(overrides.profile);
+  const safeOverrides = clone(overrides, 'Foreign candidate overrides');
 
-  assertPlainObject(
-    profileOverrides,
-    'Foreign candidate profile overrides'
-  );
+  const profileOverrides = safeOverrides.profile || {};
+  assertPlainObject(profileOverrides, 'Foreign candidate profile overrides');
 
   return createCandidate({
-    ...clone(overrides),
+    ...safeOverrides,
     id: 'candidate_test_foreign_0001',
     candidateNumber: 'MO-CAND-TEST-FOREIGN-0001',
     userId: ownerId,
@@ -579,10 +595,7 @@ function createForeignCandidate(
 }
 
 /**
- * Create a deliberately hostile payload for mass-assignment tests.
- *
- * Tests should verify that the server rejects or ignores unauthorized
- * server-managed properties.
+ * Create a hostile payload for mass-assignment tests.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -600,7 +613,7 @@ function createMassAssignmentPayload(overrides = {}) {
     isAdmin: true,
     createdAt: '2000-01-01T00:00:00.000Z',
     updatedAt: '2000-01-01T00:00:00.000Z',
-    ...clone(overrides),
+    ...clone(overrides, 'Mass-assignment overrides'),
   };
 }
 
@@ -621,7 +634,7 @@ function createEducationRecord(overrides = {}) {
     startYear: 2020,
     endYear: 2024,
     currentlyStudying: false,
-    ...clone(overrides),
+    ...clone(overrides, 'Education overrides'),
   };
 }
 
@@ -643,7 +656,7 @@ function createExperienceRecord(overrides = {}) {
     endDate: '2025-06-30',
     currentlyWorking: false,
     description: 'Synthetic employment record for automated testing.',
-    ...clone(overrides),
+    ...clone(overrides, 'Experience overrides'),
   };
 }
 
@@ -664,14 +677,14 @@ function createCertificationRecord(overrides = {}) {
     expiryDate: null,
     credentialId: 'TEST-CREDENTIAL-0001',
     credentialUrl: null,
-    ...clone(overrides),
+    ...clone(overrides, 'Certification overrides'),
   };
 }
 
 /**
  * Create synthetic resume metadata.
  *
- * This does not create a physical file or authorize download access.
+ * This helper does not create a file or authorize download access.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -680,15 +693,15 @@ function createResumeMetadata(overrides = {}) {
   assertPlainObject(overrides, 'Resume overrides');
 
   return {
-    ...clone(DEFAULT_RESUME),
-    ...clone(overrides),
+    ...clone(DEFAULT_RESUME, 'Default resume'),
+    ...clone(overrides, 'Resume overrides'),
   };
 }
 
 /**
  * Create a candidate with a selected recruitment status.
  *
- * This helper does not validate whether a workflow transition is permitted.
+ * This helper does not enforce workflow transition rules.
  *
  * @param {string} status
  * @param {object} [overrides={}]
@@ -699,7 +712,7 @@ function createCandidateWithStatus(status, overrides = {}) {
   assertPlainObject(overrides, 'Candidate status overrides');
 
   return createCandidate({
-    ...clone(overrides),
+    ...clone(overrides, 'Candidate status overrides'),
     status,
   });
 }
@@ -707,8 +720,8 @@ function createCandidateWithStatus(status, overrides = {}) {
 /**
  * Create a payload containing server-managed fields.
  *
- * Intended for testing that an API rejects or ignores fields a client
- * must not control.
+ * Intended for tests that verify unauthorized properties are rejected
+ * or ignored by the API.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -716,7 +729,7 @@ function createCandidateWithStatus(status, overrides = {}) {
 function createServerManagedFieldPayload(overrides = {}) {
   assertPlainObject(
     overrides,
-    'Server-managed field payload overrides'
+    'Server-managed field payload overrides',
   );
 
   return {
@@ -727,7 +740,7 @@ function createServerManagedFieldPayload(overrides = {}) {
     status: DEFAULT_CANDIDATE.status,
     createdAt: DEFAULT_CANDIDATE.createdAt,
     updatedAt: DEFAULT_CANDIDATE.updatedAt,
-    ...clone(overrides),
+    ...clone(overrides, 'Server-managed field payload overrides'),
   };
 }
 

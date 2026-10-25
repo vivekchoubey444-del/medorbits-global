@@ -1,5 +1,7 @@
 
 {
+  "$schema": "../../schemas/roles-permissions-fixture.schema.json",
+  "version": "1.1.0",
   "description": "Synthetic MedOrbits roles and permissions for local development and automated authorization tests. Production authorization must be enforced by the server.",
   "roles": [
     {
@@ -50,7 +52,7 @@
     {
       "id": "ROLE-TEST-0003",
       "name": "employer",
-      "description": "Employer permitted to manage their own recruitment listings.",
+      "description": "Employer permitted to manage their own recruitment listings and access job applicants only where authorized.",
       "permissions": [
         "profile:read:self",
         "profile:update:self",
@@ -70,7 +72,7 @@
     {
       "id": "ROLE-TEST-0004",
       "name": "admin",
-      "description": "Administrative role for authorized platform operations.",
+      "description": "Administrative role for authorized platform operations. High-impact actions must use restricted, audited workflows.",
       "permissions": [
         "users:read",
         "users:update",
@@ -137,19 +139,19 @@
     },
     {
       "key": "applications:read:job_applicants",
-      "description": "Read applicant information relevant to the employer's own job listings, subject to privacy controls."
+      "description": "Read only applicant information necessary for the employer's own job listings, subject to consent, privacy controls, and server-side authorization."
     },
     {
       "key": "applications:read",
-      "description": "Read applications when authorized by administrative policy."
+      "description": "Read applications for authorized administrative purposes."
     },
     {
       "key": "applications:update",
-      "description": "Update applications when authorized by administrative policy."
+      "description": "Update applications for authorized administrative purposes."
     },
     {
       "key": "documents:create:self",
-      "description": "Register a document upload for the authenticated user."
+      "description": "Register a document upload for the authenticated user after upload validation."
     },
     {
       "key": "documents:read:self",
@@ -161,15 +163,15 @@
     },
     {
       "key": "documents:read:assigned",
-      "description": "Read document metadata for assigned applicants."
+      "description": "Read document metadata for applicants assigned to the authenticated counsellor."
     },
     {
       "key": "documents:review:assigned",
-      "description": "Review documents belonging to assigned applicants."
+      "description": "Review documents belonging to applicants assigned to the authenticated counsellor."
     },
     {
       "key": "documents:read",
-      "description": "Read documents under administrative policy and audit controls."
+      "description": "Read documents under administrative policy, ownership restrictions, and audit controls."
     },
     {
       "key": "documents:review",
@@ -181,15 +183,15 @@
     },
     {
       "key": "colleges:create",
-      "description": "Create college records."
+      "description": "Create college records through authorized administrative workflows."
     },
     {
       "key": "colleges:update",
-      "description": "Update college records."
+      "description": "Update college records through authorized administrative workflows."
     },
     {
       "key": "colleges:archive",
-      "description": "Archive college records."
+      "description": "Archive college records through authorized administrative workflows."
     },
     {
       "key": "courses:read",
@@ -197,15 +199,15 @@
     },
     {
       "key": "courses:create",
-      "description": "Create course records."
+      "description": "Create course records through authorized administrative workflows."
     },
     {
       "key": "courses:update",
-      "description": "Update course records."
+      "description": "Update course records through authorized administrative workflows."
     },
     {
       "key": "courses:archive",
-      "description": "Archive course records."
+      "description": "Archive course records through authorized administrative workflows."
     },
     {
       "key": "subscriptions:read:self",
@@ -213,7 +215,7 @@
     },
     {
       "key": "subscriptions:read",
-      "description": "Read subscription records when authorized."
+      "description": "Read subscription records for authorized administrative purposes."
     },
     {
       "key": "payments:read:self",
@@ -221,7 +223,7 @@
     },
     {
       "key": "payments:read",
-      "description": "Read payment records when authorized."
+      "description": "Read payment records for authorized administrative purposes."
     },
     {
       "key": "jobs:create:self",
@@ -249,7 +251,7 @@
     },
     {
       "key": "users:suspend",
-      "description": "Suspend user access under administrative policy."
+      "description": "Suspend user access through an authorized, audited workflow."
     },
     {
       "key": "roles:read",
@@ -272,7 +274,8 @@
     "source": "fixture",
     "environment": "test",
     "synthetic": true,
+    "productionEligible": false,
     "verified": false,
-    "securityNote": "Test definitions only. Enforce permissions server-side, check record ownership and assignments, apply least privilege, and audit sensitive actions."
+    "securityNote": "Test definitions only. Enforce permissions server-side, validate record ownership and counsellor assignments, apply least privilege, prevent unauthorized role escalation, and audit sensitive actions."
   }
 }

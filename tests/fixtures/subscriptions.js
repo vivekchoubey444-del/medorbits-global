@@ -7,15 +7,16 @@
  * File: tests/fixtures/subscriptions.js
  *
  * Purpose:
- *   Synthetic test data for subscription plans, billing, authorization,
+ *   Synthetic fixtures for subscription plans, billing, authorization,
  *   entitlements, idempotency, cancellation, renewal, and security tests.
  *
  * Security:
- *   - Does not initiate payments, renewals, or access grants.
- *   - Provider IDs are synthetic.
+ *   - Never initiates payments, renewals, or access grants.
+ *   - Provider identifiers are synthetic.
  *   - Client-supplied prices, ownership, statuses, and provider references
  *     must be validated or assigned by trusted server-side logic.
  *   - Fixture expectations are not authorization decisions.
+ *   - Cloning rejects unsafe object shapes and accessor properties.
  */
 
 const SUBSCRIPTION_STATUSES = Object.freeze({
@@ -69,12 +70,23 @@ const SUBSCRIPTION_SERVER_MANAGED_FIELDS = Object.freeze([
   'currentPeriodEnd',
   'trialStart',
   'trialEnd',
+  'cancelAtPeriodEnd',
+  'cancelAt',
   'cancelledAt',
   'endedAt',
   'latestPaymentId',
   'createdAt',
   'updatedAt',
 ]);
+
+const FORBIDDEN_OBJECT_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
+
+const MAX_CLONE_DEPTH = 50;
+const MAX_FIXTURE_COUNT = 1000;
 
 const DEFAULT_SUBSCRIPTION_PLAN = Object.freeze({
   id: 'plan_test_0001',
@@ -169,6 +181,19 @@ function assertNonEmptyString(value, label) {
 }
 
 /**
+ * Validate a boolean.
+ *
+ * @param {*} value
+ * @param {string} label
+ * @returns {void}
+ */
+function assertBoolean(value, label) {
+  if (typeof value !== 'boolean') {
+    throw new TypeError(`${label} must be a boolean`);
+  }
+}
+
+/**
  * Validate a non-negative safe integer.
  *
  * @param {*} value
@@ -200,7 +225,6 @@ function assertPositiveInteger(value, label) {
 
 /**
  * Validate a currency code's format.
- *
  * This does not establish provider support for that currency.
  *
  * @param {*} value
@@ -230,35 +254,156 @@ function assertEnumValue(value, values, label) {
 }
 
 /**
- * Recursively clone arrays and plain objects.
+ * Validate a timestamp represented as an ISO UTC string.
+ *
+ * Null and undefined are allowed for optional timestamps.
  *
  * @param {*} value
- * @returns {*}
+ * @param {string} label
+ * @param {object} [options={}]
+ * @returns {void}
  */
-function clone(value) {
-  if (Array.isArray(value)) {
-    return value.map(clone);
-  }
+function assertOptionalUtcTimestamp(value, label, options = {}) {
+  if (value === null || value === undefined) {
+    if (options.required) {
+      throw new TypeError(`${label} is required`);
+    }
 
-  if (value !== null && typeof value === 'object') {
-    assertPlainObject(value, 'Fixture values');
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, clone(item)])
-    );
+    return;
   }
 
   if (
+    typeof value !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) ||
+    !Number.isFinite(Date.parse(value))
+  ) {
+    throw new TypeError(`${label} must be a valid UTC ISO timestamp`);
+  }
+}
+
+/**
+ * Recursively clone arrays and plain objects.
+ *
+ * Rejects cycles, accessors, dangerous property names, unsupported values,
+ * sparse arrays, and objects exceeding the maximum nesting depth.
+ *
+ * @param {*} value
+ * @param {WeakSet<object>} [ancestors]
+ * @param {number} [depth=0]
+ * @returns {*}
+ */
+function clone(value, ancestors = new WeakSet(), depth = 0) {
+  if (depth > MAX_CLONE_DEPTH) {
+    throw new TypeError('Fixture values exceed the maximum clone depth');
+  }
+
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new TypeError('Fixture numbers must be finite');
+    }
+
+    return value;
+  }
+
+  if (
+    typeof value === 'undefined' ||
     typeof value === 'function' ||
     typeof value === 'symbol' ||
     typeof value === 'bigint'
   ) {
     throw new TypeError(
-      'Fixture values cannot contain functions, symbols, or bigints'
+      'Fixture values cannot contain undefined, functions, symbols, or bigints'
     );
   }
 
-  return value;
+  if (typeof value !== 'object') {
+    throw new TypeError('Unsupported fixture value');
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError('Fixture values cannot contain circular references');
+  }
+
+  ancestors.add(value);
+
+  try {
+    if (Array.isArray(value)) {
+      const result = [];
+
+      for (let index = 0; index < value.length; index += 1) {
+        if (!Object.prototype.hasOwnProperty.call(value, index)) {
+          throw new TypeError('Fixture arrays cannot contain empty slots');
+        }
+
+        const descriptor = Object.getOwnPropertyDescriptor(
+          value,
+          String(index)
+        );
+
+        if (
+          !descriptor ||
+          !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+        ) {
+          throw new TypeError('Fixture arrays cannot contain accessors');
+        }
+
+        result.push(clone(descriptor.value, ancestors, depth + 1));
+      }
+
+      const extraKeys = Reflect.ownKeys(value).filter((key) => {
+        return key !== 'length' &&
+          !(typeof key === 'string' && /^(0|[1-9]\d*)$/.test(key) &&
+            Number(key) < value.length);
+      });
+
+      if (extraKeys.length > 0) {
+        throw new TypeError(
+          'Fixture arrays cannot contain custom properties'
+        );
+      }
+
+      return result;
+    }
+
+    assertPlainObject(value, 'Fixture values');
+
+    const result = Object.create(null);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== 'string') {
+        throw new TypeError('Fixture object keys must be strings');
+      }
+
+      if (FORBIDDEN_OBJECT_KEYS.has(key)) {
+        throw new TypeError(`Unsafe fixture object key: ${key}`);
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (
+        !descriptor ||
+        !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+      ) {
+        throw new TypeError(
+          `Fixture properties cannot be accessors: ${key}`
+        );
+      }
+
+      result[key] = clone(descriptor.value, ancestors, depth + 1);
+    }
+
+    return result;
+  } finally {
+    ancestors.delete(value);
+  }
 }
 
 /**
@@ -280,6 +425,19 @@ function mergeObject(base, overrides, label) {
     ...clone(base),
     ...clone(overrides),
   };
+}
+
+/**
+ * Validate optional nullable string values.
+ *
+ * @param {*} value
+ * @param {string} label
+ * @returns {void}
+ */
+function assertOptionalString(value, label) {
+  if (value !== null && value !== undefined) {
+    assertNonEmptyString(value, label);
+  }
 }
 
 /**
@@ -321,6 +479,8 @@ function validateLimits(limits) {
   const result = clone(limits);
 
   for (const [name, value] of Object.entries(result)) {
+    assertNonEmptyString(name, 'Plan limit name');
+
     if (value !== null) {
       assertNonNegativeInteger(value, `Plan limit "${name}"`);
     }
@@ -338,20 +498,22 @@ function validateLimits(limits) {
 function createSubscriptionPlan(overrides = {}) {
   assertPlainObject(overrides, 'Subscription plan overrides');
 
+  const input = clone(overrides);
+
   const plan = {
     ...clone(DEFAULT_SUBSCRIPTION_PLAN),
-    ...clone(overrides),
+    ...input,
   };
 
   plan.limits = mergeObject(
     DEFAULT_SUBSCRIPTION_PLAN.limits,
-    overrides.limits,
+    input.limits,
     'Plan limits overrides'
   );
 
-  plan.features = overrides.features === undefined
+  plan.features = input.features === undefined
     ? clone(DEFAULT_SUBSCRIPTION_PLAN.features)
-    : validateFeatures(overrides.features);
+    : validateFeatures(input.features);
 
   plan.limits = validateLimits(plan.limits);
 
@@ -359,6 +521,7 @@ function createSubscriptionPlan(overrides = {}) {
   assertNonEmptyString(plan.code, 'Plan code');
   assertNonEmptyString(plan.slug, 'Plan slug');
   assertNonEmptyString(plan.name, 'Plan name');
+  assertOptionalString(plan.description, 'Plan description');
   assertCurrency(plan.currency, 'Plan currency');
   assertNonNegativeInteger(plan.amountMinor, 'Plan amountMinor');
   assertPositiveInteger(plan.intervalCount, 'Plan intervalCount');
@@ -376,9 +539,9 @@ function createSubscriptionPlan(overrides = {}) {
     'subscription plan status'
   );
 
-  if (typeof plan.isPublic !== 'boolean') {
-    throw new TypeError('Plan isPublic must be a boolean');
-  }
+  assertBoolean(plan.isPublic, 'Plan isPublic');
+  assertOptionalUtcTimestamp(plan.createdAt, 'Plan createdAt');
+  assertOptionalUtcTimestamp(plan.updatedAt, 'Plan updatedAt');
 
   return plan;
 }
@@ -386,7 +549,8 @@ function createSubscriptionPlan(overrides = {}) {
 /**
  * Create a synthetic subscription record.
  *
- * This validates field formats, not business rules or workflow transitions.
+ * This validates fixture field formats, not business rules or workflow
+ * transitions.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -394,14 +558,16 @@ function createSubscriptionPlan(overrides = {}) {
 function createSubscription(overrides = {}) {
   assertPlainObject(overrides, 'Subscription overrides');
 
+  const input = clone(overrides);
+
   const subscription = {
     ...clone(DEFAULT_SUBSCRIPTION),
-    ...clone(overrides),
+    ...input,
   };
 
   subscription.metadata = mergeObject(
     DEFAULT_SUBSCRIPTION.metadata,
-    overrides.metadata,
+    input.metadata,
     'Subscription metadata'
   );
 
@@ -437,11 +603,47 @@ function createSubscription(overrides = {}) {
     'billing interval'
   );
 
-  if (typeof subscription.cancelAtPeriodEnd !== 'boolean') {
-    throw new TypeError(
-      'Subscription cancelAtPeriodEnd must be a boolean'
+  assertOptionalString(subscription.provider, 'Subscription provider');
+  assertOptionalString(
+    subscription.providerCustomerId,
+    'Subscription providerCustomerId'
+  );
+  assertOptionalString(
+    subscription.providerSubscriptionId,
+    'Subscription providerSubscriptionId'
+  );
+  assertOptionalString(
+    subscription.idempotencyKey,
+    'Subscription idempotencyKey'
+  );
+  assertOptionalString(
+    subscription.latestPaymentId,
+    'Subscription latestPaymentId'
+  );
+
+  assertBoolean(
+    subscription.cancelAtPeriodEnd,
+    'Subscription cancelAtPeriodEnd'
+  );
+
+  for (const field of [
+    'trialStart',
+    'trialEnd',
+    'currentPeriodStart',
+    'currentPeriodEnd',
+    'cancelAt',
+    'cancelledAt',
+    'endedAt',
+    'createdAt',
+    'updatedAt',
+  ]) {
+    assertOptionalUtcTimestamp(
+      subscription[field],
+      `Subscription ${field}`
     );
   }
+
+  assertPlainObject(subscription.metadata, 'Subscription metadata');
 
   return subscription;
 }
@@ -468,14 +670,21 @@ function createSubscriptionPayload(overrides = {}) {
 /**
  * Create multiple subscriptions with unique generated identities.
  *
+ * Common overrides apply to each record, except identity-related fields,
+ * which are generated uniquely for each item.
+ *
  * @param {number} [count=3]
  * @param {object} [overrides={}]
  * @returns {object[]}
  */
 function createSubscriptionSet(count = 3, overrides = {}) {
-  if (!Number.isInteger(count) || count < 0 || count > 1000) {
+  if (
+    !Number.isInteger(count) ||
+    count < 0 ||
+    count > MAX_FIXTURE_COUNT
+  ) {
     throw new RangeError(
-      'Subscription count must be an integer from 0 to 1000'
+      `Subscription count must be an integer from 0 to ${MAX_FIXTURE_COUNT}`
     );
   }
 
@@ -512,6 +721,9 @@ function createSubscriptionSet(count = 3, overrides = {}) {
 /**
  * Create a subscription owned by another synthetic user.
  *
+ * Ownership is set after overrides so the caller cannot accidentally
+ * replace the requested foreign owner.
+ *
  * @param {string} [userId='user_test_foreign']
  * @param {object} [overrides={}]
  * @returns {object}
@@ -523,14 +735,21 @@ function createForeignSubscription(
   assertNonEmptyString(userId, 'Foreign subscription user ID');
   assertPlainObject(overrides, 'Foreign subscription overrides');
 
+  const input = clone(overrides);
+
   return createSubscription({
-    ...clone(overrides),
-    id: 'subscription_test_foreign_0001',
-    subscriptionNumber: 'MO-SUB-TEST-FOREIGN-0001',
+    ...input,
+    id: input.id || 'subscription_test_foreign_0001',
+    subscriptionNumber:
+      input.subscriptionNumber || 'MO-SUB-TEST-FOREIGN-0001',
+    providerCustomerId:
+      input.providerCustomerId || 'provider_customer_test_foreign_0001',
+    providerSubscriptionId:
+      input.providerSubscriptionId ||
+      'provider_subscription_test_foreign_0001',
+    idempotencyKey:
+      input.idempotencyKey || 'idem_test_subscription_foreign_0001',
     userId,
-    providerCustomerId: 'provider_customer_test_foreign_0001',
-    providerSubscriptionId: 'provider_subscription_test_foreign_0001',
-    idempotencyKey: 'idem_test_subscription_foreign_0001',
   });
 }
 
@@ -691,9 +910,10 @@ function createMassAssignmentPayload(overrides = {}) {
 function createRenewalScenario(overrides = {}) {
   assertPlainObject(overrides, 'Renewal scenario overrides');
 
-  const subscriptionOverrides = overrides.subscription === undefined
+  const input = clone(overrides);
+  const subscriptionOverrides = input.subscription === undefined
     ? {}
-    : overrides.subscription;
+    : input.subscription;
 
   assertPlainObject(
     subscriptionOverrides,
@@ -705,13 +925,13 @@ function createRenewalScenario(overrides = {}) {
     status: SUBSCRIPTION_STATUSES.ACTIVE,
   });
 
-  const expectedAmountMinor = overrides.expectedAmountMinor === undefined
+  const expectedAmountMinor = input.expectedAmountMinor === undefined
     ? subscription.amountMinor
-    : overrides.expectedAmountMinor;
+    : input.expectedAmountMinor;
 
-  const expectedCurrency = overrides.expectedCurrency === undefined
+  const expectedCurrency = input.expectedCurrency === undefined
     ? subscription.currency
-    : overrides.expectedCurrency;
+    : input.expectedCurrency;
 
   assertNonNegativeInteger(
     expectedAmountMinor,
@@ -720,19 +940,31 @@ function createRenewalScenario(overrides = {}) {
 
   assertCurrency(expectedCurrency, 'Expected renewal currency');
 
-  const idempotencyKey = overrides.idempotencyKey === undefined
+  const idempotencyKey = input.idempotencyKey === undefined
     ? 'idem_test_renewal_0001'
-    : overrides.idempotencyKey;
+    : input.idempotencyKey;
 
   assertNonEmptyString(idempotencyKey, 'Renewal idempotency key');
+
+  const renewalNumber = input.renewalNumber === undefined
+    ? 2
+    : input.renewalNumber;
+
+  assertPositiveInteger(renewalNumber, 'Renewal number');
+
+  const expectedSingleCharge = input.expectedSingleCharge === undefined
+    ? true
+    : input.expectedSingleCharge;
+
+  assertBoolean(expectedSingleCharge, 'Expected single charge');
 
   return {
     subscription,
     idempotencyKey,
-    renewalNumber: 2,
+    renewalNumber,
     expectedAmountMinor,
     expectedCurrency,
-    expectedSingleCharge: true,
+    expectedSingleCharge,
   };
 }
 
@@ -747,33 +979,31 @@ function createRenewalScenario(overrides = {}) {
 function createEntitlementScenario(overrides = {}) {
   assertPlainObject(overrides, 'Entitlement scenario overrides');
 
-  const subscriptionOverrides = overrides.subscription === undefined
+  const input = clone(overrides);
+  const subscriptionOverrides = input.subscription === undefined
     ? {}
-    : overrides.subscription;
+    : input.subscription;
 
   assertPlainObject(
     subscriptionOverrides,
     'Entitlement subscription overrides'
   );
 
-  const userId = overrides.userId === undefined
-    ? 'user_test_0001'
-    : overrides.userId;
+  const userId = input.userId === undefined
+    ? DEFAULT_SUBSCRIPTION.userId
+    : input.userId;
 
-  const feature = overrides.feature === undefined
+  const feature = input.feature === undefined
     ? 'priority_support'
-    : overrides.feature;
+    : input.feature;
 
-  const expectedAccess = overrides.expectedAccess === undefined
+  const expectedAccess = input.expectedAccess === undefined
     ? true
-    : overrides.expectedAccess;
+    : input.expectedAccess;
 
   assertNonEmptyString(userId, 'Entitlement user ID');
   assertNonEmptyString(feature, 'Entitlement feature');
-
-  if (typeof expectedAccess !== 'boolean') {
-    throw new TypeError('expectedAccess must be a boolean');
-  }
+  assertBoolean(expectedAccess, 'expectedAccess');
 
   return {
     userId,
@@ -794,18 +1024,19 @@ function createEntitlementScenario(overrides = {}) {
 function createIdempotencyScenario(overrides = {}) {
   assertPlainObject(overrides, 'Idempotency scenario overrides');
 
-  const payloadOverrides = overrides.payload === undefined
+  const input = clone(overrides);
+  const payloadOverrides = input.payload === undefined
     ? {}
-    : overrides.payload;
+    : input.payload;
 
   assertPlainObject(
     payloadOverrides,
     'Idempotency payload overrides'
   );
 
-  const idempotencyKey = overrides.idempotencyKey === undefined
+  const idempotencyKey = input.idempotencyKey === undefined
     ? 'idem_test_subscription_repeat_0001'
-    : overrides.idempotencyKey;
+    : input.idempotencyKey;
 
   assertNonEmptyString(idempotencyKey, 'Idempotency key');
 
@@ -831,30 +1062,22 @@ function createIdempotencyScenario(overrides = {}) {
 function createSubscriptionAccessScenario(overrides = {}) {
   assertPlainObject(overrides, 'Subscription access overrides');
 
-  const userId = overrides.userId === undefined
-    ? DEFAULT_SUBSCRIPTION.userId
-    : overrides.userId;
+  const input = clone(overrides);
 
-  const expectedAccess = overrides.expectedAccess === undefined
+  const userId = input.userId === undefined
+    ? DEFAULT_SUBSCRIPTION.userId
+    : input.userId;
+
+  const expectedAccess = input.expectedAccess === undefined
     ? true
-    : overrides.expectedAccess;
+    : input.expectedAccess;
 
   assertNonEmptyString(userId, 'Access scenario user ID');
+  assertBoolean(expectedAccess, 'expectedAccess');
 
-  if (typeof expectedAccess !== 'boolean') {
-    throw new TypeError('expectedAccess must be a boolean');
-  }
-
-  const subscription = overrides.subscription === undefined
+  const subscription = input.subscription === undefined
     ? createSubscription()
-    : createSubscription(
-        clone(
-          assertPlainObject(
-            overrides.subscription,
-            'Access scenario subscription'
-          )
-        )
-      );
+    : createSubscription(input.subscription);
 
   return {
     userId,
@@ -866,6 +1089,8 @@ function createSubscriptionAccessScenario(overrides = {}) {
 /**
  * Create a cross-user subscription access scenario expected to be denied.
  *
+ * The subscription owner is always distinct from the requester.
+ *
  * @param {object} [overrides={}]
  * @returns {object}
  */
@@ -875,24 +1100,28 @@ function createUnauthorizedSubscriptionAccessScenario(overrides = {}) {
     'Unauthorized subscription access overrides'
   );
 
-  const userId = overrides.userId === undefined
+  const input = clone(overrides);
+
+  const userId = input.userId === undefined
     ? 'user_test_requester'
-    : overrides.userId;
+    : input.userId;
 
   assertNonEmptyString(userId, 'Unauthorized requester ID');
 
-  const subscriptionOverrides = overrides.subscription === undefined
+  const subscriptionOverrides = input.subscription === undefined
     ? {}
-    : clone(
-        assertPlainObject(
-          overrides.subscription,
-          'Unauthorized subscription overrides'
-        )
-      );
+    : input.subscription;
+
+  assertPlainObject(
+    subscriptionOverrides,
+    'Unauthorized subscription overrides'
+  );
 
   const ownerId = subscriptionOverrides.userId === undefined
     ? 'user_test_foreign'
     : subscriptionOverrides.userId;
+
+  assertNonEmptyString(ownerId, 'Unauthorized subscription owner ID');
 
   if (ownerId === userId) {
     throw new TypeError(
@@ -900,18 +1129,222 @@ function createUnauthorizedSubscriptionAccessScenario(overrides = {}) {
     );
   }
 
-  const remainingOverrides = clone(overrides);
-  delete remainingOverrides.subscription;
-  delete remainingOverrides.expectedAccess;
+  const foreignSubscription = createForeignSubscription(
+    ownerId,
+    subscriptionOverrides
+  );
 
-  return createSubscriptionAccessScenario({
-    ...remainingOverrides,
+  return {
     userId,
-    subscription: createForeignSubscription(
-      ownerId,
-      subscriptionOverrides
-    ),
+    subscription: foreignSubscription,
     expectedAccess: false,
+  };
+}
+
+/**
+ * Create a subscription request containing server-managed fields.
+ *
+ * Useful for allowlist and mass-assignment rejection tests.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createServerManagedFieldsPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Server-managed payload overrides');
+
+  const payload = {
+    ...createSubscriptionPayload(),
+  };
+
+  for (const field of SUBSCRIPTION_SERVER_MANAGED_FIELDS) {
+    payload[field] = `attacker_controlled_${field}`;
+  }
+
+  return {
+    ...payload,
+    ...clone(overrides),
+  };
+}
+
+/**
+ * Create a subscription cancellation scenario.
+ *
+ * The scenario describes expected behavior only; it does not perform
+ * cancellation or mutate a real subscription.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createCancellationScenario(overrides = {}) {
+  assertPlainObject(overrides, 'Cancellation scenario overrides');
+
+  const input = clone(overrides);
+
+  const subscription = input.subscription === undefined
+    ? createSubscription()
+    : createSubscription(input.subscription);
+
+  const cancelAtPeriodEnd = input.cancelAtPeriodEnd === undefined
+    ? false
+    : input.cancelAtPeriodEnd;
+
+  assertBoolean(cancelAtPeriodEnd, 'cancelAtPeriodEnd');
+
+  const expectedStatus = input.expectedStatus === undefined
+    ? subscription.status
+    : input.expectedStatus;
+
+  assertEnumValue(
+    expectedStatus,
+    SUBSCRIPTION_STATUSES_VALUES,
+    'expected cancellation status'
+  );
+
+  return {
+    subscription,
+    cancelAtPeriodEnd,
+    expectedStatus,
+    expectedNoImmediateRefund: input.expectedNoImmediateRefund === undefined
+      ? true
+      : assertBooleanAndReturn(
+          input.expectedNoImmediateRefund,
+          'expectedNoImmediateRefund'
+        ),
+  };
+}
+
+/**
+ * Validate a boolean and return it.
+ *
+ * @param {*} value
+ * @param {string} label
+ * @returns {boolean}
+ */
+function assertBooleanAndReturn(value, label) {
+  assertBoolean(value, label);
+  return value;
+}
+
+/**
+ * Create a synthetic unpaid subscription.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createUnpaidSubscription(overrides = {}) {
+  return createSubscriptionWithStatus(
+    SUBSCRIPTION_STATUSES.UNPAID,
+    {
+      id: 'subscription_test_unpaid_0001',
+      subscriptionNumber: 'MO-SUB-TEST-UNPAID-0001',
+      ...clone(overrides),
+    }
+  );
+}
+
+/**
+ * Create a synthetic paused subscription.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createPausedSubscription(overrides = {}) {
+  return createSubscriptionWithStatus(
+    SUBSCRIPTION_STATUSES.PAUSED,
+    {
+      id: 'subscription_test_paused_0001',
+      subscriptionNumber: 'MO-SUB-TEST-PAUSED-0001',
+      ...clone(overrides),
+    }
+  );
+}
+
+/**
+ * Create a synthetic incomplete subscription.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createIncompleteSubscription(overrides = {}) {
+  return createSubscriptionWithStatus(
+    SUBSCRIPTION_STATUSES.INCOMPLETE,
+    {
+      id: 'subscription_test_incomplete_0001',
+      subscriptionNumber: 'MO-SUB-TEST-INCOMPLETE-0001',
+      ...clone(overrides),
+    }
+  );
+}
+
+/**
+ * Create a synthetic one-time plan.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createOneTimePlan(overrides = {}) {
+  return createSubscriptionPlan({
+    id: 'plan_test_one_time_0001',
+    code: 'MO-PLAN-TEST-ONE-TIME-0001',
+    slug: 'test-one-time-plan',
+    name: 'Test One-Time Plan',
+    billingInterval: BILLING_INTERVALS.ONE_TIME,
+    intervalCount: 1,
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic yearly plan.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createYearlyPlan(overrides = {}) {
+  return createSubscriptionPlan({
+    id: 'plan_test_yearly_0001',
+    code: 'MO-PLAN-TEST-YEARLY-0001',
+    slug: 'test-yearly-plan',
+    name: 'Test Yearly Plan',
+    billingInterval: BILLING_INTERVALS.YEARLY,
+    intervalCount: 1,
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic inactive plan.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createInactivePlan(overrides = {}) {
+  return createSubscriptionPlan({
+    id: 'plan_test_inactive_0001',
+    code: 'MO-PLAN-TEST-INACTIVE-0001',
+    slug: 'test-inactive-plan',
+    name: 'Test Inactive Plan',
+    status: SUBSCRIPTION_PLAN_STATUSES.INACTIVE,
+    isPublic: false,
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic archived plan.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createArchivedPlan(overrides = {}) {
+  return createSubscriptionPlan({
+    id: 'plan_test_archived_0001',
+    code: 'MO-PLAN-TEST-ARCHIVED-0001',
+    slug: 'test-archived-plan',
+    name: 'Test Archived Plan',
+    status: SUBSCRIPTION_PLAN_STATUSES.ARCHIVED,
+    isPublic: false,
+    ...clone(overrides),
   });
 }
 
@@ -943,4 +1376,13 @@ module.exports = {
   createIdempotencyScenario,
   createSubscriptionAccessScenario,
   createUnauthorizedSubscriptionAccessScenario,
+  createServerManagedFieldsPayload,
+  createCancellationScenario,
+  createUnpaidSubscription,
+  createPausedSubscription,
+  createIncompleteSubscription,
+  createOneTimePlan,
+  createYearlyPlan,
+  createInactivePlan,
+  createArchivedPlan,
 };

@@ -1,28 +1,29 @@
 
 /**
  * MedOrbits -- Centralized CORS Security Configuration
- * File: src/config/cors.js
  *
- * Node.js: >=20
+ * File: src/config/cors.js
+ * Runtime: Node.js >=20
  * Module system: ES Modules
  *
  * Responsibilities:
- * - Validate and normalize configured origins.
+ * - Validate and normalize configured HTTP(S) origins.
  * - Enforce an explicit origin allowlist.
- * - Prevent wildcard origins in production.
- * - Enforce safe credential and origin combinations.
+ * - Prohibit wildcard origins in production.
+ * - Prevent wildcard origins with credentialed requests.
  * - Validate preflight methods and request headers.
- * - Support configurable preflight caching.
+ * - Configure bounded preflight caching.
  * - Reject malformed or unauthorized browser origins.
- * - Provide reusable configuration and validation helpers.
+ * - Fail startup on invalid security configuration.
+ * - Export reusable configuration and validation helpers.
  *
  * Environment variables:
- * - CORS_ALLOWED_ORIGINS: comma-separated origins or an array.
+ * - CORS_ALLOWED_ORIGINS: comma-separated string or string array.
  * - CORS_ALLOW_CREDENTIALS: boolean.
- * - CORS_MAX_AGE_SECONDS: non-negative integer.
+ * - CORS_MAX_AGE_SECONDS: integer from 0 through 86400.
  * - NODE_ENV: development, test, or production.
  *
- * Security note:
+ * Security boundary:
  * CORS is a browser-enforced access policy. It is not authentication,
  * authorization, CSRF protection, or a firewall for non-browser clients.
  */
@@ -48,11 +49,13 @@ const ALLOWED_HEADERS = Object.freeze([
   "Content-Type",
   "Origin",
   "X-Request-ID",
+  "X-Correlation-ID",
   "X-CSRF-Token",
 ]);
 
 const EXPOSED_HEADERS = Object.freeze([
   "X-Request-ID",
+  "X-Correlation-ID",
   "Content-Disposition",
 ]);
 
@@ -63,21 +66,32 @@ function configurationError(message) {
   return new Error(`[MedOrbits CORS] ${message}`);
 }
 
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
+}
+
 /**
  * Normalize an origin into its canonical URL origin.
  *
- * Accepted:
+ * Accepted examples:
  *   https://medorbits.in
  *   https://www.medorbits.in
  *   http://localhost:3000
  *
- * Rejected:
+ * Rejected examples:
  *   https://medorbits.in/dashboard
  *   https://user:password@medorbits.in
  *   javascript://example.com
  *   malformed URLs
  *
- * An empty string is returned only for an empty configuration entry.
+ * Empty strings are returned only for empty configuration entries.
+ * A wildcard is preserved for separate policy validation.
  */
 export function normalizeOrigin(value) {
   if (typeof value !== "string") {
@@ -94,25 +108,33 @@ export function normalizeOrigin(value) {
     return "*";
   }
 
+  // Reject whitespace and control characters instead of silently
+  // normalizing potentially malformed header/configuration values.
+  if (/[\u0000-\u0020\u007f]/u.test(input)) {
+    throw configurationError(
+      "An origin contains whitespace or control characters.",
+    );
+  }
+
   let parsed;
 
   try {
     parsed = new URL(input);
   } catch {
     throw configurationError(
-      `Invalid origin "${input}". Expected an absolute HTTP or HTTPS origin.`,
+      "An origin must be an absolute HTTP or HTTPS URL.",
     );
   }
 
   if (!ALLOWED_PROTOCOLS.has(parsed.protocol)) {
     throw configurationError(
-      `Origin "${input}" must use HTTP or HTTPS.`,
+      "An origin must use HTTP or HTTPS.",
     );
   }
 
   if (!parsed.hostname) {
     throw configurationError(
-      `Origin "${input}" must contain a hostname.`,
+      "An origin must contain a hostname.",
     );
   }
 
@@ -124,7 +146,7 @@ export function normalizeOrigin(value) {
     parsed.hash
   ) {
     throw configurationError(
-      `Origin "${input}" must not contain credentials, paths, queries, or fragments.`,
+      "An origin must not contain credentials, paths, queries, or fragments.",
     );
   }
 
@@ -135,7 +157,7 @@ export function normalizeOrigin(value) {
  * Parse and deduplicate configured origins.
  *
  * Empty configuration is permitted outside production.
- * Production requirements are enforced separately.
+ * Production requirements are enforced by validateConfiguration().
  */
 export function parseAllowedOrigins(value) {
   let entries;
@@ -181,18 +203,21 @@ export function parseAllowedOrigins(value) {
 }
 
 /**
- * Validate the security-sensitive CORS settings.
+ * Validate CORS configuration.
  *
- * Returns true if the supplied configuration is valid.
- * Throws an Error when a setting is unsafe or invalid.
+ * Returns true when valid. Throws when a security-sensitive setting
+ * is invalid or inconsistent.
  */
-export function validateConfiguration(
-  origins,
-  settings = env,
-) {
+export function validateConfiguration(origins, settings = env) {
   if (!Array.isArray(origins)) {
     throw configurationError(
       "The allowed origins must be an array.",
+    );
+  }
+
+  if (!isPlainObject(settings)) {
+    throw configurationError(
+      "CORS settings must be supplied as a plain object.",
     );
   }
 
@@ -202,7 +227,24 @@ export function validateConfiguration(
     );
   }
 
-  const normalizedOrigins = origins.map(normalizeOrigin);
+  if (
+    typeof settings.NODE_ENV !== "string" ||
+    !["development", "test", "production"].includes(settings.NODE_ENV)
+  ) {
+    throw configurationError(
+      "NODE_ENV must be development, test, or production.",
+    );
+  }
+
+  const normalizedOrigins = origins.map((origin) => {
+    if (typeof origin !== "string") {
+      throw configurationError(
+        "Every allowed origin must be a string.",
+      );
+    }
+
+    return normalizeOrigin(origin);
+  });
 
   if (normalizedOrigins.some((origin) => !origin)) {
     throw configurationError(
@@ -262,10 +304,64 @@ export function validateConfiguration(
 }
 
 /**
+ * Validate a requested preflight method.
+ *
+ * HTTP method names are case-sensitive in protocol semantics, but
+ * browser-generated Access-Control-Request-Method values use the
+ * standard uppercase method token.
+ */
+export function isAllowedMethod(method) {
+  return (
+    typeof method === "string" &&
+    ALLOWED_METHODS.includes(method.trim().toUpperCase())
+  );
+}
+
+/**
+ * Validate requested preflight header names.
+ *
+ * Header names are case-insensitive. This helper is available for
+ * custom preflight middleware and tests.
+ */
+export function areAllowedHeaders(headers) {
+  if (headers == null || headers === "") {
+    return true;
+  }
+
+  const requested = Array.isArray(headers)
+    ? headers
+    : typeof headers === "string"
+      ? headers.split(",")
+      : null;
+
+  if (!requested) {
+    return false;
+  }
+
+  const allowed = new Set(
+    ALLOWED_HEADERS.map((header) => header.toLowerCase()),
+  );
+
+  return requested.every((header) => {
+    if (typeof header !== "string") {
+      return false;
+    }
+
+    const normalized = header.trim().toLowerCase();
+
+    return (
+      normalized.length > 0 &&
+      /^[!#$%&'*+.^_`|~0-9a-z-]+$/u.test(normalized) &&
+      allowed.has(normalized)
+    );
+  });
+}
+
+/**
  * Resolve and validate the origin allowlist at startup.
  *
- * Invalid configuration fails application startup rather than
- * silently weakening the cross-origin policy.
+ * Invalid production configuration fails startup rather than silently
+ * weakening the cross-origin policy.
  */
 export const allowedOrigins = Object.freeze(
   parseAllowedOrigins(env.CORS_ALLOWED_ORIGINS),
@@ -274,44 +370,54 @@ export const allowedOrigins = Object.freeze(
 validateConfiguration(allowedOrigins, env);
 
 /**
- * Build the CORS options consumed by the cors middleware.
+ * Create the callback used by the cors package.
  *
- * Requests without an Origin header are allowed through the CORS
- * middleware for server-to-server, CLI, and same-origin use cases.
- * These requests must still pass normal authentication and authorization.
+ * Requests without Origin are allowed through the CORS middleware.
+ * This does not authorize those requests; normal authentication,
+ * authorization, and CSRF protections still apply.
+ */
+function validateRequestOrigin(origin, callback) {
+  if (typeof origin !== "string" || origin.length === 0) {
+    return callback(null, true);
+  }
+
+  let normalizedOrigin;
+
+  try {
+    normalizedOrigin = normalizeOrigin(origin);
+  } catch {
+    return callback(
+      configurationError(
+        "The request contains a malformed or unauthorized Origin header.",
+      ),
+    );
+  }
+
+  const permitted =
+    allowedOrigins.includes("*") ||
+    allowedOrigins.includes(normalizedOrigin);
+
+  if (!permitted) {
+    return callback(
+      configurationError(
+        "The request origin is not permitted by the CORS policy.",
+      ),
+    );
+  }
+
+  return callback(null, true);
+}
+
+/**
+ * Frozen options for the cors package.
+ *
+ * Note: the cors package handles preflight requests using its configured
+ * methods and headers. The exported validation helpers can also be used
+ * by custom middleware when strict rejection of unapproved preflight
+ * methods or headers is required.
  */
 export const corsOptions = Object.freeze({
-  origin(origin, callback) {
-    if (typeof origin !== "string" || origin.length === 0) {
-      return callback(null, true);
-    }
-
-    let normalizedOrigin;
-
-    try {
-      normalizedOrigin = normalizeOrigin(origin);
-    } catch {
-      return callback(
-        configurationError(
-          "The request contains a malformed or unauthorized Origin header.",
-        ),
-      );
-    }
-
-    const permitted =
-      allowedOrigins.includes("*") ||
-      allowedOrigins.includes(normalizedOrigin);
-
-    if (!permitted) {
-      return callback(
-        configurationError(
-          "The request origin is not permitted by the CORS policy.",
-        ),
-      );
-    }
-
-    return callback(null, true);
-  },
+  origin: validateRequestOrigin,
 
   credentials: env.CORS_ALLOW_CREDENTIALS,
 
@@ -331,8 +437,7 @@ export const corsOptions = Object.freeze({
 /**
  * Reusable Express middleware.
  *
- * Mount before application routes so normal requests and preflight
- * OPTIONS requests receive consistent CORS handling.
+ * Mount before application routes.
  */
 export const corsMiddleware = cors(corsOptions);
 

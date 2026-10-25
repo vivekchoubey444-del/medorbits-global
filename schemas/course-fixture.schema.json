@@ -1,0 +1,237 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/course-fixture.schema.json",
+  "title": "MedOrbits Course Fixture Collection",
+  "description": "Validates synthetic MedOrbits course fixtures for local development and automated testing. These are not official or verified course listings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "description",
+    "version",
+    "courses"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "courses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/course"
+      }
+    }
+  },
+  "$defs": {
+    "course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "code",
+        "name",
+        "shortName",
+        "category",
+        "qualificationLevel",
+        "durationMonths",
+        "durationYears",
+        "institutionType",
+        "entranceExam",
+        "counsellingRequired",
+        "status",
+        "metadata"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^COURSE-TEST-[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]+$",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "shortName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "qualificationLevel": {
+          "type": "string",
+          "enum": [
+            "Undergraduate",
+            "Postgraduate",
+            "Doctoral",
+            "Diploma",
+            "Certificate",
+            "Other"
+          ]
+        },
+        "durationMonths": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 1200
+        },
+        "durationYears": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "institutionType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "medical",
+            "dental",
+            "pharmacy",
+            "ayush",
+            "nursing",
+            "paramedical",
+            "other",
+            null
+          ]
+        },
+        "entranceExam": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "counsellingRequired": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "draft",
+            "archived"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "active"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "durationMonths": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "durationYears": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "institutionType": {
+                "type": "string",
+                "enum": [
+                  "medical",
+                  "dental",
+                  "pharmacy",
+                  "ayush",
+                  "nursing",
+                  "paramedical",
+                  "other"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "draft",
+                  "inactive",
+                  "archived"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {}
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "testCase",
+        "synthetic",
+        "verified"
+      ],
+      "properties": {
+        "source": {
+          "const": "fixture"
+        },
+        "testCase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "synthetic": {
+          "const": true
+        },
+        "verified": {
+          "const": false
+        }
+      }
+    }
+  }
+}

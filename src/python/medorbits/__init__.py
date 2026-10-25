@@ -5,14 +5,16 @@ MedOrbits Python package.
 File: src/python/medorbits/__init__.py
 
 Purpose:
-    Define package metadata and a stable, minimal public API for the
-    MedOrbits Python components.
+    Define package metadata and a stable, minimal public API for MedOrbits
+    Python components.
 
 Design principles:
     - Avoid side effects during package import.
-    - Do not load environment files or initialize external services here.
+    - Do not load environment files or initialize external services.
     - Do not expose credentials, private configuration, or internal modules.
     - Keep imports lightweight for tests, CLI tools, and application startup.
+    - Prefer installed distribution metadata for the package version.
+    - Support importing directly from an uninstalled source checkout.
 
 Recommended package layout:
 
@@ -37,13 +39,15 @@ __author__ = "MedOrbits"
 __license__ = "Proprietary"
 __copyright__ = "Copyright MedOrbits"
 
-# Keep this aligned with the Python package version configured by the
-# project's packaging metadata. The fallback supports source checkouts
-# where the package has not been installed.
+# Keep this fallback synchronized with the project's packaging metadata.
+# Installed distribution metadata takes precedence when available.
+_VERSION_FALLBACK = "0.1.0"
+
 try:
-    __version__ = version("medorbits")
+    __version__ = version(__title__)
 except PackageNotFoundError:
-    __version__ = "0.1.0"
+    # Expected when importing directly from an uninstalled source checkout.
+    __version__ = _VERSION_FALLBACK
 
 __all__ = [
     "__author__",

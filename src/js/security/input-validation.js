@@ -4,18 +4,18 @@
  * Path: /src/js/security/input-validation.js
  *
  * Features:
- * - Reusable input validators
- * - Application and job payload validation
- * - Accessible field-level validation feedback
- * - Form validation without inline event handlers
- * - Safe text normalization
- * - Configurable validation rules
+ * - Reusable, configurable input validators.
+ * - Application and job payload validation.
+ * - Accessible field-level validation feedback.
+ * - Form validation without inline event handlers.
+ * - Safe text normalization.
+ * - Explicit, bounded validation rules.
  *
  * Security:
  * - Client-side validation is for usability, not authorization.
- * - Repeat all validation on the server.
- * - Never use this module as an HTML sanitizer.
- * - Never trust client-supplied field values, IDs, or MIME types.
+ * - Repeat validation on the server.
+ * - This module is not an HTML sanitizer.
+ * - Never trust client-supplied IDs, field values, or MIME types.
  */
 
 const DEFAULTS = Object.freeze({
@@ -25,20 +25,21 @@ const DEFAULTS = Object.freeze({
   maxPhoneDigits: 15,
   minPhoneDigits: 7,
   maxIdentifierLength: 128,
+  maxFileBytes: 10 * 1024 * 1024,
 });
 
 const EMAIL_PATTERN =
   /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
 
-const IDENTIFIER_PATTERN =
-  /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 
 const MIME_TYPE_PATTERN =
   /^[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*$/;
 
 const PHONE_PATTERN = /^[+0-9().\-\s]+$/;
 
-const CONTROL_CHARACTER_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+const CONTROL_CHARACTER_PATTERN =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u;
 
 const FIELD_MESSAGES = Object.freeze({
   required: "This field is required.",
@@ -57,22 +58,21 @@ const FIELD_MESSAGES = Object.freeze({
 
 const registeredForms = new WeakMap();
 
-/**
- * Return a plain validation result.
- *
- * @param {boolean} valid
- * @param {string} [message]
- * @param {string} [code]
- * @returns {{valid: boolean, message: string, code: string}}
- */
 function result(valid, message = "", code = "") {
   return Object.freeze({ valid, message, code });
 }
 
-/**
- * Safely convert supported primitive values into a string.
- * Objects are rejected rather than coerced to "[object Object]".
- */
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object") return false;
+
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
+}
+
 function requireString(value, fieldName = "value") {
   if (typeof value !== "string") {
     throw new TypeError(`${fieldName} must be a string.`);
@@ -81,36 +81,63 @@ function requireString(value, fieldName = "value") {
   return value;
 }
 
+function validLimit(value, fallback, { minimum = 0, maximum = 1_000_000 } = {}) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return fallback;
+  }
+
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < minimum ||
+    value > maximum
+  ) {
+    throw new RangeError(
+      `Validation limit must be an integer between ${minimum} and ${maximum}.`,
+    );
+  }
+
+  return value;
+}
+
+function validBooleanOption(value, fallback, name) {
+  if (value === undefined) return fallback;
+
+  if (typeof value !== "boolean") {
+    throw new TypeError(`${name} must be a boolean.`);
+  }
+
+  return value;
+}
+
+function containsControlCharacters(value) {
+  return CONTROL_CHARACTER_PATTERN.test(value);
+}
+
 /**
  * Normalize whitespace without modifying the original source value.
  */
 export function normalizeWhitespace(value) {
-  return requireString(value)
-    .replace(/\s+/gu, " ")
-    .trim();
-}
-
-/**
- * Normalize an email address for application-level comparison.
- * This does not establish that a mailbox exists.
- */
-export function normalizeEmail(value) {
-  const email = requireString(value, "email").trim();
-
-  if (!validateEmail(email).valid) {
-    throw new TypeError("Email address is invalid.");
-  }
-
-  return email.toLowerCase();
+  return requireString(value).replace(/\s+/gu, " ").trim();
 }
 
 /**
  * Validate an email address.
+ *
+ * This checks syntax only. It does not verify mailbox existence.
  */
 export function validateEmail(
   value,
   { maxLength = DEFAULTS.maxEmailLength } = {},
 ) {
+  maxLength = validLimit(maxLength, DEFAULTS.maxEmailLength, {
+    minimum: 1,
+    maximum: 4096,
+  });
+
   if (typeof value !== "string") {
     return result(false, "Enter an email address.", "invalid_type");
   }
@@ -126,15 +153,12 @@ export function validateEmail(
   }
 
   if (/\s/u.test(email) || !EMAIL_PATTERN.test(email)) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidEmail,
-      "invalid_email",
-    );
+    return result(false, FIELD_MESSAGES.invalidEmail, "invalid_email");
   }
 
-  const [local, ...domainParts] = email.split("@");
-  const domain = domainParts.join("@");
+  const separator = email.lastIndexOf("@");
+  const local = email.slice(0, separator);
+  const domain = email.slice(separator + 1);
 
   if (
     local.length > 64 ||
@@ -143,21 +167,32 @@ export function validateEmail(
     local.includes("..") ||
     domain.length > 253
   ) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidEmail,
-      "invalid_email",
-    );
+    return result(false, FIELD_MESSAGES.invalidEmail, "invalid_email");
   }
 
   return result(true);
 }
 
 /**
- * Validate a phone number's basic syntax and digit count.
+ * Normalize an email address for application-level comparison.
  *
- * This does not validate a national numbering plan. Use a specialized
- * phone-number library for strict international validation.
+ * Lowercasing the local part is a practical application convention, not a
+ * guarantee of universal email-provider equivalence.
+ */
+export function normalizeEmail(value) {
+  const email = requireString(value, "email").trim();
+
+  if (!validateEmail(email).valid) {
+    throw new TypeError("Email address is invalid.");
+  }
+
+  return email.toLowerCase();
+}
+
+/**
+ * Validate basic phone syntax and digit count.
+ *
+ * This does not validate a national numbering plan.
  */
 export function validatePhone(
   value,
@@ -167,6 +202,20 @@ export function validatePhone(
     requireInternationalPrefix = false,
   } = {},
 ) {
+  minDigits = validLimit(minDigits, DEFAULTS.minPhoneDigits, {
+    minimum: 1,
+    maximum: 30,
+  });
+  maxDigits = validLimit(maxDigits, DEFAULTS.maxPhoneDigits, {
+    minimum: minDigits,
+    maximum: 30,
+  });
+  requireInternationalPrefix = validBooleanOption(
+    requireInternationalPrefix,
+    false,
+    "requireInternationalPrefix",
+  );
+
   if (typeof value !== "string") {
     return result(false, "Enter a phone number.", "invalid_type");
   }
@@ -178,11 +227,7 @@ export function validatePhone(
   }
 
   if (!PHONE_PATTERN.test(phone)) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidPhone,
-      "invalid_phone",
-    );
+    return result(false, FIELD_MESSAGES.invalidPhone, "invalid_phone");
   }
 
   if (
@@ -196,7 +241,7 @@ export function validatePhone(
     );
   }
 
-  const digits = phone.replace(/\D/g, "");
+  const digits = phone.replace(/\D/gu, "");
 
   if (digits.length < minDigits || digits.length > maxDigits) {
     return result(
@@ -218,12 +263,17 @@ export function validatePhone(
 }
 
 /**
- * Validate a human-readable name without limiting it to ASCII characters.
+ * Validate a human-readable name, including non-ASCII letters.
  */
 export function validateName(
   value,
   { maxLength = DEFAULTS.maxNameLength } = {},
 ) {
+  maxLength = validLimit(maxLength, DEFAULTS.maxNameLength, {
+    minimum: 1,
+    maximum: 10_000,
+  });
+
   if (typeof value !== "string") {
     return result(false, "Enter a name.", "invalid_type");
   }
@@ -238,15 +288,8 @@ export function validateName(
     return result(false, FIELD_MESSAGES.tooLong, "max_length");
   }
 
-  if (
-    CONTROL_CHARACTER_PATTERN.test(name) ||
-    !/[\p{L}]/u.test(name)
-  ) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidName,
-      "invalid_name",
-    );
+  if (containsControlCharacters(name) || !/[\p{L}]/u.test(name)) {
+    return result(false, FIELD_MESSAGES.invalidName, "invalid_name");
   }
 
   return result(true);
@@ -265,6 +308,19 @@ export function validateText(
     trim = true,
   } = {},
 ) {
+  required = validBooleanOption(required, true, "required");
+  allowNewlines = validBooleanOption(allowNewlines, true, "allowNewlines");
+  trim = validBooleanOption(trim, true, "trim");
+
+  minLength = validLimit(minLength, 0, {
+    minimum: 0,
+    maximum: 1_000_000,
+  });
+  maxLength = validLimit(maxLength, DEFAULTS.maxTextLength, {
+    minimum: minLength,
+    maximum: 1_000_000,
+  });
+
   if (typeof value !== "string") {
     return result(false, "Enter text.", "invalid_type");
   }
@@ -279,7 +335,7 @@ export function validateText(
     return result(true);
   }
 
-  if (CONTROL_CHARACTER_PATTERN.test(text)) {
+  if (containsControlCharacters(text)) {
     return result(
       false,
       "Text contains unsupported control characters.",
@@ -316,6 +372,15 @@ export function validateIdentifier(
     maxLength = DEFAULTS.maxIdentifierLength,
   } = {},
 ) {
+  minLength = validLimit(minLength, 1, {
+    minimum: 1,
+    maximum: 4096,
+  });
+  maxLength = validLimit(maxLength, DEFAULTS.maxIdentifierLength, {
+    minimum: minLength,
+    maximum: 4096,
+  });
+
   if (typeof value !== "string") {
     return result(false, "Enter a valid identifier.", "invalid_type");
   }
@@ -360,36 +425,43 @@ export function validateNumber(
     integer = false,
   } = {},
 ) {
+  required = validBooleanOption(required, true, "required");
+  integer = validBooleanOption(integer, false, "integer");
+
+  if (
+    typeof min !== "number" ||
+    typeof max !== "number" ||
+    Number.isNaN(min) ||
+    Number.isNaN(max) ||
+    min > max
+  ) {
+    throw new RangeError("Numeric minimum and maximum are invalid.");
+  }
+
   if (value === "" || value === null || value === undefined) {
     return required
       ? result(false, FIELD_MESSAGES.required, "required")
       : result(true);
   }
 
-  if (
-    typeof value !== "number" &&
-    typeof value !== "string"
-  ) {
+  if (typeof value !== "number" && typeof value !== "string") {
     return result(false, FIELD_MESSAGES.invalidNumber, "invalid_type");
   }
 
-  const number =
-    typeof value === "number" ? value : Number(value.trim());
+  if (typeof value === "string" && !value.trim()) {
+    return required
+      ? result(false, FIELD_MESSAGES.required, "required")
+      : result(true);
+  }
+
+  const number = typeof value === "number" ? value : Number(value.trim());
 
   if (!Number.isFinite(number)) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidNumber,
-      "invalid_number",
-    );
+    return result(false, FIELD_MESSAGES.invalidNumber, "invalid_number");
   }
 
   if (integer && !Number.isInteger(number)) {
-    return result(
-      false,
-      "Enter a whole number.",
-      "invalid_integer",
-    );
+    return result(false, "Enter a whole number.", "invalid_integer");
   }
 
   if (number < min) {
@@ -404,9 +476,11 @@ export function validateNumber(
 }
 
 /**
- * Validate an ISO-style calendar date in YYYY-MM-DD format.
+ * Validate a real calendar date in YYYY-MM-DD format.
  */
 export function validateDate(value, { required = true } = {}) {
+  required = validBooleanOption(required, true, "required");
+
   if (typeof value !== "string") {
     return result(false, FIELD_MESSAGES.invalidDate, "invalid_type");
   }
@@ -419,7 +493,7 @@ export function validateDate(value, { required = true } = {}) {
       : result(true);
   }
 
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(date);
 
   if (!match) {
     return result(false, FIELD_MESSAGES.invalidDate, "invalid_date");
@@ -429,7 +503,10 @@ export function validateDate(value, { required = true } = {}) {
   const month = Number(match[2]);
   const day = Number(match[3]);
 
-  const parsed = new Date(Date.UTC(year, month - 1, day));
+  // Avoid Date.UTC's special handling of years 0 through 99.
+  const parsed = new Date(0);
+  parsed.setUTCHours(0, 0, 0, 0);
+  parsed.setUTCFullYear(year, month - 1, day);
 
   if (
     parsed.getUTCFullYear() !== year ||
@@ -443,10 +520,9 @@ export function validateDate(value, { required = true } = {}) {
 }
 
 /**
- * Validate a URL. HTTPS is the default allowed scheme.
+ * Validate a URL. HTTPS is the default allowed protocol.
  *
- * This is a browser-side format check, not protection against SSRF or
- * malicious redirect chains on a server.
+ * This does not protect server-side URL fetching against SSRF.
  */
 export function validateUrl(
   value,
@@ -458,6 +534,20 @@ export function validateUrl(
   if (typeof value !== "string") {
     return result(false, FIELD_MESSAGES.invalidUrl, "invalid_type");
   }
+
+  if (
+    !Array.isArray(allowedProtocols) ||
+    allowedProtocols.length === 0 ||
+    !allowedProtocols.every(
+      (protocol) =>
+        typeof protocol === "string" &&
+        /^[a-z][a-z0-9+.-]*:$/iu.test(protocol),
+    )
+  ) {
+    throw new TypeError("allowedProtocols must contain valid URL schemes.");
+  }
+
+  allowLocalhost = validBooleanOption(allowLocalhost, false, "allowLocalhost");
 
   const input = value.trim();
 
@@ -477,7 +567,9 @@ export function validateUrl(
     return result(false, FIELD_MESSAGES.invalidUrl, "invalid_url");
   }
 
-  if (!allowedProtocols.includes(parsed.protocol)) {
+  if (!allowedProtocols.some(
+    (protocol) => protocol.toLowerCase() === parsed.protocol.toLowerCase(),
+  )) {
     return result(
       false,
       "This URL protocol is not permitted.",
@@ -504,11 +596,7 @@ export function validateUrl(
       hostname === "[::1]"
     )
   ) {
-    return result(
-      false,
-      "Localhost URLs are not allowed.",
-      "local_hostname",
-    );
+    return result(false, "Localhost URLs are not allowed.", "local_hostname");
   }
 
   return result(true);
@@ -516,27 +604,29 @@ export function validateUrl(
 
 /**
  * Validate a declared MIME type against an explicit allowlist.
- * The server must independently inspect the file contents.
  */
 export function validateMimeType(value, allowedTypes = []) {
   if (typeof value !== "string") {
     return result(false, FIELD_MESSAGES.invalidFileType, "invalid_type");
   }
 
+  if (!Array.isArray(allowedTypes)) {
+    throw new TypeError("allowedTypes must be an array.");
+  }
+
   const mime = value.trim().toLowerCase();
 
   if (!MIME_TYPE_PATTERN.test(mime)) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidFileType,
-      "invalid_mime_type",
-    );
+    return result(false, FIELD_MESSAGES.invalidFileType, "invalid_mime_type");
   }
 
   const allowlist = new Set(
-    allowedTypes
-      .filter((type) => typeof type === "string")
-      .map((type) => type.trim().toLowerCase()),
+    allowedTypes.map((type) => {
+      if (typeof type !== "string") {
+        throw new TypeError("Every allowed MIME type must be a string.");
+      }
+      return type.trim().toLowerCase();
+    }),
   );
 
   if (!allowlist.has(mime)) {
@@ -551,38 +641,46 @@ export function validateMimeType(value, allowedTypes = []) {
 }
 
 /**
- * Validate browser File objects against size and declared MIME type.
+ * Validate a browser File object against size and declared MIME type.
+ *
+ * File.type may be empty or spoofed. Verify file contents on the server.
  */
 export function validateFile(
   file,
   {
-    maxBytes = 10 * 1024 * 1024,
+    maxBytes = DEFAULTS.maxFileBytes,
     minBytes = 1,
     allowedTypes = [],
   } = {},
 ) {
+  maxBytes = validLimit(maxBytes, DEFAULTS.maxFileBytes, {
+    minimum: 1,
+    maximum: Number.MAX_SAFE_INTEGER,
+  });
+  minBytes = validLimit(minBytes, 1, {
+    minimum: 0,
+    maximum: maxBytes,
+  });
+
   if (
     !file ||
     typeof file !== "object" ||
     typeof file.size !== "number" ||
+    !Number.isFinite(file.size) ||
     typeof file.type !== "string"
   ) {
     return result(false, "Select a valid file.", "invalid_file");
   }
 
   if (file.size < minBytes || file.size > maxBytes) {
-    return result(
-      false,
-      `File size must be between ${minBytes} and ${maxBytes} bytes.`,
-      "invalid_file_size",
-    );
+    return result(false, FIELD_MESSAGES.invalidFileSize, "invalid_file_size");
   }
 
   return validateMimeType(file.type, allowedTypes);
 }
 
 /**
- * Validate a value against a set of allowed options.
+ * Validate a value against an explicit allowlist.
  */
 export function validateChoice(
   value,
@@ -592,6 +690,9 @@ export function validateChoice(
   if (!Array.isArray(allowedValues)) {
     throw new TypeError("allowedValues must be an array.");
   }
+
+  required = validBooleanOption(required, true, "required");
+  caseSensitive = validBooleanOption(caseSensitive, false, "caseSensitive");
 
   const candidate = typeof value === "string" ? value.trim() : value;
 
@@ -617,10 +718,7 @@ export function validateChoice(
 }
 
 /**
- * Validate a password using configurable length and complexity rules.
- *
- * This is only a client-side policy check. The server should enforce the
- * authoritative policy and use a suitable password-hashing algorithm.
+ * Validate password policy. The server remains authoritative.
  */
 export function validatePassword(
   value,
@@ -633,6 +731,21 @@ export function validatePassword(
     requireSymbol = false,
   } = {},
 ) {
+  minLength = validLimit(minLength, 12, { minimum: 1, maximum: 4096 });
+  maxLength = validLimit(maxLength, 128, {
+    minimum: minLength,
+    maximum: 4096,
+  });
+
+  requireLowercase = validBooleanOption(
+    requireLowercase, true, "requireLowercase",
+  );
+  requireUppercase = validBooleanOption(
+    requireUppercase, true, "requireUppercase",
+  );
+  requireDigit = validBooleanOption(requireDigit, true, "requireDigit");
+  requireSymbol = validBooleanOption(requireSymbol, false, "requireSymbol");
+
   if (typeof value !== "string") {
     return result(false, "Enter a password.", "invalid_type");
   }
@@ -646,44 +759,77 @@ export function validatePassword(
   }
 
   if (requireLowercase && !/[a-z]/u.test(value)) {
-    return result(
-      false,
-      "Password must contain a lowercase letter.",
-      "password_lowercase",
-    );
+    return result(false, "Password must contain a lowercase letter.", "password_lowercase");
   }
 
   if (requireUppercase && !/[A-Z]/u.test(value)) {
-    return result(
-      false,
-      "Password must contain an uppercase letter.",
-      "password_uppercase",
-    );
+    return result(false, "Password must contain an uppercase letter.", "password_uppercase");
   }
 
   if (requireDigit && !/\d/u.test(value)) {
-    return result(
-      false,
-      "Password must contain a digit.",
-      "password_digit",
-    );
+    return result(false, "Password must contain a digit.", "password_digit");
   }
 
   if (requireSymbol && !/[^\p{L}\p{N}\s]/u.test(value)) {
-    return result(
-      false,
-      "Password must contain a symbol.",
-      "password_symbol",
-    );
+    return result(false, "Password must contain a symbol.", "password_symbol");
+  }
+
+  return result(true);
+}
+
+const APPLICATION_FIELDS = new Set([
+  "application_id", "full_name", "email", "phone", "course",
+  "course_type", "qualification", "date_of_birth", "address", "city",
+  "state", "country", "postal_code", "institution", "exam_name",
+  "exam_score", "exam_rank", "graduation_year", "message", "consent",
+]);
+
+const JOB_FIELDS = new Set([
+  "job_id", "title", "description", "employment_type", "location",
+  "department", "experience_min_years", "experience_max_years",
+  "salary_min", "salary_max", "currency", "skills", "qualifications",
+  "application_deadline", "is_remote", "status",
+]);
+
+function validatePayloadObject(payload, allowedFields, requiredFields, allowUnknownFields, label) {
+  if (!isPlainObject(payload)) {
+    return result(false, `${label} must be an object.`, "invalid_payload");
+  }
+
+  if (!Array.isArray(requiredFields) ||
+      !requiredFields.every((field) => typeof field === "string")) {
+    throw new TypeError("requiredFields must be an array of field names.");
+  }
+
+  allowUnknownFields = validBooleanOption(
+    allowUnknownFields, false, "allowUnknownFields",
+  );
+
+  for (const key of requiredFields) {
+    const value = payload[key];
+
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && !value.trim())
+    ) {
+      return result(false, `Required field is missing: ${key}.`, "required_field");
+    }
+  }
+
+  if (!allowUnknownFields) {
+    for (const key of Object.keys(payload)) {
+      if (!allowedFields.has(key)) {
+        return result(false, `${label} contains unsupported fields.`, "unknown_fields");
+      }
+    }
   }
 
   return result(true);
 }
 
 /**
- * Validate the basic shape of an application payload.
- *
- * Extend allowed fields to match the canonical backend schema.
+ * Validate an application payload against the client-side field allowlist.
  */
 export function validateApplicationPayload(
   payload,
@@ -692,113 +838,56 @@ export function validateApplicationPayload(
     allowUnknownFields = false,
   } = {},
 ) {
-  const allowedFields = new Set([
-    "application_id",
-    "full_name",
-    "email",
-    "phone",
-    "course",
-    "course_type",
-    "qualification",
-    "date_of_birth",
-    "address",
-    "city",
-    "state",
-    "country",
-    "postal_code",
-    "institution",
-    "exam_name",
-    "exam_score",
-    "exam_rank",
-    "graduation_year",
-    "message",
-    "consent",
-  ]);
+  const base = validatePayloadObject(
+    payload, APPLICATION_FIELDS, requiredFields, allowUnknownFields, "Application",
+  );
 
-  if (
-    !payload ||
-    typeof payload !== "object" ||
-    Array.isArray(payload)
-  ) {
-    return result(false, "Application must be an object.", "invalid_payload");
-  }
+  if (!base.valid) return base;
 
-  for (const key of requiredFields) {
-    const value = payload[key];
-
-    if (
-      value === undefined ||
-      value === null ||
-      (typeof value === "string" && !value.trim())
-    ) {
-      return result(
-        false,
-        `Required field is missing: ${key}.`,
-        "required_field",
-      );
-    }
-  }
-
-  if (!allowUnknownFields) {
-    for (const key of Object.keys(payload)) {
-      if (!allowedFields.has(key)) {
-        return result(
-          false,
-          "Application contains unsupported fields.",
-          "unknown_fields",
-        );
-      }
-    }
-  }
-
-  if (
-    payload.full_name !== undefined &&
-    !validateName(payload.full_name).valid
-  ) {
+  if (payload.full_name !== undefined &&
+      !validateName(payload.full_name).valid) {
     return result(false, FIELD_MESSAGES.invalidName, "invalid_name");
   }
 
-  if (
-    payload.email !== undefined &&
-    !validateEmail(payload.email).valid
-  ) {
+  if (payload.email !== undefined &&
+      !validateEmail(payload.email).valid) {
     return result(false, FIELD_MESSAGES.invalidEmail, "invalid_email");
   }
 
-  if (
-    payload.phone !== undefined &&
-    payload.phone !== null &&
-    payload.phone !== "" &&
-    !validatePhone(payload.phone).valid
-  ) {
+  if (payload.phone !== undefined &&
+      payload.phone !== null &&
+      payload.phone !== "" &&
+      !validatePhone(payload.phone).valid) {
     return result(false, FIELD_MESSAGES.invalidPhone, "invalid_phone");
   }
 
-  if (
-    payload.date_of_birth !== undefined &&
-    payload.date_of_birth !== null &&
-    payload.date_of_birth !== "" &&
-    !validateDate(payload.date_of_birth).valid
-  ) {
+  if (payload.date_of_birth !== undefined &&
+      payload.date_of_birth !== null &&
+      payload.date_of_birth !== "" &&
+      !validateDate(payload.date_of_birth).valid) {
     return result(false, FIELD_MESSAGES.invalidDate, "invalid_date");
   }
 
-  if (
-    payload.consent !== undefined &&
-    typeof payload.consent !== "boolean"
-  ) {
-    return result(
-      false,
-      "Consent must be a boolean.",
-      "invalid_consent",
-    );
+  if (payload.consent !== undefined && typeof payload.consent !== "boolean") {
+    return result(false, "Consent must be a boolean.", "invalid_consent");
+  }
+
+  for (const field of ["exam_score", "exam_rank", "graduation_year"]) {
+    if (payload[field] !== undefined && payload[field] !== null &&
+        payload[field] !== "" &&
+        !validateNumber(payload[field], {
+          min: 0,
+          integer: field !== "exam_score",
+        }).valid) {
+      return result(false, `${field} is invalid.`, "invalid_numeric_field");
+    }
   }
 
   return result(true);
 }
 
 /**
- * Validate the basic shape of a job payload.
+ * Validate a job payload against the client-side field allowlist.
  */
 export function validateJobPayload(
   payload,
@@ -807,111 +896,47 @@ export function validateJobPayload(
     allowUnknownFields = false,
   } = {},
 ) {
-  const allowedFields = new Set([
-    "job_id",
-    "title",
-    "description",
-    "employment_type",
-    "location",
-    "department",
-    "experience_min_years",
-    "experience_max_years",
-    "salary_min",
-    "salary_max",
-    "currency",
-    "skills",
-    "qualifications",
-    "application_deadline",
-    "is_remote",
-    "status",
-  ]);
+  const base = validatePayloadObject(
+    payload, JOB_FIELDS, requiredFields, allowUnknownFields, "Job",
+  );
 
-  if (
-    !payload ||
-    typeof payload !== "object" ||
-    Array.isArray(payload)
-  ) {
-    return result(false, "Job must be an object.", "invalid_payload");
-  }
+  if (!base.valid) return base;
 
-  for (const key of requiredFields) {
-    const value = payload[key];
-
-    if (
-      value === undefined ||
-      value === null ||
-      (typeof value === "string" && !value.trim())
-    ) {
-      return result(
-        false,
-        `Required field is missing: ${key}.`,
-        "required_field",
-      );
+  for (const field of ["title", "location", "employment_type"]) {
+    if (payload[field] !== undefined &&
+        !validateText(payload[field], { maxLength: 300 }).valid) {
+      return result(false, `${field} is invalid.`, "invalid_job_field");
     }
   }
 
-  if (!allowUnknownFields) {
-    for (const key of Object.keys(payload)) {
-      if (!allowedFields.has(key)) {
-        return result(
-          false,
-          "Job contains unsupported fields.",
-          "unknown_fields",
-        );
-      }
-    }
+  if (payload.description !== undefined &&
+      !validateText(payload.description, { maxLength: 50_000 }).valid) {
+    return result(false, "Job description is invalid.", "invalid_description");
   }
 
-  if (
-    payload.application_deadline !== undefined &&
-    payload.application_deadline !== null &&
-    payload.application_deadline !== "" &&
-    !validateDate(payload.application_deadline).valid
-  ) {
-    return result(
-      false,
-      FIELD_MESSAGES.invalidDate,
-      "invalid_application_deadline",
-    );
+  if (payload.application_deadline !== undefined &&
+      payload.application_deadline !== null &&
+      payload.application_deadline !== "" &&
+      !validateDate(payload.application_deadline).valid) {
+    return result(false, FIELD_MESSAGES.invalidDate, "invalid_application_deadline");
   }
 
   for (const field of ["experience_min_years", "experience_max_years"]) {
-    if (
-      payload[field] !== undefined &&
-      payload[field] !== null &&
-      !validateNumber(payload[field], { min: 0, max: 80 }).valid
-    ) {
-      return result(
-        false,
-        `${field} must be between 0 and 80.`,
-        "invalid_experience",
-      );
+    if (payload[field] !== undefined && payload[field] !== null &&
+        !validateNumber(payload[field], { min: 0, max: 80, integer: true }).valid) {
+      return result(false, `${field} must be between 0 and 80.`, "invalid_experience");
     }
   }
 
   for (const field of ["salary_min", "salary_max"]) {
-    if (
-      payload[field] !== undefined &&
-      payload[field] !== null &&
-      !validateNumber(payload[field], { min: 0 }).valid
-    ) {
-      return result(
-        false,
-        `${field} must be a non-negative number.`,
-        "invalid_salary",
-      );
+    if (payload[field] !== undefined && payload[field] !== null &&
+        !validateNumber(payload[field], { min: 0 }).valid) {
+      return result(false, `${field} must be non-negative.`, "invalid_salary");
     }
   }
 
-  if (
-    payload.is_remote !== undefined &&
-    typeof payload.is_remote !== "boolean"
-  ) {
-    return result(
-      false,
-      "is_remote must be a boolean.",
-      "invalid_remote_flag",
-    );
+  if (payload.is_remote !== undefined && typeof payload.is_remote !== "boolean") {
+    return result(false, "is_remote must be a boolean.", "invalid_remote_flag");
   }
 
   for (const field of ["skills", "qualifications"]) {
@@ -920,17 +945,11 @@ export function validateJobPayload(
         !Array.isArray(payload[field]) ||
         payload[field].length > 100 ||
         !payload[field].every(
-          (item) =>
-            typeof item === "string" &&
-            item.trim().length > 0 &&
-            item.length <= 200,
+          (item) => typeof item === "string" &&
+            item.trim().length > 0 && item.length <= 200,
         )
       ) {
-        return result(
-          false,
-          `${field} must be a list of valid strings.`,
-          "invalid_list",
-        );
+        return result(false, `${field} must be a list of valid strings.`, "invalid_list");
       }
     }
   }
@@ -942,32 +961,23 @@ export function validateJobPayload(
 // Accessible form integration
 // ---------------------------------------------------------------------------
 
-/**
- * Find the associated error message element for a field.
- *
- * Supported conventions:
- * - data-error-for="email"
- * - id="email-error"
- */
 function findErrorElement(form, field) {
   const name = field.name || field.id;
-
   if (!name) return null;
 
-  const escapedName =
-    typeof CSS !== "undefined" && typeof CSS.escape === "function"
-      ? CSS.escape(name)
-      : name.replace(/["\\]/gu, "\\$&");
+  const escape = (value) => {
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return CSS.escape(value);
+    }
+    return value.replace(/[^A-Za-z0-9_-]/gu, "\\$&");
+  };
 
   return (
-    form.querySelector(`[data-error-for="${escapedName}"]`) ||
-    form.querySelector(`#${escapedName}-error`)
+    form.querySelector(`[data-error-for="${escape(name)}"]`) ||
+    form.querySelector(`#${escape(name)}-error`)
   );
 }
 
-/**
- * Set accessible error feedback for one field.
- */
 function setFieldError(form, field, message) {
   const errorElement = findErrorElement(form, field);
 
@@ -979,18 +989,13 @@ function setFieldError(form, field, message) {
       errorElement.hidden = false;
 
       if (errorElement.id) {
-        const current = (field.getAttribute("aria-describedby") || "")
-          .split(/\s+/u)
-          .filter(Boolean);
+        const ids = (field.getAttribute("aria-describedby") || "")
+          .split(/\s+/u).filter(Boolean);
 
-        if (!current.includes(errorElement.id)) {
-          current.push(errorElement.id);
-        }
-
-        field.setAttribute("aria-describedby", current.join(" "));
+        if (!ids.includes(errorElement.id)) ids.push(errorElement.id);
+        field.setAttribute("aria-describedby", ids.join(" "));
       }
     }
-
     return;
   }
 
@@ -1015,10 +1020,10 @@ function setFieldError(form, field, message) {
 }
 
 /**
- * Return the validation result for a form control.
+ * Validate a single form control.
  *
  * Supported data-validation values:
- * required, email, phone, name, url, number, date, identifier, password
+ * email, phone, name, url, number, date, identifier, password.
  */
 export function validateField(field) {
   if (!field || typeof field !== "object") {
@@ -1026,116 +1031,90 @@ export function validateField(field) {
   }
 
   const rule = field.dataset?.validation || "";
-  const required =
-    field.required ||
-    field.dataset?.required === "true";
-
-  const value =
-    field.type === "checkbox"
-      ? field.checked
-      : field.type === "file"
-        ? field.files?.[0] || null
-        : typeof field.value === "string"
-          ? field.value
-          : "";
+  const required = field.required || field.dataset?.required === "true";
 
   if (field.type === "checkbox") {
-    if (required && !value) {
-      return result(false, "This option must be selected.", "required");
-    }
-
-    return result(true);
+    return required && !field.checked
+      ? result(false, "This option must be selected.", "required")
+      : result(true);
   }
 
   if (field.type === "file") {
-    if (!value) {
-      return required
-        ? result(false, FIELD_MESSAGES.required, "required")
-        : result(true);
+    const file = field.files?.[0] || null;
+
+    if (!file) {
+      return required ? result(false, FIELD_MESSAGES.required, "required") : result(true);
     }
 
     const allowedTypes = (field.dataset?.allowedTypes || "")
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
+      .split(",").map((item) => item.trim()).filter(Boolean);
 
-    const maxBytes = Number(field.dataset?.maxBytes || 10 * 1024 * 1024);
+    const rawMax = field.dataset?.maxBytes;
+    const maxBytes = rawMax ? Number(rawMax) : DEFAULTS.maxFileBytes;
 
-    return validateFile(value, {
-      maxBytes,
-      allowedTypes,
-    });
+    if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
+      return result(false, "Invalid file validation configuration.", "invalid_config");
+    }
+
+    return validateFile(file, { maxBytes, allowedTypes });
   }
 
-  if (!required && !value.trim()) {
-    return result(true);
-  }
+  const value = typeof field.value === "string" ? field.value : "";
+
+  if (!required && !value.trim()) return result(true);
 
   switch (rule) {
     case "email":
       return validateEmail(value);
-
     case "phone":
       return validatePhone(value);
-
     case "name":
       return validateName(value);
-
     case "url":
       return validateUrl(value);
+    case "number": {
+      const min = field.min === "" ? Number.NEGATIVE_INFINITY : Number(field.min);
+      const max = field.max === "" ? Number.POSITIVE_INFINITY : Number(field.max);
 
-    case "number":
+      if (Number.isNaN(min) || Number.isNaN(max)) {
+        return result(false, "Invalid number validation configuration.", "invalid_config");
+      }
+
       return validateNumber(value, {
         required,
-        min: field.min === "" ? Number.NEGATIVE_INFINITY : Number(field.min),
-        max: field.max === "" ? Number.POSITIVE_INFINITY : Number(field.max),
+        min,
+        max,
         integer: field.step === "1",
       });
-
+    }
     case "date":
       return validateDate(value, { required });
-
     case "identifier":
       return validateIdentifier(value);
-
     case "password":
       return validatePassword(value);
-
-    default: {
-      const maxLength =
-        field.maxLength > 0
-          ? field.maxLength
-          : DEFAULTS.maxTextLength;
-
-      const minLength =
-        field.minLength > 0
-          ? field.minLength
-          : 0;
-
+    default:
       return validateText(value, {
         required,
-        minLength,
-        maxLength,
+        minLength: field.minLength > 0 ? field.minLength : 0,
+        maxLength: field.maxLength > 0 ? field.maxLength : DEFAULTS.maxTextLength,
         allowNewlines: field.tagName === "TEXTAREA",
       });
-    }
   }
 }
 
 /**
- * Validate a form and show accessible error messages.
- *
- * @returns {{valid: boolean, invalidFields: HTMLElement[]}}
+ * Validate all eligible controls in a form.
  */
 export function validateForm(form, { focusFirstInvalid = true } = {}) {
   if (!form || typeof form.querySelectorAll !== "function") {
     throw new TypeError("A valid form element is required.");
   }
 
+  focusFirstInvalid = validBooleanOption(focusFirstInvalid, true, "focusFirstInvalid");
+
   const fields = Array.from(
-    form.querySelectorAll(
-      "input:not([type='hidden']), select, textarea",
-    ),
+    form.querySelectorAll("input:not([type='hidden']), select, textarea"),
   ).filter((field) => !field.disabled);
 
   const invalidFields = [];
@@ -1144,24 +1123,18 @@ export function validateForm(form, { focusFirstInvalid = true } = {}) {
     const validation = validateField(field);
     setFieldError(form, field, validation.message);
 
-    if (!validation.valid) {
-      invalidFields.push(field);
-    }
+    if (!validation.valid) invalidFields.push(field);
   }
 
   const summary = form.querySelector("[data-validation-summary]");
 
   if (summary) {
-    if (invalidFields.length) {
-      summary.textContent =
-        `Please correct ${invalidFields.length} ` +
-        `field${invalidFields.length === 1 ? "" : "s"} before continuing.`;
-      summary.hidden = false;
-      summary.setAttribute("role", "alert");
-    } else {
-      summary.textContent = "";
-      summary.hidden = true;
-    }
+    summary.textContent = invalidFields.length
+      ? `Please correct ${invalidFields.length} field${invalidFields.length === 1 ? "" : "s"} before continuing.`
+      : "";
+    summary.hidden = invalidFields.length === 0;
+
+    if (invalidFields.length) summary.setAttribute("role", "alert");
   }
 
   if (invalidFields.length && focusFirstInvalid) {
@@ -1175,11 +1148,9 @@ export function validateForm(form, { focusFirstInvalid = true } = {}) {
 }
 
 /**
- * Attach validation behavior to a form.
+ * Attach event-driven validation without inline event handlers.
  *
- * The module does not automatically submit data. The application's submit
- * handler remains responsible for authorization-aware API requests,
- * CSRF protections where applicable, and server-side error handling.
+ * This does not submit data or replace server-side validation.
  */
 export function attachFormValidation(
   form,
@@ -1194,11 +1165,17 @@ export function attachFormValidation(
     throw new TypeError("A valid form element is required.");
   }
 
+  validateOnBlur = validBooleanOption(validateOnBlur, true, "validateOnBlur");
+  validateOnInput = validBooleanOption(validateOnInput, false, "validateOnInput");
+  validateOnSubmit = validBooleanOption(validateOnSubmit, true, "validateOnSubmit");
+  focusFirstInvalid = validBooleanOption(
+    focusFirstInvalid, true, "focusFirstInvalid",
+  );
+
   detachFormValidation(form);
 
   const onBlur = (event) => {
     const field = event.target;
-
     if (!field.matches?.("input, select, textarea")) return;
 
     const validation = validateField(field);
@@ -1207,7 +1184,6 @@ export function attachFormValidation(
 
   const onInput = (event) => {
     const field = event.target;
-
     if (!field.matches?.("input, select, textarea")) return;
 
     const validation = validateField(field);
@@ -1219,14 +1195,10 @@ export function attachFormValidation(
 
     const validation = validateForm(form, { focusFirstInvalid });
 
-    if (!validation.valid) {
-      event.preventDefault();
-    }
+    if (!validation.valid) event.preventDefault();
   };
 
-  if (validateOnBlur) {
-    form.addEventListener("focusout", onBlur);
-  }
+  if (validateOnBlur) form.addEventListener("focusout", onBlur);
 
   if (validateOnInput) {
     form.addEventListener("input", onInput);
@@ -1247,11 +1219,12 @@ export function attachFormValidation(
 }
 
 /**
- * Remove event listeners installed by attachFormValidation().
+ * Remove listeners installed by attachFormValidation().
  */
 export function detachFormValidation(form) {
-  const handlers = registeredForms.get(form);
+  if (!form || typeof form.removeEventListener !== "function") return;
 
+  const handlers = registeredForms.get(form);
   if (!handlers) return;
 
   if (handlers.validateOnBlur) {
@@ -1268,22 +1241,19 @@ export function detachFormValidation(form) {
 }
 
 /**
- * Automatically attach validation to forms marked with:
+ * Attach validation to forms marked data-validate-form.
  *
- *   data-validate-form
- *
- * Call this after the relevant DOM has been created.
+ * Call after the DOM has been created.
  */
-export function initializeFormValidation(root = document) {
-  const forms = [];
-
-  if (root.matches?.("form[data-validate-form]")) {
-    forms.push(root);
+export function initializeFormValidation(root = globalThis.document) {
+  if (!root || typeof root.querySelectorAll !== "function") {
+    throw new TypeError("A valid DOM root is required.");
   }
 
-  forms.push(
-    ...root.querySelectorAll("form[data-validate-form]"),
-  );
+  const forms = [];
+
+  if (root.matches?.("form[data-validate-form]")) forms.push(root);
+  forms.push(...root.querySelectorAll("form[data-validate-form]"));
 
   return forms.map((form) => attachFormValidation(form));
 }

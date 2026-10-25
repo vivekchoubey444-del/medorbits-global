@@ -1,10 +1,22 @@
-MedOrbits API Services
 
-Directory: api/services/
-Purpose: Centralize business logic, database operations, application workflows, audit logging, and notification management for the MedOrbits API.
+# MedOrbits API Services
 
-1. Directory Structure
+**Directory:** `api/services/`  
+**Project:** MedOrbits — Education, Admissions, Careers & Recruitment  
+**Runtime:** Node.js 20+  
+**Backend:** Express.js  
+**Database:** PostgreSQL  
+**Module system:** CommonJS, unless the project explicitly configures ES modules
 
+## 1. Purpose
+
+The services directory centralizes business logic, database operations, application workflows, audit logging, and notification management for the MedOrbits API.
+
+Services should remain independent of HTTP request and response objects. Controllers handle HTTP concerns, while services enforce business rules, coordinate database operations, and return consistent results or structured errors.
+
+## 2. Directory Structure
+
+```text
 api/
 └── services/
     ├── README.md
@@ -12,75 +24,118 @@ api/
     ├── application-service-2.js
     ├── audit-service.js
     └── notification-service.js
+```
 
-This structure reflects the service files established during development. Keep it synchronized with the actual repository. Before production integration, determine whether application-service.js and application-service-2.js should be merged or whether they serve distinct responsibilities.
+This structure reflects the files established during development. Keep this documentation synchronized with the actual repository.
 
-2. Service Responsibilities
+> **Compatibility note:** Before production integration, compare `application-service.js` and `application-service-2.js`. Determine whether they are separate implementations or duplicated functionality. Consolidate overlapping behavior only after checking their exports, callers, database assumptions, and tests.
 
-Service	Responsibility
-application-service.js	Application creation, retrieval, filtering, updates, and workflow transitions.
-application-service-2.js	Alternative or extended application workflow implementation, including status history and transaction handling.
-audit-service.js	Security events, administrative actions, resource activity, and audit-history queries.
-notification-service.js	In-app notifications, recipient-specific delivery records, unread counts, and read-state management.
+## 3. Service Responsibilities
 
-Application service
+| Service | Responsibility |
+|—|—|
+| `application-service.js` | Application creation, retrieval, filtering, updates, and workflow transitions. |
+| `application-service-2.js` | Alternative or extended application workflow, including status history and transaction handling. |
+| `audit-service.js` | Security events, administrative actions, resource activity, and privileged audit-history queries. |
+| `notification-service.js` | In-app notifications, recipient-specific records, unread counts, and read-state management. |
 
-The application service manages application lifecycle operations.
+### 3.1 Application Service
 
-Expected responsibilities include:
+The application service manages the application lifecycle.
 
-* Create applications associated with the authenticated applicant.
-* Retrieve applications with ownership checks.
-* List applications with pagination and filtering.
-* Update eligible draft applications.
-* Submit, review, approve, reject, or withdraw applications according to configured workflow rules.
-* Record status changes in the application’s history table.
-* Enforce valid status transitions.
-* Return consistent application-service errors.
+Expected responsibilities:
 
-Application types and eligibility requirements should be defined by the MedOrbits business domain rather than accepted blindly from client input.
+- Create applications associated with the authenticated applicant.
+- Retrieve applications with ownership checks.
+- List applications with pagination and supported filters.
+- Update eligible draft applications.
+- Submit, review, approve, reject, or withdraw applications according to workflow rules.
+- Record status changes in application history.
+- Enforce valid state transitions.
+- Coordinate related writes using database transactions.
+- Return consistent application-service errors.
 
-Audit service
+Application types, eligibility requirements, and permitted fields must be defined by the MedOrbits business domain. Do not blindly accept client-supplied application types, applicant IDs, status values, or privileged fields.
+
+### 3.2 Audit Service
 
 The audit service records significant events for security, compliance, troubleshooting, and accountability.
 
-Examples include:
+Example event names:
 
-* application.created
-* application.submitted
-* application.status_changed
-* user.login_failed
-* user.permission_denied
-* notification.created
-* admin.user_updated
+```text
+application.created
+application.submitted
+application.status_changed
+user.login_failed
+user.permission_denied
+notification.created
+admin.user_updated
+```
 
-Audit records should identify the actor, action, resource, outcome, request ID, and timestamp where available.
+Recommended event fields:
 
-Never log passwords, authentication tokens, session cookies, or unnecessary sensitive personal information. Restrict access to audit-history queries and protect records against unauthorized modification or deletion.
+- `actorId`: authenticated user or system actor.
+- `action`: machine-readable event name.
+- `resourceType`: resource category.
+- `resourceId`: affected resource identifier.
+- `outcome`: `success`, `failure`, `denied`, or `error`.
+- `requestId`: request correlation identifier.
+- `ipAddress`: client IP address when justified and correctly resolved.
+- `userAgent`: user-agent information where appropriate.
+- `metadata`: minimal, non-sensitive contextual information.
+- `createdAt`: event timestamp, preferably generated by the database.
 
-Notification service
+Never record passwords, bearer tokens, session cookies, authentication secrets, full request bodies, or unnecessary sensitive personal information.
+
+Audit-history queries must be restricted to authorized roles. Database permissions and, where appropriate, triggers must protect audit records against unauthorized modification or deletion. Application-level restrictions alone do not guarantee immutability.
+
+### 3.3 Notification Service
 
 The notification service manages in-app notification records.
 
-Expected responsibilities include:
+Expected responsibilities:
 
-* Create a notification for an authorized recipient.
-* Create notifications for a bounded list of recipients.
-* Retrieve notifications belonging to the authenticated user.
-* Filter notifications by type and read state.
-* Count unread notifications.
-* Mark individual or all notifications as read.
-* Mark notifications as unread.
-* Delete or clear notifications according to the application’s retention policy.
+- Create a notification for an authorized recipient.
+- Create notifications for a bounded list of recipients.
+- Retrieve notifications belonging to the authenticated user.
+- Filter notifications by supported type and read state.
+- Count unread notifications.
+- Mark individual notifications as read or unread.
+- Mark all eligible notifications as read.
+- Delete or clear notifications according to the retention policy.
 
-Email, SMS, push notifications, and real-time WebSocket delivery should be handled by dedicated adapters or background workers rather than assumed to occur when an in-app record is created.
+Suggested notification categories:
 
-⸻
+```text
+general
+account
+application
+admission
+document
+payment
+security
+system
+support
+career
+```
 
-3. Architecture Principles
+Suggested priorities:
 
-The recommended request flow is:
+```text
+low
+normal
+high
+urgent
+```
 
+Creating an in-app notification does not mean an email, SMS, push notification, or WebSocket message has been delivered. Use dedicated adapters or background workers for external delivery.
+
+**Authorization requirement:** A caller must be authorized to create notifications for the selected recipients. User-specific notification reads and mutations must be scoped to the authenticated recipient.
+
+## 4. Recommended Architecture
+
+```text
 HTTP Request
      |
      v
@@ -101,172 +156,221 @@ Service Layer
      v
 Repository / PostgreSQL
      |
+     +-—> Audit Logging
+     |
+     +-—> Notification / Outbox
+     |
      v
 HTTP Response
+```
 
-Audit logging and notification creation can be triggered by business operations when required.
+### Routes
 
-Responsibilities by layer
+- Define HTTP methods and endpoint paths.
+- Attach authentication and authorization middleware.
+- Apply request validation and rate limits.
+- Delegate requests to controllers.
 
-Routes
+### Middleware
 
-* Define HTTP methods and endpoint paths.
-* Attach appropriate middleware.
-* Delegate requests to controllers.
+- Authenticate requests.
+- Enforce access permissions.
+- Validate incoming data.
+- Apply rate limits and request-size limits.
+- Handle cross-cutting request concerns.
 
-Middleware
+### Controllers
 
-* Authenticate requests.
-* Enforce authorization.
-* Validate input.
-* Apply rate limits.
-* Handle cross-cutting request concerns.
+- Read validated request data.
+- Obtain the authenticated actor from trusted authentication context.
+- Call the appropriate service.
+- Return the expected HTTP response.
+- Forward errors to centralized error handling.
 
-Controllers
+### Services
 
-* Read validated request data.
-* Obtain the authenticated actor from trusted authentication context.
-* Call the appropriate service.
-* Return the expected HTTP response.
-* Forward errors to centralized error handling.
+- Implement business rules.
+- Validate domain-specific invariants.
+- Coordinate database operations.
+- Enforce ownership and workflow requirements.
+- Coordinate mandatory audit events and notification creation.
 
-Services
+### Database Layer
 
-* Implement business rules.
-* Validate domain-specific invariants.
-* Coordinate database operations.
-* Enforce ownership and workflow requirements.
-* Coordinate audit events and notifications.
+- Execute parameterized SQL.
+- Enforce relationships and critical invariants.
+- Support transactions.
+- Apply version-controlled migrations and indexes.
+- Restrict database privileges according to least privilege.
 
-Database layer
+## 5. PostgreSQL Integration
 
-* Execute parameterized SQL.
-* Enforce constraints and relationships.
-* Support transactions where required.
-* Apply migrations and indexes.
+Services should receive the existing PostgreSQL pool through dependency injection rather than creating independent connection pools.
 
-⸻
+Example service initialization:
 
-4. PostgreSQL Integration
-
-Services should receive the existing database pool through dependency injection rather than creating a new connection pool independently.
-
-Example:
-
+```javascript
 ‘use strict’;
+
 const db = require(‘../config/database’);
+
 const {
   createApplicationService,
 } = require(‘./application-service’);
+
 const {
   createAuditService,
 } = require(‘./audit-service’);
+
 const {
   createNotificationService,
 } = require(‘./notification-service’);
+
 const applicationService = createApplicationService({ db });
 const auditService = createAuditService({ db });
 const notificationService = createNotificationService({ db });
+
 module.exports = {
   applicationService,
   auditService,
   notificationService,
 };
+```
 
-Adapt the database import path to the actual project structure. Ensure the database module exports a compatible pg pool.
+**Important:** Adapt the database import path and factory exports to the actual repository. The database module must export a compatible PostgreSQL pool or client. Confirm that each service uses the same expected interface before importing it.
 
-Database conventions
+### Database conventions
 
-* Use parameterized SQL for all values.
-* Use database constraints for critical invariants.
-* Use transactions for related writes that must succeed or fail together.
-* Keep database schema migrations under version control.
-* Avoid issuing DDL statements from ordinary request handlers.
-* Never return raw SQL errors to clients.
-* Use connection pooling and release transaction clients reliably.
+- Use parameterized SQL for all query values.
+- Allowlist dynamic identifiers such as sort columns; SQL identifiers cannot be safely parameterized as ordinary values.
+- Enforce critical invariants with database constraints.
+- Use transactions for related writes that must succeed or fail together.
+- Keep schema migrations under version control.
+- Avoid issuing schema-changing DDL statements from request handlers.
+- Never return raw SQL errors or database internals to clients.
+- Release checked-out transaction clients in a `finally` block.
+- Use connection pooling and configure appropriate timeouts.
 
-Transaction handling
+## 6. Transaction Handling
 
-When a business operation changes an application and writes its status history, both writes should occur in the same transaction.
+When an application status changes and a history record is written, both operations should occur in the same transaction.
 
-The same principle applies when a notification or audit event must be guaranteed to commit with a business change.
+Example pattern:
 
-For critical audit records, define a clear failure policy. If the audit record is mandatory, the business transaction should not commit when the audit write fails. If the audit record is supplementary, use an explicitly documented alternative such as a transactional outbox.
+```javascript
+‘use strict’;
 
-Do not use a separate pool query for an audit write that must be part of an existing transaction. Pass the same transaction client to the relevant service.
+async function withTransaction(db, callback) {
+  const client = await db.connect();
 
-⸻
+  try {
+    await client.query(‘BEGIN’);
 
-5. Application Workflow
+    const result = await callback(client);
 
-The application workflow uses explicit states.
+    await client.query(‘COMMIT’);
 
-Status	Meaning
-draft	Application is being prepared.
-submitted	Applicant has submitted the application.
-under_review	Authorized staff are reviewing the application.
-documents_required	Additional documents or information are required.
-approved	Application has been approved.
-rejected	Application has been rejected.
-withdrawn	Application has been withdrawn.
+    return result;
+  } catch (error) {
+    try {
+      await client.query(‘ROLLBACK’);
+    } catch {
+      // Preserve the original operation error.
+    }
 
-A service should reject transitions that are not permitted by its workflow configuration.
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
-The status list above is a proposed shared convention. Verify that both application service implementations and the database schema use the same states and permitted transitions.
+module.exports = { withTransaction };
+```
 
-Workflow requirements
+This is a reference pattern, not a replacement for the project’s existing transaction helper. Check whether a shared transaction utility already exists before adding another.
 
-* Associate each application with its authenticated applicant.
-* Do not trust a client-supplied applicant ID.
-* Verify ownership before reading or modifying an application.
-* Restrict review decisions to authorized staff.
-* Record previous and new statuses.
-* Capture the actor responsible for a transition.
-* Use database transactions for state changes and history records.
-* Prevent concurrent updates from bypassing transition rules.
+### Transaction rules
 
-⸻
+1. Acquire one client from the existing pool.
+2. Begin the transaction on that client.
+3. Execute all related writes through the same client.
+4. Commit only after every mandatory operation succeeds.
+5. Roll back on failure.
+6. Release the client regardless of the outcome.
 
-6. Audit Event Conventions
+Do not issue a separate pool query for an audit or history write that must be part of the current transaction.
 
-Use consistent, machine-readable action names.
+### Audit failure policy
 
-Recommended format:
+Define whether each audit event is mandatory or supplementary.
 
+- **Mandatory audit event:** fail and roll back the associated business transaction if the audit write fails.
+- **Supplementary audit event:** use an explicitly documented failure policy, such as an independent logging pipeline.
+- **Reliable asynchronous processing:** use a transactional outbox when a committed business change must reliably trigger subsequent notification or delivery work.
+
+A transactional outbox stores the business change and an event record in the same transaction. A worker subsequently processes the event with retry and idempotency controls.
+
+## 7. Application Workflow
+
+The following states are a proposed shared convention:
+
+| Status | Meaning |
+|—|—|
+| `draft` | Application is being prepared. |
+| `submitted` | Applicant has submitted the application. |
+| `under_review` | Authorized staff are reviewing the application. |
+| `documents_required` | Additional documents or information are required. |
+| `approved` | Application has been approved. |
+| `rejected` | Application has been rejected. |
+| `withdrawn` | Application has been withdrawn. |
+
+Verify that both application service implementations, the database schema, API controllers, and client interfaces use the same states and permitted transitions.
+
+### Workflow requirements
+
+- Associate each application with its authenticated applicant.
+- Never trust a client-supplied applicant ID as proof of ownership.
+- Verify ownership before reading or modifying an application.
+- Restrict review decisions to authorized staff.
+- Validate every transition against the workflow configuration.
+- Record previous and new statuses.
+- Capture the actor responsible for each transition.
+- Write the application update and status history transactionally.
+- Prevent concurrent updates from bypassing transition rules.
+
+For concurrency control, consider a row lock such as `SELECT ... FOR UPDATE` or optimistic locking with a version column. Select one approach that matches the existing database design.
+
+## 8. Audit Event Conventions
+
+Use consistent, machine-readable action names in the format:
+
+```text
 <resource>.<action>
+```
 
 Examples:
 
+```text
 application.created
 application.updated
 application.submitted
 application.approved
 application.rejected
+application.status_changed
 notification.created
 notification.marked_read
 user.login_failed
 admin.permission_changed
+```
 
-Recommended event fields:
+Example usage:
 
-Field	Description
-actorId	Authenticated user or system actor.
-action	Machine-readable event name.
-resourceType	Resource category.
-resourceId	Relevant resource identifier.
-outcome	Success, failure, denial, or error.
-requestId	Request correlation identifier.
-ipAddress	Client IP when justified and correctly resolved.
-userAgent	User-agent information where appropriate.
-metadata	Minimal, non-sensitive event context.
-
-Example:
-
+```javascript
 await auditService.recordSuccess({
   actorId: actor.id,
   action: ‘application.submitted’,
   resourceType: ‘application’,
-  resourceId: application.id,
+  resourceId: String(application.id),
   requestId,
   metadata: {
     applicationType: application.application_type,
@@ -274,208 +378,237 @@ await auditService.recordSuccess({
     newStatus: ‘submitted’,
   },
 });
+```
 
-The example assumes the audit service instance and actor context are available. Do not log the complete request body or sensitive documents.
+This example assumes the audit service instance and trusted actor context are available. Confirm that the application object contains the referenced fields.
 
-⸻
+### Audit requirements
 
-7. Notification Conventions
+- Derive the actor from verified server-side authentication.
+- Validate and sanitize event fields.
+- Redact sensitive metadata as a defense-in-depth measure.
+- Avoid logging complete request bodies or sensitive documents.
+- Use a request ID consistently across relevant logs.
+- Apply retention controls and restrict access to audit history.
+- Do not expose raw database errors to clients.
+- Document the failure policy for mandatory audit events.
 
-Keep notification categories consistent across services and client interfaces.
+## 9. Notification Conventions
 
-Suggested categories include:
+Example usage:
 
-* general
-* account
-* application
-* admission
-* document
-* payment
-* security
-* system
-* support
-* career
-
-Suggested priorities:
-
-* low
-* normal
-* high
-* urgent
-
-Example:
-
+```javascript
 await notificationService.create({
-  recipientId: applicant.id,
+  recipientId: String(applicant.id),
   type: ‘application’,
   priority: ‘normal’,
   title: ‘Application submitted’,
   message: ‘Your application has been submitted successfully.’,
   actionUrl: ‘/applications’,
   metadata: {
-    applicationId: application.id,
+    applicationId: String(application.id),
   },
 });
+```
 
-The service must be called only after the caller has established authority to notify the recipient.
+Before calling the service, establish that the caller is authorized to notify the recipient. Do not trust arbitrary recipient IDs from untrusted request bodies.
 
-Notification delivery
+### Notification delivery reliability
 
-Creating a database record is not equivalent to sending a message through email, SMS, or push notification providers.
+For external delivery, consider:
 
-For reliable external delivery, consider:
+- A background job queue or transactional outbox.
+- Bounded retry policies with backoff.
+- Idempotency keys.
+- Delivery-attempt tracking.
+- Provider response logging with sensitive-data redaction.
+- Dead-letter handling for permanently failed jobs.
+- Monitoring and alerting for repeated delivery failures.
 
-* A background job queue.
-* Retry policies with backoff.
-* Idempotency keys.
-* Delivery-attempt tracking.
-* Provider response logging with sensitive-data redaction.
-* Dead-letter handling for permanently failed jobs.
+Notification expiration, retention, and deletion behavior must match the actual schema and service implementation.
 
-Use a transactional outbox when notifications must not be lost after a successful business transaction.
-
-⸻
-
-8. Error Handling
+## 10. Error Handling
 
 Services should use structured errors that the centralized API error handler can translate into HTTP responses.
 
-Recommended status codes:
+| HTTP status | Usage |
+|—|—|
+| `400` | Invalid input or unsupported operation. |
+| `401` | Authentication is missing or invalid. |
+| `403` | Actor is not authorized to perform the operation. |
+| `404` | Resource does not exist or is intentionally concealed. |
+| `409` | Invalid state transition or conflicting update. |
+| `429` | Rate limit exceeded; generally enforced by middleware. |
+| `500` | Unexpected server-side failure. |
 
-HTTP status	Usage
-400	Invalid input or unsupported operation.
-401	Authentication is missing or invalid.
-403	The actor is not authorized to perform the operation.
-404	Resource does not exist or is intentionally concealed.
-409	Invalid state transition or conflicting update.
-429	Rate limit exceeded, generally enforced by middleware.
-500	Unexpected server-side failure.
+Example service error:
 
-A service error may include:
+```javascript
+const error = new Error(
+  ‘The application is no longer editable.’
+);
 
-{
-  message: ‘The application is no longer editable.’,
-  statusCode: 409,
-  code: ‘APPLICATION_NOT_EDITABLE’
-}
+error.statusCode = 409;
+error.code = ‘APPLICATION_NOT_EDITABLE’;
 
-The actual error properties must match the error-handler implementation used by the application.
+throw error;
+```
 
-Error-handling rules
+Use the actual error class and properties expected by the project’s centralized error handler. Do not introduce incompatible error formats in individual services.
 
-* Do not expose database internals.
-* Preserve the original error for protected server-side diagnostics.
-* Avoid converting every failure into a client error.
-* Do not silently ignore failed mandatory audit writes.
-* Use a consistent response envelope at the HTTP boundary.
-* Avoid logging secrets or full sensitive payloads.
+### Error-handling rules
 
-⸻
+- Do not expose database internals.
+- Preserve original errors for protected server-side diagnostics.
+- Do not convert every failure into a client error.
+- Do not silently ignore failed mandatory audit writes.
+- Use a consistent response envelope at the HTTP boundary.
+- Avoid logging secrets or complete sensitive payloads.
 
-9. Security Requirements
+## 11. Security Requirements
 
-Authorization
+### Authorization
 
-* Derive actor identity from verified authentication context.
-* Enforce ownership checks on every user-specific operation.
-* Restrict bulk notification creation to authorized callers.
-* Restrict audit-history queries to authorized roles.
-* Verify permissions for administrative changes.
-* Never trust roles or user IDs supplied in an untrusted request body.
+- Derive actor identity from verified authentication context.
+- Enforce ownership checks on every user-specific operation.
+- Restrict bulk notification creation to authorized callers.
+- Restrict audit-history queries to configured privileged roles.
+- Verify permissions for administrative changes.
+- Never trust roles or user IDs supplied in an untrusted request body.
+- Scope notification queries and updates to the authenticated recipient.
 
-Input validation
+### Input validation
 
-* Validate required fields and field lengths.
-* Allowlist fields that clients may modify.
-* Reject unexpected properties on sensitive write endpoints.
-* Validate pagination and filter parameters.
-* Validate URLs before storing them as action links.
-* Use parameterized SQL.
-* Apply request-body size limits.
+- Validate required fields and field lengths.
+- Allowlist fields that clients may modify.
+- Reject unexpected properties on sensitive write endpoints.
+- Validate pagination and filter parameters.
+- Validate action URLs before storing them.
+- Use parameterized SQL.
+- Apply request-body size limits.
+- Reject unsupported status transitions.
+- Validate IDs according to the actual database schema.
 
-Data protection
+### Data protection
 
-* Never persist raw passwords or bearer tokens in metadata.
-* Limit stored personal information to what the service requires.
-* Apply retention and deletion policies.
-* Protect sensitive document references.
-* Restrict access to audit data.
-* Consider encryption requirements for sensitive records.
+- Never persist raw passwords, bearer tokens, or session cookies in metadata.
+- Limit stored personal information to what the service requires.
+- Apply retention and deletion policies.
+- Protect sensitive document references.
+- Restrict access to audit data.
+- Assess encryption requirements for sensitive records.
+- Do not assume recursive metadata redaction will catch every possible secret.
 
-Reliability
+### Reliability
 
-* Use transactions for related database writes.
-* Add database indexes based on actual query patterns.
-* Handle concurrent updates explicitly.
-* Use idempotency where duplicate requests could cause harmful effects.
-* Monitor failed background jobs and audit writes.
+- Use transactions for related database writes.
+- Add indexes based on actual query patterns.
+- Handle concurrent updates explicitly.
+- Use idempotency where duplicate requests could cause harmful effects.
+- Monitor failed background jobs and audit writes.
+- Ensure retry behavior does not duplicate notifications or business actions.
 
-⸻
+## 12. Recommended Database Indexes
 
-10. Recommended Database Indexes
+Confirm that equivalent indexes do not already exist before adding new ones.
 
-Confirm that equivalent indexes do not already exist before creating additional ones.
+The following examples assume the named tables and columns exist:
 
-Examples:
-
+```sql
 CREATE INDEX IF NOT EXISTS applications_applicant_created_idx
     ON applications (applicant_id, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS applications_status_created_idx
     ON applications (status, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS application_history_resource_idx
     ON application_status_history
        (application_id, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx
-    ON audit_logs (created_at DESC);
+    ON audit_logs (created_at DESC, id DESC);
+
 CREATE INDEX IF NOT EXISTS audit_logs_actor_created_idx
-    ON audit_logs (actor_id, created_at DESC);
+    ON audit_logs (actor_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS audit_logs_action_created_idx
+    ON audit_logs (action, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS audit_logs_resource_idx
+    ON audit_logs (resource_type, resource_id);
+
 CREATE INDEX IF NOT EXISTS notifications_recipient_created_idx
     ON notifications (recipient_id, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS notifications_unread_idx
     ON notifications (recipient_id, created_at DESC)
     WHERE read_at IS NULL;
+```
 
-These statements assume the documented tables and columns exist. Introduce schema changes through the project’s migration system and evaluate indexes against query plans and write volume.
+### Index considerations
 
-⸻
+- Confirm whether notification read state is stored in `read_at`, `is_read`, or another field.
+- Confirm the actual application-history table name and timestamp column.
+- Ensure audit index definitions match the service’s query ordering.
+- Introduce changes through the project’s migration system.
+- Review query plans and write volume before adding redundant indexes.
+- Consider concurrent index creation for large production tables when supported by the migration strategy.
 
-11. Testing Checklist
+## 13. Testing Checklist
 
 Before deployment, verify:
 
-* [ ]	Services initialize using the existing database pool.
-* [ ]	All SQL queries use parameterized values.
-* [ ]	Missing or invalid actor context is rejected.
-* [ ]	Users cannot read or modify another user’s application.
-* [ ]	Draft-only updates reject non-draft applications.
-* [ ]	Invalid status transitions are rejected.
-* [ ]	Status history and status changes are transactionally consistent.
-* [ ]	Audit records exclude sensitive information.
-* [ ]	Unauthorized users cannot query audit history.
-* [ ]	Notifications are visible only to their recipients.
-* [ ]	Unread counts exclude expired notifications where configured.
-* [ ]	Pagination rejects invalid values and enforces maximum limits.
-* [ ]	Database failures are handled without exposing internal details.
-* [ ]	Concurrent status changes do not bypass workflow rules.
-* [ ]	Integration tests cover rollback behavior.
-* [ ]	Background notification delivery retries failures safely.
+- [ ] Services initialize using the existing database pool.
+- [ ] Service exports match their controller imports.
+- [ ] All SQL values are parameterized.
+- [ ] Missing or invalid actor context is rejected.
+- [ ] Users cannot read or modify another user’s application.
+- [ ] Draft-only updates reject non-draft applications.
+- [ ] Invalid status transitions are rejected.
+- [ ] Status history and status changes are transactionally consistent.
+- [ ] Concurrent status changes do not bypass workflow rules.
+- [ ] Audit records exclude sensitive information.
+- [ ] Unauthorized users cannot query audit history.
+- [ ] Audit queries reject unsupported filters.
+- [ ] Notification records are visible only to their recipients.
+- [ ] Bulk notification creation has a safe recipient limit.
+- [ ] Unread counts handle expiration according to policy.
+- [ ] Pagination rejects invalid values and enforces maximum limits.
+- [ ] Database failures do not expose internal details.
+- [ ] Mandatory audit failures roll back associated transactions.
+- [ ] Transaction clients are released after success and failure.
+- [ ] Integration tests cover rollback behavior.
+- [ ] Background notification delivery retries failures safely.
+- [ ] Idempotency prevents duplicate processing where required.
 
-Run the test and lint commands defined in package.json; do not assume script names without checking the repository.
+Run the test and lint commands defined in `package.json`. Verify the actual scripts instead of assuming command names.
 
-⸻
+## 14. Maintenance and Compatibility
 
-12. Maintenance and Compatibility
+- Keep service functions focused on business responsibilities.
+- Avoid duplicating application workflow logic across service files.
+- Consolidate overlapping implementations only after compatibility analysis.
+- Document changes to schemas, statuses, error codes, and exported methods.
+- Keep role names consistent with authentication and authorization middleware.
+- Keep audit action names and notification categories consistent across the application.
+- Review dependencies and security advisories regularly.
+- Keep service tests aligned with database migrations and API contracts.
 
-* Keep service functions focused on business responsibilities.
-* Avoid duplicating application workflow logic across service files.
-* Consolidate overlapping implementations when behavior is equivalent.
-* Document changes to schemas, statuses, error codes, and exported methods.
-* Keep role names consistent with authentication and authorization middleware.
-* Keep audit action names and notification categories consistent across the application.
-* Review dependencies and security advisories regularly.
+### Pre-production verification
 
-Production readiness
+Before deployment, confirm:
 
-This README documents the intended service architecture. It does not prove that the services, database schema, authorization controls, migrations, or tests are correctly configured.
+1. The actual source files match the documented exports.
+2. The database schema and migrations match all service queries.
+3. The configured role names match the authentication model.
+4. Ownership checks are enforced in every relevant operation.
+5. Transaction boundaries include all mandatory writes.
+6. Audit immutability is enforced by database privileges and applicable database controls.
+7. Controllers use the centralized error handler correctly.
+8. Automated tests pass against a dedicated test database.
 
-Before production deployment, verify the actual source files, database schema, route integration, role model, transaction boundaries, and automated test results.
+## 15. Production Readiness Statement
+
+This README describes the intended MedOrbits service architecture. It does not independently establish that the implementation, schema, authorization controls, migrations, integrations, or automated tests are production-ready.
+
+Production readiness must be confirmed by reviewing the actual repository, database schema, route integration, permissions, transaction behavior, and test results.

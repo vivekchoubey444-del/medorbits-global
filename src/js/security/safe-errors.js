@@ -6,16 +6,16 @@
  * Responsibilities:
  * - Normalize unknown errors into a consistent structure.
  * - Produce safe user-facing error messages.
- * - Map common HTTP status codes to stable error codes.
- * - Extract API error responses without exposing server internals.
+ * - Map HTTP status codes to stable error codes.
+ * - Extract safe API error metadata without exposing server internals.
  * - Generate and validate correlation IDs.
- * - Support centralized error reporting.
+ * - Support optional centralized error reporting.
  *
  * Security:
  * - Never display stack traces or raw server exceptions to end users.
- * - Do not log passwords, tokens, session cookies, or complete request bodies.
- * - Do not treat client-side errors as authoritative server errors.
- * - Backend services must independently sanitize their error responses.
+ * - Do not log passwords, tokens, session cookies, or request bodies.
+ * - Client-side errors are not authoritative server errors.
+ * - Backend services must independently sanitize their responses.
  */
 
 const DEFAULT_OPTIONS = Object.freeze({
@@ -31,7 +31,7 @@ const DEFAULT_OPTIONS = Object.freeze({
 });
 
 const STATUS_MESSAGES = Object.freeze({
-  400: "The request could not be processed.",
+  400: DEFAULT_OPTIONS.validationMessage,
   401: DEFAULT_OPTIONS.unauthorizedMessage,
   403: DEFAULT_OPTIONS.forbiddenMessage,
   404: DEFAULT_OPTIONS.notFoundMessage,
@@ -65,20 +65,7 @@ const STATUS_CODES = Object.freeze({
 });
 
 const SAFE_ERROR_CODES = new Set([
-  "BAD_REQUEST",
-  "UNAUTHENTICATED",
-  "FORBIDDEN",
-  "NOT_FOUND",
-  "REQUEST_TIMEOUT",
-  "CONFLICT",
-  "PAYLOAD_TOO_LARGE",
-  "UNSUPPORTED_MEDIA_TYPE",
-  "VALIDATION_ERROR",
-  "RATE_LIMITED",
-  "INTERNAL_ERROR",
-  "UPSTREAM_ERROR",
-  "SERVICE_UNAVAILABLE",
-  "UPSTREAM_TIMEOUT",
+  ...Object.values(STATUS_CODES),
   "NETWORK_ERROR",
   "ABORTED",
   "UNKNOWN_ERROR",
@@ -86,15 +73,19 @@ const SAFE_ERROR_CODES = new Set([
 
 const CORRELATION_ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F]/u;
+const MAX_PUBLIC_MESSAGE_LENGTH = 500;
 
 function isPlainObject(value) {
   if (value === null || typeof value !== "object") {
     return false;
   }
 
-  const prototype = Object.getPrototypeOf(value);
-
-  return prototype === Object.prototype || prototype === null;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
 }
 
 function safeString(value, fallback = "") {
@@ -104,7 +95,11 @@ function safeString(value, fallback = "") {
 
   const normalized = value.trim();
 
-  if (CONTROL_CHARACTER_PATTERN.test(normalized)) {
+  if (
+    !normalized ||
+    normalized.length > MAX_PUBLIC_MESSAGE_LENGTH ||
+    CONTROL_CHARACTER_PATTERN.test(normalized)
+  ) {
     return fallback;
   }
 
@@ -112,42 +107,56 @@ function safeString(value, fallback = "") {
 }
 
 function safeStatus(value) {
-  const status = Number(value);
-
   if (
-    Number.isInteger(status) &&
-    status >= 400 &&
-    status <= 599
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < 400 ||
+    value > 599
   ) {
-    return status;
+    return 500;
   }
 
-  return 500;
+  return value;
+}
+
+function getOption(options, key) {
+  if (!isPlainObject(options)) {
+    return DEFAULT_OPTIONS[key];
+  }
+
+  return safeString(options[key], DEFAULT_OPTIONS[key]);
 }
 
 function createCorrelationId() {
   try {
     if (
-      typeof crypto !== "undefined" &&
-      typeof crypto.randomUUID === "function"
+      globalThis.crypto &&
+      typeof globalThis.crypto.randomUUID === "function"
     ) {
-      return crypto.randomUUID();
+      return globalThis.crypto.randomUUID();
     }
   } catch {
-    // Fall through to the non-cryptographic fallback.
+    // Secure ID generation is unavailable in this environment.
   }
 
-  // A correlation ID is for diagnostics, not authentication or authorization.
-  return `req-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 12)}`;
+  // Fail closed instead of using Math.random() for an identifier that may
+  // be mistaken for a security-sensitive token.
+  return `req-${Date.now().toString(36)}-${fallbackSequence()}`;
+}
+
+let fallbackCounter = 0;
+
+function fallbackSequence() {
+  fallbackCounter = (fallbackCounter + 1) % 0xFFFFFF;
+  return fallbackCounter.toString(36).padStart(5, "0");
 }
 
 function normalizeCorrelationId(value) {
-  const candidate = safeString(value);
+  const candidate = safeString(value, "");
 
   if (
     candidate &&
+    candidate.length <= 128 &&
     CORRELATION_ID_PATTERN.test(candidate)
   ) {
     return candidate;
@@ -161,52 +170,56 @@ function statusToCode(status) {
 }
 
 function statusToMessage(status, options = {}) {
-  if (status === 422 || status === 400) {
-    return options.validationMessage || DEFAULT_OPTIONS.validationMessage;
+  switch (status) {
+    case 400:
+    case 422:
+      return getOption(options, "validationMessage");
+    case 401:
+      return getOption(options, "unauthorizedMessage");
+    case 403:
+      return getOption(options, "forbiddenMessage");
+    case 404:
+      return getOption(options, "notFoundMessage");
+    case 408:
+    case 504:
+      return getOption(options, "timeoutMessage");
+    case 429:
+      return getOption(options, "rateLimitMessage");
+    case 502:
+    case 503:
+      return getOption(options, "maintenanceMessage");
+    default:
+      return STATUS_MESSAGES[status] || getOption(options, "genericMessage");
+  }
+}
+
+function isAbortError(error) {
+  if (!error || typeof error !== "object") {
+    return false;
   }
 
-  if (status === 401) {
-    return options.unauthorizedMessage || DEFAULT_OPTIONS.unauthorizedMessage;
+  try {
+    return error.name === "AbortError";
+  } catch {
+    return false;
   }
+}
 
-  if (status === 403) {
-    return options.forbiddenMessage || DEFAULT_OPTIONS.forbiddenMessage;
-  }
-
-  if (status === 404) {
-    return options.notFoundMessage || DEFAULT_OPTIONS.notFoundMessage;
-  }
-
-  if (status === 408 || status === 504) {
-    return options.timeoutMessage || DEFAULT_OPTIONS.timeoutMessage;
-  }
-
-  if (status === 429) {
-    return options.rateLimitMessage || DEFAULT_OPTIONS.rateLimitMessage;
-  }
-
-  if (status === 502 || status === 503) {
-    return options.maintenanceMessage || DEFAULT_OPTIONS.maintenanceMessage;
-  }
-
-  return STATUS_MESSAGES[status] || options.genericMessage ||
-    DEFAULT_OPTIONS.genericMessage;
+function isSafeAppError(error) {
+  return error instanceof SafeAppError;
 }
 
 /**
  * Create a normalized internal error record.
  *
- * The original error is deliberately not returned. Callers should use the
- * original exception only within a trusted diagnostic path.
+ * The original exception and its stack are never returned.
  */
 export function normalizeError(error, options = {}) {
-  const correlationId = normalizeCorrelationId(
-    options.correlationId,
-  );
+  const correlationId = normalizeCorrelationId(options?.correlationId);
 
-  if (error instanceof SafeAppError) {
+  if (isSafeAppError(error)) {
     return Object.freeze({
-      name: error.name,
+      name: "SafeAppError",
       code: error.code,
       status: error.status,
       message: error.publicMessage,
@@ -215,37 +228,24 @@ export function normalizeError(error, options = {}) {
     });
   }
 
-  if (error instanceof TypeError || error instanceof SyntaxError) {
-    return Object.freeze({
-      name: "ClientRuntimeError",
-      code: "BAD_REQUEST",
-      status: 400,
-      message: statusToMessage(400, options),
-      correlationId,
-      retryable: false,
-    });
-  }
-
-  if (
-    error &&
-    typeof error === "object" &&
-    error.name === "AbortError"
-  ) {
+  if (isAbortError(error)) {
     return Object.freeze({
       name: "AbortError",
       code: "ABORTED",
       status: 408,
-      message: options.timeoutMessage || DEFAULT_OPTIONS.timeoutMessage,
+      message: getOption(options, "timeoutMessage"),
       correlationId,
       retryable: true,
     });
   }
 
+  // Do not infer HTTP status from TypeError or SyntaxError. These can arise
+  // from programming errors, JSON parsing, or unrelated client operations.
   return Object.freeze({
     name: "SafeAppError",
     code: "UNKNOWN_ERROR",
     status: 500,
-    message: options.genericMessage || DEFAULT_OPTIONS.genericMessage,
+    message: getOption(options, "genericMessage"),
     correlationId,
     retryable: false,
   });
@@ -254,7 +254,7 @@ export function normalizeError(error, options = {}) {
 /**
  * Application error with an explicitly controlled public message.
  *
- * Do not put secrets, raw database errors, or stack traces in publicMessage.
+ * `message` and `cause` are internal diagnostics. Never display them directly.
  */
 export class SafeAppError extends Error {
   constructor(
@@ -267,48 +267,65 @@ export class SafeAppError extends Error {
       cause,
     } = {},
   ) {
-    super(message, cause === undefined ? undefined : { cause });
+    const internalMessage =
+      typeof message === "string" ? message : "Application error";
+
+    super(
+      internalMessage,
+      cause === undefined ? undefined : { cause },
+    );
 
     this.name = "SafeAppError";
-    this.code = SAFE_ERROR_CODES.has(code)
-      ? code
-      : "INTERNAL_ERROR";
+    this.code = SAFE_ERROR_CODES.has(code) ? code : "INTERNAL_ERROR";
     this.status = safeStatus(status);
     this.publicMessage = safeString(
       publicMessage,
       DEFAULT_OPTIONS.genericMessage,
     );
-    this.retryable = Boolean(retryable);
+    this.retryable = retryable === true;
   }
 }
 
 /**
- * Create a safe error from an HTTP status.
+ * Create an application error from an HTTP status.
  */
 export function createHttpError(status, options = {}) {
   const normalizedStatus = safeStatus(status);
+  const suppliedCode = options?.code;
 
-  const code = SAFE_ERROR_CODES.has(options.code)
-    ? options.code
-    : statusToCode(normalizedStatus);
+  // The status determines the public classification. A caller may supply
+  // an alternative known code only when it is consistent with the status.
+  const mappedCode = statusToCode(normalizedStatus);
+  const code =
+    SAFE_ERROR_CODES.has(suppliedCode) &&
+    suppliedCode === mappedCode
+      ? suppliedCode
+      : mappedCode;
+
+  const retryable =
+    typeof options?.retryable === "boolean"
+      ? options.retryable
+      : [408, 429, 502, 503, 504].includes(normalizedStatus);
 
   return new SafeAppError(
-    options.internalMessage || `HTTP ${normalizedStatus}`,
+    typeof options?.internalMessage === "string"
+      ? options.internalMessage
+      : `HTTP ${normalizedStatus}`,
     {
       code,
       status: normalizedStatus,
-      publicMessage:
-        options.publicMessage || statusToMessage(normalizedStatus, options),
-      retryable:
-        options.retryable ??
-        [408, 429, 502, 503, 504].includes(normalizedStatus),
-      cause: options.cause,
+      publicMessage: safeString(
+        options?.publicMessage,
+        statusToMessage(normalizedStatus, options),
+      ),
+      retryable,
+      cause: options?.cause,
     },
   );
 }
 
 /**
- * Build a safe error object for UI display.
+ * Build a safe object for UI display.
  */
 export function toUserError(error, options = {}) {
   const normalized = normalizeError(error, options);
@@ -325,10 +342,9 @@ export function toUserError(error, options = {}) {
 }
 
 /**
- * Extract a safe error from a fetch Response.
+ * Extract a safe error from a Fetch Response.
  *
- * Never trust a server-provided message blindly. Only known error codes and
- * explicitly allowlisted messages may be exposed directly.
+ * Server-provided messages are never rendered directly.
  */
 export async function fromResponse(response, options = {}) {
   if (
@@ -336,68 +352,51 @@ export async function fromResponse(response, options = {}) {
     typeof response !== "object" ||
     typeof response.status !== "number"
   ) {
-    return normalizeError(
-      new Error("Invalid response object"),
-      options,
-    );
+    return normalizeError(null, options);
   }
 
   const status = safeStatus(response.status);
-  const correlationId = normalizeCorrelationId(
-    response.headers?.get?.("x-correlation-id") ||
-    response.headers?.get?.("x-request-id") ||
-    options.correlationId,
-  );
 
-  let body = null;
+  let correlationId = normalizeCorrelationId(options?.correlationId);
 
   try {
-    const contentType = response.headers?.get?.("content-type") || "";
+    const headers = response.headers;
 
-    if (contentType.toLowerCase().includes("application/json")) {
-      body = await response.clone().json();
+    const headerId =
+      headers?.get?.("x-correlation-id") ||
+      headers?.get?.("x-request-id");
+
+    if (headerId) {
+      correlationId = normalizeCorrelationId(headerId);
     }
   } catch {
-    body = null;
+    // Malformed or inaccessible headers do not prevent safe error handling.
   }
 
-  const bodyError = isPlainObject(body) && isPlainObject(body.error)
-    ? body.error
-    : isPlainObject(body)
-      ? body
-      : {};
-
-  const suppliedCode = safeString(bodyError.code);
-  const code = SAFE_ERROR_CODES.has(suppliedCode)
-    ? suppliedCode
-    : statusToCode(status);
-
-  const safeMessage = statusToMessage(status, options);
-
+  // Intentionally do not parse the response body. It is unnecessary to
+  // determine the safe public message and may contain private server details.
   return Object.freeze({
     name: "HttpResponseError",
-    code,
+    code: statusToCode(status),
     status,
-    message: safeMessage,
+    message: statusToMessage(status, options),
     correlationId,
     retryable: [408, 429, 502, 503, 504].includes(status),
   });
 }
 
 /**
- * Convert common client-side network failures into safe error records.
+ * Normalize common client-side network failures.
  */
 export function fromNetworkError(error, options = {}) {
-  const correlationId = normalizeCorrelationId(
-    options.correlationId,
-  );
+  const correlationId = normalizeCorrelationId(options?.correlationId);
 
-  if (error && typeof error === "object" && error.name === "AbortError") {
+  if (isAbortError(error)) {
     return Object.freeze({
       name: "AbortError",
       code: "ABORTED",
       status: 408,
-      message: options.timeoutMessage || DEFAULT_OPTIONS.timeoutMessage,
+      message: getOption(options, "timeoutMessage"),
       correlationId,
       retryable: true,
     });
@@ -407,27 +406,28 @@ export function fromNetworkError(error, options = {}) {
     name: "NetworkError",
     code: "NETWORK_ERROR",
     status: 0,
-    message: options.networkMessage || DEFAULT_OPTIONS.networkMessage,
+    message: getOption(options, "networkMessage"),
     correlationId,
     retryable: true,
   });
 }
 
 /**
- * Display an error using textContent, never innerHTML.
+ * Display an error using textContent rather than innerHTML.
  *
  * @param {HTMLElement} element
  * @param {object} error A normalized error or toUserError() result.
  */
 export function displayError(element, error) {
-  if (!element || !("textContent" in element)) {
+  if (
+    !element ||
+    typeof element !== "object" ||
+    !("textContent" in element)
+  ) {
     throw new TypeError("A valid error display element is required.");
   }
 
-  const nestedError = isPlainObject(error?.error)
-    ? error.error
-    : error;
-
+  const nestedError = isPlainObject(error?.error) ? error.error : error;
   const message = safeString(
     nestedError?.message,
     DEFAULT_OPTIONS.genericMessage,
@@ -435,8 +435,11 @@ export function displayError(element, error) {
 
   element.textContent = message;
   element.hidden = false;
-  element.setAttribute("role", "alert");
-  element.setAttribute("aria-live", "assertive");
+
+  if (typeof element.setAttribute === "function") {
+    element.setAttribute("role", "alert");
+    element.setAttribute("aria-live", "assertive");
+  }
 
   return element;
 }
@@ -445,7 +448,7 @@ export function displayError(element, error) {
  * Clear an error display element.
  */
 export function clearError(element) {
-  if (!element || !("textContent" in element)) {
+  if (!element || typeof element !== "object" || !("textContent" in element)) {
     return;
   }
 
@@ -454,19 +457,18 @@ export function clearError(element) {
 }
 
 /**
- * Create a correlation ID for an API request.
+ * Generate or validate a correlation ID.
  *
- * Correlation IDs are diagnostic metadata only. Never use them as proof
- * of identity, permission, or request authenticity.
+ * Correlation IDs are diagnostic metadata, never authentication credentials.
  */
 export function getCorrelationId(existingId) {
   return normalizeCorrelationId(existingId);
 }
 
 /**
- * Return headers with a correlation ID added.
+ * Return copied headers with a correlation ID.
  *
- * Accepts a Headers instance, an object of header values, or no input.
+ * Supports a Headers instance or a plain object.
  */
 export function withCorrelationId(headers = {}, correlationId) {
   const requestId = getCorrelationId(correlationId);
@@ -477,17 +479,25 @@ export function withCorrelationId(headers = {}, correlationId) {
     return copy;
   }
 
-  return {
-    ...(isPlainObject(headers) ? headers : {}),
-    "X-Correlation-ID": requestId,
-  };
+  const result = {};
+
+  if (isPlainObject(headers)) {
+    for (const [key, value] of Object.entries(headers)) {
+      // Header names are case-insensitive; replace existing variants.
+      if (key.toLowerCase() !== "x-correlation-id") {
+        result[key] = value;
+      }
+    }
+  }
+
+  result["X-Correlation-ID"] = requestId;
+  return result;
 }
 
 /**
- * Optional, centralized error reporter.
+ * Report sanitized error metadata through an application-provided reporter.
  *
- * reporter must be provided by the application. This module does not send
- * errors to third-party services or log raw exception contents.
+ * This function never transmits errors itself.
  */
 export function reportSafeError(error, reporter, options = {}) {
   const normalized = normalizeError(error, options);
@@ -497,21 +507,23 @@ export function reportSafeError(error, reporter, options = {}) {
   }
 
   try {
-    reporter({
-      code: normalized.code,
-      status: normalized.status,
-      correlationId: normalized.correlationId,
-      retryable: normalized.retryable,
-    });
+    reporter(
+      Object.freeze({
+        code: normalized.code,
+        status: normalized.status,
+        correlationId: normalized.correlationId,
+        retryable: normalized.retryable,
+      }),
+    );
   } catch {
-    // Error reporting must not break the main application flow.
+    // Reporting failures must not disrupt application behavior.
   }
 
   return normalized;
 }
 
 /**
- * Normalize an API error response for consistent UI consumption.
+ * Normalize an API response into a consistent UI error object.
  */
 export async function handleApiError(response, options = {}) {
   const normalized = await fromResponse(response, options);
@@ -529,7 +541,7 @@ export async function handleApiError(response, options = {}) {
 }
 
 /**
- * Safely map a caught exception to a UI response.
+ * Convert a caught exception into a safe UI response.
  */
 export function handleCaughtError(error, options = {}) {
   return toUserError(error, options);

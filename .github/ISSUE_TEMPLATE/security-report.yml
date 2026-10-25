@@ -1,145 +1,161 @@
+
 name: "🔐 Security Report"
 description: "Report a security concern or suspected vulnerability affecting MedOrbits. Do not disclose exploitable details publicly."
 title: "[Security]: "
 labels:
+  - security
 
-* security
-    body:
-* type: markdown
+body:
+  - type: markdown
     attributes:
-    value: |
-    ## MedOrbits Security Reporting
+      value: |
+        ## MedOrbits Security Reporting
 
-Thank you for helping protect MedOrbits and its users.
-**IMPORTANT -- This issue form may be publicly visible. Do not include vulnerability exploitation steps, proof-of-concept payloads, credentials, access tokens, private URLs, personal information, or sensitive user data.**
-**For an actual security vulnerability, use the repository's private vulnerability reporting feature whenever available:**
-https://github.com/vivekchoubey366-dot/MedOrbits/security/advisories/new
-If private vulnerability reporting is unavailable, contact an authorised repository maintainer privately to request a secure reporting channel.
-Use this form only for non-sensitive security concerns that can safely be discussed publicly. Submitting this form does not guarantee a confidential report or a particular response time.
+        Thank you for helping protect MedOrbits and its users.
 
-* type: dropdown
+        **IMPORTANT: This issue form may be publicly visible. Do not include vulnerability exploitation steps, proof-of-concept payloads, credentials, access tokens, private URLs, personal information, or sensitive user data.**
+
+        **For an actual security vulnerability, use the repository's private vulnerability reporting feature whenever available:**
+
+        https://github.com/vivekchoubey366-dot/MedOrbits/security/advisories/new
+
+        If private vulnerability reporting is unavailable, contact an authorized repository maintainer privately to request a secure reporting channel.
+
+        Use this form only for non-sensitive security concerns that can safely be discussed publicly. Submitting this form does not guarantee a confidential report or a particular response time.
+
+  - type: dropdown
     id: report_type
     attributes:
-    label: Security Concern Type
-    description: Select the closest category without disclosing exploit details.
-    options:
-    - Authentication or account security
-    - Authorisation or access control
-    - Privacy or potential data exposure
-    - File upload or document access
-    - API security
-    - Dependency or package vulnerability
-    - Security configuration
-    - Suspected phishing or impersonation
-    - Security headers or browser protections
-    - Other security concern
+      label: Security Concern Type
+      description: Select the closest category without disclosing exploit details.
+      options:
+        - Authentication or account security
+        - Authorization or access control
+        - Privacy or potential data exposure
+        - File upload or document access
+        - API security
+        - Dependency or package vulnerability
+        - Security configuration
+        - Suspected phishing or impersonation
+        - Security headers or browser protections
+        - Other security concern
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: summary
     attributes:
-    label: High-Level Summary
-    description: Describe the concern without including sensitive technical details or instructions that enable exploitation.
-    placeholder: "Example: A protected resource may not consistently enforce access permissions."
+      label: High-Level Summary
+      description: Describe the concern without including sensitive technical details or instructions that enable exploitation.
+      placeholder: "Example: A protected resource may not consistently enforce access permissions."
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: impact
     attributes:
-    label: Potential Impact
-    description: Choose the closest potential impact. Maintainers will assess actual severity.
-    options:
-    - Potential unauthorised access
-    - Potential exposure of personal or confidential information
-    - Potential account compromise
-    - Potential modification or deletion of data
-    - Potential service disruption
-    - Potential financial or transaction risk
-    - Security weakness with unclear impact
-    - Not sure
+      label: Potential Impact
+      description: Choose the closest potential impact. Maintainers will assess actual severity.
+      options:
+        - Potential unauthorized access
+        - Potential exposure of personal or confidential information
+        - Potential account compromise
+        - Potential modification or deletion of data
+        - Potential service disruption
+        - Potential financial or transaction risk
+        - Security weakness with unclear impact
+        - Not sure
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: environment
     attributes:
-    label: Affected Environment
-    description: Identify the environment without revealing private infrastructure details.
-    options:
-    - Public production website
-    - Public API
-    - Staging or testing environment
-    - Local development
-    - Dependency or build process
-    - Unknown
+      label: Affected Environment
+      description: Identify the environment without revealing private infrastructure details.
+      options:
+        - Public production website
+        - Public API
+        - Staging or testing environment
+        - Local development
+        - Dependency or build process
+        - Unknown
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: affected_component
     attributes:
-    label: Affected Component
-    description: Provide a public page name or general component description. Do not include private endpoints, secrets, or internal infrastructure details.
-    placeholder: "Example: Authentication flow, document access, or public resource API."
+      label: Affected Component
+      description: Provide a public page name or general component description. Do not include private endpoints, secrets, or internal infrastructure details.
+      placeholder: "Example: Authentication flow, document access, or public resource API."
     validations:
-    required: false
-* type: textarea
+      required: false
+
+  - type: textarea
     id: safe_observation
     attributes:
-    label: Non-Sensitive Observations
-    description: Explain what you observed at a high level. Do not include payloads, exploit steps, private data, or credentials.
-    placeholder: "Describe the behaviour that raised your concern without providing instructions for reproducing an exploit."
+      label: Non-Sensitive Observations
+      description: Explain what you observed at a high level. Do not include payloads, exploit steps, private data, or credentials.
+      placeholder: "Describe the behaviour that raised your concern without providing instructions for reproducing an exploit."
     validations:
-    required: false
-* type: dropdown
+      required: false
+
+  - type: dropdown
     id: exposure_status
     attributes:
-    label: Potential Exposure Status
-    description: Select the option that best reflects what you know.
-    options:
-    - Possible issue; exposure not confirmed
-    - Potential exposure observed
-    - Issue appears limited to a test environment
-    - Issue appears resolved
-    - Unknown
+      label: Potential Exposure Status
+      description: Select the option that best reflects what you know.
+      options:
+        - Possible issue; exposure not confirmed
+        - Potential exposure observed
+        - Issue appears limited to a test environment
+        - Issue appears resolved
+        - Unknown
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: authorisation
     attributes:
-    label: Testing Authorisation
-    description: Confirm whether any testing was performed and whether you were authorised to perform it.
-    options:
-    - No testing performed; concern based on observation
-    - Testing performed within an explicitly authorised scope
-    - Testing status or authorisation is unclear
+      label: Testing Authorisation
+      description: Confirm whether any testing was performed and whether you were authorised to perform it.
+      options:
+        - No testing performed; concern based on observation
+        - Testing performed within an explicitly authorised scope
+        - Testing status or authorisation is unclear
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: mitigation
     attributes:
-    label: Suggested Mitigation
-    description: Optionally suggest a high-level defensive measure without providing exploit instructions.
-    placeholder: "Example: Enforce server-side ownership checks on every protected document request."
+      label: Suggested Mitigation
+      description: Optionally suggest a high-level defensive measure without providing exploit instructions.
+      placeholder: "Example: Enforce server-side ownership checks on every protected document request."
     validations:
-    required: false
-* type: textarea
+      required: false
+
+  - type: textarea
     id: additional_context
     attributes:
-    label: Additional Non-Sensitive Context
-    description: Provide only information that is safe to publish. Do not attach confidential logs, screenshots of private records, or proof-of-concept files.
-    placeholder: "Add relevant public documentation or a general explanation."
+      label: Additional Non-Sensitive Context
+      description: Provide only information that is safe to publish. Do not attach confidential logs, screenshots of private records, or proof-of-concept files.
+      placeholder: "Add relevant public documentation or a general explanation."
     validations:
-    required: false
-* type: checkboxes
+      required: false
+
+  - type: checkboxes
     id: confirmations
     attributes:
-    label: Security Reporting Checklist
-    description: Confirm these statements before submitting.
-    options:
-    - label: I understand that this issue may be publicly visible.
-    required: true
-    - label: I have not included credentials, tokens, private data, or sensitive vulnerability details.
-    required: true
-    - label: I have not performed testing outside an authorised scope.
-    required: true
-    - label: I understand that this form is not a confidential vulnerability reporting channel.
-    required: true
+      label: Security Reporting Checklist
+      description: Confirm every statement before submitting.
+      options:
+        - label: I understand that this issue may be publicly visible.
+          required: true
+        - label: I have not included credentials, tokens, private data, or sensitive vulnerability details.
+          required: true
+        - label: I have not performed testing outside an authorized scope.
+          required: true
+        - label: I understand that this form is not a confidential vulnerability reporting channel.
+          required: true

@@ -1,30 +1,27 @@
 
 /**
  * MedOrbits -- Central Environment Configuration
- * File: src/config/env.js
  *
- * Node.js: >=20
+ * File: src/config/env.js
+ * Runtime: Node.js >=20
  * Module system: ES Modules
  *
- * Responsibilities:
- * - Load environment variables from .env when available.
- * - Parse and validate configuration at startup.
- * - Apply explicit, documented defaults.
- * - Fail fast when configuration is invalid.
- * - Export a centralized immutable configuration object.
+ * Dependency:
+ *   npm install dotenv
  *
- * Configuration domains:
- * - Runtime and HTTP server
- * - API routing
- * - CORS
- * - MySQL
- * - SMTP email
+ * Responsibilities:
+ * - Load .env when available through dotenv.
+ * - Parse and validate configuration at startup.
+ * - Apply explicit defaults and bounded numeric settings.
+ * - Export an immutable central configuration object.
+ * - Preserve passwords exactly as configured.
+ * - Validate runtime, HTTP, CORS, MySQL, and SMTP settings.
  *
  * Security:
  * - Never log secrets.
- * - Preserve passwords exactly as configured.
- * - Do not expose the complete env object through public endpoints.
+ * - Never expose this object through public API endpoints.
  * - Keep .env files out of version control.
+ * - Store production secrets in the deployment secrets manager.
  */
 
 import "dotenv/config";
@@ -36,25 +33,41 @@ const ALLOWED_ENVIRONMENTS = new Set([
   "production",
 ]);
 
-const CONTROL_CHARACTERS = /[\u0000-\u001F\u007F]/;
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
+const HEADER_CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
 
 /**
- * Read NODE_ENV before parsing environment-dependent settings.
+ * Throw a configuration error without including secret values.
  */
-const NODE_ENV = (
-  process.env.NODE_ENV === undefined
-    ? "development"
-    : process.env.NODE_ENV
-).trim();
-
-if (!ALLOWED_ENVIRONMENTS.has(NODE_ENV)) {
-  throw new Error(
-    `NODE_ENV must be one of: ${[...ALLOWED_ENVIRONMENTS].join(", ")}.`,
-  );
+function configurationError(message) {
+  return new Error(`[MedOrbits Config] ${message}`);
 }
 
 /**
- * Parse a bounded integer.
+ * Read and validate NODE_ENV before other settings.
+ */
+function readNodeEnvironment() {
+  const raw = process.env.NODE_ENV;
+
+  if (raw === undefined || raw.trim() === "") {
+    return "development";
+  }
+
+  const value = raw.trim();
+
+  if (!ALLOWED_ENVIRONMENTS.has(value)) {
+    throw configurationError(
+      `NODE_ENV must be one of: ${[...ALLOWED_ENVIRONMENTS].join(", ")}.`,
+    );
+  }
+
+  return value;
+}
+
+const NODE_ENV = readNodeEnvironment();
+
+/**
+ * Parse a bounded integer environment variable.
  */
 function parseInteger(name, fallback, min, max) {
   const raw = process.env[name];
@@ -65,8 +78,8 @@ function parseInteger(name, fallback, min, max) {
 
   const normalized = raw.trim();
 
-  if (!/^\d+$/.test(normalized)) {
-    throw new Error(`${name} must be an integer.`);
+  if (!/^\d+$/u.test(normalized)) {
+    throw configurationError(`${name} must be an integer.`);
   }
 
   const value = Number(normalized);
@@ -76,7 +89,7 @@ function parseInteger(name, fallback, min, max) {
     value < min ||
     value > max
   ) {
-    throw new Error(
+    throw configurationError(
       `${name} must be between ${min} and ${max}.`,
     );
   }
@@ -87,7 +100,7 @@ function parseInteger(name, fallback, min, max) {
 /**
  * Parse an explicit boolean.
  *
- * Accepted values: true, false (case-insensitive).
+ * Accepted values: true, false, case-insensitive.
  */
 function parseBoolean(name, fallback) {
   const raw = process.env[name];
@@ -104,17 +117,14 @@ function parseBoolean(name, fallback) {
       return false;
 
     default:
-      throw new Error(
+      throw configurationError(
         `${name} must be "true" or "false".`,
       );
   }
 }
 
 /**
- * Read a non-secret string setting.
- *
- * Secret values should be read separately so they are not accidentally
- * modified by trimming.
+ * Read a non-secret string and trim surrounding whitespace.
  */
 function parseString(name, fallback = "") {
   const raw = process.env[name];
@@ -127,7 +137,32 @@ function parseString(name, fallback = "") {
 }
 
 /**
- * Parse comma-separated values and remove duplicates.
+ * Read a secret without trimming it.
+ *
+ * Whitespace may be significant in passwords and other credentials.
+ */
+function parseSecret(name, fallback = "") {
+  const raw = process.env[name];
+
+  if (raw === undefined) {
+    return fallback;
+  }
+
+  if (typeof raw !== "string") {
+    throw configurationError(`${name} must be a string.`);
+  }
+
+  if (CONTROL_CHARACTERS.test(raw)) {
+    throw configurationError(
+      `${name} must not contain control characters.`,
+    );
+  }
+
+  return raw;
+}
+
+/**
+ * Parse comma-separated configuration values.
  */
 function parseCsv(name, fallback = "") {
   return [
@@ -141,37 +176,35 @@ function parseCsv(name, fallback = "") {
 }
 
 /**
- * Validate and normalize the API path prefix.
+ * Validate the API prefix.
+ *
+ * This is a URL path prefix, not a full URL.
  */
 function normalizeApiPrefix(value) {
   const prefix = value.trim();
 
-  if (!prefix.startsWith("/")) {
-    throw new Error(
-      'API_PREFIX must start with "/".',
-    );
-  }
-
   if (
+    !prefix.startsWith("/") ||
     prefix === "/" ||
     prefix.includes("?") ||
     prefix.includes("#") ||
     prefix.includes("\\") ||
     prefix.includes("%") ||
+    CONTROL_CHARACTERS.test(prefix) ||
+    /\s/u.test(prefix) ||
     prefix.split("/").some(
       (segment) => segment === "." || segment === "..",
-    ) ||
-    CONTROL_CHARACTERS.test(prefix)
+    )
   ) {
-    throw new Error(
-      "API_PREFIX is not a valid API path prefix.",
+    throw configurationError(
+      "API_PREFIX must be a valid absolute API path prefix, such as /api/v1.",
     );
   }
 
-  const normalized = prefix.replace(/\/+$/, "");
+  const normalized = prefix.replace(/\/+$/u, "");
 
   if (!normalized) {
-    throw new Error(
+    throw configurationError(
       "API_PREFIX must not resolve to the root path.",
     );
   }
@@ -180,20 +213,18 @@ function normalizeApiPrefix(value) {
 }
 
 /**
- * Validate a server hostname or IP-address setting.
+ * Validate a hostname or IP-address setting.
  *
- * This rejects URL schemes, paths, credentials, whitespace, and
- * control characters. It deliberately does not resolve DNS at startup.
+ * This does not resolve DNS or verify network reachability.
  */
 function validateHost(value, name = "HOST") {
   const host = value.trim();
 
   if (
     !host ||
-    /[\u0000-\u0020\u007F]/.test(host) ||
-    /[/?#@\\]/.test(host)
+    /[\u0000-\u0020\u007f/?#@\\]/u.test(host)
   ) {
-    throw new Error(
+    throw configurationError(
       `${name} must be a hostname or IP address, not a URL.`,
     );
   }
@@ -202,14 +233,24 @@ function validateHost(value, name = "HOST") {
 }
 
 /**
- * Validate and normalize an HTTP(S) origin.
+ * Normalize an HTTP(S) origin.
  *
- * Origin entries must not contain credentials, non-root paths,
- * query strings, or fragments.
+ * Origin entries must not contain credentials, paths, queries,
+ * fragments, whitespace, or control characters.
  */
 function normalizeOrigin(value) {
   if (value === "*") {
     return "*";
+  }
+
+  if (
+    typeof value !== "string" ||
+    !value ||
+    /[\u0000-\u0020\u007f]/u.test(value)
+  ) {
+    throw configurationError(
+      "CORS_ALLOWED_ORIGINS contains an empty or malformed origin.",
+    );
   }
 
   let parsed;
@@ -217,8 +258,8 @@ function normalizeOrigin(value) {
   try {
     parsed = new URL(value);
   } catch {
-    throw new Error(
-      `CORS_ALLOWED_ORIGINS contains an invalid origin: "${value}".`,
+    throw configurationError(
+      "CORS_ALLOWED_ORIGINS contains an invalid URL origin.",
     );
   }
 
@@ -231,7 +272,7 @@ function normalizeOrigin(value) {
     parsed.search ||
     parsed.hash
   ) {
-    throw new Error(
+    throw configurationError(
       "CORS_ALLOWED_ORIGINS entries must be HTTP(S) origins without credentials, paths, queries, or fragments.",
     );
   }
@@ -239,50 +280,54 @@ function normalizeOrigin(value) {
   return parsed.origin;
 }
 
+/**
+ * Validate the configured origin list.
+ */
 function validateOriginList(origins) {
   const normalized = origins.map(normalizeOrigin);
+  const unique = [...new Set(normalized)];
 
   if (
     normalized.includes("*") &&
     normalized.length > 1
   ) {
-    throw new Error(
+    throw configurationError(
       "Do not combine a wildcard CORS origin with individual origins.",
     );
   }
 
   if (
     NODE_ENV === "production" &&
-    normalized.length === 0
+    unique.length === 0
   ) {
-    throw new Error(
+    throw configurationError(
       "CORS_ALLOWED_ORIGINS must contain at least one origin in production.",
     );
   }
 
   if (
     NODE_ENV === "production" &&
-    normalized.includes("*")
+    unique.includes("*")
   ) {
-    throw new Error(
-      "Wildcard CORS origins are not permitted in production.",
+    throw configurationError(
+      "Wildcard CORS origins are prohibited in production.",
     );
   }
 
-  return [...new Set(normalized)];
+  return unique;
 }
 
 /**
- * Validate an SMTP hostname.
+ * Validate an SMTP hostname without DNS lookup.
  */
 function validateSmtpHost(value) {
   const host = value.trim();
 
   if (
     !host ||
-    /[\u0000-\u0020\u007F/@\\?#]/.test(host)
+    /[\u0000-\u0020\u007f/@\\?#]/u.test(host)
   ) {
-    throw new Error(
+    throw configurationError(
       "SMTP_HOST must be a hostname or IP address without a scheme or path.",
     );
   }
@@ -291,15 +336,15 @@ function validateSmtpHost(value) {
 }
 
 /**
- * Validate display names and other header text.
+ * Validate text used in email headers.
  */
 function validateHeaderText(value, name, maxLength) {
   if (
     typeof value !== "string" ||
     value.length > maxLength ||
-    CONTROL_CHARACTERS.test(value)
+    HEADER_CONTROL_CHARACTERS.test(value)
   ) {
-    throw new Error(
+    throw configurationError(
       `${name} must not exceed ${maxLength} characters or contain control characters.`,
     );
   }
@@ -311,12 +356,7 @@ function validateHeaderText(value, name, maxLength) {
 // HTTP server configuration
 // ---------------------------------------------------------------------
 
-const PORT = parseInteger(
-  "PORT",
-  3000,
-  1,
-  65535,
-);
+const PORT = parseInteger("PORT", 3000, 1, 65535);
 
 const HOST = validateHost(
   parseString("HOST", "0.0.0.0"),
@@ -352,7 +392,7 @@ if (
   CORS_ALLOW_CREDENTIALS &&
   CORS_ALLOWED_ORIGINS.includes("*")
 ) {
-  throw new Error(
+  throw configurationError(
     "Wildcard CORS origins cannot be used with credentials.",
   );
 }
@@ -367,7 +407,7 @@ const DB_CHECK_ON_START = parseBoolean(
 );
 
 const DB_HOST = validateHost(
-  parseString("DB_HOST"),
+  parseString("DB_HOST", ""),
   "DB_HOST",
 );
 
@@ -380,17 +420,7 @@ const DB_PORT = parseInteger(
 
 const DB_NAME = parseString("DB_NAME");
 const DB_USER = parseString("DB_USER");
-
-// Preserve secret values exactly. Do not trim passwords.
-const DB_PASSWORD = process.env.DB_PASSWORD ?? "";
-
-if (
-  CONTROL_CHARACTERS.test(DB_PASSWORD)
-) {
-  throw new Error(
-    "DB_PASSWORD must not contain control characters.",
-  );
-}
+const DB_PASSWORD = parseSecret("DB_PASSWORD");
 
 const DB_CONNECTION_LIMIT = parseInteger(
   "DB_CONNECTION_LIMIT",
@@ -419,8 +449,8 @@ if (DB_CHECK_ON_START) {
     .map(([name]) => name);
 
   if (missing.length > 0) {
-    throw new Error(
-      "DB_CHECK_ON_START is enabled but database settings are missing: " +
+    throw configurationError(
+      "DB_CHECK_ON_START is enabled but required database settings are missing: " +
         missing.join(", ") +
         ".",
     );
@@ -428,7 +458,7 @@ if (DB_CHECK_ON_START) {
 }
 
 // ---------------------------------------------------------------------
-// Email and SMTP configuration
+// SMTP email configuration
 // ---------------------------------------------------------------------
 
 const EMAIL_ENABLED = parseBoolean(
@@ -437,7 +467,6 @@ const EMAIL_ENABLED = parseBoolean(
 );
 
 const SMTP_HOST = parseString("SMTP_HOST");
-
 const SMTP_PORT = parseInteger(
   "SMTP_PORT",
   587,
@@ -451,17 +480,7 @@ const SMTP_SECURE = parseBoolean(
 );
 
 const SMTP_USER = parseString("SMTP_USER");
-
-// Preserve SMTP password exactly as configured.
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD ?? "";
-
-if (
-  CONTROL_CHARACTERS.test(SMTP_PASSWORD)
-) {
-  throw new Error(
-    "SMTP_PASSWORD must not contain control characters.",
-  );
-}
+const SMTP_PASSWORD = parseSecret("SMTP_PASSWORD");
 
 const EMAIL_FROM_NAME = validateHeaderText(
   parseString("EMAIL_FROM_NAME", "MedOrbits"),
@@ -497,7 +516,7 @@ if (EMAIL_ENABLED) {
     .map(([name]) => name);
 
   if (missing.length > 0) {
-    throw new Error(
+    throw configurationError(
       "Email is enabled but required settings are missing: " +
         missing.join(", ") +
         ".",
@@ -508,7 +527,7 @@ if (EMAIL_ENABLED) {
 }
 
 // ---------------------------------------------------------------------
-// Central immutable configuration
+// Immutable exported configuration
 // ---------------------------------------------------------------------
 
 export const env = Object.freeze({

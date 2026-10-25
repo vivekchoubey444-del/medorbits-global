@@ -3,7 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://medorbits.in/api/schemas/user.schema.json",
   "title": "MedOrbits User",
-  "description": "Validation schema for MedOrbits user accounts and profiles.",
+  "description": "Validation schema for MedOrbits user accounts and profiles. Privileged fields must be controlled by trusted server-side operations.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -44,7 +44,8 @@
         "firstName": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 100
+          "maxLength": 100,
+          "pattern": "\\S"
         },
         "lastName": {
           "type": "string",
@@ -52,7 +53,8 @@
         },
         "displayName": {
           "type": "string",
-          "maxLength": 150
+          "maxLength": 150,
+          "pattern": "\\S"
         },
         "avatarUrl": {
           "type": "string",
@@ -79,11 +81,15 @@
         },
         "preferredLanguage": {
           "type": "string",
-          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+          "maxLength": 35
         },
         "timezone": {
           "type": "string",
-          "maxLength": 100
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "\\S",
+          "description": "Validate against the application's supported IANA time-zone database in application logic."
         },
         "website": {
           "type": "string",
@@ -160,6 +166,7 @@
     },
     "providerUserId": {
       "type": "string",
+      "minLength": 1,
       "maxLength": 255
     },
     "passwordHash": {
@@ -184,6 +191,7 @@
         "language": {
           "type": "string",
           "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+          "maxLength": 35,
           "default": "en"
         },
         "emailNotifications": {
@@ -263,6 +271,7 @@
       "properties": {
         "organizationId": {
           "type": "string",
+          "minLength": 1,
           "maxLength": 100
         },
         "organizationName": {
@@ -281,6 +290,7 @@
       "properties": {
         "planId": {
           "type": "string",
+          "minLength": 1,
           "maxLength": 100
         },
         "status": {
@@ -333,8 +343,9 @@
         },
         "lastLoginIp": {
           "type": "string",
+          "format": "ip",
           "maxLength": 45,
-          "description": "Optional IPv4 or IPv6 address recorded by the server."
+          "description": "IPv4 or IPv6 address recorded by the server. Requires a validator that supports the ip format or equivalent application validation."
         }
       }
     },
@@ -392,7 +403,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Optional non-sensitive application-specific metadata.",
+      "description": "Optional non-sensitive application-specific metadata. Restrict allowed keys and values in application logic.",
       "additionalProperties": true
     }
   },
@@ -434,4 +445,3 @@
     }
   }
 }
-

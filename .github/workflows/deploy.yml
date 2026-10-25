@@ -1,8 +1,9 @@
-File: .github/workflows/deploy.yml
 
 name: MedOrbits Deployment
+
 on:
   workflow_dispatch:
+
   workflow_run:
     workflows:
       - MedOrbits CI
@@ -10,17 +11,21 @@ on:
       - completed
     branches:
       - main
+
 permissions:
   contents: read
   actions: read
+
 concurrency:
   group: medorbits-production-deployment
   cancel-in-progress: false
+
 jobs:
   verify:
     name: Verify deployment eligibility
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     if: >-
       ${{
         (
@@ -29,13 +34,19 @@ jobs:
         ) ||
         (
           github.event_name == 'workflow_run' &&
+          github.event.workflow_run.name == 'MedOrbits CI' &&
           github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.head_branch == 'main' &&
           github.event.workflow_run.head_repository.full_name == github.repository
         )
       }}
+
+    permissions:
+      contents: read
+
     outputs:
       deployment_sha: ${{ steps.target.outputs.sha }}
+
     steps:
       - name: Resolve deployment commit
         id: target
@@ -48,121 +59,213 @@ jobs:
           CURRENT_REPOSITORY: ${{ github.repository }}
           SOURCE_BRANCH: ${{ github.event.workflow_run.head_branch }}
           SOURCE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SOURCE_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            if [[ "$SOURCE_WORKFLOW_NAME" != "MedOrbits CI" ]]; then
+              echo "::error::Unexpected source workflow."
+              exit 1
+            fi
+
             if [[ "$SOURCE_REPOSITORY" != "$CURRENT_REPOSITORY" ]]; then
-              echo "::error::The source workflow did not originate from this repository."
+              echo "::error::Source workflow is not from this repository."
               exit 1
             fi
+
             if [[ "$SOURCE_BRANCH" != "main" ]]; then
-              echo "::error::Only successful main-branch CI runs can deploy."
+              echo "::error::Only main-branch CI runs may deploy."
               exit 1
             fi
+
             if [[ "$SOURCE_CONCLUSION" != "success" ]]; then
-              echo "::error::The source CI workflow did not succeed."
+              echo "::error::The source CI run did not succeed."
               exit 1
             fi
+
             SHA="$WORKFLOW_RUN_SHA"
           else
             if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-              echo "::error::Manual production deployments must run from main."
+              echo "::error::Manual deployments must run from main."
               exit 1
             fi
+
             SHA="$MANUAL_SHA"
           fi
+
           if [[ ! "$SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
             echo "::error::Invalid deployment commit SHA."
             exit 1
           fi
+
+          # Reject stale CI completions and stale manual targets.
+          API_URL="https://api.github.com/repos/${CURRENT_REPOSITORY}/commits/main"
+
+          RESPONSE="$(
+            curl --fail --silent --show-error \
+              --retry 3 \
+              --retry-delay 2 \
+              --retry-all-errors \
+              --url "$API_URL" \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "Accept: application/vnd.github+json" \
+              --header "X-GitHub-Api-Version: 2022-11-28"
+          )"
+
+          MAIN_SHA="$(jq -r '.sha // empty' <<< "$RESPONSE")"
+
+          if [[ ! "$MAIN_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Could not determine the current main commit."
+            exit 1
+          fi
+
+          if [[ "${SHA,,}" != "${MAIN_SHA,,}" ]]; then
+            echo "::error::Deployment rejected: the verified commit is no longer the tip of main."
+            echo "Verified commit: $SHA"
+            echo "Current main:    $MAIN_SHA"
+            exit 1
+          fi
+
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "Verified deployment target: $SHA"
+
       - name: Confirm deployment eligibility
         shell: bash
         run: |
           set -euo pipefail
           echo "Deployment eligibility checks passed."
-          echo "Production deployment will use the verified commit."
+          echo "Only the verified current main commit may be deployed."
+
   deploy:
     name: Deploy verified commit to Render
     needs:
       - verify
-    if: needs.verify.result == 'success'
+
+    if: ${{ needs.verify.result == 'success' }}
+
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+
     environment:
       name: production
+
     permissions:
       contents: read
+
     steps:
       - name: Checkout verified commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.verify.outputs.deployment_sha }}
           persist-credentials: false
+
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: package-lock.json
+
       - name: Verify required project files
         shell: bash
         run: |
           set -euo pipefail
+
           for file in package.json package-lock.json server.js; do
             if [[ ! -f "$file" ]]; then
               echo "::error::Required file is missing: $file"
               exit 1
             fi
           done
+
       - name: Validate package metadata
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
-          const fs = require("node:fs");
-          let pkg;
-          let lock;
-          try {
-            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          } catch (error) {
-            console.error(`::error::Invalid package metadata: ${error.message}`);
-            process.exit(1);
-          }
+          const fs = require('node:fs');
+
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+
+          const lock = JSON.parse(
+            fs.readFileSync('package-lock.json', 'utf8')
+          );
+
           if (
-            typeof pkg.name !== "string" ||
-            typeof pkg.version !== "string"
+            typeof pkg.name !== 'string' ||
+            !pkg.name.trim() ||
+            typeof pkg.version !== 'string' ||
+            !pkg.version.trim()
           ) {
-            throw new Error("package.json must declare name and version.");
+            throw new Error(
+              'package.json must declare a non-empty name and version.'
+            );
           }
-          if (
-            lock.name && lock.name !== pkg.name ||
-            lock.version && lock.version !== pkg.version
-          ) {
-            throw new Error("package-lock.json metadata does not match package.json.");
+
+          if (!lock.packages || !lock.packages['']) {
+            throw new Error(
+              'package-lock.json must contain its root package entry.'
+            );
           }
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error("package-lock.json has no valid lockfileVersion.");
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error(
+              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
+            );
           }
-          if (!pkg.scripts || typeof pkg.scripts !== "object") {
-            throw new Error("package.json scripts configuration is missing.");
+
+          const root = lock.packages[''];
+
+          if (pkg.name !== root.name || pkg.version !== root.version) {
+            throw new Error(
+              'package.json and package-lock.json root metadata do not match.'
+            );
           }
+
           console.log(`Validated ${pkg.name}@${pkg.version}`);
           console.log(`Lockfile version: ${lock.lockfileVersion}`);
-          console.log(`Node.js requirement: ${pkg.engines?.node || "not specified"}`);
+          console.log(
+            `Node.js requirement: ${pkg.engines?.node || 'not specified'}`
+          );
           NODE
+
       - name: Verify production dependencies
         shell: bash
         run: |
           set -euo pipefail
           npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+        env:
+          CI: "true"
+
       - name: Check server syntax
         shell: bash
         run: |
           set -euo pipefail
           node --check server.js
+
+      - name: Validate Render configuration
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${RENDER_API_KEY:-}" ]]; then
+            echo "::error::Missing RENDER_API_KEY in the production environment."
+            exit 1
+          fi
+
+          if [[ ! "${RENDER_SERVICE_ID:-}" =~ ^srv-[A-Za-z0-9]+$ ]]; then
+            echo "::error::RENDER_SERVICE_ID is missing or invalid."
+            exit 1
+          fi
+
       - name: Trigger Render deployment for verified commit
         id: render
         shell: bash
@@ -172,16 +275,20 @@ jobs:
           DEPLOYMENT_SHA: ${{ needs.verify.outputs.deployment_sha }}
         run: |
           set -euo pipefail
-          if [[ -z "${RENDER_API_KEY:-}" ]]; then
-            echo "::error::Missing RENDER_API_KEY in the production environment."
-            exit 1
-          fi
-          if [[ ! "${RENDER_SERVICE_ID:-}" =~ ^srv-[A-Za-z0-9]+$ ]]; then
-            echo "::error::RENDER_SERVICE_ID is missing or invalid."
-            exit 1
-          fi
+
           RESPONSE_FILE="$(mktemp)"
           trap 'rm -f "$RESPONSE_FILE"' EXIT
+
+          REQUEST_BODY="$(
+            jq -n \
+              --arg commitId "$DEPLOYMENT_SHA" \
+              '{
+                commitId: $commitId,
+                clearCache: "do_not_clear",
+                deployMode: "build_and_deploy"
+              }'
+          )"
+
           HTTP_STATUS="$(
             curl --silent --show-error \
               --output "$RESPONSE_FILE" \
@@ -191,31 +298,31 @@ jobs:
               --header "Authorization: Bearer ${RENDER_API_KEY}" \
               --header "Accept: application/json" \
               --header "Content-Type: application/json" \
-              --data "$(jq -n \
-                --arg commitId "$DEPLOYMENT_SHA" \
-                '{
-                  commitId: $commitId,
-                  clearCache: "do_not_clear",
-                  deployMode: "build_and_deploy"
-                }')"
+              --data "$REQUEST_BODY"
           )"
+
           if [[ "$HTTP_STATUS" != "201" ]]; then
-            echo "::error::Render API rejected the deployment (HTTP $HTTP_STATUS)."
+            echo "::error::Render rejected the deployment request (HTTP $HTTP_STATUS)."
             jq -c '{message, error, errors}' "$RESPONSE_FILE" 2>/dev/null || true
             exit 1
           fi
+
           DEPLOY_ID="$(jq -r '.id // empty' "$RESPONSE_FILE")"
           RETURNED_SHA="$(jq -r '.commit.id // empty' "$RESPONSE_FILE")"
+
           if [[ -z "$DEPLOY_ID" ]]; then
             echo "::error::Render did not return a deployment ID."
             exit 1
           fi
+
           if [[ "${RETURNED_SHA,,}" != "${DEPLOYMENT_SHA,,}" ]]; then
-            echo "::error::Render deployment commit does not match the verified SHA."
+            echo "::error::Render returned a different deployment commit."
             exit 1
           fi
+
           echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
           echo "Render accepted deployment $DEPLOY_ID for $DEPLOYMENT_SHA"
+
       - name: Wait for Render deployment
         shell: bash
         env:
@@ -225,8 +332,10 @@ jobs:
           DEPLOYMENT_SHA: ${{ needs.verify.outputs.deployment_sha }}
         run: |
           set -euo pipefail
+
           MAX_ATTEMPTS=60
           SLEEP_SECONDS=15
+
           for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
             RESPONSE="$(
               curl --fail --silent --show-error \
@@ -240,13 +349,17 @@ jobs:
               echo "::error::Could not retrieve Render deployment status."
               exit 1
             }
+
             STATUS="$(jq -r '.status // "unknown"' <<< "$RESPONSE")"
             RETURNED_SHA="$(jq -r '.commit.id // empty' <<< "$RESPONSE")"
+
             if [[ "${RETURNED_SHA,,}" != "${DEPLOYMENT_SHA,,}" ]]; then
               echo "::error::Render reports a different deployment commit."
               exit 1
             fi
-            echo "Render deployment status: $STATUS (attempt $attempt/$MAX_ATTEMPTS)"
+
+            echo "Render status: $STATUS (attempt $attempt/$MAX_ATTEMPTS)"
+
             case "$STATUS" in
               live)
                 echo "Render reports the deployment is live."
@@ -260,29 +373,74 @@ jobs:
                 sleep "$SLEEP_SECONDS"
                 ;;
               *)
-                echo "::warning::Unrecognized Render status: $STATUS"
-                sleep "$SLEEP_SECONDS"
+                echo "::error::Unexpected Render deployment status: $STATUS"
+                exit 1
                 ;;
             esac
           done
-          echo "::error::Render deployment did not reach live status before timeout."
+
+          echo "::error::Deployment did not reach live status within the polling window."
           exit 1
 
-Required GitHub environment configuration
+      - name: Check production health endpoint
+        if: ${{ success() }}
+        shell: bash
+        env:
+          PRODUCTION_HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL }}
+        run: |
+          set -euo pipefail
 
-Open GitHub → Repository → Settings → Environments → production and configure:
+          if [[ -z "${PRODUCTION_HEALTH_URL:-}" ]]; then
+            echo "::notice::PRODUCTION_HEALTH_URL is not configured; HTTP health check skipped."
+            exit 0
+          fi
 
-Secret	Value
-RENDER_API_KEY	Render API key with access to the target service
-RENDER_SERVICE_ID	The Render service ID, typically beginning with srv-
+          # Only permit HTTPS health endpoints.
+          if [[ ! "$PRODUCTION_HEALTH_URL" =~ ^https:// ]]; then
+            echo "::error::PRODUCTION_HEALTH_URL must use HTTPS."
+            exit 1
+          fi
 
-Set required reviewers for the production environment if you want manual approval before deployment. Store credentials only as GitHub environment secrets; never commit them to the repository.
+          MAX_ATTEMPTS=12
+          SLEEP_SECONDS=10
 
-Important before enabling production deployments
+          for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
+            HTTP_STATUS="$(
+              curl --silent --show-error \
+                --output /dev/null \
+                --write-out "%{http_code}" \
+                --connect-timeout 10 \
+                --max-time 20 \
+                "$PRODUCTION_HEALTH_URL" || true
+            )"
 
-1. Confirm that the Render service is connected to the same repository and main branch.
-2. Review Render’s automatic-deployment setting. The API can deploy a specific commit without disabling auto-deploys; a later automatic deployment could replace it. Configure Render to deploy only after CI checks pass, or disable automatic deployments if this workflow is to be the sole deployment controller. <Cite refs={["turn760539search1","turn760539search5"]}/>
-3. Confirm server.js is genuinely required by your application. If MedOrbits is a static site or uses a different entry point, update the file checks accordingly.
-4. Test on a staging service before connecting this workflow to production.
+            if [[ "$HTTP_STATUS" =~ ^2[0-9][0-9]$ ]]; then
+              echo "Production health endpoint returned HTTP $HTTP_STATUS."
+              exit 0
+            fi
 
-What success means: the workflow verifies the selected commit, requests a Render deployment for that exact SHA, and waits until Render reports the deployment as live. It does not independently prove that every public page or API endpoint is healthy; add a post-deployment HTTP health check using your real production URL for that additional assurance.
+            echo "Health check attempt $attempt/$MAX_ATTEMPTS returned HTTP ${HTTP_STATUS:-000}."
+
+            if (( attempt < MAX_ATTEMPTS )); then
+              sleep "$SLEEP_SECONDS"
+            fi
+          done
+
+          echo "::error::Production health endpoint did not return a successful HTTP status."
+          exit 1
+
+      - name: Write deployment summary
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          DEPLOYMENT_SHA: ${{ needs.verify.outputs.deployment_sha }}
+          DEPLOY_ID: ${{ steps.render.outputs.deploy_id }}
+        run: |
+          {
+            echo "## MedOrbits Production Deployment"
+            echo
+            echo "- **Job status:** \`${JOB_STATUS}\`"
+            echo "- **Commit:** \`${DEPLOYMENT_SHA:-unresolved}\`"
+            echo "- **Render deployment ID:** \`${DEPLOY_ID:-not-created}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

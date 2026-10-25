@@ -5,22 +5,20 @@
  * MedOrbits -- User Test Fixtures
  *
  * File: tests/fixtures/users.js
+ * Runtime: Node.js 20+
  *
- * Synthetic fixtures for:
- * - Authentication and authorization
- * - RBAC and privilege escalation
- * - IDOR and ownership checks
- * - Account lifecycle and verification
- * - MFA and failed-login handling
- * - Registration, login, and profile validation
- * - Mass assignment and untrusted input
+ * Purpose:
+ *   Synthetic fixtures for authentication, authorization, RBAC, IDOR,
+ *   account lifecycle, verification, MFA, validation, and security tests.
  *
- * Security notes:
- * - These fixtures do not authenticate users.
- * - Passwords are synthetic test values, not password hashes.
- * - Principals are not signed tokens or verified sessions.
- * - Fixture roles do not grant real permissions.
- * - Never use these fixtures as production account data.
+ * Security:
+ *   - No real user data or production credentials.
+ *   - Passwords are synthetic plaintext test values, never password hashes.
+ *   - Principals are not signed tokens or authenticated sessions.
+ *   - Fixture roles do not grant actual permissions.
+ *   - Production handlers must enforce validation and authorization.
+ *
+ * Module format: CommonJS.
  */
 
 const USER_ROLES = Object.freeze({
@@ -59,9 +57,18 @@ const AUTH_PROVIDERS = Object.freeze({
 const USER_ROLE_VALUES = Object.freeze(Object.values(USER_ROLES));
 const USER_STATUS_VALUES = Object.freeze(Object.values(USER_STATUSES));
 const VERIFICATION_STATUS_VALUES = Object.freeze(
-  Object.values(VERIFICATION_STATUSES)
+  Object.values(VERIFICATION_STATUSES),
 );
 const AUTH_PROVIDER_VALUES = Object.freeze(Object.values(AUTH_PROVIDERS));
+
+const MAX_SET_SIZE = 1000;
+const MAX_CLONE_DEPTH = 50;
+
+const FORBIDDEN_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
 
 const DEFAULT_PASSWORD = 'TestOnly!Password123';
 
@@ -125,42 +132,121 @@ const DEFAULT_PROFILE_PAYLOAD = Object.freeze({
   phone: '+910000000001',
 });
 
+/**
+ * Assert that a value is a plain object.
+ *
+ * @param {unknown} value
+ * @param {string} [label='Value']
+ * @returns {void}
+ */
 function assertPlainObject(value, label = 'Value') {
   if (
-    value === null ||
-    typeof value !== 'object' ||
-    Array.isArray(value)
+    value === null
+    || typeof value !== 'object'
+    || Array.isArray(value)
   ) {
     throw new TypeError(`${label} must be a plain object`);
   }
 
   const prototype = Object.getPrototypeOf(value);
 
-  if (prototype !== Object.prototype && prototype !== null) {
+  if (
+    prototype !== Object.prototype
+    && prototype !== null
+  ) {
     throw new TypeError(`${label} must be a plain object`);
   }
-
-  return value;
 }
 
 /**
- * Clone arrays and plain objects without sharing mutable references.
- * Reject non-plain objects to keep fixture data predictable.
+ * Clone JSON-compatible fixture data without sharing references.
+ *
+ * Rejects circular references, accessors, unsupported object types,
+ * dangerous property names, non-finite numbers, and excessive depth.
+ *
+ * @param {unknown} value
+ * @param {string} [label]
+ * @param {WeakSet<object>} [ancestors]
+ * @param {number} [depth]
+ * @returns {any}
  */
-function clone(value) {
-  if (Array.isArray(value)) {
-    return value.map(clone);
+function clone(
+  value,
+  label = 'Fixture value',
+  ancestors = new WeakSet(),
+  depth = 0,
+) {
+  if (depth > MAX_CLONE_DEPTH) {
+    throw new RangeError(`${label} exceeds maximum nesting depth`);
   }
 
-  if (value !== null && typeof value === 'object') {
-    assertPlainObject(value, 'Fixture values');
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, clone(item)])
-    );
+  if (
+    value === null
+    || typeof value === 'string'
+    || typeof value === 'boolean'
+  ) {
+    return value;
   }
 
-  return value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new TypeError(`${label} contains a non-finite number`);
+    }
+
+    return value;
+  }
+
+  if (typeof value !== 'object') {
+    throw new TypeError(`${label} contains an unsupported value`);
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError(`${label} must not contain circular references`);
+  }
+
+  ancestors.add(value);
+
+  try {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => (
+        clone(item, `${label}[${index}]`, ancestors, depth + 1)
+      ));
+    }
+
+    assertPlainObject(value, label);
+
+    const result = Object.create(null);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== 'string') {
+        throw new TypeError(`${label} must not contain symbol keys`);
+      }
+
+      if (FORBIDDEN_KEYS.has(key)) {
+        throw new TypeError(`${label} contains a prohibited property name`);
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (
+        !descriptor
+        || !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+      ) {
+        throw new TypeError(`${label}.${key} must be a data property`);
+      }
+
+      result[key] = clone(
+        descriptor.value,
+        `${label}.${key}`,
+        ancestors,
+        depth + 1,
+      );
+    }
+
+    return result;
+  } finally {
+    ancestors.delete(value);
+  }
 }
 
 function assertNonEmptyString(value, label) {
@@ -172,7 +258,11 @@ function assertNonEmptyString(value, label) {
 }
 
 function assertOptionalString(value, label) {
-  if (value !== undefined && value !== null && typeof value !== 'string') {
+  if (
+    value !== undefined
+    && value !== null
+    && typeof value !== 'string'
+  ) {
     throw new TypeError(`${label} must be a string or null`);
   }
 }
@@ -193,19 +283,28 @@ function assertEnum(value, values, label) {
 
 function assertNonNegativeInteger(value, label) {
   if (!Number.isSafeInteger(value) || value < 0) {
-    throw new RangeError(`${label} must be a non-negative safe integer`);
+    throw new RangeError(
+      `${label} must be a non-negative safe integer`,
+    );
   }
 
   return value;
 }
 
+/**
+ * Lightweight email format validation for synthetic fixtures.
+ * Production registration must perform its own validation.
+ *
+ * @param {unknown} value
+ * @param {string} [label='Email']
+ * @returns {string}
+ */
 function assertValidEmail(value, label = 'Email') {
   assertNonEmptyString(value, label);
 
-  // Deliberately lightweight fixture validation, not full RFC validation.
   if (
-    value !== value.trim() ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    value !== value.trim()
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
   ) {
     throw new TypeError(`${label} must be a valid test email address`);
   }
@@ -213,13 +312,20 @@ function assertValidEmail(value, label = 'Email') {
   return value;
 }
 
+/**
+ * Validate a UTC ISO timestamp.
+ *
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {string}
+ */
 function assertIsoDate(value, label) {
   assertNonEmptyString(value, label);
 
   if (
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) ||
-    Number.isNaN(Date.parse(value)) ||
-    new Date(value).toISOString() !== value
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
+    || Number.isNaN(Date.parse(value))
+    || new Date(value).toISOString() !== value
   ) {
     throw new TypeError(`${label} must be a valid UTC ISO timestamp`);
   }
@@ -227,20 +333,32 @@ function assertIsoDate(value, label) {
   return value;
 }
 
+/**
+ * Merge plain objects using independent copies.
+ *
+ * @param {object} defaults
+ * @param {object} overrides
+ * @param {string} label
+ * @returns {object}
+ */
 function mergeObject(defaults, overrides, label) {
   assertPlainObject(overrides, label);
 
   return {
-    ...clone(defaults),
-    ...clone(overrides),
+    ...clone(defaults, `${label} defaults`),
+    ...clone(overrides, label),
   };
 }
 
-function createUser(overrides = {}) {
-  assertPlainObject(overrides, 'User overrides');
-
-  const user = mergeObject(DEFAULT_USER, overrides, 'User overrides');
-
+/**
+ * Validate a user record.
+ *
+ * This validates fixture consistency, not authentication or authorization.
+ *
+ * @param {object} user
+ * @returns {object}
+ */
+function validateUser(user) {
   assertNonEmptyString(user.id, 'User ID');
   assertNonEmptyString(user.firstName, 'First name');
   assertNonEmptyString(user.lastName, 'Last name');
@@ -250,13 +368,13 @@ function createUser(overrides = {}) {
   assertEnum(
     user.emailVerificationStatus,
     VERIFICATION_STATUS_VALUES,
-    'email verification status'
+    'email verification status',
   );
   assertEnum(user.authProvider, AUTH_PROVIDER_VALUES, 'auth provider');
 
   assertNonNegativeInteger(
     user.failedLoginAttempts,
-    'failedLoginAttempts'
+    'failedLoginAttempts',
   );
 
   for (const field of [
@@ -273,70 +391,135 @@ function createUser(overrides = {}) {
   assertIsoDate(user.updatedAt, 'updatedAt');
 
   if (
-    user.emailVerified &&
-    user.emailVerificationStatus !== VERIFICATION_STATUSES.VERIFIED
+    user.emailVerified
+    && user.emailVerificationStatus !== VERIFICATION_STATUSES.VERIFIED
   ) {
     throw new RangeError(
-      'emailVerified cannot be true unless emailVerificationStatus is verified'
+      'emailVerified requires emailVerificationStatus to be verified',
     );
   }
 
   if (
-    !user.emailVerified &&
-    user.emailVerificationStatus === VERIFICATION_STATUSES.VERIFIED
+    !user.emailVerified
+    && user.emailVerificationStatus === VERIFICATION_STATUSES.VERIFIED
   ) {
     throw new RangeError(
-      'A verified email status requires emailVerified to be true'
+      'Verified email status requires emailVerified to be true',
     );
   }
 
   return user;
 }
 
+/**
+ * Create a fresh synthetic user record.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createUser(overrides = {}) {
+  assertPlainObject(overrides, 'User overrides');
+
+  const user = mergeObject(
+    DEFAULT_USER,
+    overrides,
+    'User overrides',
+  );
+
+  return validateUser(user);
+}
+
+/**
+ * Create a synthetic registration payload.
+ *
+ * Extra properties are preserved for negative request-validation tests.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
 function createUserRegistrationPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Registration payload overrides');
+
   return mergeObject(
     DEFAULT_REGISTRATION_PAYLOAD,
     overrides,
-    'Registration payload overrides'
-  );
-}
-
-function createLoginPayload(overrides = {}) {
-  return mergeObject(
-    DEFAULT_LOGIN_PAYLOAD,
-    overrides,
-    'Login payload overrides'
-  );
-}
-
-function createPasswordChangePayload(overrides = {}) {
-  return mergeObject(
-    DEFAULT_PASSWORD_CHANGE_PAYLOAD,
-    overrides,
-    'Password-change payload overrides'
-  );
-}
-
-function createUserProfilePayload(overrides = {}) {
-  return mergeObject(
-    DEFAULT_PROFILE_PAYLOAD,
-    overrides,
-    'Profile payload overrides'
+    'Registration payload overrides',
   );
 }
 
 /**
- * Create users with deterministic, unique IDs and emails.
- * Generated identity fields cannot be overridden by common overrides.
+ * Create a synthetic login payload.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createLoginPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Login payload overrides');
+
+  return mergeObject(
+    DEFAULT_LOGIN_PAYLOAD,
+    overrides,
+    'Login payload overrides',
+  );
+}
+
+/**
+ * Create a synthetic password-change payload.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createPasswordChangePayload(overrides = {}) {
+  assertPlainObject(overrides, 'Password-change payload overrides');
+
+  return mergeObject(
+    DEFAULT_PASSWORD_CHANGE_PAYLOAD,
+    overrides,
+    'Password-change payload overrides',
+  );
+}
+
+/**
+ * Create a synthetic profile-update payload.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createUserProfilePayload(overrides = {}) {
+  assertPlainObject(overrides, 'Profile payload overrides');
+
+  return mergeObject(
+    DEFAULT_PROFILE_PAYLOAD,
+    overrides,
+    'Profile payload overrides',
+  );
+}
+
+/**
+ * Create users with deterministic, unique default IDs and emails.
+ *
+ * Identity fields generated by this factory cannot be overridden through
+ * the common overrides object.
+ *
+ * @param {number} [count=3]
+ * @param {object} [overrides={}]
+ * @returns {object[]}
  */
 function createUserSet(count = 3, overrides = {}) {
-  if (!Number.isInteger(count) || count < 0 || count > 1000) {
-    throw new RangeError('User count must be an integer from 0 to 1000');
+  if (
+    !Number.isInteger(count)
+    || count < 0
+    || count > MAX_SET_SIZE
+  ) {
+    throw new RangeError(
+      `User count must be an integer from 0 to ${MAX_SET_SIZE}`,
+    );
   }
 
   assertPlainObject(overrides, 'User set overrides');
 
-  const commonOverrides = clone(overrides);
+  const commonOverrides = clone(overrides, 'User set overrides');
+
   delete commonOverrides.id;
   delete commonOverrides.email;
   delete commonOverrides.firstName;
@@ -353,6 +536,12 @@ function createUserSet(count = 3, overrides = {}) {
   });
 }
 
+/**
+ * Create a user belonging to a different synthetic identity.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
 function createForeignUser(overrides = {}) {
   assertPlainObject(overrides, 'Foreign user overrides');
 
@@ -361,10 +550,17 @@ function createForeignUser(overrides = {}) {
     firstName: 'Foreign',
     lastName: 'User',
     email: 'foreign.user@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Foreign user overrides'),
   });
 }
 
+/**
+ * Create a user with a selected role.
+ *
+ * @param {string} role
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
 function createUserWithRole(role, overrides = {}) {
   assertEnum(role, USER_ROLE_VALUES, 'user role');
   assertPlainObject(overrides, 'Role overrides');
@@ -374,26 +570,37 @@ function createUserWithRole(role, overrides = {}) {
   return createUser({
     id: `usr_${normalizedRole}_001`,
     email: `${normalizedRole}.001@example.test`,
-    ...clone(overrides),
+    ...clone(overrides, 'Role overrides'),
     role,
   });
 }
 
+/**
+ * Create a user with a selected account status.
+ *
+ * @param {string} status
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
 function createUserWithStatus(status, overrides = {}) {
   assertEnum(status, USER_STATUS_VALUES, 'user status');
   assertPlainObject(overrides, 'Status overrides');
 
   return createUser({
-    ...clone(overrides),
+    ...clone(overrides, 'Status overrides'),
     status,
   });
 }
 
 /**
- * Deliberately hostile payload for mass-assignment tests.
- * Do not use as a valid user record or registration payload.
+ * Create a hostile payload for mass-assignment tests.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
  */
 function createMassAssignmentPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Mass-assignment overrides');
+
   return {
     firstName: 'Modified',
     lastName: 'Account',
@@ -406,7 +613,7 @@ function createMassAssignmentPayload(overrides = {}) {
     mfaEnabled: false,
     isAdmin: true,
     permissions: ['*'],
-    ...clone(assertPlainObject(overrides, 'Mass-assignment overrides')),
+    ...clone(overrides, 'Mass-assignment overrides'),
   };
 }
 
@@ -418,7 +625,7 @@ function createAdminUser(overrides = {}) {
     firstName: 'Test',
     lastName: 'Administrator',
     email: 'admin001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Admin overrides'),
     role: USER_ROLES.ADMIN,
   });
 }
@@ -431,7 +638,7 @@ function createSuperAdminUser(overrides = {}) {
     firstName: 'Test',
     lastName: 'SuperAdmin',
     email: 'superadmin001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Super-admin overrides'),
     role: USER_ROLES.SUPER_ADMIN,
   });
 }
@@ -442,7 +649,7 @@ function createInactiveUser(overrides = {}) {
   return createUserWithStatus(USER_STATUSES.INACTIVE, {
     id: 'usr_inactive_001',
     email: 'inactive001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Inactive user overrides'),
   });
 }
 
@@ -452,7 +659,7 @@ function createSuspendedUser(overrides = {}) {
   return createUserWithStatus(USER_STATUSES.SUSPENDED, {
     id: 'usr_suspended_001',
     email: 'suspended001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Suspended user overrides'),
   });
 }
 
@@ -463,7 +670,7 @@ function createLockedUser(overrides = {}) {
     id: 'usr_locked_001',
     email: 'locked001@example.test',
     failedLoginAttempts: 5,
-    ...clone(overrides),
+    ...clone(overrides, 'Locked user overrides'),
   });
 }
 
@@ -473,7 +680,7 @@ function createDeletedUser(overrides = {}) {
   return createUserWithStatus(USER_STATUSES.DELETED, {
     id: 'usr_deleted_001',
     email: 'deleted001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Deleted user overrides'),
   });
 }
 
@@ -483,7 +690,7 @@ function createPendingUser(overrides = {}) {
   return createUserWithStatus(USER_STATUSES.PENDING, {
     id: 'usr_pending_001',
     email: 'pending001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Pending user overrides'),
   });
 }
 
@@ -495,7 +702,7 @@ function createUnverifiedUser(overrides = {}) {
     email: 'unverified001@example.test',
     emailVerified: false,
     emailVerificationStatus: VERIFICATION_STATUSES.UNVERIFIED,
-    ...clone(overrides),
+    ...clone(overrides, 'Unverified user overrides'),
   });
 }
 
@@ -507,7 +714,7 @@ function createPendingVerificationUser(overrides = {}) {
     email: 'verification.pending001@example.test',
     emailVerified: false,
     emailVerificationStatus: VERIFICATION_STATUSES.PENDING,
-    ...clone(overrides),
+    ...clone(overrides, 'Pending-verification overrides'),
   });
 }
 
@@ -519,7 +726,7 @@ function createRejectedVerificationUser(overrides = {}) {
     email: 'verification.rejected001@example.test',
     emailVerified: false,
     emailVerificationStatus: VERIFICATION_STATUSES.REJECTED,
-    ...clone(overrides),
+    ...clone(overrides, 'Rejected-verification overrides'),
   });
 }
 
@@ -530,7 +737,7 @@ function createMfaEnabledUser(overrides = {}) {
     id: 'usr_mfa_001',
     email: 'mfa001@example.test',
     mfaEnabled: true,
-    ...clone(overrides),
+    ...clone(overrides, 'MFA user overrides'),
   });
 }
 
@@ -542,7 +749,7 @@ function createPhoneVerifiedUser(overrides = {}) {
     email: 'phone.verified001@example.test',
     phone: '+910000000002',
     phoneVerified: true,
-    ...clone(overrides),
+    ...clone(overrides, 'Phone-verified overrides'),
   });
 }
 
@@ -553,7 +760,7 @@ function createGoogleUser(overrides = {}) {
     id: 'usr_google_001',
     email: 'google001@example.test',
     authProvider: AUTH_PROVIDERS.GOOGLE,
-    ...clone(overrides),
+    ...clone(overrides, 'Google user overrides'),
   });
 }
 
@@ -564,14 +771,16 @@ function createUserWithFailedLogins(attempts = 3, overrides = {}) {
   return createUser({
     id: 'usr_failed_login_001',
     email: 'failed.login001@example.test',
-    ...clone(overrides),
+    ...clone(overrides, 'Failed-login overrides'),
     failedLoginAttempts: attempts,
   });
 }
 
 /**
- * Client-controlled fields intentionally mixed with server-managed fields.
- * Intended only for validation and mass-assignment security tests.
+ * Create deliberately untrusted input containing protected properties.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
  */
 function createUntrustedUserInput(overrides = {}) {
   assertPlainObject(overrides, 'Untrusted user input overrides');
@@ -591,13 +800,17 @@ function createUntrustedUserInput(overrides = {}) {
     mfaEnabled: false,
     isAdmin: true,
     permissions: ['*'],
-    ...clone(overrides),
+    ...clone(overrides, 'Untrusted user input overrides'),
   };
 }
 
 /**
- * A synthetic principal for authorization tests.
- * This is not a signed token, verified session, or proof of authentication.
+ * Create a synthetic principal for authorization tests.
+ *
+ * This is not a signed token or authenticated session.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
  */
 function createAuthenticatedPrincipal(overrides = {}) {
   assertPlainObject(overrides, 'Principal overrides');
@@ -606,7 +819,7 @@ function createAuthenticatedPrincipal(overrides = {}) {
     id: 'usr_test_001',
     role: USER_ROLES.STUDENT,
     status: USER_STATUSES.ACTIVE,
-    ...clone(overrides),
+    ...clone(overrides, 'Principal overrides'),
   };
 
   assertNonEmptyString(principal.id, 'Principal ID');
@@ -617,35 +830,46 @@ function createAuthenticatedPrincipal(overrides = {}) {
 }
 
 function createUserOwnershipScenario() {
-  return {
-    owner: createUser({
-      id: 'usr_owner_001',
-      email: 'owner001@example.test',
-    }),
-    foreignUser: createForeignUser(),
-  };
+  const owner = createUser({
+    id: 'usr_owner_001',
+    email: 'owner001@example.test',
+  });
+
+  const foreignUser = createForeignUser();
+
+  return { owner, foreignUser };
 }
 
 function createUserAccessScenario(overrides = {}) {
   assertPlainObject(overrides, 'User access scenario overrides');
 
+  const safeOverrides = clone(overrides, 'User access scenario overrides');
+
+  const ownerOverrides = safeOverrides.owner || {};
+  const foreignOverrides = safeOverrides.foreignUser || {};
+  const principalOverrides = safeOverrides.principal || {};
+
+  assertPlainObject(ownerOverrides, 'Owner overrides');
+  assertPlainObject(foreignOverrides, 'Foreign user overrides');
+  assertPlainObject(principalOverrides, 'Principal overrides');
+
   const owner = createUser({
     id: 'usr_access_owner_001',
     email: 'access.owner001@example.test',
-    ...clone(overrides.owner || {}),
+    ...ownerOverrides,
   });
 
   const foreignUser = createForeignUser({
     id: 'usr_access_foreign_001',
     email: 'access.foreign001@example.test',
-    ...clone(overrides.foreignUser || {}),
+    ...foreignOverrides,
   });
 
   const principal = createAuthenticatedPrincipal({
     id: owner.id,
     role: owner.role,
     status: owner.status,
-    ...clone(overrides.principal || {}),
+    ...principalOverrides,
   });
 
   return {
@@ -659,8 +883,10 @@ function createUserAccessScenario(overrides = {}) {
   };
 }
 
-function createUnauthorizedUserAccessScenario() {
-  const scenario = createUserAccessScenario();
+function createUnauthorizedUserAccessScenario(overrides = {}) {
+  assertPlainObject(overrides, 'Unauthorized access overrides');
+
+  const scenario = createUserAccessScenario(overrides);
 
   return {
     ...scenario,
@@ -713,9 +939,6 @@ function createAuthorizationUsers() {
   };
 }
 
-/**
- * Build a minimal set of users for account-status authorization tests.
- */
 function createAccountStatusUsers() {
   return {
     active: createUser(),
@@ -727,9 +950,6 @@ function createAccountStatusUsers() {
   };
 }
 
-/**
- * Build fixtures for verification and MFA-related tests.
- */
 function createVerificationUsers() {
   return {
     verified: createUser(),

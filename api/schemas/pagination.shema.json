@@ -1,0 +1,112 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/api/schemas/pagination.shema.json",
+  "title": "MedOrbits Pagination Schema",
+  "description": "Validates pagination, sorting, search, field selection, and filtering parameters for MedOrbits API endpoints.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000,
+      "default": 1,
+      "description": "One-based page number."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "description": "Maximum number of records per page."
+    },
+    "sortBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+      "description": "Sort field; the API must enforce an endpoint-specific allowlist."
+    },
+    "sortOrder": {
+      "type": "string",
+      "enum": [
+        "asc",
+        "desc"
+      ],
+      "default": "desc"
+    },
+    "search": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": ".*\\S.*",
+      "description": "Optional search term containing at least one non-whitespace character."
+    },
+    "filters": {
+      "type": "object",
+      "maxProperties": 20,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": ".*\\S.*"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "uniqueItems": true,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": ".*\\S.*"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "description": "Endpoint-specific filters. The API must allowlist filter names and validate permitted values."
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)*$"
+      },
+      "description": "Optional response fields; enforce an endpoint-specific field allowlist."
+    },
+    "includeTotal": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to return the total number of matching records."
+    }
+  }
+}

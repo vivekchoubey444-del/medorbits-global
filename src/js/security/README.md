@@ -2,15 +2,35 @@
 # MedOrbits JavaScript Security Utilities
 
 **Directory:** `src/js/security/`  
-**Purpose:** Shared client-side input validation, safe error handling, and accessible form feedback.
-
-This directory contains reusable JavaScript security utilities for MedOrbits frontend applications. The modules help validate user input, display safe error messages, and handle API failures consistently.
-
-> **Security boundary:** These utilities improve frontend reliability and user experience. They do not replace server-side validation, authorization, rate limiting, database constraints, or centralized backend error handling.
+**Purpose:** Shared frontend input validation, safe error handling, and accessible form feedback.  
+**Modules:** `input-validation.js`, `safe-errors.js`  
+**Runtime:** Modern browsers with ES module support.
 
 —
 
-## 1. Directory Structure
+## 1. Overview
+
+The MedOrbits JavaScript security utilities provide reusable helpers for validating form input, checking application and job payloads, displaying accessible validation errors, normalizing API failures, and attaching correlation IDs to requests.
+
+These modules are designed for use across MedOrbits education, medical admissions, careers, recruitment, application, and document workflows.
+
+### Security boundary
+
+These utilities are a frontend support layer. They do not replace:
+
+- Server-side request validation
+- Authentication and authorization
+- Database constraints and parameterized queries
+- Rate limiting and abuse prevention
+- File signature verification and malware scanning
+- CSRF protection where applicable
+- Backend error handling and audit logging
+
+Never rely on browser-side validation to protect a backend endpoint.
+
+—
+
+## 2. Directory Structure
 
 ```text
 src/
@@ -21,186 +41,277 @@ src/
         └── safe-errors.js
 ```
 
-### Modules
-
 | File | Responsibility |
 |—|—|
-| `input-validation.js` | Input validation, payload checks, accessible form errors, and form-validation helpers |
-| `safe-errors.js` | Safe error normalization, HTTP error handling, correlation IDs, and error display |
-| `README.md` | Security module documentation and integration guidance |
+| `input-validation.js` | Input validators, payload checks, file metadata checks, and accessible form validation |
+| `safe-errors.js` | Safe error normalization, HTTP and network error handling, correlation IDs, and error display |
+| `README.md` | Integration instructions, security boundaries, and testing guidance |
+
+Keep this documentation synchronized with the actual source exports and backend API contract.
 
 —
 
-## 2. Requirements
+## 3. Requirements and Module Loading
 
-- Modern browsers supporting JavaScript ES modules.
-- A web server that serves JavaScript files with an appropriate MIME type.
-- HTML forms with meaningful labels and accessible error containers.
-- A backend that independently validates and authorizes every protected operation.
-
-The modules use ES module imports and exports. Load them through `<script type=“module”>` or import them from another module.
+Use a web server that serves JavaScript files with the correct MIME type. Load the modules through ES module imports.
 
 Example:
 
 ```html
-<script type=“module” src=“/src/js/security/input-validation.js”></script>
+<script type=“module”>
+  import {
+    validateEmail,
+    initializeFormValidation
+  } from “/src/js/security/input-validation.js”;
+
+  initializeFormValidation();
+
+  console.log(validateEmail(“student@example.com”));
+</script>
 ```
 
-Use the correct public asset URL for your deployment. Do not expose private server files through the web server.
+Use the correct public asset URL for your deployment. Confirm that the web server exposes only intended frontend assets and does not publish private server-side source files or configuration.
+
+Do not use typographic quotation marks in JavaScript, HTML attributes, import paths, or JSON.
 
 —
 
-## 3. Input Validation
+## 4. Input Validation
 
-**File:** `input-validation.js`
+**Module:** `input-validation.js`
 
-The module provides reusable validation functions for common form fields and application payloads.
+### 4.1 Public exports
 
-### Available validation areas
+The module currently exports these named functions:
 
-- Email addresses
-- Telephone numbers
-- Names and plain text
-- Identifiers
-- Numeric values
-- Dates
-- URLs
-- MIME types and file metadata
-- Password requirements
-- Enumerated choices
-- Application payloads
-- Job payloads
-- Form fields and form-level validation
+| Export | Purpose |
+|—|—|
+| `normalizeWhitespace()` | Collapse repeated whitespace and trim a string |
+| `normalizeEmail()` | Validate and normalize an email address |
+| `validateEmail()` | Check email syntax and length |
+| `validatePhone()` | Check phone syntax and digit count |
+| `validateName()` | Check a human-readable name |
+| `validateText()` | Check text length, required status, and supported characters |
+| `validateIdentifier()` | Check identifier syntax and length |
+| `validateNumber()` | Check finite numeric values and optional bounds |
+| `validateDate()` | Validate a real `YYYY-MM-DD` calendar date |
+| `validateUrl()` | Check URL syntax, protocol, and selected hostname restrictions |
+| `validateMimeType()` | Check a declared MIME type against an allowlist |
+| `validateFile()` | Check file metadata, size, and declared MIME type |
+| `validateChoice()` | Check a value against allowed choices |
+| `validatePassword()` | Apply configurable password length and complexity rules |
+| `validateApplicationPayload()` | Check supported application fields and selected field constraints |
+| `validateJobPayload()` | Check supported job fields and selected field constraints |
+| `validateField()` | Validate an individual form control |
+| `validateForm()` | Validate eligible controls in a form |
+| `attachFormValidation()` | Attach validation event listeners to a form |
+| `detachFormValidation()` | Remove listeners installed by the module |
+| `initializeFormValidation()` | Attach validation to forms marked `data-validate-form` |
 
-The module also supports attaching validation behavior to forms and presenting field-level feedback.
+The default export contains these same utility functions.
 
-### Importing validation helpers
+### 4.2 Validation result
 
-Import only the functions your application needs. For example:
+Most validators return a frozen object in this format:
+
+```javascript
+{
+  valid: false,
+  message: “Enter a valid email address.”,
+  code: “invalid_email”
+}
+```
+
+- `valid` indicates whether the input passed the relevant check.
+- `message` contains user-facing feedback.
+- `code` provides a stable, machine-readable validation category.
+
+Successful results generally use empty `message` and `code` strings.
+
+Configuration errors may throw exceptions rather than return validation results. Handle invalid configuration separately from invalid user input.
+
+### 4.3 Validate an email address
 
 ```javascript
 import {
   validateEmail,
-  validatePhone,
-  validatePassword,
-  validateApplicationPayload,
-  validateJobPayload,
-  validateForm
-} from “/src/js/security/input-validation.js”;
-```
-
-**Important:** Confirm the exact exported names in `input-validation.js` before using this example. Importing a nonexistent named export causes the browser module to fail.
-
-### Example: Validate an email address
-
-```javascript
-import {
-  validateEmail
+  normalizeEmail
 } from “/src/js/security/input-validation.js”;
 
 const result = validateEmail(“student@example.com”);
 
 if (!result.valid) {
-  console.warn(“Enter a valid email address.”);
+  console.warn(result.message);
+} else {
+  const normalizedEmail = normalizeEmail(“student@example.com”);
+  // Continue with the application workflow.
 }
 ```
 
-Adapt the result handling to the actual return shape of the exported validator.
+Email syntax validation does not establish mailbox ownership or existence. Verify addresses through the appropriate account or application workflow when necessary.
 
-### Example: Validate a form
+### 4.4 Validate application and job payloads
 
-Mark a form for validation using the module’s supported data attribute:
+```javascript
+import {
+  validateApplicationPayload,
+  validateJobPayload
+} from “/src/js/security/input-validation.js”;
+
+const application = {
+  full_name: “Aarav Sharma”,
+  email: “student@example.com”,
+  course: “MBBS”,
+  consent: true
+};
+
+const applicationResult = validateApplicationPayload(application);
+
+if (!applicationResult.valid) {
+  console.warn(applicationResult.code, applicationResult.message);
+}
+
+const job = {
+  title: “Junior Software Engineer”,
+  description: “Develop and maintain application features.”,
+  employment_type: “full_time”,
+  location: “Noida, Uttar Pradesh”
+};
+
+const jobResult = validateJobPayload(job);
+
+if (!jobResult.valid) {
+  console.warn(jobResult.code, jobResult.message);
+}
+```
+
+These checks are intentionally limited. Confirm that field allowlists, required fields, enums, and business constraints match the canonical backend schemas.
+
+The payload validators return validation results; they do not sanitize, authorize, or transform the original payload.
+
+### 4.5 Accessible form integration
+
+Mark forms for validation using `data-validate-form`:
 
 ```html
 <form id=“application-form” data-validate-form>
-  <label for=“applicant-email”>Email address</label>
+  <div data-validation-summary hidden></div>
 
+  <label for=“applicant-name”>Full name</label>
+  <input
+    id=“applicant-name”
+    name=“full_name”
+    type=“text”
+    data-validation=“name”
+    autocomplete=“name”
+    required
+    aria-describedby=“applicant-name-error”
+  >
+  <p
+    id=“applicant-name-error”
+    data-error-for=“full_name”
+    hidden
+  ></p>
+
+  <label for=“applicant-email”>Email address</label>
   <input
     id=“applicant-email”
     name=“email”
     type=“email”
+    data-validation=“email”
     autocomplete=“email”
     required
-  />
+    aria-describedby=“applicant-email-error”
+  >
+  <p
+    id=“applicant-email-error”
+    data-error-for=“email”
+    hidden
+  ></p>
 
   <button type=“submit”>Continue</button>
 </form>
+
+<script type=“module”>
+  import {
+    initializeFormValidation
+  } from “/src/js/security/input-validation.js”;
+
+  initializeFormValidation();
+</script>
 ```
 
-Initialize the form using the exported form-initialization helper from `input-validation.js`. Check the implementation for the exact function name and whether automatic initialization is already included.
+Initialize after the relevant form elements exist in the DOM. Calling `initializeFormValidation()` more than once can attach new listeners after the previous listeners are detached and replaced.
 
-### Validation principles
+The helper prevents normal form submission when validation fails. It does not send the request or replace the application’s submit handler.
 
-1. Validate user input before submitting it.
-2. Provide understandable, field-specific feedback.
-3. Keep validation messages accessible to assistive technology.
-4. Use `textContent` or equivalent safe text APIs for displaying messages.
-5. Never treat client-side validation as authoritative.
-6. Validate again on the server using the canonical application schema.
-7. Apply strict allowlists to sensitive fields such as roles, statuses, course types, and workflow actions.
+### 4.6 Validation attributes
+
+Supported `data-validation` values include:
+
+- `email`
+- `phone`
+- `name`
+- `url`
+- `number`
+- `date`
+- `identifier`
+- `password`
+
+Other text controls use generic text validation.
+
+File controls can use `data-allowed-types` and `data-max-bytes`:
+
+```html
+<input
+  id=“support-document”
+  name=“document”
+  type=“file”
+  data-allowed-types=“application/pdf”
+  data-max-bytes=“10485760”
+  required
+>
+```
+
+The file check examines browser-provided metadata. It does not inspect file contents.
 
 —
 
-## 4. Safe Error Handling
+## 5. Safe Error Handling
 
-**File:** `safe-errors.js`
+**Module:** `safe-errors.js`
 
-This module standardizes frontend error handling and helps prevent internal exception details from leaking into the interface.
+### 5.1 Public exports
 
-### Main functionality
-
-| Function or class | Purpose |
+| Export | Purpose |
 |—|—|
-| `SafeAppError` | Represents an application error with a controlled public message |
-| `normalizeError()` | Converts supported error inputs into a normalized safe representation |
-| `createHttpError()` | Creates an application error associated with an HTTP status |
-| `toUserError()` | Produces a user-facing error representation |
-| `fromResponse()` | Handles an HTTP response that represents a failure |
-| `fromNetworkError()` | Handles network-level failures |
-| `displayError()` | Displays an error using a safe DOM-based approach |
-| `clearError()` | Clears an existing error display |
-| `getCorrelationId()` | Retrieves a correlation identifier when available |
-| `withCorrelationId()` | Adds a correlation identifier to supported request options |
-| `reportSafeError()` | Sends sanitized diagnostic information to an optional reporting callback |
-| `handleApiError()` | Provides a common API error-handling entry point |
-| `handleCaughtError()` | Provides a common entry point for caught exceptions |
+| `SafeAppError` | Application error with a controlled public message |
+| `normalizeError()` | Convert supported errors to a normalized representation |
+| `createHttpError()` | Create a normalized application error associated with an HTTP status |
+| `toUserError()` | Produce a user-facing error response |
+| `fromResponse()` | Normalize a failed HTTP response |
+| `fromNetworkError()` | Normalize network failures and aborts |
+| `displayError()` | Display a safe message using DOM text APIs |
+| `clearError()` | Clear and hide an error element |
+| `getCorrelationId()` | Validate or generate a correlation ID |
+| `withCorrelationId()` | Add an `X-Correlation-ID` header |
+| `reportSafeError()` | Send a limited diagnostic record to an optional callback |
+| `handleApiError()` | Produce a normalized API error response |
+| `handleCaughtError()` | Convert a caught error into a user-facing error response |
 
-Refer to the source module for exact signatures, supported arguments, return shapes, and default values.
+The default export provides these functions and the `SafeAppError` class.
 
-### Importing the module
+### 5.2 Handle a failed API response
 
 ```javascript
 import {
-  SafeAppError,
-  normalizeError,
-  createHttpError,
-  toUserError,
   fromResponse,
   fromNetworkError,
-  displayError,
-  clearError,
-  getCorrelationId,
-  withCorrelationId,
-  reportSafeError,
-  handleApiError,
-  handleCaughtError
-} from “/src/js/security/safe-errors.js”;
-```
-
-Verify that every named export exists in the current implementation before deploying this import.
-
-### Example: Handle a failed API response
-
-```javascript
-import {
-  fromResponse,
   displayError
 } from “/src/js/security/safe-errors.js”;
 
-async function loadApplications() {
-  const errorContainer = document.querySelector(
-    “[data-error-container]”
-  );
+export async function loadApplications() {
+  const errorContainer = document.querySelector(“[data-error-container]”);
 
   try {
     const response = await fetch(“/api/applications”, {
@@ -212,13 +323,18 @@ async function loadApplications() {
     });
 
     if (!response.ok) {
-      const safeError = fromResponse(response);
+      const safeError = await fromResponse(response);
 
       if (errorContainer) {
         displayError(errorContainer, safeError);
       }
 
       return null;
+    }
+
+    if (errorContainer) {
+      errorContainer.textContent = “”;
+      errorContainer.hidden = true;
     }
 
     return await response.json();
@@ -234,27 +350,129 @@ async function loadApplications() {
 }
 ```
 
-Adjust this example to the actual exported function signatures and return values. Do not assume a helper accepts a DOM element or that its return value has a particular shape without checking the implementation.
+This example returns `null` on failure as an explicit application convention. Callers must distinguish that outcome from a successful response. If `null` is a valid success value in your API, use a discriminated result object instead.
 
-### Safe error-handling rules
+`fromResponse()` is asynchronous and must be awaited. It returns a normalized error record, not a successful API response.
 
-- Do not display raw exception messages or stack traces to users.
-- Do not expose SQL errors, file paths, internal URLs, environment variables, tokens, or credentials.
-- Do not assume every `TypeError` or `SyntaxError` represents invalid user input.
-- Treat unknown application exceptions as internal errors unless their type is explicitly and safely mapped.
-- Display only controlled public messages.
-- Log sanitized diagnostic details through an approved reporting mechanism.
-- Do not log passwords, authentication cookies, access tokens, uploaded document contents, or unnecessary personal information.
-- Avoid returning success-shaped fallback data after an API failure.
-- Preserve actionable HTTP status and error-code information for application logic.
+### 5.3 Display safe errors
+
+```html
+<div
+  data-error-container
+  role=“alert”
+  aria-live=“assertive”
+  aria-atomic=“true”
+  hidden
+></div>
+```
+
+```javascript
+import {
+  displayError,
+  clearError,
+  toUserError
+} from “/src/js/security/safe-errors.js”;
+
+const container = document.querySelector(“[data-error-container]”);
+
+if (container) {
+  displayError(
+    container,
+    toUserError(new Error(“Internal implementation details”))
+  );
+}
+
+// When the error is resolved:
+if (container) {
+  clearError(container);
+}
+```
+
+`displayError()` uses `textContent`; it does not interpret the message as HTML. The UI should display only controlled, user-safe messages.
+
+### 5.4 Error classification
+
+The current implementation supports stable codes such as:
+
+- `BAD_REQUEST`
+- `UNAUTHENTICATED`
+- `FORBIDDEN`
+- `NOT_FOUND`
+- `REQUEST_TIMEOUT`
+- `CONFLICT`
+- `PAYLOAD_TOO_LARGE`
+- `UNSUPPORTED_MEDIA_TYPE`
+- `VALIDATION_ERROR`
+- `RATE_LIMITED`
+- `INTERNAL_ERROR`
+- `UPSTREAM_ERROR`
+- `SERVICE_UNAVAILABLE`
+- `UPSTREAM_TIMEOUT`
+- `NETWORK_ERROR`
+- `ABORTED`
+- `UNKNOWN_ERROR`
+
+Do not assume that every error class identifies a user mistake. In particular, a runtime `TypeError` or `SyntaxError` can indicate a programming defect. Review the current `normalizeError()` behavior before using it for production error classification.
+
+Never display raw exception messages or stack traces to end users.
 
 —
 
-## 5. API Integration
+## 6. Correlation IDs
 
-Frontend error helpers should work with the existing MedOrbits API error contract.
+Correlation IDs connect frontend requests with backend logs. They are diagnostic metadata, not authentication or authorization credentials.
 
-A recommended JSON error response is:
+### 6.1 Add a correlation header
+
+```javascript
+import {
+  getCorrelationId,
+  withCorrelationId
+} from “/src/js/security/safe-errors.js”;
+
+const correlationId = getCorrelationId();
+
+const headers = withCorrelationId(
+  {
+    Accept: “application/json”
+  },
+  correlationId
+);
+
+const response = await fetch(“/api/applications”, {
+  method: “GET”,
+  credentials: “same-origin”,
+  headers
+});
+```
+
+`withCorrelationId()` supports a `Headers` instance or a plain object of header values. For plain objects, the helper adds the canonical `X-Correlation-ID` key; avoid passing conflicting header names with different casing.
+
+The backend should validate incoming identifiers and establish a trusted request identifier for logging. Do not trust a client-supplied correlation ID as proof of request authenticity.
+
+### 6.2 Logging and reporting
+
+`reportSafeError()` sends only a limited diagnostic record to the supplied callback:
+
+```javascript
+import {
+  reportSafeError
+} from “/src/js/security/safe-errors.js”;
+
+reportSafeError(error, (event) => {
+  // Send only approved diagnostic fields to your reporting service.
+  // Apply access controls, retention limits, and server-side validation.
+  console.warn(“Application error code:”, event.code);
+});
+```
+
+The module does not automatically transmit errors to an external provider. Avoid adding passwords, tokens, request bodies, document contents, or unnecessary personal information to reporting callbacks.
+
+—
+
+## 7. Recommended API Error Contract
+
+A consistent backend error response can follow this pattern:
 
 ```json
 {
@@ -267,144 +485,97 @@ A recommended JSON error response is:
 }
 ```
 
-This is an illustrative contract. The actual response format must match the backend’s centralized error middleware and OpenAPI specification.
+This is a recommended contract, not a claim that the current backend already returns this exact shape.
 
-### Recommended HTTP status mapping
+Align the Node.js or Python error middleware, OpenAPI schema, and frontend helpers before relying on fields such as `requestId`, `correlationId`, `status`, or `retryable`.
 
-| Status | Meaning | Frontend behavior |
+The current `safe-errors.js` reads `x-correlation-id` and `x-request-id` response headers. It does not directly adopt arbitrary server-provided error messages.
+
+### Recommended status handling
+
+| HTTP status | Meaning | Recommended UI behavior |
 |—|—|—|
 | `400` | Invalid request | Show safe request feedback |
 | `401` | Authentication required | Prompt the user to sign in |
 | `403` | Permission denied | Show an access-denied message |
-| `404` | Resource not found | Show a safe not-found message |
-| `409` | Conflict or duplicate operation | Explain the conflict and offer an appropriate next step |
-| `413` | Request or upload too large | Explain the configured size limit |
-| `422` | Validation failure | Display relevant field feedback |
+| `404` | Resource not found | Show safe not-found feedback |
+| `409` | Conflict | Explain the conflict and provide a relevant next step |
+| `413` | Content too large | Explain the configured upload or request limit |
+| `415` | Unsupported content type | Explain permitted formats |
+| `422` | Validation failure | Show field-level feedback where available |
 | `429` | Rate limit exceeded | Ask the user to wait before retrying |
-| `500` | Internal server error | Show a generic error and reference ID when available |
-| `502`, `503`, `504` | Upstream or service availability failure | Show a temporary service-unavailable message |
+| `500` | Internal server error | Show a generic message and reference ID when available |
+| `502`–`504` | Upstream or service failure | Show temporary service-unavailable feedback |
 
-This table is guidance, not an assertion that the current backend implements every status mapping.
-
-### Backend responsibilities
-
-The Node.js or Python backend must independently enforce:
-
-- Authentication and authorization
-- Request schema validation
-- Role and permission checks
-- File content and size verification
-- Database integrity constraints
-- Rate limiting and abuse protection
-- Safe error serialization
-- Request correlation and audit logging
-- Business rules and workflow transitions
-
-Frontend validation can be bypassed by direct HTTP requests and modified browser code.
+The frontend must not assume that a response’s status code or body is trustworthy evidence of authorization.
 
 —
 
-## 6. Security Requirements
+## 8. Security Requirements
 
-### 6.1 Prevent DOM-based injection
+### 8.1 DOM safety
 
-Use safe DOM APIs when rendering messages:
+Use text APIs for plain-text messages:
 
 ```javascript
 element.textContent = message;
 ```
 
-Avoid injecting user-controlled values or server-provided error text through:
+Avoid:
 
 ```javascript
 element.innerHTML = message;
 ```
 
-If rich HTML is genuinely required, use an established HTML sanitizer with an explicit allowlist. Plain-text errors should not require HTML rendering.
+If rich HTML is genuinely required, use a maintained HTML sanitizer with a restrictive allowlist.
 
-### 6.2 URL validation and SSRF
+### 8.2 Server-side validation
 
-Browser-side URL validation does not prevent server-side request forgery (SSRF).
+The backend must independently validate all incoming data. Use canonical schemas and explicit allowlists for roles, statuses, course types, workflow actions, and other security-sensitive fields.
 
-For server-side URL fetching:
+### 8.3 File uploads
 
-- Allowlist permitted protocols and destinations.
-- Reject loopback, private, link-local, and reserved IP ranges where appropriate.
-- Resolve DNS and validate the resulting addresses.
-- Revalidate redirects and prevent redirect-based bypasses.
-- Apply connection and response timeouts.
-- Restrict outbound network access where practical.
+The backend must enforce file-size limits, inspect file contents, generate safe filenames, isolate uploaded files, and apply malware scanning where appropriate. Browser MIME types and file extensions are not proof of file safety.
 
-### 6.3 File validation
+### 8.4 URLs and SSRF
 
-A browser-provided MIME type is untrusted metadata. For uploads, the backend must:
+Browser URL validation does not prevent server-side request forgery. Server-side URL fetching requires destination allowlists or equivalent controls, private and reserved address restrictions, DNS validation, redirect checks, connection timeouts, and suitable outbound network restrictions.
 
-- Enforce an explicit file-size limit.
-- Allowlist permitted file formats.
-- Inspect file signatures or magic bytes where applicable.
-- Reject unexpected content and malformed files.
-- Generate safe server-side filenames.
-- Store files outside executable web roots or in appropriately isolated object storage.
-- Apply malware scanning when required by the threat model.
-- Enforce access control when downloading or previewing private documents.
+### 8.5 Passwords and credentials
 
-### 6.4 Password validation
+Never log or report passwords, session cookies, authentication tokens, or complete credential-bearing request objects. Enforce password policy on the server and store passwords using a suitable password-hashing algorithm.
 
-Client-side password checks provide feedback only. Passwords must be verified on the server and stored using an appropriate password-hashing algorithm.
+### 8.6 Error reporting
 
-Never log passwords or include them in analytics, error reports, URLs, or correlation metadata.
-
-### 6.5 Correlation IDs
-
-Correlation IDs help connect frontend failures to backend logs. They are diagnostic identifiers, not authentication credentials.
-
-- Validate their format and length.
-- Do not use them as authorization tokens.
-- Do not encode secrets or personal information in them.
-- Generate trusted server-side request IDs when appropriate.
-- Avoid relying on client-provided identifiers as proof of request origin.
-
-### 6.6 Error reporting
-
-Reporting callbacks should receive only the information needed for diagnostics. Sanitize data before transmission, restrict access to logs, and define appropriate retention policies.
-
-Do not report full request bodies or uploaded documents by default.
+Expose only controlled public messages. Keep detailed diagnostics in protected logging infrastructure, with appropriate access controls and retention policies.
 
 —
 
-## 7. Accessibility Requirements
+## 9. Accessibility
 
-Error messages should be perceivable without relying on color alone.
+- Associate each field error with the corresponding control through `aria-describedby`.
+- Set `aria-invalid=“true”` when a field fails validation.
+- Clear the invalid state and stale error text when validation succeeds.
+- Use a validation summary for form-level feedback.
+- Do not rely on color alone to communicate errors.
+- Focus the first invalid field after failed submission when appropriate.
+- Avoid moving focus during ordinary input events.
+- Test keyboard navigation and screen-reader announcements.
 
-Recommended markup:
-
-```html
-<div
-  data-error-container
-  role=“alert”
-  aria-live=“assertive”
-  aria-atomic=“true”
-></div>
-```
-
-For field-level errors, use a stable error element and connect it to the input using `aria-describedby`. Set `aria-invalid=“true”` when the field is invalid and clear it when validation succeeds.
-
-Avoid moving focus unexpectedly during ordinary field validation. On failed form submission, focus the first invalid field when appropriate.
-
-Confirm whether the existing `input-validation.js` helpers automatically set these attributes before duplicating the behavior in individual pages.
+The existing form helpers set field-level ARIA attributes when matching error elements are present. Ensure the markup’s error selectors match the control’s `name` or `id`.
 
 —
 
-## 8. Integration With MedOrbits Pages
+## 10. Integration Checklist
 
-Use the security utilities for pages and forms such as:
+Use these modules consistently across:
 
 - Student registration and login
-- Application submissions
-- Course and admission enquiries
+- Medical admission applications
+- Course enquiries
 - Job listings and recruitment applications
-- Support tickets and refund requests
-- Profile and account settings
+- Support and refund requests
+- Account settings and profile updates
 - Official-document requests
 - File upload forms
 - Payment status and confirmation pages
@@ -412,84 +583,92 @@ Use the security utilities for pages and forms such as:
 For each workflow:
 
 1. Import the required helpers.
-2. Validate input before sending the request.
-3. Disable duplicate submissions while a request is pending.
+2. Validate form input before submission.
+3. Prevent duplicate submissions while requests are pending.
 4. Handle unsuccessful HTTP responses separately from successful responses.
-5. Show a safe, accessible message.
-6. Preserve a request reference when available.
-7. Re-enable controls after the operation finishes.
-8. Rely on the backend for authoritative validation and authorization.
+5. Display safe, accessible error messages.
+6. Preserve a validated request reference when available.
+7. Restore controls after completion or failure.
+8. Enforce validation, authentication, and authorization on the server.
 
 Do not store sensitive form contents in browser storage merely to preserve a failed submission.
 
 —
 
-## 9. Testing Checklist
-
-Before deployment, verify the following.
+## 11. Testing Checklist
 
 ### Input validation
 
-- [ ] Valid and invalid email addresses are handled correctly.
-- [ ] Phone validation matches the supported country and number formats.
-- [ ] Required fields reject missing or empty values.
-- [ ] Whitespace-only input is handled consistently.
-- [ ] Numeric boundaries and malformed numbers are tested.
-- [ ] Dates and enum values are checked against supported constraints.
-- [ ] File-size and file-type restrictions are enforced on both client and server.
-- [ ] Application and job payloads match the canonical backend schemas.
-- [ ] Invalid input cannot bypass server-side validation.
+- [ ] Valid and invalid email formats
+- [ ] Phone syntax and digit-count boundaries
+- [ ] Required and whitespace-only values
+- [ ] Numeric limits, malformed numbers, and integer constraints
+- [ ] Valid and impossible calendar dates
+- [ ] URL protocols and embedded credentials
+- [ ] MIME-type allowlists and file-size limits
+- [ ] Password policy boundaries
+- [ ] Unknown application and job fields
+- [ ] Application and job schema alignment
+- [ ] Server-side rejection of invalid requests
 
-### Error handling
+### Safe errors
 
-- [ ] HTTP failures produce safe, understandable messages.
-- [ ] Network failures are distinguished from server responses.
-- [ ] Unknown exceptions do not expose internal details.
-- [ ] A runtime `TypeError` is not automatically misclassified as a user validation error.
-- [ ] Correlation IDs are preserved only in supported formats.
-- [ ] Error reporting does not include secrets or unnecessary personal information.
-- [ ] Error containers are updated safely using text APIs.
-- [ ] Failed requests do not appear successful to the user.
+- [ ] HTTP and network failures are handled separately
+- [ ] Unknown exceptions do not expose internal details
+- [ ] Runtime errors are not automatically misclassified as user input errors
+- [ ] Correlation IDs are bounded and validated
+- [ ] Reporting callbacks receive only approved fields
+- [ ] Error messages are rendered through text APIs
+- [ ] Failed requests cannot appear successful
+- [ ] Response parsing failures are handled safely
 
 ### Accessibility and compatibility
 
-- [ ] Form errors are associated with the relevant fields.
-- [ ] Error announcements work with assistive technology.
-- [ ] Keyboard-only navigation works.
-- [ ] ES module imports resolve correctly in the deployed environment.
-- [ ] Browser console errors are absent.
-- [ ] Tests cover supported browsers and mobile layouts.
+- [ ] Error elements are associated with their fields
+- [ ] Screen-reader announcements are appropriate
+- [ ] Keyboard-only navigation works
+- [ ] ES module paths resolve in deployment
+- [ ] Browser console errors are absent
+- [ ] Mobile form layouts remain usable
+
+Recommended test locations:
+
+```text
+tests/
+└── js/
+    └── security/
+        ├── input-validation.test.js
+        └── safe-errors.test.js
+```
+
+Use the test runner configured by the MedOrbits repository. Do not mark these checks complete until the corresponding automated tests have actually passed.
 
 —
 
-## 10. Maintenance Guidelines
-
-When modifying these utilities:
+## 12. Maintenance
 
 1. Preserve existing public exports unless a migration is planned.
-2. Update this README whenever exported APIs or behavior change.
-3. Add unit tests for new validation rules and error mappings.
-4. Keep frontend and backend validation rules aligned with canonical schemas.
-5. Use explicit allowlists for public error codes and user-facing messages.
-6. Avoid introducing dependencies solely for trivial validation.
-7. Review error-reporting and redaction behavior whenever new fields are added.
-8. Do not treat regular expressions or client-side sanitization as complete security controls.
-9. Document browser support and any new runtime requirements.
-10. Review security-sensitive changes before release.
+2. Update documentation when signatures, result shapes, or defaults change.
+3. Add tests for new validation rules and error mappings.
+4. Keep frontend and backend schemas aligned.
+5. Use explicit allowlists for public error codes and messages.
+6. Avoid unnecessary dependencies.
+7. Review redaction and reporting behavior when new fields are introduced.
+8. Document supported browser versions.
+9. Review security-sensitive changes before release.
+10. Confirm the production build serves only intended public assets.
 
 —
 
-## 11. Definition of Done
+## 13. Definition of Done
 
-The security utilities are ready for integration when:
-
-- [ ] All documented exports match the actual source code.
-- [ ] Example imports and function signatures have been verified.
-- [ ] Validation helpers have automated tests.
-- [ ] Error handling covers HTTP, network, and unexpected failures.
-- [ ] No raw stack traces or sensitive exception details reach the interface.
+- [ ] Documented exports match the source modules.
+- [ ] Example imports and function signatures are verified.
+- [ ] Automated unit tests cover validation and error handling.
+- [ ] HTTP, network, and unexpected failures are handled distinctly.
+- [ ] No raw stack traces or sensitive exception details reach the UI.
 - [ ] Backend validation and authorization remain authoritative.
-- [ ] Accessibility requirements are met.
+- [ ] Accessibility checks pass.
 - [ ] Documentation matches the deployed implementation.
 
-**Final note:** This directory is a frontend security-support layer. Production security depends on coordinated controls across the browser, API, authentication system, database, file storage, logging infrastructure, and deployment environment.
+**Final principle:** MedOrbits frontend security utilities improve consistency and usability. Production security depends on coordinated controls across the browser, API, authentication system, database, file storage, logging infrastructure, and deployment environment.

@@ -1,0 +1,341 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/api/schemas/notification.shema.json",
+  "title": "MedOrbits Notification Schema",
+  "description": "Validates MedOrbits user notifications, admission alerts, job updates, application status messages, and system announcements.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "message",
+    "type",
+    "status",
+    "createdAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Unique notification identifier."
+    },
+    "userId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Recipient user ID. Enforce ownership and access permissions on the server."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000,
+      "pattern": "\\S"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "system",
+        "announcement",
+        "admission",
+        "counselling",
+        "application",
+        "application-status",
+        "document",
+        "job",
+        "internship",
+        "apprenticeship",
+        "career",
+        "course",
+        "college",
+        "scholarship",
+        "payment",
+        "security",
+        "reminder",
+        "maintenance",
+        "other"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "default": "normal"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "scheduled",
+        "published",
+        "sent",
+        "delivered",
+        "failed",
+        "cancelled",
+        "archived"
+      ],
+      "default": "published"
+    },
+    "channels": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "enum": [
+          "in-app",
+          "email",
+          "sms",
+          "push",
+          "whatsapp"
+        ]
+      },
+      "default": [
+        "in-app"
+      ]
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "readAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Timestamp when the recipient read the notification."
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "Validated application-relative path or approved HTTPS URL."
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "self",
+            "blank"
+          ],
+          "default": "self"
+        }
+      }
+    },
+    "relatedResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resourceType",
+        "resourceId"
+      ],
+      "properties": {
+        "resourceType": {
+          "type": "string",
+          "enum": [
+            "application",
+            "job",
+            "college",
+            "course",
+            "scholarship",
+            "document",
+            "payment",
+            "user",
+            "announcement",
+            "other"
+          ]
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      }
+    },
+    "audience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "role",
+            "all-users",
+            "applicants",
+            "students",
+            "job-seekers",
+            "employers",
+            "administrators"
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 30,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "userIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 10000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scheduledAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "sentAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "deliveredAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "lastErrorCode": {
+          "type": "string",
+          "maxLength": 100
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "respectUserPreferences": {
+          "type": "boolean",
+          "default": true
+        },
+        "requiresAction": {
+          "type": "boolean",
+          "default": false
+        },
+        "allowEmailFallback": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "maxProperties": 30,
+      "propertyNames": {
+        "maxLength": 100,
+        "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "createdBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "updatedBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "publishedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "archivedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

@@ -5,19 +5,20 @@
  * MedOrbits -- Document Test Fixtures
  *
  * File: tests/fixtures/documents.js
+ * Runtime: Node.js 20+
  *
  * Purpose:
- *   Reusable synthetic document records for unit, integration, API,
- *   application, authorization, upload, download, and security tests.
+ *   Reusable synthetic document records and payloads for unit,
+ *   integration, API, upload, download, authorization, and security tests.
  *
  * Security:
  *   - Uses synthetic metadata only.
- *   - Does not create files or upload content to storage.
- *   - Storage keys are test identifiers, not proof of file existence.
- *   - Ownership and permissions must be verified by the application.
- *   - Client-supplied ownership, status, verification, and storage fields
- *     must never be trusted by production request handlers.
- *   - These fixtures do not implement authorization or workflow rules.
+ *   - Never creates files or uploads content to storage.
+ *   - Storage keys are identifiers, not proof of file existence.
+ *   - Does not establish ownership, authentication, or permissions.
+ *   - Does not replace production validation or authorization.
+ *
+ * Module format: CommonJS.
  */
 
 const DOCUMENT_STATUSES = Object.freeze({
@@ -49,11 +50,11 @@ const DOCUMENT_TYPES = Object.freeze({
 });
 
 const DOCUMENT_STATUS_VALUES = Object.freeze(
-  Object.values(DOCUMENT_STATUSES)
+  Object.values(DOCUMENT_STATUSES),
 );
 
 const DOCUMENT_TYPE_VALUES = Object.freeze(
-  Object.values(DOCUMENT_TYPES)
+  Object.values(DOCUMENT_TYPES),
 );
 
 const SERVER_MANAGED_FIELDS = Object.freeze([
@@ -62,11 +63,35 @@ const SERVER_MANAGED_FIELDS = Object.freeze([
   'ownerId',
   'status',
   'verification',
-  'storageKey',
   'uploadedAt',
   'createdAt',
   'updatedAt',
 ]);
+
+const MAX_SET_SIZE = 1000;
+const MAX_CLONE_DEPTH = 50;
+
+const FORBIDDEN_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
+
+const DEFAULT_VERIFICATION = Object.freeze({
+  verifiedBy: null,
+  verifiedAt: null,
+  rejectionReason: null,
+  expiresAt: null,
+});
+
+const DEFAULT_FILE = Object.freeze({
+  fileName: 'identity-proof-test.pdf',
+  mimeType: 'application/pdf',
+  sizeBytes: 1024,
+  checksum: null,
+  storageKey:
+    'test-only/documents/document_test_0001/identity-proof-test.pdf',
+});
 
 const DEFAULT_DOCUMENT = Object.freeze({
   id: 'document_test_0001',
@@ -75,20 +100,8 @@ const DEFAULT_DOCUMENT = Object.freeze({
   applicationId: 'app_test_0001',
   documentType: DOCUMENT_TYPES.IDENTITY_PROOF,
   status: DOCUMENT_STATUSES.UPLOADED,
-  file: Object.freeze({
-    fileName: 'identity-proof-test.pdf',
-    mimeType: 'application/pdf',
-    sizeBytes: 1024,
-    checksum: null,
-    storageKey:
-      'test-only/documents/document_test_0001/identity-proof-test.pdf',
-  }),
-  verification: Object.freeze({
-    verifiedBy: null,
-    verifiedAt: null,
-    rejectionReason: null,
-    expiresAt: null,
-  }),
+  file: DEFAULT_FILE,
+  verification: DEFAULT_VERIFICATION,
   visibility: 'private',
   uploadedAt: '2026-10-01T08:45:00.000Z',
   createdAt: '2026-10-01T08:45:00.000Z',
@@ -103,121 +116,58 @@ const DEFAULT_UPLOAD_DESCRIPTOR = Object.freeze({
   applicationId: 'app_test_0001',
 });
 
-const DEFAULT_VERIFICATION = Object.freeze({
-  verifiedBy: null,
-  verifiedAt: null,
-  rejectionReason: null,
-  expiresAt: null,
-});
-
 /**
- * Validate a plain object.
+ * Assert that a value is a plain object.
  *
- * Rejects arrays, null, and objects with unexpected prototypes.
- *
- * @param {*} value
+ * @param {unknown} value
  * @param {string} [label='Value']
  * @returns {void}
  */
 function assertPlainObject(value, label = 'Value') {
   if (
-    value === null ||
-    typeof value !== 'object' ||
-    Array.isArray(value)
+    value === null
+    || typeof value !== 'object'
+    || Array.isArray(value)
   ) {
     throw new TypeError(`${label} must be a plain object`);
   }
 
   const prototype = Object.getPrototypeOf(value);
 
-  if (prototype !== Object.prototype && prototype !== null) {
+  if (
+    prototype !== Object.prototype
+    && prototype !== null
+  ) {
     throw new TypeError(`${label} must be a plain object`);
   }
 }
 
 /**
- * Validate a non-empty string.
+ * Assert that a value is a non-empty string.
  *
- * @param {*} value
+ * @param {unknown} value
  * @param {string} label
- * @returns {void}
+ * @returns {string}
  */
 function assertNonEmptyString(value, label) {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new TypeError(`${label} must be a non-empty string`);
   }
+
+  return value;
 }
 
 /**
  * Validate a non-negative safe integer.
  *
- * @param {*} value
+ * @param {unknown} value
  * @param {string} label
- * @returns {void}
+ * @returns {number}
  */
 function assertNonNegativeSafeInteger(value, label) {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new RangeError(
-      `${label} must be a non-negative safe integer`
-    );
-  }
-}
-
-/**
- * Validate a supported document status.
- *
- * @param {*} status
- * @returns {void}
- */
-function assertDocumentStatus(status) {
-  if (!DOCUMENT_STATUS_VALUES.includes(status)) {
-    throw new RangeError(`Unsupported document status: ${status}`);
-  }
-}
-
-/**
- * Validate a supported document type.
- *
- * @param {*} documentType
- * @returns {void}
- */
-function assertDocumentType(documentType) {
-  if (!DOCUMENT_TYPE_VALUES.includes(documentType)) {
-    throw new RangeError(
-      `Unsupported document type: ${documentType}`
-    );
-  }
-}
-
-/**
- * Recursively clone arrays and plain objects.
- *
- * Functions, dates, class instances, and other non-plain objects are
- * intentionally rejected rather than copied ambiguously.
- *
- * @param {*} value
- * @returns {*}
- */
-function clone(value) {
-  if (Array.isArray(value)) {
-    return value.map(clone);
-  }
-
-  if (value !== null && typeof value === 'object') {
-    assertPlainObject(value, 'Fixture values');
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, clone(item)])
-    );
-  }
-
-  if (
-    typeof value === 'function' ||
-    typeof value === 'symbol' ||
-    typeof value === 'bigint'
-  ) {
-    throw new TypeError(
-      'Fixture values cannot contain functions, symbols, or bigints'
+      `${label} must be a non-negative safe integer`,
     );
   }
 
@@ -225,44 +175,209 @@ function clone(value) {
 }
 
 /**
- * Validate and clone nested metadata overrides.
+ * Validate a supported document status.
  *
- * @param {*} value
- * @param {string} label
- * @returns {object}
+ * @param {unknown} status
+ * @returns {string}
  */
-function cloneNestedObject(value, label) {
-  assertPlainObject(value, label);
-  return clone(value);
+function assertDocumentStatus(status) {
+  if (!DOCUMENT_STATUS_VALUES.includes(status)) {
+    throw new RangeError(`Unsupported document status: ${status}`);
+  }
+
+  return status;
 }
 
 /**
- * Merge a nested object with a default object without sharing references.
+ * Validate a supported document type.
+ *
+ * @param {unknown} documentType
+ * @returns {string}
+ */
+function assertDocumentType(documentType) {
+  if (!DOCUMENT_TYPE_VALUES.includes(documentType)) {
+    throw new RangeError(`Unsupported document type: ${documentType}`);
+  }
+
+  return documentType;
+}
+
+/**
+ * Clone JSON-compatible fixture values.
+ *
+ * Rejects circular references, accessors, unsupported object types,
+ * dangerous property names, non-finite numbers, and excessive depth.
+ *
+ * @param {unknown} value
+ * @param {string} [label]
+ * @param {WeakSet<object>} [ancestors]
+ * @param {number} [depth]
+ * @returns {any}
+ */
+function clone(
+  value,
+  label = 'Fixture value',
+  ancestors = new WeakSet(),
+  depth = 0,
+) {
+  if (depth > MAX_CLONE_DEPTH) {
+    throw new RangeError(`${label} exceeds maximum nesting depth`);
+  }
+
+  if (
+    value === null
+    || typeof value === 'string'
+    || typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new TypeError(`${label} contains a non-finite number`);
+    }
+
+    return value;
+  }
+
+  if (typeof value !== 'object') {
+    throw new TypeError(`${label} contains an unsupported value`);
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError(`${label} must not contain circular references`);
+  }
+
+  ancestors.add(value);
+
+  try {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => (
+        clone(item, `${label}[${index}]`, ancestors, depth + 1)
+      ));
+    }
+
+    assertPlainObject(value, label);
+
+    const result = Object.create(null);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== 'string') {
+        throw new TypeError(`${label} must not contain symbol keys`);
+      }
+
+      if (FORBIDDEN_KEYS.has(key)) {
+        throw new TypeError(`${label} contains a prohibited property name`);
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (
+        !descriptor
+        || !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+      ) {
+        throw new TypeError(`${label}.${key} must be a data property`);
+      }
+
+      result[key] = clone(
+        descriptor.value,
+        `${label}.${key}`,
+        ancestors,
+        depth + 1,
+      );
+    }
+
+    return result;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
+/**
+ * Merge a nested object with its defaults.
  *
  * @param {object} defaults
- * @param {*} overrides
+ * @param {unknown} overrides
  * @param {string} label
  * @returns {object}
  */
 function mergeNestedObject(defaults, overrides, label) {
   if (overrides === undefined) {
-    return clone(defaults);
+    return clone(defaults, label);
   }
 
-  const clonedOverrides = cloneNestedObject(overrides, label);
+  assertPlainObject(overrides, label);
 
   return {
-    ...clone(defaults),
-    ...clonedOverrides,
+    ...clone(defaults, `${label} defaults`),
+    ...clone(overrides, label),
   };
+}
+
+/**
+ * Validate and clone a record array.
+ *
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {object[]}
+ */
+function cloneRecordArray(value, label) {
+  if (!Array.isArray(value)) {
+    throw new TypeError(`${label} must be an array`);
+  }
+
+  return value.map((record, index) => {
+    assertPlainObject(record, `${label}[${index}]`);
+    return clone(record, `${label}[${index}]`);
+  });
+}
+
+/**
+ * Validate the file metadata shape.
+ *
+ * This does not verify actual file content, file signatures, storage
+ * existence, MIME authenticity, or upload authorization.
+ *
+ * @param {object} file
+ * @returns {object}
+ */
+function normalizeFileMetadata(file) {
+  assertPlainObject(file, 'Document file metadata');
+
+  const result = {
+    ...clone(DEFAULT_FILE, 'Default file metadata'),
+    ...clone(file, 'Document file metadata'),
+  };
+
+  assertNonEmptyString(result.fileName, 'file.fileName');
+  assertNonEmptyString(result.mimeType, 'file.mimeType');
+  assertNonNegativeSafeInteger(result.sizeBytes, 'file.sizeBytes');
+
+  if (
+    result.checksum !== null
+    && result.checksum !== undefined
+    && typeof result.checksum !== 'string'
+  ) {
+    throw new TypeError('file.checksum must be a string or null');
+  }
+
+  if (
+    result.storageKey !== null
+    && result.storageKey !== undefined
+    && typeof result.storageKey !== 'string'
+  ) {
+    throw new TypeError('file.storageKey must be a string or null');
+  }
+
+  return result;
 }
 
 /**
  * Create a fresh synthetic document record.
  *
- * Nested file and verification metadata are merged with their defaults.
- * This factory intentionally supports invalid workflow combinations for
- * negative tests; use the dedicated factories for common workflow states.
+ * This factory supports intentionally inconsistent workflow metadata
+ * for negative tests. Use the dedicated workflow factories for common
+ * scenarios.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -270,24 +385,29 @@ function mergeNestedObject(defaults, overrides, label) {
 function createDocument(overrides = {}) {
   assertPlainObject(overrides, 'Document overrides');
 
-  const clonedOverrides = clone(overrides);
+  const safeOverrides = clone(overrides, 'Document overrides');
 
   const document = {
-    ...clone(DEFAULT_DOCUMENT),
-    ...clonedOverrides,
+    ...clone(DEFAULT_DOCUMENT, 'Default document'),
+    ...safeOverrides,
   };
 
   document.file = mergeNestedObject(
-    DEFAULT_DOCUMENT.file,
-    overrides.file,
-    'Document file overrides'
+    DEFAULT_FILE,
+    safeOverrides.file,
+    'Document file overrides',
   );
 
+  document.file = normalizeFileMetadata(document.file);
+
   document.verification = mergeNestedObject(
-    DEFAULT_DOCUMENT.verification,
-    overrides.verification,
-    'Document verification overrides'
+    DEFAULT_VERIFICATION,
+    safeOverrides.verification,
+    'Document verification overrides',
   );
+
+  assertDocumentType(document.documentType);
+  assertDocumentStatus(document.status);
 
   return document;
 }
@@ -295,10 +415,9 @@ function createDocument(overrides = {}) {
 /**
  * Create a client-submittable document metadata payload.
  *
- * By default, server-managed fields are omitted. Explicit overrides are
- * retained to support mass-assignment and request-validation tests.
- *
- * The API under test must enforce its own request allowlist and access rules.
+ * Explicit overrides are preserved for mass-assignment and request
+ * validation tests. Production handlers must independently enforce
+ * accepted fields and validate upload content.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -306,50 +425,53 @@ function createDocument(overrides = {}) {
 function createDocumentPayload(overrides = {}) {
   assertPlainObject(overrides, 'Document payload overrides');
 
+  const safeOverrides = clone(overrides, 'Document payload overrides');
+
   return {
     applicationId: DEFAULT_DOCUMENT.applicationId,
     documentType: DEFAULT_DOCUMENT.documentType,
-    fileName: DEFAULT_DOCUMENT.file.fileName,
-    mimeType: DEFAULT_DOCUMENT.file.mimeType,
-    sizeBytes: DEFAULT_DOCUMENT.file.sizeBytes,
-    ...clone(overrides),
+    fileName: DEFAULT_FILE.fileName,
+    mimeType: DEFAULT_FILE.mimeType,
+    sizeBytes: DEFAULT_FILE.sizeBytes,
+    ...safeOverrides,
   };
 }
 
 /**
- * Create a collection of documents with unique generated identities.
+ * Create a collection with deterministic, unique document identities.
  *
- * Generated identity fields and the storage key are reserved by this
- * factory and cannot be overwritten by common overrides.
- *
- * Common fields, including status, visibility, and verification metadata,
- * may be shared across the generated collection.
+ * Generated document IDs, document numbers, owners, application IDs,
+ * filenames, and storage keys are reserved by this factory.
  *
  * @param {number} [count=3]
  * @param {object} [overrides={}]
  * @returns {object[]}
  */
 function createDocumentSet(count = 3, overrides = {}) {
-  if (!Number.isInteger(count) || count < 0 || count > 1000) {
+  if (
+    !Number.isInteger(count)
+    || count < 0
+    || count > MAX_SET_SIZE
+  ) {
     throw new RangeError(
-      'Document count must be an integer from 0 to 1000'
+      `Document count must be an integer from 0 to ${MAX_SET_SIZE}`,
     );
   }
 
   assertPlainObject(overrides, 'Document set overrides');
 
-  if (overrides.file !== undefined) {
-    assertPlainObject(overrides.file, 'Document set file overrides');
-  }
+  const safeOverrides = clone(overrides, 'Document set overrides');
 
-  const commonOverrides = clone(overrides);
-  const commonFileOverrides = commonOverrides.file || {};
+  const {
+    id: ignoredId,
+    documentNumber: ignoredDocumentNumber,
+    ownerId: ignoredOwnerId,
+    applicationId: ignoredApplicationId,
+    file: fileOverrides = {},
+    ...commonOverrides
+  } = safeOverrides;
 
-  delete commonOverrides.id;
-  delete commonOverrides.documentNumber;
-  delete commonOverrides.ownerId;
-  delete commonOverrides.applicationId;
-  delete commonOverrides.file;
+  assertPlainObject(fileOverrides, 'Document set file overrides');
 
   return Array.from({ length: count }, (_, index) => {
     const sequence = String(index + 1).padStart(4, '0');
@@ -361,14 +483,13 @@ function createDocumentSet(count = 3, overrides = {}) {
       mimeType: 'application/pdf',
       sizeBytes: 1024 + index,
       checksum: null,
-      ...clone(commonFileOverrides),
-      // Always reserve the generated storage key for this record.
-      storageKey:
-        `test-only/documents/${documentId}/${fileName}`,
+      ...fileOverrides,
+      fileName,
+      storageKey: `test-only/documents/${documentId}/${fileName}`,
     };
 
     return createDocument({
-      ...clone(commonOverrides),
+      ...commonOverrides,
       id: documentId,
       documentNumber: `MO-DOC-TEST-${sequence}`,
       ownerId: `user_test_${sequence}`,
@@ -381,7 +502,7 @@ function createDocumentSet(count = 3, overrides = {}) {
 /**
  * Create a document owned by another synthetic user.
  *
- * Useful for IDOR, cross-user access, and unauthorized-download tests.
+ * Useful for IDOR and cross-user access tests.
  *
  * @param {string} [ownerId='user_test_foreign']
  * @param {object} [overrides={}]
@@ -389,23 +510,21 @@ function createDocumentSet(count = 3, overrides = {}) {
  */
 function createForeignDocument(
   ownerId = 'user_test_foreign',
-  overrides = {}
+  overrides = {},
 ) {
   assertNonEmptyString(ownerId, 'Foreign document owner ID');
   assertPlainObject(overrides, 'Foreign document overrides');
 
-  const clonedOverrides = clone(overrides);
+  const safeOverrides = clone(overrides, 'Foreign document overrides');
 
-  const fileOverrides = overrides.file === undefined
+  const fileOverrides = safeOverrides.file === undefined
     ? {}
-    : cloneNestedObject(
-        overrides.file,
-        'Foreign document file overrides'
-      );
+    : safeOverrides.file;
+
+  assertPlainObject(fileOverrides, 'Foreign document file overrides');
 
   return createDocument({
-    ...clonedOverrides,
-    // These values are reserved to make the fixture consistently foreign.
+    ...safeOverrides,
     id: 'document_test_foreign_0001',
     documentNumber: 'MO-DOC-TEST-FOREIGN-0001',
     ownerId,
@@ -418,6 +537,7 @@ function createForeignDocument(
       sizeBytes: 2048,
       checksum: null,
       ...fileOverrides,
+      fileName: 'foreign-document-test.pdf',
       storageKey:
         'test-only/documents/document_test_foreign_0001/foreign-document-test.pdf',
     },
@@ -426,9 +546,6 @@ function createForeignDocument(
 
 /**
  * Create a deliberately hostile payload for mass-assignment tests.
- *
- * The fields represent attacker-controlled input. Their presence in this
- * fixture does not make them valid API fields.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -442,7 +559,6 @@ function createMassAssignmentPayload(overrides = {}) {
     documentNumber: 'MO-DOC-ATTACKER-CONTROLLED',
     ownerId: 'user_test_attacker',
     status: DOCUMENT_STATUSES.VERIFIED,
-    verifiedBy: 'user_test_attacker',
     verification: {
       verifiedBy: 'user_test_attacker',
       verifiedAt: '2026-10-01T09:00:00.000Z',
@@ -455,15 +571,14 @@ function createMassAssignmentPayload(overrides = {}) {
     updatedAt: '2000-01-01T00:00:00.000Z',
     isAdmin: true,
     role: 'admin',
-    ...clone(overrides),
+    ...clone(overrides, 'Mass-assignment overrides'),
   };
 }
 
 /**
  * Create a document with a selected workflow status.
  *
- * This factory validates that the status is recognized, but does not
- * validate whether a transition to that status is permitted.
+ * Status validation does not validate transition rules.
  *
  * @param {string} status
  * @param {object} [overrides={}]
@@ -474,7 +589,7 @@ function createDocumentWithStatus(status, overrides = {}) {
   assertPlainObject(overrides, 'Document status overrides');
 
   return createDocument({
-    ...clone(overrides),
+    ...clone(overrides, 'Document status overrides'),
     status,
   });
 }
@@ -490,30 +605,30 @@ function createDocumentWithStatus(status, overrides = {}) {
 function createVerifiedDocument(overrides = {}) {
   assertPlainObject(overrides, 'Verified document overrides');
 
-  const verificationOverrides = overrides.verification === undefined
-    ? {}
-    : cloneNestedObject(
-        overrides.verification,
-        'Verified document verification overrides'
-      );
+  const safeOverrides = clone(overrides, 'Verified document overrides');
 
-  return createDocument({
-    ...clone(overrides),
-    status: DOCUMENT_STATUSES.VERIFIED,
-    verification: {
+  const verification = mergeNestedObject(
+    {
       verifiedBy: 'user_test_reviewer',
       verifiedAt: '2026-10-02T10:00:00.000Z',
       rejectionReason: null,
       expiresAt: null,
-      ...verificationOverrides,
     },
+    safeOverrides.verification,
+    'Verified document verification overrides',
+  );
+
+  return createDocument({
+    ...safeOverrides,
+    status: DOCUMENT_STATUSES.VERIFIED,
+    verification,
   });
 }
 
 /**
  * Create synthetic rejected-document metadata.
  *
- * This does not represent a real review or rejection event.
+ * This does not represent a real rejection event.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -521,31 +636,30 @@ function createVerifiedDocument(overrides = {}) {
 function createRejectedDocument(overrides = {}) {
   assertPlainObject(overrides, 'Rejected document overrides');
 
-  const verificationOverrides = overrides.verification === undefined
-    ? {}
-    : cloneNestedObject(
-        overrides.verification,
-        'Rejected document verification overrides'
-      );
+  const safeOverrides = clone(overrides, 'Rejected document overrides');
 
-  return createDocument({
-    ...clone(overrides),
-    status: DOCUMENT_STATUSES.REJECTED,
-    verification: {
+  const verification = mergeNestedObject(
+    {
       verifiedBy: 'user_test_reviewer',
       verifiedAt: '2026-10-02T10:00:00.000Z',
       rejectionReason: 'Test rejection reason',
       expiresAt: null,
-      ...verificationOverrides,
     },
+    safeOverrides.verification,
+    'Rejected document verification overrides',
+  );
+
+  return createDocument({
+    ...safeOverrides,
+    status: DOCUMENT_STATUSES.REJECTED,
+    verification,
   });
 }
 
 /**
  * Create a synthetic upload request descriptor.
  *
- * Metadata only. This does not create a multipart request, a file, or a
- * storage object.
+ * This metadata does not create a file or storage object.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -554,27 +668,15 @@ function createUploadDescriptor(overrides = {}) {
   assertPlainObject(overrides, 'Upload descriptor overrides');
 
   const descriptor = {
-    ...clone(DEFAULT_UPLOAD_DESCRIPTOR),
-    ...clone(overrides),
+    ...clone(DEFAULT_UPLOAD_DESCRIPTOR, 'Default upload descriptor'),
+    ...clone(overrides, 'Upload descriptor overrides'),
   };
 
-  assertNonEmptyString(
-    descriptor.originalName,
-    'Upload originalName'
-  );
-  assertNonEmptyString(
-    descriptor.mimeType,
-    'Upload mimeType'
-  );
-  assertNonNegativeSafeInteger(
-    descriptor.sizeBytes,
-    'Upload sizeBytes'
-  );
+  assertNonEmptyString(descriptor.originalName, 'Upload originalName');
+  assertNonEmptyString(descriptor.mimeType, 'Upload mimeType');
+  assertNonNegativeSafeInteger(descriptor.sizeBytes, 'Upload sizeBytes');
   assertDocumentType(descriptor.documentType);
-  assertNonEmptyString(
-    descriptor.applicationId,
-    'Upload applicationId'
-  );
+  assertNonEmptyString(descriptor.applicationId, 'Upload applicationId');
 
   return descriptor;
 }
@@ -582,8 +684,7 @@ function createUploadDescriptor(overrides = {}) {
 /**
  * Create a synthetic download authorization scenario.
  *
- * This does not authorize a download or prove that the referenced object
- * exists. The expected result is test intent, not an access-control rule.
+ * expectedAllowed describes the test expectation. It does not grant access.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -591,36 +692,30 @@ function createUploadDescriptor(overrides = {}) {
 function createDownloadScenario(overrides = {}) {
   assertPlainObject(overrides, 'Download scenario overrides');
 
-  const scenario = {
-    requesterId: 'user_test_0001',
-    expectedAllowed: true,
-    ...clone(overrides),
-  };
+  const safeOverrides = clone(overrides, 'Download scenario overrides');
 
-  assertNonEmptyString(
-    scenario.requesterId,
-    'Download requesterId'
-  );
+  const requesterId = safeOverrides.requesterId ?? 'user_test_0001';
+  const expectedAllowed = safeOverrides.expectedAllowed ?? true;
 
-  if (typeof scenario.expectedAllowed !== 'boolean') {
+  assertNonEmptyString(requesterId, 'Download requesterId');
+
+  if (typeof expectedAllowed !== 'boolean') {
     throw new TypeError('expectedAllowed must be a boolean');
   }
 
-  scenario.document = overrides.document === undefined
+  const document = safeOverrides.document === undefined
     ? createDocument()
-    : createDocument(
-        cloneNestedObject(
-          overrides.document,
-          'Download scenario document'
-        )
-      );
+    : createDocument(safeOverrides.document);
 
-  return scenario;
+  return {
+    requesterId,
+    expectedAllowed,
+    document,
+  };
 }
 
 /**
- * Create a synthetic document that belongs to a different user than the
- * requester. Useful for testing that authorization denies cross-user access.
+ * Create a cross-user download scenario expected to be denied.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -628,37 +723,46 @@ function createDownloadScenario(overrides = {}) {
 function createUnauthorizedDownloadScenario(overrides = {}) {
   assertPlainObject(overrides, 'Unauthorized download overrides');
 
-  const requesterId = overrides.requesterId || 'user_test_requester';
+  const safeOverrides = clone(
+    overrides,
+    'Unauthorized download overrides',
+  );
+
+  const requesterId = safeOverrides.requesterId
+    ?? 'user_test_requester';
 
   assertNonEmptyString(
     requesterId,
-    'Unauthorized download requesterId'
+    'Unauthorized download requesterId',
   );
 
-  const documentOverrides = overrides.document === undefined
+  const documentOverrides = safeOverrides.document === undefined
     ? {}
-    : cloneNestedObject(
-        overrides.document,
-        'Unauthorized download document overrides'
-      );
+    : safeOverrides.document;
 
-  const foreignOwnerId = documentOverrides.ownerId || 'user_test_foreign';
+  assertPlainObject(
+    documentOverrides,
+    'Unauthorized download document overrides',
+  );
 
-  if (foreignOwnerId === requesterId) {
+  const ownerId = documentOverrides.ownerId
+    ?? 'user_test_foreign';
+
+  assertNonEmptyString(ownerId, 'Foreign document owner ID');
+
+  if (ownerId === requesterId) {
     throw new TypeError(
-      'Unauthorized download scenario requires a different document owner'
+      'Unauthorized download scenario requires a different document owner',
     );
   }
 
-  return createDownloadScenario({
-    ...clone(overrides),
+  const document = createForeignDocument(ownerId, documentOverrides);
+
+  return {
     requesterId,
     expectedAllowed: false,
-    document: createForeignDocument(
-      foreignOwnerId,
-      documentOverrides
-    ),
-  });
+    document,
+  };
 }
 
 module.exports = {
@@ -668,6 +772,8 @@ module.exports = {
   DOCUMENT_TYPE_VALUES,
   SERVER_MANAGED_FIELDS,
   DEFAULT_DOCUMENT,
+  DEFAULT_UPLOAD_DESCRIPTOR,
+  DEFAULT_VERIFICATION,
   createDocument,
   createDocumentPayload,
   createDocumentSet,

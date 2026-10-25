@@ -1,17 +1,31 @@
-MedOrbits — Python Engineering Toolkit
 
-Directory: python/
-Python version: 3.12+
-Purpose: Repository automation, data validation, integration management, and automated testing for the MedOrbits platform.
+# MedOrbits — Python Engineering Toolkit
 
-1. Overview
+**Directory:** `python/`  
+**Python:** 3.12+  
+**Project:** MedOrbits — Education · Admissions · Careers · Recruitment  
+**Website:** https://www.medorbits.in/  
+**Purpose:** Repository automation, data validation, integration management, and automated testing.
 
-The MedOrbits Python toolkit provides reusable utilities for maintaining project structure, validating datasets, analyzing dependencies, managing integrations, and running automated tests.
+—
 
-The toolkit is designed to support reliable development workflows while preserving existing project files and protecting sensitive configuration.
+## 1. Overview
 
-2. Directory Structure
+The MedOrbits Python Engineering Toolkit provides reusable utilities for maintaining repository integrity, validating datasets, analyzing dependencies, managing integrations, and running automated tests.
 
+It is designed around five engineering principles:
+
+- **Security:** Protect credentials, personal data, and production resources.
+- **Reliability:** Validate inputs, handle failures explicitly, and test expected behavior.
+- **Maintainability:** Use focused modules, stable interfaces, and shared utilities.
+- **Data integrity:** Preserve existing files and validate generated content.
+- **Transparency:** Distinguish intended functionality from functionality that has been implemented and verified.
+
+This document describes the intended architecture. The existence and behavior of individual files must be verified against the actual repository.
+
+## 2. Directory Structure
+
+```text
 python/
 ├── README.md
 ├── scripts/
@@ -48,178 +62,382 @@ python/
     ├── test_import_export.py
     ├── test_json_data.py
     └── test_validators.py
+```
 
-This is the intended structure based on the current project layout. Confirm individual files and packages exist before relying on them.
+This is the intended structure, not a verified inventory. Confirm the existence of files, packages, and nested modules before importing them or referencing them in automation.
 
-3. Component Responsibilities
+## 3. Component Responsibilities
 
-Directory	Responsibility
-scripts/	Repeatable development, maintenance, and operational scripts
-tools/	Repository inspection, structure adaptation, dependency analysis, dataset management, and scaffolding
-integrations/	Shared infrastructure and adapters for approved external services
-tests/	Automated unit, regression, validation, and utility tests
+| Component | Responsibilities |
+|—|—|
+| `scripts/` | Repeatable development, maintenance, and operational workflows |
+| `tools/` | Repository inspection, structure analysis, dependency mapping, data-source management, and scaffolding |
+| `integrations/` | Shared infrastructure and adapters for authorized external services |
+| `tests/` | Unit, regression, validation, and utility tests |
 
-Keep each component focused on one responsibility. Reuse existing utilities instead of creating duplicate implementations.
+Each component should have a clearly defined responsibility. Prefer extending existing implementations over introducing duplicate functionality.
 
-4. Requirements
+### 3.1 Repository tools
 
-* Python 3.12 or later.
-* Project dependencies installed using the repository’s documented setup.
-* Execution from the appropriate repository root.
-* Environment-specific configuration for any external services.
-* Automated tests for implemented functionality.
+- `repository_integrity.py`: inspect repository consistency and report structural or configuration issues.
+- `structure_adapter.py`: analyze source and target structures and identify potential adaptations.
+- `dependency_binder.py`: inspect declared dependencies, references, and integration points.
+- `data_source_manager.py`: validate and manage supported data sources.
+- `repository_scaffolder.py`: create eligible files and directories according to explicit generation rules.
 
-Check the active Python version:
+These descriptions define intended responsibilities. Actual features, command-line options, and side effects must be documented by the corresponding implementations.
 
+## 4. Runtime and Dependencies
+
+### Requirements
+
+- Python 3.12 or later.
+- A working installation of the project’s declared dependencies.
+- Execution from the appropriate repository root.
+- Environment-specific configuration for external services.
+- Automated tests for implemented functionality.
+
+Check the active interpreter:
+
+```bash
 python —version
+python -m pip —version
+```
 
-Install dependencies using the actual project configuration. For example, if the repository contains a development requirements file:
+Install dependencies using the repository’s actual dependency configuration. For example, if `requirements-dev.txt` exists:
 
+```bash
 python -m pip install -r requirements-dev.txt
+```
 
-Do not assume that optional dependency files exist.
+If the project uses `pyproject.toml`, follow its declared build system and dependency groups instead. Do not introduce a second dependency-management approach without a specific requirement.
 
-5. Common Development Commands
+### Recommended environment isolation
 
-Run these commands from the repository root.
+Create a virtual environment when one is not already configured:
 
-Validate Python syntax
+```bash
+python -m venv .venv
+```
 
+Activate it on macOS or Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Activate it in Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Use the project’s documented environment setup if it differs from these examples.
+
+## 5. Common Development Commands
+
+Run commands from the repository root unless the project specifies otherwise.
+
+### Compile Python files
+
+```bash
 python -m compileall -q python/
+```
 
-Run the automated tests
+This checks whether Python files can be compiled. It does not establish that imports, integrations, or runtime behavior are correct.
 
+### Run the test suite
+
+```bash
 python -m pytest python/tests/ -v
+```
 
-Run a specific test module
+### Run an individual test module
 
-python -m pytest python/tests/test_validators.py
+```bash
+python -m pytest python/tests/test_validators.py -v
+```
 
-Run linting, if Ruff is configured
+### Check linting
 
+If Ruff is installed and configured:
+
+```bash
 ruff check python/
+```
 
-Check formatting, if Ruff is configured
+### Check formatting
 
+```bash
 ruff format —check python/
+```
 
-These commands are examples of the intended workflow. Confirm the project’s installed tools and configuration before using optional commands.
+Use the actual configured test and lint tools. Optional commands may require additional development dependencies.
 
-6. Repository Tooling
+## 6. Configuration Management
 
-The tools directory provides utilities for maintaining repository consistency.
+Configuration should be explicit, validated, environment-aware, and free of committed secrets.
 
-* Repository integrity: identify structural or configuration issues.
-* Structure adaptation: inspect or align project structures.
-* Dependency binding: analyze declared dependencies and references.
-* Data source management: validate or manage supported datasets.
-* Repository scaffolding: generate missing files and fill eligible empty files according to explicit rules.
+Recommended practices:
 
-Safety requirements
+1. Keep safe defaults separate from deployment-specific values.
+2. Store credentials in environment variables or an approved secrets manager.
+3. Validate required settings before starting dependent operations.
+4. Reject malformed configuration instead of silently substituting production defaults.
+5. Resolve filesystem paths against a known project root.
+6. Avoid network requests and external-service initialization during package imports.
+7. Never print complete database URLs, access tokens, passwords, or authorization headers.
 
-* Prefer read-only inspection by default.
-* Require explicit options for file modifications.
-* Preserve non-empty files unless overwriting is explicitly authorized.
-* Back up files before destructive changes where supported.
-* Validate generated Python and JSON files.
-* Report unresolved references and failed validations clearly.
-* Never place credentials or sensitive data in generated reports.
+Where useful, maintain a placeholder-only `.env.example`. Never commit populated secret files.
 
-7. Integration Management
+Configuration precedence, supported keys, and validation behavior must be documented by the actual configuration loader.
 
-The integrations/ package provides shared infrastructure for authorized external services.
+## 7. Integration Architecture
+
+The `integrations/` package provides shared infrastructure for approved external services.
 
 Its intended responsibilities include:
 
-* Provider contracts and registration.
-* Configuration and secret references.
-* Shared HTTP communication.
-* API client operations.
-* Storage-provider operations.
-* Standardized exceptions.
-* Health reporting.
-* Repository-level integration inspection.
+- Provider contracts and registration.
+- Configuration and secret references.
+- HTTP communication and connection management.
+- API and storage client operations.
+- Standardized exception handling.
+- Health reporting.
+- Repository-level integration inspection.
+- Domain-specific education, admissions, recruitment, and notification adapters.
 
-Provider adapters should validate external responses, use bounded timeouts, follow safe retry policies, and protect sensitive information.
+### Integration requirements
 
-A registered provider or valid configuration is not proof that an external service is operational. Verify connectivity and behavior through appropriate tests.
+Every external integration should:
 
-Refer to integrations/README.md for the detailed integration architecture.
+- Use explicit connection and request timeouts.
+- Verify TLS certificates.
+- Validate requests and external responses.
+- Apply bounded retries only to appropriate transient failures.
+- Respect provider rate limits.
+- Avoid retrying non-idempotent operations without appropriate safeguards.
+- Redact sensitive information from logs.
+- Expose useful, sanitized failure details.
+- Support deterministic unit testing through mocked dependencies.
 
-8. Testing and Quality Assurance
+### Provider lifecycle
 
-The tests/ package protects existing behavior and verifies changes.
+A recommended provider lifecycle is:
 
-Testing should cover:
+1. Load and validate configuration.
+2. Resolve the provider through the registry.
+3. Initialize the provider explicitly.
+4. Perform the requested operation.
+5. Validate the returned data.
+6. Record sanitized operational metadata.
+7. Close resources when required.
 
-* Valid and invalid inputs.
-* Boundary conditions.
-* Configuration and environment handling.
-* Exception mapping.
-* HTTP failures and retry behavior.
-* Registry operations.
-* JSON validation.
-* Import/export behavior.
-* Regression cases for resolved defects.
+A registered provider or valid configuration does not prove that a remote service is reachable or operational. Verify actual behavior through appropriate tests.
 
-Mock external services during unit tests. Use controlled sandboxes for provider integration tests and never run destructive tests against production resources.
+See `integrations/README.md` for the detailed integration architecture, if that file exists.
 
-Refer to tests/README.md for test execution and contribution standards.
+## 8. Data Validation and Import Safety
 
-9. Security and Configuration
+Data-source utilities must treat remote content as untrusted input.
 
-* Keep API keys, passwords, and tokens out of source control.
-* Use environment variables or an approved secrets manager.
-* Separate development, testing, staging, and production credentials.
-* Validate external URLs and restrict outbound destinations.
-* Enable TLS certificate verification.
-* Redact secrets and unnecessary personal data from logs.
-* Protect uploaded documents and storage operations with authorization checks.
-* Avoid network requests and external-service initialization during package imports.
+### Validation requirements
 
-Use .env.example for safe configuration templates where appropriate. Never commit populated secret files.
+- Validate supported formats and expected data types.
+- Enforce maximum payload sizes and collection limits.
+- Reject malformed or empty responses where prohibited.
+- Validate required identifiers and fields.
+- Detect duplicate records and conflicting identifiers.
+- Normalize records consistently before comparison.
+- Preserve source attribution and canonical URLs where required.
+- Prevent unsafe HTML or untrusted content from being rendered without sanitization.
+- Report invalid records without exposing sensitive data.
 
-10. Development Workflow
+### Remote-source security
+
+For integrations that fetch external data:
+
+- Use an explicit hostname allowlist.
+- Require HTTPS where applicable.
+- Validate DNS results and resolved destination addresses.
+- Reject loopback, private, link-local, and cloud-metadata destinations.
+- Revalidate redirect destinations.
+- Apply timeouts and streaming response-size limits.
+- Fail closed when security validation cannot be completed.
+
+These controls must be enforced by the actual network client. A configuration file alone cannot guarantee their operation.
+
+### Publication safeguards
+
+For admissions, scholarships, fees, examinations, job listings, and announcements:
+
+- Validate data before import.
+- Keep new or changed records pending review when required.
+- Preserve manually edited records.
+- Never publish quarantined or unverified records.
+- Keep an audit trail for material changes and approvals.
+- Do not delete records merely because a source temporarily omits them.
+
+## 9. Repository Modification Safety
+
+Repository automation must preserve existing project behavior.
+
+### Default behavior
+
+- Prefer read-only inspection.
+- Require explicit options for modifications.
+- Preserve non-empty files unless overwriting is explicitly authorized.
+- Reject paths outside the permitted repository boundary.
+- Handle symbolic links deliberately.
+- Avoid destructive wildcard operations.
+- Create backups before destructive changes where supported.
+- Write generated files atomically when practical.
+- Validate generated Python and JSON files.
+- Report every failed operation clearly.
+
+### Before applying changes
+
+A tool that modifies files should, where applicable:
+
+1. Identify the repository root.
+2. Resolve and validate all target paths.
+3. Produce a proposed-change summary.
+4. Detect existing files and potential conflicts.
+5. Require explicit authorization for overwrites or deletions.
+6. Apply changes in a controlled manner.
+7. Validate the resulting files.
+8. Report changed, skipped, and failed operations.
+
+A successful command must not be reported as a successful modification unless the operation actually completed.
+
+## 10. Testing and Quality Assurance
+
+The `tests/` package protects existing behavior and verifies new functionality.
+
+### Recommended test coverage
+
+| Area | Coverage |
+|—|—|
+| Input validation | Valid, invalid, empty, malformed, and boundary values |
+| Configuration | Missing settings, invalid types, environment overrides, and secrets handling |
+| Exceptions | Error mapping, sanitized messages, and failure propagation |
+| HTTP clients | Timeouts, retry limits, rate limiting, TLS errors, and invalid responses |
+| Registry | Registration, duplicate identifiers, missing providers, and lifecycle behavior |
+| JSON data | Parsing, schema validation, duplicates, and normalization |
+| Import/export | Serialization, data integrity, and invalid records |
+| Repository tools | Path traversal, existing-file protection, dry runs, and failed writes |
+| Integrations | Mocked provider behavior and controlled integration tests |
+| Regression | Previously resolved defects and preserved interfaces |
+
+### Testing principles
+
+- Mock external services during unit tests.
+- Use isolated temporary directories for filesystem tests.
+- Use dedicated test credentials and databases where integration testing requires them.
+- Never run destructive tests against production resources.
+- Test both expected success and failure paths.
+- Avoid tests that depend on uncontrolled network availability.
+- Clean up temporary files and external resources after tests.
+- Ensure tests do not leak credentials or personal data.
+
+See `tests/README.md` for detailed testing instructions, if present.
+
+## 11. Security Standards
+
+The toolkit should follow these minimum security practices:
+
+- Keep API keys, passwords, and tokens out of source control.
+- Separate development, testing, staging, and production credentials.
+- Enforce TLS certificate verification.
+- Validate external URLs and restrict outbound destinations.
+- Apply authorization checks to sensitive storage and document operations.
+- Avoid logging personal data unless strictly necessary and authorized.
+- Use least-privilege access for service accounts.
+- Avoid executing commands or code constructed from untrusted input.
+- Keep dependency versions and security updates under review.
+- Restrict access to production data and operational reports.
+
+Security-sensitive operations should fail safely and provide actionable, sanitized diagnostics.
+
+## 12. Logging and Operational Diagnostics
+
+Logs should provide enough information to diagnose failures without exposing sensitive values.
+
+Recommended fields include:
+
+- Timestamp.
+- Operation or tool name.
+- Correlation identifier.
+- Sanitized error category.
+- Duration.
+- Counts of processed, skipped, or rejected records.
+- Success or failure status.
+
+Do not log passwords, access tokens, cookies, private keys, complete authorization headers, or raw sensitive payloads.
+
+Use consistent logging levels:
+
+- `DEBUG`: detailed development diagnostics.
+- `INFO`: significant operations and successful outcomes.
+- `WARNING`: recoverable issues and unexpected conditions.
+- `ERROR`: failed operations requiring attention.
+- `CRITICAL`: severe failures affecting continued safe operation.
+
+Use only levels and structured fields supported by the actual logging implementation.
+
+## 13. Troubleshooting
+
+| Problem | Recommended action |
+|—|—|
+| Import errors | Verify the working directory, package layout, and interpreter |
+| Missing dependencies | Follow the project’s documented installation procedure |
+| Invalid JSON | Check encoding, syntax, required fields, and expected types |
+| Missing references | Verify paths against the actual repository structure |
+| HTTP failures | Check sanitized errors, timeouts, authentication, and provider status |
+| Repeated retries | Review retry limits, rate limits, and circuit-breaker behavior |
+| Configuration errors | Verify required keys and environment settings without printing secrets |
+| Unexpected file changes | Inspect the version-control diff and restore unintended changes |
+| Test failures | Run the failing test independently, then rerun the relevant suite |
+| Permission errors | Check filesystem permissions and service-account access |
+| Provider health failures | Distinguish configuration validity from actual connectivity |
+
+## 14. Development Workflow
 
 For every change:
 
 1. Inspect the existing implementation and its public interfaces.
 2. Identify affected tools, integrations, datasets, and tests.
-3. Reuse existing utilities where appropriate.
+3. Reuse established utilities where appropriate.
 4. Implement the smallest coherent change.
 5. Add or update regression tests.
-6. Run relevant syntax checks and tests.
-7. Review file modifications and generated reports.
+6. Run syntax checks and relevant automated tests.
+7. Review the repository diff and generated reports.
 8. Update documentation and configuration examples.
-9. Verify that no secrets or unintended file changes were introduced.
+9. Check for secrets and unintended file modifications.
+10. Verify deployment-specific behavior where necessary.
 
-Do not treat successful syntax compilation as proof of correct runtime behavior.
+Do not treat successful syntax compilation as proof of runtime correctness or production readiness.
 
-11. Troubleshooting
+## 15. Definition of Done
 
-Problem	Action
-Import errors	Verify the working directory, package structure, and Python environment
-Missing dependencies	Follow the project’s documented installation process
-Invalid JSON	Check encoding, syntax, required fields, and expected types
-Missing local references	Verify paths against the actual repository structure
-HTTP failures	Inspect sanitized error details, timeouts, authentication, and provider status
-Test failures	Run the failing module independently, then rerun the complete suite
-Unexpected file changes	Review the diff and restore unintended modifications
-Missing configuration	Check required environment variables without printing secret values
+A change is complete when all applicable criteria are satisfied:
 
-12. Definition of Done
+- [ ] Python syntax checks pass.
+- [ ] Relevant automated tests pass.
+- [ ] Regression coverage is included where appropriate.
+- [ ] Configuration and dependencies are documented.
+- [ ] Existing files are preserved as intended.
+- [ ] Security-sensitive behavior is validated.
+- [ ] External integrations are tested at the appropriate level.
+- [ ] Generated data and reports are validated.
+- [ ] Documentation reflects the actual implementation.
+- [ ] No unintended secrets or file changes are introduced.
+- [ ] Operational claims are supported by verification.
 
-* [ ]	Python syntax checks pass.
-* [ ]	Relevant automated tests pass.
-* [ ]	Regression coverage is included where appropriate.
-* [ ]	Configuration and dependencies are documented.
-* [ ]	Existing project files are preserved as intended.
-* [ ]	Sensitive data is protected.
-* [ ]	Documentation reflects the actual implementation.
-* [ ]	Operational claims are supported by verification.
+## 16. Maintenance
 
-13. Maintenance
+Keep this README synchronized with the actual directory structure, Python version, dependency configuration, tool interfaces, integration contracts, and test commands.
 
-Keep this README synchronized with the actual directory structure, supported Python version, dependency configuration, testing commands, and integration interfaces.
+Remove obsolete examples when implementations change. Document new tools and packages only after their interfaces and responsibilities are established.
 
-Engineering principle: Build reusable, secure, testable Python utilities. Preserve existing project behavior, make file modifications explicit, and distinguish intended functionality from functionality that has been implemented and verified.
+**Engineering principle:** Build reusable, secure, testable Python utilities. Preserve existing project behavior, make file modifications explicit, and distinguish intended functionality from functionality that has been implemented and verified.

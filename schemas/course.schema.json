@@ -3,7 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://medorbits.in/schemas/course.schema.json",
   "title": "MedOrbits Course",
-  "description": "Validation schema for MedOrbits education catalogue courses, eligibility criteria, admission requirements, fee structures, examinations, career outcomes, and official references.",
+  "description": "Validation schema for MedOrbits education catalogue courses, eligibility, admission requirements, fees, examinations, career outcomes, and official references.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -18,25 +18,23 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 128,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
-      "description": "Stable, unique course identifier."
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
     },
     "slug": {
       "type": "string",
       "minLength": 1,
       "maxLength": 180,
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-      "description": "URL-friendly course identifier."
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "name": {
       "type": "string",
       "minLength": 2,
       "maxLength": 250,
-      "pattern": ".*\\S.*",
-      "description": "Full course or qualification name."
+      "pattern": ".*\\S.*"
     },
     "shortName": {
       "type": "string",
+      "minLength": 1,
       "maxLength": 100
     },
     "abbreviation": {
@@ -113,22 +111,10 @@
       "maxLength": 8000
     },
     "objectives": {
-      "type": "array",
-      "maxItems": 50,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 1000
-      }
+      "$ref": "#/$defs/textItems50"
     },
     "learningOutcomes": {
-      "type": "array",
-      "maxItems": 100,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 1000
-      }
+      "$ref": "#/$defs/textItems100"
     },
     "duration": {
       "$ref": "#/$defs/duration"
@@ -182,14 +168,7 @@
       }
     },
     "specializations": {
-      "type": "array",
-      "maxItems": 100,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 200
-      }
+      "$ref": "#/$defs/textItems100"
     },
     "fees": {
       "$ref": "#/$defs/feeStructure"
@@ -226,26 +205,10 @@
       }
     },
     "availableColleges": {
-      "type": "array",
-      "maxItems": 1000,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 128
-      },
-      "description": "References to college records by ID."
+      "$ref": "#/$defs/referenceIds"
     },
     "availableUniversities": {
-      "type": "array",
-      "maxItems": 1000,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 128
-      },
-      "description": "References to university records by ID."
+      "$ref": "#/$defs/referenceIds"
     },
     "countriesAvailable": {
       "type": "array",
@@ -258,14 +221,7 @@
       }
     },
     "relatedCourses": {
-      "type": "array",
-      "maxItems": 100,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 128
-      }
+      "$ref": "#/$defs/referenceIds"
     },
     "officialResources": {
       "type": "array",
@@ -275,24 +231,16 @@
       }
     },
     "brochureUrl": {
-      "type": "string",
-      "format": "uri",
-      "maxLength": 2048
+      "$ref": "#/$defs/url"
     },
     "applicationUrl": {
-      "type": "string",
-      "format": "uri",
-      "maxLength": 2048
+      "$ref": "#/$defs/url"
     },
     "officialWebsite": {
-      "type": "string",
-      "format": "uri",
-      "maxLength": 2048
+      "$ref": "#/$defs/url"
     },
     "imageUrl": {
-      "type": "string",
-      "format": "uri",
-      "maxLength": 2048
+      "$ref": "#/$defs/url"
     },
     "icon": {
       "type": "string",
@@ -300,8 +248,7 @@
     },
     "academicSession": {
       "type": "string",
-      "maxLength": 40,
-      "description": "Applicable academic session, such as 2026-27."
+      "maxLength": 40
     },
     "lastDateToApply": {
       "type": [
@@ -320,8 +267,7 @@
         "upcoming",
         "temporarily_unavailable",
         "archived"
-      ],
-      "description": "Catalogue publication or availability status."
+      ]
     },
     "featured": {
       "type": "boolean",
@@ -329,21 +275,13 @@
     },
     "verified": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether the record has passed the application's verification process."
+      "default": false
     },
     "verification": {
       "$ref": "#/$defs/verification"
     },
     "tags": {
-      "type": "array",
-      "maxItems": 100,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 80
-      }
+      "$ref": "#/$defs/textItems100"
     },
     "searchKeywords": {
       "type": "array",
@@ -357,13 +295,11 @@
     },
     "createdAt": {
       "type": "string",
-      "format": "date-time",
-      "description": "Server-generated creation timestamp."
+      "format": "date-time"
     },
     "updatedAt": {
       "type": "string",
-      "format": "date-time",
-      "description": "Server-generated update timestamp."
+      "format": "date-time"
     },
     "metadata": {
       "type": "object",
@@ -391,10 +327,125 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verified": {
+            "const": true
+          }
+        },
+        "required": [
+          "verified"
+        ]
+      },
+      "then": {
+        "required": [
+          "verification"
+        ],
+        "properties": {
+          "verification": {
+            "required": [
+              "status",
+              "verifiedAt",
+              "verifiedBy",
+              "sourceUrl"
+            ],
+            "properties": {
+              "status": {
+                "const": "verified"
+              },
+              "verifiedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "verifiedBy": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceUrl": {
+                "$ref": "#/$defs/url"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "admissions_open"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "admission": {
+            "required": [
+              "applicationStartDate",
+              "applicationEndDate"
+            ],
+            "properties": {
+              "applicationStartDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "applicationEndDate": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "referenceIds": {
+      "type": "array",
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "textItems50": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
+    "textItems100": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
     "duration": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "value",
+        "unit"
+      ],
       "properties": {
         "value": {
           "type": "number",
@@ -423,9 +474,22 @@
           "maxLength": 200
         }
       },
-      "required": [
-        "value",
-        "unit"
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "minimumMonths",
+              "maximumMonths"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maximumMonths": {
+                "minimum": 1
+              }
+            }
+          }
+        }
       ]
     },
     "eligibility": {
@@ -437,13 +501,7 @@
           "maxLength": 200
         },
         "requiredQualifications": {
-          "type": "array",
-          "maxItems": 50,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 250
-          }
+          "$ref": "#/$defs/textItems50"
         },
         "minimumPercentage": {
           "type": "number",
@@ -473,6 +531,7 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
+            "minLength": 1,
             "maxLength": 100
           }
         },
@@ -485,19 +544,29 @@
           "maxLength": 2000
         },
         "additionalRequirements": {
-          "type": "array",
-          "maxItems": 50,
-          "items": {
-            "type": "string",
-            "maxLength": 1000
-          }
+          "$ref": "#/$defs/textItems50"
         },
         "officialSourceUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "minimumAge",
+              "maximumAge"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maximumAge": {
+                "minimum": 0
+              }
+            }
+          }
+        }
+      ]
     },
     "entranceExam": {
       "type": "object",
@@ -534,9 +603,7 @@
           "maxLength": 250
         },
         "officialWebsite": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "examYear": {
           "type": "integer",
@@ -567,13 +634,7 @@
       "additionalProperties": false,
       "properties": {
         "process": {
-          "type": "array",
-          "maxItems": 50,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1000
-          }
+          "$ref": "#/$defs/textItems50"
         },
         "counsellingRequired": {
           "type": "boolean"
@@ -604,18 +665,10 @@
           "$ref": "#/$defs/money"
         },
         "requiredDocuments": {
-          "type": "array",
-          "maxItems": 100,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          }
+          "$ref": "#/$defs/textItems100"
         },
         "officialAdmissionUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "instructions": {
           "type": "string",
@@ -650,12 +703,7 @@
           "maxLength": 3000
         },
         "subjects": {
-          "type": "array",
-          "maxItems": 100,
-          "items": {
-            "type": "string",
-            "maxLength": 200
-          }
+          "$ref": "#/$defs/textItems100"
         },
         "credits": {
           "type": "number",
@@ -734,9 +782,7 @@
           "maxLength": 5000
         },
         "officialFeeUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "verifiedAt": {
           "type": [
@@ -745,7 +791,24 @@
           ],
           "format": "date-time"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "minimumTotal",
+              "maximumTotal"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maximumTotal": {
+                "minimum": 0
+              }
+            }
+          }
+        }
+      ]
     },
     "money": {
       "type": "object",
@@ -802,14 +865,10 @@
           "$ref": "#/$defs/money"
         },
         "applicationUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "officialSourceUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         }
       }
     },
@@ -889,9 +948,7 @@
           "maxLength": 3000
         },
         "referenceUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         }
       }
     },
@@ -909,9 +966,7 @@
           "maxLength": 250
         },
         "url": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "resourceType": {
           "type": "string",
@@ -974,9 +1029,7 @@
           "maxLength": 128
         },
         "sourceUrl": {
-          "type": "string",
-          "format": "uri",
-          "maxLength": 2048
+          "$ref": "#/$defs/url"
         },
         "notes": {
           "type": "string",
@@ -986,4 +1039,3 @@
     }
   }
 }
-

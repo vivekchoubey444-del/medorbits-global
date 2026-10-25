@@ -16,8 +16,8 @@
  *   - Client payloads exclude server-managed fields by default.
  *   - Never trust client-supplied amounts, ownership, status, provider
  *     references, or webhook verification results.
- *   - Webhook signatures and idempotency must be enforced by application
- *     code and persistent storage.
+ *   - Webhook verification and idempotency must be enforced by the
+ *     application and persistent storage.
  *   - Fixtures do not simulate a real payment provider.
  */
 
@@ -72,6 +72,14 @@ const WEBHOOK_EVENT_TYPES = Object.freeze({
   REFUND_FAILED: 'refund.failed',
 });
 
+const WEBHOOK_PROCESSING_STATUSES = Object.freeze({
+  RECEIVED: 'received',
+  PROCESSING: 'processing',
+  PROCESSED: 'processed',
+  FAILED: 'failed',
+  IGNORED: 'ignored',
+});
+
 const PAYMENT_STATUS_VALUES = Object.freeze(
   Object.values(PAYMENT_STATUSES)
 );
@@ -90,6 +98,10 @@ const PAYMENT_PURPOSE_VALUES = Object.freeze(
 
 const WEBHOOK_EVENT_TYPE_VALUES = Object.freeze(
   Object.values(WEBHOOK_EVENT_TYPES)
+);
+
+const WEBHOOK_PROCESSING_STATUS_VALUES = Object.freeze(
+  Object.values(WEBHOOK_PROCESSING_STATUSES)
 );
 
 const PAYMENT_SERVER_MANAGED_FIELDS = Object.freeze([
@@ -122,13 +134,14 @@ const REFUND_SERVER_MANAGED_FIELDS = Object.freeze([
   'updatedAt',
 ]);
 
-const WEBHOOK_PROCESSING_STATUSES = Object.freeze({
-  RECEIVED: 'received',
-  PROCESSING: 'processing',
-  PROCESSED: 'processed',
-  FAILED: 'failed',
-  IGNORED: 'ignored',
-});
+const MAX_CLONE_DEPTH = 50;
+const MAX_FIXTURE_COUNT = 1000;
+
+const FORBIDDEN_OBJECT_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
 
 const DEFAULT_PAYMENT = Object.freeze({
   id: 'payment_test_0001',
@@ -243,9 +256,34 @@ function assertNonEmptyString(value, label) {
 }
 
 /**
- * Validate a non-negative safe integer.
+ * Validate an optional nullable string.
  *
- * Monetary values are represented in minor currency units.
+ * @param {*} value
+ * @param {string} label
+ * @returns {void}
+ */
+function assertOptionalString(value, label) {
+  if (value !== null && value !== undefined) {
+    assertNonEmptyString(value, label);
+  }
+}
+
+/**
+ * Validate a boolean.
+ *
+ * @param {*} value
+ * @param {string} label
+ * @returns {void}
+ */
+function assertBoolean(value, label) {
+  if (typeof value !== 'boolean') {
+    throw new TypeError(`${label} must be a boolean`);
+  }
+}
+
+/**
+ * Validate a non-negative safe integer.
+ * Monetary amounts are expressed in minor currency units.
  *
  * @param {*} value
  * @param {string} label
@@ -274,8 +312,7 @@ function assertPositiveInteger(value, label) {
 
 /**
  * Validate the format of a three-letter uppercase currency code.
- *
- * This does not confirm that the currency is supported by a provider.
+ * This does not confirm provider support.
  *
  * @param {*} value
  * @param {string} [label='Currency']
@@ -304,38 +341,155 @@ function assertAllowedValue(value, allowedValues, label) {
 }
 
 /**
- * Recursively clone arrays and plain objects.
- *
- * Rejects unsupported non-JSON-like values instead of copying them
- * ambiguously into test fixtures.
+ * Validate an optional ISO UTC timestamp.
  *
  * @param {*} value
- * @returns {*}
+ * @param {string} label
+ * @returns {void}
  */
-function clone(value) {
-  if (Array.isArray(value)) {
-    return value.map(clone);
-  }
-
-  if (value !== null && typeof value === 'object') {
-    assertPlainObject(value, 'Fixture values');
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, clone(item)])
-    );
+function assertOptionalUtcTimestamp(value, label) {
+  if (value === null || value === undefined) {
+    return;
   }
 
   if (
+    typeof value !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) ||
+    !Number.isFinite(Date.parse(value))
+  ) {
+    throw new TypeError(`${label} must be a valid UTC ISO timestamp`);
+  }
+}
+
+/**
+ * Safely clone JSON-like fixture values.
+ *
+ * Rejects cycles, accessors, dangerous keys, sparse arrays, unsupported
+ * values, non-finite numbers, and excessive nesting.
+ *
+ * @param {*} value
+ * @param {WeakSet<object>} [ancestors]
+ * @param {number} [depth=0]
+ * @returns {*}
+ */
+function clone(value, ancestors = new WeakSet(), depth = 0) {
+  if (depth > MAX_CLONE_DEPTH) {
+    throw new TypeError('Fixture values exceed the maximum clone depth');
+  }
+
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new TypeError('Fixture numbers must be finite');
+    }
+
+    return value;
+  }
+
+  if (
+    typeof value === 'undefined' ||
     typeof value === 'function' ||
     typeof value === 'symbol' ||
     typeof value === 'bigint'
   ) {
     throw new TypeError(
-      'Fixture values cannot contain functions, symbols, or bigints'
+      'Fixture values cannot contain undefined, functions, symbols, or bigints'
     );
   }
 
-  return value;
+  if (typeof value !== 'object') {
+    throw new TypeError('Unsupported fixture value');
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError('Fixture values cannot contain circular references');
+  }
+
+  ancestors.add(value);
+
+  try {
+    if (Array.isArray(value)) {
+      const result = [];
+
+      for (let index = 0; index < value.length; index += 1) {
+        if (!Object.prototype.hasOwnProperty.call(value, index)) {
+          throw new TypeError('Fixture arrays cannot contain empty slots');
+        }
+
+        const descriptor = Object.getOwnPropertyDescriptor(
+          value,
+          String(index)
+        );
+
+        if (
+          !descriptor ||
+          !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+        ) {
+          throw new TypeError('Fixture arrays cannot contain accessors');
+        }
+
+        result.push(clone(descriptor.value, ancestors, depth + 1));
+      }
+
+      const extraKeys = Reflect.ownKeys(value).filter((key) => {
+        if (key === 'length') {
+          return false;
+        }
+
+        return !(
+          typeof key === 'string' &&
+          /^(0|[1-9]\d*)$/.test(key) &&
+          Number(key) < value.length
+        );
+      });
+
+      if (extraKeys.length > 0) {
+        throw new TypeError(
+          'Fixture arrays cannot contain custom properties'
+        );
+      }
+
+      return result;
+    }
+
+    assertPlainObject(value, 'Fixture values');
+
+    const result = Object.create(null);
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== 'string') {
+        throw new TypeError('Fixture object keys must be strings');
+      }
+
+      if (FORBIDDEN_OBJECT_KEYS.has(key)) {
+        throw new TypeError(`Unsafe fixture object key: ${key}`);
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (
+        !descriptor ||
+        !Object.prototype.hasOwnProperty.call(descriptor, 'value')
+      ) {
+        throw new TypeError(
+          `Fixture properties cannot be accessors: ${key}`
+        );
+      }
+
+      result[key] = clone(descriptor.value, ancestors, depth + 1);
+    }
+
+    return result;
+  } finally {
+    ancestors.delete(value);
+  }
 }
 
 /**
@@ -360,12 +514,71 @@ function mergeObject(defaults, overrides, label) {
 }
 
 /**
+ * Validate common payment fields.
+ *
+ * @param {object} payment
+ * @returns {void}
+ */
+function validatePayment(payment) {
+  assertNonEmptyString(payment.id, 'Payment ID');
+  assertNonEmptyString(payment.paymentNumber, 'Payment number');
+  assertNonEmptyString(payment.userId, 'Payment user ID');
+  assertNonEmptyString(payment.purpose, 'Payment purpose');
+
+  assertAllowedValue(
+    payment.purpose,
+    PAYMENT_PURPOSE_VALUES,
+    'payment purpose'
+  );
+
+  assertAllowedValue(
+    payment.status,
+    PAYMENT_STATUS_VALUES,
+    'payment status'
+  );
+
+  assertAllowedValue(
+    payment.paymentMethod,
+    PAYMENT_METHOD_VALUES,
+    'payment method'
+  );
+
+  assertNonNegativeInteger(payment.amountMinor, 'Payment amountMinor');
+  assertCurrency(payment.currency, 'Payment currency');
+
+  for (const field of [
+    'applicationId',
+    'subscriptionId',
+    'provider',
+    'providerPaymentId',
+    'providerOrderId',
+    'idempotencyKey',
+    'description',
+    'failureCode',
+    'failureMessage',
+  ]) {
+    assertOptionalString(payment[field], `Payment ${field}`);
+  }
+
+  for (const field of [
+    'authorizedAt',
+    'paidAt',
+    'failedAt',
+    'cancelledAt',
+    'createdAt',
+    'updatedAt',
+  ]) {
+    assertOptionalUtcTimestamp(payment[field], `Payment ${field}`);
+  }
+
+  assertPlainObject(payment.metadata, 'Payment metadata');
+}
+
+/**
  * Create a synthetic payment record.
  *
  * INR 100.00 is represented as amountMinor: 10000.
- *
- * Intentionally does not enforce payment state transitions or business
- * rules, allowing tests to construct negative and unusual states.
+ * This validates field formats, not payment transitions or business rules.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -373,22 +586,20 @@ function mergeObject(defaults, overrides, label) {
 function createPayment(overrides = {}) {
   assertPlainObject(overrides, 'Payment overrides');
 
+  const input = clone(overrides);
+
   const payment = {
     ...clone(DEFAULT_PAYMENT),
-    ...clone(overrides),
+    ...input,
   };
 
   payment.metadata = mergeObject(
     DEFAULT_PAYMENT.metadata,
-    overrides.metadata,
+    input.metadata,
     'Payment metadata'
   );
 
-  assertNonNegativeInteger(
-    payment.amountMinor,
-    'Payment amountMinor'
-  );
-  assertCurrency(payment.currency, 'Payment currency');
+  validatePayment(payment);
 
   return payment;
 }
@@ -396,9 +607,9 @@ function createPayment(overrides = {}) {
 /**
  * Create a client-submittable payment initiation payload.
  *
- * The default payload intentionally omits server-managed amount, ownership,
- * status, and provider reference fields. Explicit overrides remain available
- * for negative security tests.
+ * Server-managed amount, ownership, status, and provider fields are omitted
+ * by default. Overrides can intentionally introduce hostile fields for
+ * negative security tests.
  *
  * The application must calculate the amount from trusted pricing data.
  *
@@ -421,18 +632,20 @@ function createPaymentPayload(overrides = {}) {
 }
 
 /**
- * Create multiple payments with unique generated identifiers.
- *
- * Generated identifiers cannot be replaced by common overrides.
+ * Create multiple payments with unique generated identities.
  *
  * @param {number} [count=3]
  * @param {object} [overrides={}]
  * @returns {object[]}
  */
 function createPaymentSet(count = 3, overrides = {}) {
-  if (!Number.isInteger(count) || count < 0 || count > 1000) {
+  if (
+    !Number.isInteger(count) ||
+    count < 0 ||
+    count > MAX_FIXTURE_COUNT
+  ) {
     throw new RangeError(
-      'Payment count must be an integer from 0 to 1000'
+      `Payment count must be an integer from 0 to ${MAX_FIXTURE_COUNT}`
     );
   }
 
@@ -471,8 +684,6 @@ function createPaymentSet(count = 3, overrides = {}) {
 /**
  * Create a payment owned by another synthetic user.
  *
- * Useful for IDOR and cross-user payment access tests.
- *
  * @param {string} [userId='user_test_foreign']
  * @param {object} [overrides={}]
  * @returns {object}
@@ -484,34 +695,36 @@ function createForeignPayment(
   assertNonEmptyString(userId, 'Foreign payment user ID');
   assertPlainObject(overrides, 'Foreign payment overrides');
 
+  const input = clone(overrides);
+
   return createPayment({
-    ...clone(overrides),
-    id: 'payment_test_foreign_0001',
-    paymentNumber: 'MO-PAY-TEST-FOREIGN-0001',
+    ...input,
+    id: input.id || 'payment_test_foreign_0001',
+    paymentNumber: input.paymentNumber ||
+      'MO-PAY-TEST-FOREIGN-0001',
+    applicationId: input.applicationId || 'app_test_foreign_0001',
+    providerPaymentId: input.providerPaymentId ||
+      'provider_payment_test_foreign_0001',
+    providerOrderId: input.providerOrderId ||
+      'provider_order_test_foreign_0001',
+    idempotencyKey: input.idempotencyKey ||
+      'idem_test_payment_foreign_0001',
     userId,
-    applicationId: 'app_test_foreign_0001',
-    providerPaymentId: 'provider_payment_test_foreign_0001',
-    providerOrderId: 'provider_order_test_foreign_0001',
-    idempotencyKey: 'idem_test_payment_foreign_0001',
   });
 }
 
 /**
  * Create a payment with a selected status.
  *
- * This checks that the status is recognized; it does not validate
- * whether a transition to that status is permitted.
+ * This checks that the status is recognized, not that a transition
+ * to that status is permitted.
  *
  * @param {string} status
  * @param {object} [overrides={}]
  * @returns {object}
  */
 function createPaymentWithStatus(status, overrides = {}) {
-  assertAllowedValue(
-    status,
-    PAYMENT_STATUS_VALUES,
-    'payment status'
-  );
+  assertAllowedValue(status, PAYMENT_STATUS_VALUES, 'payment status');
   assertPlainObject(overrides, 'Payment status overrides');
 
   return createPayment({
@@ -521,7 +734,7 @@ function createPaymentWithStatus(status, overrides = {}) {
 }
 
 /**
- * Create a deliberately hostile payment payload for mass-assignment tests.
+ * Create a deliberately hostile payload for mass-assignment tests.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -547,9 +760,47 @@ function createMassAssignmentPayload(overrides = {}) {
 }
 
 /**
+ * Validate common refund fields.
+ *
+ * @param {object} refund
+ * @returns {void}
+ */
+function validateRefund(refund) {
+  assertNonEmptyString(refund.id, 'Refund ID');
+  assertNonEmptyString(refund.refundNumber, 'Refund number');
+  assertNonEmptyString(refund.paymentId, 'Refund payment ID');
+  assertNonEmptyString(refund.userId, 'Refund user ID');
+
+  assertAllowedValue(refund.status, REFUND_STATUS_VALUES, 'refund status');
+
+  assertNonNegativeInteger(refund.amountMinor, 'Refund amountMinor');
+  assertCurrency(refund.currency, 'Refund currency');
+
+  for (const field of [
+    'provider',
+    'providerRefundId',
+    'idempotencyKey',
+    'reason',
+    'failureCode',
+    'failureMessage',
+  ]) {
+    assertOptionalString(refund[field], `Refund ${field}`);
+  }
+
+  for (const field of [
+    'requestedAt',
+    'processedAt',
+    'createdAt',
+    'updatedAt',
+  ]) {
+    assertOptionalUtcTimestamp(refund[field], `Refund ${field}`);
+  }
+}
+
+/**
  * Create a synthetic refund record.
  *
- * The application must independently validate the refundable balance,
+ * The application must independently validate refundable balance,
  * ownership, payment state, and provider response.
  *
  * @param {object} [overrides={}]
@@ -563,11 +814,7 @@ function createRefund(overrides = {}) {
     ...clone(overrides),
   };
 
-  assertNonNegativeInteger(
-    refund.amountMinor,
-    'Refund amountMinor'
-  );
-  assertCurrency(refund.currency, 'Refund currency');
+  validateRefund(refund);
 
   return refund;
 }
@@ -590,7 +837,7 @@ function createRefundWithStatus(status, overrides = {}) {
 }
 
 /**
- * Create multiple refunds with unique generated identifiers.
+ * Create multiple refunds with unique identities.
  *
  * Payment and user references are shared unless overridden, allowing
  * multiple refunds to be associated with one payment.
@@ -600,9 +847,13 @@ function createRefundWithStatus(status, overrides = {}) {
  * @returns {object[]}
  */
 function createRefundSet(count = 2, overrides = {}) {
-  if (!Number.isInteger(count) || count < 0 || count > 1000) {
+  if (
+    !Number.isInteger(count) ||
+    count < 0 ||
+    count > MAX_FIXTURE_COUNT
+  ) {
     throw new RangeError(
-      'Refund count must be an integer from 0 to 1000'
+      `Refund count must be an integer from 0 to ${MAX_FIXTURE_COUNT}`
     );
   }
 
@@ -635,9 +886,8 @@ function createRefundSet(count = 2, overrides = {}) {
 /**
  * Create a synthetic webhook event.
  *
- * signatureVerified is test metadata only. It must never be used as a
- * substitute for verifying the raw request body with the provider's
- * configured cryptographic verification procedure.
+ * signatureVerified is test metadata only. It is not a substitute for
+ * cryptographic verification of the raw request body.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -645,29 +895,44 @@ function createRefundSet(count = 2, overrides = {}) {
 function createWebhookEvent(overrides = {}) {
   assertPlainObject(overrides, 'Webhook event overrides');
 
+  const input = clone(overrides);
+
   const event = {
     ...clone(DEFAULT_WEBHOOK_EVENT),
-    ...clone(overrides),
+    ...input,
   };
 
-  event.payload = overrides.payload === undefined
+  event.payload = input.payload === undefined
     ? clone(DEFAULT_WEBHOOK_EVENT.payload)
-    : clone(
-        assertPlainObject(overrides.payload, 'Webhook payload')
-      );
+    : clone(input.payload);
 
-  if (event.signatureVerified !== true &&
-      event.signatureVerified !== false) {
-    throw new TypeError('signatureVerified must be a boolean');
-  }
+  assertPlainObject(event.payload, 'Webhook payload');
+  assertNonEmptyString(event.id, 'Webhook local ID');
+  assertNonEmptyString(event.eventId, 'Webhook provider event ID');
+  assertNonEmptyString(event.provider, 'Webhook provider');
 
-  if (
-    !Number.isSafeInteger(event.attempts) ||
-    event.attempts < 0
-  ) {
-    throw new RangeError(
-      'Webhook attempts must be a non-negative safe integer'
-    );
+  assertAllowedValue(
+    event.eventType,
+    WEBHOOK_EVENT_TYPE_VALUES,
+    'webhook event type'
+  );
+
+  assertAllowedValue(
+    event.processingStatus,
+    WEBHOOK_PROCESSING_STATUS_VALUES,
+    'webhook processing status'
+  );
+
+  assertOptionalString(event.paymentId, 'Webhook paymentId');
+  assertOptionalString(event.providerPaymentId, 'Webhook providerPaymentId');
+  assertOptionalString(event.signature, 'Webhook signature');
+  assertOptionalString(event.lastError, 'Webhook lastError');
+
+  assertBoolean(event.signatureVerified, 'Webhook signatureVerified');
+  assertNonNegativeInteger(event.attempts, 'Webhook attempts');
+
+  for (const field of ['processedAt', 'receivedAt', 'createdAt']) {
+    assertOptionalUtcTimestamp(event[field], `Webhook ${field}`);
   }
 
   return event;
@@ -676,7 +941,7 @@ function createWebhookEvent(overrides = {}) {
 /**
  * Create a synthetic successful-payment webhook event.
  *
- * The event contains no valid provider signature.
+ * The event intentionally uses an invalid synthetic signature.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -684,34 +949,27 @@ function createWebhookEvent(overrides = {}) {
 function createSuccessfulPaymentWebhook(overrides = {}) {
   assertPlainObject(overrides, 'Successful webhook overrides');
 
-  const paymentOverrides = overrides.payment === undefined
-    ? {}
-    : overrides.payment;
+  const input = clone(overrides);
 
-  const eventOverrides = overrides.event === undefined
+  const paymentOverrides = input.payment === undefined
     ? {}
-    : overrides.event;
+    : input.payment;
 
-  assertPlainObject(
-    paymentOverrides,
-    'Successful webhook payment overrides'
-  );
-  assertPlainObject(
-    eventOverrides,
-    'Successful webhook event overrides'
-  );
+  const eventOverrides = input.event === undefined
+    ? {}
+    : input.event;
+
+  assertPlainObject(paymentOverrides, 'Successful webhook payment overrides');
+  assertPlainObject(eventOverrides, 'Successful webhook event overrides');
 
   const payment = createPayment({
-    ...clone(paymentOverrides),
+    ...paymentOverrides,
     status: PAYMENT_STATUSES.SUCCEEDED,
   });
 
-  const eventId = overrides.eventId ||
-    'provider_event_success_test_0001';
+  const eventId = input.eventId || 'provider_event_success_test_0001';
 
-  const eventFields = clone(eventOverrides);
-
-  return createWebhookEvent({
+  const event = createWebhookEvent({
     id: 'webhook_test_success_0001',
     eventId,
     eventType: WEBHOOK_EVENT_TYPES.PAYMENT_SUCCEEDED,
@@ -729,15 +987,20 @@ function createSuccessfulPaymentWebhook(overrides = {}) {
     },
     signature: 'synthetic-invalid-signature-for-tests-only',
     signatureVerified: false,
-    ...eventFields,
+    ...eventOverrides,
   });
+
+  return {
+    ...event,
+    payment,
+  };
 }
 
 /**
  * Create two deliveries of the same provider event.
  *
- * Provider event IDs and payloads are shared; local delivery IDs differ.
- * Use this to test deduplication and idempotent webhook processing.
+ * Provider event IDs and payloads are shared, while local delivery IDs
+ * differ. Use this for webhook deduplication tests.
  *
  * @param {object} [overrides={}]
  * @returns {{first: object, duplicate: object}}
@@ -745,20 +1008,18 @@ function createSuccessfulPaymentWebhook(overrides = {}) {
 function createDuplicateWebhookEvents(overrides = {}) {
   assertPlainObject(overrides, 'Duplicate webhook overrides');
 
-  const eventId = overrides.eventId ||
+  const input = clone(overrides);
+  const eventId = input.eventId ||
     'provider_event_duplicate_test_0001';
 
-  const eventOverrides = overrides.event === undefined
+  const eventOverrides = input.event === undefined
     ? {}
-    : overrides.event;
+    : input.event;
 
-  assertPlainObject(
-    eventOverrides,
-    'Duplicate webhook event overrides'
-  );
+  assertPlainObject(eventOverrides, 'Duplicate webhook event overrides');
 
   const first = createWebhookEvent({
-    ...clone(eventOverrides),
+    ...eventOverrides,
     id: 'webhook_test_delivery_0001',
     eventId,
   });
@@ -807,10 +1068,10 @@ function createInvalidWebhookEvent(overrides = {}) {
 /**
  * Create a synthetic refund concurrency scenario.
  *
- * By default, two requests each seek INR 60 against a successful INR 100
- * payment. Their combined requested amount is INR 120.
+ * By default, two refund requests each seek INR 60 against an INR 100
+ * successful payment, so the combined requested amount is INR 120.
  *
- * This describes a test scenario; it does not execute concurrent requests.
+ * This describes test inputs; it does not execute concurrent operations.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -818,39 +1079,32 @@ function createInvalidWebhookEvent(overrides = {}) {
 function createConcurrentPaymentScenario(overrides = {}) {
   assertPlainObject(overrides, 'Concurrency scenario overrides');
 
-  const paymentOverrides = overrides.payment === undefined
-    ? {}
-    : overrides.payment;
+  const input = clone(overrides);
 
-  const firstRefundOverrides = overrides.firstRefund === undefined
+  const paymentOverrides = input.payment === undefined
     ? {}
-    : overrides.firstRefund;
+    : input.payment;
 
-  const secondRefundOverrides = overrides.secondRefund === undefined
+  const firstRefundOverrides = input.firstRefund === undefined
     ? {}
-    : overrides.secondRefund;
+    : input.firstRefund;
 
-  assertPlainObject(
-    paymentOverrides,
-    'Concurrency payment overrides'
-  );
-  assertPlainObject(
-    firstRefundOverrides,
-    'First refund overrides'
-  );
-  assertPlainObject(
-    secondRefundOverrides,
-    'Second refund overrides'
-  );
+  const secondRefundOverrides = input.secondRefund === undefined
+    ? {}
+    : input.secondRefund;
+
+  assertPlainObject(paymentOverrides, 'Concurrency payment overrides');
+  assertPlainObject(firstRefundOverrides, 'First refund overrides');
+  assertPlainObject(secondRefundOverrides, 'Second refund overrides');
 
   const payment = createPayment({
-    ...clone(paymentOverrides),
+    ...paymentOverrides,
     status: PAYMENT_STATUSES.SUCCEEDED,
   });
 
   const requestedRefunds = [
     createRefund({
-      ...clone(firstRefundOverrides),
+      ...firstRefundOverrides,
       id: 'refund_test_concurrent_0001',
       paymentId: payment.id,
       userId: payment.userId,
@@ -860,7 +1114,7 @@ function createConcurrentPaymentScenario(overrides = {}) {
         : firstRefundOverrides.amountMinor,
     }),
     createRefund({
-      ...clone(secondRefundOverrides),
+      ...secondRefundOverrides,
       id: 'refund_test_concurrent_0002',
       paymentId: payment.id,
       userId: payment.userId,
@@ -872,7 +1126,15 @@ function createConcurrentPaymentScenario(overrides = {}) {
   ];
 
   const totalRequestedRefundMinor = requestedRefunds.reduce(
-    (total, refund) => total + refund.amountMinor,
+    (total, refund) => {
+      const nextTotal = total + refund.amountMinor;
+
+      if (!Number.isSafeInteger(nextTotal)) {
+        throw new RangeError('Combined refund amount exceeds safe integer range');
+      }
+
+      return nextTotal;
+    },
     0
   );
 
@@ -881,14 +1143,15 @@ function createConcurrentPaymentScenario(overrides = {}) {
     requestedRefunds,
     totalRequestedRefundMinor,
     paymentAmountMinor: payment.amountMinor,
+    expectedCombinedRefundWithinPaymentAmount:
+      totalRequestedRefundMinor <= payment.amountMinor,
   };
 }
 
 /**
  * Create a payment initiation idempotency scenario.
  *
- * Both requests share the same key and payload by default. This fixture
- * does not prove that the backend enforces idempotency.
+ * Both requests share the same key and payload by default.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -896,29 +1159,33 @@ function createConcurrentPaymentScenario(overrides = {}) {
 function createIdempotencyScenario(overrides = {}) {
   assertPlainObject(overrides, 'Idempotency scenario overrides');
 
-  const payloadOverrides = overrides.payload === undefined
+  const input = clone(overrides);
+
+  const payloadOverrides = input.payload === undefined
     ? {}
-    : overrides.payload;
+    : input.payload;
 
-  assertPlainObject(
-    payloadOverrides,
-    'Idempotency payload overrides'
-  );
+  assertPlainObject(payloadOverrides, 'Idempotency payload overrides');
 
-  const idempotencyKey = overrides.idempotencyKey ||
-    'idem_test_repeated_request_0001';
+  const idempotencyKey = input.idempotencyKey === undefined
+    ? 'idem_test_repeated_request_0001'
+    : input.idempotencyKey;
 
   assertNonEmptyString(idempotencyKey, 'Idempotency key');
 
   const payload = createPaymentPayload({
-    ...clone(payloadOverrides),
+    ...payloadOverrides,
     idempotencyKey,
   });
+
+  const repeatedRequest = input.repeatedRequest === undefined
+    ? clone(payload)
+    : createPaymentPayload(input.repeatedRequest);
 
   return {
     idempotencyKey,
     firstRequest: clone(payload),
-    repeatedRequest: clone(payload),
+    repeatedRequest,
     expectedSingleLogicalPayment: true,
   };
 }
@@ -926,7 +1193,7 @@ function createIdempotencyScenario(overrides = {}) {
 /**
  * Create a synthetic payment authorization scenario.
  *
- * The expected outcome is test intent, not a permission decision.
+ * expectedAllowed is a test expectation, not a permission decision.
  *
  * @param {object} [overrides={}]
  * @returns {object}
@@ -934,61 +1201,60 @@ function createIdempotencyScenario(overrides = {}) {
 function createPaymentAccessScenario(overrides = {}) {
   assertPlainObject(overrides, 'Payment access scenario overrides');
 
-  const scenario = {
-    requesterId: DEFAULT_PAYMENT.userId,
-    payment: createPayment(),
-    expectedAllowed: true,
-    ...clone(overrides),
-  };
+  const input = clone(overrides);
 
-  assertNonEmptyString(
-    scenario.requesterId,
-    'Payment access requesterId'
-  );
+  const requesterId = input.requesterId === undefined
+    ? DEFAULT_PAYMENT.userId
+    : input.requesterId;
 
-  if (typeof scenario.expectedAllowed !== 'boolean') {
-    throw new TypeError('expectedAllowed must be a boolean');
-  }
+  const expectedAllowed = input.expectedAllowed === undefined
+    ? true
+    : input.expectedAllowed;
 
-  scenario.payment = overrides.payment === undefined
+  assertNonEmptyString(requesterId, 'Payment access requesterId');
+  assertBoolean(expectedAllowed, 'Payment access expectedAllowed');
+
+  const payment = input.payment === undefined
     ? createPayment()
-    : createPayment(
-        clone(assertPlainObject(
-          overrides.payment,
-          'Payment access scenario payment'
-        ))
-      );
+    : createPayment(input.payment);
 
-  return scenario;
+  return {
+    requesterId,
+    payment,
+    expectedAllowed,
+  };
 }
 
 /**
  * Create a cross-user payment access scenario expected to be denied.
  *
+ * The requester and payment owner must differ.
+ *
  * @param {object} [overrides={}]
  * @returns {object}
  */
 function createUnauthorizedPaymentAccessScenario(overrides = {}) {
-  assertPlainObject(
-    overrides,
-    'Unauthorized payment access overrides'
-  );
+  assertPlainObject(overrides, 'Unauthorized payment access overrides');
 
-  const requesterId = overrides.requesterId || 'user_test_requester';
+  const input = clone(overrides);
 
-  assertNonEmptyString(
-    requesterId,
-    'Unauthorized payment requesterId'
-  );
+  const requesterId = input.requesterId === undefined
+    ? 'user_test_requester'
+    : input.requesterId;
 
-  const paymentOverrides = overrides.payment === undefined
+  assertNonEmptyString(requesterId, 'Unauthorized payment requesterId');
+
+  const paymentOverrides = input.payment === undefined
     ? {}
-    : clone(assertPlainObject(
-        overrides.payment,
-        'Unauthorized payment overrides'
-      ));
+    : input.payment;
 
-  const ownerId = paymentOverrides.userId || 'user_test_foreign';
+  assertPlainObject(paymentOverrides, 'Unauthorized payment overrides');
+
+  const ownerId = paymentOverrides.userId === undefined
+    ? 'user_test_foreign'
+    : paymentOverrides.userId;
+
+  assertNonEmptyString(ownerId, 'Unauthorized payment owner ID');
 
   if (ownerId === requesterId) {
     throw new TypeError(
@@ -996,15 +1262,131 @@ function createUnauthorizedPaymentAccessScenario(overrides = {}) {
     );
   }
 
-  const remainingOverrides = clone(overrides);
-  delete remainingOverrides.payment;
-  delete remainingOverrides.expectedAllowed;
-
-  return createPaymentAccessScenario({
-    ...remainingOverrides,
+  return {
     requesterId,
     payment: createForeignPayment(ownerId, paymentOverrides),
     expectedAllowed: false,
+  };
+}
+
+/**
+ * Create a payment payload containing server-managed fields.
+ *
+ * Use this for allowlist and mass-assignment rejection tests.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createServerManagedFieldsPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Server-managed payload overrides');
+
+  const payload = createPaymentPayload();
+
+  for (const field of PAYMENT_SERVER_MANAGED_FIELDS) {
+    payload[field] = `attacker_controlled_${field}`;
+  }
+
+  return {
+    ...payload,
+    ...clone(overrides),
+  };
+}
+
+/**
+ * Create a refund payload suitable for negative mass-assignment tests.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createRefundMassAssignmentPayload(overrides = {}) {
+  assertPlainObject(overrides, 'Refund mass-assignment overrides');
+
+  return {
+    paymentId: DEFAULT_REFUND.paymentId,
+    amountMinor: DEFAULT_REFUND.amountMinor,
+    currency: DEFAULT_REFUND.currency,
+    reason: DEFAULT_REFUND.reason,
+    idempotencyKey: DEFAULT_REFUND.idempotencyKey,
+    id: 'refund_test_attacker_controlled',
+    refundNumber: 'MO-REF-ATTACKER-CONTROLLED',
+    userId: 'user_test_attacker',
+    status: REFUND_STATUSES.SUCCEEDED,
+    provider: 'attacker_provider',
+    providerRefundId: 'attacker_provider_refund',
+    processedAt: '2026-10-02T09:00:00.000Z',
+    role: 'admin',
+    isAdmin: true,
+    ...clone(overrides),
+  };
+}
+
+/**
+ * Create a synthetic failed payment.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createFailedPayment(overrides = {}) {
+  return createPayment({
+    id: 'payment_test_failed_0001',
+    paymentNumber: 'MO-PAY-TEST-FAILED-0001',
+    status: PAYMENT_STATUSES.FAILED,
+    failureCode: 'TEST_PAYMENT_FAILURE',
+    failureMessage: 'Synthetic payment failure.',
+    failedAt: '2026-10-01T09:05:00.000Z',
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic successful payment.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createSuccessfulPayment(overrides = {}) {
+  return createPayment({
+    id: 'payment_test_succeeded_0001',
+    paymentNumber: 'MO-PAY-TEST-SUCCEEDED-0001',
+    status: PAYMENT_STATUSES.SUCCEEDED,
+    authorizedAt: '2026-10-01T09:01:00.000Z',
+    paidAt: '2026-10-01T09:02:00.000Z',
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic partial-refund payment.
+ *
+ * The fixture does not calculate actual refund totals. Supply corresponding
+ * refund records in the test when testing accounting invariants.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createPartiallyRefundedPayment(overrides = {}) {
+  return createPayment({
+    id: 'payment_test_partially_refunded_0001',
+    paymentNumber: 'MO-PAY-TEST-PARTIAL-0001',
+    status: PAYMENT_STATUSES.PARTIALLY_REFUNDED,
+    paidAt: '2026-10-01T09:02:00.000Z',
+    ...clone(overrides),
+  });
+}
+
+/**
+ * Create a synthetic fully refunded payment.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function createRefundedPayment(overrides = {}) {
+  return createPayment({
+    id: 'payment_test_refunded_0001',
+    paymentNumber: 'MO-PAY-TEST-REFUNDED-0001',
+    status: PAYMENT_STATUSES.REFUNDED,
+    paidAt: '2026-10-01T09:02:00.000Z',
+    ...clone(overrides),
   });
 }
 
@@ -1014,14 +1396,18 @@ module.exports = {
   PAYMENT_METHODS,
   PAYMENT_PURPOSES,
   WEBHOOK_EVENT_TYPES,
+  WEBHOOK_PROCESSING_STATUSES,
+
   PAYMENT_STATUS_VALUES,
   REFUND_STATUS_VALUES,
   PAYMENT_METHOD_VALUES,
   PAYMENT_PURPOSE_VALUES,
   WEBHOOK_EVENT_TYPE_VALUES,
-  WEBHOOK_PROCESSING_STATUSES,
+  WEBHOOK_PROCESSING_STATUS_VALUES,
+
   PAYMENT_SERVER_MANAGED_FIELDS,
   REFUND_SERVER_MANAGED_FIELDS,
+
   DEFAULT_PAYMENT,
   DEFAULT_REFUND,
   DEFAULT_WEBHOOK_EVENT,
@@ -1032,10 +1418,16 @@ module.exports = {
   createForeignPayment,
   createPaymentWithStatus,
   createMassAssignmentPayload,
+  createServerManagedFieldsPayload,
+  createFailedPayment,
+  createSuccessfulPayment,
+  createPartiallyRefundedPayment,
+  createRefundedPayment,
 
   createRefund,
   createRefundWithStatus,
   createRefundSet,
+  createRefundMassAssignmentPayload,
 
   createWebhookEvent,
   createSuccessfulPaymentWebhook,

@@ -1,27 +1,19 @@
 
 """
 MedOrbits -- Data Import Utilities
+
 File: src/python/medorbits/data_import.py
 
 Purpose:
-    Parse and validate CSV, JSON, and JSON Lines input for MedOrbits services.
-
-Features:
-    - CSV, JSON array, and JSONL parsing.
-    - File-size, row-count, column-count, and field-size limits.
-    - Strict UTF-8 decoding.
-    - Duplicate-column and duplicate-JSON-key detection.
-    - Optional column allowlists and required-column checks.
-    - Optional per-record validation callback.
-    - Streaming CSV and JSONL record iteration.
-    - No database writes or implicit filesystem access.
+    Parse and validate CSV, JSON arrays, and JSON Lines for MedOrbits.
 
 Security:
-    - Treat imported files as untrusted input.
-    - Authorize uploads before invoking this module.
-    - Never execute imported values or use them directly in SQL.
+    - Treat all imported data as untrusted.
+    - Authorize uploads before parsing.
+    - Never execute imported values or interpolate them into SQL.
     - Apply business validation before persisting records.
     - Avoid logging imported rows, personal data, or secrets.
+    - This module does not write to a database or access the filesystem.
 """
 
 from __future__ import annotations
@@ -30,7 +22,7 @@ import csv
 import io
 import json
 import math
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Final, TextIO
@@ -65,7 +57,7 @@ class ImportValidationError(ImportErrorBase):
 
 @dataclass(frozen=True, slots=True)
 class ImportOptions:
-    """Validated options for importing data."""
+    """Immutable, validated options for importing data."""
 
     format: str = "csv"
     max_file_bytes: int = DEFAULT_MAX_FILE_BYTES
@@ -81,6 +73,9 @@ class ImportOptions:
     strip_values: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.format, str):
+            raise ImportFormatError("Import format must be a string.")
+
         normalized_format = self.format.strip().lower()
 
         if normalized_format not in SUPPORTED_IMPORT_FORMATS:
@@ -108,38 +103,29 @@ class ImportOptions:
                     f"{name} must be an integer between 1 and {maximum}."
                 )
 
-        if any(
-            not isinstance(column, str) or not column or column.strip() != column
-            for column in self.required_columns
+        for name, value in (
+            ("reject_unknown_columns", self.reject_unknown_columns),
+            ("allow_empty_values", self.allow_empty_values),
+            ("skip_blank_rows", self.skip_blank_rows),
+            ("strip_values", self.strip_values),
         ):
-            raise ImportFormatError(
-                "required_columns must contain non-empty trimmed strings."
-            )
+            if not isinstance(value, bool):
+                raise ImportFormatError(f"{name} must be a boolean.")
 
-        if len(set(self.required_columns)) != len(self.required_columns):
-            raise ImportFormatError(
-                "required_columns must not contain duplicates."
-            )
+        self._validate_column_options(
+            "required_columns",
+            self.required_columns,
+        )
 
         if self.allowed_columns is not None:
+            self._validate_column_options(
+                "allowed_columns",
+                self.allowed_columns,
+            )
+
             if not self.allowed_columns:
                 raise ImportFormatError(
                     "allowed_columns cannot be empty when specified."
-                )
-
-            if any(
-                not isinstance(column, str)
-                or not column
-                or column.strip() != column
-                for column in self.allowed_columns
-            ):
-                raise ImportFormatError(
-                    "allowed_columns must contain non-empty trimmed strings."
-                )
-
-            if len(set(self.allowed_columns)) != len(self.allowed_columns):
-                raise ImportFormatError(
-                    "allowed_columns must not contain duplicates."
                 )
 
             if len(self.allowed_columns) > self.max_columns:
@@ -147,29 +133,43 @@ class ImportOptions:
                     "allowed_columns exceeds max_columns."
                 )
 
-        if not isinstance(self.reject_unknown_columns, bool):
+            if not set(self.required_columns).issubset(
+                set(self.allowed_columns)
+            ):
+                raise ImportFormatError(
+                    "required_columns must be included in allowed_columns."
+                )
+
+    @staticmethod
+    def _validate_column_options(
+        name: str,
+        columns: tuple[str, ...],
+    ) -> None:
+        if not isinstance(columns, tuple):
+            raise ImportFormatError(f"{name} must be a tuple.")
+
+        if any(
+            not isinstance(column, str)
+            or not column
+            or column.strip() != column
+            for column in columns
+        ):
             raise ImportFormatError(
-                "reject_unknown_columns must be a boolean."
+                f"{name} must contain non-empty trimmed strings."
             )
 
-        if not isinstance(self.allow_empty_values, bool):
+        if len(set(columns)) != len(columns):
             raise ImportFormatError(
-                "allow_empty_values must be a boolean."
-            )
-
-        if not isinstance(self.skip_blank_rows, bool):
-            raise ImportFormatError(
-                "skip_blank_rows must be a boolean."
-            )
-
-        if not isinstance(self.strip_values, bool):
-            raise ImportFormatError(
-                "strip_values must be a boolean."
+                f"{name} must not contain duplicates."
             )
 
 
 def _check_size(data: bytes | str, options: ImportOptions) -> None:
-    size = len(data) if isinstance(data, bytes) else len(data.encode("utf-8"))
+    """Enforce the input byte limit."""
+    if isinstance(data, bytes):
+        size = len(data)
+    else:
+        size = len(data.encode("utf-8"))
 
     if size > options.max_file_bytes:
         raise ImportLimitError(
@@ -188,7 +188,7 @@ def _decode_utf8(data: bytes) -> str:
 
 
 def _check_json_depth(value: Any, maximum: int) -> None:
-    """Reject deeply nested JSON values to reduce resource-exhaustion risk."""
+    """Reject excessive nesting after JSON decoding."""
     stack: list[tuple[Any, int]] = [(value, 1)]
 
     while stack:
@@ -200,13 +200,21 @@ def _check_json_depth(value: Any, maximum: int) -> None:
             )
 
         if isinstance(current, dict):
-            stack.extend((item, depth + 1) for item in current.values())
+            stack.extend(
+                (item, depth + 1)
+                for item in current.values()
+            )
         elif isinstance(current, list):
-            stack.extend((item, depth + 1) for item in current)
+            stack.extend(
+                (item, depth + 1)
+                for item in current
+            )
 
 
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    """JSON object-pairs hook that rejects duplicate keys."""
+def _reject_duplicate_keys(
+    pairs: list[tuple[str, Any]],
+) -> dict[str, Any]:
+    """Reject duplicate keys in JSON objects."""
     result: dict[str, Any] = {}
 
     for key, value in pairs:
@@ -227,13 +235,13 @@ def _reject_non_finite_constant(value: str) -> None:
 
 
 def _parse_json(text: str, options: ImportOptions) -> Any:
-    _check_size(text, options)
-
+    """Parse strict JSON and enforce structural limits."""
     try:
         value = json.loads(
             text,
             object_pairs_hook=_reject_duplicate_keys,
             parse_constant=_reject_non_finite_constant,
+            parse_float=Decimal,
         )
     except ImportFormatError:
         raise
@@ -241,7 +249,53 @@ def _parse_json(text: str, options: ImportOptions) -> Any:
         raise ImportFormatError("Input contains invalid JSON.") from exc
 
     _check_json_depth(value, options.max_json_depth)
+    _check_json_value_limits(value, options)
     return value
+
+
+def _check_json_value_limits(
+    value: Any,
+    options: ImportOptions,
+) -> None:
+    """Validate nested JSON value sizes and numeric finiteness."""
+    stack = [value]
+
+    while stack:
+        current = stack.pop()
+
+        if isinstance(current, str):
+            if len(current) > options.max_field_chars:
+                raise ImportLimitError(
+                    "JSON contains a string exceeding max_field_chars."
+                )
+
+        elif isinstance(current, Decimal):
+            if not current.is_finite():
+                raise ImportFormatError(
+                    "JSON contains a non-finite numeric value."
+                )
+
+        elif isinstance(current, float):
+            if not math.isfinite(current):
+                raise ImportFormatError(
+                    "JSON contains a non-finite numeric value."
+                )
+
+        elif isinstance(current, dict):
+            if len(current) > options.max_columns:
+                raise ImportLimitError(
+                    "A JSON object exceeds max_columns."
+                )
+
+            for key, item in current.items():
+                if len(key) > options.max_field_chars:
+                    raise ImportLimitError(
+                        "A JSON object key exceeds max_field_chars."
+                    )
+                stack.append(item)
+
+        elif isinstance(current, list):
+            stack.extend(current)
 
 
 def _normalize_record(
@@ -249,9 +303,10 @@ def _normalize_record(
     options: ImportOptions,
     row_number: int,
 ) -> dict[str, Any]:
+    """Validate record keys and return an independent dictionary."""
     if not isinstance(record, Mapping):
         raise ImportFormatError(
-            f"Record {row_number} must be a JSON object or mapping."
+            f"Record {row_number} must be an object or mapping."
         )
 
     if len(record) > options.max_columns:
@@ -269,7 +324,13 @@ def _normalize_record(
 
         if key.strip() != key:
             raise ImportFormatError(
-                f"Record {row_number} contains a column name with surrounding whitespace."
+                f"Record {row_number} contains a column name with "
+                "surrounding whitespace."
+            )
+
+        if len(key) > options.max_field_chars:
+            raise ImportLimitError(
+                f"Record {row_number} contains an oversized column name."
             )
 
         if key in normalized:
@@ -286,6 +347,7 @@ def _validate_columns(
     columns: tuple[str, ...],
     options: ImportOptions,
 ) -> None:
+    """Validate schema, required columns, and the configured allowlist."""
     if not columns:
         raise ImportFormatError("The import contains no columns.")
 
@@ -300,6 +362,11 @@ def _validate_columns(
             "Import contains duplicate column names."
         )
 
+    if any(len(column) > options.max_field_chars for column in columns):
+        raise ImportLimitError(
+            "An import column name exceeds max_field_chars."
+        )
+
     missing = set(options.required_columns) - set(columns)
 
     if missing:
@@ -308,8 +375,7 @@ def _validate_columns(
         )
 
     if options.allowed_columns is not None:
-        allowed = set(options.allowed_columns)
-        unknown = set(columns) - allowed
+        unknown = set(columns) - set(options.allowed_columns)
 
         if unknown and options.reject_unknown_columns:
             raise ImportValidationError(
@@ -322,20 +388,27 @@ def _validate_values(
     options: ImportOptions,
     row_number: int,
 ) -> dict[str, Any]:
+    """Validate field sizes and optionally normalize string values."""
     for key, value in record.items():
         if isinstance(value, str):
             if len(value) > options.max_field_chars:
                 raise ImportLimitError(
-                    f"Record {row_number} contains a value exceeding max_field_chars."
+                    f"Record {row_number} contains an oversized value."
                 )
+
+            if options.strip_values:
+                value = value.strip()
+                record[key] = value
 
             if not options.allow_empty_values and value == "":
                 raise ImportValidationError(
                     f"Record {row_number} contains an empty value."
                 )
 
-            if options.strip_values:
-                record[key] = value.strip()
+        elif value is None and not options.allow_empty_values:
+            raise ImportValidationError(
+                f"Record {row_number} contains a null value."
+            )
 
     return record
 
@@ -344,8 +417,7 @@ def _iter_csv_text(
     text: str,
     options: ImportOptions,
 ) -> Iterator[dict[str, Any]]:
-    _check_size(text, options)
-
+    """Parse CSV records with strict row and column validation."""
     stream = io.StringIO(text, newline="")
 
     try:
@@ -364,8 +436,19 @@ def _iter_csv_text(
             ):
                 continue
 
+            if any(len(value) > options.max_field_chars for value in row):
+                raise ImportLimitError(
+                    "A CSV field exceeds max_field_chars."
+                )
+
             if header is None:
                 header = tuple(row)
+
+                if any(column.strip() != column for column in header):
+                    raise ImportFormatError(
+                        "CSV headers must not contain surrounding whitespace."
+                    )
+
                 _validate_columns(header, options)
                 continue
 
@@ -376,15 +459,17 @@ def _iter_csv_text(
 
             if len(row) != len(header):
                 raise ImportFormatError(
-                    f"CSV record {row_number} has a different number of fields than the header."
+                    f"CSV record {row_number} has a different number "
+                    "of fields than the header."
                 )
 
             record = dict(zip(header, row, strict=True))
-            record = _validate_values(record, options, row_number)
-            yield record
+            yield _validate_values(record, options, row_number)
 
         if header is None:
-            raise ImportFormatError("CSV input is empty or has no header.")
+            raise ImportFormatError(
+                "CSV input is empty or has no header."
+            )
 
     except csv.Error as exc:
         raise ImportFormatError("CSV input is malformed.") from exc
@@ -394,10 +479,9 @@ def _iter_jsonl_text(
     text: str,
     options: ImportOptions,
 ) -> Iterator[dict[str, Any]]:
-    _check_size(text, options)
-
+    """Parse JSON Lines with duplicate-key and schema validation."""
     row_number = 0
-    columns: tuple[str, ...] | None = None
+    columns: frozenset[str] | None = None
 
     for line_number, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
@@ -416,23 +500,25 @@ def _iter_jsonl_text(
             raise ImportLimitError("JSONL import exceeds max_rows.")
 
         record = _normalize_record(value, options, row_number)
+        current_columns = frozenset(record)
 
         if columns is None:
-            columns = tuple(record.keys())
-            _validate_columns(columns, options)
-        elif tuple(record.keys()) != columns:
+            columns = current_columns
+            _validate_columns(tuple(record.keys()), options)
+        elif current_columns != columns:
             raise ImportFormatError(
-                f"JSONL line {line_number} has a different schema from the first record."
+                f"JSONL line {line_number} has a different schema "
+                "from the first record."
             )
 
-        record = _validate_values(record, options, row_number)
-        yield record
+        yield _validate_values(record, options, row_number)
 
 
 def _iter_json_text(
     text: str,
     options: ImportOptions,
 ) -> Iterator[dict[str, Any]]:
+    """Parse a JSON array of objects."""
     value = _parse_json(text, options)
 
     if not isinstance(value, list):
@@ -443,7 +529,7 @@ def _iter_json_text(
     if len(value) > options.max_rows:
         raise ImportLimitError("JSON import exceeds max_rows.")
 
-    columns: tuple[str, ...] | None = None
+    columns: frozenset[str] | None = None
 
     for row_number, item in enumerate(value, start=1):
         if not isinstance(item, dict):
@@ -452,21 +538,21 @@ def _iter_json_text(
             )
 
         record = _normalize_record(item, options, row_number)
+        current_columns = frozenset(record)
 
         if columns is None:
-            columns = tuple(record.keys())
-            _validate_columns(columns, options)
-        elif set(record.keys()) != set(columns):
+            columns = current_columns
+            _validate_columns(tuple(record.keys()), options)
+        elif current_columns != columns:
             raise ImportFormatError(
-                f"JSON record {row_number} has a different schema from the first record."
+                f"JSON record {row_number} has a different schema "
+                "from the first record."
             )
 
-        record = _validate_values(record, options, row_number)
-        yield record
+        yield _validate_values(record, options, row_number)
 
-    if not value:
-        if options.required_columns:
-            _validate_columns(options.required_columns, options)
+    if not value and options.required_columns:
+        _validate_columns(options.required_columns, options)
 
 
 def iter_import_text(
@@ -474,12 +560,11 @@ def iter_import_text(
     options: ImportOptions | None = None,
 ) -> Iterator[dict[str, Any]]:
     """
-    Stream records from a text string.
+    Yield records from text.
 
-    Note:
-        The full input string is already resident in memory. For large files,
-        use iter_import_bytes() with a bounded upload or a streaming CSV/JSONL
-        parser at the API layer.
+    The input string is already resident in memory. This API streams parsed
+    records, not input bytes. Use bounded uploads and incremental parsing for
+    large files that must not be buffered in full.
     """
     options = options or ImportOptions()
 
@@ -509,9 +594,7 @@ def iter_import_bytes(
         raise TypeError("data must be bytes.")
 
     _check_size(data, options)
-    text = _decode_utf8(data)
-
-    yield from iter_import_text(text, options)
+    yield from iter_import_text(_decode_utf8(data), options)
 
 
 def iter_import_stream(
@@ -521,14 +604,12 @@ def iter_import_stream(
     """
     Parse an already-open text stream.
 
-    The stream must be opened with UTF-8 encoding and newline="" for CSV.
-    This helper reads the stream into memory so it can enforce a total byte
-    limit before parsing. For very large uploads, implement a bounded,
-    incremental parser at the service layer.
+    This implementation reads the stream into memory to enforce the total
+    byte limit before parsing. It is not suitable for unbounded streams.
     """
     options = options or ImportOptions()
 
-    if not hasattr(source, "read") or not callable(source.read):
+    if not callable(getattr(source, "read", None)):
         raise TypeError("source must be an open text stream.")
 
     text = source.read()
@@ -548,10 +629,13 @@ def import_records(
     """
     Import records into a list and optionally validate each record.
 
-    The validator should raise an application-specific exception for invalid
-    records. This function does not persist data or authorize the operation.
+    The callback may raise an exception or return False to reject a record.
+    This function does not persist records or authorize the operation.
     """
     options = options or ImportOptions()
+
+    if validator is not None and not callable(validator):
+        raise TypeError("validator must be callable.")
 
     if isinstance(data, bytes):
         records = iter_import_bytes(data, options)
@@ -592,4 +676,3 @@ __all__ = [
     "iter_import_stream",
     "iter_import_text",
 ]
-

@@ -1,83 +1,130 @@
-File: .github/workflows/ci.yml
 
 name: MedOrbits CI
+
 on:
   push:
     branches:
       - main
       - master
       - develop
+
   pull_request:
     branches:
       - main
       - master
       - develop
+
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: medorbits-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   quality:
     name: Code Quality and Data Validation
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Verify project configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f package.json ]]; then
-            echo "::error::package.json was not found in the repository root."
-            exit 1
-          fi
-          if [[ ! -f package-lock.json ]]; then
-            echo "::error::package-lock.json is required for npm ci."
-            exit 1
-          fi
-          node <<'NODE'
-          const fs = require("node:fs");
-          let pkg;
-          try {
-            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          } catch (error) {
-            console.error(`::error::Invalid package.json: ${error.message}`);
-            process.exit(1);
-          }
-          if (!pkg.name) {
-            console.warn("::notice::package.json does not declare a package name.");
-          }
-          if (pkg.engines?.node) {
-            console.log(`Declared Node.js requirement: ${pkg.engines.node}`);
-          } else {
-            console.warn("::notice::No Node.js engine requirement is declared.");
-          }
-          console.log(`Project: ${pkg.name || "Unnamed project"}`);
-          console.log(`Node.js: ${process.version}`);
-          console.log(`npm: ${require("node:child_process").execSync("npm --version", {
-            encoding: "utf8"
-          }).trim()}`);
-          NODE
+
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: package-lock.json
-      - name: Install dependencies
-        run: npm ci
+
+      - name: Verify project configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in package.json package-lock.json; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const cp = require('node:child_process');
+
+          let pkg;
+          let lock;
+
+          try {
+            pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          } catch (error) {
+            console.error(`Invalid package metadata: ${error.message}`);
+            process.exit(1);
+          }
+
+          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
+            throw new Error('package.json must define a package name.');
+          }
+
+          if (!lock.packages || !lock.packages['']) {
+            throw new Error(
+              'package-lock.json must contain a root packages[""] entry.'
+            );
+          }
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error(
+              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
+            );
+          }
+
+          const root = lock.packages[''];
+
+          if (pkg.name !== root.name) {
+            throw new Error(
+              'package.json and package-lock.json package names differ.'
+            );
+          }
+
+          if (pkg.version && root.version && pkg.version !== root.version) {
+            throw new Error(
+              'package.json and package-lock.json versions differ.'
+            );
+          }
+
+          if (pkg.engines?.node) {
+            console.log(`Required Node.js version: ${pkg.engines.node}`);
+          }
+
+          console.log(`Project: ${pkg.name}`);
+          console.log(`Node.js: ${process.version}`);
+          console.log(`npm: ${cp.execSync('npm --version', {
+            encoding: 'utf8'
+          }).trim()}`);
+          NODE
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
         env:
           CI: "true"
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
+
           count=0
+
           while IFS= read -r -d '' file; do
             echo "Checking JavaScript syntax: $file"
             node --check "$file"
@@ -85,31 +132,39 @@ jobs:
           done < <(
             git ls-files -z -- '*.js' '*.mjs' '*.cjs'
           )
+
           if [[ "$count" -eq 0 ]]; then
-            echo "::notice::No tracked JavaScript files found."
+            echo "::warning::No tracked JavaScript files were found."
           else
             echo "Successfully checked $count JavaScript file(s)."
           fi
+
       - name: Validate JSON files
         shell: bash
         run: |
+          set -euo pipefail
+
           node <<'NODE'
-          const fs = require("node:fs");
-          const path = require("node:path");
+          const fs = require('node:fs');
+          const path = require('node:path');
+
           const excludedDirectories = new Set([
-            ".git",
-            "node_modules",
-            ".next",
-            "coverage",
-            "dist",
-            "build",
-            ".cache",
-            ".turbo"
+            '.git',
+            'node_modules',
+            '.next',
+            'coverage',
+            'dist',
+            'build',
+            '.cache',
+            '.turbo'
           ]);
+
           const files = [];
           const failures = [];
+
           function walk(directory) {
             let entries;
+
             try {
               entries = fs.readdirSync(directory, {
                 withFileTypes: true
@@ -118,30 +173,41 @@ jobs:
               failures.push(`${directory}: ${error.message}`);
               return;
             }
+
             for (const entry of entries) {
               const fullPath = path.join(directory, entry.name);
+
               if (entry.isDirectory()) {
                 if (!excludedDirectories.has(entry.name)) {
                   walk(fullPath);
                 }
                 continue;
               }
-              if (entry.isFile() && entry.name.endsWith(".json")) {
+
+              if (entry.isFile() && entry.name.endsWith('.json')) {
                 files.push(fullPath);
               }
             }
           }
-          walk(".");
+
+          walk('.');
+
           for (const file of files) {
             try {
-              JSON.parse(fs.readFileSync(file, "utf8"));
+              JSON.parse(fs.readFileSync(file, 'utf8'));
               console.log(`PASS ${file}`);
             } catch (error) {
               failures.push(`${file}: ${error.message}`);
               console.error(`FAIL ${file}: ${error.message}`);
             }
           }
+
           console.log(`Validated ${files.length} JSON file(s).`);
+
+          if (files.length === 0) {
+            console.warn('No JSON files were found.');
+          }
+
           if (failures.length > 0) {
             console.error(
               `${failures.length} JSON validation error(s) detected.`
@@ -149,79 +215,89 @@ jobs:
             process.exitCode = 1;
           }
           NODE
+
       - name: Run lint checks
         shell: bash
         run: |
           set -euo pipefail
-          if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
+
+          if node -e "process.exit(typeof require('./package.json').scripts?.lint === 'string' ? 0 : 1)"; then
             npm run lint
           else
-            echo "::notice::No lint script is configured; lint checks skipped."
+            echo "::warning::No lint script configured; lint checks skipped."
           fi
+
       - name: Run automated tests
         shell: bash
+        env:
+          CI: "true"
+          NODE_ENV: test
         run: |
           set -euo pipefail
-          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+
+          if node -e "process.exit(typeof require('./package.json').scripts?.test === 'string' ? 0 : 1)"; then
             npm test
           else
-            echo "::warning::No test script is configured. Add automated tests to strengthen CI."
+            echo "::warning::No test script configured; automated tests skipped."
           fi
+
       - name: Run production build
         shell: bash
         run: |
           set -euo pipefail
-          if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
+
+          if node -e "process.exit(typeof require('./package.json').scripts?.build === 'string' ? 0 : 1)"; then
             npm run build
           else
-            echo "::notice::No build script is configured; build check skipped."
+            echo "::notice::No build script configured; build check skipped."
           fi
+
+      - name: Write CI summary
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## MedOrbits CI -- Quality and Data Validation"
+            echo
+            echo "- **Job status:** \`${JOB_STATUS}\`"
+            echo "- **Node.js:** \`$(node --version)\`"
+            echo "- **Event:** \`${GITHUB_EVENT_NAME}\`"
+            echo "- **Ref:** \`${GITHUB_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   pull-request-check:
     name: Pull Request Readiness
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     needs:
       - quality
-    if: github.event_name == 'pull_request'
+
+    if: ${{ github.event_name == 'pull_request' }}
+
     permissions:
       contents: read
+
     steps:
       - name: Confirm quality checks completed
         shell: bash
         run: |
           set -euo pipefail
+
           echo "MedOrbits CI quality checks completed successfully."
-          echo "JavaScript syntax, JSON validation, and configured npm scripts passed."
-          echo "The pull request is ready for the next review stage."
+          echo "JavaScript syntax and JSON validation passed."
+          echo "Configured npm quality checks completed."
+          echo "The pull request is ready for review."
 
-Recommended repository configuration
-
-{@body const checks = [
-"Save the file at .github/workflows/ci.yml.",
-"Confirm package.json and package-lock.json are committed to the repository root.",
-"Confirm Node.js 22 is compatible with the package.json engines requirement.",
-"Ensure configured lint, test, and build scripts work locally.",
-"Run a test pull request that modifies a JavaScript or JSON file.",
-"Add the Code Quality and Data Validation check as a required status check.",
-"Add Pull Request Readiness as a required status check if you want the additional PR gate.",
-"Review workflow and dependency-action versions periodically."
-]}
-{@body const [checked, setChecked] = DIL.useState([])}
-CI setup checklist
-{checked.length}/{checks.length} complete
-<box background="surface-inverted" radius="full" height="5px" width={${checked.length / checks.length * 100}%} />
-{#each checks as item, i}
-<checkbox key={item} checked={checked.includes(i)} onChange={value => setChecked(old => value ? […old, i] : old.filter(n => n !== i))}>{item}
-{/each}
-Compatibility and implementation notes
-
-* Node.js: This workflow uses Node.js 22. If your package.json requires a different version, update the workflow accordingly.
-* npm installation: npm ci deliberately fails if the lockfile and package.json are inconsistent.
-* JavaScript syntax: Checks tracked .js, .mjs, and .cjs files without executing application code.
-* JSON validation: Recursively validates JSON files while skipping common generated directories.
-* Optional scripts: Missing lint, test, and build scripts produce notices or warnings rather than causing an immediate failure. For stronger enforcement, add these scripts and make them mandatory.
-* Pull request gate: The readiness job runs only on pull requests and only after the quality job succeeds.
-* Security: The workflow uses read-only repository permissions and disables persisted checkout credentials.
-* Scope: This is a CI quality workflow, not a complete security audit. It does not replace dependency review, secret scanning, code scanning, accessibility testing, or integration tests.
-
-Final recommendation: Keep this as .github/workflows/ci.yml alongside .github/workflows/dependency-review.yml. Configure branch protection to require the relevant CI checks; merely defining the jobs does not enforce merge restrictions.
+      - name: Write readiness summary
+        shell: bash
+        run: |
+          {
+            echo "## MedOrbits Pull Request Readiness"
+            echo
+            echo "All prerequisite quality checks passed."
+            echo
+            echo "This check confirms CI completion; it does not approve or merge the pull request."
+          } >> "$GITHUB_STEP_SUMMARY"

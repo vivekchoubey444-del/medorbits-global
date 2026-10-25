@@ -1,13 +1,12 @@
-File: .github/dependabot.yml
 
 # ==============================================================================
 # MedOrbits -- Dependabot Configuration
 #
 # Purpose:
-# Automate dependency version updates for npm, GitHub Actions, and Docker.
+# Automate dependency updates for npm, GitHub Actions, and Docker.
 #
 # Policy:
-# - Group compatible minor and patch updates to reduce pull-request noise.
+# - Group compatible minor and patch updates.
 # - Keep major updates separate for focused compatibility review.
 # - Apply cooldowns to version updates; security updates are handled separately.
 # - Require CI and appropriate review before merging dependency changes.
@@ -15,66 +14,82 @@ File: .github/dependabot.yml
 # Documentation:
 # https://docs.github.com/en/code-security/dependabot
 # ==============================================================================
+
 version: 2
+
 updates:
   # ---------------------------------------------------------------------------
   # 1. NPM DEPENDENCIES
   # ---------------------------------------------------------------------------
   - package-ecosystem: npm
     directory: "/"
+
     schedule:
       interval: weekly
       day: monday
       time: "09:00"
       timezone: Asia/Kolkata
+
     open-pull-requests-limit: 10
     versioning-strategy: increase
+
     labels:
       - dependencies
       - npm
       - automated-update
+
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
       include: scope
-    # Cooldown affects version updates, not security updates.
+
     cooldown:
       default-days: 7
       semver-major-days: 14
       semver-minor-days: 7
       semver-patch-days: 3
+
     groups:
       production-minor-patch:
         dependency-type: production
         update-types:
           - minor
           - patch
+
       development-minor-patch:
         dependency-type: development
         update-types:
           - minor
           - patch
+
     # Major updates remain separate for focused compatibility testing.
+
   # ---------------------------------------------------------------------------
   # 2. GITHUB ACTIONS
   # ---------------------------------------------------------------------------
   - package-ecosystem: github-actions
     directory: "/"
+
     schedule:
       interval: weekly
       day: monday
       time: "09:30"
       timezone: Asia/Kolkata
+
     open-pull-requests-limit: 5
+
     labels:
       - dependencies
       - github-actions
       - ci
+
     commit-message:
       prefix: "ci"
       include: scope
+
     cooldown:
       default-days: 7
+
     groups:
       github-actions-minor-patch:
         patterns:
@@ -82,29 +97,37 @@ updates:
         update-types:
           - minor
           - patch
-    # Major action upgrades remain separate for compatibility and security
-    # review. Review permissions, action inputs, and breaking changes.
+
+    # Review major action updates separately, including permissions,
+    # input changes, runtime requirements, and breaking changes.
+
   # ---------------------------------------------------------------------------
   # 3. DOCKER BASE IMAGES
   # ---------------------------------------------------------------------------
-  # Keep this entry only if a Dockerfile exists at the repository root.
-  # For Dockerfiles in subdirectories, configure the corresponding directory.
+  # Keep this entry if a Dockerfile exists at the repository root.
+  # Add separate entries for Dockerfiles maintained in subdirectories.
   - package-ecosystem: docker
     directory: "/"
+
     schedule:
       interval: weekly
       day: monday
       time: "10:00"
       timezone: Asia/Kolkata
+
     open-pull-requests-limit: 5
+
     labels:
       - dependencies
       - docker
       - infrastructure
+
     commit-message:
       prefix: "docker"
       include: scope
+
     cooldown:
       default-days: 7
-    # Review base-image changes for security updates, compatibility, image
-    # provenance, and deployment impact before merging.
+
+    # Review base-image changes for security, compatibility, provenance,
+    # and deployment impact before merging.

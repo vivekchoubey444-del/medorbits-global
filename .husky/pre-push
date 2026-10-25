@@ -20,10 +20,6 @@
 # Combined mode:
 #   MEDORBITS_PREPUSH_FULL=1 MEDORBITS_PREPUSH_JSON=1 git push
 #
-# Exit codes:
-#   0 = All applicable checks passed.
-#   1 = A required check failed or validation setup was invalid.
-#
 # Requirements:
 #   - Git repository
 #   - Node.js >= 20
@@ -31,8 +27,8 @@
 #   - Root package.json
 #
 # Important:
-#   This hook validates the current working tree. It does not independently
-#   prove that every pushed commit has been tested or that CI will pass.
+#   This hook checks the current working tree, not each pushed commit in
+#   isolation. CI must independently validate pushed commits.
 # ==============================================================================
 
 set -eu
@@ -48,7 +44,7 @@ strict_mode=${MEDORBITS_PREPUSH_FULL:-0}
 json_mode=${MEDORBITS_PREPUSH_JSON:-0}
 
 # ------------------------------------------------------------------------------
-# 1. Output helpers
+# Output helpers
 # ------------------------------------------------------------------------------
 
 info() {
@@ -80,6 +76,7 @@ MedOrbits Pre-push Validation
 
 Usage:
   $PROGRAM_NAME
+  $PROGRAM_NAME --help
 
 Environment:
   MEDORBITS_PREPUSH_FULL=0|1
@@ -90,17 +87,14 @@ Environment:
 
 Examples:
   git push
-
   MEDORBITS_PREPUSH_FULL=1 git push
-
   MEDORBITS_PREPUSH_JSON=1 git push
-
   MEDORBITS_PREPUSH_FULL=1 MEDORBITS_PREPUSH_JSON=1 git push
 EOF
 }
 
 # ------------------------------------------------------------------------------
-# 2. Validate arguments
+# 1. Validate arguments
 # ------------------------------------------------------------------------------
 
 if [ "$#" -gt 0 ]; then
@@ -116,20 +110,20 @@ if [ "$#" -gt 0 ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Validate feature flags
+# 2. Validate feature flags
 # ------------------------------------------------------------------------------
 
 case "$strict_mode" in
     0|1) ;;
     *)
-        die "MEDORBITS_PREPUSH_FULL must be 0 or 1."
+        die "MEDORBITS_PREPUSH_FULL must be 0 or 1." 2
         ;;
 esac
 
 case "$json_mode" in
     0|1) ;;
     *)
-        die "MEDORBITS_PREPUSH_JSON must be 0 or 1."
+        die "MEDORBITS_PREPUSH_JSON must be 0 or 1." 2
         ;;
 esac
 
@@ -139,7 +133,7 @@ info "Strict mode: $strict_mode"
 info "JSON validation: $json_mode"
 
 # ------------------------------------------------------------------------------
-# 4. Locate repository root
+# 3. Locate repository root
 # ------------------------------------------------------------------------------
 
 if ! command -v git >/dev/null 2>&1; then
@@ -157,33 +151,30 @@ fi
 info "Repository root: $repo_root"
 
 # ------------------------------------------------------------------------------
-# 5. Verify project files and required tools
+# 4. Verify required files and tools
 # ------------------------------------------------------------------------------
 
-if [ ! -f package.json ]; then
-    die "package.json was not found at the repository root."
-fi
-
-if [ ! -r package.json ]; then
-    die "package.json is not readable."
+if [ ! -f package.json ] || [ ! -r package.json ]; then
+    die "A readable package.json is required at the repository root."
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-    die "Node.js is required but was not found in PATH."
+    die "Node.js was not found in PATH."
 fi
 
 if ! command -v npm >/dev/null 2>&1; then
-    die "npm is required but was not found in PATH."
+    die "npm was not found in PATH."
 fi
 
 # ------------------------------------------------------------------------------
-# 6. Validate the Node.js runtime
+# 5. Validate runtime
 # ------------------------------------------------------------------------------
 
 section "Checking runtime"
 
-node_version=$(node -p 'process.versions.node' 2>/dev/null) ||
+if ! node_version=$(node -p 'process.versions.node' 2>/dev/null); then
     die "Unable to determine the Node.js version."
+fi
 
 node_major=${node_version%%.*}
 
@@ -197,14 +188,15 @@ if [ "$node_major" -lt 20 ]; then
     die "Node.js >= 20 is required. Current version: $node_version"
 fi
 
-npm_version=$(npm --version 2>/dev/null) ||
+if ! npm_version=$(npm --version 2>/dev/null); then
     die "Unable to determine the npm version."
+fi
 
 info "PASS: Node.js $node_version"
 info "PASS: npm $npm_version"
 
 # ------------------------------------------------------------------------------
-# 7. Validate package.json
+# 6. Validate package.json
 # ------------------------------------------------------------------------------
 
 section "Validating project configuration"
@@ -231,31 +223,22 @@ if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg)) {
     fail("package.json must contain a JSON object.");
 }
 
-if (
-    pkg.scripts !== undefined &&
-    (
-        pkg.scripts === null ||
-        typeof pkg.scripts !== "object" ||
-        Array.isArray(pkg.scripts)
-    )
-) {
-    fail("The scripts field must be an object when present.");
-}
-
-if (
-    pkg.engines !== undefined &&
-    (
-        pkg.engines === null ||
-        typeof pkg.engines !== "object" ||
-        Array.isArray(pkg.engines)
-    )
-) {
-    fail("The engines field must be an object when present.");
+for (const key of ["scripts", "engines"]) {
+    if (
+        pkg[key] !== undefined &&
+        (
+            pkg[key] === null ||
+            typeof pkg[key] !== "object" ||
+            Array.isArray(pkg[key])
+        )
+    ) {
+        fail(`The ${key} field must be an object when present.`);
+    }
 }
 
 if (
     pkg.engines &&
-    pkg.engines.node &&
+    pkg.engines.node !== undefined &&
     typeof pkg.engines.node !== "string"
 ) {
     fail("engines.node must be a string when specified.");
@@ -278,7 +261,7 @@ console.log("PASS: package.json is valid.");
 fi
 
 # ------------------------------------------------------------------------------
-# 8. Detect npm scripts
+# 7. Detect npm scripts
 #
 # Return codes:
 #   0 = Script exists and is non-empty.
@@ -321,24 +304,22 @@ try {
             : 1
     );
 } catch (error) {
-    console.error(
-        `ERROR: Cannot inspect package.json: ${error.message}`
-    );
+    console.error(`ERROR: Cannot inspect package.json: ${error.message}`);
     process.exit(2);
 }
 ' "$1"
 }
 
 # ------------------------------------------------------------------------------
-# 9. Run a configured npm script
+# 8. Run a configured npm script
 #
 # Arguments:
 #   $1 = Human-readable check name
 #   $2 = npm script name
-#   $3 = 1 if mandatory, otherwise 0
+#   $3 = 1 if mandatory; otherwise 0
 #
-# Missing optional scripts are reported as skipped.
 # Missing mandatory scripts block the push.
+# Missing optional scripts are reported as skipped.
 # Any executed script failure blocks the push.
 # ------------------------------------------------------------------------------
 
@@ -373,14 +354,12 @@ run_check() {
         if [ "$required" -eq 1 ]; then
             checks_required=$((checks_required + 1))
             checks_failed=$((checks_failed + 1))
-
             error "Required npm script '$script_name' is missing."
-            error "Add a real validation script to package.json."
+            error "Add a valid validation script to package.json."
             exit 1
         fi
 
         checks_skipped=$((checks_skipped + 1))
-
         warn "Skipping $check_name: '$script_name' is not configured."
         return 0
     fi
@@ -392,21 +371,19 @@ run_check() {
             checks_required=$((checks_required + 1))
         fi
 
-        printf '\n%s\n' "PASS: $check_name"
+        info "PASS: $check_name"
     else
         script_status=$?
 
         checks_failed=$((checks_failed + 1))
-
         error "$check_name failed with exit status $script_status."
         error "Push blocked because validation did not pass."
-
         exit 1
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 10. Standard quality checks
+# 9. Standard quality checks
 # ------------------------------------------------------------------------------
 
 section "Standard quality checks"
@@ -414,10 +391,8 @@ section "Standard quality checks"
 run_check "ESLint" "lint" 0
 
 # ------------------------------------------------------------------------------
-# 11. Optional JSON validation
-#
-# When enabled, validate:json is mandatory.
-# -----------------------------------------------------------------------------
+# 10. Optional JSON validation
+# ------------------------------------------------------------------------------
 
 section "JSON validation"
 
@@ -426,13 +401,12 @@ if [ "$json_mode" -eq 1 ]; then
     run_check "JSON validation" "validate:json" 1
 else
     checks_skipped=$((checks_skipped + 1))
-
     info "JSON validation is disabled."
     info "Enable it with MEDORBITS_PREPUSH_JSON=1."
 fi
 
 # ------------------------------------------------------------------------------
-# 12. Strict validation
+# 11. Strict validation
 # ------------------------------------------------------------------------------
 
 section "Strict validation"
@@ -440,22 +414,19 @@ section "Strict validation"
 if [ "$strict_mode" -eq 1 ]; then
     info "Strict validation mode is enabled."
 
-    # Required: automated tests.
     run_check "Automated tests" "test" 1
-
-    # Optional unless repository policy explicitly requires them.
     run_check "Formatting validation" "format:check" 0
     run_check "Production build" "build" 0
 else
     checks_skipped=$((checks_skipped + 3))
 
     info "Strict validation mode is disabled."
-    info "Automated tests, formatting validation and build were not run."
+    info "Tests, formatting validation and build were not run."
     info "Enable them with MEDORBITS_PREPUSH_FULL=1."
 fi
 
 # ------------------------------------------------------------------------------
-# 13. Final report
+# 12. Final report
 # ------------------------------------------------------------------------------
 
 section "Validation summary"
@@ -469,8 +440,7 @@ info "Strict mode:     $strict_mode"
 info "JSON mode:       $json_mode"
 
 if [ "$checks_skipped" -gt 0 ]; then
-    warn "One or more checks were skipped or disabled."
-    info "Review the output above before relying on this result."
+    warn "Some checks were skipped or disabled. Review the output above."
 fi
 
 printf '\n%s\n\n' "MedOrbits: Pre-push validation completed successfully."

@@ -1,565 +1,398 @@
-Updated the README to include repository_scaffolder.py, correct the command-line flags to use standard — syntax, and document the recommended workflow for creating, connecting, and validating repository files safely.
 
-MedOrbits Repository Tools
+# MedOrbits Python Tools
 
-Directory: python/tools/
+**Directory:** `python/tools/`  
+**Project:** MedOrbits — Education, Admissions, Careers & Recruitment  
+**Runtime:** Python 3.11+ recommended  
+**Purpose:** Reusable Python utilities for data processing, validation, automation, reporting, and backend support.
 
-A collection of Python utilities for auditing repository integrity, analyzing architecture, mapping dependencies, accessing JSON datasets, and scaffolding missing project files across the MedOrbits codebase.
+—
 
-These tools help identify broken references, inconsistent module relationships, invalid JSON datasets, missing Python imports, duplicate data sources, and potential architectural issues before deployment. The scaffolding utility also creates designated HTML, CSS, JavaScript, and JSON files and integrates explicitly declared frontend references.
+## 1. Overview
 
-1. Directory Structure
+The `python/tools/` directory contains reusable Python utilities that support MedOrbits operational and data-processing workflows.
 
+Potential use cases include:
+
+- CSV, JSON, and spreadsheet processing.
+- Education and course-catalog data validation.
+- College and university data normalization.
+- Application-data quality checks.
+- Report and document generation.
+- Data-import preparation.
+- API integration utilities.
+- Scheduled maintenance and administrative tasks.
+- Test and deployment support.
+
+Python tools should be modular, testable, safe to execute, and independent of the website’s presentation layer.
+
+**Important:** These tools are separate from the Next.js API runtime unless an explicit integration is implemented. A Python script does not automatically become an HTTP endpoint simply because it exists in the repository.
+
+## 2. Recommended Directory Structure
+
+```text
 python/
+├── README.md
+│
 └── tools/
     ├── README.md
-    ├── repository_integrity.py
-    ├── structure_adapter.py
-    ├── dependency_binder.py
-    ├── data_source_manager.py
-    └── repository_scaffolder.py
-
-Generated reports are stored in the repository’s reports/ directory by default, where supported by each tool.
-
-reports/
-├── repository-integrity.json
-├── repository-integrity.txt
-├── structure-adaptation.json
-├── adaptation-plan.json
-├── dependency-map.json
-├── dependency-map.mmd
-├── data-catalog.json
-└── scaffold-report.json
-
-Reports are generated only when the relevant tools run. Some report paths are configurable.
-
-2. Available Tools
-
-2.1 repository_integrity.py
-
-Audits repository files and references.
-
-Responsibilities
-
-* Detect Python syntax errors.
-* Validate JSON syntax.
-* Identify broken local HTML, CSS, and JavaScript references.
-* Check potential Python import problems.
-* Identify missing documentation and expected integration modules.
-* Optionally create missing Python package markers.
-
-Run
-
-python python/tools/repository_integrity.py
-
-Create missing package markers:
-
-python python/tools/repository_integrity.py —create-init
-
-Treat warnings as a failed audit:
-
-python python/tools/repository_integrity.py —fail-on-warning
-
-Outputs
-
-* reports/repository-integrity.json
-* reports/repository-integrity.txt
-
-2.2 structure_adapter.py
-
-Compares related files and reports potential architectural inconsistencies.
-
-Responsibilities
-
-* Profile Python imports, classes, and functions.
-* Extract likely API paths and HTTP route declarations.
-* Compare reference and target files.
-* Inspect JSON top-level types and keys.
-* Group related files by directory and filename.
-* Generate a reviewable adaptation plan.
-
-Run
-
-python python/tools/structure_adapter.py
-
-Compare two files:
-
-python python/tools/structure_adapter.py \
-  —reference python/integrations/base.py \
-  —target python/integrations/registry.py
-
-Generate an adaptation plan:
-
-python python/tools/structure_adapter.py \
-  —reference python/integrations/base.py \
-  —target python/integrations/registry.py \
-  —apply-safe
-
-Outputs
-
-* reports/structure-adaptation.json
-* reports/adaptation-plan.json when —apply-safe is used.
-
-Important: —apply-safe creates a reviewable plan. It does not automatically rewrite application source code.
-
-2.3 dependency_binder.py
-
-Maps detected relationships between project files.
-
-Responsibilities
-
-* Analyze Python import relationships.
-* Identify potential unresolved local imports.
-* Detect potential circular Python imports.
-* Inspect frontend asset references.
-* Validate JSON files.
-* Identify Python modules with no detected incoming dependencies.
-* Generate a Mermaid dependency diagram.
-* Optionally create missing Python package markers.
-
-Run
-
-python python/tools/dependency_binder.py
-
-Generate a JSON report only:
-
-python python/tools/dependency_binder.py —format json
-
-Generate a Mermaid diagram only:
-
-python python/tools/dependency_binder.py —format mermaid
-
-Create missing package markers:
-
-python python/tools/dependency_binder.py —create-init
-
-Outputs
-
-* reports/dependency-map.json
-* reports/dependency-map.mmd
-
-A file with no detected incoming dependency is not necessarily unused. It may be an application entry point, scheduled task, dynamically loaded module, or externally invoked script.
-
-2.4 data_source_manager.py
-
-Provides centralized discovery and access to local JSON datasets.
-
-Responsibilities
-
-* Discover JSON files in assets/data/ and other configured data directories.
-* Load dictionaries, lists, and other valid JSON values.
-* Track dataset paths, modification times, file sizes, and SHA-256 hashes.
-* Detect malformed JSON and ambiguous duplicate dataset names.
-* Support explicit dataset aliases.
-* Validate required datasets and expected top-level data types.
-* Generate a catalog of available datasets.
-* Cache loaded datasets and refresh the catalog when requested.
-* Read data without modifying the original JSON files.
-
-Run
-
-python python/tools/data_source_manager.py
-
-List discovered datasets:
-
-python python/tools/data_source_manager.py —list
-
-Validate JSON datasets:
-
-python python/tools/data_source_manager.py —validate
-
-Export the dataset catalog:
-
-python python/tools/data_source_manager.py —catalog
-
-Specify a custom repository root:
-
-python python/tools/data_source_manager.py —root .
-
-Output
-
-* reports/data-catalog.json
-
-Default search locations include:
-
-* assets/data/
-* assets/
-* data/
-* datasets/
-* python/data/
-* config/data/
-
-Additional data directories can be configured with MEDORBITS_DATA_DIRS, using the platform-specific path separator.
-
-Example: Access a dataset from another Python module
-
-from python.tools.data_source_manager import get_manager
-data = get_manager()
-colleges = data.load(“colleges”)
-courses = data.load(“courses”)
-jobs = data.load(“jobs”)
-faqs = data.load(“faqs”)
-
-If duplicate dataset names exist, specify the intended source:
-
-colleges = data.load(
-    “colleges”,
-    source=“assets/data/medical/colleges.json”,
-)
-
-The selected file must exist and contain valid JSON.
-
-Important: The manager provides a Python interface to local JSON data. Frontend pages, APIs, databases, and external services must explicitly integrate with it or use appropriate adapters. It does not automatically connect every source.
-
-2.5 repository_scaffolder.py
-
-Creates missing project files in designated locations and integrates explicitly declared frontend dependencies.
-
-Responsibilities
-
-* Create missing HTML, CSS, JavaScript, and JSON files.
-* Create parent directories when required.
-* Preserve the existing directory structure.
-* Generate starter templates for supported file types.
-* Use manifest-defined content when custom templates are required.
-* Add declared stylesheet and JavaScript references to HTML pages.
-* Add declared navigation links to HTML pages.
-* Avoid replacing existing files by default.
-* Back up existing files before explicitly permitted overwrites.
-* Validate repository JSON and Python syntax.
-* Detect many missing local HTML, CSS, and JavaScript references.
-* Produce a machine-readable report of created, modified, skipped, and problematic files.
-
-Important limitations
-
-* It creates files declared in a manifest; it does not infer every missing feature in the whole repository.
-* It does not automatically invent API contracts, database schemas, or authentication behavior.
-* It cannot guarantee runtime correctness merely because files and references exist.
-* Existing application files should not be replaced without reviewing the proposed changes.
-
-Create a scaffold manifest
-
-Create scaffold.json in the repository root:
-
-{
-  “files”: [
-    {
-      “path”: “pages/example.html”,
-      “type”: “html”,
-      “title”: “Example Page”,
-      “description”: “A new MedOrbits page.”,
-      “css”: [
-        “assets/css/example.css”
-      ],
-      “js”: [
-        “assets/js/example.js”
-      ],
-      “navigation”: [
-        {
-          “label”: “Example”,
-          “href”: “/pages/example.html”
-        }
-      ]
-    },
-    {
-      “path”: “assets/css/example.css”,
-      “type”: “css”
-    },
-    {
-      “path”: “assets/js/example.js”,
-      “type”: “js”
-    },
-    {
-      “path”: “assets/data/example.json”,
-      “type”: “json”
-    }
-  ]
-}
-
-Every file path should match the actual project architecture. Replace example paths with the intended destinations.
-
-Preview changes
-
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json
-
-Without —apply, the tool runs in dry-run mode and does not create or modify project files.
-
-Create missing files and integrate declared references
-
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json \
-  —apply
-
-Generate a report
-
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json \
-  —apply \
-  —report reports/scaffold-report.json
-
-Explicitly allow replacement of existing manifest files
-
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json \
-  —apply \
-  —overwrite \
-  —report reports/scaffold-report.json
-
-Existing files replaced through —overwrite are backed up under .scaffold_backups/.
-
-Do not use —overwrite indiscriminately on production pages. Review the manifest and back up important work before applying changes.
-
-Create files without integrating HTML references
-
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json \
-  —apply \
-  —no-integrate
-
-Output
-
-* Optional reports/scaffold-report.json
-
-The report records the execution mode, files created or modified, skipped files, backups, and detected issues.
-
-3. Requirements
-
-* Python 3.10 or later.
-* Access to the MedOrbits repository.
-* Read permission for project files.
-* Write permission for generated reports and any directories being modified.
-* No third-party Python packages required by these five tools.
-
-Check the installed Python version:
-
+    ├── __init__.py
+    ├── common.py
+    ├── validate_json.py
+    ├── validate_catalog.py
+    ├── normalize_data.py
+    ├── import_data.py
+    ├── export_report.py
+    └── tests/
+        ├── __init__.py
+        ├── test_common.py
+        ├── test_validate_json.py
+        └── test_normalize_data.py
+```
+
+This is a recommended structure. Create only the modules needed by actual workflows and document each tool’s inputs, outputs, and side effects.
+
+### Module responsibilities
+
+| Module | Intended responsibility |
+|—|—|
+| `common.py` | Shared logging, file handling, and validation helpers |
+| `validate_json.py` | Validate JSON syntax and structure |
+| `validate_catalog.py` | Check course or institution catalog records |
+| `normalize_data.py` | Normalize approved input data |
+| `import_data.py` | Prepare and validate data imports |
+| `export_report.py` | Generate reports from authorized datasets |
+| `tests/` | Automated unit and regression tests |
+
+## 3. Runtime and Dependencies
+
+Use a supported Python version and pin dependencies where reproducible execution is required.
+
+Check the installed runtime:
+
+```bash
 python —version
+```
 
-Alternatively:
+Or:
 
+```bash
 python3 —version
+```
 
-Run all commands from the repository root unless an explicit —root is supplied.
+For local development, create a virtual environment from the repository root:
 
-4. Recommended Complete Audit and Repair Workflow
+```bash
+python3 -m venv .venv
+```
 
-Run the following steps in order.
+Activate it on Linux or macOS:
 
-Step 1 — Audit repository integrity
+```bash
+source .venv/bin/activate
+```
 
-python python/tools/repository_integrity.py
+Activate it in Windows PowerShell:
 
-Review syntax errors, invalid JSON, missing references, and potential import problems.
+```powershell
+.venv\Scripts\Activate.ps1
+```
 
-Step 2 — Map dependencies
+Install dependencies from the project’s declared dependency file, if present:
 
-python python/tools/dependency_binder.py
+```bash
+python -m pip install -r requirements.txt
+```
 
-Review unresolved imports, possible circular dependencies, frontend references, and unreferenced modules.
+Do not create or install a dependency merely because a hypothetical tool might need it. Prefer the Python standard library for simple tasks.
 
-Step 3 — Validate and catalog datasets
+## 4. Coding Standards
 
-python python/tools/data_source_manager.py —validate
-python python/tools/data_source_manager.py —catalog
+Python tools should follow these standards:
 
-Review malformed datasets, duplicate names, source locations, and available data contracts.
+1. Use clear module and function names.
+2. Add type hints to public functions where practical.
+3. Document inputs, outputs, and side effects.
+4. Use `pathlib.Path` for filesystem paths.
+5. Use explicit encodings, normally UTF-8, for text files.
+6. Validate external input before processing.
+7. Avoid hard-coded credentials and production paths.
+8. Use structured logging instead of scattered debugging prints.
+9. Handle expected exceptions without hiding unexpected failures.
+10. Return meaningful exit codes for command-line execution.
+11. Keep business rules separate from command-line argument parsing.
+12. Add unit tests for reusable functions and data transformations.
 
-Step 4 — Compare architectural conventions
+### Example function style
 
-python python/tools/structure_adapter.py \
-  —reference python/integrations/base.py \
-  —target python/integrations/registry.py
+```python
+from pathlib import Path
+from typing import Any
+import json
 
-Replace the sample reference and target paths with existing modules that are appropriate for the change being reviewed.
 
-Step 5 — Preview required file creation
+def load_json_file(file_path: Path) -> Any:
+    “””Load and parse a UTF-8 JSON file.
 
-Prepare a manifest describing the missing files and their required connections.
+    Args:
+        file_path: Path to the JSON file.
 
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json
+    Returns:
+        The parsed JSON value.
 
-Review the proposed changes before applying them.
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        ValueError: If the file contains invalid JSON.
+        OSError: If the file cannot be read.
+    “””
+    try:
+        with file_path.open(“r”, encoding=“utf-8”) as file:
+            return json.load(file)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f”Invalid JSON in {file_path.name}: “
+            f”line {exc.lineno}, column {exc.colno}”
+        ) from exc
+```
 
-Step 6 — Create and connect the approved files
+Avoid including sensitive file contents or confidential user data in exception messages.
 
-python python/tools/repository_scaffolder.py \
-  —root . \
-  —manifest scaffold.json \
-  —apply \
-  —report reports/scaffold-report.json
+## 5. File and Data Handling
 
-Inspect the report and confirm that each file was created in the intended directory.
+MedOrbits may process JSON catalogs, college data, application records, job listings, and other structured information.
 
-Step 7 — Run the audits again
+### Input validation
 
-python python/tools/repository_integrity.py
-python python/tools/dependency_binder.py
-python python/tools/data_source_manager.py —validate
+- Verify file existence and expected format.
+- Enforce file-size limits for untrusted inputs.
+- Validate required fields and data types.
+- Reject malformed or unexpected structures.
+- Check identifiers for duplicates.
+- Validate URLs before using them.
+- Normalize whitespace and formatting consistently.
+- Preserve source records when normalization could lose information.
 
-Resolve confirmed issues. A static reference check does not prove that every page loads correctly or that every API request succeeds.
+### Safe writes
 
-Step 8 — Run project tests
+For important generated files, prefer writing to a temporary file and replacing the destination only after successful validation.
 
-Run the repository’s available unit and integration tests, including the existing test-suite runner where applicable.
+Do not overwrite production datasets automatically unless the operation has an explicit, documented approval process.
 
-For example, if the test suite is discoverable through unittest:
+### Data integrity
 
-python -m unittest discover -s python/tests -p “test_*.py” -v
+Before importing data into a database:
 
-Use the project’s actual test configuration if it differs from this example.
+1. Validate the complete input.
+2. Detect duplicate or conflicting identifiers.
+3. Check required references.
+4. Produce a summary of proposed changes.
+5. Use database transactions for related writes.
+6. Record import outcomes without exposing unnecessary personal information.
+7. Support rollback or recovery where practical.
 
-Step 9 — Verify runtime behavior
+## 6. Security and Privacy
 
-Test the relevant pages and workflows in the intended environment:
+Python tools must follow the same security standards as the rest of MedOrbits.
 
-* Open each new HTML page.
-* Confirm CSS and JavaScript files load.
-* Check browser console errors.
-* Verify JSON paths and expected data structures.
-* Exercise relevant API routes and authentication flows.
-* Check database connections where applicable.
-* Confirm deployment configuration and environment variables.
+### Secrets
 
-5. Repository Safety Rules
+- Read credentials from secure environment variables or a secret manager.
+- Never commit passwords, API keys, access tokens, or private connection strings.
+- Never print secrets in logs.
+- Do not include production secrets in test fixtures.
 
-* Existing source datasets must not be overwritten by audit tools.
-* Missing files must be verified before creation or renaming.
-* Imports should be added only when the dependency is genuinely required.
-* API endpoints must come from actual application routes or documented contracts.
-* Duplicate dataset names must be resolved explicitly rather than silently selecting one.
-* API keys, passwords, tokens, and other secrets must not be committed.
-* Generated reports should be reviewed before being committed.
-* Back up important changes or use version control before applying repairs.
-* Do not assume an unreferenced file is unused.
-* Do not assume that successful static checks prove runtime correctness.
-* Use scaffolding manifests to declare intended file locations and connections.
-* Review existing files before allowing any overwrite.
-* Do not assume that a generated starter template is a complete production implementation.
-* Treat generated dependency maps and adaptation plans as evidence for review, not as definitive architectural truth.
+### Filesystem safety
 
-6. What These Tools Do Not Guarantee
+- Resolve paths against an explicitly configured root where necessary.
+- Do not trust user-supplied paths.
+- Prevent path traversal when processing uploaded or externally supplied filenames.
+- Avoid following untrusted symbolic links.
+- Do not execute files supplied by users.
+- Do not use `eval()` or `exec()` to process data.
 
-Static analysis and local data inspection cannot fully determine:
+### Personal information
 
-* Whether an external API is reachable or correctly authenticated.
-* Whether a database schema matches application queries.
-* Whether an endpoint returns the expected response.
-* Whether runtime-loaded plugins are registered correctly.
-* Whether dynamically generated imports resolve.
-* Whether frontend and backend request/response contracts match.
-* Whether a JSON dataset has the correct business meaning or current information.
-* Whether every frontend page consumes the intended dataset.
-* Whether generated files meet all business requirements.
-* Whether every asset path works with the production server’s routing rules.
-* Whether the application is operational in its production environment.
+Application records, phone numbers, email addresses, and identity documents require restricted access.
 
-Validate these requirements through application-specific integration tests, contract tests, database checks, browser testing, and deployment tests.
+Use synthetic data for tests. Minimize data collection, control access, and apply appropriate retention rules.
 
-7. Version Control
+### External requests
 
-Review changes before committing:
+For network requests:
 
-git status —short
-git diff —check
-git diff
+- Set connection and read timeouts.
+- Validate response status codes.
+- Limit response sizes where possible.
+- Verify TLS certificates.
+- Handle retries conservatively.
+- Avoid logging authorization headers.
+- Validate returned data before processing.
 
-Stage only the intended files:
+## 7. Command-Line Interface Standards
 
-git add python/tools/
-git commit -m “Add repository integrity and data management tools”
+Tools that are intended to be run manually or in automation should provide clear command-line arguments.
 
-If the README is the only file changed, stage it separately:
+Example:
 
-git add python/tools/README.md
+```bash
+python -m python.tools.validate_json \
+  —input data/courses.json
+```
 
-Do not commit generated reports, scaffold backups, or sensitive configuration files unless they are intentionally maintained in version control.
+The command above is an example of a desired interface. It will work only after the corresponding module and arguments have been implemented.
 
-8. Maintenance Guidelines
+Recommended conventions:
 
-When adding a new tool:
+- `—help` displays usage information.
+- Invalid arguments produce a clear error.
+- Successful execution returns exit code `0`.
+- Invalid input returns a nonzero exit code.
+- Operational failures are reported to standard error.
+- Generated output paths are explicit.
+- Destructive operations require deliberate safeguards.
 
-1. Use a descriptive snake_case.py filename.
-2. Document its purpose, supported Python version, and command-line options.
-3. Prefer the standard library for repository maintenance utilities.
-4. Use clear exit codes for success and failure.
-5. Avoid destructive operations by default.
-6. Generate actionable findings with filenames and explanations.
-7. Keep reports deterministic where possible.
-8. Add tests for path resolution, malformed inputs, duplicate datasets, and error handling.
-9. Update this README whenever a tool or CLI option changes.
-10. Verify compatibility with the project’s supported Python version.
-11. Validate generated files after scaffolding.
-12. Ensure that integration changes are idempotent where possible.
-13. Keep application-specific logic separate from generic repository maintenance.
-14. Review backup behavior and filesystem permissions before enabling overwrite operations.
+## 8. Logging and Exit Codes
 
-9. Support and Troubleshooting
+Use Python’s `logging` module for operational messages.
 
-Repository path issues
+Recommended exit-code conventions:
 
-Pass the root directory explicitly:
+| Exit code | Meaning |
+|—|—|
+| `0` | Success |
+| `1` | General processing failure |
+| `2` | Invalid command-line arguments |
+| `3` | Input validation failure |
+| `4` | External dependency or service failure |
 
-python python/tools/dependency_binder.py —root .
+These are conventions for MedOrbits tools, not mandatory Python runtime behavior.
 
-Broken local references
+Logs should include enough information to diagnose a failure without exposing personal information, credentials, or full confidential records.
 
-1. Confirm that the referenced file exists.
-2. Check capitalization and extensions.
-3. Verify whether the path is relative to the source file or repository root.
-4. Confirm that the resource is intended to be part of the project.
-5. Check whether the path is generated dynamically at runtime.
-6. Verify whether the production server uses a different public asset root.
+## 9. Testing
 
-Unresolved Python imports
+Use the standard library’s `unittest` framework unless the project already standardizes on another test framework.
 
-1. Verify the module’s actual location.
-2. Confirm the intended Python import root.
-3. Review package and namespace-package conventions.
-4. Check the deployment working directory and PYTHONPATH.
-5. Run tests in the actual supported environment.
+Run tests from the repository root:
 
-Missing or duplicate datasets
+```bash
+python -m unittest discover -s python/tools/tests -v
+```
 
-1. Run data_source_manager.py —list.
-2. Inspect reports/data-catalog.json.
-3. Check the source paths of duplicate dataset names.
-4. Use an explicit source argument where necessary.
-5. Verify expected data types and required keys against the application’s real schema.
+For a module using `pytest`, if it is installed and configured:
 
-Missing HTML, CSS, JavaScript, or JSON files
+```bash
+python -m pytest python/tools/tests -v
+```
 
-1. Confirm the intended path in the project architecture.
-2. Add the path and file type to scaffold.json.
-3. Declare stylesheet, script, and navigation connections where required.
-4. Run the scaffolder without —apply first.
-5. Review the proposed file list and warnings.
-6. Apply the manifest only after reviewing the changes.
-7. Run the integrity and dependency tools again.
-8. Test the new page and its data integrations in a browser or application environment.
+### Recommended test cases
 
-Existing files were skipped
+- Valid input.
+- Empty files.
+- Malformed JSON.
+- Missing required fields.
+- Unexpected data types.
+- Duplicate identifiers.
+- Invalid encoding.
+- Missing input files.
+- Read-only destinations.
+- Invalid output paths.
+- Large input files.
+- Permission failures.
+- Interrupted writes.
+- Duplicate import requests.
+- Unexpected external API responses.
 
-By default, existing files are preserved.
+Use temporary directories and synthetic records to prevent tests from changing real project data.
 
-Inspect the report and confirm whether the existing file should remain unchanged. If replacement is necessary, review the manifest and use —overwrite only after ensuring a backup is appropriate.
+## 10. Integration with MedOrbits
 
-Files exist but the website does not work
+Python tools may support the main application through:
 
-File creation alone does not implement business logic. Check JavaScript runtime errors, CSS paths, server routing, JSON response formats, API authentication, and backend availability. Add application-specific tests for any behavior that the generic repository tools cannot verify.
+- Pre-deployment data validation.
+- Catalog generation and maintenance.
+- Administrative reporting.
+- Batch data imports.
+- Offline data-quality checks.
+- Scheduled processing.
 
-10. Summary
+If a Python tool must be invoked by a Node.js service, define an explicit process or service boundary. Validate arguments, constrain filesystem access, set execution timeouts, and handle process failures.
 
-MedOrbits Repository Tools provide visibility into repository structure, dependencies, and local JSON datasets while supporting controlled creation and integration of missing frontend files.
+Do not execute arbitrary shell commands assembled from user input.
 
-Use integrity audits to detect issues, dependency maps to understand relationships, the data manager to locate and validate datasets, the structure adapter to review architectural consistency, and the scaffolder to create explicitly declared files and connections.
+For frequent or latency-sensitive operations, consider whether the functionality belongs in the existing Node.js backend or a dedicated Python service.
 
-Recommended principle: preview, review, apply, audit again, and test at runtime. These tools support verified repairs; they are not a substitute for application-specific testing or review of the actual architecture.
+## 11. Configuration
 
-Implementation note: This updates the documentation only. The README assumes that all five Python utilities exist at the listed paths and that their documented CLI options match their actual implementations. Verify those interfaces against the repository before treating this as the final published documentation.
+Keep non-secret defaults in code only when they are genuinely safe and stable.
+
+Use environment variables or explicit command-line arguments for deployment-specific settings such as:
+
+```dotenv
+PYTHON_ENV=development
+PYTHON_LOG_LEVEL=INFO
+PYTHON_DATA_DIRECTORY=data
+PYTHON_OUTPUT_DIRECTORY=reports
+```
+
+These names are optional conventions. Implementations must explicitly read and validate them before they have any effect.
+
+Do not assume that variables configured for Next.js or serverless functions are automatically available in every Python execution environment.
+
+## 12. Troubleshooting
+
+### `ModuleNotFoundError`
+
+Confirm the virtual environment is activated and dependencies are installed. Run commands from the repository root so Python can resolve the intended package structure.
+
+### Invalid JSON
+
+Check the reported line and column, encoding, commas, quotation marks, and required structure.
+
+### Permission denied
+
+Verify filesystem permissions and ownership. Do not solve permission problems by granting broad write permissions to the project.
+
+### Import failures
+
+Check package names, `__init__.py` files where needed, and the current working directory. Prefer consistent module execution from the repository root.
+
+### Production and local results differ
+
+Compare Python versions, dependency versions, environment variables, input data, and filesystem permissions.
+
+## 13. Development Checklist
+
+Before merging a Python tool:
+
+- [ ] Its purpose and inputs are documented.
+- [ ] Input validation is implemented.
+- [ ] File operations use safe paths.
+- [ ] Secrets are not hard-coded or logged.
+- [ ] Expected errors are handled.
+- [ ] Exit codes are meaningful.
+- [ ] Unit tests cover success and failure cases.
+- [ ] Tests use synthetic data or temporary directories.
+- [ ] Dependencies are declared.
+- [ ] Generated files are not accidentally committed.
+- [ ] The tool has been tested in the target environment.
+- [ ] Any database writes or external requests are documented.
+
+—
+
+## 14. Reference Documentation
+
+- Python documentation: https://docs.python.org/3/
+- `pathlib`: https://docs.python.org/3/library/pathlib.html
+- `json`: https://docs.python.org/3/library/json.html
+- `logging`: https://docs.python.org/3/library/logging.html
+- `unittest`: https://docs.python.org/3/library/unittest.html
+- Python virtual environments: https://docs.python.org/3/library/venv.html
+
+—
+
+**Maintainer:** MedOrbits Engineering  
+**Directory:** `python/tools/`  
+**Status:** Architecture and implementation guidance
+
+Update this document whenever tool interfaces, dependencies, data formats, or security requirements change.

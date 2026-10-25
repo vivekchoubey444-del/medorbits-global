@@ -1,48 +1,60 @@
+
 openapi: 3.1.0
+
 info:
   title: MedOrbits API
-  version: 1.0.0
-  summary: API specification for the MedOrbits platform
+  version: 1.1.0
+  summary: Education, admissions, careers, recruitment, and application management API
   description: |
-    OpenAPI specification for MedOrbits application management,
-    authentication, notifications, audit records, and supporting
-    platform services.
-    Security-sensitive operations require authentication and
-    authorization. Application ownership must be enforced by the
-    server. Administrative endpoints must use server-verified roles.
-    IMPORTANT:
-    Endpoint paths and request schemas are proposed integration
-    contracts. Reconcile them with the actual Express routers,
-    controllers, database schema, and middleware before release.
+    OpenAPI contract for the MedOrbits platform.
+
+    Covers health checks, authentication, applications, notifications,
+    and restricted audit-log access.
+
+    Security requirements:
+    - Authentication is required by default.
+    - Application ownership must be enforced server-side.
+    - Administrative operations require server-verified permissions.
+    - Client-controlled fields must never override protected fields.
+    - Document access requires ownership and authorization checks.
+    - Validation, rate limiting, and business rules must be enforced
+      by the actual API implementation.
+
+    This specification is a contract, not proof that every endpoint
+    has already been implemented. Reconcile routes, database fields,
+    authentication middleware, and response formats before release.
   contact:
     name: MedOrbits API Support
   license:
     name: Proprietary
+
 servers:
   - url: /api
     description: Same-origin API deployment
   - url: https://api.example.com/api
-    description: Example production URL; replace before deployment
+    description: Replace with the actual production API URL
+
 tags:
   - name: Health
-    description: Service health and readiness
+    description: Health and readiness checks
   - name: Authentication
-    description: Authentication and account access
+    description: Authentication and current-user access
   - name: Applications
-    description: Application lifecycle management
+    description: Application lifecycle and workflow
   - name: Notifications
-    description: User-specific in-app notifications
+    description: User-specific notifications
   - name: Audit
     description: Restricted audit-event access
+
 security:
   - bearerAuth: []
+
 paths:
   /health:
     get:
-      tags:
-        - Health
-      summary: Check API health
+      tags: [Health]
       operationId: getApiHealth
+      summary: Check API health
       security: []
       responses:
         "200":
@@ -51,21 +63,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
-              example:
-                success: true
-                status: healthy
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+
+  /ready:
+    get:
+      tags: [Health]
+      operationId: getApiReadiness
+      summary: Check API readiness
+      description: |
+        Reports whether the service is ready to handle requests.
+        The implementation should check required dependencies,
+        such as the database, without exposing credentials or
+        internal infrastructure details.
+      security: []
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
   /auth/login:
     post:
-      tags:
-        - Authentication
+      tags: [Authentication]
+      operationId: login
       summary: Authenticate a user
       description: |
-        Proposed contract. Implement the corresponding route and
-        ensure credentials are verified using the configured identity
-        provider or authentication service.
-      operationId: login
+        Proposed login contract. Credentials must be verified by
+        the configured authentication service. Apply rate limiting,
+        generic authentication errors, and appropriate token expiry.
       security: []
       requestBody:
         required: true
@@ -76,6 +106,11 @@ paths:
       responses:
         "200":
           description: Authentication successful
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
           content:
             application/json:
               schema:
@@ -86,27 +121,31 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+
   /auth/me:
     get:
-      tags:
-        - Authentication
-      summary: Get the authenticated user's profile
+      tags: [Authentication]
       operationId: getCurrentUser
+      summary: Get the authenticated user's profile
       responses:
         "200":
-          description: Current user
+          description: Current user profile
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CurrentUserResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
   /applications:
     get:
-      tags:
-        - Applications
-      summary: List applications
+      tags: [Applications]
       operationId: listApplications
+      summary: List accessible applications
+      description: |
+        Returns only applications the authenticated user is
+        authorized to view. Ordinary applicants must not receive
+        other users' applications.
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Limit"
@@ -117,10 +156,16 @@ paths:
             $ref: "#/components/schemas/ApplicationStatus"
         - name: applicationType
           in: query
-          description: Filter by application type
           schema:
             type: string
+            minLength: 1
             maxLength: 100
+        - name: search
+          in: query
+          description: Optional search term
+          schema:
+            type: string
+            maxLength: 200
       responses:
         "200":
           description: Paginated applications
@@ -134,11 +179,15 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
     post:
-      tags:
-        - Applications
-      summary: Create a draft application
+      tags: [Applications]
       operationId: createApplication
+      summary: Create a draft application
+      description: |
+        Creates an application for the authenticated applicant.
+        Applicant identity, ownership, initial status, and audit
+        fields must be assigned by the server.
       requestBody:
         required: true
         content:
@@ -158,17 +207,21 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+
   /applications/{applicationId}:
     parameters:
       - $ref: "#/components/parameters/ApplicationId"
+
     get:
-      tags:
-        - Applications
-      summary: Get an application
+      tags: [Applications]
       operationId: getApplication
+      summary: Get an application
       description: |
-        Applicants may access their own applications. Privileged
-        staff may access applications permitted by their role.
+        Applicants can access their own applications. Authorized
+        staff can access records permitted by their assigned roles.
+        The server may return 404 to conceal inaccessible resources.
       responses:
         "200":
           description: Application details
@@ -180,13 +233,14 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
     patch:
-      tags:
-        - Applications
-      summary: Update a draft application
+      tags: [Applications]
       operationId: updateDraftApplication
-      description: Only supported fields may be changed, and the
-        application must remain in draft status.
+      summary: Update a draft application
+      description: |
+        Only editable fields are accepted. The server must verify
+        ownership, draft status, and permitted field changes.
       requestBody:
         required: true
         content:
@@ -208,12 +262,15 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
     delete:
-      tags:
-        - Applications
-      summary: Delete a draft application
+      tags: [Applications]
       operationId: deleteDraftApplication
-      description: Deletes an eligible draft owned by the authenticated applicant.
+      summary: Delete a draft application
+      description: |
+        Deletes an eligible draft belonging to the authenticated
+        applicant. Enforce retention policies and related-record
+        constraints before deleting persistent data.
       responses:
         "200":
           description: Draft deleted
@@ -227,14 +284,19 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
   /applications/{applicationId}/submit:
     parameters:
       - $ref: "#/components/parameters/ApplicationId"
     post:
-      tags:
-        - Applications
-      summary: Submit an application
+      tags: [Applications]
       operationId: submitApplication
+      summary: Submit an application
+      description: |
+        Submits an eligible draft after validating required data,
+        consent requirements, document references, and applicable
+        business rules. The operation should be transaction-safe
+        and protect against unintended duplicate submissions.
       responses:
         "200":
           description: Application submitted
@@ -242,20 +304,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
   /applications/{applicationId}/withdraw:
     parameters:
       - $ref: "#/components/parameters/ApplicationId"
     post:
-      tags:
-        - Applications
-      summary: Withdraw an application
+      tags: [Applications]
       operationId: withdrawApplication
+      summary: Withdraw an application
+      description: |
+        Withdraws an application only when its current state and
+        applicable policy permit withdrawal.
       requestBody:
         required: false
         content:
@@ -280,20 +347,20 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
   /applications/{applicationId}/status:
     parameters:
       - $ref: "#/components/parameters/ApplicationId"
     patch:
-      tags:
-        - Applications
-      summary: Change application status
+      tags: [Applications]
       operationId: transitionApplicationStatus
+      summary: Change application status
       description: |
-        Restricted workflow operation. The server must enforce role
-        permissions, allowed transitions, ownership rules, and audit
-        history. This endpoint is intended for authorized workflow
-        operations; it must not let an applicant approve or reject
-        an application.
+        Restricted workflow operation. Server-side permissions,
+        allowed state transitions, and audit history are mandatory.
+        Applicants must not approve or reject applications.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -317,17 +384,18 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
   /applications/{applicationId}/history:
     parameters:
       - $ref: "#/components/parameters/ApplicationId"
     get:
-      tags:
-        - Applications
-      summary: Get application status history
+      tags: [Applications]
       operationId: getApplicationHistory
+      summary: Get application status history
+      description: History access follows application ownership and staff permissions.
       responses:
         "200":
-          description: Application status history
+          description: Application history
           content:
             application/json:
               schema:
@@ -336,12 +404,12 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
   /notifications:
     get:
-      tags:
-        - Notifications
-      summary: List the authenticated user's notifications
+      tags: [Notifications]
       operationId: listNotifications
+      summary: List the authenticated user's notifications
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Limit"
@@ -356,19 +424,21 @@ paths:
             $ref: "#/components/schemas/NotificationType"
       responses:
         "200":
-          description: Paginated notifications
+          description: Paginated user-specific notifications
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
   /notifications/unread-count:
     get:
-      tags:
-        - Notifications
-      summary: Get unread notification count
+      tags: [Notifications]
       operationId: getUnreadNotificationCount
+      summary: Get unread notification count
       responses:
         "200":
           description: Unread notification count
@@ -376,29 +446,29 @@ paths:
             application/json:
               schema:
                 type: object
-                required:
-                  - success
-                  - data
+                additionalProperties: false
+                required: [success, data]
                 properties:
                   success:
                     type: boolean
                     const: true
                   data:
                     type: object
-                    required:
-                      - unreadCount
+                    additionalProperties: false
+                    required: [unreadCount]
                     properties:
                       unreadCount:
                         type: integer
                         minimum: 0
         "401":
           $ref: "#/components/responses/Unauthorized"
+
   /notifications/read-all:
     post:
-      tags:
-        - Notifications
-      summary: Mark all notifications as read
+      tags: [Notifications]
       operationId: markAllNotificationsRead
+      summary: Mark all notifications as read
+      description: Only notifications belonging to the authenticated user are updated.
       responses:
         "200":
           description: Notifications marked as read
@@ -406,31 +476,30 @@ paths:
             application/json:
               schema:
                 type: object
-                required:
-                  - success
-                  - data
+                additionalProperties: false
+                required: [success, data]
                 properties:
                   success:
                     type: boolean
                     const: true
                   data:
                     type: object
-                    required:
-                      - updatedCount
+                    additionalProperties: false
+                    required: [updatedCount]
                     properties:
                       updatedCount:
                         type: integer
                         minimum: 0
         "401":
           $ref: "#/components/responses/Unauthorized"
+
   /notifications/{notificationId}:
     parameters:
       - $ref: "#/components/parameters/NotificationId"
     get:
-      tags:
-        - Notifications
-      summary: Get a notification
+      tags: [Notifications]
       operationId: getNotification
+      summary: Get a notification
       responses:
         "200":
           description: Notification details
@@ -442,11 +511,12 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
     delete:
-      tags:
-        - Notifications
-      summary: Delete a notification
+      tags: [Notifications]
       operationId: deleteNotification
+      summary: Delete a notification
+      description: Deletes or hides only the authenticated user's notification record.
       responses:
         "200":
           description: Notification deleted
@@ -458,14 +528,14 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
   /notifications/{notificationId}/read:
     parameters:
       - $ref: "#/components/parameters/NotificationId"
     post:
-      tags:
-        - Notifications
-      summary: Mark a notification as read
+      tags: [Notifications]
       operationId: markNotificationRead
+      summary: Mark a notification as read
       responses:
         "200":
           description: Notification marked as read
@@ -477,14 +547,14 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
   /notifications/{notificationId}/unread:
     parameters:
       - $ref: "#/components/parameters/NotificationId"
     post:
-      tags:
-        - Notifications
-      summary: Mark a notification as unread
+      tags: [Notifications]
       operationId: markNotificationUnread
+      summary: Mark a notification as unread
       responses:
         "200":
           description: Notification marked as unread
@@ -496,16 +566,17 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
   /admin/audit-logs:
     get:
-      tags:
-        - Audit
-      summary: Search audit logs
+      tags: [Audit]
       operationId: listAuditLogs
+      summary: Search audit logs
       description: |
-        Restricted endpoint. The server must authorize audit access
-        using trusted roles and permissions. Do not rely on this
-        specification alone to enforce access control.
+        Restricted administrative operation. Enforce an explicit
+        server-side permission check. Audit records should be
+        append-only where appropriate, and sensitive values must
+        be redacted from results.
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Limit"
@@ -563,15 +634,15 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: |
-        Supply a valid access token in the Authorization header.
-        Example: Authorization: Bearer <access-token>
+      description: Supply a valid access token in the Authorization header.
+
   parameters:
     Page:
       name: page
@@ -580,16 +651,19 @@ components:
       schema:
         type: integer
         minimum: 1
+        maximum: 1000000
         default: 1
+
     Limit:
       name: limit
       in: query
-      description: Maximum number of results per page
+      description: Maximum results per page
       schema:
         type: integer
         minimum: 1
         maximum: 100
         default: 20
+
     ApplicationId:
       name: applicationId
       in: path
@@ -598,13 +672,19 @@ components:
         type: string
         minLength: 1
         maxLength: 128
+        pattern: "^[A-Za-z0-9_-]+$"
+
     NotificationId:
       name: notificationId
       in: path
       required: true
+      description: Notification identifier; use the actual identifier format implemented by the database.
       schema:
         type: string
-        format: uuid
+        minLength: 1
+        maxLength: 128
+        pattern: "^[A-Za-z0-9_-]+$"
+
   responses:
     BadRequest:
       description: Invalid request or validation failure
@@ -612,44 +692,39 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
-          example:
-            success: false
-            error:
-              code: VALIDATION_ERROR
-              message: Please correct the invalid request fields.
-              details:
-                - field: body.title
-                  message: This field is required.
-                  code: VALIDATION_ERROR
+
     Unauthorized:
       description: Authentication is missing or invalid
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
-          example:
-            success: false
-            error:
-              code: UNAUTHENTICATED
-              message: Authentication is required.
+
     Forbidden:
-      description: The authenticated user is not permitted to perform the operation
+      description: The authenticated user is not permitted to perform this operation
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
     NotFound:
-      description: The resource was not found or its existence is concealed
+      description: Resource not found or access intentionally concealed
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
     Conflict:
-      description: Request conflicts with the current resource state
+      description: Operation conflicts with the current resource state
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -662,67 +737,89 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
+    PayloadTooLarge:
+      description: Request body exceeds the configured size limit
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
     ServiceUnavailable:
       description: Service or required dependency is unavailable
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+
   schemas:
     HealthResponse:
       type: object
-      required:
-        - success
-        - status
+      additionalProperties: false
+      required: [success, status]
       properties:
         success:
           type: boolean
+          const: true
         status:
           type: string
-          enum:
-            - healthy
-            - degraded
-            - unhealthy
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+
     ErrorResponse:
       type: object
-      required:
-        - success
-        - error
+      additionalProperties: false
+      required: [success, error]
       properties:
         success:
           type: boolean
           const: false
         error:
           type: object
-          required:
-            - code
-            - message
+          additionalProperties: false
+          required: [code, message]
           properties:
             code:
               type: string
+              minLength: 1
+              maxLength: 100
+              pattern: "^[A-Z][A-Z0-9_]*$"
             message:
               type: string
+              minLength: 1
+              maxLength: 1000
             details:
               type: array
+              maxItems: 200
               items:
                 $ref: "#/components/schemas/ValidationIssue"
             requestId:
               type: string
+              maxLength: 128
+        timestamp:
+          type: string
+          format: date-time
+
     ValidationIssue:
       type: object
-      required:
-        - field
-        - message
-        - code
+      additionalProperties: false
+      required: [field, message, code]
       properties:
         field:
           type: string
+          maxLength: 500
         message:
           type: string
+          maxLength: 1000
         code:
           type: string
+          maxLength: 100
+
     Pagination:
       type: object
+      additionalProperties: false
       required:
         - page
         - limit
@@ -748,12 +845,11 @@ components:
           type: boolean
         hasPreviousPage:
           type: boolean
+
     LoginRequest:
       type: object
       additionalProperties: false
-      required:
-        - email
-        - password
+      required: [email, password]
       properties:
         email:
           type: string
@@ -763,24 +859,24 @@ components:
           type: string
           minLength: 1
           maxLength: 128
+
     LoginResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           type: object
-          required:
-            - accessToken
-            - user
+          additionalProperties: false
+          required: [accessToken, user]
           properties:
             accessToken:
               type: string
-              description: Short-lived access token; never log this value.
+              minLength: 1
+              description: Short-lived access token. Never log this value.
             tokenType:
               type: string
               const: Bearer
@@ -791,32 +887,38 @@ components:
               description: Token lifetime in seconds
             user:
               $ref: "#/components/schemas/User"
+
     User:
       type: object
-      required:
-        - id
-        - role
+      additionalProperties: false
+      required: [id, role]
       properties:
         id:
           type: string
+          minLength: 1
+          maxLength: 128
         role:
           type: string
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           format: email
         name:
           type: string
+          maxLength: 200
+
     CurrentUserResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           $ref: "#/components/schemas/User"
+
     ApplicationStatus:
       type: string
       enum:
@@ -827,137 +929,236 @@ components:
         - approved
         - rejected
         - withdrawn
-    Application:
-      type: object
-      required:
-        - id
-        - applicant_id
-        - application_type
-        - status
-        - created_at
-        - updated_at
-      properties:
-        id:
-          type: string
-          maxLength: 128
-        applicant_id:
-          type: string
-          maxLength: 128
-          description: Applicant identifier; assigned by the server.
-        application_type:
-          type: string
-          maxLength: 100
-        status:
-          $ref: "#/components/schemas/ApplicationStatus"
-        title:
-          type:
-            - string
-            - "null"
-          maxLength: 200
-        description:
-          type:
-            - string
-            - "null"
-          maxLength: 5000
-        metadata:
-          type: object
-          additionalProperties: true
-        submitted_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+
     CreateApplicationRequest:
       type: object
       additionalProperties: false
-      required:
-        - applicationType
+      required: [application]
+      properties:
+        applicant:
+          type: object
+          description: |
+            Optional applicant details when permitted by the application
+            workflow. The server must derive account ownership from the
+            authenticated identity, never from this object.
+          additionalProperties: true
+        application:
+          $ref: "#/components/schemas/ApplicationSubmission"
+        education:
+          type: object
+          additionalProperties: true
+        preferences:
+          type: object
+          additionalProperties: true
+        consents:
+          type: object
+          additionalProperties: true
+        documents:
+          type: array
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/DocumentReference"
+        additionalInformation:
+          type: string
+          maxLength: 5000
+
+    ApplicationSubmission:
+      type: object
+      additionalProperties: false
+      required: [courseCategory, courseName, admissionYear]
       properties:
         applicationType:
           type: string
+          enum:
+            - admission
+            - counselling
+            - study-abroad
+            - career-guidance
+            - consultancy
+            - document-assistance
+            - other
+        courseCategory:
+          type: string
+          enum:
+            - MBBS
+            - BDS
+            - BAMS
+            - BHMS
+            - BUMS
+            - BSc
+            - BTech
+            - BBA
+            - MBA
+            - MD
+            - MS
+            - PG
+            - PARAMEDICAL
+            - NURSING
+            - PHARMACY
+            - DIPLOMA
+            - OTHER
+        courseName:
+          type: string
           minLength: 1
-          maxLength: 100
-        title:
-          type:
-            - string
-            - "null"
           maxLength: 200
-        description:
-          type:
-            - string
-            - "null"
-          maxLength: 5000
-        metadata:
+        admissionYear:
+          type: integer
+          minimum: 2020
+          maximum: 2100
+        preferredCountry:
+          type: string
+          maxLength: 100
+        preferredState:
+          type: string
+          maxLength: 100
+        preferredCollege:
+          type: string
+          maxLength: 200
+        entranceExam:
+          type: string
+          enum:
+            - NEET-UG
+            - NEET-PG
+            - CUET
+            - JEE
+            - CAT
+            - GMAT
+            - GRE
+            - IELTS
+            - TOEFL
+            - OTHER
+            - NOT-APPLICABLE
+        entranceExamScore:
+          type: number
+          minimum: 0
+        entranceExamRank:
+          type: integer
+          minimum: 1
+        budget:
           type: object
-          maxProperties: 100
-          additionalProperties: true
+          additionalProperties: false
+          properties:
+            minimum:
+              type: number
+              minimum: 0
+            maximum:
+              type: number
+              minimum: 0
+            currency:
+              type: string
+              pattern: "^[A-Z]{3}$"
+        notes:
+          type: string
+          maxLength: 3000
+
     UpdateApplicationRequest:
       type: object
-      minProperties: 1
       additionalProperties: false
+      minProperties: 1
       properties:
-        applicationType:
+        application:
+          $ref: "#/components/schemas/ApplicationSubmission"
+        education:
+          type: object
+          additionalProperties: true
+        preferences:
+          type: object
+          additionalProperties: true
+        documents:
+          type: array
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/DocumentReference"
+        additionalInformation:
+          type: string
+          maxLength: 5000
+
+    DocumentReference:
+      type: object
+      additionalProperties: false
+      required: [documentType, documentId]
+      properties:
+        documentType:
+          type: string
+          enum:
+            - PHOTO
+            - IDENTITY_PROOF
+            - CLASS_10_MARKSHEET
+            - CLASS_12_MARKSHEET
+            - GRADUATION_CERTIFICATE
+            - ENTRANCE_SCORECARD
+            - TRANSFER_CERTIFICATE
+            - MIGRATION_CERTIFICATE
+            - CATEGORY_CERTIFICATE
+            - INCOME_CERTIFICATE
+            - PASSPORT
+            - OTHER
+        documentId:
           type: string
           minLength: 1
-          maxLength: 100
-        title:
-          type:
-            - string
-            - "null"
-          maxLength: 200
-        description:
-          type:
-            - string
-            - "null"
-          maxLength: 5000
-        metadata:
-          type: object
-          maxProperties: 100
-          additionalProperties: true
+          maxLength: 128
+          pattern: "^[A-Za-z0-9_-]+$"
+
     StatusTransitionRequest:
       type: object
       additionalProperties: false
-      required:
-        - status
+      required: [status]
       properties:
         status:
           $ref: "#/components/schemas/ApplicationStatus"
         note:
-          type:
-            - string
-            - "null"
+          type: string
           maxLength: 1000
+
+    Application:
+      type: object
+      additionalProperties: false
+      required: [id, application, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          maxLength: 128
+        applicantId:
+          type: string
+          maxLength: 128
+          description: Server-assigned applicant identifier
+        application:
+          $ref: "#/components/schemas/ApplicationSubmission"
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: [string, "null"]
+          format: date-time
+
     ApplicationResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           $ref: "#/components/schemas/Application"
+
     ApplicationListResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           type: object
-          required:
-            - items
-            - pagination
+          additionalProperties: false
+          required: [items, pagination]
           properties:
             items:
               type: array
@@ -965,40 +1166,32 @@ components:
                 $ref: "#/components/schemas/Application"
             pagination:
               $ref: "#/components/schemas/Pagination"
+
     ApplicationHistoryEntry:
       type: object
-      required:
-        - application_id
-        - changed_by
-        - new_status
-        - created_at
+      additionalProperties: false
+      required: [applicationId, changedBy, newStatus, createdAt]
       properties:
         id:
-          type:
-            - integer
-            - string
-        application_id:
+          type: [string, integer]
+        applicationId:
           type: string
-        changed_by:
+        changedBy:
           type: string
-        previous_status:
-          type:
-            - string
-            - "null"
-        new_status:
+        previousStatus:
+          type: [string, "null"]
+        newStatus:
           $ref: "#/components/schemas/ApplicationStatus"
         note:
-          type:
-            - string
-            - "null"
-        created_at:
+          type: [string, "null"]
+        createdAt:
           type: string
           format: date-time
+
     ApplicationHistoryResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
@@ -1007,6 +1200,26 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ApplicationHistoryEntry"
+
+    DeleteResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, deleted]
+          properties:
+            id:
+              type: string
+            deleted:
+              type: boolean
+              const: true
+
     NotificationType:
       type: string
       enum:
@@ -1020,31 +1233,20 @@ components:
         - system
         - support
         - career
+
     NotificationPriority:
       type: string
-      enum:
-        - low
-        - normal
-        - high
-        - urgent
+      enum: [low, normal, high, urgent]
+
     Notification:
       type: object
-      required:
-        - id
-        - recipient_id
-        - type
-        - priority
-        - title
-        - message
-        - metadata
-        - created_at
+      additionalProperties: false
+      required: [id, type, priority, title, message, createdAt, read]
       properties:
         id:
           type: string
-          format: uuid
-        recipient_id:
-          type: string
-          description: Authenticated recipient; not a client-selectable filter.
+          minLength: 1
+          maxLength: 128
         type:
           $ref: "#/components/schemas/NotificationType"
         priority:
@@ -1054,53 +1256,45 @@ components:
           maxLength: 200
         message:
           type: string
-          maxLength: 10000
-        action_url:
-          type:
-            - string
-            - "null"
+          maxLength: 5000
+        actionUrl:
+          type: [string, "null"]
           maxLength: 2048
-        metadata:
-          type: object
-          additionalProperties: true
-        read_at:
-          type:
-            - string
-            - "null"
+        read:
+          type: boolean
+        readAt:
+          type: [string, "null"]
           format: date-time
-        expires_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        created_at:
+        createdAt:
           type: string
           format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+
     NotificationResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           $ref: "#/components/schemas/Notification"
+
     NotificationListResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           type: object
-          required:
-            - items
-            - pagination
+          additionalProperties: false
+          required: [items, pagination]
           properties:
             items:
               type: array
@@ -1108,98 +1302,50 @@ components:
                 $ref: "#/components/schemas/Notification"
             pagination:
               $ref: "#/components/schemas/Pagination"
-    DeleteResponse:
-      type: object
-      required:
-        - success
-        - data
-      properties:
-        success:
-          type: boolean
-          const: true
-        data:
-          type: object
-          required:
-            - id
-            - deleted
-          properties:
-            id:
-              type: string
-            deleted:
-              type: boolean
-              const: true
+
     AuditOutcome:
       type: string
-      enum:
-        - success
-        - failure
-        - denied
-        - error
+      enum: [success, failure, denied, error]
+
     AuditLog:
       type: object
-      required:
-        - event_id
-        - action
-        - outcome
-        - metadata
-        - created_at
+      additionalProperties: false
+      required: [eventId, action, outcome, createdAt]
       properties:
         id:
-          type:
-            - integer
-            - string
-        event_id:
+          type: [string, integer]
+        eventId:
           type: string
-          format: uuid
-        actor_id:
-          type:
-            - string
-            - "null"
+          maxLength: 128
+        actorId:
+          type: [string, "null"]
         action:
           type: string
           maxLength: 150
-        resource_type:
-          type:
-            - string
-            - "null"
-        resource_id:
-          type:
-            - string
-            - "null"
+        resourceType:
+          type: [string, "null"]
+        resourceId:
+          type: [string, "null"]
         outcome:
           $ref: "#/components/schemas/AuditOutcome"
-        request_id:
-          type:
-            - string
-            - "null"
-        ip_address:
-          type:
-            - string
-            - "null"
-        user_agent:
-          type:
-            - string
-            - "null"
-        metadata:
-          type: object
-          additionalProperties: true
-        created_at:
+        requestId:
+          type: [string, "null"]
+        createdAt:
           type: string
           format: date-time
+
     AuditListResponse:
       type: object
-      required:
-        - success
-        - data
+      additionalProperties: false
+      required: [success, data]
       properties:
         success:
           type: boolean
           const: true
         data:
           type: object
-          required:
-            - items
-            - pagination
+          additionalProperties: false
+          required: [items, pagination]
           properties:
             items:
               type: array

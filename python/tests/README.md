@@ -1,24 +1,40 @@
-MedOrbits — Python Test Suite
 
-Directory: python/tests/
-Python compatibility: Python 3.12+
-Purpose: Automated testing, regression prevention, and quality assurance for MedOrbits Python modules, integrations, data utilities, and validators.
+# MedOrbits — Python Test Engineering & Quality Assurance
 
-1. Overview
+**Directory:** `python/tests/`  
+**Python compatibility:** 3.12+  
+**Project:** MedOrbits — Education · Admissions · Careers · Recruitment  
+**Website:** https://www.medorbits.in/  
+**Test framework:** pytest, subject to project configuration  
+**Scope:** Unit testing, regression prevention, integration testing, security validation, and continuous integration.
 
-The MedOrbits test suite verifies that application components behave as expected, handle invalid inputs safely, and remain reliable as the codebase evolves.
+—
 
-Tests cover configuration, shared integration contracts, exceptions, HTTP clients, registries, import/export functionality, JSON data handling, validators, and test-runner utilities.
+## 1. Purpose and Engineering Principles
 
-The suite should be deterministic, independently executable where practical, and safe for local development and continuous integration (CI).
+The MedOrbits Python Test Suite verifies the behavior, reliability, and security of Python utilities, integration infrastructure, configuration loaders, data-processing workflows, and repository automation tools.
 
-Testing policy: A test file’s presence does not prove that its tests pass. Report successful validation only after running the relevant tests and reviewing the results.
+The suite is designed to detect regressions early, validate failure handling, protect existing project behavior, and provide repeatable evidence of software quality.
 
-2. Directory Structure
+All tests should follow these principles:
 
+- **Deterministic:** The same inputs and controlled environment produce predictable results.
+- **Isolated:** Tests do not depend on execution order, production services, or unrelated local state.
+- **Repeatable:** Tests can run locally and in CI using documented commands.
+- **Secure:** Tests use synthetic data and never expose credentials or sensitive documents.
+- **Maintainable:** Tests validate documented contracts rather than unnecessary implementation details.
+- **Traceable:** Failures identify the relevant behavior, expected result, and actual result.
+- **Honest:** A test is reported as passing only after execution confirms its success.
+
+A test file’s existence, successful collection, or successful syntax compilation does not prove that its tests pass.
+
+## 2. Intended Directory Structure
+
+```text
 python/
 └── tests/
     ├── README.md
+    ├── conftest.py
     ├── test_base.py
     ├── test_config.py
     ├── test_exceptions.py
@@ -27,304 +43,433 @@ python/
     ├── test_suite_runner.py
     ├── test_import_export.py
     ├── test_json_data.py
-    └── test_validators.py
+    ├── test_validators.py
+    ├── unit/
+    ├── integration/
+    ├── security/
+    └── fixtures/
+```
 
-This structure reflects the files shown in the current repository view. Update it whenever test modules are added, removed, or relocated.
+The structure above is a recommended organization, not a verified inventory. Preserve the current repository layout where possible, and introduce new directories only when they provide practical value.
 
-3. Test Module Responsibilities
+### Directory responsibilities
 
-File	Primary responsibility
-test_base.py	Verify shared base classes, contracts, common utilities, and inherited behavior
-test_config.py	Validate configuration defaults, environment variables, missing settings, and invalid values
-test_exceptions.py	Verify custom exception types, inheritance, propagation, and safe error messages
-test_http_client.py	Test requests, responses, timeouts, retries, status handling, and network failures
-test_registry.py	Verify registration, lookup, duplicate handling, interface validation, and missing-entry behavior
-test_suite_runner.py	Test test-runner discovery, execution, reporting, and failure handling, according to its implementation
-test_import_export.py	Verify supported import/export formats, serialization, invalid input, and error handling
-test_json_data.py	Validate JSON parsing, required fields, data types, schema expectations, and malformed documents
-test_validators.py	Test validation rules, valid and invalid inputs, boundary conditions, and error reporting
+| Path | Responsibility |
+|—|—|
+| `conftest.py` | Shared pytest fixtures and narrowly scoped test configuration |
+| `unit/` | Fast tests of individual components without external services |
+| `integration/` | Tests of interactions between real components using controlled dependencies |
+| `security/` | Regression tests for security boundaries and unsafe inputs |
+| `fixtures/` | Small, deterministic, non-sensitive test data |
+| Root `test_*.py` files | Existing test modules and compatibility with the current suite |
 
-These responsibilities are guidelines. Keep tests aligned with each module’s actual public interface rather than testing implementation details unnecessarily.
+Do not move existing tests merely to match this example. Confirm pytest discovery and import behavior before restructuring.
 
-4. Requirements and Setup
+## 3. Test Module Responsibilities
 
-Run commands from the repository root unless the project configuration specifies otherwise.
+| Module | Primary responsibility |
+|—|—|
+| `test_base.py` | Base classes, contracts, shared behavior, and lifecycle requirements |
+| `test_config.py` | Defaults, environment overrides, missing settings, validation, and secret redaction |
+| `test_exceptions.py` | Exception hierarchy, error mapping, propagation, and sanitized messages |
+| `test_http_client.py` | HTTP responses, connection failures, timeouts, retries, rate limits, and response validation |
+| `test_registry.py` | Registration, lookup, duplicate handling, provider validation, and unknown-provider behavior |
+| `test_suite_runner.py` | Test discovery, execution, result reporting, and runner failure handling |
+| `test_import_export.py` | Serialization, supported formats, round-trip behavior, invalid input, and overwrite protection |
+| `test_json_data.py` | JSON parsing, schema validation, data types, nested values, and malformed documents |
+| `test_validators.py` | Input validation, boundary conditions, normalization, and actionable error reporting |
 
-Check the active Python version:
+Responsibilities must reflect each module’s actual public interface. Avoid duplicating test coverage without a clear reason.
 
+## 4. Runtime and Test Dependencies
+
+Run commands from the repository root unless the project’s configuration specifies otherwise.
+
+### Verify the Python environment
+
+```bash
 python —version
+python -m pip —version
+```
 
-The project targets Python 3.12 or later. Use the version declared by the repository’s actual project configuration if it differs.
+Use Python 3.12 or later, unless the repository’s authoritative configuration specifies a different compatibility requirement.
 
-Activate the appropriate virtual environment and install dependencies using the project’s documented setup instructions.
+### Install development dependencies
 
-If requirements-dev.txt exists:
+If `requirements-dev.txt` exists:
 
+```bash
 python -m pip install -r requirements-dev.txt
+```
 
-If it does not exist, do not assume that file is required. Use the project’s existing pyproject.toml, requirements files, or other documented dependency-management process.
+Otherwise, follow the existing `pyproject.toml`, requirements files, lockfile, or documented setup procedure.
 
-The examples below use pytest. Install it through the project’s development dependency configuration if it is not already available.
+Do not introduce duplicate dependency-management files unnecessarily.
 
-5. Running Tests
+### Recommended development tools
 
-Run the complete test suite
+Use these tools only if they are already configured or intentionally adopted:
 
-python -m pytest python/tests/
+- `pytest` — automated test execution.
+- `pytest-cov` — coverage measurement.
+- `ruff` — linting and formatting.
+- A configured type checker — static type analysis.
 
-Run one test module
+Pin or constrain development dependencies according to the repository’s dependency-management policy.
 
-python -m pytest python/tests/test_validators.py
+## 5. Standard Test Commands
 
-Run tests matching a keyword
+### Run the complete suite
 
-python -m pytest python/tests/test_validators.py -k “valid”
-
-Display detailed test output
-
+```bash
 python -m pytest python/tests/ -v
+```
 
-Stop after the first failure
+### Run a specific module
 
+```bash
+python -m pytest python/tests/test_validators.py -v
+```
+
+### Run matching tests
+
+```bash
+python -m pytest python/tests/ -k “valid”
+```
+
+### Stop at the first failure
+
+```bash
 python -m pytest python/tests/ -x
+```
 
-Show short tracebacks
+### Display concise tracebacks
 
+```bash
 python -m pytest python/tests/ —tb=short
+```
 
-Run with coverage
+### Display detailed tracebacks
 
-If pytest-cov is installed:
+```bash
+python -m pytest python/tests/ —tb=long
+```
 
-python -m pytest python/tests/ —cov=python —cov-report=term-missing
+### Run a test repeatedly to investigate intermittent failures
 
-Adjust the coverage target to match the project’s import and package layout. Do not introduce a coverage threshold unless it is explicitly configured or agreed upon.
+```bash
+python -m pytest python/tests/ —count=5
+```
 
-Run Python syntax checks
+The last command requires an appropriate repeat-testing plugin. If it is not installed, repeat the command using a shell loop or an existing project-supported mechanism.
 
+### Check Python syntax
+
+```bash
 python -m compileall -q python/
+```
 
-This checks Python compilation; it does not execute the tests or prove runtime correctness.
+Syntax compilation is a preliminary check, not a replacement for tests.
 
-6. Testing Standards
+### Run linting and formatting checks
 
-Every test module should follow these principles.
+If Ruff is configured:
 
-1. Clear naming: Test names should explain the behavior being verified.
-2. Arrange, Act, Assert: Separate setup, execution, and verification.
-3. Positive and negative cases: Cover successful behavior and expected failures.
-4. Boundary coverage: Include empty values, minimum and maximum values, and unusual valid inputs.
-5. Isolation: Avoid dependencies on test execution order or shared mutable state.
-6. Determinism: Use fixed fixtures and controlled inputs.
-7. Cleanup: Restore environment variables and remove temporary resources.
-8. Regression coverage: Add a test for each meaningful bug fix.
-9. Readable assertions: Make failures straightforward to diagnose.
-10. Safe execution: Never modify real user data or production resources during routine tests.
-11. Public-interface testing: Prefer observable behavior over private implementation details unless internal behavior is itself a requirement.
-12. Explicit expectations: Assert important return values, exceptions, state changes, and side effects.
+```bash
+ruff check python/
+ruff format —check python/
+```
 
-7. Mocking and Test Data
+### Measure coverage
 
-Use mocks, fakes, or controlled test doubles for external dependencies wherever appropriate.
+If `pytest-cov` is installed:
 
-Recommended practices:
+```bash
+python -m pytest python/tests/ —cov=python —cov-report=term-missing
+```
 
-* Use temporary directories for generated files.
-* Keep valid and invalid JSON fixtures representative and deterministic.
-* Mock HTTP responses, connection failures, and timeouts.
-* Avoid live API calls during ordinary unit tests.
-* Use synthetic test identities and documents.
-* Never commit production credentials, access tokens, private documents, or unnecessary personal information.
-* Ensure test fixtures do not contain working credentials.
-* Prefer standard-library testing utilities where they adequately meet the requirements.
+Adjust the coverage target to match the project’s actual import and package layout. Do not introduce a coverage threshold without an agreed requirement or existing configuration.
 
-For filesystem tests, use temporary directories and verify cleanup. For HTTP tests, assert both the expected outcome and the behavior of the client, including retry counts where relevant.
+## 6. Test Design Standards
 
-8. Configuration Test Expectations
+Every test should make the intended behavior clear.
+
+### Arrange, Act, Assert
+
+1. **Arrange:** Prepare fixtures, configuration, mocks, and inputs.
+2. **Act:** Perform the operation under test.
+3. **Assert:** Verify the outcome, error, state transition, or side effect.
+
+### Required practices
+
+- Use descriptive test names.
+- Test successful behavior and expected failures.
+- Include meaningful boundary cases.
+- Keep individual tests focused.
+- Prefer public-interface assertions.
+- Avoid dependence on execution order.
+- Use explicit timeouts for operations that could otherwise hang.
+- Clean up files, environment changes, mocks, and resources.
+- Add regression tests for meaningful defects.
+- Avoid assertions that merely repeat the implementation’s internal logic.
+
+Use parametrized tests when multiple inputs exercise the same validation rule. Avoid excessive parametrization when cases require materially different setup or explanations.
+
+## 7. Fixtures and Test Isolation
+
+Use pytest fixtures, temporary directories, and standard-library test utilities where appropriate.
+
+### Environment isolation
+
+- Set required environment variables explicitly.
+- Restore previous values after each test.
+- Do not depend on a developer’s `.env` file.
+- Never require production credentials.
+- Ensure test configuration cannot silently select production resources.
+
+### Filesystem isolation
+
+- Use temporary directories for generated files.
+- Verify expected files and contents.
+- Test overwrite protection and failure cleanup.
+- Ensure tests do not modify unrelated repository files.
+- Exercise path traversal and symbolic-link cases where relevant.
+
+### Shared state
+
+Reset mutable global state, registries, caches, and singleton objects between tests when they affect results.
+
+Place shared fixtures in `conftest.py` only when reuse is beneficial. Keep fixture scope as narrow as practical.
+
+## 8. Configuration and Secret-Handling Tests
 
 Configuration tests should cover:
 
-* Default values.
-* Valid environment variables.
-* Missing mandatory settings.
-* Invalid values and types.
-* Out-of-range timeout or retry settings.
-* Conflicting configuration.
-* Invalid or unauthorized provider URLs.
-* Safe handling and redaction of secrets.
-* Separation between test and production settings.
+- Valid defaults and overrides.
+- Missing required settings.
+- Invalid values and types.
+- Invalid timeout, retry, and concurrency limits.
+- Unsupported configuration versions.
+- Conflicting security settings.
+- Invalid URLs and unapproved hosts.
+- Environment separation.
+- Secret redaction in errors and logs.
+- Predictable behavior when files are missing or malformed.
 
-Tests must not depend on a developer’s personal environment. Set required environment variables explicitly and restore their previous values after each test.
+Tests must use synthetic credentials and fake endpoints. Verify that failures do not reveal passwords, tokens, authorization headers, or complete secret-bearing URLs.
 
-Do not use real production secrets in fixtures, test output, or assertions.
+For security-sensitive configuration, test both rejection of invalid settings and correct acceptance of valid settings.
 
-9. HTTP Client Test Expectations
+## 9. HTTP Client Test Matrix
 
-The HTTP client tests should cover the behaviors supported by the actual implementation.
+Test supported HTTP-client behavior using mocked transports or controlled responses.
 
-Scenario	Expected verification
-Successful response	Status handling and expected response data
-HTTP 4xx	Correct client-error mapping
-HTTP 401	Authentication failure handling
-HTTP 403	Authorization failure handling
-HTTP 429	Rate-limit behavior and bounded retry handling, if implemented
-HTTP 5xx	Eligible retry behavior and final failure handling
-Invalid JSON	Normalized response-parsing error
-Connection failure	Correct connection exception
-Timeout	Correct timeout handling
-Unexpected content type	Response validation according to the client contract
-Unsafe retry	No unintended duplicate non-idempotent operation
-Secret-bearing error	Credentials are not exposed in logs or messages
+| Scenario | Required verification |
+|—|—|
+| Successful response | Status handling, response parsing, and returned data |
+| HTTP 400 | Client-error mapping |
+| HTTP 401 | Authentication failure handling |
+| HTTP 403 | Authorization failure handling |
+| HTTP 404 | Missing-resource handling |
+| HTTP 429 | Rate-limit behavior and bounded retry policy |
+| HTTP 5xx | Retry eligibility and final error mapping |
+| Connection failure | Appropriate exception handling |
+| Timeout | Timeout enforcement and correct error classification |
+| Invalid JSON | Predictable parsing failure |
+| Unexpected content type | Response validation |
+| Oversized response | Payload limit enforcement |
+| Redirect to untrusted host | Redirect rejection |
+| Private or loopback destination | Outbound request rejection |
+| TLS verification failure | Secure failure handling |
+| Sensitive error details | Secret redaction |
+| Non-idempotent operation | No unintended duplicate operation during retries |
 
-Use mocked transports or responses for unit tests. Keep sandbox-based provider tests separate, explicitly configured, and opt-in.
+Retry only when the operation and failure are eligible under the client’s documented policy. Verify maximum attempts and total execution time.
 
-A passing HTTP unit test does not prove that a live provider is reachable.
+Unit tests should not depend on live providers. A passing mocked HTTP test does not establish live-service availability.
 
-10. Integration and Registry Tests
+## 10. Integration and Registry Testing
 
-Tests for integration infrastructure should verify:
+Test integration infrastructure independently from external network availability.
 
-* Valid registration and retrieval.
-* Rejection of invalid identifiers.
-* Duplicate-registration behavior.
-* Unknown-provider errors.
-* Interface or contract validation.
-* Configuration failures before network requests.
-* Importing modules without unexpected external side effects.
-* Standardized exception mapping.
-* Bounded timeouts and retry behavior.
-* Health-state classification.
-* Safe handling of provider failures.
+Coverage should include:
 
-Registry tests should not require live provider access. Registration should remain independent of network availability.
+- Valid provider registration and retrieval.
+- Duplicate registration behavior.
+- Invalid identifiers and unsupported providers.
+- Provider contract validation.
+- Missing or invalid configuration.
+- Standardized exception mapping.
+- Health-state classification.
+- Resource cleanup.
+- Importing modules without unexpected network access.
+- Bounded timeout and retry behavior.
+- Storage authorization and metadata validation, where supported.
 
-Where storage integrations are implemented, add tests for authorization, file metadata validation, upload/download outcomes, and access-link permissions.
+Test the documented contract. Do not assume a specific exception type, lifecycle method, or return structure until it is confirmed in the implementation.
 
-11. JSON, Import/Export, and Validator Tests
+## 11. JSON, Import/Export, and Validation Testing
 
-JSON data tests
-
-Cover:
-
-* Valid JSON objects and arrays.
-* Empty files and empty values where permitted.
-* Malformed JSON.
-* Missing required keys.
-* Incorrect data types.
-* Unexpected fields where strict schemas apply.
-* Unicode and text encoding.
-* Nested structures.
-* Invalid dates, URLs, or identifiers where relevant.
-* Large or excessive input within the project’s supported limits.
-
-Import/export tests
+### JSON data
 
 Cover:
 
-* Supported formats.
-* Correct round-trip behavior where applicable.
-* Missing or unreadable files.
-* Unsupported formats.
-* Invalid input structures.
-* Encoding errors.
-* Partial failure and cleanup.
-* Protection against unintended overwrites.
+- Valid objects and arrays.
+- Empty documents and empty values.
+- Malformed JSON.
+- Missing required keys.
+- Incorrect data types.
+- Unicode and encoding behavior.
+- Nested structures and excessive nesting.
+- Invalid dates, URLs, and identifiers.
+- Duplicate records.
+- Payload-size and collection-size limits.
+- Unsupported fields when strict validation is enabled.
 
-Validator tests
+### Import/export
 
 Cover:
 
-* Valid input.
-* Invalid input.
-* Required and optional fields.
-* Boundary values.
-* Whitespace and normalization.
-* Unicode input.
-* Malformed URLs and paths.
-* Unexpected types.
-* Clear and stable validation errors.
+- Supported formats.
+- Serialization and deserialization.
+- Round-trip behavior where applicable.
+- Missing, unreadable, and malformed files.
+- Unsupported formats.
+- Invalid input structures.
+- Encoding errors.
+- Partial failures and cleanup.
+- Existing-file protection.
+- Atomic writes and failure recovery where implemented.
 
-Tests should reflect documented requirements. Do not impose restrictions that are absent from the application’s actual validation contract.
+### Validators
 
-12. Test Discovery and Organization
+Cover:
 
-Use consistent test names, normally beginning with test_.
+- Valid and invalid values.
+- Required and optional fields.
+- Minimum and maximum limits.
+- Whitespace normalization.
+- Unicode and unusual but valid inputs.
+- Malformed URLs and filesystem paths.
+- Unexpected data types.
+- Clear and stable validation errors.
 
-For pytest, typical conventions are:
+Do not impose business rules that are absent from the documented application contract.
 
-* Files: test_*.py or *_test.py.
-* Functions: test_*.
-* Classes: Test*, without a custom __init__ method.
+## 12. Repository Tool Safety Tests
 
-Follow any naming or discovery rules already configured by the project.
+Repository automation tools deserve dedicated tests because they can modify large numbers of files.
 
-Keep shared fixtures in an existing conftest.py when doing so improves reuse. Do not create extra fixture modules solely for convention if the current suite does not need them.
+Where applicable, verify that tools:
 
-If a test fails when run with the full suite but passes independently, investigate shared state, environment variables, global registries, temporary files, and cleanup.
+- Remain within the permitted repository root.
+- Reject path traversal.
+- Handle symbolic links safely.
+- Preserve existing non-empty files by default.
+- Require explicit authorization for overwrites and deletions.
+- Support a read-only or dry-run mode.
+- Validate generated Python and JSON files.
+- Report skipped and failed operations accurately.
+- Avoid exposing secrets in reports.
+- Handle interrupted writes safely.
+- Preserve unrelated files.
+- Produce reproducible output where determinism is required.
 
-13. Continuous Integration
+Use temporary repositories and synthetic files. Never use a production checkout as the target for destructive tests.
 
-A CI workflow should:
+## 13. Test Discovery and Regression Management
 
-1. Set up the supported Python version.
-2. Install the project’s declared dependencies.
-3. Run syntax and static checks when configured.
+Follow pytest’s configured discovery rules.
+
+Typical conventions:
+
+- Test files: `test_*.py` or `*_test.py`.
+- Test functions: `test_*`.
+- Test classes: `Test*`, without a custom `__init__` method.
+
+When a test passes independently but fails in the full suite, investigate:
+
+1. Shared mutable state.
+2. Environment-variable leakage.
+3. Global registries and caches.
+4. Unclosed resources.
+5. Temporary-file collisions.
+6. Ordering assumptions.
+7. Concurrency or timing dependencies.
+
+For each resolved defect, add a regression test that fails under the original defective behavior and passes after the fix.
+
+## 14. Continuous Integration
+
+The CI pipeline should perform the following steps:
+
+1. Select the supported Python version.
+2. Install dependencies from the repository’s declared configuration.
+3. Run syntax and static checks where configured.
 4. Execute the automated test suite.
-5. Return a failing status when required tests fail.
-6. Preserve useful test output and reports.
+5. Publish useful test and coverage reports.
+6. Return a nonzero status when required checks fail.
 7. Avoid production credentials and destructive production operations.
 
 Example test command:
 
+```bash
 python -m pytest python/tests/ -v
+```
 
-Optional checks, when supported by project configuration:
+Optional configured checks:
 
+```bash
 ruff check python/
 ruff format —check python/
+```
 
-Add type checking, coverage thresholds, and integration-test jobs only when the corresponding tools and requirements are configured.
+Do not add unconfigured coverage thresholds, type-checking requirements, or mandatory services without establishing their dependencies and purpose.
 
-14. Troubleshooting
+## 15. Troubleshooting
 
-Issue	Recommended action
-ModuleNotFoundError	Check the working directory, package structure, virtual environment, and configured import path
-Missing dependency	Install dependencies using the project’s documented setup process
-No tests discovered	Check file and test naming against the active test runner
-HTTP test fails unexpectedly	Inspect mocks, timeouts, and unintended live requests
-Tests pass individually but fail together	Check shared state, environment variables, temporary files, and cleanup
-JSON validation fails	Compare the fixture with the expected schema and required fields
-Platform-specific failure	Check paths, encoding, line endings, and environment assumptions
-Unexpected retry count	Inspect retry eligibility, limits, and mocked responses
-Test leaks a secret	Remove the sensitive value from output and correct logging or exception handling
-Coverage target fails	Verify the coverage target, import path, and configured threshold
+| Issue | Recommended action |
+|—|—|
+| `ModuleNotFoundError` | Verify interpreter, working directory, package structure, and import paths |
+| Missing dependency | Follow the documented installation process |
+| No tests discovered | Check filenames, function names, and pytest configuration |
+| Tests pass individually but fail together | Inspect shared state, fixtures, and cleanup |
+| Unexpected HTTP behavior | Review mocked responses, timeout settings, and retry eligibility |
+| Invalid JSON fixture | Compare the fixture with the expected schema |
+| Platform-specific failure | Review paths, encoding, line endings, and environment assumptions |
+| Unexpected file changes | Inspect the version-control diff and restore unintended changes |
+| Secret appears in output | Remove the sensitive value and fix the logging or exception path |
+| Coverage command fails | Verify plugin installation, package target, and project configuration |
+| Intermittent failure | Investigate timing, concurrency, external dependencies, and nondeterministic inputs |
 
-15. Definition of Done
+## 16. Pull Request Quality Gate
 
-A code change is ready for review when:
+Before marking a change ready for review:
 
-* [ ]	Relevant tests have been added or updated.
-* [ ]	The applicable test suite passes.
-* [ ]	Failure cases and meaningful boundary conditions are covered.
-* [ ]	External dependencies are isolated where appropriate.
-* [ ]	Environment changes and temporary resources are cleaned up.
-* [ ]	No production secrets or real personal data have been introduced.
-* [ ]	New dependencies and test setup requirements are documented.
-* [ ]	Relevant syntax, linting, and type checks pass when configured.
-* [ ]	Regression tests cover the defect or behavior change.
-* [ ]	Documentation reflects the actual implementation.
+- [ ] Relevant tests are added or updated.
+- [ ] Focused tests have been executed.
+- [ ] The broader suite has been executed where practical.
+- [ ] Expected failure cases and boundary conditions are covered.
+- [ ] External services are mocked or explicitly isolated.
+- [ ] Environment changes and temporary resources are cleaned up.
+- [ ] No real credentials or unnecessary personal data are introduced.
+- [ ] Regression coverage is included for the defect or behavior change.
+- [ ] Configured linting, formatting, and type checks pass.
+- [ ] Documentation reflects the implementation.
+- [ ] The repository diff contains only intended changes.
 
-16. Maintenance Policy
+If a check was not run, report it as not run rather than passed.
 
-Keep this README synchronized with the real test files, Python version, test runner, package structure, and CI configuration.
+## 17. Maintenance Policy
 
-Whenever a module changes:
+Keep this README synchronized with the actual test modules, Python compatibility, test framework, dependency configuration, CI workflow, and supported integration interfaces.
 
-1. Review its public interface.
-2. Update affected tests.
-3. Add regression coverage for fixed defects.
-4. Run focused tests.
-5. Run the broader suite where practical.
-6. Document any new test dependencies or execution requirements.
+When test modules are added, removed, or relocated:
 
-Final principle: Tests are evidence of verified behavior only when they have actually been executed and their results reviewed. This README defines the intended workflow; it does not certify that the suite currently passes or achieves a specific coverage level.
+1. Update this directory listing.
+2. Review test discovery and import paths.
+3. Update CI commands where necessary.
+4. Remove obsolete setup instructions.
+5. Confirm that documented commands remain valid.
+
+**Final engineering standard:** The MedOrbits test suite must provide repeatable evidence of correctness, detect regressions, protect security boundaries, and preserve existing behavior. Documentation defines expectations; executed tests establish the results.

@@ -1,6 +1,6 @@
-File: .github/workflows/validate-project.yml
 
-name: MedOrbits -- Project Configuration Validation
+name: MedOrbits - Project Configuration Validation
+
 on:
   push:
     branches:
@@ -10,88 +10,114 @@ on:
     paths:
       - "**"
       - "!.github/ISSUE_TEMPLATE/**"
+
   pull_request:
     branches:
       - main
       - master
       - develop
+
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: validate-project-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   validate:
     name: Validate project configuration
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
+    permissions:
+      contents: read
+
     steps:
-      # 1. CHECKOUT
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # 2. SET UP NODE.JS
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-      # 3. VERIFY REQUIRED FILES AND DIRECTORIES
-      - name: Verify project structure
+
+      - name: Verify required files
         shell: bash
         run: |
           set -euo pipefail
-          required_files=(
-            "package.json"
-            "package-lock.json"
-          )
-          for file in "${required_files[@]}"; do
+
+          for file in package.json package-lock.json; do
             if [[ ! -f "$file" ]]; then
               echo "::error::Required file is missing: $file"
               exit 1
             fi
             echo "PASS: $file"
           done
+
           if [[ ! -d ".github/workflows" ]]; then
             echo "::error::Missing .github/workflows directory."
             exit 1
           fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Report runtime versions
+        run: |
           node --version
           npm --version
-      # 4. VALIDATE PACKAGE METADATA
+
       - name: Validate package metadata
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
           const fs = require('node:fs');
+
           const pkg = JSON.parse(
             fs.readFileSync('package.json', 'utf8')
           );
+
           const lock = JSON.parse(
             fs.readFileSync('package-lock.json', 'utf8')
           );
-          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
-            throw new Error('package.json must define a non-empty name.');
+
+          const semver =
+            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+
+          if (
+            typeof pkg.name !== 'string' ||
+            !pkg.name.trim()
+          ) {
+            throw new Error(
+              'package.json must define a non-empty name.'
+            );
           }
+
           if (
             typeof pkg.version !== 'string' ||
-            !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(pkg.version)
+            !semver.test(pkg.version)
           ) {
             throw new Error(
               'package.json must define a valid semantic version.'
             );
           }
+
           if (
             !pkg.scripts ||
             typeof pkg.scripts !== 'object' ||
             Array.isArray(pkg.scripts)
           ) {
-            throw new Error('package.json must define a scripts object.');
+            throw new Error(
+              'package.json must define a scripts object.'
+            );
           }
+
           for (const field of [
             'dependencies',
             'devDependencies',
@@ -109,17 +135,31 @@ jobs:
               throw new Error(`${field} must be an object.`);
             }
           }
+
           if (![2, 3].includes(lock.lockfileVersion)) {
             throw new Error(
               `Unsupported lockfileVersion: ${lock.lockfileVersion}`
             );
           }
-          const root = lock.packages?.[''];
+
+          if (
+            !lock.packages ||
+            typeof lock.packages !== 'object' ||
+            Array.isArray(lock.packages)
+          ) {
+            throw new Error(
+              'package-lock.json must contain a packages object.'
+            );
+          }
+
+          const root = lock.packages[''];
+
           if (!root) {
             throw new Error(
               'package-lock.json is missing its root package entry.'
             );
           }
+
           if (
             root.name !== pkg.name ||
             root.version !== pkg.version
@@ -128,18 +168,30 @@ jobs:
               'package.json and package-lock.json root metadata differ.'
             );
           }
+
+          if (
+            pkg.engines?.node &&
+            typeof pkg.engines.node !== 'string'
+          ) {
+            throw new Error(
+              'package.json engines.node must be a string.'
+            );
+          }
+
           console.log(`PASS: ${pkg.name}@${pkg.version}`);
           console.log(`PASS: lockfile version ${lock.lockfileVersion}`);
           console.log('PASS: package metadata and dependency declarations');
           NODE
-      # 5. VALIDATE ALL REPOSITORY JSON FILES
+
       - name: Validate repository JSON files
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+
           const excludedDirectories = new Set([
             '.git',
             'node_modules',
@@ -153,19 +205,23 @@ jobs:
             '.vercel',
             'vendor'
           ]);
+
           const files = [];
           const failures = [];
+
           function walk(directory) {
             for (const entry of fs.readdirSync(directory, {
               withFileTypes: true
             })) {
               const fullPath = path.join(directory, entry.name);
+
               if (entry.isDirectory()) {
                 if (!excludedDirectories.has(entry.name)) {
                   walk(fullPath);
                 }
                 continue;
               }
+
               if (
                 entry.isFile() &&
                 entry.name.toLowerCase().endsWith('.json')
@@ -174,89 +230,107 @@ jobs:
               }
             }
           }
+
           walk('.');
+
           if (files.length === 0) {
-            throw new Error('No repository JSON files were found.');
+            throw new Error(
+              'No repository JSON files were found.'
+            );
           }
+
           for (const file of files.sort()) {
             try {
               JSON.parse(fs.readFileSync(file, 'utf8'));
               console.log(`PASS ${file}`);
             } catch (error) {
-              failures.push({ file, message: error.message });
+              failures.push({
+                file,
+                message: error.message
+              });
               console.error(`FAIL ${file}: ${error.message}`);
             }
           }
+
           console.log(`\nJSON files checked: ${files.length}`);
           console.log(`JSON failures: ${failures.length}`);
+
           if (failures.length > 0) {
             process.exitCode = 1;
           }
           NODE
-      # 6. VALIDATE APPLICATION DATA
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+        env:
+          CI: "true"
+
       - name: Validate application data
         run: npm run check:data --if-present
-      # 7. VALIDATE PROJECT JSON WITH THE PROJECT SCRIPT
+
       - name: Run project JSON validation
         shell: bash
         run: |
           set -euo pipefail
+
           if node -e "
             const p = require('./package.json');
-            process.exit(typeof p.scripts?.['validate:json'] === 'string' ? 0 : 1);
+            process.exit(
+              typeof p.scripts?.['validate:json'] === 'string' ? 0 : 1
+            );
           "; then
             npm run validate:json
           elif node -e "
             const p = require('./package.json');
-            process.exit(typeof p.scripts?.['check:json'] === 'string' ? 0 : 1);
+            process.exit(
+              typeof p.scripts?.['check:json'] === 'string' ? 0 : 1
+            );
           "; then
             npm run check:json
           else
             echo "::notice::No validate:json or check:json script configured; recursive JSON validation has already run."
           fi
-      # 8. VERIFY LOCKFILE SYNCHRONIZATION WITHOUT WRITING FILES
+
       - name: Verify lockfile synchronization
         shell: bash
         run: |
           set -euo pipefail
+
           npm install \
             --package-lock-only \
             --ignore-scripts \
             --no-audit \
             --no-fund
-      - name: Ensure package files remain unchanged
-        shell: bash
-        run: |
-          set -euo pipefail
+
           if ! git diff --exit-code -- package.json package-lock.json; then
             echo "::error::package.json or package-lock.json is out of sync."
             echo "::error::Regenerate and commit the lockfile locally."
             exit 1
           fi
+
           echo "PASS: package manifest and lockfile are synchronized."
-      # 9. INSTALL EXACT LOCKED DEPENDENCIES
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-        env:
-          CI: "true"
-      # 10. VALIDATE WORKFLOW YAML
+
       - name: Validate GitHub Actions workflow YAML
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! -d .github/workflows ]]; then
-            echo "::error::Workflow directory not found."
-            exit 1
-          fi
+
           shopt -s nullglob
-          workflow_files=(.github/workflows/*.yml .github/workflows/*.yaml)
+          workflow_files=(
+            .github/workflows/*.yml
+            .github/workflows/*.yaml
+          )
+
           if [[ ${#workflow_files[@]} -eq 0 ]]; then
             echo "::error::No workflow YAML files found."
             exit 1
           fi
-          node <<'NODE'
+
+          node - "${workflow_files[@]}" <<'NODE'
           const fs = require('node:fs');
+
           let YAML;
+
           try {
             YAML = require('yaml');
           } catch {
@@ -265,52 +339,80 @@ jobs:
             );
             process.exit(1);
           }
-          const files = process.argv.slice(1);
+
+          const files = process.argv.slice(2);
+          let failures = 0;
+
           for (const file of files) {
             try {
               const source = fs.readFileSync(file, 'utf8');
+
               YAML.parse(source, {
                 uniqueKeys: true,
                 prettyErrors: true
               });
+
               console.log(`PASS ${file}`);
             } catch (error) {
+              failures++;
               console.error(`FAIL ${file}: ${error.message}`);
-              process.exitCode = 1;
             }
           }
+
+          console.log(`\nWorkflow files checked: ${files.length}`);
+          console.log(`Workflow YAML failures: ${failures}`);
+
+          if (failures > 0) {
+            process.exitCode = 1;
+          }
           NODE
-          "${workflow_files[@]}"
-      # 11. CHECK JAVASCRIPT SYNTAX
+
       - name: Check JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const { spawnSync } = require('node:child_process');
-          const excluded = new Set([
+
+          const excludedDirectories = new Set([
             '.git',
             'node_modules',
             'dist',
             'build',
             'coverage',
             '.next',
-            '.nuxt'
+            '.nuxt',
+            '.output',
+            '.vercel',
+            '.wrangler'
           ]);
-          const extensions = new Set(['.js', '.cjs', '.mjs']);
+
+          const extensions = new Set([
+            '.js',
+            '.cjs',
+            '.mjs'
+          ]);
+
           const files = [];
+          const failures = [];
+
           function walk(directory) {
             for (const entry of fs.readdirSync(directory, {
               withFileTypes: true
             })) {
               const fullPath = path.join(directory, entry.name);
+
               if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) {
+                if (!excludedDirectories.has(entry.name)) {
                   walk(fullPath);
                 }
-              } else if (
+                continue;
+              }
+
+              if (
                 entry.isFile() &&
                 extensions.has(path.extname(entry.name))
               ) {
@@ -318,44 +420,78 @@ jobs:
               }
             }
           }
+
           walk('.');
+
           if (files.length === 0) {
-            console.log('No JavaScript files found; skipping syntax checks.');
+            console.log(
+              'No JavaScript files found; skipping syntax checks.'
+            );
             process.exit(0);
           }
-          let failures = 0;
+
           for (const file of files.sort()) {
             const result = spawnSync(
               process.execPath,
               ['--check', file],
               { encoding: 'utf8' }
             );
+
             if (result.status !== 0) {
-              failures++;
+              failures.push(file);
               console.error(`FAIL ${file}`);
-              if (result.stdout) console.error(result.stdout);
-              if (result.stderr) console.error(result.stderr);
+
+              if (result.stdout) {
+                console.error(result.stdout);
+              }
+
+              if (result.stderr) {
+                console.error(result.stderr);
+              }
             } else {
               console.log(`PASS ${file}`);
             }
           }
+
           console.log(`\nJavaScript files checked: ${files.length}`);
-          console.log(`Syntax failures: ${failures}`);
-          if (failures > 0) {
+          console.log(`Syntax failures: ${failures.length}`);
+
+          if (failures.length > 0) {
             process.exitCode = 1;
           }
           NODE
-      # 12. VERIFY NO UNEXPECTED CHANGES
+
       - name: Verify repository integrity
         shell: bash
         run: |
           set -euo pipefail
+
           if ! git diff --check; then
             echo "::error::Whitespace errors detected."
             exit 1
           fi
+
           if ! git diff --exit-code; then
             echo "::error::Validation modified tracked repository files."
             exit 1
           fi
+
           echo "PASS: no tracked files were modified."
+
+      - name: Write validation summary
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          NODE_VERSION: "22"
+        run: |
+          {
+            echo "## MedOrbits Project Configuration Validation"
+            echo
+            echo "- **Job status:** \`${JOB_STATUS}\`"
+            echo "- **Node.js:** \`${NODE_VERSION}\`"
+            echo "- **JSON validation:** Repository JSON files"
+            echo "- **Workflow validation:** GitHub Actions YAML"
+            echo "- **JavaScript validation:** Syntax checks"
+            echo "- **Lockfile validation:** Manifest synchronization"
+          } >> "$GITHUB_STEP_SUMMARY"

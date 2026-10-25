@@ -1,24 +1,18 @@
 
 """
 MedOrbits -- Python Configuration
+
 File: src/python/medorbits/config.py
 
 Purpose:
     Centralize and validate configuration for MedOrbits Python services.
 
-Features:
-    - Typed environment-variable parsing.
-    - Environment-specific validation.
-    - Safe defaults for development and testing.
-    - Production configuration safeguards.
-    - Secret-safe settings representation.
-    - No implicit .env loading or external service initialization.
-
-Security:
-    - Supply production secrets through the deployment environment or a
-      dedicated secrets manager.
-    - Never log secret values.
-    - This module validates settings; it does not connect to services.
+Security principles:
+    - Never load .env files implicitly.
+    - Never log or expose secret values in representations.
+    - Reject unsafe production defaults.
+    - Validate configuration before initializing external services.
+    - Keep configuration loading deterministic and testable.
 """
 
 from __future__ import annotations
@@ -50,6 +44,7 @@ DEFAULT_MAX_UPLOAD_FILES: Final[int] = 10
 DEFAULT_MAX_TOTAL_UPLOAD_SIZE_MB: Final[int] = 100
 
 DEFAULT_LOG_LEVEL: Final[str] = "INFO"
+
 SUPPORTED_LOG_LEVELS: Final[frozenset[str]] = frozenset(
     {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 )
@@ -65,6 +60,8 @@ ENVIRONMENT_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(
 MIME_TYPE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
 )
+
+CURRENCY_CODE_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Z]{3}$")
 
 
 class ConfigurationError(ValueError):
@@ -90,6 +87,14 @@ def _get_string(
 
     value = raw_value.strip()
 
+    if "\x00" in value or any(
+        ord(character) < 32 and character not in "\t"
+        for character in value
+    ):
+        raise ConfigurationError(
+            f"Environment variable {name} contains invalid characters."
+        )
+
     if not value and not allow_empty:
         if required:
             raise ConfigurationError(
@@ -97,11 +102,6 @@ def _get_string(
             )
         if default is not None:
             return default
-
-    if "\x00" in value:
-        raise ConfigurationError(
-            f"Environment variable {name} contains invalid characters."
-        )
 
     return value
 
@@ -192,10 +192,19 @@ def _validate_url(
     allowed_schemes: frozenset[str],
     require_host: bool = True,
 ) -> str:
-    """Validate a service URL without including it in error messages."""
+    """Validate a service URL without disclosing its value."""
+    if not value or value != value.strip():
+        raise ConfigurationError(
+            f"Environment variable {name} is not a valid URL."
+        )
+
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ConfigurationError(
+            f"Environment variable {name} contains control characters."
+        )
+
     try:
         parsed = urlsplit(value)
-        # Accessing .port triggers validation of malformed port values.
         port = parsed.port
     except ValueError as exc:
         raise ConfigurationError(
@@ -212,19 +221,19 @@ def _validate_url(
             f"Environment variable {name} must include a hostname."
         )
 
-    if parsed.username or parsed.password:
+    if parsed.username is not None or parsed.password is not None:
         raise ConfigurationError(
             f"Environment variable {name} must not contain URL credentials."
-        )
-
-    if any(ord(character) < 32 or ord(character) == 127 for character in value):
-        raise ConfigurationError(
-            f"Environment variable {name} contains control characters."
         )
 
     if port is not None and not 1 <= port <= 65535:
         raise ConfigurationError(
             f"Environment variable {name} contains an invalid port."
+        )
+
+    if parsed.fragment:
+        raise ConfigurationError(
+            f"Environment variable {name} must not contain a URL fragment."
         )
 
     return value
@@ -237,7 +246,7 @@ def _validate_origins(origins: tuple[str, ...]) -> tuple[str, ...]:
     for origin in origins:
         if origin == "*":
             raise ConfigurationError(
-                "Wildcard CORS origins are not permitted by this configuration."
+                "Wildcard CORS origins are not permitted."
             )
 
         try:
@@ -259,14 +268,18 @@ def _validate_origins(origins: tuple[str, ...]) -> tuple[str, ...]:
             )
 
         if (
-            parsed.username
-            or parsed.password
+            parsed.username is not None
+            or parsed.password is not None
             or parsed.path not in {"", "/"}
             or parsed.query
             or parsed.fragment
+            or any(
+                ord(character) < 32 or ord(character) == 127
+                for character in origin
+            )
         ):
             raise ConfigurationError(
-                "CORS_ALLOWED_ORIGINS entries must be origins, not full URLs."
+                "CORS_ALLOWED_ORIGINS entries must be valid origins only."
             )
 
         if port is not None and not 1 <= port <= 65535:
@@ -295,12 +308,48 @@ def _validate_mime_types(
 
         normalized.append(value)
 
-    if not normalized:
+    result = tuple(dict.fromkeys(normalized))
+
+    if not result:
         raise ConfigurationError(
             "At least one upload MIME type must be configured."
         )
 
-    return tuple(dict.fromkeys(normalized))
+    return result
+
+
+def _validate_api_prefix(value: str) -> str:
+    """Validate an application API path prefix."""
+    if (
+        not value.startswith("/")
+        or value.startswith("//")
+        or "?" in value
+        or "#" in value
+        or "\\" in value
+        or "%" in value
+        or any(
+            ord(character) < 32 or ord(character) == 127
+            for character in value
+        )
+        or any(segment in {".", ".."} for segment in value.split("/"))
+        or "//" in value
+    ):
+        raise ConfigurationError("API_PREFIX is invalid.")
+
+    return value.rstrip("/") or "/"
+
+
+def _validate_storage_path(name: str, value: str) -> str:
+    """Reject empty paths and control characters."""
+    if not value or any(
+        ord(character) < 32 or ord(character) == 127
+        for character in value
+    ):
+        raise ConfigurationError(
+            f"Environment variable {name} is invalid."
+        )
+
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -347,7 +396,7 @@ class Settings:
     payment_mode: str = "test"
     payment_currency: str = "INR"
 
-    # Private storage
+    # Storage
     storage_driver: str = "local"
     storage_local_path: str = "storage/private"
     storage_temp_path: str = "storage/tmp"
@@ -360,17 +409,14 @@ class Settings:
 
     # AI integration
     ai_enabled: bool = False
-    ai_api_url: str = ""
+    ai_api_url: str = field(default="", repr=False)
     ai_api_key: str = field(default="", repr=False)
     ai_model: str = ""
 
     @classmethod
     def from_environment(cls) -> "Settings":
         """Create and validate settings from environment variables."""
-        environment = _get_string(
-            "NODE_ENV",
-            "development",
-        ).lower()
+        environment = _get_string("NODE_ENV", "development").lower()
 
         if environment not in SUPPORTED_ENVIRONMENTS:
             raise ConfigurationError(
@@ -378,37 +424,25 @@ class Settings:
             )
 
         is_production = environment == "production"
-
         debug = _get_bool("DEBUG", False)
 
         if is_production and debug:
             raise ConfigurationError("DEBUG must be disabled in production.")
 
         host = _get_string("HOST", "127.0.0.1")
-        if not host or any(
-            character.isspace() or ord(character) < 32
-            for character in host
+
+        if (
+            not host
+            or any(character.isspace() for character in host)
+            or any(ord(character) < 32 for character in host)
+            or "/" in host
+            or "\\" in host
         ):
             raise ConfigurationError("HOST contains an invalid hostname or address.")
 
-        api_prefix = _get_string("API_PREFIX", "/api/v1")
-
-        if (
-            not api_prefix.startswith("/")
-            or api_prefix.startswith("//")
-            or "?" in api_prefix
-            or "#" in api_prefix
-            or "\\" in api_prefix
-            or "%" in api_prefix
-            or any(
-                segment in {".", ".."}
-                for segment in api_prefix.split("/")
-            )
-            or any(ord(character) < 32 for character in api_prefix)
-        ):
-            raise ConfigurationError("API_PREFIX is invalid.")
-
-        api_prefix = api_prefix.rstrip("/") or "/"
+        api_prefix = _validate_api_prefix(
+            _get_string("API_PREFIX", "/api/v1")
+        )
 
         log_level = _get_string("LOG_LEVEL", DEFAULT_LOG_LEVEL).upper()
 
@@ -418,25 +452,27 @@ class Settings:
             )
 
         cors_origins = _validate_origins(
-            _get_csv(
-                "CORS_ALLOWED_ORIGINS",
-                DEFAULT_ALLOWED_ORIGINS,
-            )
+            _get_csv("CORS_ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS)
         )
-        cors_allow_credentials = _get_bool(
-            "CORS_ALLOW_CREDENTIALS",
-            False,
-        )
+        cors_allow_credentials = _get_bool("CORS_ALLOW_CREDENTIALS", False)
 
         if cors_allow_credentials and not cors_origins:
             raise ConfigurationError(
                 "Credentialed CORS requires explicitly configured origins."
             )
 
-        database_engine = _get_string(
-            "DB_ENGINE",
-            "postgresql",
-        ).lower()
+        if is_production:
+            if not cors_origins:
+                raise ConfigurationError(
+                    "Production requires at least one trusted CORS origin."
+                )
+
+            if any(not origin.lower().startswith("https://") for origin in cors_origins):
+                raise ConfigurationError(
+                    "Production CORS origins must use HTTPS."
+                )
+
+        database_engine = _get_string("DB_ENGINE", "postgresql").lower()
 
         if database_engine not in DATABASE_ENGINES:
             raise ConfigurationError(
@@ -445,23 +481,29 @@ class Settings:
 
         database_url = _get_string("DATABASE_URL", allow_empty=True)
 
+        if database_url:
+            allowed_database_schemes = {
+                "postgresql": frozenset({"postgresql", "postgres"}),
+                "mysql": frozenset({"mysql"}),
+            }
+            _validate_url(
+                "DATABASE_URL",
+                database_url,
+                allowed_schemes=allowed_database_schemes[database_engine],
+            )
+        elif is_production:
+            raise ConfigurationError(
+                "DATABASE_URL is required in production."
+            )
+
         database_connect_timeout_seconds = _get_int(
-            "DB_CONNECT_TIMEOUT_SECONDS",
-            10,
-            minimum=1,
-            maximum=120,
+            "DB_CONNECT_TIMEOUT_SECONDS", 10, minimum=1, maximum=120
         )
         database_pool_min_size = _get_int(
-            "DB_POOL_MIN_SIZE",
-            1,
-            minimum=0,
-            maximum=100,
+            "DB_POOL_MIN_SIZE", 1, minimum=0, maximum=100
         )
         database_pool_max_size = _get_int(
-            "DB_POOL_MAX_SIZE",
-            10,
-            minimum=1,
-            maximum=500,
+            "DB_POOL_MAX_SIZE", 10, minimum=1, maximum=500
         )
 
         if database_pool_min_size > database_pool_max_size:
@@ -478,41 +520,24 @@ class Settings:
             )
 
         if redis_url:
-            redis_schemes = frozenset({"redis", "rediss"})
             _validate_url(
                 "REDIS_URL",
                 redis_url,
-                allowed_schemes=redis_schemes,
+                allowed_schemes=frozenset({"redis", "rediss"}),
             )
 
         email_enabled = _get_bool("EMAIL_ENABLED", False)
         smtp_host = _get_string("SMTP_HOST")
-        smtp_port = _get_int(
-            "SMTP_PORT",
-            587,
-            minimum=1,
-            maximum=65535,
-        )
+        smtp_port = _get_int("SMTP_PORT", 587, minimum=1, maximum=65535)
         smtp_username = _get_string("SMTP_USER", allow_empty=True)
         smtp_password = _get_string("SMTP_PASSWORD", allow_empty=True)
         email_from_address = _get_string("EMAIL_FROM_ADDRESS")
         email_from_name = _get_string("EMAIL_FROM_NAME", "MedOrbits")
 
         if email_enabled:
-            required_email_values = {
-                "SMTP_HOST": smtp_host,
-                "EMAIL_FROM_ADDRESS": email_from_address,
-            }
-
-            missing_email_values = [
-                name
-                for name, value in required_email_values.items()
-                if not value
-            ]
-
-            if missing_email_values:
+            if not smtp_host or not email_from_address:
                 raise ConfigurationError(
-                    "Email is enabled but required SMTP or sender settings are missing."
+                    "Email is enabled but SMTP_HOST or EMAIL_FROM_ADDRESS is missing."
                 )
 
             if bool(smtp_username) != bool(smtp_password):
@@ -522,17 +547,12 @@ class Settings:
 
         payments_enabled = _get_bool("PAYMENTS_ENABLED", False)
         payment_mode = _get_string("PAYMENT_MODE", "test").lower()
-        payment_currency = _get_string(
-            "PAYMENT_CURRENCY",
-            "INR",
-        ).upper()
+        payment_currency = _get_string("PAYMENT_CURRENCY", "INR").upper()
 
         if payment_mode not in {"test", "live"}:
-            raise ConfigurationError(
-                "PAYMENT_MODE must be test or live."
-            )
+            raise ConfigurationError("PAYMENT_MODE must be test or live.")
 
-        if not re.fullmatch(r"[A-Z]{3}", payment_currency):
+        if not CURRENCY_CODE_PATTERN.fullmatch(payment_currency):
             raise ConfigurationError(
                 "PAYMENT_CURRENCY must be a three-letter currency code."
             )
@@ -550,24 +570,27 @@ class Settings:
         storage_driver = _get_string("STORAGE_DRIVER", "local").lower()
 
         if storage_driver not in {"local", "s3"}:
-            raise ConfigurationError(
-                "STORAGE_DRIVER must be local or s3."
-            )
+            raise ConfigurationError("STORAGE_DRIVER must be local or s3.")
 
-        storage_local_path = _get_string(
+        storage_local_path = _validate_storage_path(
             "STORAGE_LOCAL_PATH",
-            "storage/private",
+            _get_string("STORAGE_LOCAL_PATH", "storage/private"),
         )
-        storage_temp_path = _get_string(
+        storage_temp_path = _validate_storage_path(
             "STORAGE_TEMP_PATH",
-            "storage/tmp",
+            _get_string("STORAGE_TEMP_PATH", "storage/tmp"),
         )
+
+        if storage_local_path == storage_temp_path:
+            raise ConfigurationError(
+                "STORAGE_LOCAL_PATH and STORAGE_TEMP_PATH must be different."
+            )
 
         upload_max_file_size_mb = _get_int(
             "UPLOAD_MAX_FILE_SIZE_MB",
             DEFAULT_MAX_UPLOAD_SIZE_MB,
             minimum=1,
-            maximum=MAX_UPLOAD_SIZE_MB,
+            maximum=1024,
         )
         upload_max_files = _get_int(
             "UPLOAD_MAX_FILES",
@@ -579,7 +602,7 @@ class Settings:
             "UPLOAD_MAX_TOTAL_SIZE_MB",
             DEFAULT_MAX_TOTAL_UPLOAD_SIZE_MB,
             minimum=1,
-            maximum=MAX_UPLOAD_SIZE_MB,
+            maximum=10240,
         )
 
         if upload_max_file_size_mb > upload_max_total_size_mb:
@@ -619,27 +642,6 @@ class Settings:
                 raise ConfigurationError(
                     "AI_API_KEY is required when AI is enabled in production."
                 )
-
-        if is_production:
-            # Require an explicitly configured HTTPS origin in production.
-            if not cors_origins:
-                raise ConfigurationError(
-                    "Production requires at least one trusted CORS origin."
-                )
-
-            for origin in cors_origins:
-                if not origin.startswith("https://"):
-                    raise ConfigurationError(
-                        "Production CORS origins must use HTTPS."
-                    )
-
-            if storage_driver == "local":
-                # The storage module performs final filesystem boundary
-                # and symlink checks when initializing local storage.
-                if os.path.isabs(storage_local_path) is False:
-                    # Relative paths are permitted, but deployments should
-                    # confirm their resolved location is private.
-                    pass
 
         return cls(
             environment=environment,
@@ -686,9 +688,9 @@ def get_settings() -> Settings:
     """
     Return cached, validated application settings.
 
-    Environment variables must be set before the first call. Tests that
-    change environment variables should call get_settings.cache_clear()
-    before retrieving settings again.
+    Set environment variables before the first call. Tests that modify the
+    environment should call get_settings.cache_clear() before retrieving
+    settings again.
     """
     return Settings.from_environment()
 
@@ -698,4 +700,3 @@ __all__ = [
     "Settings",
     "get_settings",
 ]
-

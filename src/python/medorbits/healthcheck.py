@@ -1,30 +1,26 @@
 
-"""
-MedOrbits -- Health Checks
+"""MedOrbits health checks.
+
 File: src/python/medorbits/healthcheck.py
 
-Purpose:
-    Provide reusable liveness, readiness, and dependency health checks.
-
-Features:
-    - Process liveness checks.
-    - Application readiness checks.
-    - Pluggable dependency probes.
-    - Bounded execution time for synchronous probes.
-    - Sanitized health results.
-    - No automatic network calls or service initialization at import time.
+Provides liveness, readiness, and pluggable dependency probes.
 
 Security:
-    - Do not return credentials, connection strings, internal hostnames,
-      SQL statements, exception messages, or other sensitive details.
-    - Keep detailed diagnostics in protected logs and monitoring systems.
-    - Expose only the health information appropriate for each endpoint.
-    - A health check is not a substitute for authentication or authorization.
+    - Never expose credentials, connection strings, SQL, internal hostnames,
+      or exception messages in public health responses.
+    - Log only sanitized probe identifiers and exception type names.
+    - Do not initialize services or make network calls at import time.
+    - Health endpoints are not a substitute for authorization.
+
+Timeout note:
+    Python cannot forcibly terminate a running synchronous function. Probes
+    must implement their own I/O timeouts and avoid unbounded blocking calls.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -35,14 +31,24 @@ from types import MappingProxyType
 from typing import Any, Final
 
 
+__all__ = [
+    "HealthChecker",
+    "HealthReport",
+    "HealthStatus",
+    "ProbeResult",
+    "liveness_report",
+    "readiness_report",
+]
+
 logger = logging.getLogger("medorbits.healthcheck")
 
 DEFAULT_PROBE_TIMEOUT_SECONDS: Final[float] = 2.0
 DEFAULT_OVERALL_TIMEOUT_SECONDS: Final[float] = 5.0
 MAX_PROBE_TIMEOUT_SECONDS: Final[float] = 30.0
 MAX_PROBES: Final[int] = 50
+MAX_WORKERS: Final[int] = 50
 
-HealthProbe = Callable[[], bool | None]
+HealthProbe = Callable[[], bool]
 
 
 class HealthStatus(str, Enum):
@@ -56,7 +62,7 @@ class HealthStatus(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class ProbeResult:
-    """Sanitized result of one dependency health probe."""
+    """Sanitized result of one dependency probe."""
 
     name: str
     status: HealthStatus
@@ -72,7 +78,7 @@ class ProbeResult:
             "required": self.required,
         }
 
-        if include_reason and self.reason:
+        if include_reason and self.reason is not None:
             result["reason"] = self.reason
 
         return result
@@ -80,7 +86,7 @@ class ProbeResult:
 
 @dataclass(frozen=True, slots=True)
 class HealthReport:
-    """Aggregate health-check result."""
+    """Immutable aggregate health-check result."""
 
     status: HealthStatus
     checked_at_unix: float
@@ -125,71 +131,85 @@ class _RegisteredProbe:
 
 
 def _validate_probe_name(name: str) -> str:
+    """Validate a probe name suitable for logs and health responses."""
+    if not isinstance(name, str):
+        raise TypeError("Probe name must be a string.")
+
     if (
-        not isinstance(name, str)
-        or not name
+        not name
         or len(name) > 80
+        or not name.isascii()
         or not name.replace("_", "").replace("-", "").isalnum()
     ):
         raise ValueError(
-            "Probe name must contain only letters, numbers, underscores, or hyphens."
+            "Probe name must contain only ASCII letters, numbers, "
+            "underscores, or hyphens."
         )
 
     return name
 
 
 def _validate_timeout(value: float, label: str) -> float:
+    """Validate a finite, bounded timeout value."""
     if (
         isinstance(value, bool)
         or not isinstance(value, (int, float))
+        or not math.isfinite(value)
         or value <= 0
         or value > MAX_PROBE_TIMEOUT_SECONDS
     ):
         raise ValueError(
-            f"{label} must be greater than 0 and at most "
+            f"{label} must be finite, greater than 0, and at most "
             f"{MAX_PROBE_TIMEOUT_SECONDS} seconds."
         )
 
     return float(value)
 
 
-def _status_from_probes(
+def _aggregate_status(
     probes: tuple[ProbeResult, ...],
 ) -> HealthStatus:
-    if not probes:
-        return HealthStatus.HEALTHY
-
-    required_failures = any(
-        probe.required and probe.status is not HealthStatus.HEALTHY
+    """Aggregate probe statuses, respecting required dependencies."""
+    if any(
+        probe.required
+        and probe.status is not HealthStatus.HEALTHY
         for probe in probes
-    )
-
-    if required_failures:
+    ):
         return HealthStatus.UNHEALTHY
 
-    optional_failures = any(
+    if any(
         probe.status is not HealthStatus.HEALTHY
         for probe in probes
-    )
+    ):
+        return HealthStatus.DEGRADED
 
-    return (
-        HealthStatus.DEGRADED
-        if optional_failures
-        else HealthStatus.HEALTHY
+    return HealthStatus.HEALTHY
+
+
+def _result_for_unrun_probe(
+    probe: _RegisteredProbe,
+    *,
+    reason: str,
+) -> ProbeResult:
+    """Represent a probe that could not be completed."""
+    return ProbeResult(
+        name=probe.name,
+        status=HealthStatus.UNKNOWN,
+        duration_ms=0.0,
+        required=probe.required,
+        reason=reason,
     )
 
 
 class HealthChecker:
-    """
-    Register and execute application dependency probes.
+    """Register and execute dependency probes.
 
-    Probe callbacks should perform a small, read-only check and return True
-    when healthy. They should not initialize services or mutate application
-    state.
+    Probes run concurrently in a bounded thread pool. A probe must be a
+    small, read-only, synchronous check that returns exactly True when
+    healthy and exactly False when unhealthy.
 
-    Each probe runs in a worker thread. A timed-out synchronous probe cannot
-    be forcibly stopped; design probes with their own database/network
-    timeouts to avoid accumulating stuck worker threads.
+    A timeout cannot terminate a callback that is already running. Configure
+    database and network client timeouts independently.
     """
 
     def __init__(
@@ -199,11 +219,13 @@ class HealthChecker:
         overall_timeout_seconds: float = DEFAULT_OVERALL_TIMEOUT_SECONDS,
     ) -> None:
         if (
-            not isinstance(max_workers, int)
-            or isinstance(max_workers, bool)
-            or not 1 <= max_workers <= MAX_PROBES
+            isinstance(max_workers, bool)
+            or not isinstance(max_workers, int)
+            or not 1 <= max_workers <= MAX_WORKERS
         ):
-            raise ValueError("max_workers must be an integer between 1 and 50.")
+            raise ValueError(
+                f"max_workers must be an integer between 1 and {MAX_WORKERS}."
+            )
 
         self._overall_timeout = _validate_timeout(
             overall_timeout_seconds,
@@ -216,6 +238,8 @@ class HealthChecker:
         self._probes: dict[str, _RegisteredProbe] = {}
         self._lock = threading.RLock()
         self._closed = False
+        self._active_checks = 0
+        self._idle = threading.Condition(self._lock)
 
     def register(
         self,
@@ -225,7 +249,7 @@ class HealthChecker:
         required: bool = True,
         timeout_seconds: float = DEFAULT_PROBE_TIMEOUT_SECONDS,
     ) -> None:
-        """Register a unique synchronous dependency probe."""
+        """Register a uniquely named synchronous probe."""
         name = _validate_probe_name(name)
         timeout = _validate_timeout(timeout_seconds, "timeout_seconds")
 
@@ -255,81 +279,49 @@ class HealthChecker:
             )
 
     def unregister(self, name: str) -> bool:
-        """Remove a registered probe. Return whether it existed."""
+        """Remove a registered probe by name."""
         with self._lock:
+            if self._closed:
+                return False
             return self._probes.pop(name, None) is not None
 
     def registered_probes(self) -> tuple[str, ...]:
-        """Return registered probe names without exposing callback details."""
+        """Return registered names without exposing callbacks."""
         with self._lock:
-            return tuple(self._probes.keys())
+            return tuple(self._probes)
 
-    def _run_probe(
+    def _execute_probe(
         self,
         probe: _RegisteredProbe,
-        deadline: float,
-    ) -> ProbeResult:
-        start = time.monotonic()
-        remaining = deadline - start
-        timeout = min(probe.timeout_seconds, remaining)
-
-        if timeout <= 0:
-            return ProbeResult(
-                name=probe.name,
-                status=HealthStatus.UNKNOWN,
-                duration_ms=0.0,
-                required=probe.required,
-                reason="overall_timeout",
-            )
-
-        future: Future[bool | None] = self._executor.submit(probe.callback)
-
+    ) -> tuple[HealthStatus, str | None]:
+        """Execute one callback and return a sanitized status and reason."""
         try:
-            result = future.result(timeout=timeout)
+            outcome = probe.callback()
 
-            if result is False:
-                status = HealthStatus.UNHEALTHY
-                reason = "probe_failed"
-            else:
-                status = HealthStatus.HEALTHY
-                reason = None
+            if outcome is True:
+                return HealthStatus.HEALTHY, None
 
-        except TimeoutError:
-            future.cancel()
-            status = HealthStatus.UNHEALTHY
-            reason = "probe_timeout"
+            if outcome is False:
+                return HealthStatus.UNHEALTHY, "probe_failed"
+
+            # None, integers, strings, and other truthy/falsy values are not
+            # accepted as a successful health result.
+            return HealthStatus.UNHEALTHY, "invalid_probe_result"
 
         except Exception as exc:
-            # Do not expose exception text or connection details in results.
+            # Do not log exception text; it can contain secrets or endpoints.
             logger.warning(
-                "Health probe failed: name=%s error_type=%s",
+                "Health probe raised an exception: name=%s error_type=%s",
                 probe.name,
                 type(exc).__name__,
             )
-            status = HealthStatus.UNHEALTHY
-            reason = "probe_error"
-
-        duration_ms = (time.monotonic() - start) * 1000
-
-        return ProbeResult(
-            name=probe.name,
-            status=status,
-            duration_ms=duration_ms,
-            required=probe.required,
-            reason=reason,
-        )
+            return HealthStatus.UNHEALTHY, "probe_error"
 
     def check(self) -> HealthReport:
-        """
-        Run dependency probes and return an aggregate report.
-
-        A required failed probe makes the report unhealthy. An optional
-        failed probe makes it degraded. An overall timeout can leave probes
-        unchecked; readiness should be treated as unhealthy in that case.
-        """
-        start = time.monotonic()
+        """Run dependency probes within the overall time budget."""
+        started = time.monotonic()
         checked_at = time.time()
-        deadline = start + self._overall_timeout
+        deadline = started + self._overall_timeout
 
         with self._lock:
             if self._closed:
@@ -340,122 +332,134 @@ class HealthChecker:
                     probes=(),
                 )
 
+            self._active_checks += 1
             probes = tuple(self._probes.values())
 
-        results: list[ProbeResult] = []
+        results: dict[str, ProbeResult] = {}
+        futures: dict[Future[tuple[HealthStatus, str | None]], _RegisteredProbe] = {}
 
-        # Execute probes concurrently. Submission is bounded by the configured
-        # executor; callbacks themselves must use short I/O timeouts.
-        futures: dict[Future[bool | None], _RegisteredProbe] = {}
-
-        for probe in probes:
-            if time.monotonic() >= deadline:
-                results.append(
-                    ProbeResult(
-                        name=probe.name,
-                        status=HealthStatus.UNKNOWN,
-                        duration_ms=0.0,
-                        required=probe.required,
+        try:
+            # Submit all probes promptly so independent checks run concurrently.
+            for probe in probes:
+                if time.monotonic() >= deadline:
+                    results[probe.name] = _result_for_unrun_probe(
+                        probe,
                         reason="overall_timeout",
                     )
-                )
-                continue
+                    continue
 
-            futures[self._executor.submit(probe.callback)] = probe
+                try:
+                    future = self._executor.submit(self._execute_probe, probe)
+                except RuntimeError:
+                    results[probe.name] = _result_for_unrun_probe(
+                        probe,
+                        reason="checker_unavailable",
+                    )
+                    continue
 
-        for future, probe in futures.items():
-            remaining = deadline - time.monotonic()
+                futures[future] = probe
 
-            if remaining <= 0:
-                future.cancel()
-                results.append(
-                    ProbeResult(
-                        name=probe.name,
-                        status=HealthStatus.UNKNOWN,
-                        duration_ms=0.0,
-                        required=probe.required,
+            for future, probe in futures.items():
+                remaining = deadline - time.monotonic()
+
+                if remaining <= 0:
+                    future.cancel()
+                    results[probe.name] = _result_for_unrun_probe(
+                        probe,
                         reason="overall_timeout",
                     )
-                )
-                continue
+                    continue
 
-            probe_start = time.monotonic()
+                probe_started = time.monotonic()
+                wait_seconds = min(probe.timeout_seconds, remaining)
 
-            try:
-                outcome = future.result(
-                    timeout=min(probe.timeout_seconds, remaining)
-                )
+                try:
+                    status, reason = future.result(timeout=wait_seconds)
 
-                if outcome is False:
+                except TimeoutError:
+                    future.cancel()
                     status = HealthStatus.UNHEALTHY
-                    reason = "probe_failed"
-                else:
-                    status = HealthStatus.HEALTHY
-                    reason = None
+                    reason = (
+                        "overall_timeout"
+                        if time.monotonic() >= deadline
+                        else "probe_timeout"
+                    )
 
-            except TimeoutError:
-                future.cancel()
-                status = HealthStatus.UNHEALTHY
-                reason = "probe_timeout"
+                except Exception as exc:
+                    # Protect the caller even from unexpected executor errors.
+                    logger.warning(
+                        "Health probe execution failed: name=%s error_type=%s",
+                        probe.name,
+                        type(exc).__name__,
+                    )
+                    status = HealthStatus.UNHEALTHY
+                    reason = "probe_error"
 
-            except Exception as exc:
-                logger.warning(
-                    "Health probe failed: name=%s error_type=%s",
-                    probe.name,
-                    type(exc).__name__,
-                )
-                status = HealthStatus.UNHEALTHY
-                reason = "probe_error"
-
-            results.append(
-                ProbeResult(
+                results[probe.name] = ProbeResult(
                     name=probe.name,
                     status=status,
-                    duration_ms=(time.monotonic() - probe_start) * 1000,
+                    duration_ms=(time.monotonic() - probe_started) * 1000,
                     required=probe.required,
                     reason=reason,
                 )
+
+            # Preserve registration order in the public report.
+            report_probes = tuple(
+                results[probe.name]
+                for probe in probes
+                if probe.name in results
             )
 
-        report_probes = tuple(results)
+            report_status = _aggregate_status(report_probes)
 
-        # Unknown required probes are not ready. Optional unknown probes
-        # degrade the report rather than making readiness fail.
-        status = _status_from_probes(report_probes)
+            return HealthReport(
+                status=report_status,
+                checked_at_unix=checked_at,
+                duration_ms=(time.monotonic() - started) * 1000,
+                probes=report_probes,
+            )
 
-        report = HealthReport(
-            status=status,
-            checked_at_unix=checked_at,
-            duration_ms=(time.monotonic() - start) * 1000,
-            probes=report_probes,
-        )
-
-        return report
+        finally:
+            with self._lock:
+                self._active_checks -= 1
+                self._idle.notify_all()
 
     def close(self, *, wait: bool = True) -> None:
-        """Stop accepting new checks and release the executor."""
+        """Reject new checks and shut down the worker pool.
+
+        With wait=True, waits for active check calls to finish before shutting
+        down the executor. Running callbacks may still block indefinitely;
+        their own I/O timeouts remain essential.
+        """
         with self._lock:
             if self._closed:
                 return
+
             self._closed = True
 
-        self._executor.shutdown(wait=wait, cancel_futures=True)
+            if wait:
+                while self._active_checks:
+                    self._idle.wait()
+
+        self._executor.shutdown(
+            wait=wait,
+            cancel_futures=True,
+        )
 
     def __enter__(self) -> "HealthChecker":
         return self
 
-    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+    def __exit__(
+        self,
+        exc_type: Any,
+        exc_value: Any,
+        traceback_value: Any,
+    ) -> None:
         self.close()
 
 
-def liveness_report() -> Mapping[str, Any]:
-    """
-    Minimal process liveness response.
-
-    This deliberately does not contact external dependencies. It indicates
-    that the process can execute application code, not that it is ready
-    to serve traffic.
-    """
+def liveness_report() -> Mapping[str, str]:
+    """Return a minimal process-liveness response without probing services."""
     return MappingProxyType(
         {
             "status": HealthStatus.HEALTHY.value,
@@ -465,23 +469,8 @@ def liveness_report() -> Mapping[str, Any]:
 
 
 def readiness_report(checker: HealthChecker) -> HealthReport:
-    """
-    Check whether the service's required dependencies are ready.
-
-    Register only the probes appropriate for this application process.
-    """
+    """Evaluate registered dependency probes for application readiness."""
     if not isinstance(checker, HealthChecker):
         raise TypeError("checker must be a HealthChecker instance.")
 
     return checker.check()
-
-
-__all__ = [
-    "HealthChecker",
-    "HealthReport",
-    "HealthStatus",
-    "ProbeResult",
-    "liveness_report",
-    "readiness_report",
-]
-
