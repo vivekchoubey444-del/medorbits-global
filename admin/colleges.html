@@ -1,24 +1,2826 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Colleges | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Manage the MedOrbits college directory, institutional details, courses, accreditation, locations and published college records through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>College Management | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(67,135,217,.18), transparent 36%),
+        radial-gradient(ellipse at 96% 32%, rgba(205,164,85,.09), transparent 34%),
+        radial-gradient(ellipse at 45% 100%, rgba(38,92,151,.12), transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans", sans-serif;
+    }
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+    [hidden] { display: none !important; }
+    .container {
+      width: min(1280px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+    .skip-link:focus { top: 12px; }
+    .accent-text {
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .announcement strong { color: var(--gold-bright); }
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+    }
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s, filter .22s, box-shadow .22s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+    .btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%, rgba(116,184,255,.09), transparent 34%),
+        radial-gradient(ellipse at 93% 55%, rgba(211,173,97,.065), transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .breadcrumbs a { color: var(--blue-bright); }
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display", Georgia, serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+    .sidebar,
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+    }
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display", Georgia, serif;
+    }
+    .admin-identity strong { display: block; font-size: 11px; }
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .admin-nav { display: grid; gap: 5px; }
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+    .sidebar-note strong { color: var(--gold-bright); }
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display", Georgia, serif;
+    }
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+    .status.info { color: var(--blue-bright); }
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(200px,.7fr);
+      gap: 22px;
+      align-items: center;
+      padding: clamp(18px,3vw,28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .hero-copy { position: relative; z-index: 1; min-width: 0; }
+    .hero h2 {
+      margin: 12px 0 10px;
+      font: 600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display", Georgia, serif;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+    .hero-art {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(0deg,rgba(3,8,18,.88),rgba(3,8,18,.06)),
+        url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=85")
+        center/cover;
+    }
+    .hero-art-label {
+      position: absolute;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d2deed;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+    }
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+    }
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+    .stat-copy { min-width: 0; }
+    .stat-copy span { display: block; color: var(--muted); font-size: 9px; }
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 24px/1.35 "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+    .stat-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 19px;
+    }
+    .mini-list { display: grid; gap: 10px; }
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+    .mini-copy { min-width: 0; flex: 1; }
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .toolbar p { margin: 0; color: var(--muted); font-size: 10px; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+      align-items: end;
+    }
+    .field { min-width: 0; }
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #07162a;
+      color: var(--text);
+      font-size: 10px;
+    }
+    .field input::placeholder { color: #7188a4; }
+    .filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 15px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.055);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .pill.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .pill.warning {
+      border-color: rgba(255,224,160,.32);
+      color: var(--warning);
+    }
+    .pill.danger {
+      border-color: rgba(255,182,189,.4);
+      background: rgba(255,100,115,.07);
+      color: var(--danger);
+    }
+    .pill.info {
+      border-color: rgba(116,184,255,.28);
+      color: var(--blue-bright);
+    }
+    .pill.unknown { color: var(--muted); }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(3,11,22,.45);
+      scrollbar-width: thin;
+      scrollbar-color: #355777 #081426;
+    }
+    .data-table {
+      width: 100%;
+      min-width: 1000px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .data-table th {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(116,184,255,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(116,184,255,.1);
+      color: var(--text-soft);
+      font-size: 9px;
+      vertical-align: top;
+    }
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+    .data-table tbody tr:hover { background: rgba(116,184,255,.035); }
+    .primary-value {
+      display: block;
+      max-width: 280px;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .secondary-value {
+      display: block;
+      max-width: 300px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+    .table-action {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.05);
+      color: var(--blue-bright);
+      font-size: 9px;
+      cursor: pointer;
+    }
+    .table-action:hover { background: rgba(116,184,255,.12); }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .empty-state {
+      padding: 27px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display", Georgia, serif;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .pagination p { margin: 0; color: var(--muted); font-size: 9px; }
+    .feature-banner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display", Georgia, serif;
+    }
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .feature-image {
+      min-height: 165px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.3),rgba(5,13,26,.55)),
+        url("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=85")
+        center/cover;
+    }
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .notice strong { color: var(--gold-bright); }
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--gold-bright); }
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+    dialog {
+      width: min(760px, calc(100% - 28px));
+      max-width: 760px;
+      max-height: min(85vh, 900px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--border-gold);
+      border-radius: 18px;
+      background: linear-gradient(145deg,#102642,#050e1c);
+      color: var(--text);
+      box-shadow: 0 28px 100px rgba(0,0,0,.7);
+    }
+    dialog::backdrop {
+      background: rgba(1,5,12,.8);
+      backdrop-filter: blur(6px);
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dialog-header h2 {
+      margin: 7px 0 0;
+      font: 600 23px/1.35 "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+    .dialog-body { padding: 20px; }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 11px;
+    }
+    .detail-item {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.38);
+    }
+    .detail-item.full { grid-column: 1/-1; }
+    .detail-item span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .detail-item strong {
+      display: block;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+      .main-nav.open { display: flex; }
+      .main-nav > a { display: block; padding: 11px 8px; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+    @media (max-width:950px) {
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .hero { grid-template-columns: minmax(0,1fr) minmax(150px,.6fr); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+      .page-main { padding: 29px 0 44px; }
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+      .sidebar, .panel { padding: 15px; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .hero-art { min-height: 145px; }
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+      .stat-copy strong { font-size: 22px; }
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+      .filter-actions { flex-direction: column; }
+      .filter-actions .btn { width: 100%; }
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .btn { flex: 1; }
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+      .feature-image { min-height: 135px; }
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .pagination { align-items: flex-start; flex-direction: column; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-item.full { grid-column: auto; }
+      .dialog-header, .dialog-body { padding: 15px; }
+    }
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-nav { grid-template-columns: 1fr; }
+      .stats-grid, .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+      .footer-grid { gap: 18px 11px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Colleges</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about colleges. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>College directory and institutional operations</span>
+  </div>
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          SECURE WORKSPACE
+        </span>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/courses.html">Course catalogue</a>
+        <a href="/admin/colleges.html" aria-current="page">Colleges</a>
+        <a href="/admin/universities.html">Universities</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/courses.html">Academic catalogue</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Colleges</span>
+      </nav>
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Institutions · Academics · Directory management</span>
+          <h1>College <span class="accent-text">directory.</span></h1>
+          <p>
+            Manage the MedOrbits college directory, review institutional
+            profiles, verify locations and affiliations, and monitor
+            publication status. Search and inspect the records returned
+            by your authorised administration API. Directory counts reflect
+            the data actually returned by the backend.
+          </p>
+        </div>
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/universities.html">Universities ↗</a>
+          <button class="btn" id="refreshColleges" type="button">↻ Refresh directory</button>
+        </div>
+      </header>
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Academic operations</span>
+            </div>
+          </div>
+          <p class="sidebar-label">Workspace</p>
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/official-resources.html"><span class="nav-icon" aria-hidden="true">▣</span>Official resources</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/access-control.html"><span class="nav-icon" aria-hidden="true">⚿</span>Access control</a>
+            <a href="/admin/audit-log.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit log</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/backup-status.html"><span class="nav-icon" aria-hidden="true">◈</span>Backup status</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+          <p class="sidebar-note">
+            <strong>Maintain a trustworthy academic directory.</strong><br>
+            Verify institutional names, affiliations, locations and programme
+            information. Keep source references and review dates available
+            wherever your data model supports them.
+          </p>
+        </aside>
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Academic discovery · Data quality · Governance</span>
+              <h2 id="heroTitle">
+                Better data.
+                <span class="accent-text">Better college discovery.</span>
+              </h2>
+              <p>
+                Keep college information organised for students, counsellors
+                and administrators. Inspect available records, find
+                institutions by location or affiliation, and identify entries
+                that need review before publication.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="heroRefresh" type="button">↻ Retrieve college records</button>
+                <button class="btn btn-outline" id="heroDirectory" type="button">Explore directory ↓</button>
+              </div>
+            </div>
+            <div
+              class="hero-art"
+              role="img"
+              aria-label="University campus architecture representing higher education and college directory management"
+            >
+              <div class="hero-art-label">
+                Academic institutions
+                <span>Discover · Verify · Organise · Publish</span>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="overviewTitle">Directory overview</h2>
+                <p>
+                  Counts are calculated from the records currently returned
+                  by the API. They do not necessarily represent every college
+                  in the database if the backend uses pagination.
+                </p>
+              </div>
+            </div>
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⌂</div>
+                <div class="stat-copy">
+                  <span>Loaded colleges</span>
+                  <strong id="statTotal">--</strong>
+                  <small>Records returned by the API</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Published</span>
+                  <strong id="statPublished">--</strong>
+                  <small>Published status in loaded records</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Draft / review</span>
+                  <strong id="statReview">--</strong>
+                  <small>Unpublished or review-needed records</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⌖</div>
+                <div class="stat-copy">
+                  <span>States represented</span>
+                  <strong id="statStates">--</strong>
+                  <small>Distinct reported state or region values</small>
+                </div>
+              </article>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="connectionTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⬡</div>
+              <div>
+                <h2 id="connectionTitle">Directory service connection</h2>
+                <p>
+                  Inspect the API status, most recently updated record and
+                  the scope of the current response.
+                </p>
+              </div>
+            </div>
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              College records have not been loaded. Connect this page to the authenticated college administration API.
+            </div>
+            <div class="two-column">
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">◉</div>
+                <div class="mini-copy">
+                  <strong>Latest updated record</strong>
+                  <p id="latestCollege">No college information loaded.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">↻</div>
+                <div class="mini-copy">
+                  <strong>Last API check</strong>
+                  <p id="lastChecked">Not checked during this session.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">▣</div>
+                <div class="mini-copy">
+                  <strong>Directory scope</strong>
+                  <p id="directoryScope">Scope information not reported by the API.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">⌘</div>
+                <div class="mini-copy">
+                  <strong>Pagination and coverage</strong>
+                  <p id="recordCoverage">Coverage information not reported by the API.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="filtersTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filtersTitle">Find a college</h2>
+                <p>
+                  Search by institution name, city, state, college code,
+                  university affiliation or available course information.
+                </p>
+              </div>
+            </div>
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search colleges</label>
+                  <input
+                    id="searchInput"
+                    name="search"
+                    type="search"
+                    maxlength="150"
+                    placeholder="Name, code, city, affiliation"
+                    autocomplete="off"
+                  >
+                </div>
+                <div class="field">
+                  <label for="stateFilter">State / region</label>
+                  <select id="stateFilter" name="state">
+                    <option value="">All states and regions</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="typeFilter">Institution type</label>
+                  <select id="typeFilter" name="type">
+                    <option value="">All institution types</option>
+                    <option value="government">Government</option>
+                    <option value="private">Private</option>
+                    <option value="deemed">Deemed university</option>
+                    <option value="autonomous">Autonomous</option>
+                    <option value="other">Other / unspecified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="courseFilter">Programme / course</label>
+                  <select id="courseFilter" name="course">
+                    <option value="">All programmes</option>
+                    <option value="mbbs">MBBS</option>
+                    <option value="bds">BDS</option>
+                    <option value="bams">BAMS</option>
+                    <option value="bums">BUMS</option>
+                    <option value="bhms">BHMS</option>
+                    <option value="nursing">Nursing</option>
+                    <option value="paramedical">Paramedical</option>
+                    <option value="other">Other / unspecified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="statusFilter">Publication status</label>
+                  <select id="statusFilter" name="status">
+                    <option value="">All statuses</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="review">Needs review</option>
+                    <option value="archived">Archived</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="sortFilter">Sort records</label>
+                  <select id="sortFilter" name="sort">
+                    <option value="name-asc">College name A–Z</option>
+                    <option value="name-desc">College name Z–A</option>
+                    <option value="updated-desc">Recently updated</option>
+                    <option value="updated-asc">Oldest update first</option>
+                    <option value="state-asc">State A–Z</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="reloadFromServer" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+          <section class="panel" id="collegeDirectory" aria-labelledby="directoryTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌂</div>
+              <div>
+                <h2 id="directoryTitle">College directory</h2>
+                <p>
+                  Review institutional identifiers, locations, affiliations,
+                  programme availability and publication status. Detailed
+                  records are shown only when supplied by the API.
+                </p>
+              </div>
+            </div>
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No college records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportColleges" type="button" disabled>
+                  ⇩ Export loaded records
+                </button>
+              </div>
+            </div>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="College directory; horizontally scrollable"
+            >
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">College</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Institution type</th>
+                    <th scope="col">Affiliation</th>
+                    <th scope="col">Programmes</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="collegesBody">
+                  <tr>
+                    <td colspan="8">
+                      <div class="empty-state">
+                        <strong>No college records loaded</strong>
+                        Records will appear here when returned by the configured administration API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <p id="paginationSummary">Showing 0 colleges</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button" disabled>
+                  ← Previous
+                </button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <div class="two-column">
+            <section class="panel" aria-labelledby="qualityTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">◈</div>
+                <div>
+                  <h2 id="qualityTitle">College data quality</h2>
+                  <p>Recommended checks before an institutional record is published.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Verify institutional identity</strong>
+                    <p>
+                      Check the official college name, institution code,
+                      address, university affiliation and applicable
+                      recognition details against authoritative sources.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Review programme information</strong>
+                    <p>
+                      Verify courses, degree names, approved intake,
+                      admission route and academic year using the
+                      relevant official authority.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Check location and contact details</strong>
+                    <p>
+                      Validate the campus address, state, district,
+                      postal code and institution-managed contact details
+                      before making them publicly searchable.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">04</div>
+                  <div class="mini-copy">
+                    <strong>Keep review history</strong>
+                    <p>
+                      Track source URLs, verification dates, reviewer
+                      identity and changes through your server-side
+                      audit and review workflow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="panel" aria-labelledby="workflowTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">✓</div>
+                <div>
+                  <h2 id="workflowTitle">Directory workflow</h2>
+                  <p>Suggested operational stages for reliable college data.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">A</div>
+                  <div class="mini-copy">
+                    <strong>Collect and standardise</strong>
+                    <p>
+                      Use consistent names, identifiers, location formats
+                      and programme categories to improve search and
+                      reduce duplicate entries.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">B</div>
+                  <div class="mini-copy">
+                    <strong>Verify and review</strong>
+                    <p>
+                      Compare source records, flag missing fields and
+                      send uncertain recognition, affiliation or course
+                      details for human review.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">C</div>
+                  <div class="mini-copy">
+                    <strong>Publish with accountability</strong>
+                    <p>
+                      Require authorised approval, record important
+                      changes and provide a process to correct outdated
+                      or inaccurate public information.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="feature-banner" aria-labelledby="integrityTitle">
+            <div>
+              <span class="eyebrow">Education · Accuracy · Discovery</span>
+              <h2 id="integrityTitle">
+                Better information.
+                <span class="accent-text">More confident decisions.</span>
+              </h2>
+              <p>
+                An effective college directory combines verified institutional
+                information with transparent review processes. Keep academic
+                details current, identify the sources used for verification
+                and distinguish confirmed facts from information awaiting review.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/courses.html">Manage courses ↗</a>
+                <a class="btn btn-outline" href="/admin/universities.html">Manage universities ↗</a>
+              </div>
+            </div>
+            <div
+              class="feature-image"
+              role="img"
+              aria-label="Healthcare education and academic research representing institutional information management"
+            ></div>
+          </section>
+          <div class="notice">
+            <strong>Administration and data integrity notice:</strong>
+            This page is a client interface, not an authorisation boundary.
+            The backend must authenticate requests, enforce role-based
+            permissions, validate input, and apply appropriate CSRF protection
+            where relevant. Use server-side pagination for large directories,
+            parameterised database operations and an audit trail for important
+            changes. Verify recognition, affiliation, fees, intake and
+            programme availability with the relevant official authority
+            before presenting those details as confirmed facts.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <dialog id="collegeDialog" aria-labelledby="collegeDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Institution profile</span>
+        <h2 id="collegeDialogTitle">College details</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeCollegeDialog" type="button">
+        Close ✕
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div id="collegeDialogStatus" class="status info" role="status" aria-live="polite">
+        Details reflect the currently loaded API record.
+      </div>
+      <div id="collegeDetailGrid" class="detail-grid"></div>
+    </div>
+  </dialog>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+        <div class="footer-links">
+          <h2>Academic directory</h2>
+          <a href="/admin/courses.html">Course catalogue</a>
+          <a href="/admin/colleges.html">Colleges</a>
+          <a href="/admin/universities.html">Universities</a>
+          <a href="/admin/official-resources.html">Official resources</a>
+          <a href="/admin/documents.html">Documents</a>
+        </div>
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+        </div>
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+      <p class="disclaimer">
+        College information may change between academic years. Verify
+        recognition, affiliation, admission eligibility, approved intake,
+        fees and programme availability with the relevant official authority.
+        A directory listing alone does not establish accreditation or recognition.
+      </p>
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (() => {
+      "use strict";
+      /*
+       * MedOrbits College Directory
+       *
+       * Default API:
+       * GET /api/admin/colleges
+       *
+       * Optional runtime configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminCollegesEndpoint: "/api/admin/colleges"
+       * };
+       *
+       * Expected response:
+       * {
+       *   "colleges": [
+       *     {
+       *       "id": "college-reference",
+       *       "name": "Institution name",
+       *       "code": "INST-001",
+       *       "city": "City",
+       *       "state": "State",
+       *       "country": "India",
+       *       "type": "government",
+       *       "affiliation": "Affiliated university",
+       *       "courses": ["MBBS", "BDS"],
+       *       "status": "published",
+       *       "updatedAt": "2026-10-25T10:00:00Z",
+       *       "website": "https://example.edu",
+       *       "address": "Institution address",
+       *       "description": "Institution profile",
+       *       "recognition": "Recognition information",
+       *       "establishedYear": 2000,
+       *       "postalCode": "000000",
+       *       "sourceUrl": "https://example.gov.in"
+       *     }
+       *   ],
+       *   "meta": {
+       *     "total": 1,
+       *     "page": 1,
+       *     "pageSize": 100,
+       *     "totalPages": 1,
+       *     "scope": "College directory"
+       *   },
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "Admin workspace"
+       *   }
+       * }
+       *
+       * Also accepts { "data": { "colleges": [], "meta": {} } }
+       * and a top-level array of college records.
+       *
+       * Adapt the field names and API endpoint to the actual backend.
+       * No demonstration records are inserted by this client.
+       *
+       * This page provides read-only directory operations.
+       * Editing, deleting and publishing must be implemented as separate
+       * authorised backend operations with validation and audit logging.
+       */
+      document.addEventListener("DOMContentLoaded", init);
+      function init() {
+        const $ = id => document.getElementById(id);
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const collegeDialog = $("collegeDialog");
+        const statusBox = $("connectionStatus");
+        const PAGE_SIZE = 10;
+        $("currentYear").textContent = String(new Date().getFullYear());
+        const state = {
+          loading: false,
+          controller: null,
+          requestSequence: 0,
+          colleges: [],
+          filteredColleges: [],
+          loadedSuccessfully: false,
+          currentPage: 1,
+          meta: null
+        };
+        const validStatuses = new Set([
+          "published",
+          "draft",
+          "review",
+          "archived",
+          "unknown"
+        ]);
+        const validTypes = new Set([
+          "government",
+          "private",
+          "deemed",
+          "autonomous",
+          "other"
+        ]);
+        const knownCourses = new Set([
+          "mbbs",
+          "bds",
+          "bams",
+          "bums",
+          "bhms",
+          "nursing",
+          "paramedical",
+          "other"
+        ]);
+        function element(tag, className, content) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (content !== undefined) node.textContent = content;
+          return node;
+        }
+        function value(input, fallback = "") {
+          if (typeof input === "string" && input.trim()) {
+            return input.trim();
+          }
+          if (typeof input === "number" && Number.isFinite(input)) {
+            return String(input);
+          }
+          return fallback;
+        }
+        function safeText(input, fallback = "", maxLength = 2000) {
+          return value(input, fallback).slice(0, maxLength);
+        }
+        function normaliseKey(input) {
+          return value(input, "unknown")
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+        }
+        function normaliseStatus(input) {
+          const status = normaliseKey(input);
+          if (["active", "live", "public"].includes(status)) {
+            return "published";
+          }
+          if (["pending", "needs_review", "under_review", "review_required"].includes(status)) {
+            return "review";
+          }
+          if (["unpublished", "inactive", "draft"].includes(status)) {
+            return status === "inactive" ? "archived" : "draft";
+          }
+          if (["archived", "published", "review", "unknown"].includes(status)) {
+            return status;
+          }
+          return validStatuses.has(status) ? status : "unknown";
+        }
+        function normaliseType(input) {
+          const type = normaliseKey(input);
+          if (["public", "government", "govt", "state_government", "central_government"].includes(type)) {
+            return "government";
+          }
+          if (["private", "private_aided", "private_unaided"].includes(type)) {
+            return "private";
+          }
+          if (["deemed", "deemed_university"].includes(type)) {
+            return "deemed";
+          }
+          if (["autonomous", "autonomous_college"].includes(type)) {
+            return "autonomous";
+          }
+          return validTypes.has(type) ? type : "other";
+        }
+        function normaliseCourse(input) {
+          const course = normaliseKey(input);
+          if (["mbbs", "bds", "bams", "bums", "bhms", "nursing", "paramedical"].includes(course)) {
+            return course;
+          }
+          return knownCourses.has(course) ? course : "other";
+        }
+        function normaliseCourseList(raw) {
+          const courses =
+            raw.courses ??
+            raw.programmes ??
+            raw.programs ??
+            raw.courseNames ??
+            raw.course_names ??
+            [];
+          if (Array.isArray(courses)) {
+            return courses
+              .map(item => {
+                if (typeof item === "string" || typeof item === "number") {
+                  return safeText(item, "", 150);
+                }
+                if (item && typeof item === "object" && !Array.isArray(item)) {
+                  return safeText(
+                    item.name ?? item.title ?? item.code,
+                    "",
+                    150
+                  );
+                }
+                return "";
+              })
+              .filter(Boolean)
+              .slice(0, 100);
+          }
+          if (typeof courses === "string" && courses.trim()) {
+            return courses
+              .split(/[,;|]/)
+              .map(item => item.trim().slice(0, 150))
+              .filter(Boolean)
+              .slice(0, 100);
+          }
+          return [];
+        }
+        function getRecordId(raw) {
+          const rawId = raw.id ?? raw._id ?? raw.collegeId ?? raw.college_id ?? raw.code;
+          if (typeof rawId !== "string" && typeof rawId !== "number") {
+            return "";
+          }
+          const id = String(rawId).trim();
+          return id.length > 0 && id.length <= 200 ? id : "";
+        }
+        function normaliseCollege(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return null;
+          }
+          const id = getRecordId(raw);
+          if (!id) return null;
+          const addressObject =
+            raw.address &&
+            typeof raw.address === "object" &&
+            !Array.isArray(raw.address)
+              ? raw.address
+              : {};
+          const locationObject =
+            raw.location &&
+            typeof raw.location === "object" &&
+            !Array.isArray(raw.location)
+              ? raw.location
+              : {};
+          const affiliationObject =
+            raw.affiliation &&
+            typeof raw.affiliation === "object" &&
+            !Array.isArray(raw.affiliation)
+              ? raw.affiliation
+              : null;
+          const name = raw.name ?? raw.collegeName ?? raw.college_name ?? raw.title;
+          const city =
+            raw.city ??
+            locationObject.city ??
+            addressObject.city;
+          const stateName =
+            raw.state ??
+            raw.stateName ??
+            raw.state_name ??
+            locationObject.state ??
+            addressObject.state;
+          const country =
+            raw.country ??
+            locationObject.country ??
+            addressObject.country;
+          const addressText =
+            typeof raw.address === "string"
+              ? raw.address
+              : [
+                  addressObject.line1,
+                  addressObject.line2,
+                  addressObject.street,
+                  addressObject.district,
+                  addressObject.city,
+                  addressObject.state,
+                  addressObject.postalCode ?? addressObject.postal_code,
+                  addressObject.country
+                ].filter(Boolean).join(", ");
+          const affiliation = affiliationObject
+            ? affiliationObject.name ?? affiliationObject.title ?? affiliationObject.shortName
+            : raw.affiliation ??
+              raw.university ??
+              raw.universityName ??
+              raw.university_name;
+          const updatedAt =
+            raw.updatedAt ??
+            raw.updated_at ??
+            raw.lastUpdated ??
+            raw.last_updated ??
+            raw.modifiedAt ??
+            raw.modified_at;
+          const createdAt = raw.createdAt ?? raw.created_at;
+          return {
+            id,
+            name: safeText(name, "Unnamed institution", 300),
+            code: safeText(raw.code ?? raw.collegeCode ?? raw.college_code, "Not provided", 150),
+            city: safeText(city, "Not reported", 150),
+            state: safeText(stateName, "Not reported", 150),
+            country: safeText(country, "India", 100),
+            type: normaliseType(raw.type ?? raw.institutionType ?? raw.institution_type ?? raw.ownership),
+            affiliation: safeText(affiliation, "Not reported", 300),
+            courses: normaliseCourseList(raw),
+            status: normaliseStatus(raw.status ?? raw.publicationStatus ?? raw.publication_status ?? raw.visibility),
+            updatedAt: updatedAt ?? null,
+            createdAt: createdAt ?? null,
+            website: safeText(raw.website ?? raw.websiteUrl ?? raw.website_url, "", 500),
+            address: safeText(addressText, "Not reported", 1000),
+            description: safeText(raw.description ?? raw.overview ?? raw.about, "No description supplied.", 4000),
+            recognition: safeText(raw.recognition ?? raw.recognitionStatus ?? raw.recognition_status, "Not reported", 500),
+            establishedYear: safeText(raw.establishedYear ?? raw.established_year ?? raw.yearEstablished, "Not reported", 30),
+            postalCode: safeText(
+              raw.postalCode ??
+              raw.postal_code ??
+              raw.pincode ??
+              addressObject.postalCode ??
+              addressObject.postal_code,
+              "Not reported",
+              50
+            ),
+            sourceUrl: safeText(raw.sourceUrl ?? raw.source_url ?? raw.officialSource, "", 1000)
+          };
+        }
+        function formatDate(input) {
+          if (
+            (typeof input !== "string" && typeof input !== "number") ||
+            !String(input).trim()
+          ) {
+            return "Not reported";
+          }
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) {
+            return "Not reported";
+          }
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+        function humanise(input) {
+          return value(input, "Unknown")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b\w/g, character => character.toUpperCase());
+        }
+        function statusClass(status) {
+          if (status === "published") return "success";
+          if (status === "review") return "warning";
+          if (["draft", "archived"].includes(status)) return "danger";
+          return "unknown";
+        }
+        function statusPill(status) {
+          return element("span", `pill ${statusClass(status)}`, humanise(status));
+        }
+        function setStatus(message, type = "info") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+        function setDialogStatus(message, type = "info") {
+          $("collegeDialogStatus").textContent = message;
+          $("collegeDialogStatus").className = `status ${type}`;
+        }
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured = config.adminCollegesEndpoint || "/api/admin/colleges";
+          let endpoint;
+          try {
+            endpoint = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured college API endpoint is invalid.");
+          }
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error("The college API endpoint must use the same origin as this page.");
+          }
+          if (endpoint.username || endpoint.password || endpoint.hash) {
+            throw new Error("The API endpoint must not contain credentials or a URL fragment.");
+          }
+          return endpoint;
+        }
+        function requestHeaders() {
+          const headers = { Accept: "application/json" };
+          const csrf = document.querySelector('meta[name="csrf-token"]');
+          if (csrf && csrf.content.trim()) {
+            headers["X-CSRF-Token"] = csrf.content.trim();
+          }
+          return headers;
+        }
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+          try {
+            const data = await response.json();
+            return data && typeof data === "object" ? data : {};
+          } catch {
+            return {};
+          }
+        }
+        function apiError(response, data) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+          if (response.status === 403) {
+            return "Access denied. Your account cannot manage the college directory.";
+          }
+          if (response.status === 404) {
+            return "The college API route was not found. Check the backend route configuration.";
+          }
+          if (response.status === 429) {
+            return "The API rate limit was reached. Wait before trying again.";
+          }
+          if (response.status >= 500) {
+            return "The server could not retrieve college records.";
+          }
+          return value(data.message, "The college API could not complete the request.");
+        }
+        function renderEmpty(body, colspan, title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = element("div", "empty-state");
+          box.append(
+            element("strong", "", title),
+            element("div", "", description)
+          );
+          cell.colSpan = colspan;
+          cell.appendChild(box);
+          row.appendChild(cell);
+          body.replaceChildren(row);
+        }
+        function updateStats() {
+          const colleges = state.colleges;
+          $("statTotal").textContent = String(colleges.length);
+          $("statPublished").textContent = String(
+            colleges.filter(college => college.status === "published").length
+          );
+          $("statReview").textContent = String(
+            colleges.filter(college =>
+              ["draft", "review"].includes(college.status)
+            ).length
+          );
+          const states = new Set(
+            colleges
+              .map(college => college.state)
+              .filter(name => name && name !== "Not reported")
+              .map(name => name.toLowerCase())
+          );
+          $("statStates").textContent = String(states.size);
+        }
+        function updateMetaSummary(meta) {
+          if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+            $("directoryScope").textContent =
+              "Scope information not reported by the API.";
+            $("recordCoverage").textContent =
+              "Pagination and coverage information not reported by the API.";
+            return;
+          }
+          $("directoryScope").textContent = safeText(
+            meta.scope ?? meta.description,
+            "The API did not report the directory scope.",
+            500
+          );
+          const total =
+            meta.total ??
+            meta.totalRecords ??
+            meta.total_records;
+          const page = meta.page ?? meta.currentPage ?? meta.current_page;
+          const pageSize = meta.pageSize ?? meta.page_size ?? meta.limit;
+          const totalPages = meta.totalPages ?? meta.total_pages;
+          const parts = [];
+          if (Number.isFinite(Number(total)) && total !== "") {
+            parts.push(`${Number(total)} total record(s) reported`);
+          }
+          if (Number.isFinite(Number(page)) && page !== "") {
+            parts.push(`page ${Number(page)}`);
+          }
+          if (Number.isFinite(Number(pageSize)) && pageSize !== "") {
+            parts.push(`page size ${Number(pageSize)}`);
+          }
+          if (Number.isFinite(Number(totalPages)) && totalPages !== "") {
+            parts.push(`${Number(totalPages)} page(s)`);
+          }
+          $("recordCoverage").textContent = parts.length
+            ? `${parts.join(" · ")}.`
+            : "The API did not report pagination metadata.";
+        }
+        function populateStateOptions() {
+          const select = $("stateFilter");
+          const selected = select.value;
+          const states = [
+            ...new Set(
+              state.colleges
+                .map(college => college.state)
+                .filter(name => name && name !== "Not reported")
+            )
+          ].sort((a, b) => a.localeCompare(b));
+          select.replaceChildren(
+            element("option", "", "All states and regions")
+          );
+          select.options[0].value = "";
+          states.forEach(stateName => {
+            const option = element("option", "", stateName);
+            option.value = stateName;
+            select.appendChild(option);
+          });
+          if (states.includes(selected)) {
+            select.value = selected;
+          }
+        }
+        function courseMatches(college, selectedCourse) {
+          if (!selectedCourse) return true;
+          if (selectedCourse === "other") {
+            return college.courses.some(course =>
+              normaliseCourse(course) === "other"
+            );
+          }
+          return college.courses.some(course =>
+            normaliseCourse(course) === selectedCourse
+          );
+        }
+        function applyFilters() {
+          const query = $("searchInput").value.trim().toLowerCase();
+          const selectedState = $("stateFilter").value;
+          const selectedType = $("typeFilter").value;
+          const selectedCourse = $("courseFilter").value;
+          const selectedStatus = $("statusFilter").value;
+          const sort = $("sortFilter").value;
+          let results = state.colleges.filter(college => {
+            if (selectedState && college.state !== selectedState) {
+              return false;
+            }
+            if (selectedType && college.type !== selectedType) {
+              return false;
+            }
+            if (selectedCourse && !courseMatches(college, selectedCourse)) {
+              return false;
+            }
+            if (selectedStatus && college.status !== selectedStatus) {
+              return false;
+            }
+            if (query) {
+              const searchable = [
+                college.id,
+                college.name,
+                college.code,
+                college.city,
+                college.state,
+                college.country,
+                college.type,
+                college.affiliation,
+                college.courses.join(" "),
+                college.status,
+                college.address,
+                college.description,
+                college.recognition
+              ].join(" ").toLowerCase();
+              if (!searchable.includes(query)) {
+                return false;
+              }
+            }
+            return true;
+          });
+          results.sort((a, b) => {
+            switch (sort) {
+              case "name-desc":
+                return b.name.localeCompare(a.name);
+              case "updated-desc":
+                return (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0);
+              case "updated-asc":
+                return (Date.parse(a.updatedAt) || 0) - (Date.parse(b.updatedAt) || 0);
+              case "state-asc":
+                return a.state.localeCompare(b.state) || a.name.localeCompare(b.name);
+              case "name-asc":
+              default:
+                return a.name.localeCompare(b.name);
+            }
+          });
+          state.filteredColleges = results;
+          state.currentPage = 1;
+          renderColleges();
+        }
+        function renderColleges() {
+          const total = state.filteredColleges.length;
+          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+          state.currentPage = Math.min(state.currentPage, totalPages);
+          const start = (state.currentPage - 1) * PAGE_SIZE;
+          const pageItems = state.filteredColleges.slice(start, start + PAGE_SIZE);
+          if (!pageItems.length) {
+            renderEmpty(
+              $("collegesBody"),
+              8,
+              state.loadedSuccessfully
+                ? "No matching colleges"
+                : "No college records loaded",
+              state.loadedSuccessfully
+                ? "No records match the current search and filters."
+                : "College records will appear when returned by the configured API."
+            );
+          } else {
+            const fragment = document.createDocumentFragment();
+            pageItems.forEach(college => {
+              const row = document.createElement("tr");
+              const collegeCell = document.createElement("td");
+              collegeCell.append(
+                element("span", "primary-value", college.name),
+                element("span", "secondary-value", `Code: ${college.code} · ID: ${college.id}`)
+              );
+              const locationCell = document.createElement("td");
+              locationCell.append(
+                element("span", "primary-value", college.city),
+                element("span", "secondary-value", `${college.state} · ${college.country}`)
+              );
+              const typeCell = document.createElement("td");
+              typeCell.appendChild(
+                element("span", "pill info", humanise(college.type))
+              );
+              const affiliationCell = element(
+                "td",
+                "",
+                college.affiliation
+              );
+              const coursesCell = document.createElement("td");
+              const courseText = college.courses.length
+                ? college.courses.slice(0, 3).join(", ")
+                : "Not reported";
+              coursesCell.append(
+                element("span", "primary-value", courseText),
+                ...(college.courses.length > 3
+                  ? [element("span", "secondary-value", `+ ${college.courses.length - 3} more programme(s)`)]
+                  : [])
+              );
+              const statusCell = document.createElement("td");
+              statusCell.appendChild(statusPill(college.status));
+              const updatedCell = element("td", "", formatDate(college.updatedAt));
+              const actionCell = document.createElement("td");
+              const actions = element("div", "row-actions");
+              const inspect = element("button", "table-action", "Inspect");
+              inspect.type = "button";
+              inspect.setAttribute(
+                "aria-label",
+                `Inspect college ${college.name}`
+              );
+              inspect.addEventListener("click", () => inspectCollege(college));
+              actions.appendChild(inspect);
+              actionCell.appendChild(actions);
+              row.append(
+                collegeCell,
+                locationCell,
+                typeCell,
+                affiliationCell,
+                coursesCell,
+                statusCell,
+                updatedCell,
+                actionCell
+              );
+              fragment.appendChild(row);
+            });
+            $("collegesBody").replaceChildren(fragment);
+          }
+          $("resultSummary").textContent = state.loadedSuccessfully
+            ? `${total} matching college(s) from ${state.colleges.length} loaded record(s).`
+            : "No college records loaded.";
+          $("paginationSummary").textContent = total
+            ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total} college(s) · Page ${state.currentPage} of ${totalPages}`
+            : "Showing 0 colleges";
+          $("previousPage").disabled =
+            !state.loadedSuccessfully || state.currentPage <= 1;
+          $("nextPage").disabled =
+            !state.loadedSuccessfully || state.currentPage >= totalPages;
+          $("exportColleges").disabled =
+            !state.loadedSuccessfully ||
+            !state.colleges.length ||
+            state.loading;
+        }
+        function setLoading(loading) {
+          state.loading = loading;
+          ["refreshColleges", "heroRefresh", "reloadFromServer"].forEach(id => {
+            $(id).disabled = loading;
+          });
+          $("refreshColleges").textContent = loading
+            ? "Loading…"
+            : "↻ Refresh directory";
+          $("reloadFromServer").textContent = loading
+            ? "Loading…"
+            : "↻ Reload from server";
+          $("exportColleges").disabled =
+            loading ||
+            !state.loadedSuccessfully ||
+            !state.colleges.length;
+        }
+        async function loadColleges() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+          const controller = new AbortController();
+          state.controller = controller;
+          const requestId = ++state.requestSequence;
+          setLoading(true);
+          setStatus(
+            "Retrieving college records from the authenticated administration API…",
+            "info"
+          );
+          try {
+            const endpoint = getEndpoint();
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+            const data = await readJson(response);
+            if (requestId !== state.requestSequence) return;
+            if (!response.ok) {
+              throw new Error(apiError(response, data));
+            }
+            let payload = data;
+            if (
+              payload.data &&
+              typeof payload.data === "object" &&
+              !Array.isArray(payload.data)
+            ) {
+              payload = payload.data;
+            }
+            if (Array.isArray(payload)) {
+              payload = { colleges: payload };
+            }
+            if (!payload || typeof payload !== "object") {
+              throw new Error("The college API returned an unsupported response format.");
+            }
+            const rawColleges =
+              payload.colleges ??
+              payload.items ??
+              payload.records ??
+              payload.results ??
+              payload.data;
+            if (!Array.isArray(rawColleges)) {
+              throw new Error(
+                "The API response must contain a colleges array. Adapt this client to the actual backend response."
+              );
+            }
+            state.colleges = rawColleges
+              .map(normaliseCollege)
+              .filter(Boolean);
+            state.meta =
+              payload.meta &&
+              typeof payload.meta === "object" &&
+              !Array.isArray(payload.meta)
+                ? payload.meta
+                : null;
+            state.loadedSuccessfully = true;
+            state.currentPage = 1;
+            if (
+              payload.admin &&
+              typeof payload.admin === "object" &&
+              !Array.isArray(payload.admin)
+            ) {
+              $("adminName").textContent = value(
+                payload.admin.name,
+                "Administration"
+              );
+              $("adminEmail").textContent = value(
+                payload.admin.email,
+                "Admin workspace"
+              );
+            }
+            populateStateOptions();
+            updateStats();
+            updateMetaSummary(state.meta);
+            applyFilters();
+            const latest = state.colleges
+              .filter(college => Number.isFinite(Date.parse(college.updatedAt)))
+              .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
+            $("latestCollege").textContent = latest
+              ? `${latest.name} · ${formatDate(latest.updatedAt)}`
+              : "No valid update timestamp was reported.";
+            $("lastChecked").textContent = new Date().toLocaleString();
+            if (!state.colleges.length) {
+              setStatus(
+                "The API returned no usable college records. Check the response fields, database contents and server-side filters.",
+                "warning"
+              );
+            } else {
+              setStatus(
+                `Loaded ${state.colleges.length} college record(s). Statistics and filters reflect the returned records. Confirm backend pagination before treating the loaded dataset as the complete directory.`,
+                "success"
+              );
+            }
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+            state.colleges = [];
+            state.filteredColleges = [];
+            state.meta = null;
+            state.loadedSuccessfully = false;
+            state.currentPage = 1;
+            ["statTotal", "statPublished", "statReview", "statStates"].forEach(id => {
+              $(id).textContent = "--";
+            });
+            $("latestCollege").textContent = "No college information loaded.";
+            $("directoryScope").textContent = "Scope information not reported by the API.";
+            $("recordCoverage").textContent = "Coverage information not reported by the API.";
+            populateStateOptions();
+            renderEmpty(
+              $("collegesBody"),
+              8,
+              "Unable to load college records",
+              "Check the API route, response format, server availability and administrator permissions."
+            );
+            $("resultSummary").textContent = "Unable to load college records.";
+            $("paginationSummary").textContent = "Showing 0 colleges";
+            $("previousPage").disabled = true;
+            $("nextPage").disabled = true;
+            $("exportColleges").disabled = true;
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load college records.",
+              "error"
+            );
+            $("lastChecked").textContent =
+              `Last attempt: ${new Date().toLocaleString()}`;
+          } finally {
+            if (requestId === state.requestSequence) {
+              setLoading(false);
+              updateStats();
+            }
+          }
+        }
+        function addDetail(container, label, text, full = false) {
+          const item = element(
+            "div",
+            full ? "detail-item full" : "detail-item"
+          );
+          item.append(
+            element("span", "", label),
+            element("strong", "", value(text, "Not reported"))
+          );
+          container.appendChild(item);
+        }
+        function safeWebsite(rawUrl) {
+          if (!rawUrl) return "";
+          try {
+            const url = new URL(rawUrl);
+            if (!["https:", "http:"].includes(url.protocol)) {
+              return "";
+            }
+            if (url.username || url.password) {
+              return "";
+            }
+            return url.href;
+          } catch {
+            return "";
+          }
+        }
+        function inspectCollege(college) {
+          $("collegeDialogTitle").textContent = college.name;
+          setDialogStatus(
+            "These details reflect the currently loaded API record. Confirm important academic and recognition claims with official sources.",
+            "info"
+          );
+          const grid = $("collegeDetailGrid");
+          grid.replaceChildren();
+          addDetail(grid, "College record ID", college.id);
+          addDetail(grid, "Institution name", college.name);
+          addDetail(grid, "Institution code", college.code);
+          addDetail(grid, "Institution type", humanise(college.type));
+          addDetail(grid, "City", college.city);
+          addDetail(grid, "State / region", college.state);
+          addDetail(grid, "Country", college.country);
+          addDetail(grid, "Postal code", college.postalCode);
+          addDetail(grid, "Address", college.address, true);
+          addDetail(grid, "University affiliation", college.affiliation);
+          addDetail(grid, "Programmes", college.courses.join(", ") || "Not reported");
+          addDetail(grid, "Publication status", humanise(college.status));
+          addDetail(grid, "Established year", college.establishedYear);
+          addDetail(grid, "Recognition information", college.recognition, true);
+          addDetail(grid, "Created at", formatDate(college.createdAt));
+          addDetail(grid, "Last updated", formatDate(college.updatedAt));
+          addDetail(grid, "Description", college.description, true);
+          const website = safeWebsite(college.website);
+          const websiteItem = element("div", "detail-item full");
+          websiteItem.append(element("span", "", "Official website"));
+          if (website) {
+            const link = element("a", "", website);
+            link.href = website;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.style.color = "var(--blue-bright)";
+            link.style.overflowWrap = "anywhere";
+            websiteItem.appendChild(link);
+          } else {
+            websiteItem.appendChild(
+              element("strong", "", "Not reported or not a valid HTTP(S) URL.")
+            );
+          }
+          grid.appendChild(websiteItem);
+          const sourceUrl = safeWebsite(college.sourceUrl);
+          const sourceItem = element("div", "detail-item full");
+          sourceItem.append(element("span", "", "Verification source"));
+          if (sourceUrl) {
+            const sourceLink = element("a", "", sourceUrl);
+            sourceLink.href = sourceUrl;
+            sourceLink.target = "_blank";
+            sourceLink.rel = "noopener noreferrer";
+            sourceLink.style.color = "var(--blue-bright)";
+            sourceLink.style.overflowWrap = "anywhere";
+            sourceItem.appendChild(sourceLink);
+          } else {
+            sourceItem.appendChild(
+              element("strong", "", "No verification source supplied.")
+            );
+          }
+          grid.appendChild(sourceItem);
+          if (typeof collegeDialog.showModal === "function") {
+            collegeDialog.showModal();
+          } else {
+            setStatus(
+              "This browser does not support the college detail dialog.",
+              "warning"
+            );
+          }
+        }
+        function csvEscape(input) {
+          let text = input == null ? "" : String(input);
+          /*
+           * Protect exported cells against spreadsheet formula execution.
+           */
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+          }
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        function exportColleges() {
+          if (!state.loadedSuccessfully || !state.colleges.length) {
+            setStatus(
+              "There are no loaded college records available to export.",
+              "warning"
+            );
+            return;
+          }
+          const rows = [
+            [
+              "Record ID",
+              "College Name",
+              "Institution Code",
+              "City",
+              "State",
+              "Country",
+              "Institution Type",
+              "University Affiliation",
+              "Programmes",
+              "Publication Status",
+              "Established Year",
+              "Postal Code",
+              "Address",
+              "Recognition",
+              "Website",
+              "Created At",
+              "Updated At",
+              "Description",
+              "Verification Source"
+            ],
+            ...state.colleges.map(college => [
+              college.id,
+              college.name,
+              college.code,
+              college.city,
+              college.state,
+              college.country,
+              college.type,
+              college.affiliation,
+              college.courses.join("; "),
+              college.status,
+              college.establishedYear,
+              college.postalCode,
+              college.address,
+              college.recognition,
+              safeWebsite(college.website),
+              college.createdAt ?? "",
+              college.updatedAt ?? "",
+              college.description,
+              safeWebsite(college.sourceUrl)
+            ])
+          ];
+          const csv = "\uFEFF" +
+            rows
+              .map(row => row.map(csvEscape).join(","))
+              .join("\r\n");
+          const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+          });
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = "medorbits-colleges.csv";
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+        $("refreshColleges").addEventListener("click", loadColleges);
+        $("heroRefresh").addEventListener("click", loadColleges);
+        $("reloadFromServer").addEventListener("click", loadColleges);
+        $("heroDirectory").addEventListener("click", () => {
+          $("collegeDirectory").scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+            block: "start"
+          });
+        });
+        $("filterForm").addEventListener("submit", event => {
+          event.preventDefault();
+          applyFilters();
+        });
+        [
+          "searchInput",
+          "stateFilter",
+          "typeFilter",
+          "courseFilter",
+          "statusFilter",
+          "sortFilter"
+        ].forEach(id => {
+          $(id).addEventListener(
+            id === "searchInput" ? "input" : "change",
+            applyFilters
+          );
+        });
+        $("resetFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+        $("previousPage").addEventListener("click", () => {
+          if (state.currentPage <= 1) return;
+          state.currentPage--;
+          renderColleges();
+        });
+        $("nextPage").addEventListener("click", () => {
+          const totalPages = Math.max(
+            1,
+            Math.ceil(state.filteredColleges.length / PAGE_SIZE)
+          );
+          if (state.currentPage >= totalPages) return;
+          state.currentPage++;
+          renderColleges();
+        });
+        $("exportColleges").addEventListener("click", exportColleges);
+        $("closeCollegeDialog").addEventListener("click", () => {
+          collegeDialog.close();
+        });
+        collegeDialog.addEventListener("close", () => {
+          $("collegeDetailGrid").replaceChildren();
+        });
+        collegeDialog.addEventListener("click", event => {
+          if (event.target === collegeDialog) {
+            collegeDialog.close();
+          }
+        });
+        loadColleges();
+      }
+    })();
+  </script>
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

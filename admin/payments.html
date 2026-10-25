@@ -1,24 +1,3095 @@
+
+<!-- File: /admin/payments.html -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Payments | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a13">
+  <meta name="description" content="Manage MedOrbits payments, rupee transactions, refunds, invoices, receipts and payment reconciliation through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Payments Management | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#071a13;
+      --bg-deep:#030d09;
+      --green-900:#102d21;
+      --green-800:#173c2b;
+      --green-700:#20523a;
+      --green-600:#327b51;
+      --green:#70c795;
+      --green-bright:#a5e6bc;
+      --green-soft:#d7f4df;
+      --gold:#d4b16a;
+      --gold-bright:#ffe7aa;
+      --text:#f0f7f1;
+      --text-soft:#c8d9ce;
+      --muted:#92aa9a;
+      --border:rgba(137,209,162,.19);
+      --border-gold:rgba(212,177,106,.34);
+      --success:#a5e6bc;
+      --warning:#ffe0a0;
+      --danger:#ffb7b7;
+      --radius:18px;
+      --shadow:0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient:linear-gradient(115deg,#63c88b 0%,#b0e9bd 37%,#f5d992 72%,#b48b43 100%);
+      --surface:linear-gradient(145deg,rgba(19,49,34,.97),rgba(5,20,13,.98));
+      --surface-light:linear-gradient(145deg,rgba(26,65,44,.94),rgba(10,30,19,.97));
+    }
+
+    *,*::before,*::after { box-sizing:border-box; }
+
+    html {
+      scroll-behavior:smooth;
+      scroll-padding-top:100px;
+    }
+
+    body {
+      position:relative;
+      isolation:isolate;
+      min-height:100vh;
+      margin:0;
+      overflow-x:hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(73,169,105,.19),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(38,117,73,.13),transparent 43%),
+        linear-gradient(135deg,#030d09 0%,#071a13 48%,#0a2117 100%);
+      color:var(--text);
+      font:400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position:fixed;
+      z-index:-1;
+      inset:0;
+      background-image:radial-gradient(rgba(165,230,188,.22) .7px,transparent .7px);
+      background-size:33px 33px;
+      opacity:.13;
+      content:"";
+      pointer-events:none;
+    }
+
+    body::after {
+      position:fixed;
+      z-index:-1;
+      inset:-50%;
+      background:conic-gradient(
+        from 0deg,transparent,rgba(73,169,105,.05),transparent 23%,
+        rgba(212,177,106,.035),transparent 45%
+      );
+      animation:ambientRotate 65s linear infinite;
+      content:"";
+      pointer-events:none;
+    }
+
+    img { display:block;max-width:100%; }
+    a { color:inherit;text-decoration:none; }
+    button,input,select,textarea { font:inherit; }
+    button,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
+    [hidden] { display:none!important; }
+
+    button:focus-visible,a:focus-visible,input:focus-visible,
+    select:focus-visible,textarea:focus-visible {
+      outline:2px solid var(--green-bright);
+      outline-offset:4px;
+    }
+
+    .container {
+      width:min(1280px,calc(100% - 40px));
+      margin-inline:auto;
+    }
+
+    .skip-link {
+      position:absolute;
+      z-index:10000;
+      top:-70px;
+      left:14px;
+      padding:10px 15px;
+      border-radius:8px;
+      background:var(--green-soft);
+      color:#06170e;
+    }
+
+    .skip-link:focus { top:12px; }
+
+    .accent-text {
+      color:var(--green-bright);
+      background:var(--accent-gradient);
+      background-size:220% auto;
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      animation:gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position:100% center; }
+      to { background-position:-120% center; }
+    }
+
+    @keyframes ambientRotate { to { transform:rotate(360deg); } }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow:0 0 0 rgba(112,199,149,0); }
+      50% { box-shadow:0 0 22px rgba(112,199,149,.15); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color:rgba(137,209,162,.18); }
+      50% { border-color:rgba(212,177,106,.46); }
+    }
+
+    @keyframes revealUp {
+      from { opacity:0;transform:translateY(13px); }
+      to { opacity:1;transform:translateY(0); }
+    }
+
+    .announcement {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:9px 15px;
+      border-bottom:1px solid var(--border);
+      background:#030d09;
+      color:var(--text-soft);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.12em;
+      text-align:center;
+      text-transform:uppercase;
+    }
+
+    .announcement strong { color:var(--gold-bright); }
+
+    .sparkle {
+      color:var(--green-bright);
+      animation:glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position:sticky;
+      z-index:1000;
+      top:0;
+      border-bottom:1px solid var(--border);
+      background:rgba(4,16,10,.92);
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+    }
+
+    .site-header.scrolled {
+      background:rgba(3,13,8,.98);
+      box-shadow:0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position:relative;
+      display:flex;
+      min-height:78px;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+    }
+
+    .brand {
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
+    .brand img {
+      width:44px;
+      height:44px;
+      object-fit:contain;
+      filter:drop-shadow(0 0 11px rgba(112,199,149,.2));
+    }
+
+    .brand strong {
+      display:block;
+      color:var(--green-bright);
+      font-size:15px;
+      letter-spacing:.15em;
+      line-height:1.35;
+    }
+
+    .brand small {
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+
+    .header-right {
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .live-indicator {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      color:var(--success);
+      font-size:9px;
+      white-space:nowrap;
+    }
+
+    .live-dot {
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:var(--success);
+      box-shadow:0 0 12px rgba(165,230,188,.6);
+      animation:glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display:none;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:rgba(112,199,149,.07);
+      color:var(--green-bright);
+      cursor:pointer;
+    }
+
+    .main-nav {
+      display:flex;
+      align-items:center;
+      gap:15px;
+      font-size:10px;
+    }
+
+    .main-nav>a {
+      color:var(--text-soft);
+      white-space:nowrap;
+    }
+
+    .main-nav>a:hover,
+    .main-nav>a[aria-current="page"] { color:var(--gold-bright); }
+
+    .btn {
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      min-height:42px;
+      padding:10px 15px;
+      border:1px solid rgba(165,230,188,.42);
+      border-radius:10px;
+      background:linear-gradient(115deg,#6bc88f,#c1edcb);
+      color:#06170e;
+      font-size:10px;
+      font-weight:700;
+      text-align:center;
+      cursor:pointer;
+      transition:transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform:translateY(-2px);
+      filter:brightness(1.08);
+      box-shadow:0 7px 23px rgba(112,199,149,.16);
+    }
+
+    .btn:disabled {
+      opacity:.52;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .btn-outline {
+      border-color:var(--border-gold);
+      background:rgba(212,177,106,.05);
+      color:var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color:rgba(255,183,183,.35);
+      background:rgba(255,183,183,.07);
+      color:var(--danger);
+    }
+
+    .btn-small {
+      min-height:34px;
+      padding:7px 10px;
+      font-size:9px;
+    }
+
+    .page-main {
+      position:relative;
+      isolation:isolate;
+      min-height:70vh;
+      padding:37px 0 65px;
+      overflow:hidden;
+    }
+
+    .page-main::before {
+      position:absolute;
+      z-index:-1;
+      inset:0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(112,199,149,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(212,177,106,.06),transparent 33%);
+      content:"";
+      pointer-events:none;
+    }
+
+    .breadcrumbs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:22px;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .breadcrumbs a { color:var(--green-bright); }
+
+    .page-heading {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:24px;
+      margin-bottom:27px;
+      animation:revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      color:var(--gold-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.17em;
+      text-transform:uppercase;
+    }
+
+    .eyebrow::before {
+      width:25px;
+      height:1px;
+      background:var(--green);
+      content:"";
+    }
+
+    .page-heading h1 {
+      margin:10px 0 9px;
+      font:600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing:-.025em;
+      overflow-wrap:anywhere;
+    }
+
+    .page-heading p {
+      max-width:760px;
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.9;
+    }
+
+    .typing-line {
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+      min-height:29px;
+      margin-top:10px;
+      color:var(--text-soft);
+      font-size:10px;
+    }
+
+    .typing-line strong { color:var(--green-bright);font-weight:600; }
+
+    .heading-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      flex-shrink:0;
+    }
+
+    .dashboard-layout {
+      display:grid;
+      grid-template-columns:242px minmax(0,1fr);
+      align-items:start;
+      gap:20px;
+    }
+
+    .sidebar,.panel,.info-card {
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:var(--surface);
+      box-shadow:0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position:sticky;
+      top:100px;
+      padding:18px;
+      animation:borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding-bottom:16px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 44px;
+      width:44px;
+      height:44px;
+      border:1px solid var(--border-gold);
+      border-radius:13px;
+      background:linear-gradient(145deg,#1b5637,#332b19);
+      color:var(--gold-bright);
+      font:600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong { display:block;font-size:11px; }
+    .admin-identity small {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+      overflow-wrap:anywhere;
+    }
+
+    .role-tag {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-top:5px;
+      padding:3px 7px;
+      border:1px solid var(--border-gold);
+      border-radius:5px;
+      color:var(--gold-bright);
+      font-size:8px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .sidebar-label {
+      margin:19px 0 8px;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:700;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+    }
+
+    .admin-nav { display:grid;gap:5px; }
+
+    .admin-nav a {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 11px;
+      border:1px solid transparent;
+      border-radius:9px;
+      color:var(--text-soft);
+      font-size:10px;
+      transition:background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,.admin-nav a.active {
+      border-color:var(--border);
+      background:rgba(112,199,149,.09);
+      color:var(--green-bright);
+    }
+
+    .nav-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 25px;
+      width:25px;
+      height:25px;
+      border-radius:7px;
+      background:rgba(112,199,149,.07);
+      font-size:13px;
+    }
+
+    .sidebar-note {
+      margin:17px 0 0;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.9;
+    }
+
+    .sidebar-note strong { color:var(--gold-bright); }
+
+    .content { display:grid;gap:19px;min-width:0; }
+
+    .panel {
+      padding:clamp(17px,2.5vw,25px);
+      animation:revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display:flex;
+      align-items:flex-start;
+      gap:13px;
+      margin-bottom:19px;
+    }
+
+    .panel-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      width:43px;
+      height:43px;
+      border:1px solid var(--border-gold);
+      border-radius:12px;
+      background:linear-gradient(145deg,rgba(112,199,149,.13),rgba(212,177,106,.06));
+      color:var(--gold-bright);
+      font-size:19px;
+    }
+
+    .panel-heading h2 {
+      margin:0 0 5px;
+      font:600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .status {
+      margin-bottom:17px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:rgba(112,199,149,.045);
+      color:var(--text-soft);
+      font-size:10px;
+      line-height:1.8;
+      overflow-wrap:anywhere;
+    }
+
+    .status.success {
+      border-color:rgba(165,230,188,.3);
+      color:var(--success);
+    }
+
+    .status.error {
+      border-color:rgba(255,183,183,.35);
+      color:var(--danger);
+    }
+
+    .status.warning {
+      border-color:var(--border-gold);
+      color:var(--gold-bright);
+    }
+
+    .status.info { color:var(--green-bright); }
+
+    .hero {
+      position:relative;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(200px,.7fr);
+      gap:22px;
+      align-items:center;
+      padding:clamp(18px,3vw,28px);
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(212,177,106,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(112,199,149,.11),transparent 48%),
+        linear-gradient(120deg,rgba(19,55,36,.96),rgba(6,22,14,.98));
+    }
+
+    .hero-copy { position:relative;z-index:1;min-width:0; }
+
+    .hero h2 {
+      margin:12px 0 10px;
+      font:600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .hero p {
+      margin:0;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.9;
+    }
+
+    .hero-art {
+      position:relative;
+      min-height:220px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:
+        linear-gradient(0deg,rgba(3,13,8,.82),rgba(3,13,8,.04)),
+        url("https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .hero-art-label {
+      position:absolute;
+      right:13px;
+      bottom:12px;
+      left:13px;
+      color:#fff1ce;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+
+    .hero-art-label span {
+      display:block;
+      margin-top:3px;
+      color:#d2e4d8;
+      font-size:8px;
+      font-weight:400;
+      letter-spacing:.04em;
+      text-transform:none;
+    }
+
+    .hero-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      margin-top:17px;
+    }
+
+    .stats-grid {
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .stat-card {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      min-width:0;
+      padding:15px;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(112,199,149,.11),transparent 54%),
+        linear-gradient(145deg,rgba(19,49,34,.92),rgba(6,22,14,.96));
+    }
+
+    .stat-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 39px;
+      width:39px;
+      height:39px;
+      border:1px solid var(--border-gold);
+      border-radius:11px;
+      background:rgba(212,177,106,.07);
+      color:var(--gold-bright);
+      font-size:17px;
+    }
+
+    .stat-copy { min-width:0; }
+
+    .stat-copy span {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .stat-copy strong {
+      display:block;
+      margin-top:3px;
+      color:var(--green-bright);
+      font:600 clamp(18px,2vw,25px)/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap:anywhere;
+    }
+
+    .stat-copy small {
+      display:block;
+      margin-top:3px;
+      color:var(--muted);
+      font-size:8px;
+    }
+
+    .filter-grid {
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:13px;
+      align-items:end;
+    }
+
+    .field { min-width:0; }
+
+    .field label {
+      display:block;
+      margin-bottom:7px;
+      color:var(--text-soft);
+      font-size:10px;
+      font-weight:600;
+    }
+
+    .field input,.field select,.field textarea {
+      width:100%;
+      min-width:0;
+      min-height:43px;
+      padding:10px 11px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#071b12;
+      color:var(--text);
+      font-size:10px;
+    }
+
+    .field textarea {
+      min-height:92px;
+      resize:vertical;
+    }
+
+    .field input::placeholder,.field textarea::placeholder { color:#718f7b; }
+
+    .field-help {
+      display:block;
+      margin-top:5px;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.7;
+    }
+
+    .filter-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      margin-top:15px;
+    }
+
+    .filter-actions .btn { min-height:39px; }
+
+    .toolbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .toolbar p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .toolbar-actions { display:flex;flex-wrap:wrap;gap:8px; }
+
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      max-width:100%;
+      padding:5px 9px;
+      border:1px solid var(--border);
+      border-radius:7px;
+      background:rgba(112,199,149,.055);
+      color:var(--text-soft);
+      font-size:8px;
+      line-height:1.5;
+      overflow-wrap:anywhere;
+    }
+
+    .pill.failed,.pill.refunded,.pill.critical {
+      border-color:rgba(255,183,183,.4);
+      background:rgba(255,100,115,.07);
+      color:var(--danger);
+    }
+
+    .pill.pending,.pill.processing,.pill.medium {
+      border-color:rgba(255,224,160,.32);
+      color:var(--warning);
+    }
+
+    .pill.completed,.pill.paid,.pill.success {
+      border-color:rgba(165,230,188,.3);
+      color:var(--success);
+    }
+
+    .pill.info,.pill.unknown { color:var(--muted); }
+
+    .table-wrap {
+      width:100%;
+      overflow-x:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(3,13,8,.45);
+      scrollbar-width:thin;
+      scrollbar-color:#386849 #081a11;
+    }
+
+    .data-table {
+      width:100%;
+      min-width:1020px;
+      border-collapse:collapse;
+      text-align:left;
+    }
+
+    .data-table th {
+      padding:12px;
+      border-bottom:1px solid var(--border-gold);
+      background:rgba(112,199,149,.055);
+      color:var(--green-bright);
+      font-size:9px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .data-table td {
+      padding:12px;
+      border-bottom:1px solid rgba(137,209,162,.1);
+      color:var(--text-soft);
+      font-size:9px;
+      vertical-align:top;
+    }
+
+    .data-table tbody tr:last-child td { border-bottom:0; }
+    .data-table tbody tr:hover { background:rgba(112,199,149,.035); }
+
+    .event-title {
+      display:block;
+      max-width:250px;
+      color:var(--text);
+      font-size:10px;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+
+    .event-subtitle {
+      display:block;
+      max-width:260px;
+      margin-top:4px;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.7;
+      overflow-wrap:anywhere;
+    }
+
+    .amount {
+      color:var(--gold-bright);
+      font-size:11px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .table-action {
+      padding:6px 9px;
+      border:1px solid var(--border);
+      border-radius:7px;
+      background:rgba(112,199,149,.05);
+      color:var(--green-bright);
+      font-size:9px;
+      cursor:pointer;
+    }
+
+    .table-action:disabled { opacity:.45;cursor:not-allowed; }
+
+    .empty-state {
+      padding:27px 16px;
+      border:1px dashed var(--border);
+      border-radius:11px;
+      color:var(--muted);
+      text-align:center;
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .empty-state strong {
+      display:block;
+      margin-bottom:5px;
+      color:var(--text-soft);
+      font:600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .pagination {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:15px;
+    }
+
+    .pagination p { margin:0;color:var(--muted);font-size:9px; }
+    .pagination-actions { display:flex;gap:8px; }
+
+    .two-column {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:19px;
+    }
+
+    .mini-list { display:grid;gap:10px; }
+
+    .mini-item {
+      display:flex;
+      align-items:flex-start;
+      gap:11px;
+      min-width:0;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:rgba(3,13,8,.35);
+    }
+
+    .mini-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 36px;
+      width:36px;
+      height:36px;
+      border:1px solid var(--border-gold);
+      border-radius:10px;
+      background:rgba(212,177,106,.055);
+      color:var(--gold-bright);
+      font-size:15px;
+    }
+
+    .mini-copy { min-width:0;flex:1; }
+
+    .mini-copy strong {
+      display:block;
+      margin-bottom:4px;
+      color:var(--text);
+      font-size:10px;
+      overflow-wrap:anywhere;
+    }
+
+    .mini-copy p {
+      margin:0;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.8;
+      overflow-wrap:anywhere;
+    }
+
+    .feature-banner {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(180px,.65fr);
+      align-items:center;
+      gap:22px;
+      min-width:0;
+      padding:24px;
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(212,177,106,.12),transparent 45%),
+        linear-gradient(120deg,rgba(19,55,36,.96),rgba(6,22,14,.98));
+    }
+
+    .feature-banner h2 {
+      margin:0 0 9px;
+      font:600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .feature-image {
+      min-height:165px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,25,.35),rgba(5,13,8,.6)),
+        url("https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .notice {
+      padding:15px 16px;
+      border:1px solid var(--border-gold);
+      border-radius:11px;
+      background:rgba(212,177,106,.045);
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .notice strong { color:var(--gold-bright); }
+
+    .summary-grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .summary-item {
+      min-width:0;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:rgba(3,13,8,.35);
+    }
+
+    .summary-item span {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .summary-item strong {
+      display:block;
+      margin-top:4px;
+      color:var(--text-soft);
+      font-size:11px;
+      overflow-wrap:anywhere;
+    }
+
+    dialog {
+      width:min(720px,calc(100% - 24px));
+      max-height:min(80vh,760px);
+      padding:0;
+      overflow:auto;
+      border:1px solid var(--border-gold);
+      border-radius:16px;
+      background:#071a13;
+      color:var(--text);
+      box-shadow:var(--shadow);
+    }
+
+    dialog::backdrop {
+      background:rgba(0,0,0,.74);
+      backdrop-filter:blur(5px);
+    }
+
+    .dialog-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:15px;
+      padding:18px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .dialog-header h2 {
+      margin:0;
+      font:600 22px "Playfair Display",Georgia,serif;
+      overflow-wrap:anywhere;
+    }
+
+    .dialog-body { padding:18px; }
+
+    .dialog-body pre {
+      max-height:360px;
+      margin:0;
+      padding:14px;
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#030d09;
+      color:var(--text-soft);
+      font:10px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace;
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+    }
+
+    .site-footer {
+      padding:40px 0 0;
+      border-top:1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(112,199,149,.08),transparent 38%),
+        #030d09;
+    }
+
+    .footer-grid {
+      display:grid;
+      grid-template-columns:1.35fr repeat(4,minmax(0,1fr));
+      gap:23px;
+      padding-bottom:28px;
+    }
+
+    .footer-brand p {
+      max-width:270px;
+      margin-top:12px;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-grid h2 {
+      margin:0 0 12px;
+      padding-bottom:9px;
+      border-bottom:1px solid var(--border);
+      color:var(--green-bright);
+      font-size:9px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .footer-links a {
+      display:block;
+      margin:8px 0;
+      color:var(--muted);
+      font-size:10px;
+      overflow-wrap:anywhere;
+      transition:color .2s;
+    }
+
+    .footer-links a:hover { color:var(--gold-bright); }
+
+    .disclaimer {
+      margin:0 0 15px;
+      padding:13px 15px;
+      border-left:2px solid var(--gold);
+      border-radius:0 8px 8px 0;
+      background:rgba(212,177,106,.035);
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-bottom {
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:17px 0;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .footer-bottom span:last-child {
+      color:var(--gold-bright);
+      letter-spacing:.1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display:inline-flex; }
+
+      .main-nav {
+        position:absolute;
+        top:100%;
+        right:0;
+        left:0;
+        display:none;
+        align-items:stretch;
+        flex-direction:column;
+        gap:4px;
+        max-height:calc(100vh - 90px);
+        padding:15px 22px 20px;
+        overflow-y:auto;
+        border:1px solid var(--border);
+        border-top:0;
+        border-radius:0 0 14px 14px;
+        background:rgba(4,16,10,.99);
+        box-shadow:var(--shadow);
+      }
+
+      .main-nav.open { display:flex; }
+      .main-nav>a { display:block;padding:11px 8px; }
+      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column:1/-1; }
+    }
+
+    @media (max-width:950px) {
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .filter-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns:1fr; }
+      .sidebar { position:static; }
+      .admin-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+      .page-heading {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .heading-actions { width:100%; }
+      .heading-actions .btn { flex:1; }
+      .hero { grid-template-columns:minmax(0,1fr) minmax(150px,.6fr); }
+      .two-column { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:560px) {
+      .container { width:calc(100% - 28px); }
+
+      .announcement {
+        gap:6px;
+        font-size:8px;
+        letter-spacing:.035em;
+      }
+
+      .nav-wrap { min-height:68px; }
+      .brand img { width:38px;height:38px; }
+      .brand strong { font-size:13px; }
+      .brand small { font-size:7px; }
+      .live-indicator { display:none; }
+      .page-main { padding:29px 0 44px; }
+      .page-heading h1 { font-size:clamp(32px,9vw,42px); }
+
+      .heading-actions { flex-direction:column; }
+      .heading-actions .btn { width:100%; }
+      .sidebar,.panel { padding:15px; }
+      .admin-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .hero { grid-template-columns:1fr;padding:16px; }
+      .hero-art { min-height:145px; }
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:9px; }
+
+      .stat-card {
+        align-items:flex-start;
+        flex-direction:column;
+        gap:8px;
+        padding:12px;
+      }
+
+      .stat-copy strong { font-size:21px; }
+      .filter-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
+      .filter-actions { flex-direction:column; }
+      .filter-actions .btn { width:100%; }
+      .toolbar { align-items:flex-start;flex-direction:column; }
+      .toolbar-actions { width:100%; }
+      .toolbar-actions .btn { flex:1; }
+      .feature-banner { grid-template-columns:1fr;padding:17px; }
+      .feature-image { min-height:135px; }
+
+      .footer-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:21px 15px;
+      }
+
+      .footer-brand { grid-column:1/-1; }
+      .footer-bottom { flex-direction:column; }
+      .pagination { align-items:flex-start;flex-direction:column; }
+      .summary-grid { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:360px) {
+      .container { width:calc(100% - 22px); }
+      .brand img { width:34px;height:34px; }
+      .brand strong { font-size:12px; }
+      .admin-nav { grid-template-columns:1fr; }
+      .stats-grid,.filter-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .footer-grid { gap:18px 11px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior:auto; }
+
+      *,*::before,*::after {
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+        scroll-behavior:auto!important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Payments</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about payments. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Secure payment operations</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Payments operations</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/reports.html">Reports</a>
+        <a href="/admin/payments.html" aria-current="page">Payments</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/audit-logs.html">Audit logs</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/reports.html">Finance and reports</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Payments</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Finance operations · Admin portal</span>
+          <h1>Payments <span class="accent-text">management.</span></h1>
+          <p>
+            Review payment transactions in Indian rupees, check payment
+            outcomes, reconcile references and access available receipts.
+            Transaction information shown here comes from the protected
+            MedOrbits administration API; amounts and totals are not fabricated.
+          </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">₹</span>
+            <strong id="typingText">Accurate records. Secure payments. Clear reconciliation.</strong>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/reports.html">← Finance reports</a>
+          <button class="btn" id="refreshPayments" type="button">↻ Refresh payments</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Restricted access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/official-resources.html"><span class="nav-icon" aria-hidden="true">◈</span>Official resources</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/jobs.html"><span class="nav-icon" aria-hidden="true">♧</span>Jobs and recruitment</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a class="active" href="/admin/payments.html" aria-current="page"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/data-export.html"><span class="nav-icon" aria-hidden="true">⇩</span>Data export</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Restricted financial records.</strong>
+            <br>
+            Access payment information only for an authorised business
+            purpose. Never store card numbers, CVV values, banking passwords,
+            payment gateway secrets or authentication tokens in this interface.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Transaction register · INR ₹</span>
+              <h2 id="heroTitle">Every rupee accounted for. <span class="accent-text">Every record protected.</span></h2>
+              <p>
+                Review payment status, transaction references, customer
+                references, refunds and receipts in one administrative
+                workspace. The page does not process card details or mark
+                payments as successful; the payment provider and backend remain
+                the source of truth.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="exportCsv" type="button" disabled>⇩ Export loaded transactions</button>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Open audit history ↗</a>
+              </div>
+            </div>
+
+            <div class="hero-art" role="img" aria-label="Financial paperwork and calculator representing payment reconciliation">
+              <div class="hero-art-label">
+                Payment and reconciliation desk
+                <span>INR ₹ · Transactions · Receipts · Audit</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">₹</div>
+              <div>
+                <h2 id="overviewTitle">Payment overview</h2>
+                <p>Financial totals reflect only the transactions returned by the API for the current result set. They are not necessarily account-wide totals.</p>
+              </div>
+            </div>
+
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">₹</div>
+                <div class="stat-copy">
+                  <span>Loaded transaction value</span>
+                  <strong id="statTotalValue">--</strong>
+                  <small>Current API result set</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Successful payments</span>
+                  <strong id="statSuccessful">--</strong>
+                  <small>Returned records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Pending payments</span>
+                  <strong id="statPending">--</strong>
+                  <small>Returned records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">↩</div>
+                <div class="stat-copy">
+                  <span>Refunded value</span>
+                  <strong id="statRefunded">--</strong>
+                  <small>Refund fields returned by API</small>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="filtersTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filtersTitle">Find transactions</h2>
+                <p>Filter payment records by reference, status, method and date. The server must enforce access controls and query filtering independently.</p>
+              </div>
+            </div>
+
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              Payment records have not been loaded. Connect this page to the authenticated payments API.
+            </div>
+
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search transactions</label>
+                  <input id="searchInput" name="search" type="search" maxlength="120" placeholder="Transaction or payment reference" autocomplete="off">
+                </div>
+
+                <div class="field">
+                  <label for="statusFilter">Payment status</label>
+                  <select id="statusFilter" name="status">
+                    <option value="">All statuses</option>
+                    <option value="success">Success</option>
+                    <option value="paid">Paid</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="methodFilter">Payment method</label>
+                  <select id="methodFilter" name="method">
+                    <option value="">All methods</option>
+                    <option value="upi">UPI</option>
+                    <option value="card">Card</option>
+                    <option value="netbanking">Net banking</option>
+                    <option value="wallet">Wallet</option>
+                    <option value="bank_transfer">Bank transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="currencyFilter">Currency</label>
+                  <select id="currencyFilter" name="currency">
+                    <option value="INR">Indian rupee (INR ₹)</option>
+                    <option value="">All currencies</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="fromDate">From date</label>
+                  <input id="fromDate" name="from" type="date">
+                </div>
+
+                <div class="field">
+                  <label for="toDate">To date</label>
+                  <input id="toDate" name="to" type="date">
+                </div>
+
+                <div class="field">
+                  <label for="pageSize">Rows per page</label>
+                  <select id="pageSize" name="limit">
+                    <option value="10">10 records</option>
+                    <option value="25" selected>25 records</option>
+                    <option value="50">50 records</option>
+                    <option value="100">100 records</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="customerFilter">Customer reference</label>
+                  <input id="customerFilter" name="customerId" type="text" maxlength="120" placeholder="Optional customer ID" autocomplete="off">
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="refreshFiltered" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="paymentsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="paymentsTitle">Transaction register</h2>
+                <p>Review the payment reference, date, customer reference, amount, status and available receipt action.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No payment records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportVisible" type="button" disabled>Export visible CSV</button>
+              </div>
+            </div>
+
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Payments table; horizontally scrollable">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Payment date</th>
+                    <th scope="col">Transaction reference</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Amount (₹)</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsBody">
+                  <tr>
+                    <td colspan="8">
+                      <div class="empty-state">
+                        <strong>No payment data loaded</strong>
+                        Transactions will appear here when returned by the configured payments API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination">
+              <p id="paginationSummary">Page 1</p>
+              <div class="pagination-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button" disabled>← Previous</button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button" disabled>Next →</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="two-column">
+            <section class="panel" aria-labelledby="reconciliationTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">⌁</div>
+                <div>
+                  <h2 id="reconciliationTitle">Payment reconciliation</h2>
+                  <p>Practical checks for matching MedOrbits records with the payment provider.</p>
+                </div>
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">✓</div>
+                  <div class="mini-copy">
+                    <strong>Verify provider references</strong>
+                    <p>Match the transaction ID and provider order or payment reference against trusted provider records.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">₹</div>
+                  <div class="mini-copy">
+                    <strong>Check amounts and currency</strong>
+                    <p>Confirm amount in the smallest currency unit where applicable and verify that the currency is INR.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">◷</div>
+                  <div class="mini-copy">
+                    <strong>Resolve pending transactions</strong>
+                    <p>Use verified provider status and signed webhooks. Do not treat a browser redirect as proof of payment.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">↩</div>
+                  <div class="mini-copy">
+                    <strong>Match refunds independently</strong>
+                    <p>Verify refund reference, amount, settlement status and the original payment before closing reconciliation.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="controlsTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">◆</div>
+                <div>
+                  <h2 id="controlsTitle">Financial data controls</h2>
+                  <p>Security and operational safeguards for payment administration.</p>
+                </div>
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">⬡</div>
+                  <div class="mini-copy">
+                    <strong>Enforce role-based access</strong>
+                    <p>Require server-side permissions for transaction viewing, receipt access, exports and any refund operation.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">▣</div>
+                  <div class="mini-copy">
+                    <strong>Protect receipts and exports</strong>
+                    <p>Serve files through authenticated endpoints and log access to financial records.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">⚙</div>
+                  <div class="mini-copy">
+                    <strong>Keep payment state server-owned</strong>
+                    <p>Verify gateway signatures, webhook authenticity, idempotency and transaction state on the backend.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">≡</div>
+                  <div class="mini-copy">
+                    <strong>Maintain an audit trail</strong>
+                    <p>Record privileged access, reconciliation changes and refund actions with actor, timestamp and reason.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="feature-banner" aria-labelledby="trustTitle">
+            <div>
+              <span class="eyebrow">Finance operations · By design</span>
+              <h2 id="trustTitle">Secure transactions. <span class="accent-text">Clear records.</span></h2>
+              <p>
+                Build a reliable payment workflow around verified provider
+                callbacks, immutable transaction references, reconciled
+                settlements, documented refunds and controlled receipt access.
+                This interface is a payment register, not a payment gateway
+                or a substitute for provider-side verification.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/reports.html">Review finance reports ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Audit history</a>
+              </div>
+            </div>
+
+            <div class="feature-image" role="img" aria-label="Financial analytics dashboard on a computer"></div>
+          </section>
+
+          <div class="notice">
+            <strong>Financial security notice:</strong>
+            This page is not an authorisation boundary. The backend must
+            authenticate each request, enforce role-based permissions, validate
+            all filters, rate-limit sensitive endpoints and audit access.
+            Verify transaction states through trusted payment-provider APIs
+            and authenticated webhooks. Never store or expose full card numbers,
+            CVV, PINs, banking passwords, payment secrets or access tokens.
+            Exported transaction files may contain personal information and
+            must be handled according to your privacy, retention and accounting
+            policies. Do not initiate or record a refund from this read-only page.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="paymentDialog" aria-labelledby="paymentDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Read-only transaction inspection</span>
+        <h2 id="paymentDialogTitle">Payment details</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeDialog" type="button">Close ✕</button>
+    </div>
+    <div class="dialog-body">
+      <pre id="paymentDetails">Select a transaction to inspect its available metadata.</pre>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Payments operations</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents, payments and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Finance</h2>
+          <a href="/admin/payments.html">Payments</a>
+          <a href="/admin/reports.html">Reports and analytics</a>
+          <a href="/admin/data-export.html">Data export</a>
+          <a href="/admin/audit-logs.html">Audit logs</a>
+          <a href="/admin/security.html">Security centre</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Payment availability, transaction processing, refunds and
+        settlement status depend on the configured payment provider and
+        verified backend records. Refer to official transaction records for
+        accounting and dispute resolution.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Payments Management
+       *
+       * Suggested endpoints:
+       *   GET /api/admin/payments
+       *   GET /api/admin/payments/:id
+       *   GET /api/admin/payments/:id/receipt
+       *
+       * Optional runtime configuration:
+       *   window.MEDORBITS_CONFIG = {
+       *     adminPaymentsEndpoint: "/api/admin/payments"
+       *   };
+       *
+       * Expected list response:
+       * {
+       *   "payments": [{
+       *     "id": "PAY-001",
+       *     "createdAt": "2026-10-25T10:00:00Z",
+       *     "transactionId": "TXN-001",
+       *     "customerId": "USR-001",
+       *     "customerName": "Customer reference",
+       *     "description": "Application fee",
+       *     "amount": 1500,
+       *     "currency": "INR",
+       *     "status": "success",
+       *     "method": "upi",
+       *     "refundAmount": 0,
+       *     "receiptAvailable": true
+       *   }],
+       *   "page": 1,
+       *   "pageSize": 25,
+       *   "total": 1,
+       *   "pages": 1
+       * }
+       *
+       * The API may return { data: { payments: [...] } } instead.
+       * Align the contract with the actual backend before deployment.
+       *
+       * Amounts are assumed to be expressed in major currency units unless
+       * the backend explicitly documents a different amount representation.
+       * Never treat a client-side value as proof that a payment was made.
+       * No demo transactions are generated and no refunds are initiated here.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const refreshButton = $("refreshPayments");
+        const statusBox = $("connectionStatus");
+        const form = $("filterForm");
+        const tbody = $("paymentsBody");
+        const dialog = $("paymentDialog");
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const state = {
+          loading: false,
+          controller: null,
+          requestSequence: 0,
+          page: 1,
+          pageSize: 25,
+          total: 0,
+          pages: 1,
+          serverPayments: [],
+          visiblePayments: [],
+          selectedPayment: null,
+          loadedSuccessfully: false
+        };
+
+        const ALLOWED_STATUSES = new Set([
+          "success", "paid", "completed", "pending", "processing",
+          "failed", "refunded", "cancelled", "expired", "unknown"
+        ]);
+
+        const ALLOWED_METHODS = new Set([
+          "upi", "card", "netbanking", "wallet", "bank_transfer",
+          "cash", "other", "unknown"
+        ]);
+
+        function setStatus(message, type = "warning") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+
+        function textValue(value, fallback = "Not provided") {
+          if (typeof value === "string" && value.trim()) return value.trim();
+
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(value);
+          }
+
+          return fallback;
+        }
+
+        function normaliseToken(value, allowed) {
+          const token = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+
+          return allowed.has(token) ? token : "unknown";
+        }
+
+        function formatDate(value, withTime = true) {
+          if (
+            (typeof value !== "string" && typeof value !== "number") ||
+            String(value).trim() === ""
+          ) {
+            return "Not provided";
+          }
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) return "Not provided";
+
+          const options = {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+          };
+
+          if (withTime) {
+            options.hour = "2-digit";
+            options.minute = "2-digit";
+            options.timeZone = "UTC";
+            options.timeZoneName = "short";
+          }
+
+          return date.toLocaleString("en-IN", options);
+        }
+
+        function formatINR(amount, currency = "INR") {
+          if (typeof amount !== "number" || !Number.isFinite(amount)) {
+            return "Not provided";
+          }
+
+          try {
+            return new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: currency || "INR",
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 2
+            }).format(amount);
+          } catch {
+            return `${currency || "INR"} ${amount.toFixed(2)}`;
+          }
+        }
+
+        function safeAmount(value) {
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return value;
+          }
+
+          if (
+            typeof value === "string" &&
+            value.trim() !== "" &&
+            Number.isFinite(Number(value))
+          ) {
+            return Number(value);
+          }
+
+          return null;
+        }
+
+        function makeElement(tag, className, content) {
+          const element = document.createElement(tag);
+
+          if (className) element.className = className;
+          if (content !== undefined) element.textContent = content;
+
+          return element;
+        }
+
+        function renderEmpty(title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = makeElement("div", "empty-state");
+          const heading = makeElement("strong", "", title);
+          const copy = makeElement("div", "", description);
+
+          cell.colSpan = 8;
+          box.append(heading, copy);
+          cell.appendChild(box);
+          row.appendChild(cell);
+          tbody.replaceChildren(row);
+        }
+
+        function setLoading(loading) {
+          state.loading = loading;
+          refreshButton.disabled = loading;
+          $("refreshFiltered").disabled = loading;
+          refreshButton.textContent = loading ? "Loading…" : "↻ Refresh payments";
+          $("refreshFiltered").textContent = loading ? "Loading…" : "↻ Reload from server";
+        }
+
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured = config.adminPaymentsEndpoint || "/api/admin/payments";
+          let url;
+
+          try {
+            url = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured payments endpoint is invalid.");
+          }
+
+          if (url.origin !== window.location.origin) {
+            throw new Error("The payments endpoint must use the same origin as this page.");
+          }
+
+          if (
+            !url.pathname.startsWith("/api/") ||
+            url.username ||
+            url.password
+          ) {
+            throw new Error("The payments endpoint must be a valid same-origin /api/ route.");
+          }
+
+          return url;
+        }
+
+        function readFilters() {
+          return {
+            search: $("searchInput").value.trim().slice(0, 120),
+            status: $("statusFilter").value,
+            method: $("methodFilter").value,
+            currency: $("currencyFilter").value,
+            from: $("fromDate").value,
+            to: $("toDate").value,
+            limit: Number($("pageSize").value) || 25,
+            customerId: $("customerFilter").value.trim().slice(0, 120)
+          };
+        }
+
+        function validateFilters(filters) {
+          if (filters.from && filters.to && filters.from > filters.to) {
+            throw new Error("The start date must be on or before the end date.");
+          }
+
+          if (![10, 25, 50, 100].includes(filters.limit)) {
+            throw new Error("The selected page size is invalid.");
+          }
+        }
+
+        function applyQuery(url, filters, page) {
+          url.search = "";
+
+          const params = new URLSearchParams();
+          params.set("page", String(page));
+          params.set("limit", String(filters.limit));
+
+          if (filters.search) params.set("search", filters.search);
+          if (filters.status) params.set("status", filters.status);
+          if (filters.method) params.set("method", filters.method);
+          if (filters.currency) params.set("currency", filters.currency);
+          if (filters.from) params.set("from", filters.from);
+          if (filters.to) params.set("to", filters.to);
+          if (filters.customerId) params.set("customerId", filters.customerId);
+
+          url.search = params.toString();
+          return url;
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        function normalisePayment(payment) {
+          if (
+            !payment ||
+            typeof payment !== "object" ||
+            Array.isArray(payment)
+          ) {
+            return null;
+          }
+
+          const rawId = payment.id ?? payment._id ?? payment.paymentId;
+
+          if (
+            (typeof rawId !== "string" && typeof rawId !== "number") ||
+            !String(rawId).trim()
+          ) {
+            return null;
+          }
+
+          const currency = textValue(payment.currency, "INR").toUpperCase();
+
+          return {
+            id: String(rawId),
+            createdAt: payment.createdAt || payment.created_at ||
+              payment.paidAt || payment.transactionDate || null,
+            transactionId: textValue(
+              payment.transactionId || payment.transaction_id ||
+              payment.providerPaymentId || payment.paymentReference,
+              String(rawId)
+            ),
+            orderId: textValue(payment.orderId || payment.order_id, "Not provided"),
+            customerId: textValue(
+              payment.customerId || payment.userId || payment.customer_id,
+              "Not provided"
+            ),
+            customerName: textValue(
+              payment.customerName || payment.userName || payment.customer_name,
+              ""
+            ),
+            description: textValue(
+              payment.description || payment.purpose || payment.productName,
+              "Payment"
+            ),
+            amount: safeAmount(payment.amount ?? payment.totalAmount),
+            currency,
+            status: normaliseToken(payment.status || payment.paymentStatus, ALLOWED_STATUSES),
+            method: normaliseToken(
+              payment.method || payment.paymentMethod || payment.methodType,
+              ALLOWED_METHODS
+            ),
+            refundAmount: safeAmount(payment.refundAmount ?? payment.refundedAmount),
+            receiptAvailable: payment.receiptAvailable === true ||
+              payment.hasReceipt === true,
+            details: payment.details &&
+              typeof payment.details === "object" &&
+              !Array.isArray(payment.details)
+              ? payment.details
+              : {}
+          };
+        }
+
+        function statusLabel(value) {
+          const labels = {
+            success: "Success",
+            paid: "Paid",
+            completed: "Completed",
+            pending: "Pending",
+            processing: "Processing",
+            failed: "Failed",
+            refunded: "Refunded",
+            cancelled: "Cancelled",
+            expired: "Expired",
+            unknown: "Unknown"
+          };
+
+          return labels[value] || "Unknown";
+        }
+
+        function methodLabel(value) {
+          const labels = {
+            upi: "UPI",
+            card: "Card",
+            netbanking: "Net banking",
+            wallet: "Wallet",
+            bank_transfer: "Bank transfer",
+            cash: "Cash",
+            other: "Other",
+            unknown: "Unknown"
+          };
+
+          return labels[value] || "Unknown";
+        }
+
+        function statusPill(status) {
+          let className = "unknown";
+
+          if (["success", "paid", "completed"].includes(status)) {
+            className = "success";
+          } else if (["failed", "refunded", "cancelled", "expired"].includes(status)) {
+            className = "failed";
+          } else if (["pending", "processing"].includes(status)) {
+            className = "pending";
+          }
+
+          return makeElement("span", `pill ${className}`, statusLabel(status));
+        }
+
+        function safeDetails(payment) {
+          const sensitiveKey =
+            /password|passwd|secret|token|cookie|authorization|credential|private.?key|cvv|cvc|pin|card.?number|bank.?account.?number|session.?id/i;
+
+          function clean(value, depth = 0) {
+            if (depth > 5) return "[Maximum nesting reached]";
+
+            if (Array.isArray(value)) {
+              return value.slice(0, 100).map(item => clean(item, depth + 1));
+            }
+
+            if (value && typeof value === "object") {
+              const result = {};
+
+              Object.keys(value).slice(0, 100).forEach(key => {
+                if (sensitiveKey.test(key)) {
+                  result[key] = "[Redacted]";
+                } else {
+                  result[key] = clean(value[key], depth + 1);
+                }
+              });
+
+              return result;
+            }
+
+            if (typeof value === "string") {
+              return value.length > 2000 ? value.slice(0, 2000) + "…" : value;
+            }
+
+            if (
+              typeof value === "number" ||
+              typeof value === "boolean" ||
+              value === null
+            ) {
+              return value;
+            }
+
+            return String(value);
+          }
+
+          return clean({
+            id: payment.id,
+            transactionId: payment.transactionId,
+            orderId: payment.orderId,
+            createdAt: payment.createdAt,
+            customerId: payment.customerId,
+            customerName: payment.customerName || undefined,
+            description: payment.description,
+            amount: payment.amount,
+            currency: payment.currency,
+            status: payment.status,
+            method: payment.method,
+            refundAmount: payment.refundAmount,
+            receiptAvailable: payment.receiptAvailable,
+            details: payment.details
+          });
+        }
+
+        function renderRows(payments) {
+          if (!payments.length) {
+            renderEmpty(
+              "No matching transactions",
+              state.loadedSuccessfully
+                ? "No records match the current filters."
+                : "Transactions will appear here when the configured payments API returns authorised records."
+            );
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          payments.forEach(payment => {
+            const row = document.createElement("tr");
+
+            const dateCell = makeElement("td", "", formatDate(payment.createdAt));
+
+            const referenceCell = document.createElement("td");
+            referenceCell.appendChild(
+              makeElement("span", "event-title", payment.transactionId)
+            );
+            referenceCell.appendChild(
+              makeElement("span", "event-subtitle", `Record: ${payment.id}`)
+            );
+
+            const customerCell = document.createElement("td");
+            customerCell.appendChild(
+              makeElement(
+                "span",
+                "event-title",
+                payment.customerName || payment.customerId
+              )
+            );
+
+            if (payment.customerName && payment.customerId !== "Not provided") {
+              customerCell.appendChild(
+                makeElement("span", "event-subtitle", payment.customerId)
+              );
+            }
+
+            const descriptionCell = makeElement("td");
+            descriptionCell.appendChild(
+              makeElement("span", "event-title", payment.description)
+            );
+
+            if (payment.orderId !== "Not provided") {
+              descriptionCell.appendChild(
+                makeElement("span", "event-subtitle", `Order: ${payment.orderId}`)
+              );
+            }
+
+            const amountCell = document.createElement("td");
+            amountCell.appendChild(
+              makeElement("span", "amount", formatINR(payment.amount, payment.currency))
+            );
+
+            const methodCell = makeElement("td", "", methodLabel(payment.method));
+
+            const statusCell = document.createElement("td");
+            statusCell.appendChild(statusPill(payment.status));
+
+            const receiptCell = document.createElement("td");
+
+            const detailsButton = makeElement("button", "table-action", "Inspect ↗");
+            detailsButton.type = "button";
+            detailsButton.setAttribute(
+              "aria-label",
+              `Inspect transaction ${payment.transactionId}`
+            );
+            detailsButton.addEventListener("click", () => openPaymentDetails(payment));
+            receiptCell.appendChild(detailsButton);
+
+            const receiptButton = makeElement(
+              "button",
+              "table-action",
+              "Receipt ↓"
+            );
+            receiptButton.type = "button";
+            receiptButton.style.marginTop = "5px";
+            receiptButton.disabled = !payment.receiptAvailable || state.loading;
+            receiptButton.setAttribute(
+              "aria-label",
+              `Download receipt for transaction ${payment.transactionId}`
+            );
+            receiptButton.title = payment.receiptAvailable
+              ? "Download the receipt from the authenticated API"
+              : "No receipt is marked as available by the API";
+
+            receiptButton.addEventListener("click", () => {
+              downloadReceipt(payment);
+            });
+
+            receiptCell.appendChild(document.createElement("br"));
+            receiptCell.appendChild(receiptButton);
+
+            row.append(
+              dateCell,
+              referenceCell,
+              customerCell,
+              descriptionCell,
+              amountCell,
+              methodCell,
+              statusCell,
+              receiptCell
+            );
+
+            fragment.appendChild(row);
+          });
+
+          tbody.replaceChildren(fragment);
+        }
+
+        function renderStats(payments) {
+          let totalValue = 0;
+          let refundedValue = 0;
+          let hasAmount = false;
+          let hasRefundAmount = false;
+
+          payments.forEach(payment => {
+            if (payment.amount !== null) {
+              totalValue += payment.amount;
+              hasAmount = true;
+            }
+
+            if (payment.refundAmount !== null) {
+              refundedValue += payment.refundAmount;
+              hasRefundAmount = true;
+            }
+          });
+
+          const successful = payments.filter(payment =>
+            ["success", "paid", "completed"].includes(payment.status)
+          ).length;
+
+          const pending = payments.filter(payment =>
+            ["pending", "processing"].includes(payment.status)
+          ).length;
+
+          const currencySet = new Set(
+            payments.map(payment => payment.currency).filter(Boolean)
+          );
+
+          const singleCurrency = currencySet.size === 1
+            ? Array.from(currencySet)[0]
+            : "INR";
+
+          $("statTotalValue").textContent = hasAmount
+            ? formatINR(totalValue, singleCurrency)
+            : "--";
+
+          $("statSuccessful").textContent = String(successful);
+          $("statPending").textContent = String(pending);
+
+          $("statRefunded").textContent = hasRefundAmount
+            ? formatINR(refundedValue, singleCurrency)
+            : "--";
+        }
+
+        function applyClientFilters(payments) {
+          const filters = readFilters();
+          const query = filters.search.toLowerCase();
+
+          return payments.filter(payment => {
+            if (filters.status && payment.status !== filters.status) {
+              return false;
+            }
+
+            if (filters.method && payment.method !== filters.method) {
+              return false;
+            }
+
+            if (filters.currency && payment.currency !== filters.currency) {
+              return false;
+            }
+
+            if (
+              filters.customerId &&
+              !payment.customerId.toLowerCase().includes(filters.customerId.toLowerCase())
+            ) {
+              return false;
+            }
+
+            if (query) {
+              const haystack = [
+                payment.id,
+                payment.transactionId,
+                payment.orderId,
+                payment.customerId,
+                payment.customerName,
+                payment.description,
+                payment.status,
+                payment.method,
+                payment.currency
+              ].join(" ").toLowerCase();
+
+              if (!haystack.includes(query)) return false;
+            }
+
+            const paymentDate = payment.createdAt
+              ? new Date(payment.createdAt)
+              : null;
+
+            if (filters.from) {
+              if (!paymentDate || Number.isNaN(paymentDate.getTime())) return false;
+
+              const start = new Date(`${filters.from}T00:00:00`);
+              if (paymentDate < start) return false;
+            }
+
+            if (filters.to) {
+              if (!paymentDate || Number.isNaN(paymentDate.getTime())) return false;
+
+              const end = new Date(`${filters.to}T23:59:59.999`);
+              if (paymentDate > end) return false;
+            }
+
+            return true;
+          });
+        }
+
+        function renderCurrentPage() {
+          state.visiblePayments = applyClientFilters(state.serverPayments);
+
+          renderRows(state.visiblePayments);
+          renderStats(state.serverPayments);
+
+          $("resultSummary").textContent = state.loadedSuccessfully
+            ? `${state.visiblePayments.length} visible record(s) from ${state.serverPayments.length} loaded transaction(s).`
+            : "No payment records loaded.";
+
+          $("paginationSummary").textContent =
+            `Page ${state.page} of ${Math.max(1, state.pages)} · ${state.total} server-reported record(s)`;
+
+          $("previousPage").disabled = state.loading || state.page <= 1;
+          $("nextPage").disabled = state.loading || state.page >= state.pages;
+
+          $("exportCsv").disabled =
+            state.loading || !state.loadedSuccessfully || !state.serverPayments.length;
+
+          $("exportVisible").disabled =
+            state.loading || !state.loadedSuccessfully || !state.visiblePayments.length;
+        }
+
+        async function loadPayments() {
+          const filters = readFilters();
+
+          try {
+            validateFilters(filters);
+          } catch (error) {
+            setStatus(error.message, "warning");
+            return;
+          }
+
+          if (state.controller) state.controller.abort();
+
+          const controller = new AbortController();
+          state.controller = controller;
+
+          const requestId = ++state.requestSequence;
+          state.pageSize = filters.limit;
+
+          setLoading(true);
+          setStatus("Retrieving payment records from the administration API…", "info");
+
+          try {
+            const endpoint = applyQuery(getEndpoint(), filters, state.page);
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { Accept: "application/json" },
+              signal: controller.signal
+            });
+
+            const data = await readJson(response);
+
+            if (requestId !== state.requestSequence) return;
+
+            if (!response.ok) {
+              if (response.status === 400) {
+                throw new Error("The API rejected one or more filter parameters.");
+              }
+
+              if (response.status === 401) {
+                throw new Error("Authentication required. Sign in with an authorised administrator account.");
+              }
+
+              if (response.status === 403) {
+                throw new Error("Access denied. Your administrator account is not authorised to view payment records.");
+              }
+
+              if (response.status === 404) {
+                throw new Error("The payments endpoint was not found. Verify the backend route and configuration.");
+              }
+
+              if (response.status === 429) {
+                throw new Error("The payments API rate limit was reached. Wait before trying again.");
+              }
+
+              throw new Error(
+                typeof data.message === "string"
+                  ? data.message
+                  : "The payments API could not complete the request."
+              );
+            }
+
+            const payload = data.data && typeof data.data === "object"
+              ? data.data
+              : data;
+
+            if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+              throw new Error("The payments API returned an invalid response.");
+            }
+
+            const rawPayments =
+              payload.payments || payload.items || payload.results;
+
+            if (!Array.isArray(rawPayments)) {
+              throw new Error("The API response is missing the payments array.");
+            }
+
+            state.serverPayments = rawPayments
+              .map(normalisePayment)
+              .filter(Boolean);
+
+            state.total =
+              Number.isSafeInteger(payload.total) && payload.total >= 0
+                ? payload.total
+                : state.serverPayments.length;
+
+            state.pages =
+              Number.isSafeInteger(payload.pages) && payload.pages > 0
+                ? payload.pages
+                : Math.max(1, Math.ceil(state.total / filters.limit));
+
+            state.page =
+              Number.isSafeInteger(payload.page) && payload.page > 0
+                ? payload.page
+                : state.page;
+
+            state.loadedSuccessfully = true;
+
+            if (
+              payload.admin &&
+              typeof payload.admin === "object" &&
+              !Array.isArray(payload.admin)
+            ) {
+              $("adminName").textContent =
+                textValue(payload.admin.name, "Administration");
+
+              $("adminEmail").textContent =
+                textValue(payload.admin.email, "Admin workspace");
+            }
+
+            setStatus(
+              `Payment records loaded at ${new Date().toLocaleTimeString()}. Amount totals reflect the currently loaded API result set only.`,
+              "success"
+            );
+
+            renderCurrentPage();
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+
+            state.serverPayments = [];
+            state.visiblePayments = [];
+            state.total = 0;
+            state.pages = 1;
+            state.loadedSuccessfully = false;
+
+            renderRows([]);
+            renderStats([]);
+            $("resultSummary").textContent = "Unable to load payment records.";
+            $("paginationSummary").textContent = "Page 1";
+            $("previousPage").disabled = true;
+            $("nextPage").disabled = true;
+            $("exportCsv").disabled = true;
+            $("exportVisible").disabled = true;
+
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load payment records.",
+              "error"
+            );
+          } finally {
+            if (requestId === state.requestSequence) {
+              setLoading(false);
+              renderCurrentPage();
+            }
+          }
+        }
+
+        function openPaymentDetails(payment) {
+          state.selectedPayment = payment;
+
+          $("paymentDialogTitle").textContent =
+            `Payment details · ${payment.transactionId}`;
+
+          $("paymentDetails").textContent = JSON.stringify(
+            safeDetails(payment),
+            null,
+            2
+          );
+
+          if (typeof dialog.showModal === "function") {
+            dialog.showModal();
+          } else {
+            setStatus(
+              "Your browser does not support the payment details dialog.",
+              "warning"
+            );
+          }
+        }
+
+        function csvEscape(value) {
+          let text = value == null ? "" : String(value);
+
+          /*
+           * Mitigate spreadsheet formula injection in CSV exports.
+           * This is not a substitute for backend access control.
+           */
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+          }
+
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+
+        function exportCsv(payments, filename) {
+          if (
+            !state.loadedSuccessfully ||
+            !Array.isArray(payments) ||
+            !payments.length
+          ) {
+            setStatus("There are no loaded transactions available to export.", "warning");
+            return;
+          }
+
+          const headers = [
+            "Payment ID",
+            "Transaction reference",
+            "Order reference",
+            "Payment date",
+            "Customer reference",
+            "Customer name",
+            "Description",
+            "Amount",
+            "Currency",
+            "Status",
+            "Method",
+            "Refund amount"
+          ];
+
+          const lines = [headers.map(csvEscape).join(",")];
+
+          payments.forEach(payment => {
+            lines.push([
+              payment.id,
+              payment.transactionId,
+              payment.orderId,
+              payment.createdAt || "",
+              payment.customerId,
+              payment.customerName,
+              payment.description,
+              payment.amount === null ? "" : payment.amount,
+              payment.currency,
+              statusLabel(payment.status),
+              methodLabel(payment.method),
+              payment.refundAmount === null ? "" : payment.refundAmount
+            ].map(csvEscape).join(","));
+          });
+
+          const blob = new Blob(
+            ["\uFEFF" + lines.join("\r\n")],
+            { type: "text/csv;charset=utf-8;" }
+          );
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+
+          link.href = objectUrl;
+          link.download = filename;
+          link.style.display = "none";
+
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+
+        function safeFilename(value, fallback) {
+          if (typeof value !== "string") return fallback;
+
+          const cleaned = value
+            .replace(/[\/\\<>:"|?*\u0000-\u001f]/g, "_")
+            .replace(/^\.+/, "")
+            .trim()
+            .slice(0, 150);
+
+          return cleaned || fallback;
+        }
+
+        async function downloadReceipt(payment) {
+          if (!payment || !payment.receiptAvailable) {
+            setStatus("A receipt is not marked as available for this transaction.", "warning");
+            return;
+          }
+
+          let endpoint;
+
+          try {
+            endpoint = getEndpoint();
+          } catch (error) {
+            setStatus(error.message, "error");
+            return;
+          }
+
+          const button = Array.from(
+            tbody.querySelectorAll("button")
+          ).find(element =>
+            element.getAttribute("aria-label") ===
+            `Download receipt for transaction ${payment.transactionId}`
+          );
+
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Loading…";
+          }
+
+          try {
+            /*
+             * Use a same-origin authenticated receipt endpoint rather than
+             * trusting a file URL supplied in the transaction response.
+             */
+            const receiptUrl = new URL(
+              `${endpoint.pathname.replace(/\/+$/, "")}/${encodeURIComponent(payment.id)}/receipt`,
+              window.location.origin
+            );
+
+            if (
+              receiptUrl.origin !== window.location.origin ||
+              !receiptUrl.pathname.startsWith("/api/")
+            ) {
+              throw new Error("The receipt endpoint is invalid.");
+            }
+
+            const response = await fetch(receiptUrl.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { Accept: "application/pdf, application/octet-stream, application/json" }
+            });
+
+            if (!response.ok) {
+              if (response.status === 401) {
+                throw new Error("Sign in with an authorised administrator account to access receipts.");
+              }
+
+              if (response.status === 403) {
+                throw new Error("You are not authorised to access this receipt.");
+              }
+
+              if (response.status === 404) {
+                throw new Error("The receipt was not found or is no longer available.");
+              }
+
+              throw new Error("The receipt could not be downloaded.");
+            }
+
+            const contentType = (
+              response.headers.get("content-type") || ""
+            ).toLowerCase();
+
+            if (
+              contentType.includes("text/html") ||
+              contentType.includes("text/plain")
+            ) {
+              throw new Error("The receipt endpoint returned an unexpected file type.");
+            }
+
+            const blob = await response.blob();
+
+            if (!blob.size) {
+              throw new Error("The receipt file is empty.");
+            }
+
+            const disposition = response.headers.get("content-disposition") || "";
+            const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^";\r\n]+)/i);
+
+            const suggestedName = match
+              ? decodeURIComponent(match[1].replace(/"/g, "").trim())
+              : `medorbits-receipt-${payment.id}.pdf`;
+
+            const filename = safeFilename(
+              suggestedName,
+              `medorbits-receipt-${payment.id}.pdf`
+            );
+
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = objectUrl;
+            link.download = filename;
+            link.style.display = "none";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+
+            setStatus(
+              `Receipt download started for transaction ${payment.transactionId}.`,
+              "success"
+            );
+          } catch (error) {
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to download this receipt.",
+              "error"
+            );
+          } finally {
+            if (button && button.isConnected) {
+              button.disabled = !payment.receiptAvailable;
+              button.textContent = "Receipt ↓";
+            }
+          }
+        }
+
+        function resetFilters() {
+          form.reset();
+          $("pageSize").value = "25";
+          $("currencyFilter").value = "INR";
+          state.page = 1;
+          loadPayments();
+        }
+
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        window.matchMedia("(min-width: 1101px)")
+          .addEventListener?.("change", event => {
+            if (event.matches) closeNavigation();
+          });
+
+        $("refreshPayments").addEventListener("click", () => {
+          state.page = 1;
+          loadPayments();
+        });
+
+        $("refreshFiltered").addEventListener("click", () => {
+          state.page = 1;
+          loadPayments();
+        });
+
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          state.page = 1;
+          loadPayments();
+        });
+
+        $("resetFilters").addEventListener("click", resetFilters);
+
+        $("pageSize").addEventListener("change", () => {
+          state.page = 1;
+          loadPayments();
+        });
+
+        $("previousPage").addEventListener("click", () => {
+          if (state.loading || state.page <= 1) return;
+          state.page--;
+          loadPayments();
+        });
+
+        $("nextPage").addEventListener("click", () => {
+          if (state.loading || state.page >= state.pages) return;
+          state.page++;
+          loadPayments();
+        });
+
+        $("exportCsv").addEventListener("click", () => {
+          exportCsv(
+            state.serverPayments,
+            "medorbits-payments-loaded.csv"
+          );
+        });
+
+        $("exportVisible").addEventListener("click", () => {
+          exportCsv(
+            state.visiblePayments,
+            "medorbits-payments-visible.csv"
+          );
+        });
+
+        $("closeDialog").addEventListener("click", () => {
+          if (dialog.open) dialog.close();
+        });
+
+        dialog.addEventListener("click", event => {
+          if (event.target === dialog) dialog.close();
+        });
+
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const typingText = $("typingText");
+        const phrases = [
+          "Accurate records. Secure payments. Clear reconciliation.",
+          "Verify each transaction. Protect every record.",
+          "Rupee by rupee. Account with confidence."
+        ];
+
+        let phraseIndex = 0;
+        let timer = null;
+
+        function rotatePhrase() {
+          if (reducedMotion.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingText.textContent = phrases[phraseIndex];
+          timer = window.setTimeout(rotatePhrase, 3200);
+        }
+
+        if (!reducedMotion.matches) {
+          timer = window.setTimeout(rotatePhrase, 3200);
+        }
+
+        reducedMotion.addEventListener?.("change", event => {
+          window.clearTimeout(timer);
+          typingText.textContent = phrases[0];
+
+          if (!event.matches) {
+            timer = window.setTimeout(rotatePhrase, 3200);
+          }
+        });
+
+        /*
+         * Resolve the endpoint at request time so the existing application
+         * configuration can provide adminPaymentsEndpoint before this page
+         * initialises.
+         */
+        loadPayments();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

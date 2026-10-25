@@ -1,545 +1,572 @@
 
-# MedOrbits — Testing Strategy and Test Suite
+# MedOrbits — Test Suite Documentation
 
-**Directory:** `/tests/`
+**Directory:** `tests/`  
+**Purpose:** Automated quality assurance for the MedOrbits education consultancy, admissions, document management, payments, and career services platform.
 
-The MedOrbits test suite verifies application behavior, API contracts, data validation, authentication, document handling, security controls, accessibility, and deployment readiness.
+## 1. Overview
 
-The objective is to detect regressions early and ensure that frontend and backend implementations behave consistently with documented requirements.
+The MedOrbits test suite verifies application behavior, API contracts, database integrity, authorization, payment processing, accessibility, and critical user workflows.
 
-> **Important:** This document describes the recommended testing architecture. Test directories and scripts must match the actual repository and `package.json`.
+| Directory | Purpose |
+|—|—|
+| `unit/` | Isolated functions, validators, utilities, and business rules |
+| `integration/` | Interactions between controllers, services, repositories, and infrastructure |
+| `integration/payments/` | Payment webhooks, duplicate events, and concurrent refunds |
+| `api/` | HTTP endpoints, response contracts, validation, and access control |
+| `database/` | Connections, migrations, constraints, indexes, repositories, and transactions |
+| `security/` | Authentication, authorization, IDOR, privilege escalation, and information leakage |
+| `accessibility/` | WCAG-oriented checks, forms, navigation, contrast, keyboard access, and screen-reader semantics |
+| `e2e/` | Complete user journeys across the application |
+| `fixtures/` | Reusable test data and payloads |
 
-—
+**Important:** The presence of a test file does not prove that its tests pass or that the associated application feature is implemented. Verify the inventory, configuration, and execution results before claiming coverage.
 
-## 1. Recommended Directory Structure
+## 2. Intended directory structure
 
 ```text
 tests/
 ├── README.md
-├── unit/
-│   ├── utils/
-│   │   ├── constants.test.js
-│   │   ├── formatters.test.js
-│   │   └── validators.test.js
-│   ├── services/
-│   │   ├── api.services.test.js
-│   │   ├── auth.services.test.js
-│   │   ├── application.services.test.js
-│   │   └── document.services.test.js
-│   └── security/
-│       ├── input-validation.test.js
-│       └── safe-errors.test.js
-├── integration/
-│   ├── auth.integration.test.js
-│   ├── applications.integration.test.js
-│   ├── documents.integration.test.js
-│   ├── jobs.integration.test.js
-│   └── support.integration.test.js
+├── accessibility/
+│   ├── README.md
+│   ├── color-contrast.test.js
+│   ├── forms.accessibility.test.js
+│   ├── homepage.accessibility.test.js
+│   ├── keyboard-navigation.test.js
+│   ├── navigation.accessibility.test.js
+│   └── screen-reader.test.js
 ├── api/
-│   ├── health.api.test.js
+│   ├── README.md
 │   ├── applications.api.test.js
+│   ├── auth.api.test.js
+│   ├── colleges.api.test.js
+│   ├── courses.api.test.js
 │   ├── documents.api.test.js
-│   └── authorization.api.test.js
+│   ├── error-responses.api.test.js
+│   ├── health.api.test.js
+│   ├── jobs.api.test.js
+│   ├── payments.api.test.js
+│   ├── universities.api.test.js
+│   └── user.api.test.js
+├── database/
+│   ├── README.md
+│   ├── connection.test.js
+│   ├── constraints.test.js
+│   ├── indexes.test.js
+│   ├── migrations.test.js
+│   ├── repositories.test.js
+│   ├── setup.js
+│   └── transactions.test.js
+├── e2e/
+│   ├── README.md
+│   ├── admin-workflow.e2e.test.js
+│   ├── application-submission.e2e.test.js
+│   ├── authentication.e2e.test.js
+│   ├── document-upload.e2e.test.js
+│   └── payment-checkout.e2e.test.js
+├── fixtures/
+│   ├── README.md
+│   ├── applications.js
+│   ├── candidates.js
+│   ├── courses.js
+│   ├── documents.js
+│   ├── employers.js
+│   ├── payments.js
+│   ├── subscriptions.js
+│   └── users.js
+├── integration/
+│   ├── README.md
+│   ├── application.integration.test.js
+│   ├── auth.integration.test.js
+│   ├── controllers.integration.test.js
+│   ├── database-constraints.integration.test.js
+│   ├── notification.integration.test.js
+│   ├── payments.integration.test.js
+│   ├── repositories.integration.test.js
+│   └── payments/
+│       ├── README.md
+│       ├── concurrent-refunds.integration.test.js
+│       ├── duplicate-events.integration.test.js
+│       └── webhook.integration.test.js
 ├── security/
+│   ├── README.md
 │   ├── authentication.security.test.js
 │   ├── authorization.security.test.js
-│   ├── file-upload.security.test.js
+│   ├── idor.security.test.js
 │   ├── input-validation.security.test.js
-│   └── rate-limit.security.test.js
-├── e2e/
-│   ├── authentication.e2e.test.js
-│   ├── application-submission.e2e.test.js
-│   ├── document-management.e2e.test.js
-│   └── support.e2e.test.js
-├── accessibility/
-│   ├── navigation.a11y.test.js
-│   ├── forms.a11y.test.js
-│   └── dialogs.a11y.test.js
-├── fixtures/
-│   ├── applications/
-│   ├── documents/
-│   ├── users/
-│   └── responses/
-├── helpers/
-│   ├── test-server.js
-│   ├── test-database.js
-│   ├── test-auth.js
-│   └── cleanup.js
-└── reports/
-    └── .gitkeep
+│   ├── mass-assignment.security.test.js
+│   ├── payment-webhook.security.test.js
+│   ├── privilege-escalation.security.test.js
+│   ├── rate-limit.security.test.js
+│   ├── sensitive-data.security.test.js
+│   └── unauthorized-downloads.security.test.js
+└── unit/
+    └── validators.test.js
 ```
 
-Create only the test files that are supported by the project’s actual modules, backend routes, and chosen test framework. Do not commit generated reports containing sensitive test data.
-
-—
-
-## 2. Testing Layers
-
-| Test type | Purpose | Dependencies |
-|—|—|—|
-| Unit | Verify isolated functions and modules | Minimal; dependencies mocked where appropriate |
-| Integration | Verify interactions between services and components | Controlled test environment |
-| API | Verify HTTP contracts, validation, and status codes | Test server and isolated data |
-| Security | Verify access controls and abuse protections | Authorized test environment |
-| End-to-end | Verify complete user workflows | Browser and test backend |
-| Accessibility | Verify keyboard, semantics, and assistive-technology support | DOM or browser test tools |
-
-Use unit tests for fast feedback and integration or end-to-end tests for cross-layer behavior.
-
-—
-
-## 3. Testing Framework and Commands
-
-Use the test framework already configured in the repository. Do not introduce a second runner without a clear need.
-
-Check `package.json` for the actual test scripts before running commands.
-
-Common command conventions include:
-
-```bash
-# Install dependencies using the project’s lockfile.
-npm ci
-
-# Run the configured test suite.
-npm test
-
-# Run tests in watch mode, if configured.
-npm run test:watch
-
-# Generate coverage, if configured.
-npm run test:coverage
-
-# Run lint checks, if configured.
-npm run lint
-```
-
-These commands are examples. A script must exist in `package.json` before its corresponding command can be expected to work.
-
-### Test environment
-
-- Use a dedicated test environment.
-- Never point automated tests at production databases or services.
-- Keep test credentials separate from production credentials.
-- Use synthetic user records and documents.
-- Reset mutable state between tests where required.
-- Avoid depending on test execution order.
-- Clean up temporary files and test records.
-- Do not disable security controls merely to make tests pass.
-
-—
-
-## 4. Unit Testing
-
-Unit tests should verify the behavior of a single function or module with controlled inputs.
-
-### Utilities
-
-Test the following areas:
-
-- Text normalization and truncation.
-- Name, identifier, and email formatting.
-- Currency and number formatting.
-- Date and time formatting.
-- File-size formatting.
-- Pagination normalization.
-- Validation result structure.
-- Application, job, and role status validation.
-- Supported language and locale handling.
-
-Example using a Jest-compatible API:
-
-```javascript
-import { describe, expect, test } from “@jest/globals”;
-import {
-  validateEmail,
-} from “../../src/js/utils/validators.js”;
-
-describe(“validateEmail”, () => {
-  test(“accepts a valid email address”, () => {
-    const result = validateEmail(“student@example.com”);
-
-    expect(result.valid).toBe(true);
-  });
-
-  test(“rejects an invalid email address”, () => {
-    const result = validateEmail(“not-an-email”);
-
-    expect(result.valid).toBe(false);
-    expect(result.message).toBeTruthy();
-  });
-});
-```
-
-Adjust the import path, test runner, and module configuration to match the actual project. The example assumes the validator returns `{ valid, message }`.
-
-### API services
-
-Test:
-
-- Request URL construction.
-- Query-string encoding.
-- JSON serialization.
-- Response parsing.
-- HTTP error mapping.
-- Timeout and cancellation behavior.
-- Correlation ID propagation.
-- Multipart upload behavior.
-- Binary download handling.
-
-Mock external requests where appropriate. Use a controlled test server for integration behavior.
-
-—
-
-## 5. Authentication Tests
-
-Authentication tests should cover:
-
-- Successful login.
-- Invalid credentials.
-- Registration validation.
-- Logout and session invalidation.
-- Missing or expired sessions.
-- Password-reset request handling.
-- Password-reset token validation.
-- Email verification.
-- CSRF protection where applicable.
-- Rate limiting.
-- Safe error responses.
-
-### Security expectations
-
-- Passwords must never appear in logs or API responses.
-- Authentication tokens must not be exposed in error messages.
-- Protected endpoints must reject unauthenticated requests.
-- Session invalidation must be enforced by the backend.
-- Password-reset responses should not unnecessarily disclose whether an account exists.
-- Authorization must not rely on frontend state.
-
-—
-
-## 6. Application Workflow Tests
-
-Test the complete application lifecycle supported by the backend:
-
-1. Create an application.
-2. Retrieve the application.
-3. Update permitted fields.
-4. Submit the application.
-5. Retrieve its status.
-6. Respond to document requests.
-7. Withdraw the application where permitted.
-8. Verify allowed and prohibited status transitions.
-
-Test invalid payloads, duplicate submissions, missing records, concurrent updates, and unauthorized access.
-
-### Ownership and authorization
-
-Verify that:
-
-- Applicants can access only applications they are authorized to view.
-- Users cannot change protected ownership fields.
-- Review and approval operations require appropriate permissions.
-- Status transitions are validated by the backend.
-- Sensitive changes are audited where required.
-
-Use the application’s actual status enum and backend transition rules instead of assuming every transition is valid.
-
-—
-
-## 7. Document Management Tests
-
-Document workflows require particular attention because admission and identity records may contain sensitive personal information.
-
-### Functional coverage
-
-- Upload a permitted file.
-- Reject files exceeding the configured size limit.
-- Reject unsupported file types.
-- Retrieve document metadata.
-- List documents associated with an application.
-- Download an authorized document.
-- Reject unauthorized downloads.
-- Update permitted metadata.
-- Delete a document when permitted.
-- Handle missing or unavailable files.
-- Verify document history where implemented.
-
-### Security coverage
-
-Test:
-
-- MIME type spoofing.
-- Invalid file signatures.
-- Oversized uploads.
-- Path traversal attempts.
-- Malicious filenames.
-- Unauthorized cross-user document access.
-- Unauthorized metadata changes.
-- Storage-path disclosure.
-- Malware-scanning failures where scanning is integrated.
-
-The server must inspect file contents and enforce access controls. Client-side MIME checks are not sufficient.
-
-Use synthetic files and non-sensitive test data.
-
-—
-
-## 8. API Contract Tests
-
-API tests must verify that frontend expectations match the implemented backend.
-
-Check:
-
-- HTTP method and route.
-- Request schema.
-- Required fields.
-- Response schema.
-- Authentication requirements.
-- Authorization behavior.
-- Pagination and filtering.
-- Content types.
-- Error response format.
-- Rate limits.
-- File upload and download responses.
-
-Use `/api/openapi.yaml` as the contract when it accurately describes the implemented routes.
-
-Do not treat a documented endpoint as implemented until the route is verified in the backend.
-
-### HTTP response expectations
-
-Test the documented response codes for:
-
-- Successful requests.
-- Resource creation.
-- Invalid requests.
-- Missing authentication.
-- Insufficient permissions.
-- Missing resources.
-- Conflicts.
-- Rate limiting.
-- Unexpected server errors.
-
-Avoid asserting a status code that is not part of the actual API contract.
-
-—
-
-## 9. Security Testing
-
-Security tests should verify controls rather than merely checking that a request succeeds.
-
-### Authentication and authorization
-
-- Unauthenticated requests cannot access protected resources.
-- Users cannot access other users’ private records without permission.
-- Privileged operations require the correct role and authorization.
-- Changing client-supplied role or owner fields does not grant access.
-- Session and CSRF controls behave as configured.
-
-### Input and injection
-
-- Invalid JSON is rejected safely.
-- Oversized request bodies are handled correctly.
-- Invalid identifiers and enum values are rejected.
-- SQL injection payloads cannot alter database queries.
-- HTML and script payloads are not rendered as executable content.
-- URL and redirect inputs are constrained to approved destinations where applicable.
-
-### Abuse controls
-
-- Authentication endpoints are rate-limited.
-- Password-reset endpoints resist abuse.
-- Repeated expensive requests are controlled.
-- Resource limits are applied to uploads and request bodies.
-
-Run active security tests only against systems you own or are explicitly authorized to test.
-
-—
-
-## 10. End-to-End Tests
-
-End-to-end tests should verify realistic user journeys using a dedicated test deployment.
-
-Recommended workflows:
-
-### Applicant journey
-
-1. Open the admissions section.
-2. Sign in or create a test account.
-3. Complete required application fields.
-4. Submit the application.
-5. Confirm the resulting status.
-6. Upload a permitted test document.
-7. Verify the document association.
-
-### Document journey
-
-1. Open the official-documents page.
-2. Search or filter the catalogue.
-3. Open a document resource.
-4. Trigger an authorized download.
-5. Verify an understandable error for an unavailable resource.
-
-### Support journey
-
-1. Open the support page.
-2. Submit a valid test request.
-3. Confirm the expected response.
-4. Verify field-level validation for invalid input.
-5. Confirm that sensitive data is not exposed in the interface.
-
-Use deterministic fixtures and clean up created records after each test.
-
-—
-
-## 11. Accessibility Tests
-
-Test interface accessibility throughout the application.
-
-Coverage should include:
-
-- Keyboard-only navigation.
-- Visible focus indicators.
-- Accessible form labels.
-- Validation error associations.
-- Screen-reader announcements.
-- Dialog focus management.
-- Navigation semantics.
-- Color contrast.
-- Reduced-motion preferences.
-- Mobile navigation behavior.
-- Empty, loading, success, and error states.
-
-Automated accessibility checks can identify many issues but do not replace manual keyboard and assistive-technology testing.
-
-—
-
-## 12. Fixtures and Test Data
-
-Use `/tests/fixtures/` for deterministic, non-sensitive test data.
-
-Recommended fixture categories:
-
-- Synthetic applicants.
-- Synthetic applications.
-- Valid and invalid document samples.
-- Expected API responses.
-- Job listings.
-- Validation edge cases.
-
-Fixture requirements:
-
-- Use stable identifiers where useful.
-- Avoid production personal data.
-- Avoid real authentication credentials.
-- Keep binary fixtures small.
-- Include expected outcomes for invalid inputs.
-- Clean up any records created by tests.
-
-Do not place API keys, session cookies, passwords, private keys, or production exports in fixtures.
-
-—
-
-## 13. Test Isolation and Database Safety
-
-Database-backed tests should use an isolated test database or disposable database instance.
+This is the intended inventory, not a verified filesystem listing. Only include files for implemented modules and configured test infrastructure.
+
+## 3. Test responsibilities
+
+### 3.1 Unit tests
+
+**File:** `unit/validators.test.js`
+
+Verify:
+
+- Required fields, types, and formats.
+- String and numeric boundaries.
+- Email and identifier validation.
+- Missing, malformed, unsupported, and oversized values.
+- Consistent validation errors.
+- Deterministic behavior without unnecessary network or database dependencies.
+
+### 3.2 API tests
+
+| File | Responsibilities |
+|—|—|
+| `applications.api.test.js` | Submission, retrieval, ownership, validation, and access control |
+| `auth.api.test.js` | Registration, login, credentials, and authentication errors |
+| `colleges.api.test.js` | Catalog, search, filtering, pagination, and details |
+| `courses.api.test.js` | Catalog, course details, query validation, and access |
+| `documents.api.test.js` | Uploads, downloads, ownership, and storage-path protection |
+| `error-responses.api.test.js` | Error contracts, malformed requests, missing routes, and information leakage |
+| `health.api.test.js` | Health, liveness, readiness, and infrastructure information exposure |
+| `jobs.api.test.js` | Job listing, search, filtering, details, and protected fields |
+| `payments.api.test.js` | Payment authorization, initiation, webhook verification, and state integrity |
+| `universities.api.test.js` | Catalog, details, search, filtering, and pagination |
+| `user.api.test.js` | Profiles, updates, ownership, and sensitive-data protection |
+
+Tests must follow actual route definitions, authentication middleware, request schemas, and response contracts.
+
+### 3.3 Integration tests
+
+| File | Responsibilities |
+|—|—|
+| `application.integration.test.js` | Application workflow across connected components |
+| `auth.integration.test.js` | Authentication, services, and persistence |
+| `controllers.integration.test.js` | Controllers, services, repositories, and middleware |
+| `database-constraints.integration.test.js` | Real database constraints |
+| `notification.integration.test.js` | Notification dispatch and failure handling |
+| `payments.integration.test.js` | Payment lifecycle integration |
+| `repositories.integration.test.js` | Repository operations against the configured persistence layer |
+
+### 3.4 Database tests
+
+| File | Responsibilities |
+|—|—|
+| `connection.test.js` | Connection establishment, failure handling, and cleanup |
+| `constraints.test.js` | Foreign keys, uniqueness, nullability, and schema constraints |
+| `indexes.test.js` | Required indexes and relevant query behavior |
+| `migrations.test.js` | Migration ordering, execution, and schema state |
+| `repositories.test.js` | Repository operations |
+| `transactions.test.js` | Commit, rollback, and isolation behavior |
+| `setup.js` | Test database initialization and shared helpers |
+
+Use the database driver, schema, and migration system actually configured by the application.
+
+### 3.5 Security tests
+
+| File | Responsibilities |
+|—|—|
+| `authentication.security.test.js` | Missing, invalid, expired, and malformed credentials |
+| `authorization.security.test.js` | Role and resource-level authorization |
+| `idor.security.test.js` | Access to another user’s resources |
+| `input-validation.security.test.js` | Malformed input and injection attempts |
+| `mass-assignment.security.test.js` | Unauthorized protected-field modification |
+| `payment-webhook.security.test.js` | Webhook authenticity and payment-state integrity |
+| `privilege-escalation.security.test.js` | Unauthorized roles and permissions |
+| `rate-limit.security.test.js` | Configured request limits |
+| `sensitive-data.security.test.js` | Sensitive information leakage |
+| `unauthorized-downloads.security.test.js` | Download authorization and path traversal protection |
+
+Where applicable, verify both the authorization decision and that denied operations do not modify persistent state.
+
+### 3.6 Accessibility tests
+
+| File | Responsibilities |
+|—|—|
+| `color-contrast.test.js` | Text and interface contrast |
+| `forms.accessibility.test.js` | Labels, instructions, validation errors, and feedback |
+| `homepage.accessibility.test.js` | Homepage structure and primary interactions |
+| `keyboard-navigation.test.js` | Keyboard access, focus order, visibility, and traps |
+| `navigation.accessibility.test.js` | Navigation landmarks, menus, links, and current-page state |
+| `screen-reader.test.js` | Semantic HTML, accessible names, ARIA relationships, and announcements |
+
+Target WCAG 2.2 Level AA. Automated tests must be supplemented by manual keyboard and assistive-technology testing.
+
+### 3.7 End-to-end tests
+
+| File | Responsibilities |
+|—|—|
+| `admin-workflow.e2e.test.js` | Administrative workflows and protected operations |
+| `application-submission.e2e.test.js` | Form completion, submission, and confirmation |
+| `authentication.e2e.test.js` | Authentication journeys |
+| `document-upload.e2e.test.js` | File selection, upload, validation, and completion |
+| `payment-checkout.e2e.test.js` | Checkout, payment initiation, and result handling |
+
+Use the E2E runner configured by the repository. Do not assume it is Jest.
+
+## 4. Fixture conventions
+
+Fixtures must use synthetic, deterministic data.
+
+| File | Responsibilities |
+|—|—|
+| `applications.js` | Application records and payloads |
+| `candidates.js` | Candidate profiles |
+| `courses.js` | Course records |
+| `documents.js` | Document metadata and upload scenarios |
+| `employers.js` | Employer and organization records |
+| `payments.js` | Payment records and lifecycle scenarios |
+| `subscriptions.js` | Subscription lifecycle scenarios |
+| `users.js` | User profiles and role scenarios |
+| `README.md` | Fixture structure and maintenance |
 
 Requirements:
 
-- Confirm the database connection points to the test environment.
-- Never run destructive setup scripts against production.
-- Use transactions or controlled cleanup where appropriate.
-- Avoid shared mutable records between parallel tests.
-- Test migrations against disposable data.
-- Ensure test teardown runs after failures.
-- Verify that asynchronous operations finish before cleanup.
+- Do not use real customer data or production credentials.
+- Use stable identifiers and explicit ownership relationships.
+- Keep fixture definitions separate from database insertion and cleanup.
+- Match the application’s actual model and validation schemas.
+- Clean up records created by mutation tests.
+- Ensure fixture exports match their consumers.
 
-If MedOrbits uses PostgreSQL or MySQL, configure the test database and migrations for the actual deployed database engine. Do not assume that SQL dialects or migration scripts are interchangeable.
+The intended current fixture filenames are `applications.js`, `courses.js`, `payments.js`, and `users.js`, rather than their former `*.fixture.js` names. Update imports only after confirming the actual files and exports.
 
-—
+Example CommonJS imports:
 
-## 14. Coverage and Quality Gates
+```javascript
+‘use strict’;
 
-Coverage is a diagnostic measure, not proof that software is secure or correct.
+const applications = require(‘../fixtures/applications’);
+const courses = require(‘../fixtures/courses’);
+const payments = require(‘../fixtures/payments’);
+const users = require(‘../fixtures/users’);
+```
 
-Recommended initial targets, subject to project complexity:
+Adjust relative paths according to the importing file’s location.
 
-| Area | Suggested target |
-|—|—:|
-| Pure utility functions | 90%+ |
-| Validation logic | 90%+ |
-| API client and error handling | 85%+ |
-| Domain service modules | 80%+ |
-| Critical authorization rules | All identified cases tested |
-| Critical applicant workflows | All principal success and failure paths tested |
+## 5. Removed E2E filenames
 
-Measure statement, branch, function, and line coverage when the selected test runner supports them.
+The intended current E2E inventory uses:
 
-Prioritize meaningful branch coverage and security-sensitive behavior over increasing a single aggregate percentage.
+- `authentication.e2e.test.js`
+- `payment-checkout.e2e.test.js`
 
-—
+The former `login.e2e.test.js`, `payment.e2e.test.js`, and `registration.e2e.test.js` filenames should not be assumed to exist.
 
-## 15. Continuous Integration
+Before deleting old files, verify that their unique scenarios have been migrated. Registration coverage should remain explicitly tested within the authentication journey or a separate registration test.
 
-A continuous integration pipeline should run applicable checks for each change.
+## 6. Payment integration tests
 
-Recommended order:
+**Directory:** `tests/integration/payments/`
+
+| File | Responsibilities |
+|—|—|
+| `concurrent-refunds.integration.test.js` | Prevent duplicate or conflicting effects from concurrent refunds |
+| `duplicate-events.integration.test.js` | Verify idempotent handling of repeated gateway events |
+| `webhook.integration.test.js` | Verify signed event processing and payment-state transitions |
+| `README.md` | Test setup, provider simulation, and execution |
+
+Verify:
+
+- Valid signatures are accepted.
+- Invalid signatures are rejected.
+- Duplicate events do not duplicate financial effects.
+- State transitions are atomic or otherwise concurrency-safe.
+- Amounts and currencies are validated.
+- Refunds cannot exceed refundable amounts.
+- Failures do not leave inconsistent payment state.
+
+Use provider mocks or test-mode credentials. Never initiate live charges or refunds in automated tests.
+
+## 7. Technology and dependencies
+
+Preserve the project’s existing configuration.
+
+Potential tools include:
+
+- Node.js 20 or later.
+- Jest for configured unit, API, and integration tests.
+- Supertest for Express HTTP tests.
+- The configured SQL database driver.
+- Browser automation for E2E testing.
+- axe-core or jest-axe for accessibility testing.
+
+Inspect `package.json`, the lockfile, and existing test configuration before installing dependencies or changing runners.
+
+Do not replace the test runner or database adapter without an explicit architecture change.
+
+## 8. Test environment and database safety
+
+Tests must use isolated infrastructure.
+
+Illustrative environment configuration:
+
+```dotenv
+NODE_ENV=test
+TEST_DATABASE_URL=mysql://test_user:test_password@127.0.0.1:3306/medorbits_test
+```
+
+This example is not a claim that the repository uses this exact database or variable name. Configure the actual driver and environment variables required by MedOrbits.
+
+Before database tests run:
+
+1. Verify that the target is a dedicated test database.
+2. Apply required migrations.
+3. Load required fixtures.
+4. Verify test-only credentials.
+5. Mock or disable live payment operations.
+6. Ensure setup and cleanup are safe and repeatable.
+
+Never run destructive test setup against production data.
+
+## 9. Authentication helpers
+
+Authentication tests should use valid credentials issued through the application’s real test authentication mechanism.
+
+A helper may return:
+
+```javascript
+{
+  token: ‘test-issued-access-token’,
+  userId: ‘TEST-USER-001’,
+}
+```
+
+This illustrates the expected interface; the token is not valid.
+
+Create test users through trusted setup and assign roles server-side. Do not simulate administrator access by trusting client-supplied role fields. An unimplemented helper must be completed before its associated tests are considered runnable.
+
+## 10. API response contracts
+
+Test the response envelope implemented by MedOrbits. The following are illustrative examples, not mandatory contracts.
+
+Success:
+
+```json
+{
+  “success”: true,
+  “data”: []
+}
+```
+
+Error:
+
+```json
+{
+  “success”: false,
+  “message”: “Request could not be processed.”
+}
+```
+
+Use the actual route and middleware behavior to determine expected status codes.
+
+| Status | Typical meaning |
+|—|—|
+| `200` | Successful operation |
+| `201` | Resource created |
+| `204` | Successful operation without a response body |
+| `400` | Invalid request |
+| `401` | Missing or invalid authentication |
+| `403` | Insufficient permission |
+| `404` | Resource or route not found; may conceal restricted resources |
+| `405` | Unsupported HTTP method |
+| `409` | Conflict |
+| `415` | Unsupported media type |
+| `422` | Validation failure |
+| `429` | Rate limit exceeded |
+| `500` | Unexpected server failure |
+| `503` | Service unavailable |
+
+Prefer exact status assertions when the contract is known. Do not accept unrelated status codes merely to make tests pass.
+
+## 11. Security requirements
+
+### Authentication and authorization
+
+- Protected routes reject missing and invalid credentials.
+- Roles and permissions are assigned by trusted server-side logic.
+- Users cannot access other users’ private resources without authorization.
+- Administrative operations require the appropriate permission.
+
+### Input handling
+
+- Request bodies and query parameters are validated.
+- Injection attempts cannot alter query structure.
+- Unexpected fields cannot bypass validation.
+- File paths and identifiers cannot escape permitted storage.
+
+### Sensitive information
+
+Responses must not expose unnecessary:
+
+- Password hashes.
+- Access or refresh tokens.
+- Private keys.
+- Database connection strings.
+- Environment variables.
+- Stack traces.
+- Internal filesystem paths.
+- Payment gateway secrets.
+
+### Payment integrity
+
+- Payment state is determined by trusted server-side verification.
+- Invalid webhooks cannot mark payments successful.
+- Repeated events do not duplicate financial effects.
+- Refunds are protected against concurrency errors.
+
+## 12. Accessibility requirements
+
+Target WCAG 2.2 Level AA.
+
+Verify:
+
+- Semantic HTML and accessible names.
+- Sufficient text and interface contrast.
+- Keyboard accessibility and visible focus.
+- Logical focus order.
+- Accessible labels and validation messages.
+- Heading hierarchy and navigation landmarks.
+- Meaningful image alternatives.
+- Screen-reader-compatible status announcements.
+- Responsive layouts and zoom behavior.
+
+Automated checks do not establish full WCAG conformance. Manually test important journeys using a keyboard and appropriate assistive technologies.
+
+## 13. Running tests
+
+Use the repository’s existing npm scripts when available.
+
+### Jest
+
+```bash
+# Run all Jest-discovered tests
+npx jest —runInBand
+
+# Run individual categories
+npx jest tests/unit —runInBand
+npx jest tests/integration —runInBand
+npx jest tests/api —runInBand
+npx jest tests/database —runInBand
+npx jest tests/security —runInBand
+npx jest tests/accessibility —runInBand
+
+# Run payment integration tests
+npx jest tests/integration/payments —runInBand
+
+# Run E2E tests only if configured for Jest
+npx jest tests/e2e —runInBand
+
+# Generate coverage
+npx jest —coverage —runInBand
+```
+
+These commands assume the root Jest configuration discovers the relevant files and that the required test environment is available.
+
+If the project uses Node’s built-in test runner for a test file, run it using the configured Node test command rather than invoking it through Jest.
+
+Prefer `npm test` when the existing script correctly runs the intended suite.
+
+## 14. Jest configuration
+
+Example reference configuration for Node-based tests:
+
+```javascript
+‘use strict’;
+
+module.exports = {
+  testEnvironment: ‘node’,
+  clearMocks: true,
+  restoreMocks: true,
+  verbose: true,
+  testTimeout: 15000,
+};
+```
+
+Merge necessary settings into the existing configuration. Do not overwrite project-specific test discovery, setup files, coverage thresholds, or environment configuration without reviewing them.
+
+## 15. Test isolation and cleanup
+
+Every test must be deterministic and independently repeatable.
+
+- Create records through test setup.
+- Use stable fixtures.
+- Avoid execution-order dependencies.
+- Roll back or clean up database mutations.
+- Mock external services when live connectivity is unnecessary.
+- Prevent tests from reaching production services.
+- Close database connections and browser resources.
+- Configure reasonable asynchronous timeouts.
+- Run shared-state tests serially until isolation is reliable.
+
+Do not silently skip essential authorization, persistence, or security assertions.
+
+## 16. CI integration
+
+Recommended CI sequence:
 
 1. Install dependencies using the lockfile.
-2. Check formatting and lint rules.
-3. Validate JSON and configuration files.
-4. Run unit tests.
-5. Run integration and API tests.
-6. Run security checks.
-7. Run accessibility checks where configured.
-8. Build or validate deployment assets.
-9. Publish test reports without exposing sensitive data.
+2. Validate required environment variables.
+3. Run unit tests.
+4. Start isolated database services.
+5. Apply migrations and load fixtures.
+6. Run integration and database tests.
+7. Run API and security tests.
+8. Run accessibility tests.
+9. Run E2E tests using the configured runner.
+10. Publish test and coverage reports.
+11. Fail the pipeline when required checks fail.
 
-Use the repository’s actual CI provider and scripts. Do not add a pipeline that assumes unavailable services or undocumented environment variables.
+CI must use test-only credentials and must not print secrets in logs.
 
-—
+## 17. Troubleshooting
 
-## 16. Failure Reporting
+**Module not found:** Check dependency installation, filename casing, relative imports, and the module system.
 
-When a test fails, report:
+**Database connection failure:** Verify the test database, connection URL, migrations, and required environment variables.
 
-- Test name.
-- Expected behavior.
-- Actual behavior.
-- Relevant safe diagnostic information.
-- Whether the failure is reproducible.
-- The likely affected module.
-- The corrective action or follow-up needed.
+**Authentication failure:** Verify that the helper issues a valid test token and that the test user’s role and ownership match the scenario.
 
-Never include passwords, session tokens, private document contents, or sensitive user records in test output.
+**Unexpected HTTP status:** Compare the assertion with the actual route, middleware, controller, and documented contract.
 
-Flaky tests should be investigated rather than permanently hidden through retries or skipped execution.
+**E2E failure:** Verify the configured runner, application startup, browser installation, base URL, selectors, and asynchronous behavior.
 
-—
+**Inconsistent results:** Investigate shared mutable fixtures, parallel execution, missing cleanup, and external dependencies.
 
-## 17. Pre-Release Checklist
+**Deleted files:** Check imports, test discovery, npm scripts, and CI configuration. Confirm scenario migration before treating a deletion as complete.
 
+## 18. Definition of done
+
+Before release, verify:
+
+- [ ] The directory inventory matches the actual repository.
+- [ ] Required test dependencies and runners are configured.
 - [ ] Unit tests pass.
-- [ ] API contract tests pass.
-- [ ] Integration tests pass.
-- [ ] Critical user workflows pass.
+- [ ] Integration and database tests pass against isolated infrastructure.
+- [ ] API response contracts are verified.
 - [ ] Authentication and authorization tests pass.
-- [ ] File-upload and document-access tests pass.
-- [ ] Validation and error-handling tests pass.
-- [ ] Accessibility checks have been completed.
-- [ ] Database tests use an isolated environment.
-- [ ] Test fixtures contain no sensitive production data.
-- [ ] Coverage has been reviewed.
-- [ ] No critical tests are silently skipped.
-- [ ] Deployment configuration has been checked.
-- [ ] Test results correspond to the code being released.
+- [ ] Payment webhook and idempotency tests pass.
+- [ ] Security tests cover the intended threat model.
+- [ ] Accessibility checks and manual reviews are completed.
+- [ ] Critical E2E workflows pass.
+- [ ] Fixtures are deterministic and cleanup is reliable.
+- [ ] Removed files are not referenced by active configuration.
+- [ ] CI uses test-only credentials and services.
+- [ ] Required checks pass before deployment.
 
-—
+## 19. Maintenance policy
 
-## 18. Maintenance Policy
+Update this document whenever:
 
-Update tests whenever application behavior, API contracts, schemas, authorization rules, or business workflows change.
+- Test files are added, renamed, or removed.
+- Fixture names or exports change.
+- The test runner or dependencies change.
+- API contracts or authentication mechanisms change.
+- Database setup or migrations change.
+- E2E workflows or accessibility tooling change.
+- CI execution commands change.
 
-Each new feature should include relevant success cases, failure cases, and security tests. Fixes for reported defects should include regression tests whenever practical.
-
-**Release principle:** A passing test suite provides evidence about the behaviors it covers. It does not prove that every defect, security vulnerability, or deployment issue has been eliminated.
+The actual implementation, route contracts, schema, test configuration, and execution results remain the authoritative sources of truth.

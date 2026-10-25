@@ -1,24 +1,3016 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Candidates | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Manage MedOrbits candidates, applicant profiles, recruitment stages, qualifications, résumé records and candidate status through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Candidate Management | MedOrbits Admin</title>
+
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#061326;
+      --bg-deep:#030914;
+      --navy:#071629;
+      --navy-2:#0b2039;
+      --navy-3:#123252;
+      --navy-4:#193f65;
+      --blue:#82baff;
+      --blue-bright:#b8dcff;
+      --blue-soft:#e0efff;
+      --gold:#d3ad61;
+      --gold-bright:#ffe4a2;
+      --text:#f1f6ff;
+      --text-soft:#c7d7ec;
+      --muted:#91a8c5;
+      --border:rgba(130,186,255,.19);
+      --border-gold:rgba(211,173,97,.32);
+      --success:#9ee8c1;
+      --warning:#ffe0a0;
+      --danger:#ffb6bd;
+      --radius:18px;
+      --shadow:0 25px 75px rgba(0,0,0,.42);
+      --accent-gradient:linear-gradient(115deg,#3479c7,#8cc5ff 34%,#f4d68f 70%,#b68c45);
+      --surface:linear-gradient(145deg,rgba(17,39,67,.97),rgba(5,14,28,.99));
+      --surface-light:linear-gradient(145deg,rgba(20,48,79,.92),rgba(7,22,41,.97));
+    }
+
+    *,*::before,*::after { box-sizing:border-box; }
+
+    html {
+      scroll-behavior:smooth;
+      scroll-padding-top:100px;
+    }
+
+    body {
+      position:relative;
+      isolation:isolate;
+      min-height:100vh;
+      margin:0;
+      overflow-x:hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(52,121,199,.24),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.075),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(25,63,101,.20),transparent 43%),
+        linear-gradient(135deg,#030914 0%,#071629 48%,#0b2441 100%);
+      color:var(--text);
+      font:400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position:fixed;
+      z-index:-1;
+      inset:0;
+      background-image:radial-gradient(rgba(184,220,255,.17) .7px,transparent .7px);
+      background-size:33px 33px;
+      opacity:.14;
+      content:"";
+      pointer-events:none;
+    }
+
+    body::after {
+      position:fixed;
+      z-index:-1;
+      inset:-50%;
+      background:conic-gradient(from 0deg,transparent,rgba(52,121,199,.065),transparent 23%,rgba(211,173,97,.035),transparent 45%);
+      animation:ambientRotate 65s linear infinite;
+      content:"";
+      pointer-events:none;
+    }
+
+    img { display:block; max-width:100%; }
+    a { color:inherit; text-decoration:none; }
+    button,input,select,textarea { font:inherit; }
+
+    button:focus-visible,a:focus-visible,input:focus-visible,
+    select:focus-visible,textarea:focus-visible {
+      outline:2px solid var(--blue-bright);
+      outline-offset:4px;
+    }
+
+    [hidden] { display:none!important; }
+
+    .container {
+      width:min(1280px,calc(100% - 40px));
+      margin-inline:auto;
+    }
+
+    .skip-link {
+      position:absolute;
+      z-index:10000;
+      top:-70px;
+      left:14px;
+      padding:10px 15px;
+      border-radius:8px;
+      background:var(--blue-soft);
+      color:#071426;
+    }
+
+    .skip-link:focus { top:12px; }
+
+    .accent-text {
+      background:var(--accent-gradient);
+      background-size:220% auto;
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      animation:gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position:100% center; }
+      to { background-position:-120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform:rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow:0 0 0 rgba(130,186,255,0); }
+      50% { box-shadow:0 0 22px rgba(130,186,255,.17); }
+    }
+
+    @keyframes revealUp {
+      from { opacity:0; transform:translateY(13px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+
+    .announcement {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:9px 15px;
+      border-bottom:1px solid var(--border);
+      background:#030914;
+      color:var(--text-soft);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.12em;
+      text-align:center;
+      text-transform:uppercase;
+    }
+
+    .announcement strong { color:var(--gold-bright); }
+    .sparkle { color:var(--blue-bright); animation:glowPulse 3s ease-in-out infinite; }
+
+    .site-header {
+      position:sticky;
+      z-index:1000;
+      top:0;
+      border-bottom:1px solid var(--border);
+      background:rgba(5,15,29,.94);
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+    }
+
+    .site-header.scrolled {
+      background:rgba(3,9,20,.98);
+      box-shadow:0 14px 40px rgba(0,0,0,.4);
+    }
+
+    .nav-wrap {
+      position:relative;
+      display:flex;
+      min-height:78px;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+    }
+
+    .brand { display:inline-flex; align-items:center; gap:10px; flex-shrink:0; }
+
+    .brand img {
+      width:44px;
+      height:44px;
+      object-fit:contain;
+      filter:drop-shadow(0 0 11px rgba(130,186,255,.22));
+    }
+
+    .brand strong {
+      display:block;
+      color:var(--blue-bright);
+      font-size:15px;
+      letter-spacing:.15em;
+      line-height:1.35;
+    }
+
+    .brand small {
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+
+    .header-right { display:flex; align-items:center; gap:12px; }
+
+    .workspace-indicator {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      color:var(--blue-bright);
+      font-size:9px;
+      white-space:nowrap;
+    }
+
+    .live-dot {
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:var(--success);
+      box-shadow:0 0 12px rgba(158,232,193,.55);
+    }
+
+    .menu-toggle {
+      display:none;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:rgba(130,186,255,.07);
+      color:var(--blue-bright);
+      cursor:pointer;
+    }
+
+    .main-nav { display:flex; align-items:center; gap:15px; font-size:10px; }
+    .main-nav>a { color:var(--text-soft); white-space:nowrap; }
+    .main-nav>a:hover,.main-nav>a[aria-current="page"] { color:var(--gold-bright); }
+
+    .btn {
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      min-height:42px;
+      padding:10px 15px;
+      border:1px solid rgba(184,220,255,.45);
+      border-radius:10px;
+      background:linear-gradient(115deg,#4e91e0,#a9d5ff);
+      color:#061326;
+      font-size:10px;
+      font-weight:700;
+      text-align:center;
+      cursor:pointer;
+      transition:transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform:translateY(-2px);
+      filter:brightness(1.07);
+      box-shadow:0 7px 23px rgba(130,186,255,.17);
+    }
+
+    .btn:disabled { opacity:.48; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    .btn-outline {
+      border-color:var(--border-gold);
+      background:rgba(211,173,97,.05);
+      color:var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color:rgba(255,182,189,.35);
+      background:rgba(255,182,189,.07);
+      color:var(--danger);
+    }
+
+    .btn-small { min-height:34px; padding:7px 10px; font-size:9px; }
+
+    .page-main {
+      position:relative;
+      isolation:isolate;
+      min-height:70vh;
+      padding:37px 0 65px;
+      overflow:hidden;
+    }
+
+    .page-main::before {
+      position:absolute;
+      z-index:-1;
+      inset:0;
+      background:radial-gradient(ellipse at 12% 5%,rgba(130,186,255,.09),transparent 34%),radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.06),transparent 33%);
+      content:"";
+      pointer-events:none;
+    }
+
+    .breadcrumbs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:22px;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .breadcrumbs a { color:var(--blue-bright); }
+
+    .page-heading {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:24px;
+      margin-bottom:27px;
+      animation:revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      color:var(--gold-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.17em;
+      text-transform:uppercase;
+    }
+
+    .eyebrow::before { width:25px; height:1px; background:var(--blue); content:""; }
+
+    .page-heading h1 {
+      margin:10px 0 9px;
+      font:600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing:-.025em;
+      overflow-wrap:anywhere;
+    }
+
+    .page-heading p {
+      max-width:740px;
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.9;
+    }
+
+    .heading-actions { display:flex; flex-wrap:wrap; gap:9px; flex-shrink:0; }
+
+    .dashboard-layout {
+      display:grid;
+      grid-template-columns:242px minmax(0,1fr);
+      align-items:start;
+      gap:20px;
+    }
+
+    .sidebar,.panel {
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:var(--surface);
+      box-shadow:0 18px 48px rgba(0,0,0,.23);
+    }
+
+    .sidebar { position:sticky; top:100px; padding:18px; }
+
+    .admin-identity {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding-bottom:16px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 44px;
+      width:44px;
+      height:44px;
+      border:1px solid var(--border-gold);
+      border-radius:13px;
+      background:linear-gradient(145deg,#164878,#14243b);
+      color:var(--gold-bright);
+      font:600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong { display:block; font-size:11px; overflow-wrap:anywhere; }
+    .admin-identity small { display:block; color:var(--muted); font-size:9px; overflow-wrap:anywhere; }
+
+    .role-tag {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-top:5px;
+      padding:3px 7px;
+      border:1px solid var(--border-gold);
+      border-radius:5px;
+      color:var(--gold-bright);
+      font-size:8px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .sidebar-label {
+      margin:19px 0 8px;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:700;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+    }
+
+    .admin-nav { display:grid; gap:5px; }
+
+    .admin-nav a {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 11px;
+      border:1px solid transparent;
+      border-radius:9px;
+      color:var(--text-soft);
+      font-size:10px;
+      transition:background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,.admin-nav a.active {
+      border-color:var(--border);
+      background:rgba(130,186,255,.09);
+      color:var(--blue-bright);
+    }
+
+    .nav-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 25px;
+      width:25px;
+      height:25px;
+      border-radius:7px;
+      background:rgba(130,186,255,.07);
+      font-size:13px;
+    }
+
+    .sidebar-note {
+      margin:17px 0 0;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.9;
+    }
+
+    .sidebar-note strong { color:var(--gold-bright); }
+
+    .content { display:grid; gap:19px; min-width:0; }
+
+    .panel {
+      padding:clamp(17px,2.5vw,25px);
+      animation:revealUp .65s ease both;
+    }
+
+    .panel-heading { display:flex; align-items:flex-start; gap:13px; margin-bottom:19px; }
+
+    .panel-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      width:43px;
+      height:43px;
+      border:1px solid var(--border-gold);
+      border-radius:12px;
+      background:linear-gradient(145deg,rgba(130,186,255,.13),rgba(211,173,97,.06));
+      color:var(--gold-bright);
+      font-size:19px;
+    }
+
+    .panel-heading h2 { margin:0 0 5px; font:600 21px/1.3 "Playfair Display",Georgia,serif; }
+    .panel-heading p { margin:0; color:var(--muted); font-size:10px; line-height:1.9; }
+
+    .status {
+      margin-bottom:17px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:rgba(130,186,255,.045);
+      color:var(--text-soft);
+      font-size:10px;
+      line-height:1.8;
+      overflow-wrap:anywhere;
+      white-space:pre-line;
+    }
+
+    .status.success { border-color:rgba(158,232,193,.3); color:var(--success); }
+    .status.error { border-color:rgba(255,182,189,.4); color:var(--danger); }
+    .status.warning { border-color:var(--border-gold); color:var(--gold-bright); }
+    .status.info { color:var(--blue-bright); }
+
+    .hero {
+      position:relative;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(200px,.7fr);
+      gap:22px;
+      align-items:center;
+      padding:clamp(18px,3vw,28px);
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:var(--radius);
+      background:radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),radial-gradient(ellipse at 0% 100%,rgba(52,121,199,.15),transparent 48%),linear-gradient(120deg,rgba(17,39,67,.97),rgba(5,14,28,.99));
+    }
+
+    .hero-copy { position:relative; z-index:1; min-width:0; }
+    .hero h2 { margin:12px 0 10px; font:600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display",Georgia,serif; }
+    .hero p { margin:0; color:var(--muted); font-size:11px; line-height:1.9; }
+
+    .hero-art {
+      position:relative;
+      min-height:235px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:
+        linear-gradient(0deg,rgba(3,9,20,.91),rgba(3,9,20,.08)),
+        url("https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .hero-art-label {
+      position:absolute;
+      right:13px;
+      bottom:12px;
+      left:13px;
+      color:#fff1ce;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+
+    .hero-art-label span {
+      display:block;
+      margin-top:3px;
+      color:#c7d7ec;
+      font-size:8px;
+      font-weight:400;
+      letter-spacing:.04em;
+      text-transform:none;
+    }
+
+    .hero-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:17px; }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+
+    .stat-card {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      min-width:0;
+      padding:15px;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:radial-gradient(circle at 100% 0%,rgba(130,186,255,.11),transparent 54%),linear-gradient(145deg,rgba(17,39,67,.92),rgba(5,14,28,.97));
+    }
+
+    .stat-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 39px;
+      width:39px;
+      height:39px;
+      border:1px solid var(--border-gold);
+      border-radius:11px;
+      background:rgba(211,173,97,.07);
+      color:var(--gold-bright);
+      font-size:17px;
+    }
+
+    .stat-copy { min-width:0; }
+    .stat-copy span { display:block; color:var(--muted); font-size:9px; }
+
+    .stat-copy strong {
+      display:block;
+      margin-top:3px;
+      color:var(--blue-bright);
+      font:600 clamp(20px,2.2vw,27px)/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap:anywhere;
+    }
+
+    .stat-copy small { display:block; margin-top:3px; color:var(--muted); font-size:8px; line-height:1.6; }
+
+    .field-help { margin:12px 0 0; color:var(--muted); font-size:9px; line-height:1.8; }
+
+    .toolbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .toolbar p { margin:0; color:var(--muted); font-size:10px; }
+    .toolbar-actions { display:flex; flex-wrap:wrap; gap:8px; }
+
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .field { display:grid; gap:6px; min-width:0; }
+    .field.full { grid-column:1/-1; }
+    .field label { color:var(--text-soft); font-size:10px; font-weight:600; }
+
+    .field input,.field select,.field textarea,
+    .search-input,.filter-select {
+      width:100%;
+      min-width:0;
+      min-height:42px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#08182c;
+      color:var(--text);
+      font-size:11px;
+    }
+
+    .field textarea { min-height:100px; resize:vertical; }
+    .field input::placeholder,.field textarea::placeholder,.search-input::placeholder { color:#7890ae; }
+    .field select option,.filter-select option { background:#08182c; color:var(--text); }
+    .field input[type="checkbox"] { width:17px; min-height:17px; accent-color:#82baff; }
+
+    .check-line { display:flex; align-items:center; gap:9px; color:var(--text-soft); font-size:10px; }
+
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      max-width:100%;
+      padding:5px 9px;
+      border:1px solid var(--border);
+      border-radius:7px;
+      background:rgba(130,186,255,.055);
+      color:var(--text-soft);
+      font-size:8px;
+      line-height:1.5;
+      overflow-wrap:anywhere;
+    }
+
+    .pill.success { border-color:rgba(158,232,193,.3); color:var(--success); }
+    .pill.warning { border-color:rgba(255,224,160,.32); color:var(--warning); }
+    .pill.danger { border-color:rgba(255,182,189,.4); color:var(--danger); }
+    .pill.info { border-color:rgba(130,186,255,.28); color:var(--blue-bright); }
+    .pill.unknown { color:var(--muted); }
+
+    .table-wrap {
+      width:100%;
+      overflow-x:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(3,9,20,.35);
+    }
+
+    .data-table { width:100%; min-width:1050px; border-collapse:collapse; text-align:left; }
+
+    .data-table th {
+      padding:13px 12px;
+      border-bottom:1px solid var(--border);
+      background:rgba(130,186,255,.055);
+      color:var(--blue-bright);
+      font-size:8px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .data-table td {
+      padding:13px 12px;
+      border-bottom:1px solid rgba(130,186,255,.10);
+      color:var(--text-soft);
+      font-size:9px;
+      vertical-align:top;
+      overflow-wrap:anywhere;
+    }
+
+    .data-table tbody tr:last-child td { border-bottom:0; }
+    .data-table tbody tr:hover { background:rgba(130,186,255,.045); }
+
+    .table-empty { padding:26px!important; color:var(--muted)!important; text-align:center; line-height:1.9; }
+    .table-primary { display:block; margin-bottom:3px; color:var(--text); font-size:10px; font-weight:700; }
+    .table-secondary { display:block; color:var(--muted); font-size:8px; }
+
+    .candidate-cell { display:flex; align-items:center; gap:10px; min-width:180px; }
+
+    .candidate-avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 38px;
+      width:38px;
+      height:38px;
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:11px;
+      background:linear-gradient(145deg,#164878,#14243b);
+      color:var(--gold-bright);
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .candidate-avatar img { width:100%; height:100%; object-fit:cover; }
+
+    .candidate-name { display:block; color:var(--text); font-size:10px; font-weight:700; }
+    .candidate-sub { display:block; max-width:210px; color:var(--muted); font-size:8px; overflow-wrap:anywhere; }
+
+    .row-actions { display:flex; flex-wrap:wrap; gap:6px; min-width:150px; }
+
+    .article-list {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+
+    .candidate-card {
+      min-width:0;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:rgba(3,9,20,.4);
+    }
+
+    .candidate-card-top {
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-height:120px;
+      padding:17px;
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.11),transparent 50%),
+        linear-gradient(145deg,rgba(20,48,79,.92),rgba(7,22,41,.97));
+    }
+
+    .candidate-card-avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 54px;
+      width:54px;
+      height:54px;
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:15px;
+      background:linear-gradient(145deg,#164878,#14243b);
+      color:var(--gold-bright);
+      font:600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .candidate-card-avatar img { width:100%; height:100%; object-fit:cover; }
+
+    .candidate-card-top h3 {
+      margin:0 0 4px;
+      font:600 17px/1.4 "Playfair Display",Georgia,serif;
+      overflow-wrap:anywhere;
+    }
+
+    .candidate-card-top p { margin:0; color:var(--muted); font-size:9px; overflow-wrap:anywhere; }
+
+    .candidate-card-body { padding:15px; }
+    .candidate-card-body .pill { margin-bottom:12px; }
+    .candidate-card-body p { margin:0 0 13px; color:var(--muted); font-size:10px; line-height:1.8; overflow-wrap:anywhere; }
+
+    .candidate-meta { display:grid; gap:8px; margin-bottom:14px; }
+    .candidate-meta div { display:flex; justify-content:space-between; gap:12px; font-size:9px; }
+    .candidate-meta span { color:var(--muted); }
+    .candidate-meta strong { color:var(--text-soft); text-align:right; overflow-wrap:anywhere; }
+
+    .article-actions { display:flex; flex-wrap:wrap; gap:7px; }
+
+    .detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+
+    .detail-item {
+      min-width:0;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:rgba(3,9,20,.35);
+    }
+
+    .detail-item span {
+      display:block;
+      margin-bottom:5px;
+      color:var(--muted);
+      font-size:8px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+    }
+
+    .detail-item strong {
+      display:block;
+      color:var(--text-soft);
+      font-size:10px;
+      font-weight:600;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .notice {
+      padding:15px 16px;
+      border:1px solid var(--border-gold);
+      border-radius:11px;
+      background:rgba(211,173,97,.045);
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+      overflow-wrap:anywhere;
+    }
+
+    .notice strong { color:var(--gold-bright); }
+
+    .feature-banner {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(180px,.65fr);
+      align-items:center;
+      gap:22px;
+      min-width:0;
+      padding:24px;
+      overflow:hidden;
+      border:1px solid var(--border-gold);
+      border-radius:var(--radius);
+      background:radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),linear-gradient(120deg,rgba(17,39,67,.96),rgba(5,14,28,.99));
+    }
+
+    .feature-banner h2 { margin:0 0 9px; font:600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif; }
+    .feature-banner p { margin:0; color:var(--muted); font-size:10px; line-height:1.9; }
+
+    .feature-image {
+      min-height:165px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:
+        linear-gradient(135deg,rgba(7,22,41,.25),rgba(3,9,20,.75)),
+        url("https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .site-footer { padding:40px 0 0; border-top:1px solid var(--border); background:radial-gradient(ellipse at 15% 0%,rgba(130,186,255,.08),transparent 38%),#030914; }
+
+    .footer-grid {
+      display:grid;
+      grid-template-columns:1.35fr repeat(4,minmax(0,1fr));
+      gap:23px;
+      padding-bottom:28px;
+    }
+
+    .footer-brand p { max-width:270px; margin-top:12px; color:var(--muted); font-size:10px; line-height:1.9; }
+    .footer-grid h2 { margin:0 0 12px; padding-bottom:9px; border-bottom:1px solid var(--border); color:var(--blue-bright); font-size:9px; letter-spacing:.12em; text-transform:uppercase; }
+    .footer-links a { display:block; margin:8px 0; color:var(--muted); font-size:10px; overflow-wrap:anywhere; }
+    .footer-links a:hover { color:var(--gold-bright); }
+
+    .disclaimer { margin:0 0 15px; padding:13px 15px; border-left:2px solid var(--gold); border-radius:0 8px 8px 0; background:rgba(211,173,97,.035); color:var(--muted); font-size:10px; line-height:1.9; }
+
+    .footer-bottom {
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:17px 0;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .footer-bottom span:last-child { color:var(--gold-bright); letter-spacing:.1em; }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display:inline-flex; }
+
+      .main-nav {
+        position:absolute;
+        top:100%;
+        right:0;
+        left:0;
+        display:none;
+        align-items:stretch;
+        flex-direction:column;
+        gap:4px;
+        max-height:calc(100vh - 90px);
+        padding:15px 22px 20px;
+        overflow-y:auto;
+        border:1px solid var(--border);
+        border-top:0;
+        border-radius:0 0 14px 14px;
+        background:rgba(5,15,29,.99);
+        box-shadow:var(--shadow);
+      }
+
+      .main-nav.open { display:flex; }
+      .main-nav>a { display:block; padding:11px 8px; }
+      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column:1/-1; }
+    }
+
+    @media (max-width:950px) {
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns:1fr; }
+      .sidebar { position:static; }
+      .admin-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .page-heading { align-items:flex-start; flex-direction:column; }
+      .heading-actions { width:100%; }
+      .heading-actions .btn { flex:1; }
+      .hero { grid-template-columns:minmax(0,1fr) minmax(150px,.6fr); }
+      .feature-banner { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:560px) {
+      .container { width:calc(100% - 28px); }
+      .announcement { gap:6px; font-size:8px; letter-spacing:.035em; }
+      .nav-wrap { min-height:68px; }
+      .brand img { width:38px; height:38px; }
+      .brand strong { font-size:13px; }
+      .brand small { font-size:7px; }
+      .workspace-indicator { display:none; }
+      .page-main { padding:29px 0 44px; }
+      .page-heading h1 { font-size:clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction:column; }
+      .heading-actions .btn { width:100%; }
+      .sidebar,.panel { padding:15px; }
+      .admin-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .hero { grid-template-columns:1fr; padding:16px; }
+      .hero-art { min-height:155px; }
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+      .stat-card { align-items:flex-start; flex-direction:column; gap:8px; padding:12px; }
+      .stat-copy strong { font-size:22px; }
+      .form-grid,.detail-grid,.article-list { grid-template-columns:1fr; }
+      .field.full { grid-column:auto; }
+      .toolbar { align-items:flex-start; flex-direction:column; }
+      .toolbar-actions { width:100%; }
+      .toolbar-actions .btn { flex:1; }
+      .feature-banner { padding:17px; }
+      .feature-image { min-height:135px; }
+      .footer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:21px 15px; }
+      .footer-brand { grid-column:1/-1; }
+      .footer-bottom { flex-direction:column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width:calc(100% - 22px); }
+      .brand img { width:34px; height:34px; }
+      .brand strong { font-size:12px; }
+      .admin-nav { grid-template-columns:1fr; }
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .footer-grid { gap:18px 11px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior:auto; }
+      *,*::before,*::after {
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+        scroll-behavior:auto!important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Candidates</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about candidates. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Candidate management</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="workspace-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+
+        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/jobs.html">Jobs</a>
+        <a href="/admin/recruitment.html">Recruitment</a>
+        <a href="/admin/candidates.html" aria-current="page">Candidates</a>
+        <a href="/admin/reports.html">Reports</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Candidates</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Administration · Recruitment operations</span>
+          <h1>Candidate <span class="accent-text">management.</span></h1>
+          <p>
+            Manage candidate profiles, qualifications, applications,
+            recruitment stages and follow-up status from one workspace.
+            Candidate information is loaded from your configured
+            administration API; this page does not generate sample records.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <button class="btn btn-outline" id="refreshCandidates" type="button">↻ Refresh candidates</button>
+          <button class="btn" id="newCandidateButton" type="button">＋ Add candidate</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Recruitment workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/application-status.html"><span class="nav-icon" aria-hidden="true">◷</span>Application status</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">📄</span>Documents</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">📚</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">🏫</span>Colleges</a>
+            <a href="/admin/jobs.html"><span class="nav-icon" aria-hidden="true">💼</span>Jobs</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">🤝</span>Recruitment</a>
+            <a href="/admin/candidates.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">♙</span>Candidates</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Candidate data protection.</strong>
+            <br>
+            Access personal information only for authorised recruitment
+            purposes. Apply role-based access, retention policies and
+            secure document handling to every candidate record.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">MedOrbits · Talent workspace</span>
+              <h2 id="heroTitle">Discover potential. <span class="accent-text">Build opportunity.</span></h2>
+              <p>
+                Maintain candidate records, track recruitment progress,
+                review qualifications and coordinate the next stage of
+                each application through your authorised backend.
+              </p>
+
+              <div class="hero-actions">
+                <button class="btn" type="button" id="heroCreateButton">Add a candidate ↗</button>
+                <a class="btn btn-outline" href="/admin/recruitment.html">Recruitment workspace ↗</a>
+              </div>
+            </div>
+
+            <div class="hero-art" role="img" aria-label="Professional team collaborating in a recruitment and career planning workspace">
+              <div class="hero-art-label">
+                The MedOrbits talent desk
+                <span>Profiles · Applications · Interviews · Opportunities</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="metricsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">📊</div>
+              <div>
+                <h2 id="metricsTitle">Candidate overview</h2>
+                <p>Metrics use API-reported values where available, otherwise counts are calculated from returned records.</p>
+              </div>
+            </div>
+
+            <div class="status warning" id="candidateStatus" role="status" aria-live="polite">
+              Candidate data has not yet been loaded.
+            </div>
+
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">♙</div>
+                <div class="stat-copy">
+                  <span>Total candidates</span>
+                  <strong id="statTotal">--</strong>
+                  <small id="statTotalNote">Awaiting API data</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Under review</span>
+                  <strong id="statReview">--</strong>
+                  <small>Review-stage records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Shortlisted</span>
+                  <strong id="statShortlisted">--</strong>
+                  <small>Shortlisted records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✦</div>
+                <div class="stat-copy">
+                  <span>Selected</span>
+                  <strong id="statSelected">--</strong>
+                  <small>Selected candidates</small>
+                </div>
+              </article>
+            </div>
+
+            <p class="field-help">
+              The directory may be paginated by your API. When server totals
+              are unavailable, calculated counts represent only records
+              returned in the current response.
+            </p>
+          </section>
+
+          <section class="panel" id="candidateEditor" aria-labelledby="editorTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✍</div>
+              <div>
+                <h2 id="editorTitle">Add or edit candidate</h2>
+                <p>Create a candidate profile or update an existing record through the configured API.</p>
+              </div>
+            </div>
+
+            <div id="editorStatus" class="status info" role="status" aria-live="polite">
+              The editor is ready. Saving requires a configured API and authorised access.
+            </div>
+
+            <form id="candidateForm" novalidate>
+              <input type="hidden" id="candidateId" name="id">
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="candidateName">Full name *</label>
+                  <input id="candidateName" name="name" type="text" maxlength="180" required autocomplete="name" placeholder="Candidate full name">
+                </div>
+
+                <div class="field">
+                  <label for="candidateEmail">Email address *</label>
+                  <input id="candidateEmail" name="email" type="email" maxlength="254" required autocomplete="email" placeholder="candidate@example.com">
+                </div>
+
+                <div class="field">
+                  <label for="candidatePhone">Phone number</label>
+                  <input id="candidatePhone" name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="Contact number">
+                </div>
+
+                <div class="field">
+                  <label for="candidateLocation">Location</label>
+                  <input id="candidateLocation" name="location" type="text" maxlength="180" autocomplete="address-level2" placeholder="City, state or country">
+                </div>
+
+                <div class="field">
+                  <label for="candidatePosition">Target role / course *</label>
+                  <input id="candidatePosition" name="position" type="text" maxlength="180" required placeholder="Job title, course or opportunity">
+                </div>
+
+                <div class="field">
+                  <label for="candidateCategory">Opportunity category</label>
+                  <select id="candidateCategory" name="category">
+                    <option value="">Select category</option>
+                    <option value="employment">Employment</option>
+                    <option value="internship">Internship</option>
+                    <option value="education">Education / admission</option>
+                    <option value="recruitment">Recruitment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="candidateQualification">Highest qualification</label>
+                  <input id="candidateQualification" name="qualification" type="text" maxlength="180" placeholder="Qualification or degree">
+                </div>
+
+                <div class="field">
+                  <label for="candidateExperience">Experience</label>
+                  <input id="candidateExperience" name="experience" type="text" maxlength="120" placeholder="e.g. Entry level, 2 years">
+                </div>
+
+                <div class="field">
+                  <label for="candidateStatus">Recruitment status *</label>
+                  <select id="candidateStatusField" name="status" required>
+                    <option value="new">New</option>
+                    <option value="under_review">Under review</option>
+                    <option value="shortlisted">Shortlisted</option>
+                    <option value="interview">Interview</option>
+                    <option value="selected">Selected</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="on_hold">On hold</option>
+                    <option value="hired">Hired</option>
+                    <option value="withdrawn">Withdrawn</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="candidateSource">Candidate source</label>
+                  <select id="candidateSource" name="source">
+                    <option value="">Select source</option>
+                    <option value="website">Website</option>
+                    <option value="job_board">Job board</option>
+                    <option value="referral">Referral</option>
+                    <option value="recruiter">Recruiter</option>
+                    <option value="institution">Educational institution</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field full">
+                  <label for="candidateResume">Résumé / CV URL</label>
+                  <input id="candidateResume" name="resumeUrl" type="url" maxlength="1000" placeholder="https://example.com/secure-resume">
+                  <p class="field-help">
+                    Prefer authenticated document endpoints or signed,
+                    short-lived links. Do not use publicly accessible
+                    URLs for confidential candidate documents.
+                  </p>
+                </div>
+
+                <div class="field full">
+                  <label for="candidateSkills">Skills and relevant expertise</label>
+                  <textarea id="candidateSkills" name="skills" rows="3" maxlength="3000" placeholder="Relevant skills, certifications or experience"></textarea>
+                </div>
+
+                <div class="field full">
+                  <label for="candidateNotes">Internal recruitment notes</label>
+                  <textarea id="candidateNotes" name="notes" rows="4" maxlength="5000" placeholder="Add concise, job-relevant notes. Avoid unnecessary sensitive personal information."></textarea>
+                </div>
+
+                <div class="field full">
+                  <label class="check-line" for="candidateConsent">
+                    <input id="candidateConsent" name="consentRecorded" type="checkbox">
+                    Candidate consent / notice recorded, if applicable
+                  </label>
+                  <p class="field-help">
+                    This checkbox is a record field only. The backend must
+                    verify any required consent and applicable lawful basis.
+                  </p>
+                </div>
+              </div>
+
+              <div class="hero-actions">
+                <button class="btn" id="saveCandidateButton" type="submit">Save candidate</button>
+                <button class="btn btn-outline" id="resetEditorButton" type="button">Clear editor</button>
+                <button class="btn btn-outline" id="cancelEditButton" type="button" hidden>Cancel editing</button>
+              </div>
+
+              <p class="field-help">
+                Saving creates or updates a candidate record. It does not
+                automatically create an employment offer, confirm admission
+                or authorise a hiring decision.
+              </p>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="directoryTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">📋</div>
+              <div>
+                <h2 id="directoryTitle">Candidate directory</h2>
+                <p>Search candidate records, filter recruitment stages and open profiles for editing.</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="searchCandidates">Search candidates</label>
+                <input class="search-input" id="searchCandidates" type="search" maxlength="180" placeholder="Search name, email, role or skills">
+              </div>
+
+              <div class="field">
+                <label for="filterStatus">Filter by status</label>
+                <select class="filter-select" id="filterStatus">
+                  <option value="">All statuses</option>
+                  <option value="new">New</option>
+                  <option value="under_review">Under review</option>
+                  <option value="shortlisted">Shortlisted</option>
+                  <option value="interview">Interview</option>
+                  <option value="selected">Selected</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="on_hold">On hold</option>
+                  <option value="hired">Hired</option>
+                  <option value="withdrawn">Withdrawn</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="filterCategory">Filter by category</label>
+                <select class="filter-select" id="filterCategory">
+                  <option value="">All categories</option>
+                  <option value="employment">Employment</option>
+                  <option value="internship">Internship</option>
+                  <option value="education">Education / admission</option>
+                  <option value="recruitment">Recruitment</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="sortCandidates">Sort candidates</label>
+                <select class="filter-select" id="sortCandidates">
+                  <option value="updated_desc">Recently updated</option>
+                  <option value="created_desc">Recently added</option>
+                  <option value="name_asc">Name A–Z</option>
+                  <option value="status_asc">Status</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="toolbar" style="margin-top:18px">
+              <p id="candidateSummary">No candidate data loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="clearFiltersButton" type="button">Clear filters</button>
+                <button class="btn btn-small" id="reloadDirectoryButton" type="button">Reload directory</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Candidate</th>
+                    <th scope="col">Target role</th>
+                    <th scope="col">Qualification</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="candidateTableBody">
+                  <tr>
+                    <td colspan="7" class="table-empty">Candidate records will appear here when the API returns data.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="profilesTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">♙</div>
+              <div>
+                <h2 id="profilesTitle">Candidate profiles</h2>
+                <p>A visual overview of candidate records currently returned by the API.</p>
+              </div>
+            </div>
+
+            <div class="article-list" id="candidateProfileList">
+              <article class="candidate-card">
+                <div class="candidate-card-top">
+                  <div class="candidate-card-avatar" aria-hidden="true">MO</div>
+                  <div>
+                    <h3>Candidate profiles awaiting data</h3>
+                    <p>No candidate records have been loaded yet.</p>
+                  </div>
+                </div>
+                <div class="candidate-card-body">
+                  <p>Real candidate cards will appear after a successful API response.</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="connectivityTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⬡</div>
+              <div>
+                <h2 id="connectivityTitle">API connectivity</h2>
+                <p>Review the candidate data source and the latest successful refresh.</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span>Candidate collection endpoint</span>
+                <strong id="sourceEndpoint">Not configured</strong>
+              </div>
+              <div class="detail-item">
+                <span>Last successful refresh</span>
+                <strong id="lastRefresh">Not yet refreshed</strong>
+              </div>
+              <div class="detail-item">
+                <span>Connection state</span>
+                <strong id="connectionState">Not connected</strong>
+              </div>
+              <div class="detail-item">
+                <span>Page time</span>
+                <strong id="pageTime">--</strong>
+              </div>
+            </div>
+
+            <p class="field-help">
+              A successful candidate request confirms that the endpoint
+              responded. It does not independently verify database health,
+              recruitment workflow integrity or document availability.
+            </p>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="featureTitle">
+            <div>
+              <span class="eyebrow">Talent · Education · Opportunity</span>
+              <h2 id="featureTitle">Every profile. <span class="accent-text">A meaningful next step.</span></h2>
+              <p>
+                Coordinate recruitment and educational opportunities using
+                consistent records, fair evaluation criteria, accurate
+                information and secure candidate-data practices.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/jobs.html">Manage job listings ↗</a>
+                <a class="btn btn-outline" href="/admin/recruitment.html">Recruitment workspace ↗</a>
+              </div>
+            </div>
+            <div class="feature-image" role="img" aria-label="Professional colleagues collaborating on candidate and career planning"></div>
+          </section>
+
+          <div class="notice">
+            <strong>Security and compliance notice:</strong>
+            This page is an administrative client, not an access-control
+            boundary. The backend must authenticate administrators,
+            enforce role-based permissions, validate candidate data,
+            protect résumé and document endpoints, apply appropriate
+            retention policies and record privileged actions in audit
+            logs. Avoid exposing candidate contact information, internal
+            notes or documents to unauthorised users.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents, candidate management and professional
+            opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/candidates.html">Candidates</a>
+          <a href="/admin/recruitment.html">Recruitment</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/pages/education.html">Education hub</a>
+          <a href="/admin/courses.html">Courses</a>
+          <a href="/admin/colleges.html">Colleges</a>
+          <a href="/admin/universities.html">Universities</a>
+          <a href="/admin/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/admin/jobs.html">Job listings</a>
+          <a href="/career/jobs.html">Career opportunities</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/resume-support.html">Résumé support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Candidate information and recruitment decisions are subject to
+        authorised access, the configured backend, applicable employment
+        and privacy requirements, and MedOrbits retention policies.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Candidate Management
+       * File: /admin/candidates.html
+       *
+       * Default API contract:
+       *
+       * GET    /api/admin/candidates
+       * GET    /api/admin/candidates/:id
+       * POST   /api/admin/candidates
+       * PUT    /api/admin/candidates/:id
+       * DELETE /api/admin/candidates/:id
+       *
+       * Optional configuration in /assets/js/config.js:
+       *
+       * window.MEDORBITS_CONFIG = {
+       *   adminCandidatesEndpoint: "/api/admin/candidates"
+       * };
+       *
+       * Collection response example:
+       * {
+       *   "success": true,
+       *   "data": {
+       *     "items": [],
+       *     "metrics": {
+       *       "total": 0,
+       *       "underReview": 0,
+       *       "shortlisted": 0,
+       *       "selected": 0
+       *     },
+       *     "admin": {
+       *       "name": "Administration",
+       *       "email": "admin@example.com"
+       *     }
+       *   }
+       * }
+       *
+       * This is documentation of the response format only.
+       * No example candidates or metrics are inserted into the interface.
+       *
+       * Security requirements:
+       * - Use same-origin endpoints.
+       * - Authenticate and authorise every request on the server.
+       * - Validate all fields and status transitions server-side.
+       * - Protect write requests against CSRF where applicable.
+       * - Protect résumé and document URLs from unauthorised access.
+       * - Never store credentials or secret tokens in this file.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+        const config = window.MEDORBITS_CONFIG || {};
+
+        const state = {
+          candidates: [],
+          controller: null,
+          requestSequence: 0,
+          saving: false,
+          deleting: false,
+          editingId: null,
+          lastSuccessfulRefresh: null
+        };
+
+        const STATUSES = [
+          "new",
+          "under_review",
+          "shortlisted",
+          "interview",
+          "selected",
+          "rejected",
+          "on_hold",
+          "hired",
+          "withdrawn"
+        ];
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+        $("pageTime").textContent = new Date().toLocaleString();
+
+        function objectOf(value) {
+          return value && typeof value === "object" && !Array.isArray(value)
+            ? value
+            : {};
+        }
+
+        function arrayOf(value) {
+          return Array.isArray(value) ? value : [];
+        }
+
+        function textOf(value, fallback = "") {
+          if (typeof value === "string" && value.trim()) return value.trim();
+          if (typeof value === "number" && Number.isFinite(value)) return String(value);
+          if (typeof value === "boolean") return String(value);
+          return fallback;
+        }
+
+        function firstOf(object, keys, fallback = "") {
+          for (const key of keys) {
+            const value = object[key];
+
+            if (value !== undefined && value !== null && value !== "") {
+              return value;
+            }
+          }
+
+          return fallback;
+        }
+
+        function getPath(object, path) {
+          return path.split(".").reduce((current, key) => {
+            if (
+              current &&
+              typeof current === "object" &&
+              Object.prototype.hasOwnProperty.call(current, key)
+            ) {
+              return current[key];
+            }
+
+            return undefined;
+          }, object);
+        }
+
+        function firstDefined(object, paths) {
+          for (const path of paths) {
+            const value = getPath(object, path);
+
+            if (value !== undefined && value !== null && value !== "") {
+              return value;
+            }
+          }
+
+          return undefined;
+        }
+
+        function element(tag, className, text) {
+          const node = document.createElement(tag);
+
+          if (className) node.className = className;
+
+          if (text !== undefined && text !== null) {
+            node.textContent = String(text);
+          }
+
+          return node;
+        }
+
+        function setText(id, value, fallback = "Not reported") {
+          $(id).textContent = textOf(value, fallback);
+        }
+
+        function setStatus(id, message, kind = "info") {
+          const node = $(id);
+          node.textContent = message;
+          node.className = `status ${kind}`;
+        }
+
+        function titleCase(value) {
+          return textOf(value, "Not reported")
+            .replace(/[_-]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .replace(/\b[a-z]/g, character => character.toUpperCase());
+        }
+
+        function statusClass(status) {
+          switch (textOf(status).toLowerCase()) {
+            case "selected":
+            case "hired":
+              return "success";
+
+            case "shortlisted":
+            case "interview":
+            case "under_review":
+            case "new":
+              return "warning";
+
+            case "rejected":
+            case "withdrawn":
+              return "danger";
+
+            case "on_hold":
+              return "unknown";
+
+            default:
+              return "info";
+          }
+        }
+
+        function formatDate(value) {
+          if (
+            (typeof value !== "string" && typeof value !== "number") ||
+            !String(value).trim()
+          ) {
+            return "Not reported";
+          }
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) {
+            return "Not reported";
+          }
+
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
+        function formatMetric(value) {
+          if (
+            typeof value === "number" &&
+            Number.isFinite(value) &&
+            value >= 0
+          ) {
+            return new Intl.NumberFormat().format(value);
+          }
+
+          if (
+            typeof value === "string" &&
+            /^\d+$/.test(value.trim())
+          ) {
+            return new Intl.NumberFormat().format(Number(value));
+          }
+
+          return "--";
+        }
+
+        function endpointFor(path, fallback) {
+          let url;
+
+          try {
+            url = new URL(path || fallback, window.location.origin);
+          } catch {
+            throw new Error("The configured candidate API endpoint is invalid.");
+          }
+
+          if (url.origin !== window.location.origin) {
+            throw new Error("Candidate API endpoints must use the current website origin.");
+          }
+
+          if (url.username || url.password || url.hash) {
+            throw new Error("API endpoints must not contain credentials or URL fragments.");
+          }
+
+          return url;
+        }
+
+        function baseEndpoint() {
+          return endpointFor(
+            config.adminCandidatesEndpoint,
+            "/api/admin/candidates"
+          );
+        }
+
+        function candidateEndpoint(id) {
+          const base = baseEndpoint();
+          const cleanPath = base.pathname.replace(/\/+$/, "");
+          const url = new URL(base.href);
+
+          url.pathname = `${cleanPath}/${encodeURIComponent(id)}`;
+          url.search = "";
+          url.hash = "";
+
+          return url;
+        }
+
+        function apiError(response, payload) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+
+          if (response.status === 403) {
+            return "Access denied. Your account is not authorised to manage candidates.";
+          }
+
+          if (response.status === 404) {
+            return "The candidate API route or requested record was not found. Check your backend routes.";
+          }
+
+          if (response.status === 409) {
+            return textOf(
+              payload.message,
+              "The candidate record conflicts with an existing record."
+            );
+          }
+
+          if (response.status === 422) {
+            return textOf(
+              payload.message,
+              "The server rejected the submitted candidate data."
+            );
+          }
+
+          if (response.status === 429) {
+            return "The API rate limit was reached. Wait before trying again.";
+          }
+
+          if (response.status >= 500) {
+            return "The server encountered an error while processing the request.";
+          }
+
+          return textOf(
+            payload.message,
+            `The request failed with HTTP ${response.status}.`
+          );
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            return objectOf(await response.json());
+          } catch {
+            return {};
+          }
+        }
+
+        async function request(url, options = {}) {
+          const headers = new Headers(options.headers || {});
+          headers.set("Accept", "application/json");
+
+          if (options.body !== undefined) {
+            headers.set("Content-Type", "application/json");
+          }
+
+          const csrfToken = textOf(config.csrfToken);
+
+          if (
+            csrfToken &&
+            ["POST", "PUT", "PATCH", "DELETE"].includes(
+              String(options.method || "GET").toUpperCase()
+            )
+          ) {
+            headers.set("X-CSRF-Token", csrfToken);
+          }
+
+          const response = await fetch(url.href, {
+            ...options,
+            headers,
+            credentials: "same-origin",
+            cache: "no-store"
+          });
+
+          const payload = await readJson(response);
+
+          if (!response.ok) {
+            throw new Error(apiError(response, payload));
+          }
+
+          if (payload.success === false) {
+            throw new Error(
+              textOf(payload.message, "The server did not approve this operation.")
+            );
+          }
+
+          return payload;
+        }
+
+        function unwrap(payload) {
+          if (
+            payload &&
+            payload.data &&
+            typeof payload.data === "object"
+          ) {
+            return payload.data;
+          }
+
+          return payload;
+        }
+
+        function normaliseCandidate(value) {
+          const candidate = objectOf(value);
+
+          const name = textOf(
+            firstOf(candidate, ["name", "fullName", "full_name", "candidateName"]),
+            "Unnamed candidate"
+          );
+
+          const rawStatus = textOf(
+            firstOf(candidate, ["status", "applicationStatus", "stage"]),
+            "new"
+          ).toLowerCase();
+
+          const rawCategory = firstOf(candidate, [
+            "category",
+            "opportunityCategory",
+            "opportunity_type"
+          ]);
+
+          const category = typeof rawCategory === "object"
+            ? textOf(
+                firstOf(objectOf(rawCategory), ["name", "title", "slug"]),
+                "Not reported"
+              )
+            : textOf(rawCategory, "Not reported");
+
+          const rawAuthor = candidate.author;
+          const rawSkills = firstOf(candidate, ["skills", "skillSet"], "");
+
+          return {
+            ...candidate,
+            id: textOf(firstOf(candidate, ["id", "candidateId", "candidate_id", "_id"])),
+            name,
+            email: textOf(firstOf(candidate, ["email", "emailAddress", "email_address"])),
+            phone: textOf(firstOf(candidate, ["phone", "phoneNumber", "mobile"])),
+            location: textOf(firstOf(candidate, ["location", "city", "address"])),
+            position: textOf(firstOf(candidate, [
+              "position",
+              "targetRole",
+              "jobTitle",
+              "course",
+              "role"
+            ])),
+            category,
+            qualification: textOf(firstOf(candidate, [
+              "qualification",
+              "highestQualification",
+              "education"
+            ])),
+            experience: textOf(firstOf(candidate, [
+              "experience",
+              "workExperience",
+              "experienceLevel"
+            ])),
+            status: rawStatus,
+            source: textOf(firstOf(candidate, ["source", "applicationSource"])),
+            resumeUrl: textOf(firstOf(candidate, [
+              "resumeUrl",
+              "resume_url",
+              "cvUrl",
+              "documentUrl"
+            ])),
+            skills: Array.isArray(rawSkills)
+              ? rawSkills.map(item => textOf(item)).filter(Boolean).join(", ")
+              : textOf(rawSkills),
+            notes: textOf(firstOf(candidate, ["notes", "internalNotes", "recruiterNotes"])),
+            consentRecorded: candidate.consentRecorded === true ||
+              candidate.consent_recorded === true,
+            avatarUrl: textOf(firstOf(candidate, ["avatarUrl", "profileImage", "photoUrl"])),
+            createdAt: candidate.createdAt ?? candidate.created_at,
+            updatedAt: candidate.updatedAt ?? candidate.updated_at
+          };
+        }
+
+        function getCandidates(data) {
+          const candidates = [
+            data.items,
+            data.candidates,
+            data.records,
+            data.results,
+            data.data?.items,
+            data.data?.candidates
+          ];
+
+          for (const value of candidates) {
+            if (Array.isArray(value)) return value;
+          }
+
+          return [];
+        }
+
+        function getInitials(name) {
+          const parts = textOf(name)
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2);
+
+          if (!parts.length) return "CA";
+
+          return parts.map(part => part.charAt(0).toUpperCase()).join("");
+        }
+
+        function safeDocumentUrl(value) {
+          if (!value) return "";
+
+          try {
+            const url = new URL(value, window.location.origin);
+
+            if (url.username || url.password || url.hash) return "";
+            if (!["https:", "http:"].includes(url.protocol)) return "";
+
+            if (
+              url.origin !== window.location.origin &&
+              url.protocol !== "https:"
+            ) {
+              return "";
+            }
+
+            return url.href;
+          } catch {
+            return "";
+          }
+        }
+
+        function makeAvatar(candidate, card = false) {
+          const avatar = element(
+            "div",
+            card ? "candidate-card-avatar" : "candidate-avatar"
+          );
+
+          avatar.setAttribute("aria-hidden", "true");
+
+          const safeUrl = safeDocumentUrl(candidate.avatarUrl);
+
+          if (safeUrl) {
+            const img = element("img");
+            img.src = safeUrl;
+            img.alt = "";
+            img.loading = "lazy";
+            img.decoding = "async";
+            img.referrerPolicy = "strict-origin-when-cross-origin";
+
+            img.addEventListener("error", () => {
+              avatar.replaceChildren(
+                document.createTextNode(getInitials(candidate.name))
+              );
+            }, { once: true });
+
+            avatar.appendChild(img);
+          } else {
+            avatar.textContent = getInitials(candidate.name);
+          }
+
+          return avatar;
+        }
+
+        function createActionButton(label, className, callback, disabled = false) {
+          const button = element(
+            "button",
+            `btn ${className || ""} btn-small`,
+            label
+          );
+
+          button.type = "button";
+          button.disabled = disabled;
+          button.addEventListener("click", callback);
+
+          return button;
+        }
+
+        function renderEmptyRow(message) {
+          const row = element("tr");
+          const cell = element("td", "table-empty", message);
+          cell.colSpan = 7;
+          row.appendChild(cell);
+          $("candidateTableBody").replaceChildren(row);
+        }
+
+        function filteredCandidates() {
+          const query = $("searchCandidates").value.trim().toLowerCase();
+          const status = $("filterStatus").value;
+          const category = $("filterCategory").value;
+          const sort = $("sortCandidates").value;
+
+          const list = state.candidates.filter(candidate => {
+            const searchable = [
+              candidate.name,
+              candidate.email,
+              candidate.phone,
+              candidate.position,
+              candidate.qualification,
+              candidate.experience,
+              candidate.category,
+              candidate.location,
+              candidate.skills,
+              candidate.source
+            ].join(" ").toLowerCase();
+
+            const matchesQuery = !query || searchable.includes(query);
+            const matchesStatus = !status || candidate.status === status;
+            const matchesCategory = !category ||
+              candidate.category.toLowerCase() === category.toLowerCase();
+
+            return matchesQuery && matchesStatus && matchesCategory;
+          });
+
+          const timestamp = value => {
+            const parsed = new Date(value || 0).getTime();
+            return Number.isFinite(parsed) ? parsed : 0;
+          };
+
+          list.sort((a, b) => {
+            if (sort === "name_asc") {
+              return a.name.localeCompare(b.name);
+            }
+
+            if (sort === "status_asc") {
+              return a.status.localeCompare(b.status);
+            }
+
+            if (sort === "created_desc") {
+              return timestamp(b.createdAt) - timestamp(a.createdAt);
+            }
+
+            return timestamp(b.updatedAt) - timestamp(a.updatedAt);
+          });
+
+          return list;
+        }
+
+        function renderTable() {
+          const candidates = filteredCandidates();
+
+          if (!candidates.length) {
+            renderEmptyRow(
+              state.candidates.length
+                ? "No candidates match the current search and filters."
+                : "No candidate records were returned by the API."
+            );
+
+            $("candidateSummary").textContent = state.candidates.length
+              ? "No matching candidates."
+              : "No candidate data available.";
+
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          candidates.forEach(candidate => {
+            const row = element("tr");
+
+            const identityCell = element("td");
+            const identity = element("div", "candidate-cell");
+            const avatar = makeAvatar(candidate);
+
+            const identityCopy = element("div");
+            identityCopy.appendChild(
+              element("span", "candidate-name", candidate.name)
+            );
+            identityCopy.appendChild(
+              element("span", "candidate-sub", candidate.email || "Email not provided")
+            );
+
+            identity.append(avatar, identityCopy);
+            identityCell.appendChild(identity);
+
+            const positionCell = element("td");
+            positionCell.appendChild(
+              element("span", "table-primary", candidate.position || "Not specified")
+            );
+            positionCell.appendChild(
+              element("span", "table-secondary", candidate.location || "Location not reported")
+            );
+
+            const qualificationCell = element(
+              "td",
+              "",
+              candidate.qualification || "Not reported"
+            );
+
+            const categoryCell = element(
+              "td",
+              "",
+              titleCase(candidate.category)
+            );
+
+            const statusCell = element("td");
+            statusCell.appendChild(
+              element(
+                "span",
+                `pill ${statusClass(candidate.status)}`,
+                titleCase(candidate.status)
+              )
+            );
+
+            const updatedCell = element(
+              "td",
+              "",
+              formatDate(candidate.updatedAt || candidate.createdAt)
+            );
+
+            const actionCell = element("td");
+            const actions = element("div", "row-actions");
+
+            actions.appendChild(createActionButton(
+              "Edit",
+              "btn-outline",
+              () => loadCandidateIntoEditor(candidate.id),
+              !candidate.id
+            ));
+
+            if (candidate.resumeUrl) {
+              const safeUrl = safeDocumentUrl(candidate.resumeUrl);
+
+              if (safeUrl) {
+                const resumeLink = element("a", "btn btn-outline btn-small", "Résumé ↗");
+                resumeLink.href = safeUrl;
+                resumeLink.target = "_blank";
+                resumeLink.rel = "noopener noreferrer";
+                resumeLink.setAttribute("aria-label", `Open résumé for ${candidate.name}`);
+                actions.appendChild(resumeLink);
+              }
+            }
+
+            actions.appendChild(createActionButton(
+              "Delete",
+              "btn-danger",
+              () => deleteCandidate(candidate),
+              !candidate.id
+            ));
+
+            actionCell.appendChild(actions);
+
+            row.append(
+              identityCell,
+              positionCell,
+              qualificationCell,
+              categoryCell,
+              statusCell,
+              updatedCell,
+              actionCell
+            );
+
+            fragment.appendChild(row);
+          });
+
+          $("candidateTableBody").replaceChildren(fragment);
+
+          $("candidateSummary").textContent =
+            `Showing ${candidates.length} of ${state.candidates.length} candidate record(s).`;
+        }
+
+        function renderProfiles() {
+          const candidates = filteredCandidates().slice(0, 6);
+          const list = $("candidateProfileList");
+          const fragment = document.createDocumentFragment();
+
+          if (!candidates.length) {
+            const card = element("article", "candidate-card");
+            const top = element("div", "candidate-card-top");
+            const avatar = element("div", "candidate-card-avatar", "MO");
+            avatar.setAttribute("aria-hidden", "true");
+
+            const heading = element("div");
+            heading.appendChild(element("h3", "", "No candidate profiles"));
+            heading.appendChild(element("p", "", "Candidate records will appear here after a successful API response."));
+
+            top.append(avatar, heading);
+
+            const body = element("div", "candidate-card-body");
+            body.appendChild(element("p", "", "Try changing the filters or refresh the candidate directory."));
+
+            card.append(top, body);
+            fragment.appendChild(card);
+            list.replaceChildren(fragment);
+
+            return;
+          }
+
+          candidates.forEach(candidate => {
+            const card = element("article", "candidate-card");
+            const top = element("div", "candidate-card-top");
+
+            top.appendChild(makeAvatar(candidate, true));
+
+            const heading = element("div");
+            heading.appendChild(element("h3", "", candidate.name));
+            heading.appendChild(
+              element("p", "", candidate.position || "Target opportunity not specified")
+            );
+
+            top.appendChild(heading);
+
+            const body = element("div", "candidate-card-body");
+
+            body.appendChild(
+              element(
+                "span",
+                `pill ${statusClass(candidate.status)}`,
+                titleCase(candidate.status)
+              )
+            );
+
+            body.appendChild(
+              element(
+                "p",
+                "",
+                candidate.skills || "No skills summary has been supplied."
+              )
+            );
+
+            const meta = element("div", "candidate-meta");
+
+            const details = [
+              ["Email", candidate.email || "Not provided"],
+              ["Qualification", candidate.qualification || "Not reported"],
+              ["Experience", candidate.experience || "Not reported"],
+              ["Category", titleCase(candidate.category)],
+              ["Updated", formatDate(candidate.updatedAt || candidate.createdAt)]
+            ];
+
+            details.forEach(([label, value]) => {
+              const line = element("div");
+              line.append(
+                element("span", "", label),
+                element("strong", "", value)
+              );
+              meta.appendChild(line);
+            });
+
+            const actions = element("div", "article-actions");
+
+            actions.appendChild(createActionButton(
+              "Edit profile",
+              "btn-outline",
+              () => loadCandidateIntoEditor(candidate.id),
+              !candidate.id
+            ));
+
+            if (candidate.resumeUrl) {
+              const safeUrl = safeDocumentUrl(candidate.resumeUrl);
+
+              if (safeUrl) {
+                const resumeLink = element("a", "btn btn-outline btn-small", "Résumé ↗");
+                resumeLink.href = safeUrl;
+                resumeLink.target = "_blank";
+                resumeLink.rel = "noopener noreferrer";
+                actions.appendChild(resumeLink);
+              }
+            }
+
+            body.append(meta, actions);
+            card.append(top, body);
+            fragment.appendChild(card);
+          });
+
+          list.replaceChildren(fragment);
+        }
+
+        function updateMetrics(data) {
+          const metrics = objectOf(
+            data.metrics ?? data.statistics ?? data.stats
+          );
+
+          const total = firstDefined(metrics, [
+            "total",
+            "totalCandidates",
+            "total_candidates",
+            "candidates.total"
+          ]) ?? data.total ?? data.totalCandidates;
+
+          const review = firstDefined(metrics, [
+            "underReview",
+            "under_review",
+            "inReview",
+            "reviewCount"
+          ]);
+
+          const shortlisted = firstDefined(metrics, [
+            "shortlisted",
+            "shortlistedCount"
+          ]);
+
+          const selected = firstDefined(metrics, [
+            "selected",
+            "selectedCount"
+          ]);
+
+          const countStatus = status => state.candidates.filter(
+            candidate => candidate.status === status
+          ).length;
+
+          $("statTotal").textContent = formatMetric(
+            total === undefined ? state.candidates.length : total
+          );
+
+          $("statTotalNote").textContent = total === undefined
+            ? "Count of returned records"
+            : "Reported by API";
+
+          $("statReview").textContent = formatMetric(
+            review === undefined
+              ? countStatus("under_review")
+              : review
+          );
+
+          $("statShortlisted").textContent = formatMetric(
+            shortlisted === undefined
+              ? countStatus("shortlisted")
+              : shortlisted
+          );
+
+          $("statSelected").textContent = formatMetric(
+            selected === undefined
+              ? countStatus("selected")
+              : selected
+          );
+        }
+
+        function renderAdmin(data) {
+          const admin = objectOf(data.admin ?? data.currentAdmin);
+
+          setText("adminName", admin.name, "Administration");
+          setText("adminEmail", admin.email, "Recruitment workspace");
+        }
+
+        function renderAll(data) {
+          state.candidates = getCandidates(data).map(normaliseCandidate);
+
+          updateMetrics(data);
+          renderAdmin(data);
+          renderTable();
+          renderProfiles();
+
+          state.lastSuccessfulRefresh = new Date();
+
+          setText("lastRefresh", state.lastSuccessfulRefresh.toLocaleString());
+          setText("connectionState", "Request successful");
+
+          setStatus(
+            "candidateStatus",
+            `Candidate data loaded successfully. ${state.candidates.length} record(s) were returned by the API.`,
+            "success"
+          );
+        }
+
+        function clearDirectory() {
+          state.candidates = [];
+
+          $("statTotal").textContent = "--";
+          $("statReview").textContent = "--";
+          $("statShortlisted").textContent = "--";
+          $("statSelected").textContent = "--";
+          $("statTotalNote").textContent = "Awaiting API data";
+
+          renderTable();
+          renderProfiles();
+        }
+
+        async function loadCandidates() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+
+          const controller = new AbortController();
+          state.controller = controller;
+
+          const sequence = ++state.requestSequence;
+
+          $("refreshCandidates").disabled = true;
+          $("reloadDirectoryButton").disabled = true;
+
+          setStatus(
+            "candidateStatus",
+            "Loading candidate records from the authorised API…",
+            "info"
+          );
+
+          setText("connectionState", "Request in progress");
+
+          try {
+            const endpoint = baseEndpoint();
+
+            setText(
+              "sourceEndpoint",
+              `${endpoint.pathname}${endpoint.search}`
+            );
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { Accept: "application/json" },
+              signal: controller.signal
+            });
+
+            const payload = await readJson(response);
+
+            if (sequence !== state.requestSequence) return;
+
+            if (!response.ok) {
+              throw new Error(apiError(response, payload));
+            }
+
+            if (payload.success === false) {
+              throw new Error(
+                textOf(payload.message, "The server did not return candidate data.")
+              );
+            }
+
+            const data = unwrap(payload);
+
+            if (!data || typeof data !== "object" || Array.isArray(data)) {
+              throw new Error("The API returned an invalid candidate collection.");
+            }
+
+            renderAll(data);
+          } catch (error) {
+            if (error?.name === "AbortError") return;
+            if (sequence !== state.requestSequence) return;
+
+            clearDirectory();
+
+            setText("connectionState", "Request failed");
+
+            setStatus(
+              "candidateStatus",
+              error instanceof Error
+                ? error.message
+                : "Unable to load candidate records.",
+              "error"
+            );
+          } finally {
+            if (sequence === state.requestSequence) {
+              $("refreshCandidates").disabled = false;
+              $("reloadDirectoryButton").disabled = false;
+            }
+          }
+        }
+
+        function resetEditor() {
+          $("candidateForm").reset();
+          $("candidateId").value = "";
+
+          state.editingId = null;
+
+          $("editorTitle").textContent = "Add or edit candidate";
+          $("saveCandidateButton").textContent = "Save candidate";
+          $("cancelEditButton").hidden = true;
+
+          setStatus(
+            "editorStatus",
+            "The editor is ready for a new candidate. Saving requires an authorised API.",
+            "info"
+          );
+        }
+
+        function fillEditor(candidate) {
+          $("candidateId").value = candidate.id;
+          $("candidateName").value = candidate.name === "Unnamed candidate" ? "" : candidate.name;
+          $("candidateEmail").value = candidate.email;
+          $("candidatePhone").value = candidate.phone;
+          $("candidateLocation").value = candidate.location;
+          $("candidatePosition").value = candidate.position;
+          $("candidateQualification").value = candidate.qualification;
+          $("candidateExperience").value = candidate.experience;
+          $("candidateStatusField").value = STATUSES.includes(candidate.status)
+            ? candidate.status
+            : "new";
+          $("candidateSource").value = candidate.source;
+          $("candidateResume").value = candidate.resumeUrl;
+          $("candidateSkills").value = candidate.skills;
+          $("candidateNotes").value = candidate.notes;
+          $("candidateConsent").checked = candidate.consentRecorded;
+
+          const categories = [
+            "employment",
+            "internship",
+            "education",
+            "recruitment",
+            "other"
+          ];
+
+          $("candidateCategory").value = categories.includes(candidate.category)
+            ? candidate.category
+            : "";
+
+          state.editingId = candidate.id;
+
+          $("editorTitle").textContent = "Edit candidate profile";
+          $("saveCandidateButton").textContent = "Save changes";
+          $("cancelEditButton").hidden = false;
+
+          setStatus(
+            "editorStatus",
+            `Editing candidate: ${candidate.name}. Saving will send an update request to the server.`,
+            "info"
+          );
+
+          $("candidateEditor").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+
+          $("candidateName").focus({ preventScroll: true });
+        }
+
+        async function loadCandidateIntoEditor(id) {
+          const candidate = state.candidates.find(item => item.id === id);
+
+          if (!candidate) {
+            setStatus(
+              "candidateStatus",
+              "This candidate is no longer in the current directory. Refresh the list.",
+              "warning"
+            );
+            return;
+          }
+
+          try {
+            const payload = await request(candidateEndpoint(id), {
+              method: "GET"
+            });
+
+            const data = unwrap(payload);
+            const record = data.candidate ?? data.item ?? data;
+
+            if (!record || typeof record !== "object" || Array.isArray(record)) {
+              throw new Error("The API did not return a valid candidate record.");
+            }
+
+            const fresh = normaliseCandidate(record);
+
+            if (!fresh.id) fresh.id = id;
+
+            fillEditor(fresh);
+          } catch (error) {
+            if (
+              error instanceof Error &&
+              /404|not found/i.test(error.message)
+            ) {
+              fillEditor(candidate);
+
+              setStatus(
+                "editorStatus",
+                "The detail endpoint is unavailable. The editor was populated from the collection response; saving still requires a working update endpoint.",
+                "warning"
+              );
+
+              return;
+            }
+
+            setStatus(
+              "candidateStatus",
+              error instanceof Error
+                ? error.message
+                : "Unable to retrieve the candidate record.",
+              "error"
+            );
+          }
+        }
+
+        function validateForm() {
+          const name = $("candidateName").value.trim();
+          const email = $("candidateEmail").value.trim();
+          const position = $("candidatePosition").value.trim();
+          const status = $("candidateStatusField").value;
+          const resumeUrl = $("candidateResume").value.trim();
+
+          if (!name || !email || !position) {
+            throw new Error(
+              "Complete the required fields: full name, email address and target role or course."
+            );
+          }
+
+          if (name.length > 180 || email.length > 254 || position.length > 180) {
+            throw new Error("One or more fields exceed their permitted length.");
+          }
+
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+          if (!emailPattern.test(email)) {
+            throw new Error("Enter a valid email address.");
+          }
+
+          if (!STATUSES.includes(status)) {
+            throw new Error("Select a valid recruitment status.");
+          }
+
+          if (resumeUrl) {
+            let parsed;
+
+            try {
+              parsed = new URL(resumeUrl);
+            } catch {
+              throw new Error("Enter a valid absolute résumé URL.");
+            }
+
+            if (!["https:", "http:"].includes(parsed.protocol)) {
+              throw new Error("The résumé URL must use HTTP or HTTPS.");
+            }
+
+            if (
+              parsed.protocol !== "https:" &&
+              parsed.origin !== window.location.origin
+            ) {
+              throw new Error("External résumé links must use HTTPS.");
+            }
+
+            if (parsed.username || parsed.password) {
+              throw new Error("Résumé URLs must not contain embedded credentials.");
+            }
+          }
+
+          return {
+            name,
+            email,
+            phone: $("candidatePhone").value.trim(),
+            location: $("candidateLocation").value.trim(),
+            position,
+            category: $("candidateCategory").value,
+            qualification: $("candidateQualification").value.trim(),
+            experience: $("candidateExperience").value.trim(),
+            status,
+            source: $("candidateSource").value,
+            resumeUrl,
+            skills: $("candidateSkills").value.trim(),
+            notes: $("candidateNotes").value.trim(),
+            consentRecorded: $("candidateConsent").checked
+          };
+        }
+
+        async function saveCandidate(event) {
+          event.preventDefault();
+
+          if (state.saving) return;
+
+          let candidateData;
+
+          try {
+            candidateData = validateForm();
+          } catch (error) {
+            setStatus(
+              "editorStatus",
+              error instanceof Error
+                ? error.message
+                : "Check the candidate fields.",
+              "error"
+            );
+            return;
+          }
+
+          const isEditing = Boolean(state.editingId);
+
+          let endpoint;
+
+          try {
+            endpoint = isEditing
+              ? candidateEndpoint(state.editingId)
+              : baseEndpoint();
+          } catch (error) {
+            setStatus(
+              "editorStatus",
+              error instanceof Error ? error.message : "Invalid API endpoint.",
+              "error"
+            );
+            return;
+          }
+
+          state.saving = true;
+          $("saveCandidateButton").disabled = true;
+          $("saveCandidateButton").textContent = isEditing
+            ? "Saving changes…"
+            : "Saving candidate…";
+
+          setStatus(
+            "editorStatus",
+            "Sending candidate data to the server…",
+            "info"
+          );
+
+          try {
+            const payload = await request(endpoint, {
+              method: isEditing ? "PUT" : "POST",
+              body: JSON.stringify(candidateData)
+            });
+
+            const message = textOf(
+              payload.message,
+              isEditing
+                ? "The server confirmed the candidate update."
+                : "The server confirmed the candidate creation."
+            );
+
+            resetEditor();
+
+            setStatus("editorStatus", message, "success");
+
+            await loadCandidates();
+          } catch (error) {
+            setStatus(
+              "editorStatus",
+              error instanceof Error
+                ? error.message
+                : "The candidate could not be saved.",
+              "error"
+            );
+          } finally {
+            state.saving = false;
+            $("saveCandidateButton").disabled = false;
+            $("saveCandidateButton").textContent = state.editingId
+              ? "Save changes"
+              : "Save candidate";
+          }
+        }
+
+        async function deleteCandidate(candidate) {
+          if (!candidate.id || state.deleting) return;
+
+          const confirmation = window.confirm(
+            `Delete candidate "${candidate.name}"? This action will send a deletion request to the server and may be irreversible.`
+          );
+
+          if (!confirmation) return;
+
+          const typedConfirmation = window.prompt(
+            'Type DELETE to confirm removal of this candidate record.'
+          );
+
+          if (typedConfirmation !== "DELETE") {
+            setStatus(
+              "candidateStatus",
+              "Deletion cancelled. The confirmation phrase did not match.",
+              "warning"
+            );
+            return;
+          }
+
+          state.deleting = true;
+
+          try {
+            const payload = await request(candidateEndpoint(candidate.id), {
+              method: "DELETE"
+            });
+
+            setStatus(
+              "candidateStatus",
+              textOf(payload.message, "The server confirmed the deletion request."),
+              "success"
+            );
+
+            if (state.editingId === candidate.id) {
+              resetEditor();
+            }
+
+            await loadCandidates();
+          } catch (error) {
+            setStatus(
+              "candidateStatus",
+              error instanceof Error
+                ? error.message
+                : "The candidate could not be deleted.",
+              "error"
+            );
+          } finally {
+            state.deleting = false;
+          }
+        }
+
+        function clearFilters() {
+          $("searchCandidates").value = "";
+          $("filterStatus").value = "";
+          $("filterCategory").value = "";
+          $("sortCandidates").value = "updated_desc";
+
+          renderTable();
+          renderProfiles();
+        }
+
+        function closeNavigation() {
+          $("mainNav").classList.remove("open");
+          $("menuToggle").setAttribute("aria-expanded", "false");
+          $("menuToggle").textContent = "☰ MENU";
+        }
+
+        $("menuToggle").addEventListener("click", () => {
+          const open = $("mainNav").classList.toggle("open");
+
+          $("menuToggle").setAttribute("aria-expanded", String(open));
+          $("menuToggle").textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+
+        $("mainNav").querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            $("mainNav").classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          $("siteHeader").classList.toggle(
+            "scrolled",
+            window.scrollY > 20
+          );
+        }, { passive: true });
+
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+
+        $("candidateForm").addEventListener("submit", saveCandidate);
+
+        $("resetEditorButton").addEventListener("click", resetEditor);
+        $("cancelEditButton").addEventListener("click", resetEditor);
+
+        function openNewCandidateEditor() {
+          resetEditor();
+
+          $("candidateEditor").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+
+          $("candidateName").focus({ preventScroll: true });
+        }
+
+        $("newCandidateButton").addEventListener(
+          "click",
+          openNewCandidateEditor
+        );
+
+        $("heroCreateButton").addEventListener(
+          "click",
+          openNewCandidateEditor
+        );
+
+        $("refreshCandidates").addEventListener("click", loadCandidates);
+        $("reloadDirectoryButton").addEventListener("click", loadCandidates);
+        $("clearFiltersButton").addEventListener("click", clearFilters);
+
+        [
+          "searchCandidates",
+          "filterStatus",
+          "filterCategory",
+          "sortCandidates"
+        ].forEach(id => {
+          $(id).addEventListener(
+            id === "searchCandidates" ? "input" : "change",
+            () => {
+              renderTable();
+              renderProfiles();
+            }
+          );
+        });
+
+        clearDirectory();
+        loadCandidates();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

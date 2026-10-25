@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071629">
-  <meta name="description" content="Verify your phone number securely for your MedOrbits account.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080706">
+  <meta name="description" content="Verify your phone number securely on your MedOrbits account to help protect your account and support important education and career updates.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="MedOrbits">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -23,883 +23,1366 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #071629;
-      --bg-soft: #0b203b;
-      --surface: #102947;
-      --surface-2: #153657;
-      --surface-3: #081a2e;
-      --accent: #8bbcff;
-      --accent-bright: #d9e9ff;
-      --text: #f2f7ff;
-      --text-soft: #c7d8ee;
-      --muted: #9db2cc;
-      --border: rgba(139,188,255,.23);
-      --success: #a8f0d0;
-      --warning: #ffdfa2;
-      --danger: #ffc1ca;
-      --radius: 16px;
-      --shadow: 0 24px 70px rgba(0,0,0,.28);
+      --bg: #080706;
+      --bg-deep: #030303;
+      --bg-soft: #100e0a;
+      --surface: #15120c;
+      --surface-2: #20190e;
+      --gold: #c99a38;
+      --gold-bright: #f7d98b;
+      --gold-light: #ffedbd;
+      --champagne: #e8c982;
+      --text: #f7f0df;
+      --text-soft: #d4c8ad;
+      --muted: #a99b7f;
+      --border: rgba(220,174,76,.23);
+      --border-bright: rgba(247,217,139,.43);
+      --success: #b8e6bd;
+      --danger: #ffb9a9;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.55);
+      --gold-gradient: linear-gradient(
+        115deg,
+        #8f6420 0%,
+        #e6bd61 28%,
+        #fff0b8 48%,
+        #c08a2c 70%,
+        #f4d77f 100%
+      );
+      --gold-surface: linear-gradient(
+        145deg,
+        rgba(35,27,15,.97),
+        rgba(8,7,5,.98)
+      );
     }
 
-    *,*::before,*::after { box-sizing:border-box; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
 
     html {
-      scroll-behavior:smooth;
-      scroll-padding-top:100px;
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
     }
 
     body {
-      margin:0;
-      min-height:100vh;
+      position: relative;
+      isolation: isolate;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(ellipse at 10% 0%,rgba(40,102,170,.2),transparent 35%),
-        radial-gradient(ellipse at 90% 40%,rgba(98,155,221,.08),transparent 32%),
-        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
-      color:var(--text);
-      font:400 14px/1.7 "DM Sans",sans-serif;
+        radial-gradient(ellipse at 12% 0%,rgba(190,132,34,.13),transparent 35%),
+        radial-gradient(ellipse at 92% 38%,rgba(142,96,26,.09),transparent 34%),
+        radial-gradient(ellipse at 50% 100%,rgba(112,73,18,.08),transparent 42%),
+        linear-gradient(135deg,#030303 0%,#0b0906 48%,#100c06 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
     }
 
-    img { display:block;max-width:100%; }
-    a { color:inherit;text-decoration:none; }
-    button,input,select { font:inherit; }
-    button,a { -webkit-tap-highlight-color:transparent; }
-
-    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible {
-      outline:2px solid var(--accent-bright);
-      outline-offset:4px;
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(247,217,139,.13) .7px,
+        transparent .7px
+      );
+      background-size: 34px 34px;
+      opacity: .16;
+      content: "";
+      pointer-events: none;
     }
 
-    [hidden] { display:none!important; }
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 4px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
 
     .container {
-      width:min(1180px,calc(100% - 40px));
-      margin-inline:auto;
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .gold-text {
+      color: var(--gold-bright);
+      background: var(--gold-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: goldFlow 6s linear infinite;
+    }
+
+    @keyframes goldFlow {
+      0% { background-position: 100% center; }
+      100% { background-position: -120% center; }
+    }
+
+    @keyframes goldGlow {
+      0%,100% {
+        text-shadow: 0 0 5px rgba(230,189,97,.08);
+      }
+      50% {
+        text-shadow:
+          0 0 17px rgba(230,189,97,.32),
+          0 0 35px rgba(192,138,44,.13);
+      }
+    }
+
+    @keyframes softFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes revealUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes borderShimmer {
+      0%,100% { border-color: rgba(220,174,76,.19); }
+      50% { border-color: rgba(247,217,139,.43); }
+    }
+
+    @keyframes cursorBlink {
+      to { visibility: hidden; }
+    }
+
+    @keyframes shieldPulse {
+      0%,100% {
+        box-shadow:
+          0 0 0 0 rgba(201,154,56,.08),
+          inset 0 0 25px rgba(201,154,56,.05);
+      }
+      50% {
+        box-shadow:
+          0 0 0 12px rgba(201,154,56,0),
+          inset 0 0 35px rgba(201,154,56,.14);
+      }
     }
 
     .skip-link {
-      position:absolute;
-      top:-70px;
-      left:14px;
-      z-index:10000;
-      padding:10px 15px;
-      border-radius:8px;
-      background:var(--accent-bright);
-      color:var(--bg);
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      background: var(--gold-light);
+      color: #100c05;
     }
 
-    .skip-link:focus { top:12px; }
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    /* Announcement */
 
     .announcement {
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:10px;
-      padding:8px 15px;
-      border-bottom:1px solid rgba(139,188,255,.13);
-      background:#040b15;
-      color:var(--accent-bright);
-      font-size:9px;
-      font-weight:700;
-      letter-spacing:.1em;
-      text-align:center;
-      text-transform:uppercase;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      background: #030303;
+      color: var(--champagne);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
     }
 
-    .spark { color:var(--accent); }
+    .spark {
+      color: var(--gold-bright);
+      animation: goldGlow 3s ease-in-out infinite;
+    }
+
+    /* Header and navigation */
 
     .site-header {
-      position:sticky;
-      top:0;
-      z-index:1000;
-      border-bottom:1px solid var(--border);
-      background:rgba(5,14,27,.94);
-      backdrop-filter:blur(18px);
-      transition:box-shadow .2s,background .2s;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,5,4,.91);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .site-header.scrolled {
-      background:rgba(4,11,21,.98);
-      box-shadow:0 12px 35px rgba(0,0,0,.25);
+      background: rgba(3,3,3,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.58);
     }
 
     .nav-wrap {
-      min-height:78px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:22px;
+      position: relative;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
     }
 
     .brand {
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      flex-shrink:0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand img {
-      width:45px;
-      height:45px;
-      object-fit:contain;
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(220,174,76,.15));
     }
 
     .brand strong {
-      display:block;
-      color:var(--accent-bright);
-      font-size:15px;
-      letter-spacing:.13em;
-      line-height:1.35;
+      display: block;
+      color: var(--gold-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
     }
 
     .brand small {
-      display:block;
-      color:var(--muted);
-      font-size:8px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
     }
 
     .menu-toggle {
-      display:none;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      background:transparent;
-      color:var(--accent-bright);
-      cursor:pointer;
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      cursor: pointer;
     }
 
     .main-nav {
-      display:flex;
-      align-items:center;
-      gap:17px;
-      font-size:11px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
     }
 
-    .main-nav>a,.nav-trigger {
-      color:var(--text-soft);
-      white-space:nowrap;
+    .main-nav > a,
+    .nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
     }
 
-    .main-nav>a:hover,.nav-trigger:hover {
-      color:var(--accent-bright);
+    .main-nav > a:hover,
+    .nav-trigger:hover {
+      color: var(--gold-light);
     }
 
-    .nav-group { position:relative; }
+    .nav-group {
+      position: relative;
+    }
 
     .nav-trigger {
-      padding:12px 0;
-      border:0;
-      background:transparent;
-      cursor:pointer;
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
     }
 
     .nav-trigger span {
-      margin-left:4px;
-      color:var(--accent);
+      margin-left: 4px;
+      color: var(--gold);
     }
 
     .dropdown {
-      position:absolute;
-      top:100%;
-      left:-12px;
-      display:none;
-      width:245px;
-      padding:9px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:#102947;
-      box-shadow:var(--shadow);
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      background: #100d08;
+      box-shadow: var(--shadow);
     }
 
     .nav-group.open .dropdown,
-    .nav-group:focus-within .dropdown { display:grid; }
+    .nav-group:focus-within .dropdown {
+      display: grid;
+    }
 
     .dropdown a {
-      padding:10px 11px;
-      border-radius:7px;
-      color:var(--text-soft);
-      font-size:11px;
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
     }
 
     .dropdown a:hover {
-      background:rgba(139,188,255,.09);
-      color:var(--accent-bright);
+      background: rgba(201,154,56,.1);
+      color: var(--gold-light);
     }
 
-    .nav-cta,.btn {
-      display:inline-flex;
-      justify-content:center;
-      align-items:center;
-      gap:8px;
-      min-height:41px;
-      padding:10px 15px;
-      border:1px solid var(--accent);
-      border-radius:9px;
-      background:linear-gradient(135deg,#d9e9ff,#82b6f8);
-      color:#071629!important;
-      font-size:11px;
-      font-weight:700;
-      cursor:pointer;
-      transition:transform .2s,filter .2s;
+    /* Buttons */
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 43px;
+      padding: 10px 16px;
+      border: 1px solid #e2b955;
+      border-radius: 10px;
+      background: var(--gold-gradient);
+      background-size: 180% auto;
+      color: #120d04;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition:
+        transform .22s,
+        filter .22s,
+        box-shadow .22s;
     }
 
-    .btn:hover,.nav-cta:hover {
-      transform:translateY(-1px);
-      filter:brightness(1.06);
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 25px rgba(201,154,56,.15);
     }
 
     .btn:disabled {
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .btn-outline {
-      border-color:rgba(199,216,238,.32);
-      background:transparent;
-      color:var(--accent-bright)!important;
+      border-color: rgba(220,174,76,.36);
+      background: rgba(201,154,56,.035);
+      color: var(--gold-light);
     }
 
+    .btn-block {
+      width: 100%;
+    }
+
+    /* Page structure */
+
     .page-main {
-      position:relative;
-      isolation:isolate;
-      min-height:70vh;
-      padding:40px 0 65px;
-      overflow:hidden;
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 38px 0 70px;
+      overflow: hidden;
     }
 
     .page-main::before {
-      position:absolute;
-      z-index:-1;
-      inset:0;
+      position: absolute;
+      z-index: -1;
+      inset: 0;
       background:
-        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
-        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
-      content:"";
-      pointer-events:none;
+        radial-gradient(ellipse at 14% 8%,rgba(201,154,56,.09),transparent 34%),
+        radial-gradient(ellipse at 90% 65%,rgba(148,102,30,.07),transparent 32%);
+      content: "";
+      pointer-events: none;
     }
 
     .breadcrumbs {
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-bottom:22px;
-      color:var(--muted);
-      font-size:11px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 23px;
+      color: var(--muted);
+      font-size: 11px;
     }
 
-    .breadcrumbs a { color:var(--accent-bright); }
-    .breadcrumbs a:hover { text-decoration:underline; }
+    .breadcrumbs a {
+      color: var(--gold-bright);
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
 
     .page-heading {
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:22px;
-      margin-bottom:28px;
+      margin-bottom: 26px;
+      animation: revealUp .65s ease both;
     }
 
     .eyebrow {
-      display:inline-flex;
-      align-items:center;
-      gap:9px;
-      color:var(--accent-bright);
-      font-size:9px;
-      font-weight:700;
-      letter-spacing:.16em;
-      text-transform:uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--champagne);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
     }
 
     .eyebrow::before {
-      width:25px;
-      height:1px;
-      background:var(--accent);
-      content:"";
+      width: 25px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
     }
 
     .page-heading h1 {
-      margin:10px 0 9px;
-      font:600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
-      letter-spacing:-.025em;
-      overflow-wrap:anywhere;
+      margin: 10px 0;
+      font: 600 clamp(34px,4.5vw,52px)/1.15 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
     }
 
-    .page-heading h1 span { color:var(--accent-bright); }
+    .page-heading h1 span {
+      animation: goldGlow 4s ease-in-out infinite;
+    }
 
     .page-heading p {
-      max-width:690px;
-      margin:0;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.8;
+      max-width: 730px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
     }
 
-    .heading-actions {
-      display:flex;
-      flex-wrap:wrap;
-      gap:9px;
-      flex-shrink:0;
+    .typing-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 27px;
+      margin-top: 9px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .typing-line strong {
+      color: var(--gold-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background: var(--gold-bright);
+      animation: cursorBlink .8s steps(2,start) infinite;
     }
 
     .layout {
-      display:grid;
-      grid-template-columns:240px minmax(0,1fr);
-      align-items:start;
-      gap:19px;
+      display: grid;
+      grid-template-columns: 240px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
     }
 
-    .sidebar,.panel,.side-card {
-      min-width:0;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
-      box-shadow:0 18px 48px rgba(0,0,0,.18);
+    .sidebar,
+    .panel,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--gold-surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.26);
     }
+
+    /* Account sidebar */
 
     .sidebar {
-      position:sticky;
-      top:100px;
-      padding:19px;
+      position: sticky;
+      top: 100px;
+      padding: 19px;
+      animation: borderShimmer 7s ease-in-out infinite;
     }
 
     .account-user {
-      display:flex;
-      align-items:center;
-      gap:11px;
-      padding-bottom:17px;
-      border-bottom:1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--border);
     }
 
     .avatar {
-      display:grid;
-      place-items:center;
-      flex:0 0 43px;
-      height:43px;
-      border:1px solid rgba(139,188,255,.35);
-      border-radius:13px;
-      background:linear-gradient(145deg,#173d64,#0b203b);
-      color:var(--accent-bright);
-      font:600 16px "Playfair Display",Georgia,serif;
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(220,174,76,.45);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#3a2b12,#100c06);
+      color: var(--gold-light);
+      font: 600 16px "Playfair Display",Georgia,serif;
     }
 
     .account-user strong {
-      display:block;
-      font-size:11px;
-      overflow-wrap:anywhere;
+      display: block;
+      font-size: 11px;
     }
 
     .account-user small {
-      display:block;
-      color:var(--muted);
-      font-size:9px;
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
     }
 
     .account-nav {
-      display:grid;
-      gap:5px;
-      margin:15px 0;
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
     }
 
     .account-nav a {
-      padding:10px 11px;
-      border:1px solid transparent;
-      border-radius:8px;
-      color:var(--text-soft);
-      font-size:10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
     }
 
-    .account-nav a:hover,.account-nav a.active {
-      border-color:rgba(139,188,255,.2);
-      background:rgba(139,188,255,.09);
-      color:var(--accent-bright);
+    .account-nav a:hover,
+    .account-nav a.active {
+      border-color: rgba(220,174,76,.23);
+      background: rgba(201,154,56,.09);
+      color: var(--gold-light);
     }
 
     .sidebar-note {
-      margin:15px 0 0;
-      padding-top:14px;
-      border-top:1px solid var(--border);
-      color:var(--muted);
-      font-size:9px;
-      line-height:1.8;
+      margin: 15px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
     }
 
     .sidebar-note a {
-      color:var(--accent-bright);
-      text-decoration:underline;
-      text-underline-offset:3px;
+      color: var(--gold-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
+
+    /* Main verification area */
 
     .content {
-      display:grid;
-      gap:19px;
-      min-width:0;
+      display: grid;
+      gap: 18px;
+      min-width: 0;
     }
 
-    .panel { padding:clamp(17px,2.5vw,25px); }
+    .panel {
+      padding: clamp(18px,3vw,29px);
+      animation: revealUp .65s ease both;
+    }
+
+    .verification-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(230px,.8fr);
+      align-items: center;
+      gap: 26px;
+    }
 
     .panel-heading {
-      display:flex;
-      align-items:flex-start;
-      gap:13px;
-      margin-bottom:20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 18px;
     }
 
     .panel-icon {
-      display:grid;
-      place-items:center;
-      flex:0 0 43px;
-      width:43px;
-      height:43px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(139,188,255,.08);
-      color:var(--accent-bright);
-      font-size:19px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(201,154,56,.08);
+      color: var(--gold-bright);
+      font-size: 20px;
     }
 
-    .panel-heading h2,.side-card h2 {
-      margin:0 0 5px;
-      font:600 21px/1.3 "Playfair Display",Georgia,serif;
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 22px/1.35 "Playfair Display",Georgia,serif;
     }
 
     .panel-heading p {
-      margin:0;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.8;
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
-    .verification-card {
-      width:100%;
-      max-width:570px;
-      margin:0 auto;
+    .form-field {
+      margin-bottom: 17px;
     }
 
-    .verification-symbol {
-      display:grid;
-      place-items:center;
-      width:70px;
-      height:70px;
-      margin:0 auto 20px;
-      border:1px solid rgba(139,188,255,.3);
-      border-radius:22px;
-      background:linear-gradient(145deg,rgba(139,188,255,.15),rgba(16,41,71,.7));
-      color:var(--accent-bright);
-      font-size:29px;
-    }
-
-    .verification-card h2 {
-      margin:0 0 9px;
-      font:600 clamp(23px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
-      text-align:center;
-    }
-
-    .verification-intro {
-      max-width:470px;
-      margin:0 auto 24px;
-      color:var(--muted);
-      font-size:11px;
-      line-height:1.9;
-      text-align:center;
-    }
-
-    .security-note {
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      margin-bottom:22px;
-      padding:12px 14px;
-      border:1px solid rgba(139,188,255,.18);
-      border-radius:10px;
-      background:rgba(139,188,255,.045);
-      color:var(--text-soft);
-      font-size:10px;
-      line-height:1.8;
-    }
-
-    .security-note .note-icon {
-      flex-shrink:0;
-      color:var(--accent);
-      font-size:15px;
-    }
-
-    .field-group { margin-bottom:18px; }
-
-    .field-label {
-      display:block;
-      margin-bottom:7px;
-      color:var(--text-soft);
-      font-size:10px;
-      font-weight:700;
+    .form-field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 700;
     }
 
     .field-help {
-      margin:7px 0 0;
-      color:var(--muted);
-      font-size:9px;
-      line-height:1.8;
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
     }
 
-    .phone-row {
-      display:grid;
-      grid-template-columns:minmax(115px,.38fr) minmax(0,1fr);
-      gap:9px;
+    .input-wrap {
+      display: flex;
+      align-items: stretch;
+      min-width: 0;
+      border: 1px solid rgba(220,174,76,.3);
+      border-radius: 11px;
+      background: rgba(3,3,3,.62);
+      transition: border-color .2s,box-shadow .2s;
     }
 
-    .field {
-      display:block;
-      width:100%;
-      min-width:0;
-      min-height:45px;
-      padding:11px 12px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      background:var(--surface-3);
-      color:var(--text);
-      font-size:11px;
+    .input-wrap:focus-within {
+      border-color: var(--gold-bright);
+      box-shadow: 0 0 0 3px rgba(201,154,56,.08);
     }
 
-    .field::placeholder { color:#8198b4; }
-
-    .field:disabled {
-      cursor:not-allowed;
-      opacity:.6;
+    .country-code {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0 12px;
+      border-right: 1px solid var(--border);
+      color: var(--gold-light);
+      font-size: 12px;
+      font-weight: 700;
     }
 
-    select.field option {
-      background:var(--surface-3);
-      color:var(--text);
+    .form-input {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      min-height: 47px;
+      padding: 12px 13px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
     }
 
-    .otp-grid {
-      display:grid;
-      grid-template-columns:repeat(6,minmax(0,1fr));
-      gap:9px;
+    .form-input::placeholder {
+      color: #84765c;
+      opacity: 1;
+    }
+
+    .input-wrap .form-input {
+      border: 0;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .form-input:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .phone-input {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .04em;
     }
 
     .otp-input {
-      width:100%;
-      min-width:0;
-      height:54px;
-      padding:6px 2px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      background:var(--surface-3);
-      color:var(--accent-bright);
-      font-size:22px;
-      font-weight:700;
-      text-align:center;
-      caret-color:var(--accent);
+      text-align: center;
+      font-size: clamp(19px,4vw,25px);
+      font-weight: 700;
+      letter-spacing: .34em;
+      font-variant-numeric: tabular-nums;
     }
 
-    .otp-input:focus {
-      border-color:var(--accent);
-      background:#0b2340;
+    .form-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
     }
 
-    .otp-input:disabled { opacity:.55; }
-
-    .btn-block { width:100%; }
-
-    .btn-row {
-      display:grid;
-      grid-template-columns:1fr;
-      gap:10px;
-      margin-top:17px;
+    .form-message {
+      margin: 15px 0 0;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(201,154,56,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
     }
 
-    .form-status {
-      display:none;
-      margin-bottom:18px;
-      padding:12px 14px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      font-size:10px;
-      line-height:1.8;
-      overflow-wrap:anywhere;
+    .form-message.success {
+      border-color: rgba(184,230,189,.3);
+      color: var(--success);
     }
 
-    .form-status.visible { display:block; }
-
-    .form-status.info {
-      border-color:rgba(139,188,255,.3);
-      background:rgba(139,188,255,.06);
-      color:var(--accent-bright);
+    .form-message.error {
+      border-color: rgba(255,185,169,.36);
+      color: var(--danger);
     }
 
-    .form-status.success {
-      border-color:rgba(168,240,208,.3);
-      background:rgba(168,240,208,.06);
-      color:var(--success);
+    .form-message.info {
+      border-color: rgba(220,174,76,.28);
+      color: var(--champagne);
     }
 
-    .form-status.error {
-      border-color:rgba(255,193,202,.3);
-      background:rgba(255,193,202,.06);
-      color:var(--danger);
-    }
-
-    .resend-row {
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-wrap:wrap;
-      gap:6px;
-      margin-top:16px;
-      color:var(--muted);
-      font-size:10px;
-      text-align:center;
+    .inline-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 13px;
     }
 
     .text-button {
-      padding:3px;
-      border:0;
-      background:transparent;
-      color:var(--accent-bright);
-      font-size:10px;
-      font-weight:700;
-      cursor:pointer;
+      padding: 4px 0;
+      border: 0;
+      background: transparent;
+      color: var(--gold-bright);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    .text-button:hover { text-decoration:underline; }
+    .text-button:hover {
+      color: var(--gold-light);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
 
     .text-button:disabled {
-      cursor:not-allowed;
-      opacity:.5;
-      text-decoration:none;
+      color: var(--muted);
+      cursor: not-allowed;
+      text-decoration: none;
     }
 
-    .privacy-footnote {
-      margin:22px 0 0;
-      padding-top:16px;
-      border-top:1px solid rgba(139,188,255,.13);
-      color:var(--muted);
-      font-size:9px;
-      line-height:1.8;
-      text-align:center;
+    .countdown {
+      color: var(--muted);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
     }
 
-    .privacy-footnote a {
-      color:var(--accent-bright);
-      text-decoration:underline;
-      text-underline-offset:3px;
+    /* Related phone-security imagery */
+
+    .visual-column {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
     }
 
-    .security-panel {
-      display:flex;
-      align-items:flex-start;
-      gap:13px;
-      padding:17px;
-      border:1px solid rgba(168,240,208,.22);
-      border-radius:12px;
-      background:rgba(168,240,208,.035);
+    .hero-visual {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 300px;
+      padding: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background:
+        radial-gradient(ellipse at 50% 38%,rgba(201,154,56,.17),transparent 50%),
+        linear-gradient(150deg,rgba(33,25,13,.94),rgba(5,5,4,.98));
     }
 
-    .security-symbol-small {
-      display:grid;
-      place-items:center;
-      flex:0 0 39px;
-      width:39px;
-      height:39px;
-      border:1px solid rgba(168,240,208,.22);
-      border-radius:11px;
-      color:var(--success);
-      font-size:18px;
+    .hero-visual::before,
+    .hero-visual::after {
+      position: absolute;
+      width: 205px;
+      height: 205px;
+      border: 1px solid rgba(220,174,76,.12);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
     }
 
-    .security-panel h3 {
-      margin:0 0 5px;
-      color:var(--success);
-      font-size:12px;
+    .hero-visual::after {
+      width: 260px;
+      height: 260px;
+      border-color: rgba(220,174,76,.06);
     }
 
-    .security-panel p {
-      margin:0 0 10px;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+    .visual-art {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: 290px;
+      animation: softFloat 6s ease-in-out infinite;
     }
 
-    .security-links {
-      display:flex;
-      flex-wrap:wrap;
-      gap:13px;
+    .visual-art img {
+      width: 100%;
+      max-height: 265px;
+      object-fit: contain;
+      border-radius: 12px;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,.35));
     }
 
-    .security-links a {
-      color:var(--accent-bright);
-      font-size:10px;
-      text-decoration:underline;
-      text-underline-offset:3px;
+    .art-fallback {
+      display: grid;
+      place-items: center;
+      gap: 12px;
+      width: 170px;
+      height: 210px;
+      padding: 20px;
+      border: 1px solid rgba(247,217,139,.45);
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 50% 20%,rgba(247,217,139,.16),transparent 40%),
+        linear-gradient(145deg,#2c2110,#090806);
+      color: var(--gold-bright);
+      box-shadow:
+        0 25px 55px rgba(0,0,0,.45),
+        inset 0 0 25px rgba(201,154,56,.08);
+      text-align: center;
     }
+
+    .art-fallback .phone-emoji {
+      font-size: 67px;
+      line-height: 1.1;
+      filter: drop-shadow(0 0 15px rgba(201,154,56,.25));
+    }
+
+    .art-fallback .shield-emoji {
+      font-size: 29px;
+    }
+
+    .art-caption {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      left: 12px;
+      z-index: 2;
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .visual-caption {
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(201,154,56,.035);
+    }
+
+    .visual-caption h3 {
+      margin: 0 0 6px;
+      color: var(--gold-light);
+      font: 600 17px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .visual-caption p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .security-points {
+      display: grid;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .security-point {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .point-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 29px;
+      width: 29px;
+      height: 29px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+    }
+
+    /* Verified state */
+
+    .verified-state {
+      padding: 24px 15px;
+      text-align: center;
+    }
+
+    .verified-badge {
+      display: grid;
+      place-items: center;
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 18px;
+      border: 1px solid rgba(184,230,189,.4);
+      border-radius: 24px;
+      background: rgba(184,230,189,.07);
+      color: var(--success);
+      font-size: 34px;
+      animation: shieldPulse 3s ease-in-out infinite;
+    }
+
+    .verified-state h2 {
+      margin: 0 0 8px;
+      font: 600 clamp(25px,4vw,33px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .verified-state p {
+      max-width: 430px;
+      margin: 0 auto 20px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    /* Additional information */
+
+    .info-card {
+      position: relative;
+      padding: 22px;
+      overflow: hidden;
+    }
+
+    .info-card h2 {
+      margin: 0 0 8px;
+      font: 600 22px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card > p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .help-card {
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(8,7,5,.68);
+      transition: transform .2s,border-color .2s;
+    }
+
+    .help-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-bright);
+    }
+
+    .help-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      font-size: 21px;
+    }
+
+    .help-card h3 {
+      margin: 0 0 5px;
+      font-size: 11px;
+    }
+
+    .help-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .help-card a {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--gold-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .privacy-notice {
+      padding: 15px 16px;
+      border: 1px solid rgba(220,174,76,.22);
+      border-radius: 11px;
+      background: rgba(201,154,56,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .privacy-notice strong {
+      color: var(--gold-bright);
+    }
+
+    /* Footer */
 
     .site-footer {
-      padding:43px 0 0;
-      border-top:1px solid var(--border);
-      background:#040b15;
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(201,154,56,.07),transparent 38%),
+        #030303;
     }
 
     .footer-grid {
-      display:grid;
-      grid-template-columns:1.4fr repeat(4,minmax(0,1fr));
-      gap:23px;
-      padding-bottom:28px;
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
     }
 
     .footer-brand p {
-      max-width:270px;
-      margin-top:12px;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
     .footer-grid h2 {
-      margin:0 0 12px;
-      padding-bottom:9px;
-      border-bottom:1px solid rgba(139,188,255,.17);
-      color:var(--accent-bright);
-      font-size:9px;
-      letter-spacing:.12em;
-      text-transform:uppercase;
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      color: var(--gold-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
     .footer-links a {
-      display:block;
-      margin:8px 0;
-      color:var(--muted);
-      font-size:10px;
-      overflow-wrap:anywhere;
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
     }
 
-    .footer-links a:hover { color:var(--accent-bright); }
+    .footer-links a:hover {
+      color: var(--gold-light);
+    }
 
     .disclaimer {
-      margin:0 0 15px;
-      padding:13px 15px;
-      border-left:2px solid var(--accent);
-      border-radius:0 8px 8px 0;
-      background:rgba(16,41,71,.4);
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(201,154,56,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
     .footer-bottom {
-      display:flex;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      gap:10px;
-      padding:17px 0;
-      border-top:1px solid rgba(139,188,255,.13);
-      color:var(--muted);
-      font-size:9px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(220,174,76,.13);
+      color: var(--muted);
+      font-size: 9px;
     }
 
-    @media(max-width:1100px) {
-      .menu-toggle { display:inline-flex; }
+    .footer-bottom span:last-child {
+      color: var(--champagne);
+      letter-spacing: .1em;
+    }
 
-      .main-nav {
-        position:absolute;
-        top:100%;
-        right:0;
-        left:0;
-        display:none;
-        align-items:stretch;
-        flex-direction:column;
-        gap:4px;
-        max-height:calc(100vh - 90px);
-        padding:15px 22px 20px;
-        overflow-y:auto;
-        border-bottom:1px solid var(--border);
-        background:#071629;
+    /* Responsive */
+
+    @media (max-width:1100px) {
+      .menu-toggle {
+        display: inline-flex;
       }
 
-      .main-nav.open { display:flex; }
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(5,5,4,.99);
+        box-shadow: var(--shadow);
+      }
 
-      .main-nav>a,.nav-trigger {
-        display:block;
-        width:100%;
-        padding:11px 8px;
-        text-align:left;
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
       }
 
       .dropdown {
-        position:static;
-        width:100%;
-        margin-bottom:5px;
-        box-shadow:none;
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
       }
-
-      .nav-cta { width:100%; }
-      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .footer-brand { grid-column:1/-1; }
-    }
-
-    @media(max-width:800px) {
-      .container { width:calc(100% - 30px); }
-      .nav-wrap { min-height:69px; }
-      .layout { grid-template-columns:1fr; }
-      .sidebar { position:static; }
-
-      .account-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
-
-      .page-heading {
-        align-items:flex-start;
-        flex-direction:column;
-      }
-
-      .heading-actions { width:100%; }
-      .heading-actions .btn { flex:1; }
-    }
-
-    @media(max-width:560px) {
-      .announcement { gap:6px;font-size:8px;letter-spacing:.04em; }
-      .page-main { padding:30px 0 45px; }
-      .page-heading h1 { font-size:clamp(31px,9vw,42px); }
-
-      .sidebar,.panel { padding:15px; }
-      .account-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
-
-      .heading-actions {
-        display:grid;
-        grid-template-columns:1fr;
-      }
-
-      .heading-actions .btn { width:100%; }
-
-      .phone-row { grid-template-columns:1fr; }
-      .otp-grid { gap:6px; }
-      .otp-input { height:48px;font-size:19px; }
 
       .footer-grid {
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:21px 15px;
+        grid-template-columns: repeat(3,minmax(0,1fr));
       }
 
-      .footer-brand { grid-column:1/-1; }
-      .footer-bottom { flex-direction:column; }
+      .footer-brand {
+        grid-column: 1/-1;
+      }
     }
 
-    @media(max-width:360px) {
-      .container { width:calc(100% - 22px); }
-      .brand img { width:37px;height:37px; }
-      .brand strong { font-size:13px; }
-      .brand small { font-size:7px; }
-      .otp-grid { gap:4px; }
-      .otp-input { height:43px;font-size:17px; }
-      .footer-grid { grid-template-columns:1fr; }
-      .footer-brand { grid-column:auto; }
+    @media (max-width:900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .account-nav {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .verification-grid {
+        grid-template-columns: minmax(0,1fr) minmax(200px,.75fr);
+        gap: 17px;
+      }
+
+      .hero-visual {
+        min-height: 260px;
+      }
+
+      .help-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
     }
 
-    @media(prefers-reduced-motion:reduce) {
-      html { scroll-behavior:auto; }
+    @media (max-width:650px) {
+      .container {
+        width: calc(100% - 30px);
+      }
+
+      .nav-wrap {
+        min-height: 69px;
+      }
+
+      .page-main {
+        padding: 29px 0 48px;
+      }
+
+      .verification-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .visual-column {
+        grid-row: 1;
+      }
+
+      .hero-visual {
+        min-height: 220px;
+      }
+
+      .visual-art img {
+        max-height: 190px;
+      }
+
+      .art-fallback {
+        width: 130px;
+        height: 155px;
+        border-radius: 24px;
+      }
+
+      .art-fallback .phone-emoji {
+        font-size: 47px;
+      }
+
+      .art-fallback .shield-emoji {
+        font-size: 23px;
+      }
+
+      .visual-caption {
+        padding: 14px;
+      }
+
+      .page-heading h1 {
+        font-size: clamp(32px,8vw,43px);
+      }
+
+      .help-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width:430px) {
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .04em;
+      }
+
+      .sidebar,
+      .panel,
+      .info-card {
+        padding: 15px;
+      }
+
+      .account-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .help-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .inline-actions {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width:350px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand img {
+        width: 37px;
+        height: 37px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .account-nav,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-brand {
+        grid-column: auto;
+      }
+
+      .country-code {
+        padding-inline: 9px;
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
       *,*::before,*::after {
-        animation-duration:.01ms!important;
-        animation-iteration-count:1!important;
-        transition-duration:.01ms!important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
@@ -909,26 +1392,33 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <div class="announcement">
-    <span>Your future, your direction</span>
+    <span>Secure your MedOrbits account</span>
     <span class="spark" aria-hidden="true">✦</span>
-    <span>Study · Work · Grow -- one connected destination</span>
+    <span>One verified number · Better account protection</span>
   </div>
 
   <header class="site-header" id="siteHeader">
     <div class="container nav-wrap">
       <a class="brand" href="/index.html" aria-label="MedOrbits home">
-        <img src="/assets/images/logo/medorbits-logo.png"
-             alt="MedOrbits logo" width="45" height="45">
+        <img
+          src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo"
+          width="45"
+          height="45"
+        >
         <span>
           <strong>MEDORBITS</strong>
           <small>Study · Career · Consultancy</small>
         </span>
       </a>
 
-      <button class="menu-toggle" id="menuToggle" type="button"
-              aria-expanded="false" aria-controls="mainNav">
-        ☰ MENU
-      </button>
+      <button
+        class="menu-toggle"
+        id="menuToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mainNav"
+      >☰ MENU</button>
 
       <nav class="main-nav" id="mainNav" aria-label="Main navigation">
         <a href="/index.html">Home</a>
@@ -978,8 +1468,10 @@
         <a href="/pages/about.html">About</a>
         <a href="/pages/contact.html">Contact</a>
         <a href="/account/index.html">My Account</a>
-        <a href="/account/applications.html">My Applications</a>
-        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+        <a href="/account/my-applications.html">My Applications</a>
+        <a href="/account/my-documents.html">My Documents</a>
+        <a href="/account/verify-phone.html" aria-current="page">Verify Phone</a>
+        <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
       </nav>
     </div>
   </header>
@@ -990,28 +1482,24 @@
       <nav class="breadcrumbs" aria-label="Breadcrumb">
         <a href="/index.html">Home</a>
         <span aria-hidden="true">›</span>
-        <a href="/account/index.html">My account</a>
+        <a href="/account/index.html">My Account</a>
         <span aria-hidden="true">›</span>
-        <span aria-current="page">Verify phone</span>
+        <span aria-current="page">Verify Phone</span>
       </nav>
 
       <header class="page-heading">
-        <div>
-          <span class="eyebrow">Personal workspace · Security</span>
-          <h1>Verify your <span>phone</span></h1>
-          <p>
-            Confirm access to your phone number to help protect your
-            MedOrbits account and support important account communications.
-          </p>
-        </div>
+        <span class="eyebrow">Account protection · Phone verification</span>
+        <h1>Verify your <span class="gold-text">phone.</span></h1>
+        <p>
+          Confirm that you can access your mobile number. A verified number
+          can help with account recovery and important updates related to
+          your education and career journey.
+        </p>
 
-        <div class="heading-actions">
-          <a class="btn btn-outline" href="/account/settings.html">
-            ⚙ Account settings
-          </a>
-          <a class="btn" href="/account/index.html">
-            My account ↗
-          </a>
+        <div class="typing-line" aria-live="off">
+          <span aria-hidden="true">✦</span>
+          <strong id="typingText">Your account. Your security. Your future.</strong>
+          <span class="typing-cursor" aria-hidden="true"></span>
         </div>
       </header>
 
@@ -1021,28 +1509,38 @@
           <div class="account-user">
             <div class="avatar" aria-hidden="true">MO</div>
             <div>
-              <strong>My MedOrbits account</strong>
-              <small>Profile and account services</small>
+              <strong>My account</strong>
+              <small>Account security</small>
             </div>
           </div>
 
           <nav class="account-nav" aria-label="Account menu">
             <a href="/account/index.html">▦ &nbsp; Account home</a>
             <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
-            <a href="/account/edit-profile.html">◈ &nbsp; Edit profile</a>
-            <a href="/account/settings.html">⚙ &nbsp; Account settings</a>
-            <a href="/account/applications.html">▤ &nbsp; My applications</a>
-            <a href="/account/documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/profile.html">◈ &nbsp; Profile</a>
+            <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
+            <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
+            <a href="/account/application-details.html">▧ &nbsp; Application details</a>
+            <a href="/account/my-documents.html">📁 &nbsp; My documents</a>
+            <a href="/account/messages.html">✉ &nbsp; Messages</a>
             <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
-            <a href="/account/payments.html">＄ &nbsp; Payments</a>
-            <a href="/account/change-password.html">◉ &nbsp; Change password</a>
+            <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
+            <a href="/account/receipts.html">▤ &nbsp; Receipts</a>
+            <a href="/account/saved-colleges.html">☆ &nbsp; Saved colleges</a>
+            <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
+            <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
+            <a href="/account/sessions.html">⌘ &nbsp; Active sessions</a>
+            <a href="/account/security-settings.html">⚙ &nbsp; Security settings</a>
+            <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
+            <a href="/account/change-password.html">🔒 &nbsp; Change password</a>
+            <a href="/account/verify-email.html">✉ &nbsp; Verify email</a>
             <a class="active" href="/account/verify-phone.html" aria-current="page">☎ &nbsp; Verify phone</a>
             <a href="/account/delete-account.html">⊗ &nbsp; Delete account</a>
           </nav>
 
           <p class="sidebar-note">
-            Never share your password or one-time verification code.
-            MedOrbits support should not ask you to disclose your OTP.
+            Never share your OTP or account password with another person.
+            MedOrbits support should not need your verification code.
             <br>
             <a href="/pages/contact.html">Contact support ↗</a>
           </p>
@@ -1050,168 +1548,253 @@
 
         <div class="content">
 
-          <section class="panel" aria-labelledby="phonePanelTitle">
-            <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">☎</div>
-              <div>
-                <h2 id="phonePanelTitle">Phone verification</h2>
-                <p>Request a code and verify your phone through the configured account service.</p>
-              </div>
-            </div>
+          <section class="panel" aria-labelledby="verificationTitle">
+            <div class="verification-grid">
 
-            <div class="verification-card">
-              <div class="verification-symbol" id="verificationSymbol" aria-hidden="true">☎</div>
+              <div class="verification-form-column">
 
-              <h2 id="verificationTitle">Verify your mobile</h2>
-
-              <p class="verification-intro" id="verificationIntro">
-                Enter your phone number to request a one-time verification code.
-                Your number will only be marked verified after the server confirms the code.
-              </p>
-
-              <div class="form-status" id="formStatus" role="status" aria-live="polite"></div>
-
-              <div class="security-note">
-                <span class="note-icon" aria-hidden="true">ⓘ</span>
-                <span>
-                  This page does not send SMS messages independently.
-                  A configured verification backend and SMS provider are required.
-                  Never share your code with anyone.
-                </span>
-              </div>
-
-              <form id="phoneForm" novalidate>
-                <div class="field-group">
-                  <label class="field-label" for="countryCode">
-                    Country calling code
-                  </label>
-
-                  <div class="phone-row">
-                    <select class="field" id="countryCode" name="countryCode"
-                            autocomplete="tel-country-code" required>
-                      <option value="+91" selected>India (+91)</option>
-                      <option value="+1">US / Canada (+1)</option>
-                      <option value="+44">United Kingdom (+44)</option>
-                      <option value="+61">Australia (+61)</option>
-                      <option value="+971">UAE (+971)</option>
-                      <option value="+65">Singapore (+65)</option>
-                    </select>
-
-                    <input class="field" id="phoneNumber" name="phoneNumber"
-                           type="tel" inputmode="numeric" autocomplete="tel-national"
-                           placeholder="Enter mobile number" minlength="6"
-                           maxlength="15" aria-describedby="phoneHelp" required>
+                <div id="phoneFormState">
+                  <div class="panel-heading">
+                    <div class="panel-icon" aria-hidden="true">☎</div>
+                    <div>
+                      <h2 id="verificationTitle">Verify your mobile number</h2>
+                      <p>
+                        Enter your number, request a one-time password, and
+                        enter the code sent by your verification service.
+                      </p>
+                    </div>
                   </div>
 
-                  <p class="field-help" id="phoneHelp">
-                    Enter the number without the country calling code.
-                    Check it carefully before requesting a verification code.
-                  </p>
-                </div>
-
-                <button class="btn btn-block" id="sendCodeButton" type="submit">
-                  Send verification code ↗
-                </button>
-              </form>
-
-              <form id="otpForm" hidden novalidate>
-                <div class="field-group">
-                  <label class="field-label" for="otp1">
-                    Enter your six-digit verification code
-                  </label>
-
-                  <div class="otp-grid" id="otpGrid" role="group"
-                       aria-label="Six-digit verification code">
-                    <input class="otp-input" id="otp1" name="otp1" type="text"
-                           inputmode="numeric" autocomplete="one-time-code"
-                           pattern="[0-9]*" maxlength="1" aria-label="Digit 1" required>
-                    <input class="otp-input" id="otp2" name="otp2" type="text"
-                           inputmode="numeric" pattern="[0-9]*"
-                           maxlength="1" aria-label="Digit 2" required>
-                    <input class="otp-input" id="otp3" name="otp3" type="text"
-                           inputmode="numeric" pattern="[0-9]*"
-                           maxlength="1" aria-label="Digit 3" required>
-                    <input class="otp-input" id="otp4" name="otp4" type="text"
-                           inputmode="numeric" pattern="[0-9]*"
-                           maxlength="1" aria-label="Digit 4" required>
-                    <input class="otp-input" id="otp5" name="otp5" type="text"
-                           inputmode="numeric" pattern="[0-9]*"
-                           maxlength="1" aria-label="Digit 5" required>
-                    <input class="otp-input" id="otp6" name="otp6" type="text"
-                           inputmode="numeric" pattern="[0-9]*"
-                           maxlength="1" aria-label="Digit 6" required>
+                  <div
+                    id="verificationStatus"
+                    class="form-message info"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Your phone verification status has not yet been checked.
+                    Continue to request a verification code.
                   </div>
 
-                  <p class="field-help">
-                    Enter the code sent by your verification provider.
+                  <form id="phoneForm" novalidate>
+                    <div class="form-field">
+                      <label for="phoneNumber">Mobile number</label>
+
+                      <div class="input-wrap">
+                        <span class="country-code" aria-label="Country code India">+91</span>
+                        <input
+                          class="form-input phone-input"
+                          id="phoneNumber"
+                          name="phone"
+                          type="tel"
+                          inputmode="numeric"
+                          autocomplete="tel-national"
+                          placeholder="Enter 10-digit mobile number"
+                          minlength="10"
+                          maxlength="10"
+                          pattern="[6-9][0-9]{9}"
+                          aria-describedby="phoneHelp"
+                          required
+                        >
+                      </div>
+
+                      <small class="field-help" id="phoneHelp">
+                        Enter a valid 10-digit Indian mobile number beginning
+                        with 6, 7, 8 or 9. Use a number you can access now.
+                      </small>
+                    </div>
+
+                    <button class="btn btn-block" id="sendOtpButton" type="submit">
+                      Send verification code ↗
+                    </button>
+                  </form>
+
+                  <form id="otpForm" hidden novalidate>
+                    <div class="form-field">
+                      <label for="otpCode">One-time password (OTP)</label>
+
+                      <input
+                        class="form-input otp-input"
+                        id="otpCode"
+                        name="otp"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        minlength="6"
+                        maxlength="6"
+                        placeholder="••••••"
+                        aria-describedby="otpHelp"
+                        required
+                      >
+
+                      <small class="field-help" id="otpHelp">
+                        Enter the six-digit code delivered to the mobile
+                        number displayed in the message above.
+                      </small>
+                    </div>
+
+                    <button class="btn btn-block" id="verifyOtpButton" type="submit">
+                      Verify phone securely ✓
+                    </button>
+
+                    <div class="inline-actions">
+                      <button
+                        class="text-button"
+                        id="resendOtpButton"
+                        type="button"
+                        disabled
+                      >Resend code</button>
+
+                      <span class="countdown" id="resendCountdown">
+                        You can request another code shortly.
+                      </span>
+
+                      <button
+                        class="text-button"
+                        id="changePhoneButton"
+                        type="button"
+                      >Change number</button>
+                    </div>
+                  </form>
+                </div>
+
+                <section id="verifiedState" class="verified-state" hidden>
+                  <div class="verified-badge" aria-hidden="true">✓</div>
+                  <h2>Phone <span class="gold-text">verified.</span></h2>
+                  <p id="verifiedMessage">
+                    The verification service has confirmed your mobile number.
                   </p>
-                </div>
+                  <a class="btn" href="/account/security-settings.html">
+                    Review security settings ↗
+                  </a>
+                  <div style="margin-top:12px">
+                    <a class="text-button" href="/account/index.html">
+                      Return to my account
+                    </a>
+                  </div>
+                </section>
 
-                <button class="btn btn-block" id="verifyCodeButton" type="submit">
-                  Verify phone number
-                </button>
-
-                <div class="resend-row">
-                  <span>Didn't receive a code?</span>
-                  <button class="text-button" id="resendButton" type="button" disabled>
-                    Resend code
-                  </button>
-                  <span id="resendCountdown" aria-live="polite"></span>
-                </div>
-
-                <div class="btn-row">
-                  <button class="btn btn-outline btn-block" id="changeNumberButton" type="button">
-                    Change phone number
-                  </button>
-                </div>
-              </form>
-
-              <div id="verifiedState" hidden>
-                <div class="verification-symbol" aria-hidden="true">✓</div>
-                <h2>Phone verified</h2>
-                <p class="verification-intro">
-                  The verification service has confirmed your phone number.
-                  You can return to your account settings.
-                </p>
-                <a class="btn btn-block" href="/account/settings.html">
-                  Return to account settings ↗
-                </a>
               </div>
 
-              <p class="privacy-footnote">
-                Your phone number should be processed securely according to
-                the <a href="/legal/privacy-policy.html">MedOrbits Privacy Policy</a>.
-              </p>
+              <div class="visual-column">
+                <div class="hero-visual">
+                  <div class="visual-art">
+                    <!--
+                      Optional local image:
+                      /assets/images/account/phone-verification.webp
+
+                      If the image does not exist, the emoji illustration
+                      below remains visible.
+                    -->
+                    <img
+                      id="phoneSecurityImage"
+                      src="/assets/images/account/phone-verification.webp"
+                      alt="Illustration of a mobile phone and secure verification"
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      hidden
+                    >
+
+                    <div class="art-fallback" id="phoneArtFallback" aria-hidden="true">
+                      <span class="phone-emoji">📱</span>
+                      <span class="shield-emoji">🛡️</span>
+                    </div>
+                  </div>
+
+                  <div class="art-caption">
+                    Secure verification · MedOrbits account
+                  </div>
+                </div>
+
+                <div class="visual-caption">
+                  <h3>Your number, protected.</h3>
+                  <p>
+                    Verify the number you control so that account-related
+                    communications can reach you when the service supports
+                    those features.
+                  </p>
+
+                  <div class="security-points">
+                    <div class="security-point">
+                      <span class="point-icon" aria-hidden="true">🔐</span>
+                      <span>
+                        <strong>Private by design.</strong>
+                        Your verification code should be processed securely
+                        by the server.
+                      </span>
+                    </div>
+
+                    <div class="security-point">
+                      <span class="point-icon" aria-hidden="true">📲</span>
+                      <span>
+                        <strong>Code-based confirmation.</strong>
+                        A successful server response is required to mark
+                        your number as verified.
+                      </span>
+                    </div>
+
+                    <div class="security-point">
+                      <span class="point-icon" aria-hidden="true">✨</span>
+                      <span>
+                        <strong>Stay connected.</strong>
+                        Keep your contact information current in your
+                        account profile.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </section>
 
-          <section class="panel" aria-labelledby="securityTitle">
-            <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">♙</div>
-              <div>
-                <h2 id="securityTitle">Protect your account</h2>
-                <p>Keep your account and verification details secure.</p>
-              </div>
-            </div>
+          <section class="info-card" aria-labelledby="helpTitle">
+            <h2 id="helpTitle">Need help with <span class="gold-text">verification?</span></h2>
+            <p>
+              Use these steps if your code does not arrive or you need to
+              review your account contact details.
+            </p>
 
-            <div class="security-panel">
-              <div class="security-symbol-small" aria-hidden="true">✓</div>
-              <div>
-                <h3>Verification safety</h3>
+            <div class="help-grid">
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">📶</div>
+                <h3>Check your network</h3>
                 <p>
-                  Only request codes for a phone number you control. Do not
-                  share OTPs with other people. If you no longer control your
-                  registered number, contact support before changing account
-                  security details.
+                  Confirm that your phone has mobile coverage and can receive
+                  messages from your service provider.
                 </p>
-                <div class="security-links">
-                  <a href="/account/change-password.html">Change password</a>
-                  <a href="/account/settings.html">Account settings</a>
-                  <a href="/pages/contact.html">Contact support</a>
-                </div>
-              </div>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">🔢</div>
+                <h3>Check the number</h3>
+                <p>
+                  Verify that the number entered is correct and that you
+                  have access to the device.
+                </p>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">💬</div>
+                <h3>Contact support</h3>
+                <p>
+                  If verification continues to fail, contact MedOrbits
+                  support without sharing your OTP or password.
+                </p>
+                <a href="/pages/contact.html">Get assistance ↗</a>
+              </article>
             </div>
           </section>
+
+          <div class="privacy-notice">
+            <strong>Security notice:</strong>
+            Never share your one-time password with anyone. Use HTTPS in
+            production. The server must generate and validate OTPs, enforce
+            expiry and attempt limits, protect resend endpoints against
+            abuse, and associate verification with the authenticated user.
+            A browser message alone must never establish verified status.
+          </div>
 
         </div>
       </div>
@@ -1224,13 +1807,19 @@
 
         <div class="footer-brand">
           <a class="brand" href="/index.html" aria-label="MedOrbits home">
-            <img src="/assets/images/logo/medorbits-logo.png"
-                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="45"
+              height="45"
+              loading="lazy"
+            >
             <span>
               <strong>MEDORBITS</strong>
               <small>Study · Career · Consultancy</small>
             </span>
           </a>
+
           <p>
             Explore education pathways, admission resources and career
             opportunities with MedOrbits.
@@ -1279,9 +1868,9 @@
       </div>
 
       <p class="disclaimer">
-        Phone verification depends on the configured authentication service
-        and SMS provider. This page must not be treated as proof of verification
-        unless the server confirms the code and saves the verified status.
+        MedOrbits provides education and career information and consultancy
+        services. Verify important requirements with the relevant institution
+        or official authority.
       </p>
 
       <div class="footer-bottom">
@@ -1295,14 +1884,448 @@
     (() => {
       "use strict";
 
-      const $ = id => document.getElementById(id);
+      /*
+       * Phone verification API contract
+       *
+       * POST /api/account/phone/send-otp
+       * Body: { "phone": "9876543210", "countryCode": "+91" }
+       *
+       * POST /api/account/phone/verify-otp
+       * Body: { "phone": "9876543210", "countryCode": "+91", "otp": "123456" }
+       *
+       * Optional:
+       * GET /api/account/phone/status
+       *
+       * Expected successful send response:
+       * { "message": "Verification code sent", "expiresIn": 300,
+       *   "resendAfter": 30 }
+       *
+       * Expected successful verify response:
+       * { "verified": true, "message": "Phone verified successfully" }
+       *
+       * The endpoints above are API contracts, not claims that the
+       * backend routes already exist. Configure actual paths in
+       * window.MEDORBITS_CONFIG.phoneVerification if needed.
+       *
+       * Server requirements:
+       * - Authenticate the account owner.
+       * - Validate phone numbers and OTPs on the server.
+       * - Store only appropriately protected OTP data.
+       * - Enforce expiry, attempt limits, resend cooldowns and rate limits.
+       * - Use CSRF protection if required by your session architecture.
+       * - Never accept a client-side verified flag as proof of verification.
+       */
 
-      $("currentYear").textContent = String(new Date().getFullYear());
+      const config = window.MEDORBITS_CONFIG || {};
+      const phoneConfig = config.phoneVerification || {};
+
+      const endpoints = {
+        send: phoneConfig.sendEndpoint || "/api/account/phone/send-otp",
+        verify: phoneConfig.verifyEndpoint || "/api/account/phone/verify-otp",
+        status: phoneConfig.statusEndpoint || "/api/account/phone/status"
+      };
+
+      const $ = id => document.getElementById(id);
 
       const header = $("siteHeader");
       const menuToggle = $("menuToggle");
       const mainNav = $("mainNav");
       const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      const phoneForm = $("phoneForm");
+      const otpForm = $("otpForm");
+      const phoneInput = $("phoneNumber");
+      const otpInput = $("otpCode");
+
+      const sendButton = $("sendOtpButton");
+      const verifyButton = $("verifyOtpButton");
+      const resendButton = $("resendOtpButton");
+      const changePhoneButton = $("changePhoneButton");
+
+      const statusBox = $("verificationStatus");
+      const phoneFormState = $("phoneFormState");
+      const verifiedState = $("verifiedState");
+
+      const typingText = $("typingText");
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      let resendTimer = null;
+      let resendSeconds = 0;
+      let requestInProgress = false;
+      let activePhone = "";
+      let otpStageActive = false;
+
+      function showMessage(message, type = "info") {
+        statusBox.textContent = message;
+        statusBox.className = `form-message ${type}`;
+        statusBox.hidden = false;
+      }
+
+      function setBusy(button, busy, busyText, normalText) {
+        button.disabled = busy;
+        button.textContent = busy ? busyText : normalText;
+      }
+
+      function normalisePhone(value) {
+        return String(value || "").replace(/\D/g, "");
+      }
+
+      function isValidIndianMobile(value) {
+        return /^[6-9]\d{9}$/.test(value);
+      }
+
+      async function parseResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          return {};
+        }
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      async function apiRequest(url, body) {
+        const headers = {
+          "Accept": "application/json"
+        };
+
+        const options = {
+          method: body ? "POST" : "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers
+        };
+
+        if (body) {
+          headers["Content-Type"] = "application/json";
+          options.body = JSON.stringify(body);
+        }
+
+        /*
+         * Add the CSRF header here if your application uses cookie-based
+         * sessions and your backend requires a CSRF token.
+         * Do not disable server-side CSRF protections to make this page work.
+         */
+
+        const response = await fetch(url, options);
+        const data = await parseResponse(response);
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Please sign in to verify your phone number.");
+          }
+
+          if (response.status === 403) {
+            throw new Error(
+              "Your session is not authorized for this operation. Refresh your session and try again."
+            );
+          }
+
+          if (response.status === 404) {
+            throw new Error(
+              "The phone-verification API route is not available yet. Configure the backend endpoint before using verification."
+            );
+          }
+
+          if (response.status === 429) {
+            throw new Error(
+              "Too many attempts. Please wait before trying again."
+            );
+          }
+
+          throw new Error(
+            typeof data.message === "string"
+              ? data.message
+              : "The request could not be completed. Please try again."
+          );
+        }
+
+        return data;
+      }
+
+      function startResendCountdown(seconds) {
+        window.clearInterval(resendTimer);
+
+        resendSeconds = Math.max(0, Math.min(300, Number(seconds) || 30));
+        resendButton.disabled = resendSeconds > 0;
+
+        updateCountdown();
+
+        if (resendSeconds <= 0) return;
+
+        resendTimer = window.setInterval(() => {
+          resendSeconds = Math.max(0, resendSeconds - 1);
+          updateCountdown();
+
+          if (resendSeconds <= 0) {
+            window.clearInterval(resendTimer);
+            resendButton.disabled = false;
+          }
+        }, 1000);
+      }
+
+      function updateCountdown() {
+        const countdown = $("resendCountdown");
+
+        if (resendSeconds > 0) {
+          countdown.textContent =
+            `Request another code in ${resendSeconds}s`;
+        } else {
+          countdown.textContent =
+            "You can request another code.";
+        }
+      }
+
+      function stopResendCountdown() {
+        window.clearInterval(resendTimer);
+        resendTimer = null;
+        resendSeconds = 0;
+        resendButton.disabled = true;
+        updateCountdown();
+      }
+
+      async function sendOtp(event) {
+        event.preventDefault();
+
+        if (requestInProgress) return;
+
+        const phone = normalisePhone(phoneInput.value);
+
+        if (!isValidIndianMobile(phone)) {
+          phoneInput.setCustomValidity(
+            "Enter a valid 10-digit Indian mobile number."
+          );
+          phoneInput.reportValidity();
+          phoneInput.setCustomValidity("");
+          phoneInput.focus();
+          return;
+        }
+
+        requestInProgress = true;
+        setBusy(
+          sendButton,
+          true,
+          "Sending code…",
+          "Send verification code ↗"
+        );
+
+        try {
+          const data = await apiRequest(endpoints.send, {
+            phone,
+            countryCode: "+91"
+          });
+
+          /*
+           * A successful response means the server accepted the request.
+           * It does not mean that the phone has been verified.
+           */
+          activePhone = phone;
+          otpStageActive = true;
+
+          phoneForm.hidden = true;
+          otpForm.hidden = false;
+          otpInput.value = "";
+
+          const maskedPhone =
+            `${phone.slice(0, 2)}••••${phone.slice(-2)}`;
+
+          showMessage(
+            typeof data.message === "string"
+              ? `${data.message} Number ending ${phone.slice(-2)}.`
+              : `If the number is eligible, a verification code has been requested for +91 ${maskedPhone}.`,
+            "success"
+          );
+
+          startResendCountdown(
+            Number.isFinite(data.resendAfter)
+              ? data.resendAfter
+              : 30
+          );
+
+          otpInput.focus();
+
+        } catch (error) {
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to request a verification code.",
+            "error"
+          );
+        } finally {
+          requestInProgress = false;
+          setBusy(
+            sendButton,
+            false,
+            "Sending code…",
+            "Send verification code ↗"
+          );
+        }
+      }
+
+      async function verifyOtp(event) {
+        event.preventDefault();
+
+        if (requestInProgress) return;
+
+        const otp = otpInput.value.trim();
+
+        if (!/^\d{6}$/.test(otp)) {
+          otpInput.setCustomValidity(
+            "Enter the six-digit verification code."
+          );
+          otpInput.reportValidity();
+          otpInput.setCustomValidity("");
+          otpInput.focus();
+          return;
+        }
+
+        if (!activePhone || !otpStageActive) {
+          showMessage(
+            "Request a new verification code before submitting an OTP.",
+            "error"
+          );
+          return;
+        }
+
+        requestInProgress = true;
+        setBusy(
+          verifyButton,
+          true,
+          "Verifying…",
+          "Verify phone securely ✓"
+        );
+
+        try {
+          const data = await apiRequest(endpoints.verify, {
+            phone: activePhone,
+            countryCode: "+91",
+            otp
+          });
+
+          if (data.verified !== true) {
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "The server has not confirmed phone verification."
+            );
+          }
+
+          /*
+           * Only an explicit positive server result may switch the UI
+           * into the verified state.
+           */
+          window.clearInterval(resendTimer);
+          otpStageActive = false;
+
+          phoneFormState.hidden = true;
+          verifiedState.hidden = false;
+
+          $("verifiedMessage").textContent =
+            typeof data.message === "string"
+              ? data.message
+              : "The verification service has confirmed your mobile number.";
+
+          otpInput.value = "";
+
+        } catch (error) {
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Phone verification failed. Please try again.",
+            "error"
+          );
+        } finally {
+          requestInProgress = false;
+          setBusy(
+            verifyButton,
+            false,
+            "Verifying…",
+            "Verify phone securely ✓"
+          );
+        }
+      }
+
+      async function resendOtp() {
+        if (
+          requestInProgress ||
+          resendSeconds > 0 ||
+          !activePhone ||
+          !otpStageActive
+        ) {
+          return;
+        }
+
+        requestInProgress = true;
+        resendButton.disabled = true;
+        resendButton.textContent = "Requesting…";
+
+        try {
+          const data = await apiRequest(endpoints.send, {
+            phone: activePhone,
+            countryCode: "+91"
+          });
+
+          showMessage(
+            typeof data.message === "string"
+              ? data.message
+              : "A new verification code has been requested. If eligible, it will be delivered shortly.",
+            "success"
+          );
+
+          otpInput.value = "";
+
+          startResendCountdown(
+            Number.isFinite(data.resendAfter)
+              ? data.resendAfter
+              : 30
+          );
+
+          otpInput.focus();
+
+        } catch (error) {
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to resend the verification code.",
+            "error"
+          );
+
+          resendButton.disabled = false;
+        } finally {
+          requestInProgress = false;
+          resendButton.textContent = "Resend code";
+        }
+      }
+
+      function changePhone() {
+        if (requestInProgress) return;
+
+        stopResendCountdown();
+
+        otpStageActive = false;
+        activePhone = "";
+        otpInput.value = "";
+
+        otpForm.hidden = true;
+        phoneForm.hidden = false;
+
+        showMessage(
+          "Enter the correct mobile number to request a new verification code.",
+          "info"
+        );
+
+        phoneInput.focus();
+      }
+
+      /* Responsive navigation */
 
       function closeNavigation() {
         mainNav.classList.remove("open");
@@ -1322,13 +2345,7 @@
         menuToggle.setAttribute("aria-expanded", String(isOpen));
         menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
 
-        if (!isOpen) {
-          navGroups.forEach(group => {
-            group.classList.remove("open");
-            group.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
-          });
-        }
+        if (!isOpen) closeNavigation();
       });
 
       navGroups.forEach(group => {
@@ -1389,398 +2406,149 @@
           if (event.matches) closeNavigation();
         });
 
-      /*
-       * Configure these routes to match your backend:
-       * POST /api/auth/phone/send-code
-       * POST /api/auth/phone/verify-code
-       *
-       * The server must authenticate the current user, normalize phone
-       * numbers, enforce rate limits, expire codes, limit failed attempts,
-       * protect state-changing requests against CSRF where applicable,
-       * and persist verification status only after validating the OTP.
-       *
-       * Never return the OTP to the browser.
-       */
-      const SEND_CODE_ENDPOINT =
-        window.MEDORBITS_CONFIG?.sendPhoneVerificationEndpoint ||
-        "/api/auth/phone/send-code";
+      /* Phone field and OTP usability */
 
-      const VERIFY_CODE_ENDPOINT =
-        window.MEDORBITS_CONFIG?.verifyPhoneVerificationEndpoint ||
-        "/api/auth/phone/verify-code";
+      phoneInput.addEventListener("input", () => {
+        phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+      });
 
-      const phoneForm = $("phoneForm");
-      const otpForm = $("otpForm");
-      const countryCode = $("countryCode");
-      const phoneNumber = $("phoneNumber");
-      const sendCodeButton = $("sendCodeButton");
-      const verifyCodeButton = $("verifyCodeButton");
-      const resendButton = $("resendButton");
-      const resendCountdown = $("resendCountdown");
-      const changeNumberButton = $("changeNumberButton");
-      const formStatus = $("formStatus");
-      const verificationTitle = $("verificationTitle");
-      const verificationIntro = $("verificationIntro");
-      const verificationSymbol = $("verificationSymbol");
-      const verifiedState = $("verifiedState");
-      const otpInputs = [...document.querySelectorAll(".otp-input")];
+      otpInput.addEventListener("input", () => {
+        otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
+      });
 
-      let pendingPhone = null;
-      let resendTimer = null;
-      let resendAvailableAt = 0;
-      let sendingCode = false;
-      let verifyingCode = false;
+      otpInput.addEventListener("paste", event => {
+        event.preventDefault();
 
-      function showStatus(message, type = "info") {
-        formStatus.textContent = message;
-        formStatus.className = "form-status visible " + type;
-      }
+        const pasted = (event.clipboardData || window.clipboardData)
+          .getData("text")
+          .replace(/\D/g, "")
+          .slice(0, 6);
 
-      function clearStatus() {
-        formStatus.textContent = "";
-        formStatus.className = "form-status";
-      }
+        otpInput.value = pasted;
+      });
 
-      function readPhone() {
-        const code = countryCode.value;
-        const number = phoneNumber.value.replace(/\D/g, "");
+      phoneForm.addEventListener("submit", sendOtp);
+      otpForm.addEventListener("submit", verifyOtp);
+      resendButton.addEventListener("click", resendOtp);
+      changePhoneButton.addEventListener("click", changePhone);
 
-        return { code, number, full: code + number };
-      }
+      /* Typing animation */
 
-      function validatePhone() {
-        const phone = readPhone();
+      const phrases = [
+        "Your account. Your security. Your future.",
+        "Verify your number. Protect your access.",
+        "Stay connected to your next opportunity.",
+        "One secure step toward your goals."
+      ];
 
-        if (!phone.code) {
-          showStatus("Select a country calling code.", "error");
-          countryCode.focus();
-          return null;
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
+
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+          return;
         }
 
-        if (!/^\d{6,15}$/.test(phone.number)) {
-          showStatus(
-            "Enter a valid phone number containing 6 to 15 digits.",
-            "error"
-          );
-          phoneNumber.focus();
-          return null;
-        }
+        const phrase = phrases[phraseIndex];
 
-        return phone;
-      }
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
 
-      async function postJson(endpoint, payload) {
-        const headers = {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        };
-
-        /*
-         * If your application uses CSRF tokens, add the actual token header
-         * according to your server's CSRF implementation.
-         */
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          credentials: "same-origin",
-          cache: "no-store",
-          headers,
-          body: JSON.stringify(payload)
-        });
-
-        let result = {};
-
-        if (response.status !== 204) {
-          const contentType = response.headers.get("content-type") || "";
-
-          if (contentType.includes("application/json")) {
-            result = await response.json().catch(() => ({}));
-          } else {
-            await response.text().catch(() => "");
-          }
-        }
-
-        if (!response.ok) {
-          const message =
-            typeof result.message === "string"
-              ? result.message
-              : response.status === 401
-                ? "Your session has expired. Sign in and try again."
-                : response.status === 403
-                  ? "You are not permitted to perform this action."
-                  : response.status === 404
-                    ? "The phone verification service is not configured. Contact support."
-                    : response.status === 429
-                      ? "Too many attempts. Please wait before trying again."
-                      : "The request could not be completed. Please try again.";
-
-          const error = new Error(message);
-          error.status = response.status;
-          throw error;
-        }
-
-        return result;
-      }
-
-      function setPhoneBusy(busy) {
-        sendingCode = busy;
-        sendCodeButton.disabled = busy;
-        countryCode.disabled = busy;
-        phoneNumber.disabled = busy;
-
-        sendCodeButton.textContent = busy
-          ? "Requesting code…"
-          : "Send verification code ↗";
-      }
-
-      function setOtpBusy(busy) {
-        verifyingCode = busy;
-        verifyCodeButton.disabled = busy;
-
-        otpInputs.forEach(input => {
-          input.disabled = busy;
-        });
-
-        verifyCodeButton.textContent = busy
-          ? "Verifying…"
-          : "Verify phone number";
-      }
-
-      function clearOtp() {
-        otpInputs.forEach(input => {
-          input.value = "";
-        });
-      }
-
-      function startResendCooldown(seconds = 30) {
-        clearInterval(resendTimer);
-
-        resendAvailableAt = Date.now() + seconds * 1000;
-        resendButton.disabled = true;
-
-        function updateCountdown() {
-          const remaining = Math.max(
-            0,
-            Math.ceil((resendAvailableAt - Date.now()) / 1000)
-          );
-
-          if (remaining === 0) {
-            clearInterval(resendTimer);
-            resendTimer = null;
-            resendCountdown.textContent = "";
-            resendButton.disabled = false;
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1600);
             return;
           }
 
-          resendCountdown.textContent = `Available in ${remaining}s`;
-        }
-
-        updateCountdown();
-        resendTimer = window.setInterval(updateCountdown, 1000);
-      }
-
-      async function requestCode(isResend = false) {
-        if (sendingCode || verifyingCode) return;
-
-        clearStatus();
-
-        const phone = validatePhone();
-        if (!phone) return;
-
-        setPhoneBusy(true);
-
-        try {
-          const result = await postJson(SEND_CODE_ENDPOINT, {
-            countryCode: phone.code,
-            phoneNumber: phone.number
-          });
-
-          pendingPhone = phone;
-
-          phoneForm.hidden = true;
-          otpForm.hidden = false;
-
-          verificationTitle.textContent = "Enter your code";
-          verificationIntro.textContent =
-            typeof result.destination === "string" && result.destination
-              ? `Enter the verification code sent to ${result.destination}.`
-              : `Enter the verification code sent to the phone number ending in ${phone.number.slice(-3)}.`;
-
-          startResendCooldown(
-            Number.isInteger(result.resendAfterSeconds)
-              ? Math.max(15, Math.min(result.resendAfterSeconds, 300))
-              : 30
-          );
-
-          clearOtp();
-          otpInputs[0].focus();
-
-          showStatus(
-            isResend
-              ? "Your new verification request was accepted. Check your messages."
-              : "Your verification request was accepted. Check your messages for the code.",
-            "success"
-          );
-        } catch (error) {
-          showStatus(error.message, "error");
-        } finally {
-          setPhoneBusy(false);
-        }
-      }
-
-      phoneForm.addEventListener("submit", async event => {
-        event.preventDefault();
-        await requestCode(false);
-      });
-
-      resendButton.addEventListener("click", async () => {
-        if (resendButton.disabled) return;
-        await requestCode(true);
-      });
-
-      changeNumberButton.addEventListener("click", () => {
-        if (verifyingCode || sendingCode) return;
-
-        clearInterval(resendTimer);
-        resendTimer = null;
-        pendingPhone = null;
-
-        otpForm.hidden = true;
-        phoneForm.hidden = false;
-        resendButton.disabled = true;
-        resendCountdown.textContent = "";
-
-        countryCode.disabled = false;
-        phoneNumber.disabled = false;
-
-        clearOtp();
-        clearStatus();
-
-        verificationTitle.textContent = "Verify your mobile";
-        verificationIntro.textContent =
-          "Enter your phone number to request a one-time verification code. Your number will only be marked verified after the server confirms the code.";
-
-        phoneNumber.focus();
-      });
-
-      otpInputs.forEach((input, index) => {
-        input.addEventListener("input", () => {
-          input.value = input.value.replace(/\D/g, "").slice(0, 1);
-
-          if (input.value && index < otpInputs.length - 1) {
-            otpInputs[index + 1].focus();
-          }
-        });
-
-        input.addEventListener("keydown", event => {
-          if (event.key === "Backspace" && !input.value && index > 0) {
-            otpInputs[index - 1].focus();
-          }
-
-          if (event.key === "ArrowLeft" && index > 0) {
-            event.preventDefault();
-            otpInputs[index - 1].focus();
-          }
-
-          if (event.key === "ArrowRight" && index < otpInputs.length - 1) {
-            event.preventDefault();
-            otpInputs[index + 1].focus();
-          }
-        });
-
-        input.addEventListener("paste", event => {
-          event.preventDefault();
-
-          const pasted = event.clipboardData
-            .getData("text")
-            .replace(/\D/g, "")
-            .slice(0, otpInputs.length);
-
-          pasted.split("").forEach((digit, digitIndex) => {
-            otpInputs[digitIndex].value = digit;
-          });
-
-          const nextEmpty = otpInputs.find(otpInput => !otpInput.value);
-          (nextEmpty || otpInputs[otpInputs.length - 1]).focus();
-        });
-      });
-
-      otpForm.addEventListener("submit", async event => {
-        event.preventDefault();
-
-        if (verifyingCode || sendingCode) return;
-
-        clearStatus();
-
-        const code = otpInputs.map(input => input.value).join("");
-
-        if (!/^\d{6}$/.test(code)) {
-          showStatus("Enter all six digits of your verification code.", "error");
-
-          const firstEmpty = otpInputs.find(input => !input.value);
-          (firstEmpty || otpInputs[0]).focus();
+          typingTimer = window.setTimeout(typeNextCharacter, 48);
           return;
         }
 
-        if (!pendingPhone) {
-          showStatus(
-            "Request a new verification code before submitting it.",
-            "error"
-          );
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
+
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 280);
           return;
         }
 
-        setOtpBusy(true);
+        typingTimer = window.setTimeout(typeNextCharacter, 25);
+      }
 
+      if (reducedMotion.matches) {
+        typingText.textContent = phrases[0];
+      } else {
+        typingTimer = window.setTimeout(typeNextCharacter, 1400);
+      }
+
+      reducedMotion.addEventListener?.("change", event => {
+        window.clearTimeout(typingTimer);
+
+        if (event.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        phraseIndex = 0;
+        characterIndex = 0;
+        deleting = false;
+        typeNextCharacter();
+      });
+
+      /* Optional image with a built-in fallback illustration */
+
+      const phoneImage = $("phoneSecurityImage");
+      const phoneFallback = $("phoneArtFallback");
+
+      phoneImage.addEventListener("load", () => {
+        phoneImage.hidden = false;
+        phoneFallback.hidden = true;
+      });
+
+      phoneImage.addEventListener("error", () => {
+        phoneImage.hidden = true;
+        phoneFallback.hidden = false;
+      });
+
+      /*
+       * Optional initial status check.
+       * If the route is not implemented, leave the user on the normal
+       * verification form rather than inventing a verified status.
+       */
+      async function checkPhoneStatus() {
         try {
-          const result = await postJson(VERIFY_CODE_ENDPOINT, {
-            countryCode: pendingPhone.code,
-            phoneNumber: pendingPhone.number,
-            code
-          });
+          const data = await apiRequest(endpoints.status);
 
+          if (data.verified === true) {
+            phoneFormState.hidden = true;
+            verifiedState.hidden = false;
+
+            $("verifiedMessage").textContent =
+              typeof data.message === "string"
+                ? data.message
+                : "The verification service confirms that your phone is verified.";
+          }
+        } catch {
           /*
-           * Require an explicit verified:true response.
-           * HTTP success alone is not sufficient to display a verified state.
+           * Status checking is optional. Do not block the form when
+           * the status endpoint is unavailable or not yet implemented.
            */
-          if (result.verified !== true) {
-            throw new Error(
-              "The server did not confirm phone verification. Check the code and try again."
-            );
-          }
-
-          clearInterval(resendTimer);
-          resendTimer = null;
-
-          phoneForm.hidden = true;
-          otpForm.hidden = true;
-          verificationSymbol.hidden = true;
-          verificationTitle.hidden = true;
-          verificationIntro.hidden = true;
-          verifiedState.hidden = false;
-
-          showStatus(
-            "Your phone number has been verified successfully.",
-            "success"
-          );
-        } catch (error) {
-          showStatus(error.message, "error");
-        } finally {
-          setOtpBusy(false);
         }
-      });
+      }
 
-      window.addEventListener("pagehide", () => {
-        clearInterval(resendTimer);
-      });
+      checkPhoneStatus();
     })();
   </script>
 
-  <!-- Shared MedOrbits scripts -->
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/utils.js" defer></script>
   <script src="/assets/js/security.js" defer></script>
-  <script src="/assets/js/navigation.js" defer></script>
   <script src="/assets/js/account.js" defer></script>
   <script src="/assets/js/app.js" defer></script>
   <script src="/assets/js/main.js" defer></script>

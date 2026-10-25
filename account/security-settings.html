@@ -1,12 +1,11 @@
-<!-- File: /account/security-settings.html -->
 
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071629">
-  <meta name="description" content="Manage your MedOrbits account security, sign-in protection, active sessions, verification status and account recovery options.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080706">
+  <meta name="description" content="Manage your MedOrbits account security, password protection, two-factor authentication, login alerts and active security preferences.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="MedOrbits">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -24,60 +23,107 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #071629;
-      --bg-soft: #0b203b;
-      --surface: #102947;
-      --surface-2: #153657;
-      --accent: #8bbcff;
-      --accent-bright: #d9e9ff;
-      --text: #f2f7ff;
-      --text-soft: #c7d8ee;
-      --muted: #9db2cc;
-      --border: rgba(139,188,255,.23);
-      --success: #a8f0d0;
-      --warning: #ffdfa2;
-      --danger: #ffc1ca;
-      --radius: 16px;
-      --shadow: 0 24px 70px rgba(0,0,0,.28);
+      --bg: #080706;
+      --bg-deep: #030303;
+      --bg-soft: #100e0a;
+      --surface: #15120c;
+      --surface-2: #20190e;
+      --gold: #c99a38;
+      --gold-bright: #f7d98b;
+      --gold-light: #ffedbd;
+      --champagne: #e8c982;
+      --text: #f7f0df;
+      --text-soft: #d4c8ad;
+      --muted: #a99b7f;
+      --border: rgba(220,174,76,.23);
+      --border-bright: rgba(247,217,139,.43);
+      --success: #b8e6bd;
+      --danger: #ffb9a9;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.55);
+      --gold-gradient: linear-gradient(115deg,#8f6420 0%,#e6bd61 28%,#fff0b8 48%,#c08a2c 70%,#f4d77f 100%);
+      --gold-surface: linear-gradient(145deg,rgba(35,27,15,.97),rgba(8,7,5,.98));
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
+    *,*::before,*::after { box-sizing: border-box; }
 
-    html {
-      scroll-behavior: smooth;
-      scroll-padding-top: 100px;
-    }
+    html { scroll-behavior: smooth; scroll-padding-top: 100px; }
 
     body {
+      position: relative;
+      isolation: isolate;
       margin: 0;
       min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(ellipse at 10% 0%, rgba(40,102,170,.20), transparent 35%),
-        radial-gradient(ellipse at 90% 40%, rgba(98,155,221,.08), transparent 32%),
-        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+        radial-gradient(ellipse at 12% 0%,rgba(190,132,34,.13),transparent 35%),
+        radial-gradient(ellipse at 92% 38%,rgba(142,96,26,.09),transparent 34%),
+        radial-gradient(ellipse at 50% 100%,rgba(112,73,18,.08),transparent 42%),
+        linear-gradient(135deg,#030303 0%,#0b0906 48%,#100c06 100%);
       color: var(--text);
       font: 400 14px/1.7 "DM Sans",sans-serif;
     }
 
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(rgba(247,217,139,.13) .7px,transparent .7px);
+      background-size: 34px 34px;
+      opacity: .16;
+      content: "";
+      pointer-events: none;
+    }
+
     img { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
-    button, input, select { font: inherit; }
-    button, a { -webkit-tap-highlight-color: transparent; }
+    button,input { font: inherit; }
+    button,a { -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
 
-    button:focus-visible,
-    a:focus-visible,
-    input:focus-visible,
-    select:focus-visible {
-      outline: 2px solid var(--accent-bright);
+    button:focus-visible,a:focus-visible,input:focus-visible {
+      outline: 2px solid var(--gold-light);
       outline-offset: 4px;
     }
 
-    [hidden] { display: none !important; }
+    .container { width: min(1180px,calc(100% - 40px)); margin-inline: auto; }
 
-    .container {
-      width: min(1180px,calc(100% - 40px));
-      margin-inline: auto;
+    .gold-text {
+      color: var(--gold-bright);
+      background: var(--gold-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: goldFlow 6s linear infinite;
     }
+
+    @keyframes goldFlow {
+      0% { background-position: 100% center; }
+      100% { background-position: -120% center; }
+    }
+
+    @keyframes goldGlow {
+      0%,100% { text-shadow: 0 0 5px rgba(230,189,97,.08); }
+      50% { text-shadow: 0 0 17px rgba(230,189,97,.32),0 0 35px rgba(192,138,44,.13); }
+    }
+
+    @keyframes softFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes borderShimmer {
+      0%,100% { border-color: rgba(220,174,76,.19); }
+      50% { border-color: rgba(247,217,139,.43); }
+    }
+
+    @keyframes cursorBlink { to { visibility: hidden; } }
 
     .skip-link {
       position: absolute;
@@ -85,9 +131,10 @@
       left: 14px;
       z-index: 10000;
       padding: 10px 15px;
+      border: 1px solid var(--gold);
       border-radius: 8px;
-      background: var(--accent-bright);
-      color: var(--bg);
+      background: var(--gold-light);
+      color: #100c05;
     }
 
     .skip-link:focus { top: 12px; }
@@ -98,31 +145,32 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      padding: 8px 15px;
-      border-bottom: 1px solid rgba(139,188,255,.13);
-      background: #040b15;
-      color: var(--accent-bright);
+      padding: 9px 15px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      background: #030303;
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .1em;
+      letter-spacing: .12em;
       text-align: center;
       text-transform: uppercase;
     }
 
-    .spark { color: var(--accent); }
+    .spark { color: var(--gold-bright); animation: goldGlow 3s ease-in-out infinite; }
 
     .site-header {
       position: sticky;
       top: 0;
       z-index: 1000;
       border-bottom: 1px solid var(--border);
-      background: rgba(5,14,27,.94);
-      backdrop-filter: blur(18px);
+      background: rgba(5,5,4,.91);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .site-header.scrolled {
-      background: rgba(4,11,21,.98);
-      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+      background: rgba(3,3,3,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.58);
     }
 
     .nav-wrap {
@@ -134,24 +182,20 @@
       gap: 22px;
     }
 
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
     .brand img {
       width: 45px;
       height: 45px;
       object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(220,174,76,.15));
     }
 
     .brand strong {
       display: block;
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       font-size: 15px;
-      letter-spacing: .13em;
+      letter-spacing: .15em;
       line-height: 1.35;
     }
 
@@ -159,7 +203,7 @@
       display: block;
       color: var(--muted);
       font-size: 8px;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
@@ -168,29 +212,15 @@
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 9px;
-      background: transparent;
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
       cursor: pointer;
     }
 
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 17px;
-      font-size: 11px;
-    }
+    .main-nav { display: flex; align-items: center; gap: 15px; font-size: 10px; }
 
-    .main-nav > a,
-    .nav-trigger {
-      color: var(--text-soft);
-      white-space: nowrap;
-    }
-
-    .main-nav > a:hover,
-    .nav-trigger:hover {
-      color: var(--accent-bright);
-    }
-
+    .main-nav>a,.nav-trigger { color: var(--text-soft); white-space: nowrap; }
+    .main-nav>a:hover,.nav-trigger:hover { color: var(--gold-light); }
     .nav-group { position: relative; }
 
     .nav-trigger {
@@ -200,10 +230,7 @@
       cursor: pointer;
     }
 
-    .nav-trigger span {
-      margin-left: 4px;
-      color: var(--accent);
-    }
+    .nav-trigger span { margin-left: 4px; color: var(--gold); }
 
     .dropdown {
       position: absolute;
@@ -212,16 +239,13 @@
       display: none;
       width: 245px;
       padding: 9px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-bright);
       border-radius: 12px;
-      background: #102947;
+      background: #100d08;
       box-shadow: var(--shadow);
     }
 
-    .nav-group.open .dropdown,
-    .nav-group:focus-within .dropdown {
-      display: grid;
-    }
+    .nav-group.open .dropdown,.nav-group:focus-within .dropdown { display: grid; }
 
     .dropdown a {
       padding: 10px 11px;
@@ -230,58 +254,49 @@
       font-size: 11px;
     }
 
-    .dropdown a:hover,
-    .dropdown a[aria-current="page"] {
-      background: rgba(139,188,255,.09);
-      color: var(--accent-bright);
-    }
+    .dropdown a:hover { background: rgba(201,154,56,.1); color: var(--gold-light); }
 
     .btn {
       display: inline-flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      min-height: 41px;
-      padding: 10px 15px;
-      border: 1px solid var(--accent);
-      border-radius: 9px;
-      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
-      color: #071629;
+      min-height: 43px;
+      padding: 10px 16px;
+      border: 1px solid #e2b955;
+      border-radius: 10px;
+      background: var(--gold-gradient);
+      background-size: 180% auto;
+      color: #120d04;
       font-size: 11px;
       font-weight: 700;
       text-align: center;
       cursor: pointer;
-      transition: transform .2s,filter .2s;
+      transition: transform .22s,filter .22s,box-shadow .22s;
     }
 
-    .btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.06);
-    }
-
-    .btn:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 7px 25px rgba(201,154,56,.15); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
 
     .btn-outline {
-      border-color: rgba(199,216,238,.32);
-      background: transparent;
-      color: var(--accent-bright);
+      border-color: rgba(220,174,76,.36);
+      background: rgba(201,154,56,.035);
+      color: var(--gold-light);
     }
 
     .btn-danger {
-      border-color: rgba(255,193,202,.35);
-      background: rgba(255,193,202,.05);
-      color: var(--danger);
+      border-color: rgba(255,185,169,.38);
+      background: rgba(120,36,25,.18);
+      color: #ffc7b9;
     }
+
+    .btn-block { width: 100%; }
 
     .page-main {
       position: relative;
       isolation: isolate;
       min-height: 70vh;
-      padding: 40px 0 65px;
+      padding: 38px 0 70px;
       overflow: hidden;
     }
 
@@ -290,105 +305,59 @@
       z-index: -1;
       inset: 0;
       background:
-        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
-        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+        radial-gradient(ellipse at 14% 8%,rgba(201,154,56,.09),transparent 34%),
+        radial-gradient(ellipse at 90% 65%,rgba(148,102,30,.07),transparent 32%);
       content: "";
       pointer-events: none;
     }
 
-    .breadcrumbs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 22px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 23px; color: var(--muted); font-size: 11px; }
+    .breadcrumbs a { color: var(--gold-bright); }
     .breadcrumbs a:hover { text-decoration: underline; }
 
-    .page-heading {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 22px;
-      margin-bottom: 28px;
-    }
+    .page-heading { margin-bottom: 26px; animation: revealUp .65s ease both; }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      color: var(--accent-bright);
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .16em;
+      letter-spacing: .17em;
       text-transform: uppercase;
     }
 
-    .eyebrow::before {
-      width: 25px;
-      height: 1px;
-      background: var(--accent);
-      content: "";
-    }
+    .eyebrow::before { width: 25px; height: 1px; background: var(--gold); content: ""; }
 
     .page-heading h1 {
-      margin: 10px 0 9px;
-      font: 600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      margin: 10px 0;
+      font: 600 clamp(34px,4.5vw,52px)/1.15 "Playfair Display",Georgia,serif;
       letter-spacing: -.025em;
       overflow-wrap: anywhere;
     }
 
-    .page-heading h1 span { color: var(--accent-bright); }
+    .page-heading h1 span { animation: goldGlow 4s ease-in-out infinite; }
 
-    .page-heading p {
-      max-width: 710px;
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.9;
-    }
+    .page-heading>p { max-width: 730px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.9; }
 
-    .heading-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      flex-shrink: 0;
-    }
+    .typing-line { display: flex; align-items: center; gap: 7px; min-height: 27px; margin-top: 9px; color: var(--text-soft); font-size: 11px; }
+    .typing-line strong { color: var(--gold-bright); font-weight: 600; }
+    .typing-cursor { display: inline-block; width: 2px; height: 15px; background: var(--gold-bright); animation: cursorBlink .8s steps(2,start) infinite; }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 240px minmax(0,1fr);
-      align-items: start;
-      gap: 19px;
-    }
+    .layout { display: grid; grid-template-columns: 240px minmax(0,1fr); align-items: start; gap: 20px; }
 
-    .sidebar,
-    .panel,
-    .quick-card,
-    .info-card {
+    .sidebar,.panel,.info-card {
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      background: linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
-      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+      background: var(--gold-surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.26);
     }
 
-    .sidebar {
-      position: sticky;
-      top: 100px;
-      padding: 19px;
-    }
+    .sidebar { position: sticky; top: 100px; padding: 19px; animation: borderShimmer 7s ease-in-out infinite; }
 
-    .account-user {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding-bottom: 17px;
-      border-bottom: 1px solid var(--border);
-    }
+    .account-user { display: flex; align-items: center; gap: 11px; padding-bottom: 17px; border-bottom: 1px solid var(--border); }
 
     .avatar {
       display: grid;
@@ -396,30 +365,17 @@
       flex: 0 0 43px;
       width: 43px;
       height: 43px;
-      border: 1px solid rgba(139,188,255,.35);
+      border: 1px solid rgba(220,174,76,.45);
       border-radius: 13px;
-      background: linear-gradient(145deg,#173d64,#0b203b);
-      color: var(--accent-bright);
+      background: linear-gradient(145deg,#3a2b12,#100c06);
+      color: var(--gold-light);
       font: 600 16px "Playfair Display",Georgia,serif;
     }
 
-    .account-user strong {
-      display: block;
-      font-size: 11px;
-    }
+    .account-user strong { display: block; font-size: 11px; }
+    .account-user small { display: block; color: var(--muted); font-size: 9px; overflow-wrap: anywhere; }
 
-    .account-user small {
-      display: block;
-      color: var(--muted);
-      font-size: 9px;
-      overflow-wrap: anywhere;
-    }
-
-    .account-nav {
-      display: grid;
-      gap: 5px;
-      margin: 15px 0;
-    }
+    .account-nav { display: grid; gap: 5px; margin: 15px 0; }
 
     .account-nav a {
       padding: 10px 11px;
@@ -427,433 +383,295 @@
       border-radius: 8px;
       color: var(--text-soft);
       font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
     }
 
-    .account-nav a:hover,
-    .account-nav a.active {
-      border-color: rgba(139,188,255,.2);
-      background: rgba(139,188,255,.09);
-      color: var(--accent-bright);
+    .account-nav a:hover,.account-nav a.active {
+      border-color: rgba(220,174,76,.23);
+      background: rgba(201,154,56,.09);
+      color: var(--gold-light);
     }
 
-    .sidebar-note {
-      margin: 15px 0 0;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 9px;
-      line-height: 1.8;
-    }
+    .sidebar-note { margin: 15px 0 0; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 9px; line-height: 1.9; }
+    .sidebar-note a { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; }
 
-    .sidebar-note a {
-      color: var(--accent-bright);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
+    .content { display: grid; gap: 18px; min-width: 0; }
 
-    .content {
-      display: grid;
-      gap: 18px;
-      min-width: 0;
-    }
+    .panel { padding: clamp(18px,3vw,29px); animation: revealUp .65s ease both; }
 
-    .panel { padding: clamp(17px,2.5vw,25px); }
-
-    .panel-heading {
-      display: flex;
-      align-items: flex-start;
-      gap: 13px;
-      margin-bottom: 19px;
-    }
+    .panel-heading { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 18px; }
 
     .panel-icon {
       display: grid;
       place-items: center;
-      flex: 0 0 43px;
-      width: 43px;
-      height: 43px;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(139,188,255,.08);
-      color: var(--accent-bright);
-      font-size: 19px;
+      border-radius: 13px;
+      background: rgba(201,154,56,.08);
+      color: var(--gold-bright);
+      font-size: 20px;
     }
 
-    .panel-heading h2,
-    .info-card h2 {
-      margin: 0 0 5px;
-      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
-    }
+    .panel-heading h2 { margin: 0 0 5px; font: 600 22px/1.35 "Playfair Display",Georgia,serif; }
+    .panel-heading p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.9; }
 
-    .panel-heading p,
-    .info-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.9;
-    }
+    .hero-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(220px,.72fr); align-items: center; gap: 25px; }
 
-    .status {
-      margin-bottom: 16px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      color: var(--text-soft);
-      background: rgba(139,188,255,.05);
-      font-size: 10px;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
-    }
-
-    .status.error {
-      border-color: rgba(255,193,202,.35);
-      color: var(--danger);
-    }
-
-    .status.success {
-      border-color: rgba(168,240,208,.3);
-      color: var(--success);
-    }
-
-    .status.warning {
-      border-color: rgba(255,223,162,.3);
-      color: var(--warning);
-    }
-
-    .security-score {
-      display: grid;
-      grid-template-columns: minmax(0,1fr) auto;
-      align-items: center;
-      gap: 15px;
-      padding: 17px;
-      margin-bottom: 18px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(139,188,255,.045);
-    }
-
-    .security-score strong {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 12px;
-    }
-
-    .security-score p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.8;
-    }
-
-    .score-indicator {
-      display: grid;
-      place-items: center;
-      width: 57px;
-      height: 57px;
-      border: 2px solid var(--border);
-      border-radius: 50%;
-      color: var(--accent-bright);
-      font-size: 19px;
-    }
-
-    .security-list {
-      display: grid;
-      gap: 11px;
-    }
-
-    .security-item {
+    .security-summary {
       display: flex;
       align-items: flex-start;
       gap: 13px;
-      padding: 17px;
+      padding: 15px;
       border: 1px solid var(--border);
       border-radius: 12px;
-      background: rgba(139,188,255,.035);
+      background: rgba(201,154,56,.045);
     }
 
-    .security-item-icon {
+    .summary-icon { font-size: 24px; line-height: 1.3; }
+
+    .security-summary strong { display: block; color: var(--gold-light); font-size: 11px; }
+    .security-summary p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.8; }
+
+    .hero-visual {
+      position: relative;
       display: grid;
       place-items: center;
-      flex: 0 0 42px;
-      width: 42px;
-      height: 42px;
+      min-height: 285px;
+      padding: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background:
+        radial-gradient(ellipse at 50% 38%,rgba(201,154,56,.17),transparent 50%),
+        linear-gradient(150deg,rgba(33,25,13,.94),rgba(5,5,4,.98));
+    }
+
+    .hero-visual::before,.hero-visual::after {
+      position: absolute;
+      width: 205px;
+      height: 205px;
+      border: 1px solid rgba(220,174,76,.12);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    .hero-visual::after { width: 260px; height: 260px; border-color: rgba(220,174,76,.06); }
+
+    .visual-art { position: relative; z-index: 1; display: grid; place-items: center; width: 100%; max-width: 280px; animation: softFloat 6s ease-in-out infinite; }
+
+    .visual-art img { width: 100%; max-height: 260px; object-fit: cover; border: 1px solid var(--border); border-radius: 14px; }
+
+    .art-fallback {
+      display: grid;
+      place-items: center;
+      gap: 12px;
+      width: 190px;
+      min-height: 205px;
+      padding: 20px;
+      border: 1px solid rgba(247,217,139,.45);
+      border-radius: 28px;
+      background: radial-gradient(circle at 50% 20%,rgba(247,217,139,.16),transparent 40%),linear-gradient(145deg,#2c2110,#090806);
+      color: var(--gold-bright);
+      box-shadow: 0 25px 55px rgba(0,0,0,.45),inset 0 0 25px rgba(201,154,56,.08);
+      text-align: center;
+    }
+
+    .art-fallback .shield-emoji { font-size: 65px; line-height: 1.1; filter: drop-shadow(0 0 15px rgba(201,154,56,.25)); }
+    .art-fallback strong { font: 600 16px "Playfair Display",Georgia,serif; }
+    .art-caption { position: absolute; right: 12px; bottom: 12px; left: 12px; z-index: 2; color: var(--muted); font-size: 9px; text-align: center; }
+
+    .visual-caption { margin-top: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 13px; background: rgba(201,154,56,.035); }
+    .visual-caption h3 { margin: 0 0 6px; color: var(--gold-light); font: 600 17px/1.4 "Playfair Display",Georgia,serif; }
+    .visual-caption p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.9; }
+
+    .security-points { display: grid; gap: 10px; margin-top: 14px; }
+
+    .security-point { display: flex; align-items: flex-start; gap: 10px; color: var(--text-soft); font-size: 10px; line-height: 1.8; }
+
+    .point-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 29px;
+      width: 29px;
+      height: 29px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+    }
+
+    .settings-list { display: grid; gap: 11px; }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(5,5,4,.55);
+    }
+
+    .setting-copy { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+
+    .setting-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
       border: 1px solid var(--border);
       border-radius: 11px;
-      background: rgba(139,188,255,.07);
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
       font-size: 18px;
     }
 
-    .security-item-copy {
-      flex: 1;
-      min-width: 0;
-    }
+    .setting-copy h3 { margin: 0 0 4px; font-size: 11px; }
+    .setting-copy p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.85; }
 
-    .security-item-copy h3 {
-      margin: 0 0 5px;
-      font-size: 12px;
-    }
+    .setting-action { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 10px; }
 
-    .security-item-copy p {
-      margin: 0;
+    .status-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       color: var(--muted);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #8e8068; }
+    .status-dot.enabled { background: var(--success); box-shadow: 0 0 10px rgba(184,230,189,.25); }
+    .status-dot.warning { background: var(--gold-bright); }
+
+    .toggle {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 47px;
+      align-items: center;
+      width: 47px;
+      height: 27px;
+      padding: 3px;
+      border: 1px solid rgba(220,174,76,.35);
+      border-radius: 30px;
+      background: #17130c;
+      cursor: pointer;
+      transition: background .2s,border-color .2s;
+    }
+
+    .toggle::before {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #8b7c5e;
+      content: "";
+      transition: transform .2s,background .2s;
+    }
+
+    .toggle[aria-checked="true"] { border-color: #e2b955; background: #5b4318; }
+    .toggle[aria-checked="true"]::before { transform: translateX(19px); background: var(--gold-light); }
+    .toggle:disabled { opacity: .5; cursor: not-allowed; }
+
+    .form-message {
+      margin: 14px 0 0;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(201,154,56,.045);
+      color: var(--text-soft);
       font-size: 10px;
       line-height: 1.9;
       overflow-wrap: anywhere;
     }
 
-    .security-item-action {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 11px;
-    }
+    .form-message.success { border-color: rgba(184,230,189,.3); color: var(--success); }
+    .form-message.error { border-color: rgba(255,185,169,.36); color: var(--danger); }
+    .form-message.info { border-color: rgba(220,174,76,.28); color: var(--champagne); }
 
-    .security-item-action .btn {
-      min-height: 35px;
-      padding: 7px 11px;
-      font-size: 10px;
-    }
+    .action-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 7px;
-      padding: 4px 8px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      color: var(--muted);
-      font-size: 9px;
-      line-height: 1.5;
-    }
+    .form-field { margin-bottom: 15px; }
+    .form-field label { display: block; margin-bottom: 7px; color: var(--text-soft); font-size: 10px; font-weight: 700; }
 
-    .pill.success {
-      border-color: rgba(168,240,208,.3);
-      color: var(--success);
-    }
-
-    .pill.warning {
-      border-color: rgba(255,223,162,.3);
-      color: var(--warning);
-    }
-
-    .pill.danger {
-      border-color: rgba(255,193,202,.3);
-      color: var(--danger);
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2,minmax(0,1fr));
-      gap: 15px;
-    }
-
-    .field {
-      display: grid;
-      align-content: start;
-      gap: 7px;
+    .form-input {
+      display: block;
+      width: 100%;
       min-width: 0;
-    }
-
-    .field.full { grid-column: 1/-1; }
-
-    .field label {
-      color: var(--text-soft);
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-    .field input,
-    .field select {
-      width: 100%;
-      min-height: 43px;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      background: #081a30;
+      min-height: 46px;
+      padding: 11px 13px;
+      border: 1px solid rgba(220,174,76,.3);
+      border-radius: 10px;
+      background: rgba(3,3,3,.62);
       color: var(--text);
-      font-size: 11px;
+      font-size: 12px;
     }
 
-    .field input::placeholder { color: #8197b2; }
+    .form-input::placeholder { color: #84765c; opacity: 1; }
+    .field-help { display: block; margin-top: 7px; color: var(--muted); font-size: 9px; line-height: 1.8; }
 
-    .field small {
-      color: var(--muted);
-      font-size: 9px;
-      line-height: 1.8;
-    }
+    .info-card { position: relative; padding: 22px; overflow: hidden; }
+    .info-card h2 { margin: 0 0 8px; font: 600 22px/1.4 "Playfair Display",Georgia,serif; }
+    .info-card>p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.9; }
 
-    .field input:disabled,
-    .field select:disabled {
-      opacity: .65;
-      cursor: not-allowed;
-    }
+    .help-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
 
-    .form-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      margin-top: 17px;
-    }
-
-    .section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 5px 0 15px;
-    }
-
-    .section-heading h2 {
-      margin: 0;
-      font: 600 21px/1.4 "Playfair Display",Georgia,serif;
-    }
-
-    .section-heading a {
-      color: var(--accent-bright);
-      font-size: 10px;
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
+    .help-card {
+      min-width: 0;
+      padding: 15px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 13px;
+      background: rgba(8,7,5,.68);
+      transition: transform .2s,border-color .2s;
     }
 
-    .data-table {
-      width: 100%;
-      min-width: 480px;
-      border-collapse: collapse;
-      text-align: left;
+    .help-card:hover { transform: translateY(-3px); border-color: var(--border-bright); }
+
+    .help-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      font-size: 21px;
     }
 
-    .data-table th,
-    .data-table td {
-      padding: 13px;
-      border-bottom: 1px solid rgba(139,188,255,.13);
-      font-size: 10px;
-      vertical-align: top;
-    }
+    .help-card h3 { margin: 0 0 5px; font-size: 11px; }
+    .help-card p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.9; }
+    .help-card a { display: inline-block; margin-top: 10px; color: var(--gold-bright); font-size: 10px; font-weight: 700; }
 
-    .data-table th {
-      background: rgba(139,188,255,.06);
-      color: var(--accent-bright);
-      font-weight: 700;
-    }
-
-    .data-table td { color: var(--text-soft); }
-
-    .data-table tr:last-child td { border-bottom: 0; }
-
-    .empty-state {
-      padding: 20px;
-      color: var(--muted);
-      font-size: 10px;
-      text-align: center;
-    }
-
-    .notice {
-      padding: 14px 16px;
-      border: 1px solid rgba(255,223,162,.22);
-      border-radius: 10px;
-      background: rgba(255,223,162,.035);
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.9;
-    }
-
-    .notice strong { color: var(--warning); }
-
-    .info-card { padding: 21px; }
-
-    .info-card h2 { margin-bottom: 9px; }
-
-    .info-links { display: grid; margin-top: 12px; }
-
-    .info-links a {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-soft);
-      font-size: 10px;
-    }
-
-    .info-links a:last-child { border-bottom: 0; }
-    .info-links a span { color: var(--accent); }
-    .info-links a:hover { color: var(--accent-bright); }
+    .privacy-notice { padding: 15px 16px; border: 1px solid rgba(220,174,76,.22); border-radius: 11px; background: rgba(201,154,56,.035); color: var(--muted); font-size: 10px; line-height: 1.9; }
+    .privacy-notice strong { color: var(--gold-bright); }
 
     .site-footer {
       padding: 43px 0 0;
       border-top: 1px solid var(--border);
-      background: #040b15;
+      background: radial-gradient(ellipse at 15% 0%,rgba(201,154,56,.07),transparent 38%),#030303;
     }
 
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
-      gap: 23px;
-      padding-bottom: 28px;
-    }
+    .footer-grid { display: grid; grid-template-columns: 1.4fr repeat(4,minmax(0,1fr)); gap: 23px; padding-bottom: 28px; }
+    .footer-brand p { max-width: 270px; margin-top: 12px; color: var(--muted); font-size: 10px; line-height: 1.9; }
 
-    .footer-brand p {
-      max-width: 270px;
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.9;
-    }
+    .footer-grid h2 { margin: 0 0 12px; padding-bottom: 9px; border-bottom: 1px solid rgba(220,174,76,.18); color: var(--gold-bright); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
 
-    .footer-grid h2 {
-      margin: 0 0 12px;
-      padding-bottom: 9px;
-      border-bottom: 1px solid rgba(139,188,255,.17);
-      color: var(--accent-bright);
-      font-size: 9px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
+    .footer-links a { display: block; margin: 8px 0; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; transition: color .2s; }
+    .footer-links a:hover { color: var(--gold-light); }
 
-    .footer-links a {
-      display: block;
-      margin: 8px 0;
-      color: var(--muted);
-      font-size: 10px;
-      overflow-wrap: anywhere;
-    }
+    .disclaimer { margin: 0 0 15px; padding: 13px 15px; border-left: 2px solid var(--gold); border-radius: 0 8px 8px 0; background: rgba(201,154,56,.035); color: var(--muted); font-size: 10px; line-height: 1.9; }
 
-    .footer-links a:hover { color: var(--accent-bright); }
-
-    .disclaimer {
-      margin: 0 0 15px;
-      padding: 13px 15px;
-      border-left: 2px solid var(--accent);
-      border-radius: 0 8px 8px 0;
-      background: rgba(16,41,71,.4);
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.9;
-    }
-
-    .footer-bottom {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 17px 0;
-      border-top: 1px solid rgba(139,188,255,.13);
-      color: var(--muted);
-      font-size: 9px;
-    }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 17px 0; border-top: 1px solid rgba(220,174,76,.13); color: var(--muted); font-size: 9px; }
+    .footer-bottom span:last-child { color: var(--champagne); letter-spacing: .1em; }
 
     @media (max-width:1100px) {
       .menu-toggle { display: inline-flex; }
-
       .main-nav {
         position: absolute;
         top: 100%;
@@ -866,27 +684,15 @@
         max-height: calc(100vh - 90px);
         padding: 15px 22px 20px;
         overflow-y: auto;
-        border-bottom: 1px solid var(--border);
-        background: #071629;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(5,5,4,.99);
+        box-shadow: var(--shadow);
       }
-
       .main-nav.open { display: flex; }
-
-      .main-nav > a,
-      .nav-trigger {
-        display: block;
-        width: 100%;
-        padding: 11px 8px;
-        text-align: left;
-      }
-
-      .dropdown {
-        position: static;
-        width: 100%;
-        margin-bottom: 5px;
-        box-shadow: none;
-      }
-
+      .main-nav>a,.nav-trigger { display: block; width: 100%; padding: 11px 8px; text-align: left; }
+      .dropdown { position: static; width: 100%; margin-bottom: 5px; box-shadow: none; }
       .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
       .footer-brand { grid-column: 1/-1; }
     }
@@ -894,87 +700,51 @@
     @media (max-width:900px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar { position: static; }
+      .account-nav { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .hero-grid { grid-template-columns: minmax(0,1fr) minmax(200px,.75fr); gap: 17px; }
+      .help-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
 
-    @media (max-width:800px) {
+    @media (max-width:650px) {
       .container { width: calc(100% - 30px); }
       .nav-wrap { min-height: 69px; }
-
-      .account-nav {
-        grid-template-columns: repeat(3,minmax(0,1fr));
-      }
-
-      .page-heading {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .heading-actions { width: 100%; }
-      .heading-actions .btn { flex: 1; }
-    }
-
-    @media (max-width:560px) {
-      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
-      .page-main { padding: 30px 0 45px; }
-      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
-
-      .sidebar,
-      .panel,
-      .info-card { padding: 15px; }
-
-      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
-      .heading-actions { flex-direction: column; }
-      .heading-actions .btn { width: 100%; }
-      .form-grid { grid-template-columns: 1fr; }
-      .field.full { grid-column: auto; }
-
-      .security-item {
-        flex-wrap: wrap;
-      }
-
-      .security-item-copy {
-        flex-basis: calc(100% - 58px);
-      }
-
-      .security-item-action {
-        width: 100%;
-      }
-
-      .security-item-action .btn { flex: 1; }
-
-      .footer-grid {
-        grid-template-columns: repeat(2,minmax(0,1fr));
-        gap: 21px 15px;
-      }
-
+      .page-main { padding: 29px 0 48px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { min-height: 220px; }
+      .visual-art img { max-height: 190px; }
+      .art-fallback { width: 145px; min-height: 160px; border-radius: 24px; }
+      .art-fallback .shield-emoji { font-size: 48px; }
+      .page-heading h1 { font-size: clamp(32px,8vw,43px); }
+      .setting-row { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .setting-action { justify-content: flex-start; width: 100%; }
+      .help-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 21px 15px; }
       .footer-brand { grid-column: 1/-1; }
       .footer-bottom { flex-direction: column; }
     }
 
-    @media (max-width:360px) {
-      .container { width: calc(100% - 22px); }
+    @media (max-width:430px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .sidebar,.panel,.info-card { padding: 15px; }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .help-grid { grid-template-columns: 1fr; }
+      .action-row { align-items: stretch; flex-direction: column; }
+      .action-row .btn { width: 100%; }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
 
+    @media (max-width:350px) {
+      .container { width: calc(100% - 22px); }
       .brand img { width: 37px; height: 37px; }
       .brand strong { font-size: 13px; }
       .brand small { font-size: 7px; }
-
-      .footer-grid,
-      .account-nav { grid-template-columns: 1fr; }
-
-      .security-score { grid-template-columns: 1fr; }
-      .score-indicator { width: 48px; height: 48px; }
+      .account-nav,.footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
     }
 
     @media (prefers-reduced-motion:reduce) {
       html { scroll-behavior: auto; }
-
-      *,
-      *::before,
-      *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
-      }
+      *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>
@@ -983,34 +753,25 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <div class="announcement">
-    <span>Your future, your direction</span>
+    <span>MedOrbits account protection</span>
     <span class="spark" aria-hidden="true">✦</span>
-    <span>Study · Work · Grow -- one connected destination</span>
+    <span>Security settings · You control your account</span>
   </div>
 
   <header class="site-header" id="siteHeader">
     <div class="container nav-wrap">
       <a class="brand" href="/index.html" aria-label="MedOrbits home">
-        <img src="/assets/images/logo/medorbits-logo.png"
-             alt="MedOrbits logo" width="45" height="45">
-        <span>
-          <strong>MEDORBITS</strong>
-          <small>Study · Career · Consultancy</small>
-        </span>
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45">
+        <span><strong>MEDORBITS</strong><small>Study · Career · Consultancy</small></span>
       </a>
 
-      <button class="menu-toggle" id="menuToggle" type="button"
-              aria-expanded="false" aria-controls="mainNav">
-        ☰ MENU
-      </button>
+      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
 
       <nav class="main-nav" id="mainNav" aria-label="Main navigation">
         <a href="/index.html">Home</a>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Education <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Education <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/education/index.html">Education hub</a>
             <a href="/education/courses.html">Courses</a>
@@ -1022,9 +783,7 @@
         </div>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Admissions <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Admissions <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/education/admissions/index.html">Admission guidance</a>
             <a href="/education/admissions/eligibility.html">Eligibility</a>
@@ -1036,9 +795,7 @@
         </div>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Careers <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Careers <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/career/index.html">Career hub</a>
             <a href="/career/jobs.html">Find jobs</a>
@@ -1054,8 +811,8 @@
         <a href="/account/index.html">My Account</a>
         <a href="/account/my-applications.html">My Applications</a>
         <a href="/account/my-documents.html">My Documents</a>
-        <a href="/account/saved-colleges.html">Saved Colleges</a>
-        <a href="/account/saved-courses.html">Saved Courses</a>
+        <a href="/account/sessions.html">Active Sessions</a>
+        <a href="/account/security-settings.html" aria-current="page">Security</a>
         <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
       </nav>
     </div>
@@ -1063,7 +820,6 @@
 
   <main class="page-main" id="main-content">
     <div class="container">
-
       <nav class="breadcrumbs" aria-label="Breadcrumb">
         <a href="/index.html">Home</a>
         <span aria-hidden="true">›</span>
@@ -1073,35 +829,25 @@
       </nav>
 
       <header class="page-heading">
-        <div>
-          <span class="eyebrow">Protect your personal workspace</span>
-          <h1>Security <span>settings.</span></h1>
-          <p>
-            Review your account protection, verification status, active
-            sessions and recovery options. Security changes must be verified
-            and processed by the authenticated MedOrbits account service.
-          </p>
-        </div>
-
-        <div class="heading-actions">
-          <a class="btn btn-outline" href="/account/sessions.html">
-            ⌘ Active sessions
-          </a>
-          <a class="btn" href="/pages/contact.html">
-            Get support ↗
-          </a>
+        <span class="eyebrow">Account protection · Security centre</span>
+        <h1>Your security. <span class="gold-text">Your control.</span></h1>
+        <p>
+          Manage account protection, password access, additional sign-in
+          verification and security notifications from one place. Available
+          options depend on the security features configured for your account.
+        </p>
+        <div class="typing-line" aria-live="off">
+          <span aria-hidden="true">✦</span>
+          <strong id="typingText">Protect your account. Protect your future.</strong>
+          <span class="typing-cursor" aria-hidden="true"></span>
         </div>
       </header>
 
       <div class="layout">
-
         <aside class="sidebar" aria-label="Account navigation">
           <div class="account-user">
             <div class="avatar" aria-hidden="true">MO</div>
-            <div>
-              <strong>My account</strong>
-              <small id="accountEmail">Account overview</small>
-            </div>
+            <div><strong>My account</strong><small>Account security</small></div>
           </div>
 
           <nav class="account-nav" aria-label="Account menu">
@@ -1111,7 +857,7 @@
             <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
             <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
             <a href="/account/application-details.html">▧ &nbsp; Application details</a>
-            <a href="/account/my-documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/my-documents.html">📁 &nbsp; My documents</a>
             <a href="/account/messages.html">✉ &nbsp; Messages</a>
             <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
             <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
@@ -1120,8 +866,7 @@
             <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
             <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
             <a href="/account/sessions.html">⌘ &nbsp; Active sessions</a>
-            <a class="active" href="/account/security-settings.html"
-               aria-current="page">⚙ &nbsp; Security settings</a>
+            <a class="active" href="/account/security-settings.html" aria-current="page">⚙ &nbsp; Security settings</a>
             <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
             <a href="/account/change-password.html">🔒 &nbsp; Change password</a>
             <a href="/account/verify-email.html">✉ &nbsp; Verify email</a>
@@ -1130,379 +875,269 @@
           </nav>
 
           <p class="sidebar-note">
-            Never share your password or verification codes with anyone.
+            Never share your password, one-time codes or recovery credentials.
             <br><a href="/pages/contact.html">Contact support ↗</a>
           </p>
         </aside>
 
         <div class="content">
-
-          <!-- SECURITY OVERVIEW -->
           <section class="panel" aria-labelledby="securityOverviewTitle">
+            <div class="hero-grid">
+              <div>
+                <div class="panel-heading">
+                  <div class="panel-icon" aria-hidden="true">🛡️</div>
+                  <div>
+                    <h2 id="securityOverviewTitle">Your security overview</h2>
+                    <p>Review your current protection settings and take action where needed.</p>
+                  </div>
+                </div>
+
+                <div class="security-summary">
+                  <span class="summary-icon" aria-hidden="true">🔐</span>
+                  <div>
+                    <strong id="securityStatusTitle">Security status not checked</strong>
+                    <p id="securityStatusDescription">
+                      Connect the security settings API to load your current account protection status.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="security-points">
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">✓</span>
+                    <span><strong>Use a unique password.</strong> Avoid reusing passwords from other websites.</span>
+                  </div>
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">✓</span>
+                    <span><strong>Review active sessions.</strong> Sign out devices you no longer recognize.</span>
+                  </div>
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">✓</span>
+                    <span><strong>Enable extra verification.</strong> Use multi-factor authentication when available.</span>
+                  </div>
+                </div>
+
+                <div class="action-row">
+                  <a class="btn" href="/account/change-password.html">Change password ↗</a>
+                  <a class="btn btn-outline" href="/account/sessions.html">Review sessions ↗</a>
+                </div>
+              </div>
+
+              <div>
+                <div class="hero-visual">
+                  <div class="visual-art">
+                    <!-- Optional local image: /assets/images/account/security-shield.webp -->
+                    <img
+                      id="securityImage"
+                      src="/assets/images/account/security-shield.webp"
+                      alt="Illustration representing account security, digital protection and a shield"
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      hidden
+                    >
+                    <div class="art-fallback" id="securityArtFallback" aria-hidden="true">
+                      <span class="shield-emoji">🛡️</span>
+                      <strong>Secure your account</strong>
+                      <span>✦ 🔒 ✦</span>
+                    </div>
+                  </div>
+                  <div class="art-caption">Account protection · MedOrbits</div>
+                </div>
+                <div class="visual-caption">
+                  <h3>Security begins with you.</h3>
+                  <p>Keep recovery details current and check unexpected login activity promptly.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="settingsTitle">
             <div class="panel-heading">
               <div class="panel-icon" aria-hidden="true">⚙</div>
               <div>
-                <h2 id="securityOverviewTitle">Security overview</h2>
-                <p>
-                  Review the protection status reported by your authenticated
-                  account service. No security status is assumed or fabricated.
-                </p>
+                <h2 id="settingsTitle">Protection settings</h2>
+                <p>These controls reflect server-backed preferences. A setting is not active unless the server confirms it.</p>
               </div>
             </div>
 
-            <div id="securityStatus" class="status" role="status"
-                 aria-live="polite">
-              Security information has not been loaded.
+            <div class="settings-list">
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">🔑</span>
+                  <div>
+                    <h3>Multi-factor authentication</h3>
+                    <p>Require an additional verification step when signing in, if supported by your account.</p>
+                  </div>
+                </div>
+                <div class="setting-action">
+                  <span class="status-label"><span class="status-dot" id="mfaDot"></span><span id="mfaStatus">Not checked</span></span>
+                  <button class="toggle" id="mfaToggle" type="button" role="switch" aria-checked="false" aria-label="Toggle multi-factor authentication" disabled></button>
+                </div>
+              </article>
+
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">📧</span>
+                  <div>
+                    <h3>Security email notifications</h3>
+                    <p>Receive supported alerts about sign-ins, password changes and important account events.</p>
+                  </div>
+                </div>
+                <div class="setting-action">
+                  <span class="status-label"><span class="status-dot" id="emailAlertsDot"></span><span id="emailAlertsStatus">Not checked</span></span>
+                  <button class="toggle" id="emailAlertsToggle" type="button" role="switch" aria-checked="false" aria-label="Toggle security email notifications" disabled></button>
+                </div>
+              </article>
+
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">📱</span>
+                  <div>
+                    <h3>New-device sign-in alerts</h3>
+                    <p>Request notifications when the service detects a sign-in from a new device.</p>
+                  </div>
+                </div>
+                <div class="setting-action">
+                  <span class="status-label"><span class="status-dot" id="deviceAlertsDot"></span><span id="deviceAlertsStatus">Not checked</span></span>
+                  <button class="toggle" id="deviceAlertsToggle" type="button" role="switch" aria-checked="false" aria-label="Toggle new-device sign-in alerts" disabled></button>
+                </div>
+              </article>
             </div>
 
-            <div class="security-score">
-              <div>
-                <strong id="securityHeadline">Security status unavailable</strong>
-                <p id="securityDescription">
-                  Sign in and load your account security information to see
-                  the current verification and protection status.
-                </p>
-              </div>
-              <div class="score-indicator" aria-hidden="true">⌑</div>
+            <div id="settingsMessage" class="form-message info" role="status" aria-live="polite">
+              Security preferences have not been loaded. Connect the configured API to manage these settings.
             </div>
 
-            <div class="security-list">
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">🔒</div>
-                <div class="security-item-copy">
-                  <h3>Password protection</h3>
-                  <p>
-                    Update your password if it is weak, reused or potentially
-                    exposed. Use a unique password that you do not use on
-                    other websites.
-                  </p>
-                  <span id="passwordStatus" class="pill">Status unavailable</span>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline"
-                       href="/account/change-password.html">
-                      Change password
-                    </a>
-                    <a class="btn btn-outline"
-                       href="/account/reset-password.html">
-                      Reset password
-                    </a>
-                  </div>
-                </div>
-              </article>
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">✉</div>
-                <div class="security-item-copy">
-                  <h3>Email verification</h3>
-                  <p>
-                    A verified email can help with account recovery and
-                    important account notifications.
-                  </p>
-                  <span id="emailStatus" class="pill">Status unavailable</span>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline"
-                       href="/account/verify-email.html">
-                      Manage email verification
-                    </a>
-                  </div>
-                </div>
-              </article>
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">☎</div>
-                <div class="security-item-copy">
-                  <h3>Phone verification</h3>
-                  <p>
-                    Confirm your phone number if phone verification is
-                    supported by your account and required for recovery.
-                  </p>
-                  <span id="phoneStatus" class="pill">Status unavailable</span>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline"
-                       href="/account/verify-phone.html">
-                      Manage phone verification
-                    </a>
-                  </div>
-                </div>
-              </article>
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">⛨</div>
-                <div class="security-item-copy">
-                  <h3>Additional sign-in verification</h3>
-                  <p>
-                    Check whether multi-factor authentication is available
-                    for your account. Do not assume it is enabled unless the
-                    account service confirms it.
-                  </p>
-                  <span id="mfaStatus" class="pill">Status unavailable</span>
-                  <div class="security-item-action">
-                    <button class="btn btn-outline" id="manageMfa"
-                            type="button">
-                      Manage verification
-                    </button>
-                  </div>
-                </div>
-              </article>
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">⌘</div>
-                <div class="security-item-copy">
-                  <h3>Active sessions</h3>
-                  <p>
-                    Review your signed-in devices and terminate unfamiliar
-                    sessions using the dedicated, authenticated session
-                    management page.
-                  </p>
-                  <span id="sessionStatus" class="pill">Status unavailable</span>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline" href="/account/sessions.html">
-                      Review sessions
-                    </a>
-                  </div>
-                </div>
-              </article>
-
-            </div>
-
-            <div class="form-actions">
-              <button class="btn" id="refreshSecurity" type="button">
-                ↻ Refresh security status
-              </button>
-              <a class="btn btn-outline" href="/account/index.html">
-                Back to account
-              </a>
+            <div class="action-row">
+              <button class="btn btn-outline" id="refreshSettingsButton" type="button">↻ Refresh security status</button>
             </div>
           </section>
 
-          <!-- SECURITY PREFERENCES -->
-          <section class="panel" aria-labelledby="preferencesTitle">
+          <section class="panel" aria-labelledby="passwordTitle">
             <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">◈</div>
+              <div class="panel-icon" aria-hidden="true">🔒</div>
               <div>
-                <h2 id="preferencesTitle">Security preferences</h2>
-                <p>
-                  Manage supported security notifications. Preferences are
-                  saved only when the authenticated server accepts the update.
-                </p>
+                <h2 id="passwordTitle">Password and sign-in</h2>
+                <p>Use a strong, unique password and check which devices can access your account.</p>
               </div>
             </div>
 
-            <div id="preferencesStatus" class="status" role="status"
-                 aria-live="polite">
-              Security preferences have not been loaded.
-            </div>
-
-            <form id="preferencesForm">
-              <div class="form-grid">
-                <div class="field full">
-                  <label for="loginAlerts">Sign-in alerts</label>
-                  <select id="loginAlerts" name="loginAlerts" disabled>
-                    <option value="">Loading preference…</option>
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                  <small>
-                    Where supported, receive alerts about sign-ins or
-                    security-relevant account activity.
-                  </small>
+            <div class="settings-list">
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">🔐</span>
+                  <div>
+                    <h3>Change your password</h3>
+                    <p>Update your password if it is weak, reused or potentially exposed.</p>
+                  </div>
                 </div>
-
-                <div class="field full">
-                  <label for="securityAlerts">Important security notifications</label>
-                  <select id="securityAlerts" name="securityAlerts" disabled>
-                    <option value="">Loading preference…</option>
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                  <small>
-                    Where supported, receive notifications about password
-                    changes, verification changes and other important events.
-                  </small>
+                <div class="setting-action">
+                  <a class="btn btn-outline" href="/account/change-password.html">Change password ↗</a>
                 </div>
-              </div>
+              </article>
 
-              <div class="form-actions">
-                <button class="btn" id="savePreferences" type="submit" disabled>
-                  Save preferences
-                </button>
-                <button class="btn btn-outline" id="reloadPreferences"
-                        type="button">
-                  Reload preferences
-                </button>
-              </div>
-            </form>
-          </section>
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">💻</span>
+                  <div>
+                    <h3>Active sessions and devices</h3>
+                    <p>Review signed-in devices and end sessions you do not recognize.</p>
+                  </div>
+                </div>
+                <div class="setting-action">
+                  <a class="btn btn-outline" href="/account/sessions.html">Manage sessions ↗</a>
+                </div>
+              </article>
 
-          <!-- RECENT SECURITY EVENTS -->
-          <section class="panel" aria-labelledby="eventsTitle">
-            <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">◷</div>
-              <div>
-                <h2 id="eventsTitle">Recent security activity</h2>
-                <p>
-                  View security events supplied by the account service.
-                  This section does not inspect browser history or fabricate
-                  sign-in records.
-                </p>
-              </div>
-            </div>
-
-            <div id="eventsStatus" class="status" role="status"
-                 aria-live="polite">
-              Security activity has not been loaded.
-            </div>
-
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Event</th>
-                    <th scope="col">Date and time</th>
-                    <th scope="col">Result</th>
-                  </tr>
-                </thead>
-                <tbody id="eventsTableBody">
-                  <tr>
-                    <td colspan="3">
-                      <div class="empty-state">
-                        Security events will appear when returned by the
-                        authenticated account service.
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="form-actions">
-              <button class="btn btn-outline" id="refreshEvents" type="button">
-                ↻ Refresh activity
-              </button>
-              <a class="btn btn-outline" href="/account/sessions.html">
-                View active sessions
-              </a>
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">✉</span>
+                  <div>
+                    <h3>Recovery email</h3>
+                    <p>Check whether your account email has been verified.</p>
+                  </div>
+                </div>
+                <div class="setting-action">
+                  <a class="btn btn-outline" href="/account/verify-email.html">Verify email ↗</a>
+                </div>
+              </article>
             </div>
           </section>
 
-          <!-- ACCOUNT RECOVERY -->
           <section class="panel" aria-labelledby="recoveryTitle">
             <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">⌑</div>
+              <div class="panel-icon" aria-hidden="true">🧰</div>
               <div>
                 <h2 id="recoveryTitle">Account recovery</h2>
-                <p>
-                  Use the official recovery process if you cannot sign in
-                  or believe your credentials have been compromised.
-                </p>
+                <p>Prepare for unexpected sign-in problems and protect your account from unauthorized changes.</p>
               </div>
             </div>
 
-            <div class="security-list">
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">↺</div>
-                <div class="security-item-copy">
-                  <h3>Forgot your password?</h3>
-                  <p>
-                    Start the password recovery process. Verification and
-                    reset links must be generated and validated by the server.
-                  </p>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline"
-                       href="/account/reset-password.html">
-                      Recover account
-                    </a>
+            <div class="settings-list">
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">☎</span>
+                  <div>
+                    <h3>Phone verification</h3>
+                    <p>Review phone verification options if they are supported by your account.</p>
                   </div>
+                </div>
+                <div class="setting-action">
+                  <a class="btn btn-outline" href="/account/verify-phone.html">Review phone ↗</a>
                 </div>
               </article>
 
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">⌘</div>
-                <div class="security-item-copy">
-                  <h3>Recognise an unfamiliar session?</h3>
-                  <p>
-                    Review available session details and use the session
-                    management controls to sign out devices you do not
-                    recognise.
-                  </p>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline" href="/account/sessions.html">
-                      Manage sessions
-                    </a>
+              <article class="setting-row">
+                <div class="setting-copy">
+                  <span class="setting-icon" aria-hidden="true">◉</span>
+                  <div>
+                    <h3>Privacy settings</h3>
+                    <p>Review account privacy and the data preferences available to you.</p>
                   </div>
                 </div>
-              </article>
-
-              <article class="security-item">
-                <div class="security-item-icon" aria-hidden="true">✉</div>
-                <div class="security-item-copy">
-                  <h3>Need help securing your account?</h3>
-                  <p>
-                    Contact MedOrbits through the published support page.
-                    Never send your password, one-time verification code
-                    or recovery token in a support message.
-                  </p>
-                  <div class="security-item-action">
-                    <a class="btn btn-outline" href="/pages/contact.html">
-                      Contact support
-                    </a>
-                  </div>
+                <div class="setting-action">
+                  <a class="btn btn-outline" href="/account/privacy-settings.html">Privacy settings ↗</a>
                 </div>
               </article>
             </div>
           </section>
 
-          <!-- QUICK LINKS -->
-          <section class="info-card" aria-labelledby="accountLinksTitle">
-            <h2 id="accountLinksTitle">Account and privacy controls</h2>
-            <p>
-              Open the relevant account page to manage your personal details,
-              privacy choices and account access.
-            </p>
+          <section class="info-card" aria-labelledby="helpTitle">
+            <h2 id="helpTitle">Keep your account <span class="gold-text">protected.</span></h2>
+            <p>Follow these practical steps to reduce the risk of account misuse.</p>
 
-            <div class="info-links">
-              <a href="/account/profile.html">
-                View account profile <span>↗</span>
-              </a>
-              <a href="/account/edit-profile.html">
-                Edit personal details <span>↗</span>
-              </a>
-              <a href="/account/change-password.html">
-                Change account password <span>↗</span>
-              </a>
-              <a href="/account/verify-email.html">
-                Verify email address <span>↗</span>
-              </a>
-              <a href="/account/verify-phone.html">
-                Verify phone number <span>↗</span>
-              </a>
-              <a href="/account/privacy-settings.html">
-                Privacy settings <span>↗</span>
-              </a>
-              <a href="/account/delete-account.html">
-                Account deletion options <span>↗</span>
-              </a>
-              <a href="/legal/privacy-policy.html">
-                Privacy policy <span>↗</span>
-              </a>
-              <a href="/pages/contact.html">
-                Contact support <span>↗</span>
-              </a>
+            <div class="help-grid">
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">🔑</div>
+                <h3>Use a strong password</h3>
+                <p>Choose a long, unique password. A reputable password manager can help you store it safely.</p>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">📲</div>
+                <h3>Check your devices</h3>
+                <p>Review sessions regularly. End sessions you do not recognize and change your password if needed.</p>
+                <a href="/account/sessions.html">Review sessions ↗</a>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">💬</div>
+                <h3>Get assistance</h3>
+                <p>If you suspect unauthorized access, contact support through the official MedOrbits website.</p>
+                <a href="/pages/contact.html">Contact support ↗</a>
+              </article>
             </div>
           </section>
 
-          <div class="notice">
-            <strong>Security notice:</strong>
-            This page is a user interface, not an independent security
-            boundary. The server must authenticate each request, authorize
-            access to the current user's records, validate all updates,
-            protect session cookies, apply CSRF protections where appropriate,
-            rate-limit sensitive operations and record security events safely.
-            Passwords and verification tokens must never be returned in
-            account-summary or activity responses.
+          <div class="privacy-notice">
+            <strong>Important:</strong>
+            The interface does not provide security by itself. The server must
+            authenticate the account owner, enforce authorization and CSRF
+            protections, validate every preference change, rate-limit sensitive
+            operations and record security events appropriately. Never expose
+            passwords, session tokens, recovery codes or MFA secrets to this page.
           </div>
-
         </div>
       </div>
     </div>
@@ -1511,20 +1146,12 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
-
         <div class="footer-brand">
           <a class="brand" href="/index.html" aria-label="MedOrbits home">
-            <img src="/assets/images/logo/medorbits-logo.png"
-                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
-            <span>
-              <strong>MEDORBITS</strong>
-              <small>Study · Career · Consultancy</small>
-            </span>
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span><strong>MEDORBITS</strong><small>Study · Career · Consultancy</small></span>
           </a>
-          <p>
-            Explore education pathways, admission resources and career
-            opportunities with MedOrbits.
-          </p>
+          <p>Explore education pathways, admission resources and career opportunities with MedOrbits.</p>
         </div>
 
         <div class="footer-links">
@@ -1565,15 +1192,11 @@
           <a href="/legal/refund-policy.html">Refund policy</a>
           <a href="/legal/disclaimer.html">Disclaimer</a>
         </div>
-
       </div>
 
       <p class="disclaimer">
-        MedOrbits provides education and career information and consultancy
-        services. Course information, admission rules, fees, eligibility and
-        deadlines can change. Confirm material details with the relevant
-        institution and official authority. A saved item or guidance request
-        is not an admission offer or a guarantee of employment.
+        MedOrbits provides education and career information and consultancy services.
+        Verify important requirements with the relevant institution or official authority.
       </p>
 
       <div class="footer-bottom">
@@ -1588,91 +1211,355 @@
       "use strict";
 
       /*
-       * File: /account/security-settings.html
+       * MedOrbits security-settings API contract.
        *
-       * Expected API contract:
-       *
-       * GET /api/account/security
+       * GET /api/account/security-settings
+       * Expected response:
        * {
-       *   "user": { "email": "user@example.com" },
-       *   "security": {
-       *     "passwordConfigured": true,
-       *     "emailVerified": true,
-       *     "phoneVerified": false,
-       *     "mfaEnabled": false,
-       *     "activeSessions": 2
-       *   }
+       *   "mfaEnabled": false,
+       *   "securityEmailAlerts": true,
+       *   "newDeviceAlerts": true,
+       *   "passwordUpdatedAt": "2026-01-01T00:00:00.000Z"
        * }
        *
-       * GET /api/account/security/preferences
-       * {
-       *   "preferences": {
-       *     "loginAlerts": true,
-       *     "securityAlerts": true
-       *   }
-       * }
+       * PATCH /api/account/security-settings
+       * Body: { "setting": "mfaEnabled", "enabled": true }
        *
-       * PUT /api/account/security/preferences
-       * {
-       *   "loginAlerts": true,
-       *   "securityAlerts": true
-       * }
+       * Supported setting keys:
+       * - mfaEnabled
+       * - securityEmailAlerts
+       * - newDeviceAlerts
        *
-       * GET /api/account/security/events
-       * {
-       *   "events": [
-       *     {
-       *       "event": "Password changed",
-       *       "timestamp": "2026-10-25T10:00:00Z",
-       *       "result": "success"
-       *     }
-       *   ]
-       * }
+       * Override endpoints with:
+       * window.MEDORBITS_CONFIG.securitySettings.getEndpoint
+       * window.MEDORBITS_CONFIG.securitySettings.updateEndpoint
        *
-       * Optional configuration:
-       * window.MEDORBITS_CONFIG.securityEndpoint
-       * window.MEDORBITS_CONFIG.securityPreferencesEndpoint
-       * window.MEDORBITS_CONFIG.securityEventsEndpoint
+       * These routes are contracts, not a claim that the backend already
+       * implements them. The page fails closed if the service is unavailable.
        *
-       * The server must implement these routes before account security data
-       * and preference updates can work. Endpoints are same-origin by default.
-       * Do not put secrets or authorization tokens in this HTML file.
+       * Backend requirements:
+       * - Authenticate and authorize the current account owner.
+       * - Validate setting names and boolean values with an allowlist.
+       * - Enforce CSRF protection and rate limits.
+       * - Persist settings only after server-side validation.
+       * - Implement MFA enrollment/verification as a separate secure flow.
+       * - Never enable MFA merely by trusting a client-supplied boolean.
+       * - Do not expose passwords, OTPs, recovery codes or MFA secrets.
        */
 
       const config = window.MEDORBITS_CONFIG || {};
+      const securityConfig = config.securitySettings || {};
 
       const endpoints = {
-        security: config.securityEndpoint || "/api/account/security",
-        preferences:
-          config.securityPreferencesEndpoint ||
-          "/api/account/security/preferences",
-        events:
-          config.securityEventsEndpoint ||
-          "/api/account/security/events"
+        get: securityConfig.getEndpoint || "/api/account/security-settings",
+        update: securityConfig.updateEndpoint || "/api/account/security-settings"
       };
 
       const $ = id => document.getElementById(id);
-
       const header = $("siteHeader");
       const menuToggle = $("menuToggle");
       const mainNav = $("mainNav");
       const navGroups = [...document.querySelectorAll(".nav-group")];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-      const securityStatus = $("securityStatus");
-      const preferencesStatus = $("preferencesStatus");
-      const eventsStatus = $("eventsStatus");
+      const settingsMessage = $("settingsMessage");
+      const refreshButton = $("refreshSettingsButton");
+      const statusTitle = $("securityStatusTitle");
+      const statusDescription = $("securityStatusDescription");
 
-      const refreshSecurity = $("refreshSecurity");
-      const refreshEvents = $("refreshEvents");
-      const reloadPreferences = $("reloadPreferences");
-      const preferencesForm = $("preferencesForm");
-      const savePreferences = $("savePreferences");
-      const manageMfa = $("manageMfa");
+      const settingDefinitions = {
+        mfaEnabled: {
+          toggle: $("mfaToggle"),
+          label: $("mfaStatus"),
+          dot: $("mfaDot"),
+          title: "Multi-factor authentication"
+        },
+        securityEmailAlerts: {
+          toggle: $("emailAlertsToggle"),
+          label: $("emailAlertsStatus"),
+          dot: $("emailAlertsDot"),
+          title: "Security email notifications"
+        },
+        newDeviceAlerts: {
+          toggle: $("deviceAlertsToggle"),
+          label: $("deviceAlertsStatus"),
+          dot: $("deviceAlertsDot"),
+          title: "New-device sign-in alerts"
+        }
+      };
 
-      let currentSecurity = null;
-      let preferencesLoaded = false;
+      const settingKeys = Object.keys(settingDefinitions);
+      let settings = null;
+      let loading = false;
+      let updatingSetting = false;
 
       $("currentYear").textContent = String(new Date().getFullYear());
+
+      function showMessage(message, type = "info") {
+        settingsMessage.textContent = message;
+        settingsMessage.className = `form-message ${type}`;
+      }
+
+      function setStatus(title, description) {
+        statusTitle.textContent = title;
+        statusDescription.textContent = description;
+      }
+
+      function setControlsDisabled(disabled) {
+        refreshButton.disabled = disabled;
+
+        for (const key of settingKeys) {
+          settingDefinitions[key].toggle.disabled = disabled || !settings;
+        }
+      }
+
+      function setBusy(button, busy, normalText, busyText) {
+        button.disabled = busy;
+        button.textContent = busy ? busyText : normalText;
+      }
+
+      async function readJson(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) return {};
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || "";
+      }
+
+      async function request(url, options = {}) {
+        const headers = { "Accept": "application/json" };
+        const requestOptions = {
+          method: options.method || "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers
+        };
+
+        if (options.body !== undefined) {
+          headers["Content-Type"] = "application/json";
+          requestOptions.body = JSON.stringify(options.body);
+        }
+
+        const csrfToken = getCsrfToken();
+
+        if (csrfToken && requestOptions.method !== "GET") {
+          headers["X-CSRF-Token"] = csrfToken;
+        }
+
+        const response = await fetch(url, requestOptions);
+        const data = await readJson(response);
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Your session may have expired. Sign in and try again.");
+          }
+
+          if (response.status === 403) {
+            throw new Error("You are not authorized to change these security settings.");
+          }
+
+          if (response.status === 404) {
+            throw new Error("The security settings API route is not available. Configure the backend endpoint first.");
+          }
+
+          if (response.status === 429) {
+            throw new Error("Too many requests. Wait a moment before trying again.");
+          }
+
+          throw new Error(
+            typeof data.message === "string"
+              ? data.message
+              : "The security request could not be completed."
+          );
+        }
+
+        return data;
+      }
+
+      function isBoolean(value) {
+        return typeof value === "boolean";
+      }
+
+      function validateSettings(data) {
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("The security service returned an invalid response.");
+        }
+
+        const validated = {};
+
+        for (const key of settingKeys) {
+          if (!isBoolean(data[key])) {
+            throw new Error(`The security service did not return a valid value for ${settingDefinitions[key].title}.`);
+          }
+
+          validated[key] = data[key];
+        }
+
+        return validated;
+      }
+
+      function renderSettings(nextSettings) {
+        settings = nextSettings;
+
+        for (const key of settingKeys) {
+          const definition = settingDefinitions[key];
+          const enabled = settings[key];
+
+          definition.toggle.setAttribute("aria-checked", String(enabled));
+          definition.label.textContent = enabled ? "Enabled" : "Disabled";
+          definition.dot.classList.toggle("enabled", enabled);
+          definition.dot.classList.toggle("warning", !enabled);
+          definition.toggle.disabled = false;
+        }
+
+        const enabledCount = settingKeys.filter(key => settings[key]).length;
+
+        if (settings.mfaEnabled) {
+          setStatus(
+            "Multi-factor authentication enabled",
+            `${enabledCount} of ${settingKeys.length} listed security preferences are enabled. Continue reviewing your settings periodically.`
+          );
+        } else {
+          setStatus(
+            "Additional sign-in protection is not enabled",
+            `${enabledCount} of ${settingKeys.length} listed security preferences are enabled. Consider enabling multi-factor authentication if your account supports it.`
+          );
+        }
+      }
+
+      async function loadSettings() {
+        if (loading || updatingSetting) return;
+
+        loading = true;
+        setBusy(refreshButton, true, "↻ Refresh security status", "Loading security status…");
+        setControlsDisabled(true);
+        showMessage("Loading security preferences from the account service…", "info");
+
+        try {
+          const data = await request(endpoints.get);
+          const validated = validateSettings(data);
+
+          renderSettings(validated);
+          showMessage("Security preferences loaded from the server.", "success");
+        } catch (error) {
+          settings = null;
+
+          for (const key of settingKeys) {
+            const definition = settingDefinitions[key];
+            definition.toggle.disabled = true;
+            definition.toggle.setAttribute("aria-checked", "false");
+            definition.label.textContent = "Unavailable";
+            definition.dot.classList.remove("enabled", "warning");
+          }
+
+          setStatus(
+            "Security status unavailable",
+            "The service could not confirm your account settings. No setting has been assumed to be enabled."
+          );
+
+          showMessage(
+            error instanceof Error ? error.message : "Unable to load security settings.",
+            "error"
+          );
+        } finally {
+          loading = false;
+          refreshButton.disabled = false;
+          refreshButton.textContent = "↻ Refresh security status";
+        }
+      }
+
+      async function updateSetting(key) {
+        if (
+          !settingKeys.includes(key) ||
+          !settings ||
+          loading ||
+          updatingSetting
+        ) {
+          return;
+        }
+
+        const definition = settingDefinitions[key];
+        const previousValue = settings[key];
+        const nextValue = !previousValue;
+
+        if (key === "mfaEnabled") {
+          showMessage(
+            "Multi-factor authentication must be enrolled and verified through a secure setup flow. Use your account's MFA enrollment process before enabling it here.",
+            "info"
+          );
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `${nextValue ? "Enable" : "Disable"} ${definition.title.toLowerCase()}?`
+        );
+
+        if (!confirmed) return;
+
+        updatingSetting = true;
+        setControlsDisabled(true);
+        showMessage("Saving your preference…", "info");
+
+        try {
+          const data = await request(endpoints.update, {
+            method: "PATCH",
+            body: {
+              setting: key,
+              enabled: nextValue
+            }
+          });
+
+          /*
+           * Require the server to echo the saved boolean. Do not display
+           * a successful state based only on an HTTP 2xx response.
+           */
+          if (!data || data[key] !== nextValue) {
+            throw new Error(
+              "The server did not confirm the saved preference. Refresh your settings to check the current value."
+            );
+          }
+
+          settings = { ...settings, [key]: nextValue };
+          renderSettings(settings);
+
+          showMessage(`${definition.title} updated successfully.`, "success");
+        } catch (error) {
+          /*
+           * The server might have committed the change before a response
+           * was interrupted. Reload from the authoritative source.
+           */
+          showMessage(
+            error instanceof Error ? error.message : "Unable to update this preference.",
+            "error"
+          );
+        } finally {
+          updatingSetting = false;
+
+          if (settings) {
+            for (const settingKey of settingKeys) {
+              settingDefinitions[settingKey].toggle.disabled = false;
+            }
+          }
+
+          refreshButton.disabled = false;
+
+          /*
+           * Reconcile with the server after success or failure rather than
+           * assuming the client state is authoritative.
+           */
+          await loadSettings();
+        }
+      }
+
+      /* Responsive navigation */
 
       function closeNavigation() {
         mainNav.classList.remove("open");
@@ -1681,8 +1568,7 @@
 
         navGroups.forEach(group => {
           group.classList.remove("open");
-          group.querySelector(".nav-trigger")
-            ?.setAttribute("aria-expanded", "false");
+          group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
         });
       }
 
@@ -1705,8 +1591,7 @@
 
           navGroups.forEach(other => {
             other.classList.remove("open");
-            other.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
+            other.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
           });
 
           if (shouldOpen) {
@@ -1726,8 +1611,7 @@
         if (!event.target.closest(".nav-group")) {
           navGroups.forEach(group => {
             group.classList.remove("open");
-            group.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
+            group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
           });
         }
 
@@ -1748,524 +1632,125 @@
         header.classList.toggle("scrolled", window.scrollY > 20);
       }, { passive: true });
 
-      window.matchMedia("(min-width: 1101px)")
-        .addEventListener?.("change", event => {
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+      if (desktopQuery.addEventListener) {
+        desktopQuery.addEventListener("change", event => {
           if (event.matches) closeNavigation();
         });
-
-      function showStatus(element, message, type = "") {
-        element.replaceChildren();
-        element.textContent = message;
-        element.className = "status" + (type ? ` ${type}` : "");
-        element.hidden = false;
-      }
-
-      function setPill(id, text, type = "") {
-        const element = $(id);
-        element.textContent = text;
-        element.className = "pill" + (type ? ` ${type}` : "");
-      }
-
-      function isBoolean(value) {
-        return typeof value === "boolean";
-      }
-
-      function isNonNegativeInteger(value) {
-        return Number.isSafeInteger(value) && value >= 0;
-      }
-
-      function setPreferenceControlsEnabled(enabled) {
-        $("loginAlerts").disabled = !enabled;
-        $("securityAlerts").disabled = !enabled;
-        savePreferences.disabled = !enabled;
-      }
-
-      async function requestJson(url, options = {}) {
-        const response = await fetch(url, {
-          credentials: "same-origin",
-          cache: "no-store",
-          ...options,
-          headers: {
-            "Accept": "application/json",
-            ...(options.body ? { "Content-Type": "application/json" } : {}),
-            ...(options.headers || {})
-          }
+      } else if (desktopQuery.addListener) {
+        desktopQuery.addListener(event => {
+          if (event.matches) closeNavigation();
         });
-
-        const contentType = response.headers.get("content-type") || "";
-        let data = {};
-
-        if (contentType.includes("application/json")) {
-          try {
-            data = await response.json();
-          } catch {
-            data = {};
-          }
-        }
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error(
-              "Sign in to view and manage your account security."
-            );
-          }
-
-          if (response.status === 403) {
-            throw new Error(
-              "You are not authorized to access this security resource."
-            );
-          }
-
-          if (response.status === 404) {
-            throw new Error(
-              "The required security API route is not configured on the server."
-            );
-          }
-
-          if (response.status === 429) {
-            throw new Error(
-              "Too many requests. Please wait before trying again."
-            );
-          }
-
-          if (response.status === 419 || response.status === 422) {
-            throw new Error(
-              typeof data.message === "string"
-                ? data.message
-                : "The request could not be validated. Refresh the page and try again."
-            );
-          }
-
-          throw new Error(
-            typeof data.message === "string"
-              ? data.message
-              : `The request failed with status ${response.status}.`
-          );
-        }
-
-        return data;
       }
 
-      function setSecurityUnavailable(message) {
-        currentSecurity = null;
+      /* Relatable local image with a built-in fallback */
 
-        $("securityHeadline").textContent = "Security status unavailable";
-        $("securityDescription").textContent =
-          "Your security information could not be confirmed. Use the account links below to access the supported security pages.";
+      const securityImage = $("securityImage");
+      const securityFallback = $("securityArtFallback");
 
-        setPill("passwordStatus", "Status unavailable");
-        setPill("emailStatus", "Status unavailable");
-        setPill("phoneStatus", "Status unavailable");
-        setPill("mfaStatus", "Status unavailable");
-        setPill("sessionStatus", "Status unavailable");
-
-        showStatus(securityStatus, message, "error");
-      }
-
-      function renderSecurity(security) {
-        const fields = [
-          "passwordConfigured",
-          "emailVerified",
-          "phoneVerified",
-          "mfaEnabled",
-          "activeSessions"
-        ];
-
-        for (const field of fields) {
-          if (!(field in security)) {
-            throw new Error(
-              "The security API response is missing a required security field."
-            );
-          }
-        }
-
-        if (
-          !isBoolean(security.passwordConfigured) ||
-          !isBoolean(security.emailVerified) ||
-          !isBoolean(security.phoneVerified) ||
-          !isBoolean(security.mfaEnabled) ||
-          !isNonNegativeInteger(security.activeSessions)
-        ) {
-          throw new Error(
-            "The security API returned invalid field values."
-          );
-        }
-
-        currentSecurity = security;
-
-        setPill(
-          "passwordStatus",
-          security.passwordConfigured
-            ? "Password configured"
-            : "Password setup required",
-          security.passwordConfigured ? "success" : "warning"
-        );
-
-        setPill(
-          "emailStatus",
-          security.emailVerified ? "Verified" : "Not verified",
-          security.emailVerified ? "success" : "warning"
-        );
-
-        setPill(
-          "phoneStatus",
-          security.phoneVerified ? "Verified" : "Not verified",
-          security.phoneVerified ? "success" : "warning"
-        );
-
-        setPill(
-          "mfaStatus",
-          security.mfaEnabled ? "Enabled" : "Not enabled",
-          security.mfaEnabled ? "success" : "warning"
-        );
-
-        setPill(
-          "sessionStatus",
-          `${security.activeSessions.toLocaleString()} active session${security.activeSessions === 1 ? "" : "s"}`,
-          security.activeSessions > 0 ? "" : "success"
-        );
-
-        const recommendations = [];
-
-        if (!security.passwordConfigured) {
-          recommendations.push("Set up your password");
-        }
-
-        if (!security.emailVerified) {
-          recommendations.push("verify your email");
-        }
-
-        if (!security.phoneVerified) {
-          recommendations.push("review phone verification");
-        }
-
-        if (!security.mfaEnabled) {
-          recommendations.push("consider additional sign-in verification");
-        }
-
-        $("securityHeadline").textContent =
-          recommendations.length === 0
-            ? "Reported security checks are complete"
-            : "Some security checks need attention";
-
-        $("securityDescription").textContent =
-          recommendations.length === 0
-            ? "The account service reports that the displayed checks are complete. Continue reviewing your sessions and account activity regularly."
-            : "Consider the following actions: " +
-              recommendations.join("; ") +
-              ". These recommendations are based only on the fields returned by your account service.";
-
-        showStatus(
-          securityStatus,
-          "Security information was retrieved from the account service.",
-          "success"
-        );
-      }
-
-      async function loadSecurity() {
-        refreshSecurity.disabled = true;
-        refreshSecurity.textContent = "Loading…";
-
-        try {
-          const data = await requestJson(endpoints.security);
-
-          if (
-            !data.security ||
-            typeof data.security !== "object" ||
-            Array.isArray(data.security)
-          ) {
-            throw new Error(
-              "The security API returned an invalid response."
-            );
-          }
-
-          const email =
-            typeof data.user?.email === "string"
-              ? data.user.email.trim()
-              : "";
-
-          $("accountEmail").textContent = email || "Account overview";
-
-          renderSecurity(data.security);
-
-        } catch (error) {
-          setSecurityUnavailable(
-            error instanceof Error
-              ? error.message
-              : "Security information could not be loaded."
-          );
-        } finally {
-          refreshSecurity.disabled = false;
-          refreshSecurity.textContent = "↻ Refresh security status";
-        }
-      }
-
-      async function loadPreferences() {
-        reloadPreferences.disabled = true;
-        reloadPreferences.textContent = "Loading…";
-        setPreferenceControlsEnabled(false);
-        preferencesLoaded = false;
-
-        try {
-          const data = await requestJson(endpoints.preferences);
-
-          if (
-            !data.preferences ||
-            typeof data.preferences !== "object" ||
-            Array.isArray(data.preferences)
-          ) {
-            throw new Error(
-              "The security preferences API returned an invalid response."
-            );
-          }
-
-          const preferences = data.preferences;
-
-          if (
-            !isBoolean(preferences.loginAlerts) ||
-            !isBoolean(preferences.securityAlerts)
-          ) {
-            throw new Error(
-              "The server did not return valid values for both security preferences."
-            );
-          }
-
-          $("loginAlerts").value = String(preferences.loginAlerts);
-          $("securityAlerts").value = String(preferences.securityAlerts);
-
-          preferencesLoaded = true;
-          setPreferenceControlsEnabled(true);
-
-          showStatus(
-            preferencesStatus,
-            "Security preferences loaded. You can now update the supported options.",
-            "success"
-          );
-
-        } catch (error) {
-          $("loginAlerts").value = "";
-          $("securityAlerts").value = "";
-
-          showStatus(
-            preferencesStatus,
-            error instanceof Error
-              ? error.message
-              : "Security preferences could not be loaded.",
-            "error"
-          );
-        } finally {
-          reloadPreferences.disabled = false;
-          reloadPreferences.textContent = "Reload preferences";
-        }
-      }
-
-      preferencesForm.addEventListener("submit", async event => {
-        event.preventDefault();
-
-        if (!preferencesLoaded) {
-          showStatus(
-            preferencesStatus,
-            "Load the current preferences before saving changes.",
-            "warning"
-          );
-          return;
-        }
-
-        const loginAlerts = $("loginAlerts").value;
-        const securityAlerts = $("securityAlerts").value;
-
-        if (
-          !["true", "false"].includes(loginAlerts) ||
-          !["true", "false"].includes(securityAlerts)
-        ) {
-          showStatus(
-            preferencesStatus,
-            "Select a valid value for both security preferences.",
-            "error"
-          );
-          return;
-        }
-
-        savePreferences.disabled = true;
-        savePreferences.textContent = "Saving…";
-
-        try {
-          const payload = {
-            loginAlerts: loginAlerts === "true",
-            securityAlerts: securityAlerts === "true"
-          };
-
-          const data = await requestJson(endpoints.preferences, {
-            method: "PUT",
-            body: JSON.stringify(payload)
-          });
-
-          if (
-            !data.preferences ||
-            data.preferences.loginAlerts !== payload.loginAlerts ||
-            data.preferences.securityAlerts !== payload.securityAlerts
-          ) {
-            throw new Error(
-              "The server did not confirm the requested preference values. Reload preferences to check the saved settings."
-            );
-          }
-
-          showStatus(
-            preferencesStatus,
-            "Your security preferences were saved by the account service.",
-            "success"
-          );
-
-        } catch (error) {
-          showStatus(
-            preferencesStatus,
-            error instanceof Error
-              ? error.message
-              : "Security preferences could not be saved.",
-            "error"
-          );
-        } finally {
-          savePreferences.disabled = !preferencesLoaded;
-          savePreferences.textContent = "Save preferences";
-        }
+      securityImage.addEventListener("load", () => {
+        securityImage.hidden = false;
+        securityFallback.hidden = true;
       });
 
-      async function loadEvents() {
-        refreshEvents.disabled = true;
-        refreshEvents.textContent = "Loading…";
+      securityImage.addEventListener("error", () => {
+        securityImage.hidden = true;
+        securityFallback.hidden = false;
+      });
 
-        try {
-          const data = await requestJson(endpoints.events);
+      if (securityImage.complete && securityImage.naturalWidth > 0) {
+        securityImage.hidden = false;
+        securityFallback.hidden = true;
+      }
 
-          if (!Array.isArray(data.events)) {
-            throw new Error(
-              "The security activity API returned an invalid response."
-            );
-          }
+      /* Accessible typing animation */
 
-          const body = $("eventsTableBody");
-          body.replaceChildren();
+      const phrases = [
+        "Protect your account. Protect your future.",
+        "Secure sign-ins. Stronger account protection.",
+        "Review your settings. Stay in control.",
+        "Your education journey deserves secure access."
+      ];
 
-          if (data.events.length === 0) {
-            const row = document.createElement("tr");
-            const cell = document.createElement("td");
+      const typingText = $("typingText");
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
 
-            cell.colSpan = 3;
-            cell.className = "empty-state";
-            cell.textContent =
-              "No security events were returned by the account service.";
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
 
-            row.appendChild(cell);
-            body.appendChild(row);
+        const phrase = phrases[phraseIndex];
 
-            showStatus(
-              eventsStatus,
-              "Security activity loaded. No events were returned.",
-              "success"
-            );
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
 
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1500);
             return;
           }
 
-          data.events.slice(0, 50).forEach(item => {
-            const row = document.createElement("tr");
-            const eventCell = document.createElement("td");
-            const timeCell = document.createElement("td");
-            const resultCell = document.createElement("td");
-
-            const eventName =
-              typeof item.event === "string" ? item.event : "Security event";
-
-            eventCell.textContent = eventName;
-
-            const timestamp =
-              typeof item.timestamp === "string"
-                ? new Date(item.timestamp)
-                : null;
-
-            timeCell.textContent =
-              timestamp && !Number.isNaN(timestamp.getTime())
-                ? timestamp.toLocaleString()
-                : "Date unavailable";
-
-            const result =
-              typeof item.result === "string"
-                ? item.result
-                : "Not provided";
-
-            resultCell.textContent = result;
-
-            row.append(eventCell, timeCell, resultCell);
-            body.appendChild(row);
-          });
-
-          showStatus(
-            eventsStatus,
-            "Security activity was retrieved from the account service.",
-            "success"
-          );
-
-        } catch (error) {
-          const body = $("eventsTableBody");
-          body.replaceChildren();
-
-          const row = document.createElement("tr");
-          const cell = document.createElement("td");
-
-          cell.colSpan = 3;
-          cell.className = "empty-state";
-          cell.textContent =
-            "Security activity is unavailable. Use the account support or session management pages if you need assistance.";
-
-          row.appendChild(cell);
-          body.appendChild(row);
-
-          showStatus(
-            eventsStatus,
-            error instanceof Error
-              ? error.message
-              : "Security activity could not be loaded.",
-            "error"
-          );
-        } finally {
-          refreshEvents.disabled = false;
-          refreshEvents.textContent = "↻ Refresh activity";
+          typingTimer = window.setTimeout(typeNextCharacter, 48);
+          return;
         }
+
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
+
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 280);
+          return;
+        }
+
+        typingTimer = window.setTimeout(typeNextCharacter, 25);
       }
 
-      manageMfa.addEventListener("click", () => {
-        if (!currentSecurity) {
-          showStatus(
-            securityStatus,
-            "Load your security status before checking additional verification options.",
-            "warning"
-          );
-          return;
-        }
+      if (reducedMotion.matches) {
+        typingText.textContent = phrases[0];
+      } else {
+        typingTimer = window.setTimeout(typeNextCharacter, 1400);
+      }
 
-        if (currentSecurity.mfaEnabled) {
-          showStatus(
-            securityStatus,
-            "Additional sign-in verification is reported as enabled. Use the account's supported verification management flow to review or change it.",
-            "success"
-          );
-          return;
-        }
+      if (reducedMotion.addEventListener) {
+        reducedMotion.addEventListener("change", event => {
+          window.clearTimeout(typingTimer);
 
-        showStatus(
-          securityStatus,
-          "Additional sign-in verification is not reported as enabled. Enrollment requires a supported server-side verification setup flow. No security setting was changed.",
-          "warning"
-        );
-      });
+          if (event.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
 
-      refreshSecurity.addEventListener("click", loadSecurity);
-      refreshEvents.addEventListener("click", loadEvents);
-      reloadPreferences.addEventListener("click", loadPreferences);
+          phraseIndex = 0;
+          characterIndex = 0;
+          deleting = false;
+          typeNextCharacter();
+        });
+      }
 
-      loadSecurity();
-      loadPreferences();
-      loadEvents();
+      /* Security preferences */
+
+      for (const key of settingKeys) {
+        settingDefinitions[key].toggle.addEventListener("click", () => {
+          updateSetting(key);
+        });
+      }
+
+      refreshButton.addEventListener("click", loadSettings);
+
+      /*
+       * Fetch the server's actual settings on page load.
+       * Until the request succeeds, controls remain disabled.
+       */
+      loadSettings();
     })();
   </script>
 

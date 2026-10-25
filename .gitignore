@@ -1,69 +1,46 @@
-=============================================================================
+==============================================================================
 
-MEDORBITS -- ROOT GIT IGNORE POLICY
+MedOrbits -- Root Git Ignore Policy
 
-=============================================================================
+File: .gitignore
 
-Project:          MedOrbits
+Policy version: 3.1.0
 
-File:             .gitignore
+Purpose:
 
-Policy Version:   3.0.0
+Exclude local secrets, credentials, dependencies, runtime state, caches,
 
-Scope:            Repository root and nested directories
+temporary files and generated artifacts without hiding maintained source.
 
-Purpose:          Exclude secrets, private data, dependencies, local
+Security:
 
-configuration, temporary files, caches and generated
+.gitignore is not a secrets-management system. It does not untrack files
 
-artifacts while preserving required project resources.
+already committed or remove secrets from Git history.
 
-SECURITY PRINCIPLES
+Maintenance:
 
-1. Never commit production credentials, private keys, authentication
+Review patterns against the actual repository before adoption.
 
-tokens or confidential user records.
+==============================================================================
 
-2. Use environment variables and approved secrets-management facilities.
-
-3. Keep example configuration files sanitized and free of real secrets.
-
-4. Review staged changes before committing.
-
-5. Use secret scanning and dependency auditing where available.
-
-6. Rotate exposed credentials and assess Git history after a leak.
-
-7. Remember that .gitignore does not protect deployed files, untrack
-
-existing files or invalidate exposed credentials.
-
-8. Preserve source code, public assets, datasets, documentation,
-
-dependency manifests, lockfiles and intentional deployment files.
-
-9. Review project-specific patterns before introducing broad exclusions.
-
-10. Never delete project resources merely because they match an ignore rule.
-
-=============================================================================
-
---------------------------------------------------–
+----------------------------------------------------
 
 01. ENVIRONMENT VARIABLES AND LOCAL CONFIGURATION
 
---------------------------------------------------–
+----------------------------------------------------
 
 .env
 .env.*
 !.env.example
 !.env.sample
 !.env.template
-!.env..example
-!.env..sample
-!.env.*.template
+!.env.development.example
+!.env.test.example
+!.env.production.example
+!.env.staging.example
 
-Environment-specific overrides
+Local environment overrides
 
 .env.local
 .env.development.local
@@ -71,7 +48,7 @@ Environment-specific overrides
 .env.production.local
 .env.staging.local
 
-Local environment files
+Environment files using alternative naming conventions
 
 *.local.env
 local.env
@@ -79,35 +56,30 @@ development.env
 staging.env
 production.env
 
-Secret-bearing environment files
+Secret-bearing local configuration
 
 secrets.env
 secret.env
 credentials.env
+credentials.local.*
+secrets.local.*
 
-Local configuration overrides
+Local application overrides
 
 config.local.*
 settings.local.*
-secrets.local.*
-credentials.local.*
-
-Local runtime configuration
-
+nodemon.local.json
 .envrc.local
-.nodemon.local.json
 
-Keep shared, non-sensitive configuration tracked.
+Keep shared, sanitized configuration templates tracked.
 
-Templates must contain placeholders rather than real credentials.
-
---------------------------------------------------–
+----------------------------------------------------
 
 02. SECRETS, TOKENS AND AUTHENTICATION MATERIAL
 
---------------------------------------------------–
+----------------------------------------------------
 
-Local secret directories
+Dedicated private directories
 
 /secrets/
 /private-secrets/
@@ -115,28 +87,22 @@ Local secret directories
 /credentials/
 /private-credentials/
 
-Secret and credential files
-
-*.secret
-*.secrets
-*.token
-*.tokens
-*.credential
-*.credentials
-
-API keys and credential files
+Explicitly named credential files
 
 api-key.txt
 api-keys.txt
 api_key.txt
 api_keys.txt
-credentials.json
 service-account.json
 service-account-key.json
 google-credentials.json
 firebase-adminsdk*.json
+application_default_credentials.json
+cloud-credentials.json
+cloud-service-account.json
+deployment-credentials.json
 
-Authentication artifacts
+Local authentication artifacts
 
 tokens.json
 access-token.txt
@@ -146,23 +112,32 @@ auth-token.txt
 cookies.txt
 cookies.json
 
-Common local authentication caches
+Secret and credential extensions
+
+*.secret
+*.secrets
+*.token
+*.tokens
+*.credential
+*.credentials
+
+Local authentication caches
 
 .auth-cache/
 .token-cache/
 .local-auth/
 
-Do not commit real credentials in test fixtures, examples, documentation,
+Do not store real secrets in test fixtures, examples, documentation,
 
-logs or generated bundles. Use synthetic test values.
+logs, generated bundles, screenshots or committed configuration.
 
---------------------------------------------------–
+----------------------------------------------------
 
 03. PRIVATE KEYS, CERTIFICATES AND TLS MATERIAL
 
---------------------------------------------------–
+----------------------------------------------------
 
-Private key and keystore formats
+Private key formats
 
 *.key
 *.p12
@@ -171,13 +146,16 @@ Private key and keystore formats
 *.jks
 *.ppk
 
-Common private key names
+Common SSH private keys
 
 id_rsa
 id_dsa
 id_ecdsa
 id_ed25519
 ssh_host_*
+
+Common private-key naming patterns
+
 private-key.*
 private_key.*
 server.key
@@ -186,47 +164,41 @@ tls.key
 signing-key.*
 signing_key.*
 
-Private TLS material
+Local certificate storage
 
-certificate.p12
 .local-certs/
 .dev-certs/
 certs/private/
 certificates/private/
 
-Do not globally exclude public-only .crt, .cer or .pem files.
+Intentionally do not globally ignore *.pem, *.crt or *.cer.
 
-Inspect certificate files before committing to ensure they contain
+These extensions can contain public certificates, CA bundles, or private
 
-no private keys or confidential material.
+material. Inspect their contents before committing.
 
-A private key must never be committed, even to a private repository.
+----------------------------------------------------
 
---------------------------------------------------–
+04. DATABASES, LOCAL STATE AND BACKUPS
 
-04. DATABASES, BACKUPS AND DATABASE EXPORTS
-
---------------------------------------------------–
+----------------------------------------------------
 
 Local database files
 
-*.db
 *.sqlite
 *.sqlite3
 *.db-journal
 *.sqlite-journal
 *.sqlite3-journal
 
-Database backups and exports
+Explicit local database directories
 
-*.dump
-*.backup
-*.bak
-*.sql.bak
-*.sql.backup
-*.sql.gz
-*.dump.gz
-*.tmp.sql
+/.local-db/
+/.local-database/
+/database/local/
+/database/backups/
+/db/backups/
+/backups/database/
 
 Database client credentials and history
 
@@ -235,26 +207,19 @@ Database client credentials and history
 .my.cnf
 .mysql_history
 
-Local database storage
+Do not globally ignore *.sql, *.db, *.dump or *.backup.
 
-.local-db/
-/.local-database/
-/database/local/
-/database/backups/
-/db/backups/
-/backups/database/
+Reviewed migrations, schemas, sanitized fixtures and sample databases may
 
-Preserve reviewed schemas, migrations, safe development fixtures
+be required by development, testing or deployment.
 
-and database documentation. Never commit production dumps or private data.
+----------------------------------------------------
 
---------------------------------------------------–
+05. PRIVATE USER DATA, APPLICANT RECORDS AND DOCUMENTS
 
-05. PRIVATE USER DATA, APPLICATION RECORDS AND DOCUMENTS
+----------------------------------------------------
 
---------------------------------------------------–
-
-Private data directories
+Private application data
 
 /private-data/
 /private-data-local/
@@ -266,36 +231,32 @@ Private data directories
 /private-storage/
 /private-records/
 
-Private exports
-
-*.personal-data
-*.private-export
-*.user-export
-
-Common confidential document exports
-
-private-report-.pdf
-confidential-.pdf
-personal-record-*.pdf
-
-Local-only application data
+Local-only storage
 
 .local-data/
 .local-uploads/
 .local-storage/
 .local-documents/
 
-Keep legitimate public brochures, approved public documents and website
+Private exports
 
-assets tracked. Protect sensitive files through application authorization
+*.personal-data
+*.private-export
+*.user-export
 
-and storage permissions as well as repository hygiene.
+Keep approved public brochures, official public documents, public website
 
---------------------------------------------------–
+assets and sanitized test fixtures tracked.
 
-06. NODE.JS, NPM, YARN AND PNPM
+Protect confidential applicant documents through storage permissions and
 
---------------------------------------------------–
+application authorization as well as repository hygiene.
+
+----------------------------------------------------
+
+06. NODE.JS, NPM, YARN, PNPM AND BUN
+
+----------------------------------------------------
 
 Installed dependencies
 
@@ -326,19 +287,19 @@ Bun local cache
 
 .bun/
 
-Keep package.json, package-lock.json and intentional lockfiles tracked.
+Preserve package manifests and lockfiles.
 
-Yarn plugins, releases and configuration may need to remain tracked,
+Keep intentional Yarn releases, plugins and configuration tracked when
 
-depending on the selected Yarn version and project workflow.
+required by the selected Yarn version and repository workflow.
 
---------------------------------------------------–
+----------------------------------------------------
 
-07. BUILD OUTPUTS AND GENERATED ARTIFACTS
+07. BUILD OUTPUTS AND FRAMEWORK ARTIFACTS
 
---------------------------------------------------–
+----------------------------------------------------
 
-Root-level build outputs
+Root build output
 
 /dist/
 /build/
@@ -347,7 +308,7 @@ Root-level build outputs
 /release-build/
 /generated-build/
 
-Framework output directories
+Framework output
 
 .next/
 .nuxt/
@@ -356,7 +317,7 @@ Framework output directories
 .svelte-kit/
 .angular/
 
-Build caches
+Bundler caches
 
 .parcel-cache/
 .turbo/
@@ -366,32 +327,37 @@ Build caches
 .vite/
 storybook-static/
 
-Keep source files and intentionally maintained generated source tracked.
+Preserve maintained source and intentionally tracked generated source.
 
-Review project-specific output directories before adding broad rules.
+Verify that any ignored output directory is actually generated.
 
---------------------------------------------------–
+----------------------------------------------------
 
-08. LOGS, DIAGNOSTICS AND RUNTIME FILES
+08. LOGS, CRASH REPORTS AND RUNTIME FILES
 
---------------------------------------------------–
+----------------------------------------------------
 
 Log directories
 
 /logs/
 /log/
 
-General logs
+Logs
 
-*.log
-.log.
+.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-Process and runtime files
+Process and runtime state
 
 *.pid
 *.pid.lock
 *.seed
 /pids/
+.pm2/
+.pids/
 
 Crash diagnostics
 
@@ -400,7 +366,7 @@ core.*
 *.core
 *.stackdump
 
-Common application diagnostics
+Local application diagnostics
 
 crash.log
 error.log
@@ -412,20 +378,27 @@ request-debug.log
 access.log
 error-report.log
 
-Local process-manager state
+Logs may contain session identifiers, credentials, personal information,
 
-.pm2/
-.pids/
+request payloads, internal paths or other confidential data.
 
-Logs may contain credentials, session identifiers, personal information,
-
-request payloads or internal paths. Do not commit sensitive diagnostics.
-
---------------------------------------------------–
+----------------------------------------------------
 
 09. TEMPORARY FILES AND EDITOR SWAP FILES
 
---------------------------------------------------–
+----------------------------------------------------
+
+Temporary files
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.swn
+*.orig
+*.rej
+*.patch~
+*~
 
 Temporary directories
 
@@ -435,34 +408,20 @@ Temporary directories
 /.temp/
 /.cache-tmp/
 
-Temporary files
-
-*.tmp
-*.temp
-*.swp
-*.swo
-*.swn
-*.bak
-*.backup
-*.orig
-*.rej
-*.patch~
-*~
-
 Temporary runtime files
 
 *.lock.tmp
 *.pid.tmp
 
-Do not use a blanket *.lock rule. Dependency lockfiles and other
+Avoid blanket *.lock exclusions: package lockfiles and other intentional
 
-intentional lock files may be required for reproducible builds.
+lock files may be necessary for reproducible builds.
 
---------------------------------------------------–
+----------------------------------------------------
 
 10. OPERATING SYSTEM FILES
 
---------------------------------------------------–
+----------------------------------------------------
 
 macOS
 
@@ -489,13 +448,13 @@ Linux
 .Trash-*
 .nfs*
 
---------------------------------------------------–
+----------------------------------------------------
 
 11. IDE AND EDITOR WORKSPACES
 
---------------------------------------------------–
+----------------------------------------------------
 
-Visual Studio Code local workspace state
+Visual Studio Code private workspace state
 
 .vscode/*
 !.vscode/extensions.json
@@ -515,24 +474,22 @@ Vim and Emacs
 
 .*.sw?
 Session.vim
-tags
 TAGS
-.projectile
 
 Local workspace files
 
 *.code-workspace.local
 workspace.local.json
 
-Keep sanitized shared editor recommendations and examples where useful.
+Review editor settings for local paths, credentials and machine-specific
 
-Review workspace files for private paths, tokens and local configuration.
+configuration before deciding whether they should be committed.
 
---------------------------------------------------–
+----------------------------------------------------
 
 12. PYTHON, VIRTUAL ENVIRONMENTS AND CACHES
 
---------------------------------------------------–
+----------------------------------------------------
 
 Python bytecode
 
@@ -547,12 +504,9 @@ venv/
 env/
 ENV/
 virtualenv/
-.python-version.local
 
 Python build artifacts
 
-/build/python/
-/dist/python/
 wheels/
 pip-wheel-metadata/
 *.egg
@@ -591,15 +545,13 @@ pip temporary artifacts
 pip-log.txt
 pip-delete-this-directory.txt
 
-Preserve source code, tests, project configuration and dependency manifests.
+Preserve Python source, tests, configuration and dependency manifests.
 
-Review notebook outputs for confidential data before committing.
+----------------------------------------------------
 
---------------------------------------------------–
+13. TESTING, BROWSER AUTOMATION AND GENERATED TEST OUTPUT
 
-13. TESTING, BROWSER AUTOMATION AND END-TO-END ARTIFACTS
-
---------------------------------------------------–
+----------------------------------------------------
 
 Playwright
 
@@ -627,7 +579,7 @@ test-reports/
 /reports/test/
 /reports/coverage/
 
-Sensitive test fixtures
+Explicit private test data
 
 /tests/fixtures/private/
 /tests/fixtures/real-user-data/
@@ -635,25 +587,23 @@ Sensitive test fixtures
 
 Preserve tests, test configuration and sanitized fixtures.
 
-Never commit real applicant records or production credentials.
-
---------------------------------------------------–
+----------------------------------------------------
 
 14. FRONTEND FRAMEWORKS AND DEVELOPMENT TOOLING
 
---------------------------------------------------–
+----------------------------------------------------
 
-TypeScript generated build metadata
+TypeScript build metadata
 
 *.tsbuildinfo
 
-Sass and framework caches
+Framework and Sass caches
 
 .sass-cache/
 .storybook-cache/
 .angular/cache/
 
-General cache directories
+General caches
 
 .cache/
 
@@ -664,40 +614,37 @@ Linter and formatter caches
 .prettier-cache/
 .biome/
 
-Review broad cache patterns if the project intentionally stores source
+Review broad cache patterns if the project intentionally stores maintained
 
-material inside a directory with a matching name.
+source material inside a directory with a matching name.
 
---------------------------------------------------–
+----------------------------------------------------
 
 15. GENERATED API CLIENTS AND DOCUMENTATION OUTPUT
 
---------------------------------------------------–
+----------------------------------------------------
 
-Generated client code
+Ignore these directories only when they contain generated output.
+
+Remove a pattern if the corresponding directory contains maintained source.
 
 /api-client-generated/
 /openapi-generated/
 /swagger-generated/
-
-Generated documentation output
-
 /docs-build/
 /documentation-build/
 
-Do not ignore the entire docs/ directory.
+Do not ignore docs/, official-documents/, API specifications or maintained
 
-Keep maintained documentation, API specifications and required generated
+documentation as a whole.
 
-source tracked when they are part of the project’s release workflow.
-
---------------------------------------------------–
+----------------------------------------------------
 
 16. LOCAL UPLOADS AND USER-GENERATED FILES
 
---------------------------------------------------–
+----------------------------------------------------
 
-Local upload directories
+Local-only upload and storage directories
 
 /uploads-local/
 /local-uploads/
@@ -705,24 +652,22 @@ Local upload directories
 /storage-local/
 /media-local/
 
-Incomplete uploads and chunks
+Incomplete uploads
 
 *.uploading
 *.part
 *.partial
 *.chunk
 
-Do not globally ignore public/assets/ or public/uploads/ without reviewing
+Do not globally ignore public/assets/ or public/uploads/.
 
-the application architecture. Public assets may be intentional source files.
+Those directories may contain required public website assets.
 
-Store sensitive applicant documents in protected private storage.
-
---------------------------------------------------–
+----------------------------------------------------
 
 17. DEPLOYMENT AND HOSTING LOCAL STATE
 
---------------------------------------------------–
+----------------------------------------------------
 
 Vercel
 
@@ -751,118 +696,88 @@ Docker local state
 
 .docker/
 
-Local Docker Compose overrides
-
-docker-compose.override.yaml
-docker-compose.override.yml
-
 Terraform local state
 
 .terraform/
 *.tfstate
 .tfstate.
+crash.log
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 
-Keep intentional deployment manifests, Dockerfiles and reviewed
+Local Docker Compose overrides
 
-infrastructure definitions tracked. Never commit local state containing
+docker-compose.override.yaml
+docker-compose.override.yml
 
-credentials or confidential infrastructure information.
+Preserve reviewed deployment manifests, Dockerfiles, Terraform modules,
 
---------------------------------------------------–
+intentional Compose files and required infrastructure configuration.
+
+Never commit state or credentials containing confidential infrastructure data.
+
+----------------------------------------------------
 
 18. CLOUD CREDENTIALS AND LOCAL CLI STATE
 
---------------------------------------------------–
+----------------------------------------------------
 
-Local cloud CLI directories
+Local cloud CLI state
 
 .aws/
 .gcloud/
 .azure/
 
-Cloud credential files
+Add provider-specific credential exclusions only when they match files
 
-application_default_credentials.json
-cloud-credentials.json
-cloud-service-account.json
-deployment-credentials.json
+actually used by the repository. Avoid hiding shared, sanitized examples.
 
-Use approved provider identity and secrets-management facilities.
-
-Keep sanitized examples separate from actual credential files.
-
---------------------------------------------------–
+----------------------------------------------------
 
 19. LOCAL APPLICATION OVERRIDES AND RUNTIME STATE
 
---------------------------------------------------–
-
-Local application overrides
-
-.envrc.local
-.nodemon.local.json
-
-Development diagnostics
-
-nodemon-debug.log
+----------------------------------------------------
 
 Local runtime state
 
 .runtime/
 .instance/
 
-Local metadata and application caches
+Local application caches
 
 .metadata-local/
 .project-cache/
 .application-cache/
 
-Do not ignore shared configuration or required runtime manifests
+Local diagnostic output
 
-without confirming that builds, tests and deployments remain reproducible.
+nodemon-debug.log
 
---------------------------------------------------–
+Preserve shared runtime manifests and reviewed configuration files.
+
+----------------------------------------------------
 
 20. ARCHIVES, DOWNLOADS AND LARGE LOCAL FILES
 
---------------------------------------------------–
+----------------------------------------------------
 
-Local exports and download artifacts
+Intentionally no blanket exclusions for:
 
-*.export
-*.exported
-*.download
-*.partial-download
+*.zip, *.7z, *.rar, *.tar, *.tar.gz, *.pdf, *.png, *.jpg, *.xlsx
 
-Optional archive exclusions:
+Archives, PDFs, images and spreadsheets may be required public assets,
 
-Enable individual rules only if the repository policy explicitly
+official documents, release artifacts or approved project resources.
 
-prohibits tracking these archive formats.
+Add narrow rules for specific generated directories when needed.
 
-*.zip
-
-*.7z
-
-*.rar
-
-*.tar
-
-*.tar.gz
-
-Do not blanket-ignore PDFs, images, spreadsheets or JSON datasets.
-
-These may be required public assets, official documents or project data.
-
---------------------------------------------------–
+----------------------------------------------------
 
 21. MACHINE LEARNING AND DATA SCIENCE ARTIFACTS
 
---------------------------------------------------–
+----------------------------------------------------
 
 Local model and dataset caches
 
@@ -870,19 +785,21 @@ Local model and dataset caches
 .cache/torch/
 .cache/models/
 
-Large model artifacts
+Optional large model files: enable only if the repository policy requires it.
 
 *.pt
+
 *.pth
+
 *.onnx
+
 *.safetensors
+
 *.model
 
-Optional generated datasets:
+Optional generated datasets: enable only when these contain reproducible
 
-Uncomment only if these directories contain reproducible generated data
-
-that must not be stored in version control.
+generated data that must not be version-controlled.
 
 /datasets/raw/
 
@@ -892,49 +809,60 @@ that must not be stored in version control.
 
 /data/processed/
 
-Do not exclude required schemas, scripts or approved small model assets
+Preserve data schemas, processing scripts, approved datasets and test fixtures.
 
-without reviewing their role in the project.
+----------------------------------------------------
 
---------------------------------------------------–
+22. LOCAL TOOL STATE
 
-22. PACKAGE MANAGER AND TOOL STATE
-
---------------------------------------------------–
-
-Local tool state
+----------------------------------------------------
 
 .deno/
 .volta-local/
+.vscode-test/
+.debug/
+.debug-cache/
+.sessions-local/
+.tasks-local/
+.worktrees-local/
 
-Preserve committed lockfiles, shared runtime configuration and package
+Local profiling artifacts
 
-manifests required for reproducible builds.
+.prof/
+*.prof
+*.profraw
+*.profdata
 
---------------------------------------------------–
+Preserve shared tool configuration and runtime manifests.
 
-23. LOCAL CERTIFICATE AUTHORITIES AND DEVELOPMENT TLS
+----------------------------------------------------
 
---------------------------------------------------–
+23. LOCAL API AND INTEGRATION TEST STATE
 
-Local certificate and development TLS directories
+----------------------------------------------------
 
-.local-certs/
-.dev-certs/
-certs/private/
-certificates/private/
+Local HTTP client environments that may contain secrets
 
-Review public certificates and certificate configuration individually.
+.http-client.private.env.json
+.rest-client.private.env.json
 
-Never commit private keys or confidential TLS material.
+Local API history and caches
 
---------------------------------------------------–
+.api-history/
+.http-cache/
+.integration-cache/
 
-24. PRIVATE REPORTS AND BUSINESS EXPORTS
+Preserve sanitized API examples, OpenAPI specifications and shared test
 
---------------------------------------------------–
+collections. Inspect request and response bodies before committing fixtures.
 
-Private exports and internal reports
+----------------------------------------------------
+
+24. LOCAL REPORTS AND SECURITY TOOL OUTPUT
+
+----------------------------------------------------
+
+Local-only reports
 
 /exports-private/
 /reports-private/
@@ -942,7 +870,23 @@ Private exports and internal reports
 /confidential-exports/
 /internal-exports/
 
-Microsoft Office temporary lock files
+Local security-tool output
+
+.secret-scan-local/
+.gitleaks-local/
+.trufflehog-local/
+.dependency-audit-local/
+.security-report-local/
+
+Keep approved CI security policies, security configuration and remediation
+
+documentation tracked. Do not ignore security findings to conceal them.
+
+----------------------------------------------------
+
+25. OFFICE APPLICATION TEMPORARY FILES
+
+----------------------------------------------------
 
 ~$.doc
 ~$.docx
@@ -951,170 +895,17 @@ Microsoft Office temporary lock files
 ~$.ppt
 ~$.pptx
 
-Keep approved public reports and documentation tracked.
+Preserve approved reports and public documents.
 
-Protect private exports through appropriate storage permissions.
+----------------------------------------------------
 
---------------------------------------------------–
+26. OPTIONAL GENERATED BUNDLES AND SOURCE MAPS
 
-25. LOCAL NOTES, TEST CREDENTIALS AND MAINTENANCE MARKERS
+----------------------------------------------------
 
---------------------------------------------------–
+Enable these patterns only if generated bundles are not maintained source
 
-Local-only notes
-
-NOTES.local.md
-TODO.local.md
-DEVELOPMENT.local.md
-
-Local test credentials
-
-test-credentials.local.*
-local-test-secrets.*
-
-Local maintenance markers
-
-.maintenance.local
-.development.local
-
-Keep shared engineering decisions, project documentation and team
-
-maintenance instructions in version control.
-
---------------------------------------------------–
-
-26. MEDORBITS SOURCE FILES -- PRESERVATION POLICY
-
---------------------------------------------------–
-
-The following are preservation guidelines, not a complete Git allowlist.
-
-Git ignore rules do not force files to be tracked.
-
-Public website and application source
-
-!/index.html
-!/pages/
-!/education/
-!/career/
-!/legal/
-
-Shared public assets
-
-!/assets/
-!/public/assets/
-
-Public crawler and sitemap files
-
-!/public/robots.txt
-!/public/sitemap.xml
-
-Root project documentation
-
-!/README.md
-!/LICENSE
-
-JavaScript project manifests
-
-!/package.json
-!/package-lock.json
-
-Intentional deployment configuration
-
-!/render.yaml
-!/Dockerfile
-
-Other important project resources to preserve where applicable:
-
-CONTRIBUTING.md
-
-CHANGELOG.md
-
-SECURITY.md
-
-SUPPORT_GUIDE.md
-
-docs/
-
-Database schemas and migrations
-
-JSON datasets and schemas
-
-Python and JavaScript source modules
-
-Tests and sanitized test fixtures
-
-CI workflows and reviewed infrastructure configuration
-
-.nvmrc
-
-.python-version
-
-pyproject.toml
-
-pytest.ini
-
-ruff.toml
-
-requirements.txt
-
-requirements-dev.txt
-
-IMPORTANT:
-
-Negation rules cannot re-include files if their parent directory remains
-
-excluded. Avoid adding unnecessary blanket directory exclusions above.
-
-If a required file is ignored, inspect the matching rule and make a narrow,
-
-reviewed correction. Confirm all preservation rules against the real repo.
-
---------------------------------------------------–
-
-27. ADDITIONAL LOCAL DEVELOPMENT STATE
-
---------------------------------------------------–
-
-Local debugger state
-
-.vscode-test/
-.debug/
-.debug-cache/
-
-Local task and session state
-
-.sessions-local/
-.tasks-local/
-.worktrees-local/
-
-Temporary generated reports
-
-*.report.tmp
-*.results.tmp
-
-Local profiling output
-
-.prof/
-*.prof
-*.profraw
-*.profdata
-
-Keep reproducible scripts and approved baseline reports tracked where
-
-they are required by CI, performance testing or release review.
-
---------------------------------------------------–
-
-28. GENERATED BUNDLES, SOURCE MAPS AND MINIFIED OUTPUT
-
---------------------------------------------------–
-
-Optional generated bundle patterns:
-
-Uncomment only when these files are build artifacts rather than maintained
-
-source files or intentionally published assets.
+and are not intentionally published as part of the repository.
 
 *.min.js
 
@@ -1122,106 +913,86 @@ source files or intentionally published assets.
 
 *.map
 
-Never globally ignore generated-looking files without verifying their role.
+Some projects intentionally track built assets and source maps. Verify their
 
-Some projects intentionally track compiled assets, source maps or bundles.
+role before excluding them.
 
---------------------------------------------------–
+----------------------------------------------------
 
-29. LOCAL API, HTTP AND INTEGRATION TEST STATE
+27. MEDORBITS PRESERVATION GUIDANCE
 
---------------------------------------------------–
+----------------------------------------------------
 
-Local HTTP request collections containing private data
+Git tracks files by default unless a matching ignore rule excludes them.
 
-.http-client.private.env.json
-.rest-client.private.env.json
+Do not add broad exclusions for these maintained project resources:
 
-Local API request history and caches
+- HTML, CSS, JavaScript, TypeScript and Python source
 
-.api-history/
-.http-cache/
-.integration-cache/
+- /pages/, /assets/, /public/assets/ and public website files
 
-Preserve sanitized API examples and shared test collections.
+- Official public documents, brochures and approved media
 
-Inspect request and response bodies before committing fixtures.
+- JSON data, schemas and sanitized fixtures
 
---------------------------------------------------–
+- Tests, test configuration and test helpers
 
-30. SECRET SCANNING AND SECURITY TOOL OUTPUT
+- README, LICENSE, SECURITY and contribution documentation
 
---------------------------------------------------–
+- package.json and package-lock.json
 
-Local secret scanner reports
+- Approved dependency lockfiles
 
-.secret-scan-local/
-.gitleaks-local/
-.trufflehog-local/
+- CI workflows under .github/workflows/
 
-Local dependency audit output
+- .husky hook scripts and documentation
 
-.dependency-audit-local/
-.security-report-local/
+- Reviewed deployment manifests and Dockerfiles
 
-Keep approved CI policies, security configuration and remediation
+- Database migrations, schemas and development fixtures
 
-documentation tracked. Do not use ignore rules to conceal security findings.
+- Required runtime configuration such as .nvmrc
 
-=============================================================================
+This section intentionally does not use negation patterns to force-tr
 
-FINAL SECURITY AND MAINTENANCE NOTICE
+track files. Negation rules cannot restore files when a parent directory
 
-=============================================================================
+remains excluded, and ignore rules never automatically add files to Git.
 
-This .gitignore is a repository hygiene control, not a complete security
+----------------------------------------------------
 
-system. It does not replace access controls, secrets management, secure
+28. MAINTENANCE NOTES
 
-deployment practices, code review or incident response.
+----------------------------------------------------
 
-Before committing:
-
-1. Review effective ignore rules against the actual repository.
-
-2. Confirm that required source files, public assets, datasets,
-
-documentation and lockfiles are not unintentionally excluded.
-
-3. Inspect staged changes for credentials, private records and generated
-
-artifacts.
-
-4. Use secret scanning where available.
-
-5. If a secret was committed, revoke or rotate it and assess Git history,
-
-deployment artifacts, logs and other copies.
-
-6. Test ignore behavior with:
+Inspect why a file is ignored:
 
 git check-ignore -v path/to/file
 
-7. Review already-tracked files with:
+Inspect tracked files:
 
 git ls-files
 
-8. Remember that .gitignore does not stop tracking files already in Git.
+Inspect working-tree changes:
 
-Removing a tracked file from the index requires a separate, deliberate
+git status –short
 
-operation and must not be done blindly.
+Inspect ignored, untracked files:
 
-Project:          MedOrbits
+git status –short –ignored
 
-File:             .gitignore
+Remember:
 
-Policy Version:   3.0.0
+- .gitignore does not untrack files already committed.
 
-Maintenance:      Review against the actual repository before adoption.
+- Removing tracked files from Git’s index is a separate, deliberate action.
 
-=============================================================================
+- Never delete project files solely because they match an ignore pattern.
+
+- Rotate exposed secrets and assess Git history after a credential leak.
+
+==============================================================================
 
 END OF MEDORBITS ROOT GIT IGNORE POLICY
 
-=============================================================================
+==============================================================================

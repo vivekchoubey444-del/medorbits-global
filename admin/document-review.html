@@ -1,24 +1,3219 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Document Review | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Review and manage MedOrbits student document submissions, verification status, document categories, review notes and outstanding requirements through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Document Review | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(67,135,217,.18), transparent 36%),
+        radial-gradient(ellipse at 96% 32%, rgba(205,164,85,.09), transparent 34%),
+        radial-gradient(ellipse at 45% 100%, rgba(38,92,151,.12), transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+    [hidden] { display: none !important; }
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+    .skip-link:focus { top: 12px; }
+    .accent-text {
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .announcement strong { color: var(--gold-bright); }
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+    }
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+    .btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .breadcrumbs a { color: var(--blue-bright); }
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+    .sidebar,
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+    }
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+    .admin-identity strong { display: block; font-size: 11px; }
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .admin-nav { display: grid; gap: 5px; }
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+    .sidebar-note strong { color: var(--gold-bright); }
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+    .status.info { color: var(--blue-bright); }
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(200px,.7fr);
+      gap: 22px;
+      align-items: center;
+      padding: clamp(18px,3vw,28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .hero-copy { position: relative; z-index: 1; min-width: 0; }
+    .hero h2 {
+      margin: 12px 0 10px;
+      font: 600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display",Georgia,serif;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+    .hero-art {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(0deg,rgba(3,8,18,.88),rgba(3,8,18,.05)),
+        url("https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=85")
+        center/cover;
+    }
+    .hero-art-label {
+      position: absolute;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d2deed;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+    }
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+    }
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+    .stat-copy { min-width: 0; }
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 24px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+    .stat-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 19px;
+    }
+    .mini-list { display: grid; gap: 10px; }
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+    .mini-copy { min-width: 0; flex: 1; }
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .toolbar p { margin: 0; color: var(--muted); font-size: 10px; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+      align-items: end;
+    }
+    .field { min-width: 0; }
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #07162a;
+      color: var(--text);
+      font-size: 10px;
+    }
+    .field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .field input::placeholder,
+    .field textarea::placeholder { color: #7188a4; }
+    .field-help {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+    }
+    .filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 15px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.055);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .pill.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .pill.warning {
+      border-color: rgba(255,224,160,.32);
+      color: var(--warning);
+    }
+    .pill.danger {
+      border-color: rgba(255,182,189,.4);
+      background: rgba(255,100,115,.07);
+      color: var(--danger);
+    }
+    .pill.info {
+      border-color: rgba(116,184,255,.28);
+      color: var(--blue-bright);
+    }
+    .pill.unknown { color: var(--muted); }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(3,11,22,.45);
+      scrollbar-width: thin;
+      scrollbar-color: #355777 #081426;
+    }
+    .data-table {
+      width: 100%;
+      min-width: 1050px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .data-table th {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(116,184,255,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(116,184,255,.1);
+      color: var(--text-soft);
+      font-size: 9px;
+      vertical-align: top;
+    }
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+    .data-table tbody tr:hover { background: rgba(116,184,255,.035); }
+    .primary-value {
+      display: block;
+      max-width: 280px;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .secondary-value {
+      display: block;
+      max-width: 300px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+    .table-action {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.05);
+      color: var(--blue-bright);
+      font-size: 9px;
+      cursor: pointer;
+    }
+    .table-action:hover { background: rgba(116,184,255,.12); }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .empty-state {
+      padding: 27px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .pagination p { margin: 0; color: var(--muted); font-size: 9px; }
+    .document-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+    }
+    .document-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: linear-gradient(145deg,rgba(17,39,67,.95),rgba(5,14,28,.98));
+      transition: transform .22s,border-color .22s;
+    }
+    .document-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-gold);
+    }
+    .document-card-image {
+      position: relative;
+      min-height: 125px;
+      background-position: center;
+      background-size: cover;
+    }
+    .document-card-image::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,rgba(3,8,18,.83),transparent 78%);
+      content: "";
+    }
+    .document-card-image span {
+      position: absolute;
+      z-index: 1;
+      bottom: 10px;
+      left: 12px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .document-card-body { padding: 14px; }
+    .document-card h3 {
+      margin: 0 0 7px;
+      color: var(--text);
+      font: 600 18px/1.4 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+    .document-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+    .document-card .card-link {
+      display: inline-flex;
+      margin-top: 12px;
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .feature-banner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .feature-image {
+      min-height: 165px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.25),rgba(5,13,26,.45)),
+        url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=85")
+        center/cover;
+    }
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .notice strong { color: var(--gold-bright); }
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--gold-bright); }
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+    dialog {
+      width: min(800px,calc(100% - 28px));
+      max-width: 800px;
+      max-height: min(85vh,900px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--border-gold);
+      border-radius: 18px;
+      background: linear-gradient(145deg,#102642,#050e1c);
+      color: var(--text);
+      box-shadow: 0 28px 100px rgba(0,0,0,.7);
+    }
+    dialog::backdrop {
+      background: rgba(1,5,12,.8);
+      backdrop-filter: blur(6px);
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dialog-header h2 {
+      margin: 7px 0 0;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+    .dialog-body { padding: 20px; }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 11px;
+    }
+    .detail-item {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.38);
+    }
+    .detail-item.full { grid-column: 1/-1; }
+    .detail-item span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .detail-item strong {
+      display: block;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+      .main-nav.open { display: flex; }
+      .main-nav > a { display: block; padding: 11px 8px; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+    @media (max-width:950px) {
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .document-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .hero { grid-template-columns: minmax(0,1fr) minmax(150px,.6fr); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+      .page-main { padding: 29px 0 44px; }
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+      .sidebar, .panel { padding: 15px; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .hero-art { min-height: 145px; }
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+      .stat-copy strong { font-size: 22px; }
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+      .filter-actions { flex-direction: column; }
+      .filter-actions .btn { width: 100%; }
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .btn { flex: 1; }
+      .document-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .document-card-image { min-height: 100px; }
+      .document-card-body { padding: 11px; }
+      .document-card h3 { font-size: 15px; }
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+      .feature-image { min-height: 135px; }
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .pagination { align-items: flex-start; flex-direction: column; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-item.full { grid-column: auto; }
+      .dialog-header, .dialog-body { padding: 15px; }
+    }
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-nav { grid-template-columns: 1fr; }
+      .stats-grid, .filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .document-card-grid { grid-template-columns: 1fr; }
+      .footer-grid { gap: 18px 11px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Document Review</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about document review. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Student document review and verification</span>
+  </div>
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          SECURE WORKSPACE
+        </span>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/documents.html">Documents</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/official-resources.html">Official resources</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/documents.html">Documents</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Document review</span>
+      </nav>
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Student services · Verification · Document administration</span>
+          <h1>Document <span class="accent-text">review.</span></h1>
+          <p>
+            Review submitted student documents, monitor verification status,
+            identify outstanding requirements and inspect document metadata
+            through your authorised administration API. All counts and records
+            reflect the response returned by the configured backend.
+          </p>
+        </div>
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/documents.html">Document centre ↗</a>
+          <button class="btn" id="refreshDocuments" type="button">↻ Refresh records</button>
+        </div>
+      </header>
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Document review</span>
+            </div>
+          </div>
+          <p class="sidebar-label">Workspace</p>
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/counselling.html"><span class="nav-icon" aria-hidden="true">☷</span>Counselling</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Document centre</a>
+            <a href="/admin/document-review.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">✓</span>Document review</a>
+            <a href="/admin/official-resources.html"><span class="nav-icon" aria-hidden="true">▣</span>Official resources</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/access-control.html"><span class="nav-icon" aria-hidden="true">⚿</span>Access control</a>
+            <a href="/admin/audit-log.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit log</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/backup-status.html"><span class="nav-icon" aria-hidden="true">◈</span>Backup status</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+          <p class="sidebar-note">
+            <strong>Privacy before approval.</strong><br>
+            Verify document requirements against official instructions.
+            Access student files only when authorised, protect personal
+            information and record review decisions through the approved workflow.
+          </p>
+        </aside>
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Inspect · Verify · Record</span>
+              <h2 id="heroTitle">
+                Every document,
+                <span class="accent-text">reviewed with care.</span>
+              </h2>
+              <p>
+                Manage the administrative review of student-submitted
+                documents. Check submission metadata, follow verification
+                progress and identify records requiring further attention
+                without exposing document contents unnecessarily.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="heroRefresh" type="button">↻ Load document records</button>
+                <button class="btn btn-outline" id="heroDirectory" type="button">Open review queue ↓</button>
+              </div>
+            </div>
+            <div
+              class="hero-art"
+              role="img"
+              aria-label="Professional paperwork and document review workspace"
+            >
+              <div class="hero-art-label">
+                Document review workspace
+                <span>Receive · Inspect · Verify · Resolve</span>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="overviewTitle">Review overview</h2>
+                <p>
+                  Statistics are calculated from the records currently returned
+                  by the API. They are not guaranteed to represent the complete
+                  database when the server paginates or limits its response.
+                </p>
+              </div>
+            </div>
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">▤</div>
+                <div class="stat-copy">
+                  <span>Loaded documents</span>
+                  <strong id="statTotal">--</strong>
+                  <small>Records returned by the API</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Awaiting review</span>
+                  <strong id="statPending">--</strong>
+                  <small>Pending or submitted status</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Verified</span>
+                  <strong id="statVerified">--</strong>
+                  <small>Verified status in loaded records</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">!</div>
+                <div class="stat-copy">
+                  <span>Action required</span>
+                  <strong id="statAction">--</strong>
+                  <small>Rejected or correction requested</small>
+                </div>
+              </article>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="connectionTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⬡</div>
+              <div>
+                <h2 id="connectionTitle">Review service connection</h2>
+                <p>
+                  Check API availability, the latest document activity and
+                  the record coverage reported by the backend.
+                </p>
+              </div>
+            </div>
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              Document records have not been loaded. Connect this page to the authenticated document administration API.
+            </div>
+            <div class="two-column">
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">◉</div>
+                <div class="mini-copy">
+                  <strong>Latest document activity</strong>
+                  <p id="latestDocument">No document information loaded.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">↻</div>
+                <div class="mini-copy">
+                  <strong>Last API check</strong>
+                  <p id="lastChecked">Not checked during this session.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">▣</div>
+                <div class="mini-copy">
+                  <strong>Service scope</strong>
+                  <p id="serviceScope">Scope information not reported by the API.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">⌘</div>
+                <div class="mini-copy">
+                  <strong>Record coverage</strong>
+                  <p id="recordCoverage">Pagination and coverage information not reported by the API.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="typesTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▧</div>
+              <div>
+                <h2 id="typesTitle">Document categories</h2>
+                <p>
+                  Use these visual categories as review guidance. They do not
+                  represent a claim that matching documents already exist
+                  in the database.
+                </p>
+              </div>
+            </div>
+            <div class="document-card-grid">
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Academic records and paperwork"
+                  style="background-image:url('https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Academic records</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Academic certificates</h3>
+                  <p>Review submitted marksheets, school certificates, transcripts and qualification records against the applicable requirements.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="academic">Review academic records ↗</a>
+                </div>
+              </article>
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Official papers arranged for administrative verification"
+                  style="background-image:url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Identity and eligibility</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Identity and eligibility</h3>
+                  <p>Check the relevant document type, validity and eligibility requirements without collecting unnecessary personal information.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="identity">Review identity records ↗</a>
+                </div>
+              </article>
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Professional workspace for application documentation"
+                  style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Admission documents</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Admission paperwork</h3>
+                  <p>Inspect application attachments, entrance examination records and required declarations according to official instructions.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="admission">Review admission files ↗</a>
+                </div>
+              </article>
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Student application forms and office documents"
+                  style="background-image:url('https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Application forms</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Forms and declarations</h3>
+                  <p>Review submitted forms, signatures and required declarations while preserving the original submission and audit history.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="application">Review application forms ↗</a>
+                </div>
+              </article>
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Organised files and administrative paperwork"
+                  style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Supporting evidence</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Supporting documents</h3>
+                  <p>Check supplementary evidence and requested corrections against the stated checklist and documented review criteria.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="supporting">Review supporting files ↗</a>
+                </div>
+              </article>
+              <article class="document-card">
+                <div
+                  class="document-card-image"
+                  role="img"
+                  aria-label="Secure document review and record management"
+                  style="background-image:url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=700&q=80')"
+                >
+                  <span>Corrections and follow-up</span>
+                </div>
+                <div class="document-card-body">
+                  <h3>Corrections and follow-up</h3>
+                  <p>Identify incomplete submissions, communicate precise correction requirements and track outstanding verification steps.</p>
+                  <a class="card-link" href="#reviewQueue" data-document-type="correction">Review pending actions ↗</a>
+                </div>
+              </article>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="filtersTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filtersTitle">Find a document submission</h2>
+                <p>
+                  Search loaded document metadata by document name, submission
+                  identifier, student reference, category, course or assigned reviewer.
+                  Do not search or expose document contents in browser-side logs.
+                </p>
+              </div>
+            </div>
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search records</label>
+                  <input
+                    id="searchInput"
+                    name="search"
+                    type="search"
+                    maxlength="150"
+                    placeholder="Document, submission ID, student ID"
+                    autocomplete="off"
+                  >
+                </div>
+                <div class="field">
+                  <label for="typeFilter">Document category</label>
+                  <select id="typeFilter" name="type">
+                    <option value="">All categories</option>
+                    <option value="academic">Academic records</option>
+                    <option value="identity">Identity / eligibility</option>
+                    <option value="admission">Admission documents</option>
+                    <option value="application">Application forms</option>
+                    <option value="supporting">Supporting documents</option>
+                    <option value="correction">Correction / follow-up</option>
+                    <option value="other">Other / unspecified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="statusFilter">Review status</label>
+                  <select id="statusFilter" name="status">
+                    <option value="">All statuses</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="pending">Pending review</option>
+                    <option value="in_review">In review</option>
+                    <option value="verified">Verified</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="correction_required">Correction required</option>
+                    <option value="resubmitted">Resubmitted</option>
+                    <option value="archived">Archived</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="priorityFilter">Priority</label>
+                  <select id="priorityFilter" name="priority">
+                    <option value="">All priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="normal">Normal</option>
+                    <option value="low">Low</option>
+                    <option value="unknown">Not specified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="reviewerFilter">Assigned reviewer</label>
+                  <input
+                    id="reviewerFilter"
+                    name="reviewer"
+                    type="search"
+                    maxlength="120"
+                    placeholder="Reviewer name or ID"
+                    autocomplete="off"
+                  >
+                </div>
+                <div class="field">
+                  <label for="sortFilter">Sort records</label>
+                  <select id="sortFilter" name="sort">
+                    <option value="updated-desc">Recently updated</option>
+                    <option value="created-desc">Newest submissions</option>
+                    <option value="created-asc">Oldest submissions</option>
+                    <option value="name-asc">Document name A–Z</option>
+                    <option value="priority-desc">Priority: highest first</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="reloadFromServer" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+          <section class="panel" id="reviewQueue" aria-labelledby="queueTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="queueTitle">Document review queue</h2>
+                <p>
+                  Inspect submission metadata and current review status.
+                  This interface does not download, approve, reject or modify
+                  submitted files. Those actions require a separately authorised
+                  server-side workflow.
+                </p>
+              </div>
+            </div>
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No document records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportDocuments" type="button" disabled>
+                  ⇩ Export loaded metadata
+                </button>
+              </div>
+            </div>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Document review queue; horizontally scrollable"
+            >
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Document / submission</th>
+                    <th scope="col">Student reference</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Review status</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Assigned reviewer</th>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="documentsBody">
+                  <tr>
+                    <td colspan="9">
+                      <div class="empty-state">
+                        <strong>No document records loaded</strong>
+                        Records will appear here when returned by the configured administration API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <p id="paginationSummary">Showing 0 documents</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button" disabled>
+                  ← Previous
+                </button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <div class="two-column">
+            <section class="panel" aria-labelledby="qualityTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">◈</div>
+                <div>
+                  <h2 id="qualityTitle">Document verification standards</h2>
+                  <p>Recommended controls for a consistent and accountable review process.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Verify against the correct checklist</strong>
+                    <p>Confirm the document type, applicable admission cycle, required format and official requirements before marking a review complete.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Protect student information</strong>
+                    <p>Open sensitive files only through authorised, access-controlled document routes. Avoid copying identity numbers or personal data into notes.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Record specific findings</strong>
+                    <p>Document the requirement checked, the outcome and any correction needed. Keep review notes factual and professional.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">04</div>
+                  <div class="mini-copy">
+                    <strong>Preserve the audit trail</strong>
+                    <p>Record reviewer identity, timestamps, status transitions and reasons for decisions using server-side audit events.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="panel" aria-labelledby="workflowTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">✓</div>
+                <div>
+                  <h2 id="workflowTitle">Review workflow</h2>
+                  <p>Suggested stages for document verification and follow-up.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">A</div>
+                  <div class="mini-copy">
+                    <strong>Receive and register</strong>
+                    <p>Confirm the submission has a valid record identifier, document category and relevant application reference.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">B</div>
+                  <div class="mini-copy">
+                    <strong>Inspect and verify</strong>
+                    <p>Use the authorised document viewer to check completeness, legibility and applicable requirements.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">C</div>
+                  <div class="mini-copy">
+                    <strong>Record the review decision</strong>
+                    <p>Approve, request corrections or reject only through the designated backend workflow and with a documented reason.</p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">D</div>
+                  <div class="mini-copy">
+                    <strong>Follow up and close</strong>
+                    <p>Track resubmissions, notify the appropriate parties and retain records according to the approved retention policy.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="feature-banner" aria-labelledby="integrityTitle">
+            <div>
+              <span class="eyebrow">Privacy · Accuracy · Accountability</span>
+              <h2 id="integrityTitle">
+                Every review.
+                <span class="accent-text">A traceable decision.</span>
+              </h2>
+              <p>
+                A dependable document review process protects student privacy
+                while helping administrators identify missing requirements and
+                keep applications moving. Verify documents against the correct
+                official requirements and record decisions through the approved
+                backend workflow.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/documents.html">Open document centre ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-log.html">Review audit log ↗</a>
+              </div>
+            </div>
+            <div
+              class="feature-image"
+              role="img"
+              aria-label="Students and academic professionals collaborating on paperwork"
+            ></div>
+          </section>
+          <div class="notice">
+            <strong>Security and document-handling notice:</strong>
+            This page is a client interface, not an authorisation boundary.
+            The backend must authenticate administrators, enforce role-based
+            access control, validate requests, apply rate limits and protect
+            document endpoints. Store uploaded files securely, use short-lived
+            authorised download links where appropriate, scan uploads, protect
+            personal information in logs and enforce retention policies.
+            A displayed status is not proof of authenticity or official
+            acceptance. All verification decisions must follow the applicable
+            institution and regulatory requirements.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <dialog id="documentDialog" aria-labelledby="documentDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Submission record</span>
+        <h2 id="documentDialogTitle">Document details</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeDocumentDialog" type="button">
+        Close ✕
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div id="documentDialogStatus" class="status info" role="status" aria-live="polite">
+        Details reflect the metadata returned by the authorised API.
+      </div>
+      <div id="documentDetailGrid" class="detail-grid"></div>
+    </div>
+  </dialog>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents, student guidance and professional opportunities.
+          </p>
+        </div>
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+        <div class="footer-links">
+          <h2>Documents</h2>
+          <a href="/admin/documents.html">Document centre</a>
+          <a href="/admin/document-review.html">Document review</a>
+          <a href="/admin/official-resources.html">Official resources</a>
+          <a href="/admin/counselling.html">Counselling</a>
+          <a href="/admin/audit-log.html">Audit log</a>
+        </div>
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/admin/courses.html">Course catalogue</a>
+          <a href="/admin/colleges.html">Colleges</a>
+          <a href="/admin/universities.html">Universities</a>
+          <a href="/pages/education.html">Education guide</a>
+          <a href="/pages/contact.html">Student support</a>
+        </div>
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+      <p class="disclaimer">
+        Document review is an administrative process and does not by itself
+        establish the authenticity, legal validity or official acceptance of
+        any document. Verify requirements and final acceptance with the
+        relevant institution or authorised authority. Handle personal data
+        according to applicable law and the organisation's approved policies.
+      </p>
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (() => {
+      "use strict";
+      /*
+       * MedOrbits Document Review
+       *
+       * Default endpoint:
+       * GET /api/admin/documents
+       *
+       * Optional configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminDocumentsEndpoint: "/api/admin/documents"
+       * };
+       *
+       * Accepted response examples:
+       * {
+       *   "documents": [
+       *     {
+       *       "id": "DOC-001",
+       *       "submissionId": "SUB-001",
+       *       "studentId": "STU-001",
+       *       "studentName": "Student name",
+       *       "name": "Class 12 marksheet",
+       *       "type": "academic",
+       *       "status": "pending",
+       *       "priority": "normal",
+       *       "reviewer": "Reviewer name",
+       *       "createdAt": "2026-10-25T10:00:00Z",
+       *       "updatedAt": "2026-10-25T11:00:00Z",
+       *       "description": "Submission description",
+       *       "reviewNotes": "Review note",
+       *       "correctionReason": "Reason, if applicable"
+       *     }
+       *   ],
+       *   "meta": {
+       *     "total": 1,
+       *     "page": 1,
+       *     "pageSize": 100,
+       *     "totalPages": 1,
+       *     "scope": "Document review"
+       *   },
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "Admin workspace"
+       *   }
+       * }
+       *
+       * Also accepts:
+       * { "data": { "documents": [], "meta": {} } }
+       * { "items": [], "meta": {} }
+       * { "records": [], "meta": {} }
+       * A top-level array of document records.
+       *
+       * This interface is intentionally read-only. It does not download
+       * document contents or submit review decisions. Integrate the field
+       * mappings and endpoint with the actual backend contract.
+       *
+       * Important: client-side filters only cover loaded records. If the
+       * backend paginates, implement server-side filtering and pagination
+       * before treating the queue as exhaustive.
+       */
+      document.addEventListener("DOMContentLoaded", init);
+      function init() {
+        const $ = id => document.getElementById(id);
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const documentDialog = $("documentDialog");
+        const statusBox = $("connectionStatus");
+        const PAGE_SIZE = 10;
+        $("currentYear").textContent = String(new Date().getFullYear());
+        const state = {
+          loading: false,
+          controller: null,
+          requestSequence: 0,
+          documents: [],
+          filteredDocuments: [],
+          loadedSuccessfully: false,
+          currentPage: 1,
+          meta: null
+        };
+        const validStatuses = new Set([
+          "submitted",
+          "pending",
+          "in_review",
+          "verified",
+          "rejected",
+          "correction_required",
+          "resubmitted",
+          "archived",
+          "unknown"
+        ]);
+        const validPriorities = new Set([
+          "urgent",
+          "high",
+          "normal",
+          "low",
+          "unknown"
+        ]);
+        const priorityWeight = {
+          urgent: 4,
+          high: 3,
+          normal: 2,
+          low: 1,
+          unknown: 0
+        };
+        const knownTypes = [
+          "academic",
+          "identity",
+          "admission",
+          "application",
+          "supporting",
+          "correction"
+        ];
+        function element(tag, className, content) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (content !== undefined) node.textContent = content;
+          return node;
+        }
+        function value(input, fallback = "") {
+          if (typeof input === "string" && input.trim()) {
+            return input.trim();
+          }
+          if (typeof input === "number" && Number.isFinite(input)) {
+            return String(input);
+          }
+          return fallback;
+        }
+        function safeText(input, fallback = "", maxLength = 2000) {
+          return value(input, fallback).slice(0, maxLength);
+        }
+        function normaliseKey(input) {
+          return value(input, "unknown")
+            .toLowerCase()
+            .trim()
+            .replace(/[\s/&-]+/g, "_")
+            .replace(/^_+|_+$/g, "");
+        }
+        function humanise(input) {
+          return value(input, "Unknown")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b\w/g, character => character.toUpperCase());
+        }
+        function normaliseStatus(input) {
+          const status = normaliseKey(input);
+          const aliases = {
+            new: "submitted",
+            received: "submitted",
+            uploaded: "submitted",
+            awaiting_review: "pending",
+            awaiting_verification: "pending",
+            under_review: "in_review",
+            reviewing: "in_review",
+            processing: "in_review",
+            approved: "verified",
+            accepted: "verified",
+            complete: "verified",
+            completed: "verified",
+            correction_requested: "correction_required",
+            needs_correction: "correction_required",
+            resubmitted_for_review: "resubmitted",
+            declined: "rejected",
+            invalid: "rejected",
+            closed: "archived"
+          };
+          const mapped = aliases[status] || status;
+          return validStatuses.has(mapped) ? mapped : "unknown";
+        }
+        function normalisePriority(input) {
+          const priority = normaliseKey(input);
+          const aliases = {
+            critical: "urgent",
+            emergency: "urgent",
+            high_priority: "high",
+            medium: "normal",
+            standard: "normal",
+            routine: "normal",
+            low_priority: "low",
+            unspecified: "unknown",
+            none: "unknown"
+          };
+          const mapped = aliases[priority] || priority;
+          return validPriorities.has(mapped) ? mapped : "unknown";
+        }
+        function normaliseType(input) {
+          const type = normaliseKey(input);
+          const aliases = {
+            academic_record: "academic",
+            academic_records: "academic",
+            marksheet: "academic",
+            transcript: "academic",
+            certificate: "academic",
+            educational: "academic",
+            identity_document: "identity",
+            identity_documents: "identity",
+            identification: "identity",
+            eligibility_document: "identity",
+            id_proof: "identity",
+            admission_document: "admission",
+            admission_documents: "admission",
+            entrance_exam: "admission",
+            entrance_exam_document: "admission",
+            application_form: "application",
+            application_documents: "application",
+            declaration: "application",
+            supporting_document: "supporting",
+            supporting_documents: "supporting",
+            additional_evidence: "supporting",
+            correction_request: "correction",
+            resubmission: "correction",
+            follow_up: "correction"
+          };
+          const mapped = aliases[type] || type;
+          return knownTypes.includes(mapped) ? mapped : "other";
+        }
+        function firstValue(...values) {
+          for (const item of values) {
+            if (
+              typeof item === "string" &&
+              item.trim()
+            ) {
+              return item.trim();
+            }
+            if (
+              typeof item === "number" &&
+              Number.isFinite(item)
+            ) {
+              return String(item);
+            }
+          }
+          return "";
+        }
+        function normaliseDocument(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return null;
+          }
+          const nestedType =
+            raw.type && typeof raw.type === "object"
+              ? raw.type
+              : raw.documentType && typeof raw.documentType === "object"
+                ? raw.documentType
+                : {};
+          const nestedStudent =
+            raw.student && typeof raw.student === "object"
+              ? raw.student
+              : {};
+          const nestedReviewer =
+            raw.reviewer && typeof raw.reviewer === "object"
+              ? raw.reviewer
+              : raw.assignedReviewer && typeof raw.assignedReviewer === "object"
+                ? raw.assignedReviewer
+                : {};
+          const idCandidate = firstValue(
+            raw.id,
+            raw._id,
+            raw.documentId,
+            raw.document_id,
+            raw.submissionId,
+            raw.submission_id,
+            raw.uuid
+          );
+          if (!idCandidate || idCandidate.length > 200) {
+            return null;
+          }
+          const name = safeText(
+            firstValue(
+              raw.documentName,
+              raw.document_name,
+              raw.name,
+              raw.title,
+              raw.fileName,
+              raw.file_name,
+              raw.originalName,
+              raw.original_name
+            ),
+            "Untitled document",
+            300
+          );
+          const rawType = firstValue(
+            typeof raw.type === "string" ? raw.type : "",
+            typeof raw.documentType === "string" ? raw.documentType : "",
+            raw.category,
+            raw.documentCategory,
+            raw.document_category,
+            rawTypeFallback(nestedType)
+          );
+          const rawStatus = firstValue(
+            raw.reviewStatus,
+            raw.review_status,
+            raw.status,
+            raw.verificationStatus,
+            raw.verification_status,
+            raw.state
+          );
+          const rawPriority = firstValue(
+            raw.priority,
+            raw.reviewPriority,
+            raw.review_priority,
+            raw.urgency
+          );
+          const reviewerName = firstValue(
+            typeof raw.reviewer === "string" ? raw.reviewer : "",
+            typeof raw.assignedReviewer === "string" ? raw.assignedReviewer : "",
+            raw.reviewerName,
+            raw.reviewer_name,
+            raw.assignedReviewerName,
+            raw.assigned_reviewer_name,
+            nestedReviewer.name,
+            nestedReviewer.fullName,
+            nestedReviewer.full_name,
+            nestedReviewer.displayName
+          );
+          const studentName = firstValue(
+            typeof raw.studentName === "string" ? raw.studentName : "",
+            raw.student_name,
+            nestedStudent.name,
+            nestedStudent.fullName,
+            nestedStudent.full_name,
+            nestedStudent.displayName
+          );
+          const studentId = firstValue(
+            raw.studentId,
+            raw.student_id,
+            raw.studentReference,
+            raw.student_reference,
+            raw.applicantId,
+            raw.applicant_id,
+            nestedStudent.id,
+            nestedStudent.studentId,
+            nestedStudent.student_id
+          );
+          const submissionId = firstValue(
+            raw.submissionId,
+            raw.submission_id,
+            raw.applicationId,
+            raw.application_id,
+            raw.referenceNumber,
+            raw.reference_number
+          );
+          const createdAt =
+            raw.submittedAt ??
+            raw.submitted_at ??
+            raw.createdAt ??
+            raw.created_at ??
+            raw.uploadedAt ??
+            raw.uploaded_at ??
+            null;
+          const updatedAt =
+            raw.updatedAt ??
+            raw.updated_at ??
+            raw.lastUpdated ??
+            raw.last_updated ??
+            raw.modifiedAt ??
+            raw.modified_at ??
+            null;
+          return {
+            id: idCandidate,
+            name,
+            fileName: safeText(
+              firstValue(raw.fileName, raw.file_name, raw.originalName, raw.original_name),
+              "Not reported",
+              300
+            ),
+            submissionId: safeText(submissionId, "Not reported", 200),
+            studentName: safeText(studentName, "Not reported", 200),
+            studentId: safeText(studentId, "Not reported", 200),
+            type: normaliseType(rawType),
+            typeLabel: safeText(
+              rawType || "Other / unspecified",
+              "Other / unspecified",
+              200
+            ),
+            status: normaliseStatus(rawStatus),
+            priority: normalisePriority(rawPriority),
+            reviewer: safeText(reviewerName, "Unassigned", 200),
+            course: safeText(
+              firstValue(
+                raw.courseName,
+                raw.course_name,
+                raw.course,
+                raw.programmeName,
+                raw.programme_name,
+                raw.programName,
+                raw.program_name
+              ),
+              "Not reported",
+              250
+            ),
+            institution: safeText(
+              firstValue(
+                raw.institutionName,
+                raw.institution_name,
+                raw.institution,
+                raw.collegeName,
+                raw.college_name
+              ),
+              "Not reported",
+              250
+            ),
+            mimeType: safeText(
+              firstValue(raw.mimeType, raw.mime_type, raw.contentType, raw.content_type),
+              "Not reported",
+              120
+            ),
+            fileSize: normaliseFileSize(
+              raw.fileSize ?? raw.file_size ?? raw.sizeBytes ?? raw.size_bytes
+            ),
+            description: safeText(
+              firstValue(
+                raw.description,
+                raw.summary,
+                raw.purpose,
+                raw.documentPurpose,
+                raw.document_purpose
+              ),
+              "No description supplied.",
+              3000
+            ),
+            reviewNotes: safeText(
+              firstValue(
+                raw.reviewNotes,
+                raw.review_notes,
+                raw.notes,
+                raw.internalNote,
+                raw.internal_note
+              ),
+              "No review notes reported.",
+              3000
+            ),
+            correctionReason: safeText(
+              firstValue(
+                raw.correctionReason,
+                raw.correction_reason,
+                raw.rejectionReason,
+                raw.rejection_reason,
+                raw.reasonForRejection,
+                raw.reason_for_rejection
+              ),
+              "No correction reason reported.",
+              3000
+            ),
+            createdAt,
+            updatedAt,
+            categoryId: safeText(
+              firstValue(raw.categoryId, raw.category_id, raw.documentCategoryId),
+              "Not reported",
+              200
+            ),
+            reviewId: safeText(
+              firstValue(raw.reviewId, raw.review_id, raw.verificationId, raw.verification_id),
+              "Not reported",
+              200
+            )
+          };
+        }
+        function rawTypeFallback(type) {
+          return firstValue(type.name, type.title, type.label, type.slug);
+        }
+        function normaliseFileSize(input) {
+          if (typeof input === "number" && Number.isFinite(input) && input >= 0) {
+            if (input < 1024) return `${input} bytes`;
+            if (input < 1024 * 1024) {
+              return `${(input / 1024).toFixed(1)} KB`;
+            }
+            return `${(input / (1024 * 1024)).toFixed(2)} MB`;
+          }
+          if (typeof input === "string" && input.trim()) {
+            return input.trim().slice(0, 100);
+          }
+          return "Not reported";
+        }
+        function formatDate(input) {
+          if (
+            (typeof input !== "string" && typeof input !== "number") ||
+            !String(input).trim()
+          ) {
+            return "Not reported";
+          }
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) {
+            return "Not reported";
+          }
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+        function dateValue(input) {
+          if (!input) return 0;
+          const timestamp = Date.parse(input);
+          return Number.isFinite(timestamp) ? timestamp : 0;
+        }
+        function statusClass(status) {
+          if (status === "verified") return "success";
+          if (
+            status === "pending" ||
+            status === "submitted" ||
+            status === "resubmitted"
+          ) {
+            return "warning";
+          }
+          if (
+            status === "rejected" ||
+            status === "correction_required"
+          ) {
+            return "danger";
+          }
+          if (status === "in_review") return "info";
+          return "unknown";
+        }
+        function priorityClass(priority) {
+          if (priority === "urgent" || priority === "high") return "danger";
+          if (priority === "normal") return "info";
+          if (priority === "low") return "success";
+          return "unknown";
+        }
+        function pill(text, className = "unknown") {
+          return element("span", `pill ${className}`, text);
+        }
+        function setStatus(message, type = "info") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+        function setDialogStatus(message, type = "info") {
+          $("documentDialogStatus").textContent = message;
+          $("documentDialogStatus").className = `status ${type}`;
+        }
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured =
+            config.adminDocumentsEndpoint ||
+            "/api/admin/documents";
+          let endpoint;
+          try {
+            endpoint = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured document API endpoint is invalid.");
+          }
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error(
+              "The document API endpoint must use the same origin as this page."
+            );
+          }
+          if (endpoint.username || endpoint.password || endpoint.hash) {
+            throw new Error(
+              "The API endpoint must not contain credentials or a URL fragment."
+            );
+          }
+          return endpoint;
+        }
+        function requestHeaders() {
+          const headers = {
+            Accept: "application/json"
+          };
+          const csrf = document.querySelector('meta[name="csrf-token"]');
+          if (csrf && csrf.content.trim()) {
+            headers["X-CSRF-Token"] = csrf.content.trim();
+          }
+          return headers;
+        }
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+          try {
+            const data = await response.json();
+            return data && typeof data === "object" ? data : {};
+          } catch {
+            return {};
+          }
+        }
+        function apiError(response, data) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+          if (response.status === 403) {
+            return "Access denied. Your account cannot view these document records.";
+          }
+          if (response.status === 404) {
+            return "The document API route was not found. Check the backend route and endpoint configuration.";
+          }
+          if (response.status === 429) {
+            return "The API rate limit was reached. Wait before trying again.";
+          }
+          if (response.status >= 500) {
+            return "The server could not retrieve document records.";
+          }
+          return safeText(
+            data.message ?? data.error,
+            "The document API could not complete the request.",
+            500
+          );
+        }
+        function renderEmpty(body, colspan, title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = element("div", "empty-state");
+          box.append(
+            element("strong", "", title),
+            element("div", "", description)
+          );
+          cell.colSpan = colspan;
+          cell.appendChild(box);
+          row.appendChild(cell);
+          body.replaceChildren(row);
+        }
+        function updateStats() {
+          const documents = state.documents;
+          $("statTotal").textContent = String(documents.length);
+          $("statPending").textContent = String(
+            documents.filter(documentRecord =>
+              ["submitted", "pending", "resubmitted"].includes(documentRecord.status)
+            ).length
+          );
+          $("statVerified").textContent = String(
+            documents.filter(documentRecord =>
+              documentRecord.status === "verified"
+            ).length
+          );
+          $("statAction").textContent = String(
+            documents.filter(documentRecord =>
+              ["rejected", "correction_required"].includes(documentRecord.status)
+            ).length
+          );
+        }
+        function updateMetaSummary(meta) {
+          if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+            $("serviceScope").textContent =
+              "Scope information not reported by the API.";
+            $("recordCoverage").textContent =
+              "Pagination and coverage information not reported by the API.";
+            return;
+          }
+          $("serviceScope").textContent = safeText(
+            meta.scope ?? meta.description,
+            "The API did not report the service scope.",
+            500
+          );
+          const total = meta.total ?? meta.totalRecords ?? meta.total_records;
+          const page = meta.page ?? meta.currentPage ?? meta.current_page;
+          const pageSize = meta.pageSize ?? meta.page_size ?? meta.limit;
+          const totalPages = meta.totalPages ?? meta.total_pages;
+          const parts = [];
+          if (total !== undefined && total !== null && Number.isFinite(Number(total))) {
+            parts.push(`${Number(total)} total record(s) reported`);
+          }
+          if (page !== undefined && page !== null && Number.isFinite(Number(page))) {
+            parts.push(`page ${Number(page)}`);
+          }
+          if (
+            pageSize !== undefined &&
+            pageSize !== null &&
+            Number.isFinite(Number(pageSize))
+          ) {
+            parts.push(`page size ${Number(pageSize)}`);
+          }
+          if (
+            totalPages !== undefined &&
+            totalPages !== null &&
+            Number.isFinite(Number(totalPages))
+          ) {
+            parts.push(`${Number(totalPages)} page(s)`);
+          }
+          $("recordCoverage").textContent = parts.length
+            ? `${parts.join(" · ")}.`
+            : "The API did not report pagination metadata.";
+        }
+        function applyFilters() {
+          const query = $("searchInput").value.trim().toLowerCase();
+          const selectedType = $("typeFilter").value;
+          const selectedStatus = $("statusFilter").value;
+          const selectedPriority = $("priorityFilter").value;
+          const reviewerQuery = $("reviewerFilter").value.trim().toLowerCase();
+          const sort = $("sortFilter").value;
+          let results = state.documents.filter(documentRecord => {
+            if (
+              selectedType &&
+              documentRecord.type !== selectedType
+            ) {
+              return false;
+            }
+            if (
+              selectedStatus &&
+              documentRecord.status !== selectedStatus
+            ) {
+              return false;
+            }
+            if (
+              selectedPriority &&
+              documentRecord.priority !== selectedPriority
+            ) {
+              return false;
+            }
+            if (
+              reviewerQuery &&
+              !documentRecord.reviewer.toLowerCase().includes(reviewerQuery)
+            ) {
+              return false;
+            }
+            if (query) {
+              const searchable = [
+                documentRecord.id,
+                documentRecord.submissionId,
+                documentRecord.studentId,
+                documentRecord.studentName,
+                documentRecord.name,
+                documentRecord.fileName,
+                documentRecord.type,
+                documentRecord.typeLabel,
+                documentRecord.status,
+                documentRecord.priority,
+                documentRecord.reviewer,
+                documentRecord.course,
+                documentRecord.institution,
+                documentRecord.description
+              ].join(" ").toLowerCase();
+              if (!searchable.includes(query)) {
+                return false;
+              }
+            }
+            return true;
+          });
+          results.sort((a, b) => {
+            switch (sort) {
+              case "created-desc":
+                return dateValue(b.createdAt) - dateValue(a.createdAt);
+              case "created-asc":
+                return dateValue(a.createdAt) - dateValue(b.createdAt);
+              case "name-asc":
+                return a.name.localeCompare(b.name);
+              case "priority-desc":
+                return (
+                  priorityWeight[b.priority] - priorityWeight[a.priority] ||
+                  dateValue(b.createdAt) - dateValue(a.createdAt)
+                );
+              case "updated-desc":
+              default:
+                return dateValue(b.updatedAt) - dateValue(a.updatedAt);
+            }
+          });
+          state.filteredDocuments = results;
+          state.currentPage = 1;
+          renderDocuments();
+        }
+        function renderDocuments() {
+          const total = state.filteredDocuments.length;
+          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+          state.currentPage = Math.min(state.currentPage, totalPages);
+          const start = (state.currentPage - 1) * PAGE_SIZE;
+          const pageItems = state.filteredDocuments.slice(
+            start,
+            start + PAGE_SIZE
+          );
+          if (!pageItems.length) {
+            renderEmpty(
+              $("documentsBody"),
+              9,
+              state.loadedSuccessfully
+                ? "No matching documents"
+                : "No document records loaded",
+              state.loadedSuccessfully
+                ? "No records match the current search and filters."
+                : "Document records will appear when returned by the configured API."
+            );
+          } else {
+            const fragment = document.createDocumentFragment();
+            pageItems.forEach(documentRecord => {
+              const row = document.createElement("tr");
+              const documentCell = document.createElement("td");
+              documentCell.append(
+                element("span", "primary-value", documentRecord.name),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Submission: ${documentRecord.submissionId}`
+                ),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Record ID: ${documentRecord.id}`
+                )
+              );
+              const studentCell = document.createElement("td");
+              studentCell.append(
+                element("span", "primary-value", documentRecord.studentName),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Student ID: ${documentRecord.studentId}`
+                )
+              );
+              const typeCell = document.createElement("td");
+              typeCell.appendChild(
+                pill(humanise(documentRecord.type), "info")
+              );
+              const statusCell = document.createElement("td");
+              statusCell.appendChild(
+                pill(
+                  humanise(documentRecord.status),
+                  statusClass(documentRecord.status)
+                )
+              );
+              const priorityCell = document.createElement("td");
+              priorityCell.appendChild(
+                pill(
+                  humanise(documentRecord.priority),
+                  priorityClass(documentRecord.priority)
+                )
+              );
+              const reviewerCell = element(
+                "td",
+                "",
+                documentRecord.reviewer
+              );
+              const createdCell = element(
+                "td",
+                "",
+                formatDate(documentRecord.createdAt)
+              );
+              const updatedCell = element(
+                "td",
+                "",
+                formatDate(documentRecord.updatedAt)
+              );
+              const actionCell = document.createElement("td");
+              const actions = element("div", "row-actions");
+              const inspect = element("button", "table-action", "Inspect");
+              inspect.type = "button";
+              inspect.setAttribute(
+                "aria-label",
+                `Inspect document ${documentRecord.name}`
+              );
+              inspect.addEventListener("click", () => {
+                inspectDocument(documentRecord);
+              });
+              actions.appendChild(inspect);
+              actionCell.appendChild(actions);
+              row.append(
+                documentCell,
+                studentCell,
+                typeCell,
+                statusCell,
+                priorityCell,
+                reviewerCell,
+                createdCell,
+                updatedCell,
+                actionCell
+              );
+              fragment.appendChild(row);
+            });
+            $("documentsBody").replaceChildren(fragment);
+          }
+          $("resultSummary").textContent = state.loadedSuccessfully
+            ? `${total} matching document(s) from ${state.documents.length} loaded record(s).`
+            : "No document records loaded.";
+          $("paginationSummary").textContent = total
+            ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total} document(s) · Page ${state.currentPage} of ${totalPages}`
+            : "Showing 0 documents";
+          $("previousPage").disabled =
+            !state.loadedSuccessfully || state.currentPage <= 1;
+          $("nextPage").disabled =
+            !state.loadedSuccessfully || state.currentPage >= totalPages;
+          $("exportDocuments").disabled =
+            !state.loadedSuccessfully ||
+            !state.documents.length ||
+            state.loading;
+        }
+        function setLoading(loading) {
+          state.loading = loading;
+          [
+            "refreshDocuments",
+            "heroRefresh",
+            "reloadFromServer"
+          ].forEach(id => {
+            $(id).disabled = loading;
+          });
+          $("refreshDocuments").textContent = loading
+            ? "Loading…"
+            : "↻ Refresh records";
+          $("reloadFromServer").textContent = loading
+            ? "Loading…"
+            : "↻ Reload from server";
+          $("exportDocuments").disabled =
+            loading ||
+            !state.loadedSuccessfully ||
+            !state.documents.length;
+        }
+        async function loadDocuments() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+          const controller = new AbortController();
+          state.controller = controller;
+          const requestId = ++state.requestSequence;
+          setLoading(true);
+          setStatus(
+            "Retrieving document metadata from the authenticated administration API…",
+            "info"
+          );
+          try {
+            const endpoint = getEndpoint();
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+            const data = await readJson(response);
+            if (requestId !== state.requestSequence) return;
+            if (!response.ok) {
+              throw new Error(apiError(response, data));
+            }
+            let payload = data;
+            if (
+              payload.data &&
+              typeof payload.data === "object" &&
+              !Array.isArray(payload.data)
+            ) {
+              payload = payload.data;
+            }
+            if (Array.isArray(payload)) {
+              payload = { documents: payload };
+            }
+            if (!payload || typeof payload !== "object") {
+              throw new Error(
+                "The document API returned an unsupported response format."
+              );
+            }
+            const rawDocuments =
+              payload.documents ??
+              payload.items ??
+              payload.records ??
+              payload.results;
+            if (!Array.isArray(rawDocuments)) {
+              throw new Error(
+                "The API response must contain a documents, items, records or results array. Adapt this client to the actual backend response."
+              );
+            }
+            state.documents = rawDocuments
+              .map(normaliseDocument)
+              .filter(Boolean);
+            state.meta =
+              payload.meta &&
+              typeof payload.meta === "object" &&
+              !Array.isArray(payload.meta)
+                ? payload.meta
+                : null;
+            state.loadedSuccessfully = true;
+            state.currentPage = 1;
+            if (
+              payload.admin &&
+              typeof payload.admin === "object" &&
+              !Array.isArray(payload.admin)
+            ) {
+              $("adminName").textContent = value(
+                payload.admin.name,
+                "Administration"
+              );
+              $("adminEmail").textContent = value(
+                payload.admin.email,
+                "Admin workspace"
+              );
+            }
+            updateStats();
+            updateMetaSummary(state.meta);
+            applyFilters();
+            const latest = state.documents
+              .filter(record => dateValue(record.updatedAt) > 0)
+              .sort(
+                (a, b) =>
+                  dateValue(b.updatedAt) - dateValue(a.updatedAt)
+              )[0];
+            $("latestDocument").textContent = latest
+              ? `${latest.name} · ${formatDate(latest.updatedAt)}`
+              : "No valid update timestamp was reported.";
+            $("lastChecked").textContent = new Date().toLocaleString();
+            if (!state.documents.length) {
+              setStatus(
+                "The API returned no usable document records. Check the response field names, database contents and server-side filters.",
+                "warning"
+              );
+            } else {
+              setStatus(
+                `Loaded ${state.documents.length} document record(s). Statistics and filters reflect the returned records. Confirm backend pagination before treating this as the complete review queue.`,
+                "success"
+              );
+            }
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+            state.documents = [];
+            state.filteredDocuments = [];
+            state.meta = null;
+            state.loadedSuccessfully = false;
+            state.currentPage = 1;
+            [
+              "statTotal",
+              "statPending",
+              "statVerified",
+              "statAction"
+            ].forEach(id => {
+              $(id).textContent = "--";
+            });
+            $("latestDocument").textContent =
+              "No document information loaded.";
+            $("serviceScope").textContent =
+              "Scope information not reported by the API.";
+            $("recordCoverage").textContent =
+              "Coverage information not reported by the API.";
+            renderEmpty(
+              $("documentsBody"),
+              9,
+              "Unable to load document records",
+              "Check the API route, response format, server availability and administrator permissions."
+            );
+            $("resultSummary").textContent =
+              "Unable to load document records.";
+            $("paginationSummary").textContent = "Showing 0 documents";
+            $("previousPage").disabled = true;
+            $("nextPage").disabled = true;
+            $("exportDocuments").disabled = true;
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load document records.",
+              "error"
+            );
+            $("lastChecked").textContent =
+              `Last attempt: ${new Date().toLocaleString()}`;
+          } finally {
+            if (requestId === state.requestSequence) {
+              setLoading(false);
+            }
+          }
+        }
+        function addDetail(container, label, text, full = false) {
+          const item = element(
+            "div",
+            full ? "detail-item full" : "detail-item"
+          );
+          item.append(
+            element("span", "", label),
+            element("strong", "", value(text, "Not reported"))
+          );
+          container.appendChild(item);
+        }
+        function inspectDocument(documentRecord) {
+          $("documentDialogTitle").textContent = documentRecord.name;
+          setDialogStatus(
+            "These details reflect the metadata returned by the authorised API. This dialog does not establish document authenticity or official acceptance.",
+            "info"
+          );
+          const grid = $("documentDetailGrid");
+          grid.replaceChildren();
+          addDetail(grid, "Record ID", documentRecord.id);
+          addDetail(grid, "Submission reference", documentRecord.submissionId);
+          addDetail(grid, "Document name", documentRecord.name);
+          addDetail(grid, "File name", documentRecord.fileName);
+          addDetail(grid, "Student name", documentRecord.studentName);
+          addDetail(grid, "Student reference", documentRecord.studentId);
+          addDetail(grid, "Document category", humanise(documentRecord.type));
+          addDetail(grid, "Category as reported", documentRecord.typeLabel);
+          addDetail(grid, "Review status", humanise(documentRecord.status));
+          addDetail(grid, "Priority", humanise(documentRecord.priority));
+          addDetail(grid, "Assigned reviewer", documentRecord.reviewer);
+          addDetail(grid, "Course / programme", documentRecord.course);
+          addDetail(grid, "Institution", documentRecord.institution);
+          addDetail(grid, "File type", documentRecord.mimeType);
+          addDetail(grid, "File size", documentRecord.fileSize);
+          addDetail(grid, "Submitted / created", formatDate(documentRecord.createdAt));
+          addDetail(grid, "Last updated", formatDate(documentRecord.updatedAt));
+          addDetail(grid, "Review reference", documentRecord.reviewId);
+          addDetail(grid, "Category reference", documentRecord.categoryId);
+          addDetail(grid, "Description", documentRecord.description, true);
+          addDetail(grid, "Review notes", documentRecord.reviewNotes, true);
+          addDetail(grid, "Correction / rejection reason", documentRecord.correctionReason, true);
+          if (typeof documentDialog.showModal === "function") {
+            documentDialog.showModal();
+          } else {
+            setStatus(
+              "This browser does not support the document details dialog.",
+              "warning"
+            );
+          }
+        }
+        function csvEscape(input) {
+          let text = input == null ? "" : String(input);
+          /*
+           * Prefix spreadsheet formula-like values to reduce CSV injection risk.
+           */
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+          }
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        function exportDocuments() {
+          if (!state.loadedSuccessfully || !state.documents.length) {
+            setStatus(
+              "There are no loaded document records available to export.",
+              "warning"
+            );
+            return;
+          }
+          /*
+           * Export metadata only. Do not export document contents, storage
+           * URLs, access tokens, credentials or signed download links.
+           */
+          const rows = [
+            [
+              "Record ID",
+              "Submission Reference",
+              "Document Name",
+              "Student Reference",
+              "Student Name",
+              "Category",
+              "Review Status",
+              "Priority",
+              "Assigned Reviewer",
+              "Course",
+              "Institution",
+              "File Type",
+              "File Size",
+              "Created At",
+              "Updated At",
+              "Review Reference",
+              "Description",
+              "Review Notes",
+              "Correction Reason"
+            ],
+            ...state.documents.map(documentRecord => [
+              documentRecord.id,
+              documentRecord.submissionId,
+              documentRecord.name,
+              documentRecord.studentId,
+              documentRecord.studentName,
+              documentRecord.type,
+              documentRecord.status,
+              documentRecord.priority,
+              documentRecord.reviewer,
+              documentRecord.course,
+              documentRecord.institution,
+              documentRecord.mimeType,
+              documentRecord.fileSize,
+              documentRecord.createdAt ?? "",
+              documentRecord.updatedAt ?? "",
+              documentRecord.reviewId,
+              documentRecord.description,
+              documentRecord.reviewNotes,
+              documentRecord.correctionReason
+            ])
+          ];
+          const csv = "\uFEFF" +
+            rows
+              .map(row => row.map(csvEscape).join(","))
+              .join("\r\n");
+          const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+          });
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = "medorbits-document-review-metadata.csv";
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => {
+            URL.revokeObjectURL(objectUrl);
+          }, 1000);
+        }
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            closeNavigation();
+          }
+        });
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+        $("refreshDocuments").addEventListener("click", loadDocuments);
+        $("heroRefresh").addEventListener("click", loadDocuments);
+        $("reloadFromServer").addEventListener("click", loadDocuments);
+        $("heroDirectory").addEventListener("click", () => {
+          $("reviewQueue").scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+            block: "start"
+          });
+        });
+        $("filterForm").addEventListener("submit", event => {
+          event.preventDefault();
+          applyFilters();
+        });
+        [
+          "searchInput",
+          "typeFilter",
+          "statusFilter",
+          "priorityFilter",
+          "reviewerFilter",
+          "sortFilter"
+        ].forEach(id => {
+          $(id).addEventListener(
+            id === "searchInput" || id === "reviewerFilter"
+              ? "input"
+              : "change",
+            applyFilters
+          );
+        });
+        $("resetFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+        /*
+         * Category cards apply local filters to the loaded dataset.
+         * They do not create records or assume documents exist.
+         */
+        document.querySelectorAll("[data-document-type]").forEach(link => {
+          link.addEventListener("click", event => {
+            event.preventDefault();
+            const type = link.getAttribute("data-document-type") || "";
+            $("typeFilter").value = type;
+            applyFilters();
+            $("reviewQueue").scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "auto"
+                : "smooth",
+              block: "start"
+            });
+          });
+        });
+        $("previousPage").addEventListener("click", () => {
+          if (state.currentPage <= 1) return;
+          state.currentPage--;
+          renderDocuments();
+        });
+        $("nextPage").addEventListener("click", () => {
+          const totalPages = Math.max(
+            1,
+            Math.ceil(state.filteredDocuments.length / PAGE_SIZE)
+          );
+          if (state.currentPage >= totalPages) return;
+          state.currentPage++;
+          renderDocuments();
+        });
+        $("exportDocuments").addEventListener("click", exportDocuments);
+        $("closeDocumentDialog").addEventListener("click", () => {
+          documentDialog.close();
+        });
+        documentDialog.addEventListener("close", () => {
+          $("documentDetailGrid").replaceChildren();
+        });
+        documentDialog.addEventListener("click", event => {
+          if (event.target === documentDialog) {
+            documentDialog.close();
+          }
+        });
+        loadDocuments();
+      }
+    })();
+  </script>
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

@@ -1,24 +1,2905 @@
+
+<!-- File: /admin/job-details.html -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Job Details | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06150f">
+  <meta name="description" content="View and inspect job listing details, employer information, employment requirements and recruitment metadata through the MedOrbits administration portal.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Job Details | MedOrbits Admin</title>
+
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06150f;
+      --bg-deep: #030b07;
+      --navy: #0a2017;
+      --navy-2: #103326;
+      --navy-3: #174634;
+      --blue: #8dc8a5;
+      --blue-bright: #b4e7c4;
+      --blue-soft: #d9f5df;
+      --gold: #c5a565;
+      --gold-bright: #f1dca5;
+      --text: #eff7f0;
+      --text-soft: #c4d8c8;
+      --muted: #8fae98;
+      --border: rgba(141,200,165,.19);
+      --border-gold: rgba(197,165,101,.32);
+      --success: #9ee8b5;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #3f9665 0%,
+        #a6dfb5 36%,
+        #f1dca5 70%,
+        #9d793c 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,49,34,.97),
+        rgba(5,17,10,.98)
+      );
+      --surface-light: linear-gradient(
+        145deg,
+        rgba(20,60,41,.92),
+        rgba(10,29,19,.97)
+      );
+    }
+
+    *,*::before,*::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(63,150,101,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(197,165,101,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(36,103,65,.12),transparent 43%),
+        linear-gradient(135deg,#030b07 0%,#071a11 48%,#0a2017 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(rgba(180,231,196,.18) .7px,transparent .7px);
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(63,150,101,.045),
+        transparent 23%,
+        rgba(197,165,101,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button,input,select,textarea { font: inherit; }
+    button,a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #06150f;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .accent-text {
+      color: var(--blue-bright);
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(141,200,165,0); }
+      50% { box-shadow: 0 0 22px rgba(141,200,165,.13); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color: rgba(141,200,165,.18); }
+      50% { border-color: rgba(197,165,101,.48); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes typingBlink {
+      to { visibility: hidden; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030b07;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong { color: var(--gold-bright); }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,16,10,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(3,11,7,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(141,200,165,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,181,.6);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(141,200,165,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover { color: var(--gold-bright); }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(180,231,196,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#83c99b,#d2f0d8);
+      color: #06150f;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(141,200,165,.16);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(197,165,101,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(141,200,165,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(197,165,101,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a { color: var(--blue-bright); }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 29px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .typing-line strong {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      width: 2px;
+      height: 14px;
+      background: var(--gold-bright);
+      animation: typingBlink .8s steps(2,start) infinite;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,.panel,.admin-card,.info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+      animation: borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#174634,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong { display: block; font-size: 11px; }
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav { display: grid; gap: 5px; }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,.admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(141,200,165,.09);
+      color: var(--blue-bright);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(141,200,165,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong { color: var(--gold-bright); }
+
+    .content { display: grid; gap: 19px; min-width: 0; }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(141,200,165,.13),rgba(197,165,101,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(141,200,165,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,181,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .status-row .status { flex: 1; margin: 0; }
+    .timestamp { color: var(--muted); font-size: 9px; }
+
+    .hero-card {
+      position: relative;
+      min-height: 300px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background: var(--navy-2);
+    }
+
+    .hero-card > img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: .52;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg,rgba(3,11,7,.97) 0%,rgba(5,20,12,.87) 49%,rgba(5,20,12,.23) 100%),
+        linear-gradient(0deg,rgba(3,11,7,.8),transparent 75%);
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      min-height: 300px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: clamp(22px,4vw,42px);
+    }
+
+    .hero-copy h2 {
+      max-width: 670px;
+      margin: 14px 0 10px;
+      font: 600 clamp(28px,4vw,43px)/1.2 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-copy p {
+      max-width: 650px;
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 19px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(3,11,7,.55);
+      color: var(--text-soft);
+      font-size: 9px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(141,200,165,.05);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .status-pill::before {
+      width: 5px;
+      height: 5px;
+      flex: 0 0 5px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .status-pill.published,
+    .status-pill.approved,
+    .status-pill.active {
+      border-color: rgba(158,232,181,.25);
+      color: var(--success);
+    }
+
+    .status-pill.pending,
+    .status-pill.review {
+      border-color: rgba(255,224,160,.24);
+      color: var(--warning);
+    }
+
+    .status-pill.closed,
+    .status-pill.rejected,
+    .status-pill.expired {
+      border-color: rgba(255,182,189,.25);
+      color: var(--danger);
+    }
+
+    .status-pill.draft,
+    .status-pill.unknown {
+      border-color: rgba(141,200,165,.25);
+      color: var(--blue-bright);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 13px;
+      margin-bottom: 4px;
+    }
+
+    .stat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+      padding: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(141,200,165,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,49,34,.92),rgba(6,21,15,.96));
+      transition: transform .23s,border-color .23s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-gold);
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(141,200,165,.14),rgba(197,165,101,.08));
+      font-size: 20px;
+    }
+
+    .stat-copy { min-width: 0; }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 21px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 14px;
+    }
+
+    .detail-card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--surface-light);
+    }
+
+    .detail-card h3 {
+      margin: 0 0 15px;
+      font: 600 18px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+    }
+
+    .detail-item {
+      display: grid;
+      grid-template-columns: minmax(100px,.8fr) minmax(0,1.2fr);
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(141,200,165,.12);
+    }
+
+    .detail-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .detail-item dt {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .detail-item dd {
+      min-width: 0;
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .description {
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 2;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .description p { margin: 0 0 12px; }
+    .description p:last-child { margin-bottom: 0; }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(141,200,165,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 23px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .admin-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-gold);
+      box-shadow: 0 24px 55px rgba(0,0,0,.35),0 0 25px rgba(141,200,165,.045);
+    }
+
+    .card-image {
+      position: relative;
+      height: 155px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#174634,#101d16);
+    }
+
+    .card-image::after {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg,rgba(3,11,7,.9),transparent 70%),
+        linear-gradient(115deg,rgba(17,70,46,.12),rgba(197,165,101,.09));
+      content: "";
+      pointer-events: none;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease,filter .6s ease;
+    }
+
+    .admin-card:hover .card-image img {
+      transform: scale(1.055);
+      filter: saturate(1.1);
+    }
+
+    .card-image-label {
+      position: absolute;
+      z-index: 1;
+      bottom: 12px;
+      left: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .card-image-label::before {
+      width: 18px;
+      height: 1px;
+      background: var(--gold-bright);
+      content: "";
+    }
+
+    .card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 17px;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .card-title-row h3 {
+      margin: 0 0 7px;
+      font: 600 19px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .card-symbol {
+      display: grid;
+      place-items: center;
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(197,165,101,.07);
+      color: var(--gold-bright);
+      font-size: 16px;
+    }
+
+    .card-body p {
+      flex: 1;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-footer small { color: var(--muted); font-size: 8px; }
+
+    .card-link {
+      color: var(--blue-bright);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .feature-banner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(197,165,101,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,51,38,.96),rgba(7,17,10,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      position: relative;
+      min-height: 145px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--navy-2);
+    }
+
+    .feature-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 145px;
+      object-fit: cover;
+      opacity: .9;
+    }
+
+    .feature-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .activity-list { display: grid; }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(141,200,165,.12);
+    }
+
+    .activity-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(197,165,101,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .activity-copy { min-width: 0; flex: 1; }
+
+    .activity-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-copy a { color: var(--blue-bright); }
+
+    .info-card {
+      padding: 23px;
+      background: var(--surface-light);
+    }
+
+    .info-card h2 {
+      margin: 0 0 9px;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .security-links {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .security-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(5,15,9,.4);
+      color: var(--text-soft);
+      font-size: 9px;
+      transition: border-color .2s,color .2s;
+    }
+
+    .security-links a:hover {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .security-links span { color: var(--blue-bright); }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(197,165,101,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong { color: var(--gold-bright); }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(141,200,165,.08),transparent 38%),
+        #030b07;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: var(--gold-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(197,165,101,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,16,10,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open { display: flex; }
+      .main-nav > a { display: block; padding: 11px 8px; }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .page-heading { align-items: flex-start; flex-direction: column; }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .feature-banner { grid-template-columns: minmax(0,1fr) minmax(140px,.55fr); }
+    }
+
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+
+      .page-main { padding: 29px 0 44px; }
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+
+      .sidebar,.panel,.info-card { padding: 15px; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .hero-card,.hero-copy { min-height: 340px; }
+      .hero-overlay {
+        background: linear-gradient(90deg,rgba(3,11,7,.94),rgba(3,11,7,.62)),
+                    linear-gradient(0deg,rgba(3,11,7,.8),transparent);
+      }
+
+      .hero-copy { padding: 19px; }
+      .hero-copy h2 { font-size: 29px; }
+      .hero-actions { flex-direction: column; width: 100%; }
+      .hero-actions .btn { width: 100%; }
+
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+        padding: 12px;
+      }
+
+      .stat-copy strong { font-size: 19px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-card { padding: 14px; }
+
+      .detail-item {
+        grid-template-columns: minmax(88px,.75fr) minmax(0,1.25fr);
+        gap: 8px;
+      }
+
+      .admin-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+      .card-image { height: 112px; }
+
+      .card-image-label {
+        bottom: 8px;
+        left: 9px;
+        font-size: 7px;
+        letter-spacing: .06em;
+      }
+
+      .card-body { padding: 11px; }
+      .card-title-row { gap: 6px; }
+      .card-title-row h3 { font-size: 15px; }
+
+      .card-symbol {
+        flex-basis: 29px;
+        width: 29px;
+        height: 29px;
+        font-size: 13px;
+      }
+
+      .card-body p { font-size: 9px; line-height: 1.7; }
+
+      .card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .card-link { font-size: 9px; }
+
+      .feature-banner { grid-template-columns: 1fr; padding: 17px; }
+      .feature-image { min-height: 125px; }
+
+      .security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 8px;
+      }
+
+      .security-links a { align-items: flex-start; padding: 10px; }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-grid { gap: 8px; }
+      .card-image { height: 94px; }
+      .card-body { padding: 9px; }
+      .card-title-row h3 { font-size: 13px; }
+      .card-symbol { display: none; }
+
+      .stats-grid,.security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .footer-grid { gap: 18px 11px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Job Details</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about job details. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Job details and career operations</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Job details administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/jobs.html">Jobs</a>
+        <a href="/admin/recruitment.html">Recruitment</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/jobs.html">Jobs management</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Job details</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Career operations · Record inspection</span>
+          <h1>Job <span class="accent-text">details.</span></h1>
+          <p>
+            Inspect an individual job listing, employer information,
+            employment terms, eligibility requirements and publication
+            metadata returned by your authorised jobs administration API.
+            This page displays records; it does not approve or modify them.
+          </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Clear records. Better career pathways.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/jobs.html">← Back to jobs</a>
+          <button class="btn" id="refreshJob" type="button">↻ Refresh details</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a class="active" href="/admin/jobs.html" aria-current="page"><span class="nav-icon" aria-hidden="true">💼</span>Jobs management</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Platform settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Record confidentiality.</strong>
+            <br>
+            Job descriptions can include confidential employer details.
+            Display only fields authorised for the current administrator
+            and enforce record-level access in the backend.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="panel" aria-labelledby="recordOverviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="recordOverviewTitle">Job record overview</h2>
+                <p>Record details are populated from the configured job-details API.</p>
+              </div>
+            </div>
+
+            <div class="status-row">
+              <div class="status warning" id="jobStatus" role="status" aria-live="polite">
+                Waiting for a job identifier and authorised API response.
+              </div>
+              <span class="timestamp" id="lastUpdated">Not refreshed</span>
+            </div>
+
+            <section class="hero-card" aria-labelledby="jobTitle">
+              <img
+                src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=85"
+                alt="Professionals collaborating in a modern workplace"
+                fetchpriority="high"
+                decoding="async"
+              >
+              <div class="hero-overlay"></div>
+              <div class="hero-copy">
+                <span class="eyebrow">Selected career opportunity</span>
+                <h2 id="jobTitle">Job details are being loaded</h2>
+                <p id="jobSummary">
+                  The listing title, employer, location and job summary will
+                  appear here when the authorised API returns a valid record.
+                </p>
+                <div class="hero-meta">
+                  <span class="meta-chip" id="jobIdChip">Job ID: --</span>
+                  <span class="meta-chip" id="jobTypeChip">Employment: --</span>
+                  <span class="meta-chip" id="jobLocationChip">Location: --</span>
+                  <span class="status-pill unknown" id="jobStatusPill">Unspecified</span>
+                </div>
+                <div class="hero-actions">
+                  <a class="btn" href="/admin/jobs.html">← All job listings</a>
+                  <a class="btn btn-outline" href="/admin/recruitment.html">Recruitment workspace ↗</a>
+                </div>
+              </div>
+            </section>
+
+            <div class="stats-grid" aria-label="Job record summary">
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">💼</div>
+                <div class="stat-copy">
+                  <span>Employment type</span>
+                  <strong id="statEmployment">--</strong>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⌖</div>
+                <div class="stat-copy">
+                  <span>Work location</span>
+                  <strong id="statLocation">--</strong>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Posted date</span>
+                  <strong id="statPosted">--</strong>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⌛</div>
+                <div class="stat-copy">
+                  <span>Application deadline</span>
+                  <strong id="statDeadline">--</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="descriptionTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="descriptionTitle">Job description</h2>
+                <p>Role summary and responsibilities provided by the jobs service.</p>
+              </div>
+            </div>
+            <div class="description" id="jobDescription">
+              <p>Job description content will appear here after the record is loaded.</p>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="requirementsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✓</div>
+              <div>
+                <h2 id="requirementsTitle">Requirements and qualifications</h2>
+                <p>Review the skills, qualifications and experience requirements attached to this listing.</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <article class="detail-card">
+                <h3>Eligibility and experience</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Education</dt><dd id="education">Not provided</dd></div>
+                  <div class="detail-item"><dt>Experience</dt><dd id="experience">Not provided</dd></div>
+                  <div class="detail-item"><dt>Vacancies</dt><dd id="vacancies">Not provided</dd></div>
+                  <div class="detail-item"><dt>Language</dt><dd id="languages">Not provided</dd></div>
+                </dl>
+              </article>
+
+              <article class="detail-card">
+                <h3>Required skills</h3>
+                <p class="description" id="skillsIntro">Skills and competencies have not been supplied.</p>
+                <div class="tag-list" id="skillsList" aria-label="Required skills"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="employmentTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">♧</div>
+              <div>
+                <h2 id="employmentTitle">Employment and compensation</h2>
+                <p>Inspect the work arrangement and compensation information available in the record.</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <article class="detail-card">
+                <h3>Employment terms</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Employment type</dt><dd id="employmentType">Not provided</dd></div>
+                  <div class="detail-item"><dt>Work arrangement</dt><dd id="workArrangement">Not provided</dd></div>
+                  <div class="detail-item"><dt>Work schedule</dt><dd id="workSchedule">Not provided</dd></div>
+                  <div class="detail-item"><dt>Department</dt><dd id="department">Not provided</dd></div>
+                  <div class="detail-item"><dt>Experience level</dt><dd id="experienceLevel">Not provided</dd></div>
+                </dl>
+              </article>
+
+              <article class="detail-card">
+                <h3>Salary and benefits</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Salary range</dt><dd id="salary">Not disclosed</dd></div>
+                  <div class="detail-item"><dt>Salary period</dt><dd id="salaryPeriod">Not provided</dd></div>
+                  <div class="detail-item"><dt>Currency</dt><dd id="salaryCurrency">Not provided</dd></div>
+                  <div class="detail-item"><dt>Benefits</dt><dd id="benefits">Not provided</dd></div>
+                </dl>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="employerTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">🏢</div>
+              <div>
+                <h2 id="employerTitle">Employer information</h2>
+                <p>Employer information returned by the job record endpoint. Only authorised fields should be provided.</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <article class="detail-card">
+                <h3>Organisation profile</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Employer</dt><dd id="employerName">Not provided</dd></div>
+                  <div class="detail-item"><dt>Industry</dt><dd id="employerIndustry">Not provided</dd></div>
+                  <div class="detail-item"><dt>Organisation size</dt><dd id="employerSize">Not provided</dd></div>
+                  <div class="detail-item"><dt>Employer reference</dt><dd id="employerId">Not provided</dd></div>
+                  <div class="detail-item"><dt>Verification</dt><dd id="employerVerification">Not provided</dd></div>
+                </dl>
+              </article>
+
+              <article class="detail-card">
+                <h3>Workplace location</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>City</dt><dd id="employerCity">Not provided</dd></div>
+                  <div class="detail-item"><dt>State / region</dt><dd id="employerRegion">Not provided</dd></div>
+                  <div class="detail-item"><dt>Country</dt><dd id="employerCountry">Not provided</dd></div>
+                  <div class="detail-item"><dt>Workplace mode</dt><dd id="employerWorkMode">Not provided</dd></div>
+                </dl>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="metadataTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">≡</div>
+              <div>
+                <h2 id="metadataTitle">Publication and record metadata</h2>
+                <p>Administrative record identifiers and lifecycle timestamps for auditing and support.</p>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <article class="detail-card">
+                <h3>Publication status</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Current status</dt><dd id="recordStatus">Not provided</dd></div>
+                  <div class="detail-item"><dt>Posted on</dt><dd id="postedDate">Not provided</dd></div>
+                  <div class="detail-item"><dt>Last updated</dt><dd id="updatedDate">Not provided</dd></div>
+                  <div class="detail-item"><dt>Application deadline</dt><dd id="deadlineDate">Not provided</dd></div>
+                  <div class="detail-item"><dt>Record created</dt><dd id="createdDate">Not provided</dd></div>
+                </dl>
+              </article>
+
+              <article class="detail-card">
+                <h3>Administration reference</h3>
+                <dl class="detail-list">
+                  <div class="detail-item"><dt>Job ID</dt><dd id="recordJobId">Not provided</dd></div>
+                  <div class="detail-item"><dt>External reference</dt><dd id="externalReference">Not provided</dd></div>
+                  <div class="detail-item"><dt>Applications</dt><dd id="applicationCount">Not provided</dd></div>
+                  <div class="detail-item"><dt>Recruitment owner</dt><dd id="recruitmentOwner">Not provided</dd></div>
+                  <div class="detail-item"><dt>Last reviewed</dt><dd id="lastReviewed">Not provided</dd></div>
+                </dl>
+              </article>
+            </div>
+          </section>
+
+          <section aria-labelledby="workflowModulesTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="workflowModulesTitle">Related career <span class="accent-text">workflows.</span></h2>
+                <p>Move between supported recruitment and job administration areas.</p>
+              </div>
+            </div>
+
+            <div class="admin-grid">
+              <a class="admin-card" href="/admin/jobs.html">
+                <div class="card-image">
+                  <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80" alt="Professionals collaborating in a modern workplace" loading="lazy" decoding="async">
+                  <span class="card-image-label">Job listings</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Jobs management</h3>
+                    <span class="card-symbol" aria-hidden="true">💼</span>
+                  </div>
+                  <p>Return to the job register to search listings and inspect another record.</p>
+                  <div class="card-footer">
+                    <small>Listing administration</small>
+                    <span class="card-link">View all jobs →</span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/recruitment.html">
+                <div class="card-image">
+                  <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=80" alt="Professional meeting in an office environment" loading="lazy" decoding="async">
+                  <span class="card-image-label">Recruitment</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Recruitment operations</h3>
+                    <span class="card-symbol" aria-hidden="true">♧</span>
+                  </div>
+                  <p>Open the recruitment workspace to coordinate supported employer and hiring workflows.</p>
+                  <div class="card-footer">
+                    <small>Recruitment coordination</small>
+                    <span class="card-link">Open workspace →</span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/applications.html">
+                <div class="card-image">
+                  <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80" alt="Business professionals discussing a hiring decision" loading="lazy" decoding="async">
+                  <span class="card-image-label">Applications</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Candidate applications</h3>
+                    <span class="card-symbol" aria-hidden="true">♙</span>
+                  </div>
+                  <p>Open application management for authorised candidate workflow tasks.</p>
+                  <div class="card-footer">
+                    <small>Candidate workflow</small>
+                    <span class="card-link">Review applications →</span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/reports.html">
+                <div class="card-image">
+                  <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80" alt="Business analytics displayed on a computer screen" loading="lazy" decoding="async">
+                  <span class="card-image-label">Reporting</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Reports and insights</h3>
+                    <span class="card-symbol" aria-hidden="true">▥</span>
+                  </div>
+                  <p>Navigate to the platform reporting area for available career and recruitment reports.</p>
+                  <div class="card-footer">
+                    <small>Reporting and oversight</small>
+                    <span class="card-link">View reports →</span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="careerFeatureTitle">
+            <div>
+              <span class="eyebrow">Structured career operations</span>
+              <h2 id="careerFeatureTitle">Better opportunities. <span class="accent-text">Clearer pathways.</span></h2>
+              <p>
+                Maintain accurate job information, consistent publication
+                records and accountable recruitment workflows across MedOrbits.
+                Keep employer and candidate data limited to authorised users.
+              </p>
+              <div class="feature-actions">
+                <a class="btn" href="/admin/jobs.html">Return to job listings</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Review audit history ↗</a>
+              </div>
+            </div>
+            <div class="feature-image">
+              <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80" alt="A team working together on a professional project" loading="lazy" decoding="async">
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="quickLinksTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✧</div>
+              <div>
+                <h2 id="quickLinksTitle">Job record quick links</h2>
+                <p>Useful destinations for routine job and recruitment administration.</p>
+              </div>
+            </div>
+
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">💼</div>
+                <div class="activity-copy">
+                  <strong>Job listing register</strong>
+                  <p>Return to <a href="/admin/jobs.html">jobs management</a> to search or inspect other listings.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">♧</div>
+                <div class="activity-copy">
+                  <strong>Recruitment coordination</strong>
+                  <p>Open <a href="/admin/recruitment.html">recruitment management</a> for supported hiring operations.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">♙</div>
+                <div class="activity-copy">
+                  <strong>Application records</strong>
+                  <p>Visit <a href="/admin/applications.html">application management</a> for permitted candidate workflows.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🔐</div>
+                <div class="activity-copy">
+                  <strong>Audit and security controls</strong>
+                  <p>Use <a href="/admin/audit-logs.html">audit logs</a> and the <a href="/admin/security.html">security centre</a> for administrative oversight.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card" aria-labelledby="securityTitle">
+            <h2 id="securityTitle">Protect candidate and employer <span class="accent-text">information.</span></h2>
+            <p>
+              Job records may include confidential employer details and
+              recruitment information. The server must enforce authentication,
+              role-based permissions and record-level access. Never expose
+              private candidate information or employer contact details unless
+              they are explicitly needed and authorised.
+            </p>
+            <div class="security-links">
+              <a href="/admin/security.html">Security centre <span>↗</span></a>
+              <a href="/admin/audit-logs.html">Audit logs <span>↗</span></a>
+              <a href="/admin/recruitment.html">Recruitment management <span>↗</span></a>
+              <a href="/pages/contact.html">Support and assistance <span>↗</span></a>
+            </div>
+          </section>
+
+          <div class="notice">
+            <strong>Security notice:</strong>
+            This page is an interface, not an authorization boundary.
+            Authenticate and authorise every API request on the server.
+            Validate record identifiers, enforce record-level permissions,
+            limit returned personal information and audit access to sensitive
+            recruitment records.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Job details administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents, recruitment and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/jobs.html">Jobs</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Job descriptions, eligibility criteria, compensation,
+        recruitment requirements and application deadlines may change.
+        Applicants should verify employment details with the relevant
+        employer before making decisions.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Job Details
+       *
+       * Default endpoint:
+       *   GET /api/admin/jobs/:id
+       *
+       * Job identifier:
+       *   /admin/job-details.html?id=JOB-001
+       *
+       * Supported response examples:
+       *   { "job": { "id": "JOB-001", "title": "Example role" } }
+       *   { "data": { "job": { "id": "JOB-001", "title": "Example role" } } }
+       *   { "id": "JOB-001", "title": "Example role" }
+       *
+       * Optional config:
+       *   window.MEDORBITS_CONFIG = {
+       *     adminJobDetailsEndpoint: "/api/admin/jobs"
+       *   };
+       *
+       * The configured endpoint is treated as a base path and the encoded
+       * job identifier is appended as a path segment. Adjust the URL
+       * construction if your backend uses a query-based details endpoint.
+       *
+       * This is an integration contract, not a claim that the API already
+       * exists. Map property names to the actual backend response schema.
+       * Every request must be authorised by the backend.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const refreshButton = $("refreshJob");
+        const statusBox = $("jobStatus");
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const typingText = $("typingText");
+        const phrases = [
+          "Clear records. Better career pathways.",
+          "Accurate listings. Better recruitment.",
+          "Connecting talent with opportunity."
+        ];
+
+        let phraseIndex = 0;
+        let typingTimer = null;
+
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+        } else {
+          typingTimer = window.setInterval(() => {
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            typingText.textContent = phrases[phraseIndex];
+          }, 3600);
+        }
+
+        reducedMotion.addEventListener?.("change", event => {
+          if (event.matches) {
+            window.clearInterval(typingTimer);
+            typingText.textContent = phrases[0];
+          } else {
+            window.clearInterval(typingTimer);
+            typingTimer = window.setInterval(() => {
+              phraseIndex = (phraseIndex + 1) % phrases.length;
+              typingText.textContent = phrases[phraseIndex];
+            }, 3600);
+          }
+        });
+
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+          menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        window.matchMedia("(min-width: 1101px)").addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+        function showStatus(message, type = "warning") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+
+        function displayText(id, value, fallback = "Not provided") {
+          const element = $(id);
+          if (!element) return;
+
+          if (value === null || value === undefined || value === "") {
+            element.textContent = fallback;
+            return;
+          }
+
+          if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+            element.textContent = String(value);
+            return;
+          }
+
+          element.textContent = fallback;
+        }
+
+        function firstValue(object, keys, fallback = "") {
+          for (const key of keys) {
+            const value = object?.[key];
+
+            if (
+              value !== undefined &&
+              value !== null &&
+              !(typeof value === "string" && !value.trim())
+            ) {
+              return value;
+            }
+          }
+
+          return fallback;
+        }
+
+        function asText(value, fallback = "Not provided") {
+          if (typeof value === "string" && value.trim()) return value.trim();
+
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(value);
+          }
+
+          if (typeof value === "boolean") return value ? "Yes" : "No";
+
+          return fallback;
+        }
+
+        function formatDate(value, fallback = "Not provided") {
+          if (
+            typeof value !== "string" &&
+            typeof value !== "number"
+          ) {
+            return fallback;
+          }
+
+          if (value === "") return fallback;
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) return fallback;
+
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
+        function formatDateOnly(value, fallback = "Not provided") {
+          if (
+            typeof value !== "string" &&
+            typeof value !== "number"
+          ) {
+            return fallback;
+          }
+
+          if (value === "") return fallback;
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) return fallback;
+
+          return date.toLocaleDateString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+          });
+        }
+
+        function normaliseStatus(value) {
+          const key = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+
+          const allowed = new Set([
+            "published",
+            "pending",
+            "pending_review",
+            "draft",
+            "closed",
+            "rejected",
+            "under_review",
+            "active",
+            "expired",
+            "approved",
+            "paused",
+            "archived"
+          ]);
+
+          return allowed.has(key) ? key : "unknown";
+        }
+
+        function statusLabel(value) {
+          const labels = {
+            published: "Published",
+            pending: "Pending review",
+            pending_review: "Pending review",
+            draft: "Draft",
+            closed: "Closed",
+            rejected: "Rejected",
+            under_review: "Under review",
+            active: "Active",
+            expired: "Expired",
+            approved: "Approved",
+            paused: "Paused",
+            archived: "Archived",
+            unknown: "Unspecified"
+          };
+
+          return labels[value] || "Unspecified";
+        }
+
+        function statusClass(value) {
+          if (["published", "approved", "active"].includes(value)) return value;
+          if (["pending", "pending_review"].includes(value)) return "pending";
+          if (["under_review", "paused"].includes(value)) return "review";
+          if (["closed", "rejected", "expired", "archived"].includes(value)) return value;
+          if (value === "draft") return "draft";
+          return "unknown";
+        }
+
+        function employmentLabel(value) {
+          const key = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+
+          const labels = {
+            full_time: "Full-time",
+            part_time: "Part-time",
+            contract: "Contract",
+            internship: "Internship",
+            temporary: "Temporary",
+            remote: "Remote",
+            freelance: "Freelance",
+            apprenticeship: "Apprenticeship",
+            permanent: "Permanent",
+            hybrid: "Hybrid",
+            on_site: "On-site"
+          };
+
+          return labels[key] || asText(value);
+        }
+
+        function renderTags(containerId, values, emptyMessage) {
+          const container = $(containerId);
+          container.replaceChildren();
+
+          const items = Array.isArray(values)
+            ? values
+            : typeof values === "string"
+              ? values.split(/[,;\n]/).map(item => item.trim()).filter(Boolean)
+              : [];
+
+          if (!items.length) {
+            const empty = document.createElement("span");
+            empty.className = "description";
+            empty.textContent = emptyMessage;
+            container.appendChild(empty);
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          items.slice(0, 80).forEach(item => {
+            const value = typeof item === "string"
+              ? item
+              : item && typeof item === "object"
+                ? firstValue(item, ["name", "title", "label", "skill"], "")
+                : "";
+
+            if (typeof value !== "string" || !value.trim()) return;
+
+            const tag = document.createElement("span");
+            tag.className = "tag";
+            tag.textContent = value.trim();
+            fragment.appendChild(tag);
+          });
+
+          if (!fragment.childNodes.length) {
+            const empty = document.createElement("span");
+            empty.className = "description";
+            empty.textContent = emptyMessage;
+            container.appendChild(empty);
+            return;
+          }
+
+          container.appendChild(fragment);
+        }
+
+        function renderDescription(value) {
+          const container = $("jobDescription");
+          container.replaceChildren();
+
+          const text = typeof value === "string" ? value.trim() : "";
+
+          if (!text) {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = "No job description was supplied by the service.";
+            container.appendChild(paragraph);
+            return;
+          }
+
+          /*
+           * Render as plain text. New lines become separate paragraphs;
+           * API-provided HTML is deliberately never executed or injected.
+           */
+          const paragraphs = text.split(/\n{2,}/).map(item => item.trim()).filter(Boolean);
+
+          paragraphs.forEach(item => {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = item;
+            container.appendChild(paragraph);
+          });
+        }
+
+        function safeCount(value) {
+          if (typeof value === "string" && value.trim() !== "") {
+            const numeric = Number(value);
+            if (Number.isSafeInteger(numeric) && numeric >= 0) {
+              return numeric.toLocaleString();
+            }
+          }
+
+          if (Number.isSafeInteger(value) && value >= 0) {
+            return value.toLocaleString();
+          }
+
+          return "Not provided";
+        }
+
+        function salaryText(job) {
+          const salary = job.salary && typeof job.salary === "object"
+            ? job.salary
+            : {};
+
+          const minimum = firstValue(job, [
+            "salaryMin",
+            "salary_min",
+            "minSalary",
+            "minimumSalary"
+          ], firstValue(salary, ["min", "minimum", "minAmount"], null));
+
+          const maximum = firstValue(job, [
+            "salaryMax",
+            "salary_max",
+            "maxSalary",
+            "maximumSalary"
+          ], firstValue(salary, ["max", "maximum", "maxAmount"], null));
+
+          const explicit = firstValue(job, [
+            "salaryRange",
+            "salary_range",
+            "salaryText",
+            "compensation"
+          ], firstValue(salary, ["range", "display"], null));
+
+          if (typeof explicit === "string" && explicit.trim()) {
+            return explicit.trim();
+          }
+
+          if (minimum !== null && maximum !== null) {
+            const currency = asText(
+              firstValue(job, ["salaryCurrency", "currency"], salary.currency || "INR"),
+              "INR"
+            );
+
+            return `${currency} ${minimum} – ${maximum}`;
+          }
+
+          if (minimum !== null) {
+            const currency = asText(
+              firstValue(job, ["salaryCurrency", "currency"], salary.currency || "INR"),
+              "INR"
+            );
+
+            return `${currency} ${minimum}${maximum === null ? "+" : ""}`;
+          }
+
+          if (maximum !== null) {
+            const currency = asText(
+              firstValue(job, ["salaryCurrency", "currency"], salary.currency || "INR"),
+              "INR"
+            );
+
+            return `Up to ${currency} ${maximum}`;
+          }
+
+          return "Not disclosed";
+        }
+
+        function renderJob(job) {
+          const employer = job.employer && typeof job.employer === "object"
+            ? job.employer
+            : {};
+
+          const locationObject = job.location && typeof job.location === "object"
+            ? job.location
+            : {};
+
+          const title = asText(firstValue(job, ["title", "jobTitle", "name"]), "Untitled job");
+          const id = asText(firstValue(job, ["id", "jobId", "job_id"]), "Not provided");
+          const employment = employmentLabel(firstValue(job, ["employmentType", "employment_type", "type"]));
+          const location = typeof job.location === "string"
+            ? job.location
+            : asText(firstValue(locationObject, ["display", "label", "address", "city"]),
+              [
+                firstValue(locationObject, ["city"], ""),
+                firstValue(locationObject, ["state", "region"], ""),
+                firstValue(locationObject, ["country"], "")
+              ].filter(Boolean).join(", ") || "Not provided");
+
+          const status = normaliseStatus(firstValue(job, ["status", "publicationStatus", "publication_status"]));
+          const postedAt = firstValue(job, ["postedAt", "posted_at", "publishedAt", "published_at"]);
+          const deadline = firstValue(job, ["applicationDeadline", "application_deadline", "closingDate", "closing_date"]);
+          const description = firstValue(job, ["description", "jobDescription", "job_description", "summary"], "");
+
+          displayText("jobTitle", title, "Untitled job");
+          displayText("jobSummary", firstValue(job, ["summary", "shortDescription", "short_description", "excerpt"]), "No summary was supplied for this job listing.");
+          displayText("jobIdChip", `Job ID: ${id}`);
+          displayText("jobTypeChip", `Employment: ${employment}`);
+          displayText("jobLocationChip", `Location: ${location}`);
+
+          const statusPill = $("jobStatusPill");
+          statusPill.className = `status-pill ${statusClass(status)}`;
+          statusPill.textContent = statusLabel(status);
+
+          displayText("statEmployment", employment);
+          displayText("statLocation", location);
+          displayText("statPosted", formatDateOnly(postedAt));
+          displayText("statDeadline", formatDateOnly(deadline));
+
+          renderDescription(description);
+
+          displayText("education", firstValue(job, [
+            "education",
+            "educationRequirement",
+            "education_requirement",
+            "qualification",
+            "qualifications"
+          ]));
+
+          displayText("experience", firstValue(job, [
+            "experience",
+            "experienceRequired",
+            "experience_required",
+            "experienceRange"
+          ]));
+
+          displayText("vacancies", firstValue(job, [
+            "vacancies",
+            "vacancyCount",
+            "vacancy_count",
+            "openings"
+          ]));
+
+          displayText("languages", firstValue(job, [
+            "languages",
+            "languageRequirements",
+            "language_requirements"
+          ]));
+
+          const skills = firstValue(job, [
+            "skills",
+            "requiredSkills",
+            "required_skills",
+            "keySkills"
+          ], []);
+
+          displayText(
+            "skillsIntro",
+            Array.isArray(skills) && skills.length
+              ? "Skills and competencies supplied for this role:"
+              : typeof skills === "string" && skills.trim()
+                ? "Skills and competencies supplied for this role:"
+                : "No specific skills list was supplied."
+          );
+
+          renderTags("skillsList", skills, "No skills listed.");
+
+          displayText("employmentType", employment);
+          displayText("workArrangement", firstValue(job, [
+            "workArrangement",
+            "work_arrangement",
+            "workMode",
+            "work_mode",
+            "remotePolicy"
+          ]));
+          displayText("workSchedule", firstValue(job, [
+            "workSchedule",
+            "work_schedule",
+            "schedule",
+            "workingHours"
+          ]));
+          displayText("department", firstValue(job, ["department", "team", "function"]));
+          displayText("experienceLevel", firstValue(job, [
+            "experienceLevel",
+            "experience_level",
+            "seniority",
+            "seniorityLevel"
+          ]));
+
+          displayText("salary", salaryText(job));
+          displayText("salaryPeriod", firstValue(job, [
+            "salaryPeriod",
+            "salary_period",
+            "payPeriod"
+          ], job.salary?.period || "Not provided"));
+
+          displayText("salaryCurrency", firstValue(job, [
+            "salaryCurrency",
+            "salary_currency",
+            "currency"
+          ], job.salary?.currency || "Not provided"));
+
+          displayText("benefits", firstValue(job, [
+            "benefits",
+            "perks",
+            "compensationBenefits",
+            "compensation_benefits"
+          ]));
+
+          displayText("employerName", firstValue(job, [
+            "employerName",
+            "employer_name",
+            "companyName",
+            "company_name",
+            "company"
+          ], firstValue(employer, ["name", "companyName", "company_name"])));
+
+          displayText("employerIndustry", firstValue(job, [
+            "employerIndustry",
+            "employer_industry",
+            "industry"
+          ], employer.industry));
+
+          displayText("employerSize", firstValue(job, [
+            "employerSize",
+            "employer_size",
+            "companySize",
+            "company_size"
+          ], employer.size));
+
+          displayText("employerId", firstValue(job, [
+            "employerId",
+            "employer_id",
+            "companyId",
+            "company_id"
+          ], firstValue(employer, ["id", "employerId", "employer_id"])));
+
+          displayText("employerVerification", firstValue(job, [
+            "employerVerification",
+            "employer_verification",
+            "employerVerified",
+            "employer_verified"
+          ], employer.verificationStatus || employer.verified));
+
+          displayText("employerCity", firstValue(job, [
+            "city",
+            "workCity",
+            "work_city"
+          ], locationObject.city || employer.city));
+
+          displayText("employerRegion", firstValue(job, [
+            "state",
+            "region",
+            "workState",
+            "work_state"
+          ], locationObject.state || locationObject.region || employer.state));
+
+          displayText("employerCountry", firstValue(job, [
+            "country",
+            "workCountry",
+            "work_country"
+          ], locationObject.country || employer.country));
+
+          displayText("employerWorkMode", firstValue(job, [
+            "workMode",
+            "work_mode",
+            "workArrangement",
+            "work_arrangement"
+          ], locationObject.mode));
+
+          displayText("recordStatus", statusLabel(status));
+          displayText("postedDate", formatDate(postedAt));
+          displayText("updatedDate", formatDate(firstValue(job, ["updatedAt", "updated_at", "modifiedAt", "modified_at"])));
+          displayText("deadlineDate", formatDateOnly(deadline));
+          displayText("createdDate", formatDate(firstValue(job, ["createdAt", "created_at"])));
+          displayText("recordJobId", id);
+          displayText("externalReference", firstValue(job, [
+            "externalReference",
+            "external_reference",
+            "referenceCode",
+            "reference_code"
+          ]));
+          displayText("applicationCount", safeCount(firstValue(job, [
+            "applicationCount",
+            "application_count",
+            "applicationsCount",
+            "applications_count"
+          ], null)));
+          displayText("recruitmentOwner", firstValue(job, [
+            "recruitmentOwner",
+            "recruitment_owner",
+            "ownerName",
+            "owner_name"
+          ]));
+          displayText("lastReviewed", formatDate(firstValue(job, [
+            "lastReviewedAt",
+            "last_reviewed_at",
+            "reviewedAt",
+            "reviewed_at"
+          ])));
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const jobId = (params.get("id") || params.get("jobId") || "").trim();
+
+        const configuredEndpoint =
+          window.MEDORBITS_CONFIG?.adminJobDetailsEndpoint ||
+          "/api/admin/jobs";
+
+        let endpoint;
+
+        try {
+          endpoint = new URL(configuredEndpoint, window.location.origin);
+        } catch {
+          showStatus("The configured job-details endpoint is invalid.", "error");
+          refreshButton.disabled = true;
+          return;
+        }
+
+        if (
+          endpoint.origin !== window.location.origin ||
+          endpoint.username ||
+          endpoint.password ||
+          !endpoint.pathname.startsWith("/api/")
+        ) {
+          showStatus("The job-details endpoint must be a same-origin /api/ path.", "error");
+          refreshButton.disabled = true;
+          return;
+        }
+
+        if (!jobId || jobId.length > 200) {
+          showStatus(
+            "No valid job identifier was supplied. Open this page from Jobs Management using a URL such as /admin/job-details.html?id=JOB-001.",
+            "warning"
+          );
+          refreshButton.disabled = true;
+          return;
+        }
+
+        let requestController = null;
+        let requestSequence = 0;
+        let loading = false;
+
+        function setLoading(value) {
+          loading = value;
+          refreshButton.disabled = value;
+          refreshButton.textContent = value ? "Loading…" : "↻ Refresh details";
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        async function loadJob() {
+          if (loading) {
+            requestController?.abort();
+          }
+
+          if (requestController) requestController.abort();
+
+          const controller = new AbortController();
+          requestController = controller;
+          const requestId = ++requestSequence;
+
+          setLoading(true);
+          showStatus("Loading job record from the authorised administration service…", "warning");
+
+          /*
+           * The ID is encoded as one path segment. Never accept a URL
+           * supplied by the record itself for API requests or navigation.
+           */
+          const requestUrl = new URL(endpoint.href);
+          const basePath = requestUrl.pathname.replace(/\/+$/, "");
+          requestUrl.pathname = `${basePath}/${encodeURIComponent(jobId)}`;
+
+          try {
+            const response = await fetch(requestUrl, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { "Accept": "application/json" },
+              signal: controller.signal
+            });
+
+            const payload = await readJson(response);
+
+            if (requestId !== requestSequence) return;
+
+            if (!response.ok) {
+              if (response.status === 401) {
+                throw new Error("Authentication required. Sign in with an authorised administrator account.");
+              }
+
+              if (response.status === 403) {
+                throw new Error("Access denied. Your account is not authorised to view this job record.");
+              }
+
+              if (response.status === 404) {
+                throw new Error("The job record or configured API endpoint was not found. Check the job ID and backend route.");
+              }
+
+              if (response.status === 429) {
+                throw new Error("Too many requests. Wait briefly before refreshing the job record.");
+              }
+
+              throw new Error(
+                typeof payload.message === "string"
+                  ? payload.message
+                  : "The job service could not return this record."
+              );
+            }
+
+            if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+              throw new Error("The job API returned an invalid response.");
+            }
+
+            const nestedData = payload.data && typeof payload.data === "object"
+              ? payload.data
+              : null;
+
+            const job = payload.job ||
+              nestedData?.job ||
+              nestedData ||
+              payload;
+
+            if (
+              !job ||
+              typeof job !== "object" ||
+              Array.isArray(job)
+            ) {
+              throw new Error("The API response does not contain a valid job object.");
+            }
+
+            const returnedId = firstValue(job, ["id", "jobId", "job_id"], null);
+
+            if (
+              returnedId !== null &&
+              String(returnedId) !== jobId
+            ) {
+              throw new Error("The returned job identifier does not match the requested record.");
+            }
+
+            renderJob(job);
+
+            if (
+              typeof payload.admin?.name === "string" &&
+              payload.admin.name.trim()
+            ) {
+              $("adminName").textContent = payload.admin.name.trim();
+            }
+
+            if (
+              typeof payload.admin?.email === "string" &&
+              payload.admin.email.trim()
+            ) {
+              $("adminEmail").textContent = payload.admin.email.trim();
+            }
+
+            $("lastUpdated").textContent =
+              "Updated " + new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              });
+
+            showStatus("Job record retrieved successfully.", "success");
+          } catch (error) {
+            if (error?.name === "AbortError") return;
+            if (requestId !== requestSequence) return;
+
+            const message = error instanceof Error
+              ? error.message
+              : "The job record could not be loaded.";
+
+            showStatus(message, "error");
+          } finally {
+            if (requestId === requestSequence) {
+              setLoading(false);
+            }
+          }
+        }
+
+        refreshButton.addEventListener("click", loadJob);
+        loadJob();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

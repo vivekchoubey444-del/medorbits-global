@@ -1,24 +1,2926 @@
+<!-- File: /admin/user-details.html -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>User Details | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Review an authorised MedOrbits user profile, account status, verification details, linked applications and administrative activity.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>User Details | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+      --surface-light: linear-gradient(
+        145deg,
+        rgba(20,48,79,.92),
+        rgba(10,24,44,.97)
+      );
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(67,135,217,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(38,92,151,.12),transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .accent-text {
+      color: var(--blue-bright);
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color: rgba(116,184,255,.18); }
+      50% { border-color: rgba(211,173,97,.48); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes typingBlink {
+      to { visibility: hidden; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong { color: var(--gold-bright); }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover { color: var(--gold-bright); }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a { color: var(--blue-bright); }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 29px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .typing-line strong {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      width: 2px;
+      height: 14px;
+      background: var(--gold-bright);
+      animation: typingBlink .8s steps(2,start) infinite;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+      animation: borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong { display: block; font-size: 11px; }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav { display: grid; gap: 5px; }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong { color: var(--gold-bright); }
+
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status.info { color: var(--blue-bright); }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .status-row .status { flex: 1; margin: 0; }
+
+    .timestamp {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .profile-hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(200px,.7fr);
+      gap: 22px;
+      align-items: center;
+      min-width: 0;
+      padding: clamp(18px,3vw,28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .profile-hero-copy { position: relative; z-index: 1; min-width: 0; }
+
+    .profile-identity {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      min-width: 0;
+      margin-bottom: 18px;
+    }
+
+    .profile-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 84px;
+      width: 84px;
+      height: 84px;
+      overflow: hidden;
+      border: 2px solid var(--border-gold);
+      border-radius: 24px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 29px "Playfair Display",Georgia,serif;
+      box-shadow: 0 10px 30px rgba(0,0,0,.24);
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-identity-copy { min-width: 0; }
+
+    .profile-identity h2 {
+      margin: 0 0 5px;
+      font: 600 clamp(22px,3vw,31px)/1.25 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .profile-identity p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .profile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.055);
+      color: var(--text-soft);
+      font-size: 9px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .pill.active,
+    .pill.verified {
+      border-color: rgba(158,232,193,.28);
+      color: var(--success);
+    }
+
+    .pill.pending,
+    .pill.invited {
+      border-color: rgba(255,224,160,.27);
+      color: var(--warning);
+    }
+
+    .pill.suspended,
+    .pill.disabled,
+    .pill.unverified {
+      border-color: rgba(255,182,189,.28);
+      color: var(--danger);
+    }
+
+    .pill.unknown {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .profile-hero-art {
+      position: relative;
+      min-height: 190px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.4),rgba(5,13,26,.6)),
+        url("https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .profile-hero-art::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,rgba(3,8,18,.75),transparent 75%);
+      content: "";
+    }
+
+    .hero-art-label {
+      position: absolute;
+      z-index: 1;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d2deed;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 19px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 40px;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 18px;
+    }
+
+    .stat-copy { min-width: 0; }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 20px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .detail-item {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: rgba(3,11,22,.35);
+    }
+
+    .detail-item dt {
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .detail-item dd {
+      margin: 0;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .detail-item dd.subtle {
+      color: var(--text-soft);
+      font-weight: 400;
+    }
+
+    .detail-item a {
+      color: var(--blue-bright);
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 23px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .section-heading a {
+      color: var(--gold-bright);
+      font-size: 10px;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 19px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .mini-copy { min-width: 0; flex: 1; }
+
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-copy a { color: var(--blue-bright); }
+
+    .empty-state {
+      padding: 26px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(3,11,22,.45);
+      scrollbar-width: thin;
+      scrollbar-color: #355777 #081426;
+    }
+
+    .data-table {
+      width: 100%;
+      min-width: 570px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .data-table th {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(116,184,255,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(116,184,255,.1);
+      color: var(--text-soft);
+      font-size: 9px;
+      vertical-align: top;
+    }
+
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+
+    .data-table a {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+
+    .activity-list { display: grid; }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(116,184,255,.12);
+    }
+
+    .activity-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .activity-copy { min-width: 0; flex: 1; }
+
+    .activity-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-time {
+      display: block;
+      margin-top: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+    }
+
+    .feature-banner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      position: relative;
+      min-height: 150px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.3),rgba(5,13,26,.55)),
+        url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .feature-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong { color: var(--gold-bright); }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: var(--gold-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav > a {
+        display: block;
+        padding: 11px 8px;
+      }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .profile-hero { grid-template-columns: minmax(0,1fr) minmax(150px,.6fr); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+      .page-main { padding: 29px 0 44px; }
+
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+
+      .sidebar,
+      .panel { padding: 15px; }
+
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .profile-hero { grid-template-columns: 1fr; padding: 16px; }
+      .profile-hero-art { min-height: 130px; }
+
+      .profile-identity { gap: 12px; }
+      .profile-avatar {
+        flex-basis: 66px;
+        width: 66px;
+        height: 66px;
+        border-radius: 19px;
+        font-size: 23px;
+      }
+
+      .profile-identity h2 { font-size: 23px; }
+
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { width: 100%; }
+
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .stat-copy strong { font-size: 20px; }
+      .detail-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+      .detail-item { padding: 10px; }
+      .detail-item dd { font-size: 10px; }
+
+      .feature-banner { grid-template-columns: 1fr; padding: 17px; }
+      .feature-image { min-height: 125px; }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-nav { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { gap: 18px 11px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>User Details</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about user details. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>User profile details</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img
+          src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo"
+          width="44"
+          height="44"
+        >
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>User administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/users.html">Users</a>
+        <a href="/admin/user-details.html" aria-current="page">User details</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/admissions.html">Admissions</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/users.html">User management</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">User details</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Identity operations · Admin portal</span>
+          <h1>User <span class="accent-text">details.</span></h1>
+          <p>
+            Review an individual account, inspect verified contact information,
+            understand account status and examine related application and
+            administrative activity. Profile data is retrieved from your
+            configured, authenticated administration API.
+          </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Secure identities. Responsible access.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/users.html">← Back to users</a>
+          <button class="btn" id="refreshProfile" type="button">↻ Refresh profile</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html">
+              <span class="nav-icon" aria-hidden="true">▦</span>
+              Dashboard
+            </a>
+            <a class="active" href="/admin/users.html" aria-current="page">
+              <span class="nav-icon" aria-hidden="true">♙</span>
+              User management
+            </a>
+            <a href="/admin/applications.html">
+              <span class="nav-icon" aria-hidden="true">▤</span>
+              Applications
+            </a>
+            <a href="/admin/admissions.html">
+              <span class="nav-icon" aria-hidden="true">🎓</span>
+              Admissions
+            </a>
+            <a href="/admin/documents.html">
+              <span class="nav-icon" aria-hidden="true">▧</span>
+              Documents
+            </a>
+            <a href="/admin/courses.html">
+              <span class="nav-icon" aria-hidden="true">▣</span>
+              Course catalogue
+            </a>
+            <a href="/admin/colleges.html">
+              <span class="nav-icon" aria-hidden="true">⌂</span>
+              Colleges
+            </a>
+            <a href="/admin/universities.html">
+              <span class="nav-icon" aria-hidden="true">⌘</span>
+              Universities
+            </a>
+            <a href="/admin/notifications.html">
+              <span class="nav-icon" aria-hidden="true">♢</span>
+              Notifications
+            </a>
+            <a href="/admin/reports.html">
+              <span class="nav-icon" aria-hidden="true">▥</span>
+              Reports and analytics
+            </a>
+            <a href="/admin/audit-logs.html">
+              <span class="nav-icon" aria-hidden="true">≡</span>
+              Audit logs
+            </a>
+            <a href="/admin/security.html">
+              <span class="nav-icon" aria-hidden="true">⬡</span>
+              Security centre
+            </a>
+            <a href="/admin/settings.html">
+              <span class="nav-icon" aria-hidden="true">⚙</span>
+              Platform settings
+            </a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Confidential profile.</strong>
+            <br>
+            Access to this page should be restricted to authorised
+            administrators. Never expose passwords, authentication tokens,
+            private document contents or unnecessary personal information.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section aria-labelledby="profileTitle">
+            <div class="profile-hero">
+              <div class="profile-hero-copy">
+                <span class="eyebrow">Account identity · Profile overview</span>
+
+                <div class="profile-identity" style="margin-top:16px">
+                  <div class="profile-avatar" id="profileAvatar" aria-hidden="true">U</div>
+                  <div class="profile-identity-copy">
+                    <h2 id="profileName">User profile</h2>
+                    <p id="profileEmail">Select a user from the user directory.</p>
+                    <div class="profile-meta">
+                      <span class="pill unknown" id="profileStatus">Status unavailable</span>
+                      <span class="pill unknown" id="profileRole">Role unavailable</span>
+                      <span class="pill unknown" id="profileVerified">Verification unavailable</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="status warning" id="profileStatusMessage" role="status" aria-live="polite">
+                  Waiting for a user identifier. Open this page from a user record or provide an ID in the URL.
+                </div>
+
+                <div class="hero-actions">
+                  <a class="btn btn-outline" href="/admin/users.html">← User directory</a>
+                  <a class="btn btn-outline" href="/admin/audit-logs.html">View audit logs ↗</a>
+                </div>
+              </div>
+
+              <div
+                class="profile-hero-art"
+                role="img"
+                aria-label="Professional team collaborating in a modern workplace"
+              >
+                <div class="hero-art-label">
+                  MedOrbits identity operations
+                  <span>Account oversight · Privacy · Accountability</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="overviewTitle">Account overview</h2>
+                <p>
+                  Key attributes of the selected user, as returned by the
+                  authorised profile service.
+                </p>
+              </div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">♙</div>
+                <div class="stat-copy">
+                  <span>Account role</span>
+                  <strong id="summaryRole">--</strong>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Email verification</span>
+                  <strong id="summaryEmailVerified">--</strong>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Account created</span>
+                  <strong id="summaryCreated">--</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="personalDetailsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">♧</div>
+              <div>
+                <h2 id="personalDetailsTitle">Profile information</h2>
+                <p>
+                  Account details are displayed only when the API returns
+                  the corresponding fields and the administrator is authorised.
+                </p>
+              </div>
+            </div>
+
+            <dl class="detail-grid">
+              <div class="detail-item">
+                <dt>Full name</dt>
+                <dd id="detailName">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>User ID</dt>
+                <dd id="detailId">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Email address</dt>
+                <dd id="detailEmail">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Phone number</dt>
+                <dd id="detailPhone">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Username</dt>
+                <dd id="detailUsername">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Account role</dt>
+                <dd id="detailRole">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Account status</dt>
+                <dd id="detailStatus">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Email verification</dt>
+                <dd id="detailVerification">Not available</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Registration date</dt>
+                <dd id="detailCreated">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Last profile update</dt>
+                <dd id="detailUpdated">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Last login</dt>
+                <dd id="detailLastLogin">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Preferred language</dt>
+                <dd id="detailLanguage">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Country or region</dt>
+                <dd id="detailCountry">Not provided</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Account reference</dt>
+                <dd id="detailReference">Not provided</dd>
+              </div>
+            </dl>
+          </section>
+
+          <div class="two-column">
+            <section class="panel" aria-labelledby="securityDetailsTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">⬡</div>
+                <div>
+                  <h2 id="securityDetailsTitle">Security overview</h2>
+                  <p>Selected security indicators supplied by the API.</p>
+                </div>
+              </div>
+
+              <div class="mini-list" id="securityList">
+                <div class="empty-state">
+                  <strong>Security information unavailable</strong>
+                  Security indicators will appear here when the profile API supplies them.
+                </div>
+              </div>
+
+              <div class="hero-actions">
+                <a class="btn btn-outline" href="/admin/security.html">Security centre ↗</a>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="accountContextTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">▤</div>
+                <div>
+                  <h2 id="accountContextTitle">Account context</h2>
+                  <p>Related account and education workflow references.</p>
+                </div>
+              </div>
+
+              <div class="mini-list" id="accountContextList">
+                <div class="empty-state">
+                  <strong>No linked context loaded</strong>
+                  Related account information will appear when supplied by the API.
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="panel" aria-labelledby="applicationsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">🎓</div>
+              <div>
+                <h2 id="applicationsTitle">Linked applications</h2>
+                <p>
+                  Application references returned for this account. Full
+                  application details remain in the authorised applications workspace.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Linked applications table; horizontally scrollable">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Application reference</th>
+                    <th scope="col">Course or programme</th>
+                    <th scope="col">Institution</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="applicationsBody">
+                  <tr>
+                    <td colspan="6">
+                      <div class="empty-state">
+                        <strong>Applications not loaded</strong>
+                        Linked applications will be shown when returned by the profile API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="hero-actions">
+              <a class="btn btn-outline" href="/admin/applications.html">Open applications ↗</a>
+              <a class="btn btn-outline" href="/admin/admissions.html">Open admissions ↗</a>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="activityTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">≡</div>
+              <div>
+                <h2 id="activityTitle">Recent account activity</h2>
+                <p>
+                  Activity entries are read-only and must originate from
+                  the protected audit or profile service.
+                </p>
+              </div>
+            </div>
+
+            <div class="activity-list" id="activityList">
+              <div class="empty-state">
+                <strong>No activity loaded</strong>
+                Activity history will appear here when the API returns authorised records.
+              </div>
+            </div>
+
+            <div class="hero-actions">
+              <a class="btn btn-outline" href="/admin/audit-logs.html">Open audit history ↗</a>
+            </div>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="privacyTitle">
+            <div>
+              <span class="eyebrow">Responsible identity operations</span>
+              <h2 id="privacyTitle">
+                Protect personal data. <span class="accent-text">Preserve trust.</span>
+              </h2>
+              <p>
+                Use minimum-necessary data access, role-based permissions,
+                secure session handling and auditable workflows when reviewing
+                user profiles. Account changes must be performed through
+                separately authorised backend operations.
+              </p>
+              <div class="feature-actions">
+                <a class="btn" href="/admin/security.html">Review security ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Audit history</a>
+              </div>
+            </div>
+
+            <div
+              class="feature-image"
+              role="img"
+              aria-label="Professional working on a laptop in a modern workspace"
+            ></div>
+          </section>
+
+          <div class="notice">
+            <strong>Security notice:</strong>
+            This page is a user interface, not an authorization boundary.
+            The backend must authenticate the administrator, enforce
+            record-level authorization, validate user identifiers, rate-limit
+            requests and audit access to sensitive information. Never return
+            password hashes, access tokens, reset tokens, recovery secrets or
+            unnecessary personal data. This page intentionally does not perform
+            role changes, account suspension or account deletion.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>User administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Verify account-related requests, education requirements and
+        official information with the relevant institution or authority.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits User Details
+       *
+       * Suggested endpoint:
+       *   GET /api/admin/users/:id
+       *
+       * The ID is read from:
+       *   /admin/user-details.html?id=USER_ID
+       *
+       * Optional configuration:
+       *   window.MEDORBITS_CONFIG = {
+       *     adminUserDetailsEndpoint: "/api/admin/users"
+       *   };
+       *
+       * Example response contract:
+       * {
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "admin@example.com"
+       *   },
+       *   "user": {
+       *     "id": "USR-001",
+       *     "name": "Example User",
+       *     "email": "user@example.com",
+       *     "phone": null,
+       *     "username": "example",
+       *     "role": "student",
+       *     "status": "active",
+       *     "emailVerified": true,
+       *     "createdAt": "2026-10-25T10:00:00Z",
+       *     "updatedAt": null,
+       *     "lastLoginAt": null,
+       *     "preferredLanguage": "en",
+       *     "country": null,
+       *     "reference": null,
+       *     "security": {
+       *       "twoFactorEnabled": false,
+       *       "passwordUpdatedAt": null,
+       *       "failedLoginCount": 0,
+       *       "lastSecurityEventAt": null
+       *     },
+       *     "applications": [],
+       *     "activity": []
+       *   }
+       * }
+       *
+       * This is a frontend integration contract, not a claim that the
+       * endpoint already exists. Align it with your actual backend.
+       *
+       * Do not return password hashes, access tokens, reset tokens,
+       * recovery codes or unrestricted personal records.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const refreshButton = $("refreshProfile");
+        const statusBox = $("profileStatusMessage");
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const state = {
+          loading: false,
+          controller: null,
+          sequence: 0,
+          userId: "",
+          user: null
+        };
+
+        function showStatus(message, type = "warning") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+
+        function textValue(value, fallback = "Not provided") {
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(value);
+          }
+
+          return fallback;
+        }
+
+        function safeText(value, fallback = "Not provided") {
+          return textValue(value, fallback);
+        }
+
+        function formatDate(value, includeTime = false) {
+          if (
+            typeof value !== "string" &&
+            typeof value !== "number"
+          ) {
+            return "Not provided";
+          }
+
+          if (String(value).trim() === "") return "Not provided";
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) {
+            return "Not provided";
+          }
+
+          const options = {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+          };
+
+          if (includeTime) {
+            options.hour = "2-digit";
+            options.minute = "2-digit";
+          }
+
+          return date.toLocaleString(undefined, options);
+        }
+
+        function normaliseStatus(value) {
+          const status = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+
+          const allowed = new Set([
+            "active",
+            "pending",
+            "invited",
+            "suspended",
+            "disabled"
+          ]);
+
+          return allowed.has(status) ? status : "unknown";
+        }
+
+        function statusLabel(value) {
+          const labels = {
+            active: "Active",
+            pending: "Pending",
+            invited: "Invited",
+            suspended: "Suspended",
+            disabled: "Disabled",
+            unknown: "Unspecified"
+          };
+
+          return labels[normaliseStatus(value)];
+        }
+
+        function roleLabel(value) {
+          const role = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+
+          const labels = {
+            student: "Student",
+            applicant: "Applicant",
+            counsellor: "Counsellor",
+            recruiter: "Recruiter",
+            employer: "Employer",
+            admin: "Administrator",
+            administrator: "Administrator",
+            super_admin: "Super administrator",
+            other: "Other"
+          };
+
+          return labels[role] || (role ? role.replace(/_/g, " ") : "Not provided");
+        }
+
+        function setText(id, value, fallback = "Not provided") {
+          const element = $(id);
+          if (!element) return;
+          element.textContent = safeText(value, fallback);
+        }
+
+        function setPill(id, label, className) {
+          const element = $(id);
+          element.textContent = label;
+          element.className = `pill ${className || "unknown"}`;
+        }
+
+        function clearProfile() {
+          $("profileName").textContent = "User profile";
+          $("profileEmail").textContent = "Profile information is not available.";
+          $("profileAvatar").replaceChildren();
+          $("profileAvatar").textContent = "U";
+
+          setPill("profileStatus", "Status unavailable", "unknown");
+          setPill("profileRole", "Role unavailable", "unknown");
+          setPill("profileVerified", "Verification unavailable", "unknown");
+
+          [
+            "detailName",
+            "detailId",
+            "detailEmail",
+            "detailRole",
+            "detailStatus",
+            "detailVerification",
+            "detailCreated",
+            "summaryRole",
+            "summaryEmailVerified",
+            "summaryCreated"
+          ].forEach(id => setText(id, null, "--"));
+
+          [
+            "detailPhone",
+            "detailUsername",
+            "detailUpdated",
+            "detailLastLogin",
+            "detailLanguage",
+            "detailCountry",
+            "detailReference"
+          ].forEach(id => setText(id, null));
+
+          $("securityList").replaceChildren();
+          $("accountContextList").replaceChildren();
+          $("applicationsBody").replaceChildren();
+          $("activityList").replaceChildren();
+
+          renderEmpty($("securityList"), "Security information unavailable",
+            "Security indicators will appear when returned by the API.");
+
+          renderEmpty($("accountContextList"), "No linked context loaded",
+            "Related account information will appear when supplied by the API.");
+
+          renderTableEmpty($("applicationsBody"), 6, "Applications not loaded",
+            "Linked applications will appear when returned by the API.");
+
+          renderEmpty($("activityList"), "No activity loaded",
+            "Activity history will appear when returned by the API.");
+        }
+
+        function renderEmpty(container, title, description) {
+          const box = document.createElement("div");
+          const heading = document.createElement("strong");
+          const copy = document.createElement("div");
+
+          box.className = "empty-state";
+          heading.textContent = title;
+          copy.textContent = description;
+
+          box.append(heading, copy);
+          container.replaceChildren(box);
+        }
+
+        function renderTableEmpty(tbody, colspan, title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = document.createElement("div");
+          const heading = document.createElement("strong");
+          const copy = document.createElement("div");
+
+          cell.colSpan = colspan;
+          box.className = "empty-state";
+          heading.textContent = title;
+          copy.textContent = description;
+
+          box.append(heading, copy);
+          cell.appendChild(box);
+          row.appendChild(cell);
+          tbody.replaceChildren(row);
+        }
+
+        function makeMiniItem(iconText, titleText, descriptionText) {
+          const item = document.createElement("div");
+          const icon = document.createElement("div");
+          const copy = document.createElement("div");
+          const title = document.createElement("strong");
+          const description = document.createElement("p");
+
+          item.className = "mini-item";
+          icon.className = "mini-icon";
+          copy.className = "mini-copy";
+
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = iconText;
+          title.textContent = titleText;
+          description.textContent = descriptionText;
+
+          copy.append(title, description);
+          item.append(icon, copy);
+
+          return item;
+        }
+
+        function makeActivityItem(iconText, titleText, descriptionText, dateText) {
+          const item = document.createElement("div");
+          const icon = document.createElement("div");
+          const copy = document.createElement("div");
+          const title = document.createElement("strong");
+          const description = document.createElement("p");
+          const time = document.createElement("span");
+
+          item.className = "activity-item";
+          icon.className = "activity-icon";
+          copy.className = "activity-copy";
+          time.className = "activity-time";
+
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = iconText;
+          title.textContent = titleText;
+          description.textContent = descriptionText;
+          time.textContent = dateText;
+
+          copy.append(title, description);
+
+          if (dateText) copy.appendChild(time);
+
+          item.append(icon, copy);
+
+          return item;
+        }
+
+        function renderSecurity(security) {
+          const list = $("securityList");
+
+          if (!security || typeof security !== "object" || Array.isArray(security)) {
+            renderEmpty(list, "Security information unavailable",
+              "The API did not provide security indicators for this account.");
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+          let count = 0;
+
+          if (typeof security.twoFactorEnabled === "boolean") {
+            fragment.appendChild(makeMiniItem(
+              "⬡",
+              "Two-factor authentication",
+              security.twoFactorEnabled ? "Enabled" : "Not enabled"
+            ));
+            count++;
+          }
+
+          if (
+            typeof security.passwordUpdatedAt === "string" &&
+            security.passwordUpdatedAt.trim()
+          ) {
+            fragment.appendChild(makeMiniItem(
+              "🔐",
+              "Password last updated",
+              formatDate(security.passwordUpdatedAt, true)
+            ));
+            count++;
+          }
+
+          if (
+            Number.isSafeInteger(security.failedLoginCount) &&
+            security.failedLoginCount >= 0
+          ) {
+            fragment.appendChild(makeMiniItem(
+              "◷",
+              "Reported failed login count",
+              String(security.failedLoginCount)
+            ));
+            count++;
+          }
+
+          if (
+            typeof security.lastSecurityEventAt === "string" &&
+            security.lastSecurityEventAt.trim()
+          ) {
+            fragment.appendChild(makeMiniItem(
+              "✦",
+              "Last security event",
+              formatDate(security.lastSecurityEventAt, true)
+            ));
+            count++;
+          }
+
+          if (!count) {
+            renderEmpty(list, "No security indicators supplied",
+              "The API returned no supported security fields for this account.");
+            return;
+          }
+
+          list.replaceChildren(fragment);
+        }
+
+        function renderContext(user) {
+          const list = $("accountContextList");
+          const fragment = document.createDocumentFragment();
+          let count = 0;
+
+          const fields = [
+            ["Education level", user.educationLevel],
+            ["Preferred study destination", user.studyDestination],
+            ["Career interest", user.careerInterest],
+            ["Profile completion", user.profileCompletion]
+          ];
+
+          fields.forEach(([label, value]) => {
+            if (
+              (typeof value === "string" && value.trim()) ||
+              (typeof value === "number" && Number.isFinite(value))
+            ) {
+              fragment.appendChild(makeMiniItem("✧", label, String(value)));
+              count++;
+            }
+          });
+
+          if (
+            user.organisation &&
+            typeof user.organisation === "string" &&
+            user.organisation.trim()
+          ) {
+            fragment.appendChild(makeMiniItem(
+              "⌂",
+              "Organisation",
+              user.organisation.trim()
+            ));
+            count++;
+          }
+
+          if (
+            user.accountType &&
+            typeof user.accountType === "string" &&
+            user.accountType.trim()
+          ) {
+            fragment.appendChild(makeMiniItem(
+              "♙",
+              "Account type",
+              user.accountType.trim()
+            ));
+            count++;
+          }
+
+          if (!count) {
+            renderEmpty(list, "No additional context supplied",
+              "No optional education or career context was returned for this account.");
+            return;
+          }
+
+          list.replaceChildren(fragment);
+        }
+
+        function renderApplications(applications) {
+          const tbody = $("applicationsBody");
+
+          if (!Array.isArray(applications) || applications.length === 0) {
+            renderTableEmpty(tbody, 6, "No linked applications",
+              "The API returned no linked application records for this account.");
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          applications.forEach(application => {
+            if (
+              !application ||
+              typeof application !== "object" ||
+              Array.isArray(application)
+            ) {
+              return;
+            }
+
+            const row = document.createElement("tr");
+            const values = [
+              textValue(application.id || application.applicationId, "Not provided"),
+              textValue(application.course || application.programme, "Not provided"),
+              textValue(application.institution || application.college, "Not provided"),
+              textValue(application.status, "Not provided"),
+              formatDate(application.submittedAt || application.createdAt)
+            ];
+
+            values.forEach(value => {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement("td");
+            const link = document.createElement("a");
+            const applicationId = application.id || application.applicationId;
+
+            if (
+              (typeof applicationId === "string" ||
+               typeof applicationId === "number") &&
+              String(applicationId).trim()
+            ) {
+              link.href = "/admin/applications.html?id=" +
+                encodeURIComponent(String(applicationId));
+              link.textContent = "View ↗";
+              link.setAttribute("aria-label",
+                "View application " + String(applicationId));
+              actionCell.appendChild(link);
+            } else {
+              actionCell.textContent = "Unavailable";
+            }
+
+            row.appendChild(actionCell);
+            fragment.appendChild(row);
+          });
+
+          if (!fragment.childNodes.length) {
+            renderTableEmpty(tbody, 6, "No valid application records",
+              "The API returned no usable application references.");
+            return;
+          }
+
+          tbody.replaceChildren(fragment);
+        }
+
+        function renderActivity(activity) {
+          const list = $("activityList");
+
+          if (!Array.isArray(activity) || activity.length === 0) {
+            renderEmpty(list, "No activity supplied",
+              "No activity entries were returned by the profile service.");
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+          let count = 0;
+
+          activity.forEach(entry => {
+            if (
+              !entry ||
+              typeof entry !== "object" ||
+              Array.isArray(entry)
+            ) {
+              return;
+            }
+
+            const action = textValue(
+              entry.action || entry.event || entry.type,
+              "Account activity"
+            );
+
+            const description = textValue(
+              entry.description || entry.message,
+              "An account activity entry was recorded."
+            );
+
+            const timestamp = formatDate(
+              entry.createdAt || entry.timestamp,
+              true
+            );
+
+            fragment.appendChild(makeActivityItem(
+              "≡",
+              action,
+              description,
+              timestamp === "Not provided" ? "" : timestamp
+            ));
+
+            count++;
+          });
+
+          if (!count) {
+            renderEmpty(list, "No valid activity entries",
+              "The API returned no usable activity records.");
+            return;
+          }
+
+          list.replaceChildren(fragment);
+        }
+
+        function safeImageUrl(value) {
+          if (typeof value !== "string" || !value.trim()) return null;
+
+          try {
+            const url = new URL(value, window.location.origin);
+
+            if (url.protocol !== "https:" && url.protocol !== "http:") {
+              return null;
+            }
+
+            if (url.origin !== window.location.origin && url.protocol !== "https:") {
+              return null;
+            }
+
+            return url.href;
+          } catch {
+            return null;
+          }
+        }
+
+        function renderProfile(user) {
+          const id = textValue(user.id || user.userId, "Not provided");
+          const name = textValue(
+            user.name || user.fullName || user.username,
+            "Unnamed user"
+          );
+          const email = textValue(user.email, "Email not provided");
+          const role = roleLabel(user.role);
+          const status = normaliseStatus(user.status);
+          const verified = user.emailVerified === true;
+
+          $("profileName").textContent = name;
+          $("profileEmail").textContent = email;
+
+          const initials = name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => part.charAt(0).toUpperCase())
+            .join("");
+
+          const avatar = $("profileAvatar");
+          avatar.replaceChildren();
+
+          const avatarUrl = safeImageUrl(user.avatarUrl || user.profileImage);
+
+          if (avatarUrl) {
+            const image = document.createElement("img");
+            image.src = avatarUrl;
+            image.alt = "";
+            image.loading = "lazy";
+            image.referrerPolicy = "no-referrer";
+            image.addEventListener("error", () => {
+              avatar.replaceChildren();
+              avatar.textContent = initials || "U";
+            }, { once: true });
+            avatar.appendChild(image);
+          } else {
+            avatar.textContent = initials || "U";
+          }
+
+          setPill("profileStatus", statusLabel(status), status);
+          setPill("profileRole", role, "unknown");
+          setPill(
+            "profileVerified",
+            verified ? "Email verified" : "Email not verified",
+            verified ? "verified" : "unverified"
+          );
+
+          setText("detailName", name);
+          setText("detailId", id);
+          setText("detailEmail", email);
+          setText("detailPhone", user.phone || user.phoneNumber);
+          setText("detailUsername", user.username);
+          setText("detailRole", role);
+          setText("detailStatus", statusLabel(status));
+          setText("detailVerification", verified ? "Verified" : "Not verified");
+          setText("detailCreated", formatDate(user.createdAt, true));
+          setText("detailUpdated", formatDate(user.updatedAt, true));
+          setText("detailLastLogin", formatDate(user.lastLoginAt, true));
+          setText("detailLanguage", user.preferredLanguage || user.language);
+          setText("detailCountry", user.country || user.region);
+          setText("detailReference", user.reference || user.accountReference);
+
+          setText("summaryRole", role);
+          setText("summaryEmailVerified", verified ? "Verified" : "No");
+          setText("summaryCreated", formatDate(user.createdAt));
+
+          renderSecurity(user.security);
+          renderContext(user);
+          renderApplications(user.applications);
+          renderActivity(user.activity);
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.includes("application/json")) {
+            return {};
+          }
+
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const base = config.adminUserDetailsEndpoint || "/api/admin/users";
+
+          let url;
+
+          try {
+            url = new URL(base, window.location.origin);
+          } catch {
+            throw new Error("The configured user-details endpoint is invalid.");
+          }
+
+          if (url.origin !== window.location.origin) {
+            throw new Error(
+              "The user-details endpoint must use the same origin as this page."
+            );
+          }
+
+          return url;
+        }
+
+        function getUserId() {
+          const params = new URLSearchParams(window.location.search);
+
+          return (
+            params.get("id") ||
+            params.get("userId") ||
+            params.get("user_id") ||
+            ""
+          ).trim();
+        }
+
+        function setLoading(loading) {
+          state.loading = loading;
+          refreshButton.disabled = loading;
+          refreshButton.textContent = loading
+            ? "Loading…"
+            : "↻ Refresh profile";
+        }
+
+        async function loadProfile() {
+          const userId = getUserId();
+
+          if (!userId) {
+            state.user = null;
+            clearProfile();
+            setLoading(false);
+
+            showStatus(
+              "No user ID was provided. Open this page using View from /admin/users.html, or supply ?id=USER_ID.",
+              "warning"
+            );
+
+            return;
+          }
+
+          if (state.controller) {
+            state.controller.abort();
+          }
+
+          const controller = new AbortController();
+          state.controller = controller;
+          const requestId = ++state.sequence;
+
+          state.userId = userId;
+          setLoading(true);
+
+          showStatus("Loading the selected user profile…", "info");
+
+          try {
+            const endpoint = getEndpoint();
+
+            endpoint.pathname =
+              endpoint.pathname.replace(/\/+$/, "") +
+              "/" +
+              encodeURIComponent(userId);
+
+            endpoint.search = "";
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: {
+                Accept: "application/json"
+              },
+              signal: controller.signal
+            });
+
+            const data = await readJson(response);
+
+            if (requestId !== state.sequence) return;
+
+            if (!response.ok) {
+              if (response.status === 400) {
+                throw new Error("The supplied user identifier is invalid.");
+              }
+
+              if (response.status === 401) {
+                throw new Error(
+                  "Authentication required. Sign in with an authorised administrator account."
+                );
+              }
+
+              if (response.status === 403) {
+                throw new Error(
+                  "Access denied. Your administrator account is not authorised to view this profile."
+                );
+              }
+
+              if (response.status === 404) {
+                throw new Error(
+                  "The user profile was not found, or the configured profile API is unavailable."
+                );
+              }
+
+              if (response.status === 429) {
+                throw new Error(
+                  "Too many requests. Wait before trying again."
+                );
+              }
+
+              throw new Error(
+                typeof data.message === "string"
+                  ? data.message
+                  : "The user profile service could not complete the request."
+              );
+            }
+
+            if (
+              !data ||
+              typeof data !== "object" ||
+              Array.isArray(data)
+            ) {
+              throw new Error("The profile API returned an invalid response.");
+            }
+
+            const user = data.user || data.data?.user || data.data;
+
+            if (
+              !user ||
+              typeof user !== "object" ||
+              Array.isArray(user)
+            ) {
+              throw new Error(
+                "The profile response did not contain a valid user object."
+              );
+            }
+
+            const returnedId = user.id ?? user.userId;
+
+            if (
+              returnedId === undefined ||
+              returnedId === null ||
+              String(returnedId).trim() === ""
+            ) {
+              throw new Error(
+                "The profile response is missing the required user identifier."
+              );
+            }
+
+            if (String(returnedId) !== userId) {
+              throw new Error(
+                "The returned profile identifier does not match the requested user."
+              );
+            }
+
+            state.user = user;
+            renderProfile(user);
+
+            if (
+              data.admin &&
+              typeof data.admin === "object" &&
+              !Array.isArray(data.admin)
+            ) {
+              setText("adminName", data.admin.name, "Administration");
+              setText("adminEmail", data.admin.email, "Admin workspace");
+            }
+
+            showStatus(
+              "User profile retrieved from the administration service.",
+              "success"
+            );
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.sequence) return;
+
+            state.user = null;
+            clearProfile();
+
+            showStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to retrieve the user profile.",
+              "error"
+            );
+          } finally {
+            if (requestId === state.sequence) {
+              setLoading(false);
+            }
+          }
+        }
+
+        /*
+         * Responsive navigation.
+         */
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+          menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        window.matchMedia("(min-width: 1101px)")
+          .addEventListener?.("change", event => {
+            if (event.matches) closeNavigation();
+          });
+
+        /*
+         * Accessible rotating heading.
+         */
+        const typingText = $("typingText");
+        const phrases = [
+          "Secure identities. Responsible access.",
+          "Protect privacy. Maintain accountability.",
+          "Clear records. Stronger trust."
+        ];
+
+        const reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        );
+
+        let phraseIndex = 0;
+        let characterIndex = phrases[0].length;
+        let deleting = false;
+        let typingTimer = null;
+
+        function typeNextCharacter() {
+          if (reducedMotion.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          const phrase = phrases[phraseIndex];
+
+          if (!deleting) {
+            characterIndex++;
+            typingText.textContent = phrase.slice(0, characterIndex);
+
+            if (characterIndex >= phrase.length) {
+              deleting = true;
+              typingTimer = window.setTimeout(typeNextCharacter, 1700);
+              return;
+            }
+
+            typingTimer = window.setTimeout(typeNextCharacter, 42);
+            return;
+          }
+
+          characterIndex--;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex <= 0) {
+            deleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            typingTimer = window.setTimeout(typeNextCharacter, 280);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 24);
+        }
+
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+        } else {
+          typingTimer = window.setTimeout(typeNextCharacter, 1400);
+        }
+
+        reducedMotion.addEventListener?.("change", event => {
+          window.clearTimeout(typingTimer);
+
+          if (event.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          phraseIndex = 0;
+          characterIndex = 0;
+          deleting = false;
+          typeNextCharacter();
+        });
+
+        refreshButton.addEventListener("click", loadProfile);
+
+        /*
+         * The endpoint is read at request time so deferred configuration
+         * scripts can populate window.MEDORBITS_CONFIG before this request.
+         */
+        loadProfile();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

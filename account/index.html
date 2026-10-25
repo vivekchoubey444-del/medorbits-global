@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071629">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080706">
   <meta name="description" content="MedOrbits account hub for managing your profile, applications, documents, saved courses, colleges, jobs, payments and account security.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="MedOrbits">
@@ -23,21 +23,28 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #071629;
-      --bg-soft: #0b203b;
-      --surface: #102947;
-      --surface-2: #153657;
-      --accent: #8bbcff;
-      --accent-bright: #d9e9ff;
-      --text: #f2f7ff;
-      --text-soft: #c7d8ee;
-      --muted: #9db2cc;
-      --border: rgba(139,188,255,.23);
-      --success: #a8f0d0;
-      --warning: #ffdfa2;
-      --danger: #ffc1ca;
-      --radius: 16px;
-      --shadow: 0 24px 70px rgba(0,0,0,.28);
+      --bg: #080706;
+      --bg-deep: #030303;
+      --bg-soft: #100e0a;
+      --surface: #15120c;
+      --surface-2: #20190e;
+      --surface-3: #292012;
+      --gold: #c99a38;
+      --gold-bright: #f7d98b;
+      --gold-light: #ffedbd;
+      --champagne: #e8c982;
+      --text: #f7f0df;
+      --text-soft: #d4c8ad;
+      --muted: #a99b7f;
+      --border: rgba(220,174,76,.23);
+      --border-bright: rgba(247,217,139,.43);
+      --success: #b8e6bd;
+      --warning: #f6d58a;
+      --danger: #ffb9a9;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.55);
+      --gold-gradient: linear-gradient(115deg,#8f6420 0%,#e6bd61 28%,#fff0b8 48%,#c08a2c 70%,#f4d77f 100%);
+      --gold-surface: linear-gradient(145deg,rgba(35,27,15,.97),rgba(8,7,5,.98));
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -48,14 +55,30 @@
     }
 
     body {
+      position: relative;
+      isolation: isolate;
       margin: 0;
       min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(ellipse at 10% 0%, rgba(40,102,170,.20), transparent 35%),
-        radial-gradient(ellipse at 90% 40%, rgba(98,155,221,.08), transparent 32%),
-        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+        radial-gradient(ellipse at 12% 0%,rgba(190,132,34,.13),transparent 35%),
+        radial-gradient(ellipse at 92% 38%,rgba(142,96,26,.09),transparent 34%),
+        radial-gradient(ellipse at 50% 100%,rgba(112,73,18,.08),transparent 42%),
+        linear-gradient(135deg,#030303 0%,#0b0906 48%,#100c06 100%);
       color: var(--text);
       font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        radial-gradient(rgba(247,217,139,.13) .7px,transparent .7px);
+      background-size: 34px 34px;
+      opacity: .16;
+      content: "";
+      pointer-events: none;
     }
 
     img { display: block; max-width: 100%; }
@@ -64,7 +87,7 @@
     button, a { -webkit-tap-highlight-color: transparent; }
 
     button:focus-visible, a:focus-visible, input:focus-visible {
-      outline: 2px solid var(--accent-bright);
+      outline: 2px solid var(--gold-light);
       outline-offset: 4px;
     }
 
@@ -75,15 +98,51 @@
       margin-inline: auto;
     }
 
+    .gold-text {
+      color: var(--gold-bright);
+      background: var(--gold-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: goldFlow 6s linear infinite;
+    }
+
+    @keyframes goldFlow {
+      0% { background-position: 100% center; }
+      100% { background-position: -120% center; }
+    }
+
+    @keyframes goldTypingGlow {
+      0%,100% { text-shadow: 0 0 5px rgba(230,189,97,.08); }
+      50% { text-shadow: 0 0 17px rgba(230,189,97,.32),0 0 35px rgba(192,138,44,.13); }
+    }
+
+    @keyframes softFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes borderShimmer {
+      0%,100% { border-color: rgba(220,174,76,.19); }
+      50% { border-color: rgba(247,217,139,.42); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .skip-link {
       position: absolute;
       top: -70px;
       left: 14px;
       z-index: 10000;
       padding: 10px 15px;
+      border: 1px solid var(--gold);
       border-radius: 8px;
-      background: var(--accent-bright);
-      color: var(--bg);
+      background: var(--gold-light);
+      color: #100c05;
     }
 
     .skip-link:focus { top: 12px; }
@@ -94,34 +153,36 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      padding: 8px 15px;
-      border-bottom: 1px solid rgba(139,188,255,.13);
-      background: #040b15;
-      color: var(--accent-bright);
+      padding: 9px 15px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      background: #030303;
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .1em;
+      letter-spacing: .12em;
       text-align: center;
       text-transform: uppercase;
     }
 
-    .spark { color: var(--accent); }
+    .spark { color: var(--gold-bright); animation: goldTypingGlow 3s ease-in-out infinite; }
 
     .site-header {
       position: sticky;
       top: 0;
       z-index: 1000;
       border-bottom: 1px solid var(--border);
-      background: rgba(5,14,27,.94);
-      backdrop-filter: blur(18px);
+      background: rgba(5,5,4,.91);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .site-header.scrolled {
-      background: rgba(4,11,21,.98);
-      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+      background: rgba(3,3,3,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.58);
     }
 
     .nav-wrap {
+      position: relative;
       min-height: 78px;
       display: flex;
       align-items: center;
@@ -140,13 +201,14 @@
       width: 45px;
       height: 45px;
       object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(220,174,76,.15));
     }
 
     .brand strong {
       display: block;
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       font-size: 15px;
-      letter-spacing: .13em;
+      letter-spacing: .15em;
       line-height: 1.35;
     }
 
@@ -154,7 +216,7 @@
       display: block;
       color: var(--muted);
       font-size: 8px;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
@@ -163,16 +225,16 @@
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 9px;
-      background: transparent;
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
       cursor: pointer;
     }
 
     .main-nav {
       display: flex;
       align-items: center;
-      gap: 17px;
-      font-size: 11px;
+      gap: 15px;
+      font-size: 10px;
     }
 
     .main-nav > a, .nav-trigger {
@@ -181,7 +243,7 @@
     }
 
     .main-nav > a:hover, .nav-trigger:hover {
-      color: var(--accent-bright);
+      color: var(--gold-light);
     }
 
     .nav-group { position: relative; }
@@ -195,7 +257,7 @@
 
     .nav-trigger span {
       margin-left: 4px;
-      color: var(--accent);
+      color: var(--gold);
     }
 
     .dropdown {
@@ -205,9 +267,9 @@
       display: none;
       width: 245px;
       padding: 9px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-bright);
       border-radius: 12px;
-      background: #102947;
+      background: #100d08;
       box-shadow: var(--shadow);
     }
 
@@ -224,8 +286,8 @@
     }
 
     .dropdown a:hover {
-      background: rgba(139,188,255,.09);
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.1);
+      color: var(--gold-light);
     }
 
     .btn {
@@ -233,33 +295,37 @@
       justify-content: center;
       align-items: center;
       gap: 8px;
-      min-height: 41px;
-      padding: 10px 15px;
-      border: 1px solid var(--accent);
-      border-radius: 9px;
-      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
-      color: #071629;
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 1px solid #e2b955;
+      border-radius: 10px;
+      background: var(--gold-gradient);
+      background-size: 180% auto;
+      color: #120d04;
       font-size: 11px;
       font-weight: 700;
       text-align: center;
       cursor: pointer;
-      transition: transform .2s,filter .2s;
+      transition: transform .22s,filter .22s,box-shadow .22s;
     }
 
     .btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.06);
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 25px rgba(201,154,56,.15);
     }
 
+    .btn:disabled { opacity: .6; cursor: wait; transform: none; }
+
     .btn-outline {
-      border-color: rgba(199,216,238,.32);
-      background: transparent;
-      color: var(--accent-bright);
+      border-color: rgba(220,174,76,.36);
+      background: rgba(201,154,56,.035);
+      color: var(--gold-light);
     }
 
     .btn-danger {
-      border-color: rgba(255,193,202,.35);
-      background: rgba(255,193,202,.05);
+      border-color: rgba(255,185,169,.35);
+      background: rgba(255,185,169,.05);
       color: var(--danger);
     }
 
@@ -276,8 +342,8 @@
       z-index: -1;
       inset: 0;
       background:
-        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
-        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+        radial-gradient(ellipse at 14% 8%,rgba(201,154,56,.09),transparent 34%),
+        radial-gradient(ellipse at 90% 65%,rgba(148,102,30,.07),transparent 32%);
       content: "";
       pointer-events: none;
     }
@@ -291,7 +357,7 @@
       font-size: 11px;
     }
 
-    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs a { color: var(--gold-bright); }
     .breadcrumbs a:hover { text-decoration: underline; }
 
     .page-heading {
@@ -299,35 +365,38 @@
       align-items: flex-end;
       justify-content: space-between;
       gap: 22px;
-      margin-bottom: 28px;
+      margin-bottom: 29px;
+      animation: revealUp .7s ease both;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      color: var(--accent-bright);
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .16em;
+      letter-spacing: .17em;
       text-transform: uppercase;
     }
 
     .eyebrow::before {
       width: 25px;
       height: 1px;
-      background: var(--accent);
+      background: var(--gold);
       content: "";
     }
 
     .page-heading h1 {
       margin: 10px 0 9px;
-      font: 600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      font: 600 clamp(34px,4.3vw,51px)/1.13 "Playfair Display",Georgia,serif;
       letter-spacing: -.025em;
       overflow-wrap: anywhere;
     }
 
-    .page-heading h1 span { color: var(--accent-bright); }
+    .page-heading h1 span {
+      animation: goldTypingGlow 4s ease-in-out infinite;
+    }
 
     .page-heading p {
       max-width: 710px;
@@ -335,6 +404,33 @@
       color: var(--muted);
       font-size: 12px;
       line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .typing-line strong {
+      color: var(--gold-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background: var(--gold-bright);
+      animation: cursorBlink .8s steps(2,start) infinite;
+    }
+
+    @keyframes cursorBlink {
+      to { visibility: hidden; }
     }
 
     .heading-actions {
@@ -355,14 +451,15 @@
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      background: linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
-      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+      background: var(--gold-surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.26);
     }
 
     .sidebar {
       position: sticky;
       top: 100px;
       padding: 19px;
+      animation: borderShimmer 7s ease-in-out infinite;
     }
 
     .account-user {
@@ -379,11 +476,12 @@
       flex: 0 0 43px;
       width: 43px;
       height: 43px;
-      border: 1px solid rgba(139,188,255,.35);
+      border: 1px solid rgba(220,174,76,.45);
       border-radius: 13px;
-      background: linear-gradient(145deg,#173d64,#0b203b);
-      color: var(--accent-bright);
+      background: linear-gradient(145deg,#3a2b12,#100c06);
+      color: var(--gold-light);
       font: 600 16px "Playfair Display",Georgia,serif;
+      box-shadow: inset 0 0 20px rgba(201,154,56,.07);
     }
 
     .account-user strong {
@@ -410,13 +508,14 @@
       border-radius: 8px;
       color: var(--text-soft);
       font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
     }
 
     .account-nav a:hover,
     .account-nav a.active {
-      border-color: rgba(139,188,255,.2);
-      background: rgba(139,188,255,.09);
-      color: var(--accent-bright);
+      border-color: rgba(220,174,76,.23);
+      background: rgba(201,154,56,.09);
+      color: var(--gold-light);
     }
 
     .sidebar-note {
@@ -429,7 +528,7 @@
     }
 
     .sidebar-note a {
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       text-decoration: underline;
       text-underline-offset: 3px;
     }
@@ -440,7 +539,10 @@
       min-width: 0;
     }
 
-    .panel { padding: clamp(17px,2.5vw,25px); }
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
 
     .panel-heading {
       display: flex;
@@ -457,9 +559,10 @@
       height: 43px;
       border: 1px solid var(--border);
       border-radius: 12px;
-      background: rgba(139,188,255,.08);
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.08);
+      color: var(--gold-bright);
       font-size: 19px;
+      box-shadow: inset 0 0 18px rgba(201,154,56,.04);
     }
 
     .panel-heading h2, .info-card h2 {
@@ -478,21 +581,21 @@
       margin-bottom: 16px;
       padding: 12px 14px;
       border: 1px solid var(--border);
-      border-radius: 9px;
+      border-radius: 10px;
+      background: rgba(201,154,56,.045);
       color: var(--text-soft);
-      background: rgba(139,188,255,.05);
       font-size: 10px;
       line-height: 1.8;
       overflow-wrap: anywhere;
     }
 
     .status.error {
-      border-color: rgba(255,193,202,.35);
+      border-color: rgba(255,185,169,.35);
       color: var(--danger);
     }
 
     .status.success {
-      border-color: rgba(168,240,208,.3);
+      border-color: rgba(184,230,189,.3);
       color: var(--success);
     }
 
@@ -504,10 +607,28 @@
     }
 
     .stat-card {
-      padding: 15px;
+      position: relative;
+      min-width: 0;
+      padding: 16px;
+      overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(139,188,255,.045);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(201,154,56,.1),transparent 53%),
+        rgba(18,14,8,.82);
+      transition: transform .23s,border-color .23s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-bright);
+    }
+
+    .stat-card .stat-icon {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 20px;
+      filter: drop-shadow(0 0 9px rgba(201,154,56,.16));
     }
 
     .stat-card span {
@@ -519,8 +640,8 @@
     .stat-card strong {
       display: block;
       margin-top: 5px;
-      color: var(--accent-bright);
-      font: 600 25px/1.3 "Playfair Display",Georgia,serif;
+      color: var(--gold-bright);
+      font: 600 26px/1.3 "Playfair Display",Georgia,serif;
       overflow-wrap: anywhere;
     }
 
@@ -535,11 +656,11 @@
 
     .section-heading h2 {
       margin: 0;
-      font: 600 21px/1.4 "Playfair Display",Georgia,serif;
+      font: 600 22px/1.4 "Playfair Display",Georgia,serif;
     }
 
     .section-heading a {
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       font-size: 10px;
     }
 
@@ -550,30 +671,49 @@
     }
 
     .quick-card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      min-height: 165px;
-      padding: 16px;
-      transition: transform .2s,border-color .2s;
+      min-height: 178px;
+      padding: 17px;
+      overflow: hidden;
+      transition: transform .24s,border-color .24s,box-shadow .24s;
+    }
+
+    .quick-card::after {
+      position: absolute;
+      right: -35px;
+      bottom: -42px;
+      width: 110px;
+      height: 110px;
+      border: 1px solid rgba(220,174,76,.08);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
     }
 
     .quick-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(139,188,255,.55);
+      transform: translateY(-4px);
+      border-color: var(--border-bright);
+      box-shadow: 0 22px 50px rgba(0,0,0,.4),0 0 24px rgba(201,154,56,.04);
     }
 
     .quick-icon {
       display: grid;
       place-items: center;
-      width: 39px;
-      height: 39px;
+      width: 43px;
+      height: 43px;
       margin-bottom: 13px;
-      border: 1px solid var(--border);
-      border-radius: 11px;
-      background: rgba(139,188,255,.08);
-      color: var(--accent-bright);
-      font-size: 18px;
+      border: 1px solid rgba(220,174,76,.27);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(201,154,56,.15),rgba(201,154,56,.025));
+      color: var(--gold-bright);
+      font-size: 20px;
+      animation: softFloat 5s ease-in-out infinite;
     }
+
+    .quick-card:nth-child(3n + 2) .quick-icon { animation-delay: -.8s; }
+    .quick-card:nth-child(3n) .quick-icon { animation-delay: -1.6s; }
 
     .quick-card strong {
       display: block;
@@ -593,7 +733,7 @@
 
     .quick-card .card-link {
       margin-top: 13px;
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       font-size: 10px;
       font-weight: 700;
     }
@@ -605,7 +745,7 @@
       align-items: flex-start;
       gap: 12px;
       padding: 14px 0;
-      border-bottom: 1px solid rgba(139,188,255,.14);
+      border-bottom: 1px solid rgba(220,174,76,.13);
     }
 
     .activity-item:last-child {
@@ -616,13 +756,14 @@
     .activity-icon {
       display: grid;
       place-items: center;
-      flex: 0 0 35px;
-      width: 35px;
-      height: 35px;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--accent-bright);
-      background: rgba(139,188,255,.06);
+      border-radius: 11px;
+      color: var(--gold-bright);
+      background: rgba(201,154,56,.06);
+      font-size: 16px;
     }
 
     .activity-copy { min-width: 0; flex: 1; }
@@ -642,7 +783,7 @@
     }
 
     .activity-copy a {
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       text-decoration: underline;
       text-underline-offset: 3px;
     }
@@ -654,7 +795,24 @@
       margin-top: 18px;
     }
 
-    .info-card { padding: 21px; }
+    .info-card {
+      position: relative;
+      padding: 23px;
+      overflow: hidden;
+    }
+
+    .info-card::before {
+      position: absolute;
+      top: -80px;
+      right: -70px;
+      width: 190px;
+      height: 190px;
+      border: 1px solid rgba(220,174,76,.1);
+      border-radius: 50%;
+      box-shadow: 0 0 0 25px rgba(220,174,76,.018),0 0 0 50px rgba(220,174,76,.012);
+      content: "";
+      pointer-events: none;
+    }
 
     .info-card h2 { margin-bottom: 9px; }
 
@@ -669,28 +827,31 @@
       border-bottom: 1px solid var(--border);
       color: var(--text-soft);
       font-size: 10px;
+      transition: color .2s,padding .2s;
     }
 
     .info-links a:last-child { border-bottom: 0; }
-    .info-links a span { color: var(--accent); }
-    .info-links a:hover { color: var(--accent-bright); }
+    .info-links a span { color: var(--gold-bright); }
+    .info-links a:hover { padding-left: 4px; color: var(--gold-light); }
 
     .notice {
-      padding: 14px 16px;
-      border: 1px solid rgba(255,223,162,.22);
-      border-radius: 10px;
-      background: rgba(255,223,162,.035);
+      padding: 15px 16px;
+      border: 1px solid rgba(220,174,76,.22);
+      border-radius: 11px;
+      background: rgba(201,154,56,.035);
       color: var(--muted);
       font-size: 10px;
       line-height: 1.9;
     }
 
-    .notice strong { color: var(--warning); }
+    .notice strong { color: var(--gold-bright); }
 
     .site-footer {
       padding: 43px 0 0;
       border-top: 1px solid var(--border);
-      background: #040b15;
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(201,154,56,.07),transparent 38%),
+        #030303;
     }
 
     .footer-grid {
@@ -711,8 +872,8 @@
     .footer-grid h2 {
       margin: 0 0 12px;
       padding-bottom: 9px;
-      border-bottom: 1px solid rgba(139,188,255,.17);
-      color: var(--accent-bright);
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      color: var(--gold-bright);
       font-size: 9px;
       letter-spacing: .12em;
       text-transform: uppercase;
@@ -724,16 +885,17 @@
       color: var(--muted);
       font-size: 10px;
       overflow-wrap: anywhere;
+      transition: color .2s;
     }
 
-    .footer-links a:hover { color: var(--accent-bright); }
+    .footer-links a:hover { color: var(--gold-light); }
 
     .disclaimer {
       margin: 0 0 15px;
       padding: 13px 15px;
-      border-left: 2px solid var(--accent);
+      border-left: 2px solid var(--gold);
       border-radius: 0 8px 8px 0;
-      background: rgba(16,41,71,.4);
+      background: rgba(201,154,56,.035);
       color: var(--muted);
       font-size: 10px;
       line-height: 1.9;
@@ -745,9 +907,14 @@
       flex-wrap: wrap;
       gap: 10px;
       padding: 17px 0;
-      border-top: 1px solid rgba(139,188,255,.13);
+      border-top: 1px solid rgba(220,174,76,.13);
       color: var(--muted);
       font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--champagne);
+      letter-spacing: .1em;
     }
 
     @media (max-width:1100px) {
@@ -765,8 +932,11 @@
         max-height: calc(100vh - 90px);
         padding: 15px 22px 20px;
         overflow-y: auto;
-        border-bottom: 1px solid var(--border);
-        background: #071629;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(5,5,4,.99);
+        box-shadow: var(--shadow);
       }
 
       .main-nav.open { display: flex; }
@@ -799,9 +969,7 @@
       .layout { grid-template-columns: 1fr; }
       .sidebar { position: static; }
 
-      .account-nav {
-        grid-template-columns: repeat(3,minmax(0,1fr));
-      }
+      .account-nav { grid-template-columns: repeat(3,minmax(0,1fr)); }
 
       .page-heading {
         align-items: flex-start;
@@ -817,6 +985,7 @@
       .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
       .page-main { padding: 30px 0 45px; }
       .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+      .typing-line { flex-wrap: wrap; }
 
       .sidebar, .panel, .quick-card, .info-card { padding: 15px; }
 
@@ -825,6 +994,7 @@
       .quick-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .heading-actions { flex-direction: column; }
       .heading-actions .btn { width: 100%; }
+      .quick-card { min-height: 172px; }
 
       .footer-grid {
         grid-template-columns: repeat(2,minmax(0,1fr));
@@ -850,6 +1020,7 @@
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
@@ -949,12 +1120,17 @@
       <header class="page-heading">
         <div>
           <span class="eyebrow">Your personal workspace</span>
-          <h1>My <span>account.</span></h1>
+          <h1>My <span class="gold-text">account.</span></h1>
           <p>
             Manage your profile, applications, documents, education
             shortlist, job interests, messages, payments and security
             settings from one connected MedOrbits workspace.
           </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Your next chapter starts here.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
         </div>
 
         <div class="heading-actions">
@@ -985,7 +1161,7 @@
             <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
             <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
             <a href="/account/application-details.html">▧ &nbsp; Application details</a>
-            <a href="/account/my-documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/my-documents.html">📁 &nbsp; My documents</a>
             <a href="/account/messages.html">✉ &nbsp; Messages</a>
             <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
             <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
@@ -1013,7 +1189,7 @@
 
           <section class="panel" aria-labelledby="overviewTitle">
             <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div class="panel-icon" aria-hidden="true">✦</div>
               <div>
                 <h2 id="overviewTitle">Account overview</h2>
                 <p>
@@ -1032,26 +1208,32 @@
 
             <div class="stats-grid" aria-label="Account summary">
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">📋</span>
                 <span>Applications</span>
                 <strong id="applicationCount">--</strong>
               </div>
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">🎓</span>
                 <span>Saved courses</span>
                 <strong id="courseCount">--</strong>
               </div>
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">🏛️</span>
                 <span>Saved colleges</span>
                 <strong id="collegeCount">--</strong>
               </div>
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">💼</span>
                 <span>Saved jobs</span>
                 <strong id="jobCount">--</strong>
               </div>
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">📁</span>
                 <span>Documents</span>
                 <strong id="documentCount">--</strong>
               </div>
               <div class="stat-card">
+                <span class="stat-icon" aria-hidden="true">🔔</span>
                 <span>Notifications</span>
                 <strong id="notificationCount">--</strong>
               </div>
@@ -1068,90 +1250,90 @@
 
           <section aria-labelledby="workspaceTitle">
             <div class="section-heading">
-              <h2 id="workspaceTitle">Your workspace</h2>
+              <h2 id="workspaceTitle">Your <span class="gold-text">workspace.</span></h2>
               <a href="/account/dashboard.html">View dashboard ↗</a>
             </div>
 
             <div class="quick-grid">
               <a class="quick-card" href="/account/profile.html">
-                <span class="quick-icon" aria-hidden="true">◈</span>
+                <span class="quick-icon" aria-hidden="true">👤</span>
                 <strong>My profile</strong>
                 <p>View your available profile information and account details.</p>
                 <span class="card-link">View profile →</span>
               </a>
 
               <a class="quick-card" href="/account/edit-profile.html">
-                <span class="quick-icon" aria-hidden="true">✎</span>
+                <span class="quick-icon" aria-hidden="true">✍️</span>
                 <strong>Edit profile</strong>
                 <p>Update your personal details and education preferences.</p>
                 <span class="card-link">Edit details →</span>
               </a>
 
               <a class="quick-card" href="/account/my-applications.html">
-                <span class="quick-icon" aria-hidden="true">▤</span>
+                <span class="quick-icon" aria-hidden="true">🎓</span>
                 <strong>My applications</strong>
                 <p>Review applications and available application statuses.</p>
                 <span class="card-link">View applications →</span>
               </a>
 
               <a class="quick-card" href="/account/my-documents.html">
-                <span class="quick-icon" aria-hidden="true">▧</span>
+                <span class="quick-icon" aria-hidden="true">📂</span>
                 <strong>My documents</strong>
                 <p>Access your documents and available document records.</p>
                 <span class="card-link">Manage documents →</span>
               </a>
 
               <a class="quick-card" href="/account/messages.html">
-                <span class="quick-icon" aria-hidden="true">✉</span>
+                <span class="quick-icon" aria-hidden="true">💬</span>
                 <strong>Messages</strong>
                 <p>Open your account messages and available conversations.</p>
                 <span class="card-link">Open messages →</span>
               </a>
 
               <a class="quick-card" href="/account/notifications.html">
-                <span class="quick-icon" aria-hidden="true">♧</span>
+                <span class="quick-icon" aria-hidden="true">🔔</span>
                 <strong>Notifications</strong>
                 <p>Review account alerts and available updates.</p>
                 <span class="card-link">View notifications →</span>
               </a>
 
               <a class="quick-card" href="/account/saved-colleges.html">
-                <span class="quick-icon" aria-hidden="true">☆</span>
+                <span class="quick-icon" aria-hidden="true">🏛️</span>
                 <strong>Saved colleges</strong>
                 <p>Return to colleges you bookmarked for further research.</p>
                 <span class="card-link">Open shortlist →</span>
               </a>
 
               <a class="quick-card" href="/account/saved-courses.html">
-                <span class="quick-icon" aria-hidden="true">▣</span>
+                <span class="quick-icon" aria-hidden="true">📚</span>
                 <strong>Saved courses</strong>
                 <p>Review your course shortlist and compare study pathways.</p>
                 <span class="card-link">Open shortlist →</span>
               </a>
 
               <a class="quick-card" href="/account/saved-jobs.html">
-                <span class="quick-icon" aria-hidden="true">◇</span>
+                <span class="quick-icon" aria-hidden="true">💼</span>
                 <strong>Saved jobs</strong>
                 <p>Revisit job opportunities you saved for later.</p>
                 <span class="card-link">View saved jobs →</span>
               </a>
 
               <a class="quick-card" href="/account/payment-history.html">
-                <span class="quick-icon" aria-hidden="true">＄</span>
+                <span class="quick-icon" aria-hidden="true">💳</span>
                 <strong>Payment history</strong>
                 <p>Review available transaction and payment records.</p>
                 <span class="card-link">View payments →</span>
               </a>
 
               <a class="quick-card" href="/account/receipts.html">
-                <span class="quick-icon" aria-hidden="true">▤</span>
+                <span class="quick-icon" aria-hidden="true">🧾</span>
                 <strong>Receipts</strong>
                 <p>Access receipts made available through your account.</p>
                 <span class="card-link">View receipts →</span>
               </a>
 
               <a class="quick-card" href="/account/security-settings.html">
-                <span class="quick-icon" aria-hidden="true">⚙</span>
+                <span class="quick-icon" aria-hidden="true">🛡️</span>
                 <strong>Account security</strong>
                 <p>Review security settings and available verification options.</p>
                 <span class="card-link">Manage security →</span>
@@ -1161,7 +1343,7 @@
 
           <section class="panel" aria-labelledby="activityTitle">
             <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">⌘</div>
+              <div class="panel-icon" aria-hidden="true">✧</div>
               <div>
                 <h2 id="activityTitle">Account activity and important links</h2>
                 <p>
@@ -1173,7 +1355,7 @@
 
             <div class="activity-list">
               <div class="activity-item">
-                <div class="activity-icon" aria-hidden="true">▤</div>
+                <div class="activity-icon" aria-hidden="true">📋</div>
                 <div class="activity-copy">
                   <strong>Application details</strong>
                   <p>
@@ -1185,7 +1367,7 @@
               </div>
 
               <div class="activity-item">
-                <div class="activity-icon" aria-hidden="true">✉</div>
+                <div class="activity-icon" aria-hidden="true">✉️</div>
                 <div class="activity-copy">
                   <strong>Email verification</strong>
                   <p>
@@ -1196,7 +1378,7 @@
               </div>
 
               <div class="activity-item">
-                <div class="activity-icon" aria-hidden="true">☎</div>
+                <div class="activity-icon" aria-hidden="true">📱</div>
                 <div class="activity-copy">
                   <strong>Phone verification</strong>
                   <p>
@@ -1207,7 +1389,7 @@
               </div>
 
               <div class="activity-item">
-                <div class="activity-icon" aria-hidden="true">🔒</div>
+                <div class="activity-icon" aria-hidden="true">🔐</div>
                 <div class="activity-copy">
                   <strong>Password management</strong>
                   <p>
@@ -1231,7 +1413,7 @@
               </div>
 
               <div class="activity-item">
-                <div class="activity-icon" aria-hidden="true">◉</div>
+                <div class="activity-icon" aria-hidden="true">🛡️</div>
                 <div class="activity-copy">
                   <strong>Privacy and account controls</strong>
                   <p>
@@ -1246,7 +1428,7 @@
           </section>
 
           <section class="info-card" aria-labelledby="discoverTitle">
-            <h2 id="discoverTitle">Continue exploring MedOrbits</h2>
+            <h2 id="discoverTitle">Continue exploring <span class="gold-text">MedOrbits.</span></h2>
             <p>
               Use the education and career resources to research your options.
               Verify current requirements with the relevant institution or
@@ -1254,15 +1436,15 @@
             </p>
 
             <div class="info-links">
-              <a href="/education/courses.html">Browse education courses <span>↗</span></a>
-              <a href="/education/colleges.html">Explore colleges <span>↗</span></a>
-              <a href="/education/universities.html">Explore universities <span>↗</span></a>
-              <a href="/education/admissions/exams.html">Research entrance examinations <span>↗</span></a>
-              <a href="/education/resources/fees.html">Review fees and funding <span>↗</span></a>
-              <a href="/education/resources/scholarships.html">Find scholarship information <span>↗</span></a>
-              <a href="/career/jobs.html">Explore job opportunities <span>↗</span></a>
-              <a href="/career/recruitment.html">Recruitment services <span>↗</span></a>
-              <a href="/pages/contact.html">Contact MedOrbits support <span>↗</span></a>
+              <a href="/education/courses.html">🎓 &nbsp; Browse education courses <span>↗</span></a>
+              <a href="/education/colleges.html">🏛️ &nbsp; Explore colleges <span>↗</span></a>
+              <a href="/education/universities.html">🌐 &nbsp; Explore universities <span>↗</span></a>
+              <a href="/education/admissions/exams.html">📝 &nbsp; Research entrance examinations <span>↗</span></a>
+              <a href="/education/resources/fees.html">💳 &nbsp; Review fees and funding <span>↗</span></a>
+              <a href="/education/resources/scholarships.html">🏅 &nbsp; Find scholarship information <span>↗</span></a>
+              <a href="/career/jobs.html">💼 &nbsp; Explore job opportunities <span>↗</span></a>
+              <a href="/career/recruitment.html">🤝 &nbsp; Recruitment services <span>↗</span></a>
+              <a href="/pages/contact.html">✉️ &nbsp; Contact MedOrbits support <span>↗</span></a>
             </div>
           </section>
 
@@ -1364,7 +1546,7 @@
        *
        * GET /api/account/summary
        *
-       * Example response:
+       * Expected response:
        * {
        *   "summary": {
        *     "applications": 0,
@@ -1374,19 +1556,15 @@
        *     "documents": 0,
        *     "notifications": 0
        *   },
-       *   "user": {
-       *     "email": "verified-account-email"
-       *   }
+       *   "user": { "email": "account@example.com" }
        * }
        *
-       * Configure an alternative endpoint with:
+       * Configure an alternative endpoint through:
        * window.MEDORBITS_CONFIG.accountSummaryEndpoint
        *
-       * The server must authenticate the request and calculate all counts
-       * for the currently authenticated user. Never accept a client-supplied
+       * The server must authenticate the request and calculate counts
+       * for the currently authenticated user. Never trust a client-supplied
        * user ID as authorization to read another user's data.
-       *
-       * This page deliberately does not fabricate account statistics.
        */
 
       const endpoint =
@@ -1399,7 +1577,6 @@
       const menuToggle = $("menuToggle");
       const mainNav = $("mainNav");
       const navGroups = [...document.querySelectorAll(".nav-group")];
-
       const statusBox = $("accountStatus");
       const refreshButton = $("refreshSummary");
 
@@ -1413,6 +1590,78 @@
         documents: $("documentCount"),
         notifications: $("notificationCount")
       };
+
+      /* Animated typing text */
+      const typingText = $("typingText");
+      const phrases = [
+        "Your next chapter starts here.",
+        "Explore education without limits.",
+        "Build your career with confidence.",
+        "Keep your goals within reach.",
+        "Your future. Your direction."
+      ];
+
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
+
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        const phrase = phrases[phraseIndex];
+
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1900);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 48);
+          return;
+        }
+
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
+
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 300);
+          return;
+        }
+
+        typingTimer = window.setTimeout(typeNextCharacter, 25);
+      }
+
+      if (!reducedMotion.matches) {
+        typingTimer = window.setTimeout(typeNextCharacter, 1500);
+      } else {
+        typingText.textContent = phrases[0];
+      }
+
+      reducedMotion.addEventListener?.("change", event => {
+        if (event.matches) {
+          window.clearTimeout(typingTimer);
+          typingText.textContent = phrases[0];
+        } else {
+          phraseIndex = 0;
+          characterIndex = 0;
+          deleting = false;
+          typeNextCharacter();
+        }
+      });
 
       function closeNavigation() {
         mainNav.classList.remove("open");
@@ -1494,16 +1743,13 @@
         });
 
       function showStatus(message, type = "") {
-        statusBox.replaceChildren();
         statusBox.textContent = message;
         statusBox.className = "status" + (type ? ` ${type}` : "");
         statusBox.hidden = false;
       }
 
       function setSummaryValues(summary) {
-        const keys = Object.keys(summaryFields);
-
-        keys.forEach(key => {
+        Object.keys(summaryFields).forEach(key => {
           const value = summary[key];
 
           summaryFields[key].textContent =
@@ -1534,9 +1780,7 @@
             method: "GET",
             credentials: "same-origin",
             cache: "no-store",
-            headers: {
-              "Accept": "application/json"
-            }
+            headers: { "Accept": "application/json" }
           });
 
           const data = await readJson(response);

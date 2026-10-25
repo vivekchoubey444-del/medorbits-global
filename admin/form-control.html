@@ -1,24 +1,2695 @@
+<!-- File: /admin/form-control.html -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Form Control | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06170f">
+  <meta name="description" content="Manage MedOrbits forms, form availability, submission workflows, validation policies and form analytics through the administration portal.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Form Control | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06170f;
+      --bg-deep: #020a06;
+      --navy: #0b2117;
+      --navy-2: #123628;
+      --navy-3: #1a4934;
+      --blue: #65d8a0;
+      --blue-bright: #a9f3ca;
+      --blue-soft: #ddffeb;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1faf5;
+      --text-soft: #c5e3d4;
+      --muted: #91b7a1;
+      --border: rgba(101,216,160,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #268c5b 0%,
+        #9ee9bd 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(15,49,37,.97),
+        rgba(4,17,12,.98)
+      );
+      --surface-light: linear-gradient(
+        145deg,
+        rgba(20,61,44,.92),
+        rgba(8,27,18,.97)
+      );
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(53,171,108,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(31,108,68,.12),transparent 43%),
+        linear-gradient(135deg,#020a06 0%,#06170f 48%,#0a2117 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(rgba(169,243,202,.2) .7px,transparent .7px);
+      background-size: 33px 33px;
+      opacity: .14;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(53,171,108,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #06170f;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .accent-text {
+      color: var(--blue-bright);
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(101,216,160,0); }
+      50% { box-shadow: 0 0 22px rgba(101,216,160,.13); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color: rgba(101,216,160,.18); }
+      50% { border-color: rgba(211,173,97,.48); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes typingBlink {
+      to { visibility: hidden; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #020a06;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong { color: var(--gold-bright); }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,15,9,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(2,10,6,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(101,216,160,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(101,216,160,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a { color: var(--text-soft); white-space: nowrap; }
+    .main-nav > a:hover { color: var(--gold-bright); }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,243,202,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#65d8a0,#c5f6d9);
+      color: #06170f;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(101,216,160,.16);
+    }
+
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,182,189,.32);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(101,216,160,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a { color: var(--blue-bright); }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 29px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .typing-line strong { color: var(--blue-bright); font-weight: 600; }
+
+    .typing-cursor {
+      width: 2px;
+      height: 14px;
+      background: var(--gold-bright);
+      animation: typingBlink .8s steps(2,start) infinite;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel,
+    .admin-card,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+      animation: borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#1c6244,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong { display: block; font-size: 11px; }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav { display: grid; gap: 5px; }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(101,216,160,.09);
+      color: var(--blue-bright);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(101,216,160,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong { color: var(--gold-bright); }
+
+    .content { display: grid; gap: 19px; min-width: 0; }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(101,216,160,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(101,216,160,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .status-row .status { flex: 1; margin: 0; }
+    .timestamp { color: var(--muted); font-size: 9px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 13px;
+      margin-bottom: 21px;
+    }
+
+    .stat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+      padding: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(101,216,160,.11),transparent 54%),
+        linear-gradient(145deg,rgba(15,49,37,.92),rgba(4,17,12,.96));
+      transition: transform .23s,border-color .23s;
+    }
+
+    .stat-card:hover { transform: translateY(-3px); border-color: var(--border-gold); }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(101,216,160,.14),rgba(211,173,97,.08));
+      font-size: 20px;
+    }
+
+    .stat-copy { min-width: 0; }
+    .stat-copy span { display: block; color: var(--muted); font-size: 9px; }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 26px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 23px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    .section-heading a { color: var(--gold-bright); font-size: 10px; }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .admin-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-gold);
+      box-shadow: 0 24px 55px rgba(0,0,0,.35),0 0 25px rgba(101,216,160,.045);
+    }
+
+    .card-image {
+      position: relative;
+      height: 155px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#174b34,#101d30);
+    }
+
+    .card-image::after {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg,rgba(3,15,9,.9),transparent 70%),
+        linear-gradient(115deg,rgba(17,76,48,.12),rgba(211,173,97,.09));
+      content: "";
+      pointer-events: none;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease,filter .6s ease;
+    }
+
+    .admin-card:hover .card-image img { transform: scale(1.055); filter: saturate(1.1); }
+
+    .card-image-label {
+      position: absolute;
+      z-index: 1;
+      bottom: 12px;
+      left: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .card-image-label::before {
+      width: 18px;
+      height: 1px;
+      background: var(--gold-bright);
+      content: "";
+    }
+
+    .card-body { display: flex; flex: 1; flex-direction: column; padding: 17px; }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .card-title-row h3 {
+      margin: 0 0 7px;
+      font: 600 19px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .card-symbol {
+      display: grid;
+      place-items: center;
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 16px;
+    }
+
+    .card-body p {
+      flex: 1;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-footer small { color: var(--muted); font-size: 8px; }
+    .card-link { color: var(--blue-bright); font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .card-link span { display: inline-block; transition: transform .2s; }
+    .admin-card:hover .card-link span { transform: translateX(4px); }
+
+    .feature-banner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,57,39,.96),rgba(4,17,10,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.9; }
+
+    .feature-image {
+      position: relative;
+      min-height: 145px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--navy-2);
+    }
+
+    .feature-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 145px;
+      object-fit: cover;
+      opacity: .9;
+    }
+
+    .feature-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    .field label { color: var(--text-soft); font-size: 9px; font-weight: 700; }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #091c12;
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .field textarea { min-height: 100px; resize: vertical; line-height: 1.7; }
+    .field input::placeholder,
+    .field textarea::placeholder { color: #789b86; }
+
+    .field input:disabled,
+    .field select:disabled,
+    .field textarea:disabled {
+      opacity: .68;
+      cursor: not-allowed;
+    }
+
+    .field-hint { color: var(--muted); font-size: 9px; line-height: 1.7; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(101,216,160,.035);
+    }
+
+    .checkbox-row input {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      margin-top: 3px;
+      accent-color: #65d8a0;
+    }
+
+    .checkbox-row label { color: var(--text-soft); font-size: 10px; line-height: 1.8; }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .form-actions .btn { min-width: 125px; }
+
+    .permission-lock {
+      padding: 14px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .permission-lock strong { color: var(--gold-bright); }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(2,12,7,.45);
+      scrollbar-width: thin;
+    }
+
+    .data-table { width: 100%; min-width: 600px; border-collapse: collapse; text-align: left; }
+
+    .data-table th {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(101,216,160,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 13px 14px;
+      border-bottom: 1px solid rgba(101,216,160,.1);
+      color: var(--text-soft);
+      font-size: 10px;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(101,216,160,.05);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .status-pill::before {
+      width: 5px;
+      height: 5px;
+      flex: 0 0 5px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .status-pill.active { border-color: rgba(158,232,193,.25); color: var(--success); }
+    .status-pill.inactive { border-color: rgba(255,224,160,.24); color: var(--warning); }
+    .status-pill.error { border-color: rgba(255,182,189,.25); color: var(--danger); }
+
+    .empty-state {
+      padding: 30px 18px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .activity-list { display: grid; }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(101,216,160,.12);
+    }
+
+    .activity-item:last-child { padding-bottom: 0; border-bottom: 0; }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .activity-copy { min-width: 0; flex: 1; }
+    .activity-copy strong { display: block; margin-bottom: 3px; font-size: 10px; }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-copy a { color: var(--blue-bright); }
+
+    .info-card { padding: 23px; background: var(--surface-light); }
+
+    .info-card h2 {
+      margin: 0 0 9px;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.9; }
+
+    .security-links {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .security-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(3,15,8,.4);
+      color: var(--text-soft);
+      font-size: 9px;
+      transition: border-color .2s,color .2s;
+    }
+
+    .security-links a:hover { border-color: var(--border-gold); color: var(--gold-bright); }
+    .security-links span { color: var(--blue-bright); }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong { color: var(--gold-bright); }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(101,216,160,.08),transparent 38%),
+        #020a06;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: var(--gold-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child { color: var(--gold-bright); letter-spacing: .1em; }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,15,9,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open { display: flex; }
+      .main-nav > a { display: block; padding: 11px 8px; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .page-heading { align-items: flex-start; flex-direction: column; }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .feature-banner { grid-template-columns: minmax(0,1fr) minmax(140px,.55fr); }
+    }
+
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .035em; }
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+      .page-main { padding: 29px 0 44px; }
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+      .sidebar, .panel, .info-card { padding: 15px; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .admin-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+
+      .card-image { height: 112px; }
+      .card-image-label { bottom: 8px; left: 9px; font-size: 7px; letter-spacing: .06em; }
+      .card-body { padding: 11px; }
+      .card-title-row { gap: 6px; }
+      .card-title-row h3 { font-size: 15px; }
+      .card-symbol { flex-basis: 29px; width: 29px; height: 29px; font-size: 13px; }
+      .card-body p { font-size: 9px; line-height: 1.7; }
+      .card-footer { align-items: flex-start; flex-direction: column; gap: 6px; }
+      .card-link { font-size: 9px; }
+
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+        padding: 12px;
+      }
+
+      .stat-copy strong { font-size: 23px; }
+      .status-row { align-items: stretch; flex-direction: column; }
+      .feature-banner { grid-template-columns: 1fr; padding: 17px; }
+      .feature-image { min-height: 125px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .form-actions { flex-direction: column; }
+      .form-actions .btn { width: 100%; }
+      .security-links { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+      .security-links a { align-items: flex-start; padding: 10px; }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 21px 15px; }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-grid { gap: 8px; }
+      .card-image { height: 94px; }
+      .card-body { padding: 9px; }
+      .card-title-row h3 { font-size: 13px; }
+      .card-symbol { display: none; }
+      .stats-grid, .security-links { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { gap: 18px 11px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Form Control</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about form control. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Form control management</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Form control administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/admissions.html">Admissions</a>
+        <a href="/admin/form-control.html" aria-current="page">Form control</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Form control</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Form governance · Admin portal</span>
+          <h1>Form <span class="accent-text">control.</span></h1>
+          <p>
+            Manage the availability and configuration of MedOrbits forms,
+            monitor submission workflows, inspect form health and coordinate
+            controlled updates across education, admissions, consultancy and
+            career services. Changes must be validated and authorised by the
+            connected backend.
+          </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Clear forms. Consistent submissions. Better oversight.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="#formRegistry">▤ Form registry</a>
+          <button class="btn" id="refreshDashboard" type="button">↻ Refresh form data</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/integrations.html"><span class="nav-icon" aria-hidden="true">⇄</span>Integrations</a>
+            <a href="/admin/api-settings.html"><span class="nav-icon" aria-hidden="true">⌘</span>API settings</a>
+            <a class="active" href="/admin/form-control.html" aria-current="page"><span class="nav-icon" aria-hidden="true">☷</span>Form control</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Platform settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Form governance.</strong>
+            <br>
+            Form controls affect the data collection process. Validate
+            configuration changes on the server and keep sensitive submission
+            values out of logs, analytics and public responses.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="overviewTitle">Form operations overview</h2>
+                <p>Live metrics are supplied by the configured, authenticated administration API.</p>
+              </div>
+            </div>
+
+            <div class="status-row">
+              <div class="status warning" id="dashboardStatus" role="status" aria-live="polite">
+                Form statistics have not been loaded.
+              </div>
+              <span class="timestamp" id="lastUpdated">Not refreshed</span>
+            </div>
+
+            <div class="stats-grid" aria-label="Form statistics">
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">☷</div>
+                <div class="stat-copy"><span>Total forms</span><strong id="totalForms">--</strong></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy"><span>Active forms</span><strong id="activeForms">--</strong></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⏸</div>
+                <div class="stat-copy"><span>Inactive forms</span><strong id="inactiveForms">--</strong></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">▤</div>
+                <div class="stat-copy"><span>Submissions</span><strong id="totalSubmissions">--</strong></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⌛</div>
+                <div class="stat-copy"><span>Pending reviews</span><strong id="pendingReviews">--</strong></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⚠</div>
+                <div class="stat-copy"><span>Configuration alerts</span><strong id="configurationAlerts">--</strong></div>
+              </div>
+            </div>
+
+            <div class="heading-actions">
+              <a class="btn" href="#formRegistry">Explore form registry ↓</a>
+              <a class="btn btn-outline" href="/admin/applications.html">Review submissions ↗</a>
+            </div>
+          </section>
+
+          <section aria-labelledby="modulesTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="modulesTitle">Form management <span class="accent-text">workflows.</span></h2>
+                <p>Quick access to the main form administration tasks.</p>
+              </div>
+            </div>
+
+            <div class="admin-grid">
+              <a class="admin-card" href="#formRegistry">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80"
+                    alt="Paperwork and forms arranged on a desk"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Form registry</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Form registry</h3>
+                    <span class="card-symbol" aria-hidden="true">☷</span>
+                  </div>
+                  <p>Inspect registered forms, their categories, current availability and supported submission routes.</p>
+                  <div class="card-footer">
+                    <small>Configuration inventory</small>
+                    <span class="card-link">View registry <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="#formEditor">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80"
+                    alt="A person writing and organising paperwork"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Configuration control</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Form configuration</h3>
+                    <span class="card-symbol" aria-hidden="true">⚙</span>
+                  </div>
+                  <p>Prepare authorised form updates with a clear change reason and explicit confirmation.</p>
+                  <div class="card-footer">
+                    <small>Controlled changes</small>
+                    <span class="card-link">Configure forms <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/applications.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80"
+                    alt="Official documents being checked"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Submission management</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Submission workflows</h3>
+                    <span class="card-symbol" aria-hidden="true">▤</span>
+                  </div>
+                  <p>Continue to the authorised application workspace to review submitted records and processing status.</p>
+                  <div class="card-footer">
+                    <small>Application processing</small>
+                    <span class="card-link">Open applications <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/audit-logs.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80"
+                    alt="Digital analytics displayed on a monitor"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Governance and reporting</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Audit and reporting</h3>
+                    <span class="card-symbol" aria-hidden="true">▥</span>
+                  </div>
+                  <p>Review recorded administrative events and use available reports for operational oversight.</p>
+                  <div class="card-footer">
+                    <small>Accountability</small>
+                    <span class="card-link">Review audit logs <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <section class="panel" id="formRegistry" aria-labelledby="registryTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">☷</div>
+              <div>
+                <h2 id="registryTitle">Registered form inventory</h2>
+                <p>Form records are read from the server. No example or fabricated form records are inserted.</p>
+              </div>
+            </div>
+
+            <div class="status" id="registryStatus" role="status" aria-live="polite">
+              Connect the authenticated form-management endpoint to load the registry.
+            </div>
+
+            <div class="field-grid" style="margin-bottom:16px">
+              <div class="field">
+                <label for="registrySearch">Search forms</label>
+                <input id="registrySearch" type="search" maxlength="100" autocomplete="off" placeholder="Search by name or identifier">
+              </div>
+              <div class="field">
+                <label for="registryCategory">Form category</label>
+                <select id="registryCategory">
+                  <option value="">All categories</option>
+                  <option value="admissions">Admissions</option>
+                  <option value="education">Education</option>
+                  <option value="consultancy">Consultancy</option>
+                  <option value="career">Career and recruitment</option>
+                  <option value="support">Support</option>
+                  <option value="account">Account and profile</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Registered forms table, horizontally scrollable">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Form</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Identifier</th>
+                    <th scope="col">Availability</th>
+                    <th scope="col">Updated</th>
+                  </tr>
+                </thead>
+                <tbody id="formRegistryBody">
+                  <tr>
+                    <td colspan="5">
+                      <div class="empty-state">
+                        <strong>Form registry ready</strong>
+                        Form records will appear here after a successful API response.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel" id="formEditor" aria-labelledby="editorTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⚙</div>
+              <div>
+                <h2 id="editorTitle">Controlled form configuration</h2>
+                <p>Prepare an update for a registered form. Editing remains disabled until both application configuration and the authenticated server response permit it.</p>
+              </div>
+            </div>
+
+            <div class="permission-lock" id="permissionNotice" role="status" aria-live="polite">
+              <strong>Read-only mode.</strong>
+              Configuration editing is disabled until the backend explicitly confirms your permission and the client write feature is enabled.
+            </div>
+
+            <div class="status" id="editorStatus" role="status" aria-live="polite" hidden></div>
+
+            <form id="formConfigForm">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="formId">Registered form</label>
+                  <select id="formId" name="formId" required disabled>
+                    <option value="">Load the registry first</option>
+                  </select>
+                  <span class="field-hint">Only a form identifier returned by the server can be selected.</span>
+                </div>
+
+                <div class="field">
+                  <label for="formAvailability">Form availability</label>
+                  <select id="formAvailability" name="enabled" required disabled>
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                  <span class="field-hint">The backend must enforce availability on every submission request.</span>
+                </div>
+
+                <div class="field full">
+                  <label for="formNotice">User-facing notice</label>
+                  <textarea id="formNotice" name="notice" maxlength="500" placeholder="Enter the notice displayed to users when supported by this form." disabled></textarea>
+                  <span class="field-hint">Maximum 500 characters. Do not include personal data, credentials or confidential operational details.</span>
+                </div>
+
+                <div class="field full">
+                  <label for="changeReason">Reason for change</label>
+                  <textarea id="changeReason" name="reason" minlength="8" maxlength="500" placeholder="Explain why this form configuration needs to change." disabled></textarea>
+                  <span class="field-hint">Required for change accountability. The server must record an audit event.</span>
+                </div>
+
+                <div class="field full">
+                  <div class="checkbox-row">
+                    <input id="confirmChange" name="confirmChange" type="checkbox" required disabled>
+                    <label for="confirmChange">
+                      I have reviewed the impact of this change and confirm that it is intended. I understand that the server must validate and audit the update.
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn" id="saveConfig" type="submit" disabled>Save configuration</button>
+                <button class="btn btn-outline" id="resetConfig" type="reset" disabled>Reset changes</button>
+                <button class="btn btn-outline" id="reloadRegistry" type="button">Reload registry</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="featureTitle">
+            <div>
+              <span class="eyebrow">Reliable form operations</span>
+              <h2 id="featureTitle">Better forms. <span class="accent-text">Clearer journeys.</span></h2>
+              <p>
+                Keep forms aligned with the user journey, validate submissions
+                consistently, communicate availability clearly and preserve
+                traceable records of administrative changes.
+              </p>
+              <div class="feature-actions">
+                <a class="btn" href="/admin/applications.html">Open applications ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Review audit history</a>
+              </div>
+            </div>
+            <div class="feature-image">
+              <img
+                src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80"
+                alt="Digital work tools used for online form workflows"
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="quickLinksTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✧</div>
+              <div>
+                <h2 id="quickLinksTitle">Form operations quick links</h2>
+                <p>Useful destinations for form lifecycle management and administrative oversight.</p>
+              </div>
+            </div>
+
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🎓</div>
+                <div class="activity-copy">
+                  <strong>Admissions and application forms</strong>
+                  <p>Open <a href="/admin/admissions.html">admissions management</a> and <a href="/admin/applications.html">application records</a> for authorised workflows.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">📄</div>
+                <div class="activity-copy">
+                  <strong>Document and upload workflows</strong>
+                  <p>Use <a href="/admin/documents.html">document management</a> to oversee permitted document-related operations.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">⇄</div>
+                <div class="activity-copy">
+                  <strong>API and service integration</strong>
+                  <p>Review <a href="/admin/api-settings.html">API settings</a> and <a href="/admin/integrations.html">integrations</a> when connecting the form service.</p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🔐</div>
+                <div class="activity-copy">
+                  <strong>Audit and access controls</strong>
+                  <p>Use <a href="/admin/audit-logs.html">audit logs</a> and the <a href="/admin/security.html">security centre</a> for administrative accountability.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card" aria-labelledby="securityTitle">
+            <h2 id="securityTitle">Protect form <span class="accent-text">integrity.</span></h2>
+            <p>
+              A disabled button is not an access-control mechanism. The backend
+              must enforce authentication and role-based permissions, validate
+              every field, prevent unauthorised form submissions, apply CSRF
+              protection where applicable and record sensitive configuration
+              changes without logging submitted personal information.
+            </p>
+            <div class="security-links">
+              <a href="/admin/security.html">Security centre <span>↗</span></a>
+              <a href="/admin/audit-logs.html">Audit logs <span>↗</span></a>
+              <a href="/admin/api-settings.html">API settings <span>↗</span></a>
+              <a href="/pages/contact.html">Support and assistance <span>↗</span></a>
+            </div>
+          </section>
+
+          <div class="notice">
+            <strong>Implementation notice:</strong>
+            This page expects a same-origin authenticated API. The suggested
+            endpoints below are integration contracts, not proof that the
+            backend routes already exist. Verify the actual route names and
+            response shape in your server before deployment.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Form control administration</small>
+            </span>
+          </a>
+          <p>A connected education and career platform for resources, admissions, documents and professional opportunities.</p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/form-control.html">Form control</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy services.
+        Admission requirements, course information, fees and deadlines may change.
+        Verify eligibility and official requirements with the relevant institution
+        or authority.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Form Control
+       *
+       * Suggested GET:
+       *   /api/admin/forms
+       *
+       * Suggested PATCH:
+       *   /api/admin/forms/:id/configuration
+       *
+       * Expected GET response:
+       * {
+       *   "data": {
+       *     "admin": { "name": "Administration", "email": "..." },
+       *     "permissions": { "canUpdateForms": false },
+       *     "summary": {
+       *       "totalForms": 0,
+       *       "activeForms": 0,
+       *       "inactiveForms": 0,
+       *       "totalSubmissions": 0,
+       *       "pendingReviews": 0,
+       *       "configurationAlerts": 0
+       *     },
+       *     "forms": [
+       *       {
+       *         "id": "server-issued-id",
+       *         "name": "Form name",
+       *         "category": "admissions",
+       *         "enabled": true,
+       *         "notice": "",
+       *         "updatedAt": "2026-10-25T10:00:00Z"
+       *       }
+       *     ]
+       *   }
+       * }
+       *
+       * PATCH request:
+       * {
+       *   "enabled": true,
+       *   "notice": "...",
+       *   "reason": "..."
+       * }
+       *
+       * Optional configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminFormsEndpoint: "/api/admin/forms",
+       *   adminFormsWriteEnabled: false,
+       *   csrfToken: "server-provided-token-if-required"
+       * };
+       *
+       * The client write flag must remain false until deliberately enabled
+       * for a tested backend integration. The backend must independently
+       * enforce authorization, validation, CSRF protection, concurrency
+       * checks and audit logging.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+        const config = window.MEDORBITS_CONFIG || {};
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const refreshButton = $("refreshDashboard");
+        const registryStatus = $("registryStatus");
+        const dashboardStatus = $("dashboardStatus");
+        const editorStatus = $("editorStatus");
+        const registryBody = $("formRegistryBody");
+        const formSelect = $("formId");
+        const formAvailability = $("formAvailability");
+        const formNotice = $("formNotice");
+        const changeReason = $("changeReason");
+        const confirmChange = $("confirmChange");
+        const saveButton = $("saveConfig");
+        const resetButton = $("resetConfig");
+        const reloadButton = $("reloadRegistry");
+
+        const endpointPath = config.adminFormsEndpoint || "/api/admin/forms";
+        let endpoint;
+
+        try {
+          endpoint = new URL(endpointPath, window.location.origin);
+          if (endpoint.origin !== window.location.origin ||
+              endpoint.username || endpoint.password ||
+              endpoint.hash) {
+            throw new Error("The form API endpoint must be a safe same-origin URL.");
+          }
+        } catch (error) {
+          dashboardStatus.textContent = error.message || "Invalid form API endpoint.";
+          dashboardStatus.className = "status error";
+          refreshButton.disabled = true;
+          reloadButton.disabled = true;
+          return;
+        }
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const statElements = {
+          totalForms: $("totalForms"),
+          activeForms: $("activeForms"),
+          inactiveForms: $("inactiveForms"),
+          totalSubmissions: $("totalSubmissions"),
+          pendingReviews: $("pendingReviews"),
+          configurationAlerts: $("configurationAlerts")
+        };
+
+        const state = {
+          forms: [],
+          canWrite: false,
+          loading: false,
+          saving: false,
+          controller: null,
+          sequence: 0,
+          originalForm: null
+        };
+
+        function setStatus(element, message, type = "warning", hidden = false) {
+          element.textContent = message;
+          element.className = `status ${type}`;
+          element.hidden = hidden;
+        }
+
+        function setStats(summary) {
+          for (const [key, element] of Object.entries(statElements)) {
+            const value = summary?.[key];
+            element.textContent =
+              Number.isSafeInteger(value) && value >= 0
+                ? value.toLocaleString()
+                : "--";
+          }
+        }
+
+        function resetStats() {
+          Object.values(statElements).forEach(element => {
+            element.textContent = "--";
+          });
+        }
+
+        function safeText(value, fallback = "Not provided") {
+          return typeof value === "string" && value.trim()
+            ? value.trim()
+            : fallback;
+        }
+
+        function formatDate(value) {
+          if (typeof value !== "string" || !value.trim()) {
+            return "Not provided";
+          }
+
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "Not provided";
+
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
+        async function readJson(response) {
+          const type = response.headers.get("content-type") || "";
+          if (!type.toLowerCase().includes("application/json")) return {};
+
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        function responseMessage(data, fallback) {
+          return typeof data?.message === "string" && data.message.trim()
+            ? data.message.trim().slice(0, 500)
+            : fallback;
+        }
+
+        function explainHttpError(response, data) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+          if (response.status === 403) {
+            return "Access denied. Your account is not authorised to perform this action.";
+          }
+          if (response.status === 404) {
+            return "The configured form API route was not found. Check the backend route configuration.";
+          }
+          if (response.status === 409) {
+            return responseMessage(data, "The form changed elsewhere. Reload the registry before trying again.");
+          }
+          if (response.status === 422) {
+            return responseMessage(data, "The server rejected the submitted configuration.");
+          }
+          if (response.status === 429) {
+            return "Too many requests. Wait before trying again.";
+          }
+          if (response.status >= 500) {
+            return "The form service encountered a server error. Try again later.";
+          }
+          return responseMessage(data, `The request failed with HTTP ${response.status}.`);
+        }
+
+        function isRecord(value) {
+          return value !== null &&
+            typeof value === "object" &&
+            !Array.isArray(value);
+        }
+
+        function normalisePayload(payload) {
+          if (!isRecord(payload)) {
+            throw new Error("The form API returned an invalid response.");
+          }
+
+          const data = isRecord(payload.data) ? payload.data : payload;
+
+          if (!Array.isArray(data.forms)) {
+            throw new Error("The form API response must include a forms array.");
+          }
+
+          const forms = data.forms.map(form => {
+            if (!isRecord(form)) {
+              throw new Error("The form API returned an invalid form record.");
+            }
+
+            const id = typeof form.id === "string" ? form.id.trim() : "";
+            const name = typeof form.name === "string" ? form.name.trim() : "";
+
+            if (!id || !name || id.length > 200 || name.length > 200) {
+              throw new Error("A form record is missing a valid identifier or name.");
+            }
+
+            if (typeof form.enabled !== "boolean") {
+              throw new Error(`The availability value for "${name}" is invalid.`);
+            }
+
+            return {
+              id,
+              name,
+              category: safeText(form.category, "other").toLowerCase(),
+              enabled: form.enabled,
+              notice: typeof form.notice === "string"
+                ? form.notice.slice(0, 500)
+                : "",
+              updatedAt: form.updatedAt
+            };
+          });
+
+          const uniqueIds = new Set(forms.map(form => form.id));
+          if (uniqueIds.size !== forms.length) {
+            throw new Error("The form API returned duplicate form identifiers.");
+          }
+
+          return { data, forms };
+        }
+
+        function createCell(value) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          return cell;
+        }
+
+        function categoryLabel(value) {
+          const labels = {
+            admissions: "Admissions",
+            education: "Education",
+            consultancy: "Consultancy",
+            career: "Career",
+            support: "Support",
+            account: "Account",
+            other: "Other"
+          };
+          return labels[value] || value;
+        }
+
+        function availabilityPill(enabled) {
+          const pill = document.createElement("span");
+          pill.className = `status-pill ${enabled ? "active" : "inactive"}`;
+          pill.textContent = enabled ? "Enabled" : "Disabled";
+          return pill;
+        }
+
+        function showEmptyRegistry(message) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const empty = document.createElement("div");
+          const heading = document.createElement("strong");
+          const detail = document.createElement("span");
+
+          cell.colSpan = 5;
+          empty.className = "empty-state";
+          heading.textContent = "No form records to display";
+          detail.textContent = message;
+          empty.append(heading, detail);
+          cell.appendChild(empty);
+          row.appendChild(cell);
+          registryBody.replaceChildren(row);
+        }
+
+        function filteredForms() {
+          const query = $("registrySearch").value.trim().toLowerCase();
+          const category = $("registryCategory").value;
+
+          return state.forms.filter(form => {
+            const matchesQuery = !query ||
+              form.name.toLowerCase().includes(query) ||
+              form.id.toLowerCase().includes(query);
+
+            const matchesCategory = !category ||
+              form.category === category;
+
+            return matchesQuery && matchesCategory;
+          });
+        }
+
+        function renderRegistry() {
+          const fragment = document.createDocumentFragment();
+          const forms = filteredForms();
+
+          if (!forms.length) {
+            showEmptyRegistry(
+              state.forms.length
+                ? "No forms match the current search or category filter."
+                : "The server has not returned any registered forms."
+            );
+            return;
+          }
+
+          forms.forEach(form => {
+            const row = document.createElement("tr");
+            const nameCell = createCell(form.name);
+            const categoryCell = createCell(categoryLabel(form.category));
+            const idCell = createCell(form.id);
+            const statusCell = document.createElement("td");
+            const updatedCell = createCell(formatDate(form.updatedAt));
+
+            statusCell.appendChild(availabilityPill(form.enabled));
+            row.append(
+              nameCell,
+              categoryCell,
+              idCell,
+              statusCell,
+              updatedCell
+            );
+            fragment.appendChild(row);
+          });
+
+          registryBody.replaceChildren(fragment);
+        }
+
+        function populateFormSelect() {
+          const previousValue = formSelect.value;
+          const fragment = document.createDocumentFragment();
+
+          const placeholder = document.createElement("option");
+          placeholder.value = "";
+          placeholder.textContent = state.forms.length
+            ? "Select a registered form"
+            : "No registered forms available";
+          fragment.appendChild(placeholder);
+
+          state.forms.forEach(form => {
+            const option = document.createElement("option");
+            option.value = form.id;
+            option.textContent = `${form.name} (${form.id})`;
+            fragment.appendChild(option);
+          });
+
+          formSelect.replaceChildren(fragment);
+
+          if (state.forms.some(form => form.id === previousValue)) {
+            formSelect.value = previousValue;
+          }
+
+          updateEditorPermission();
+        }
+
+        function selectedForm() {
+          return state.forms.find(form => form.id === formSelect.value) || null;
+        }
+
+        function updateEditorPermission() {
+          const selected = selectedForm();
+          const editable = state.canWrite && Boolean(selected) && !state.saving;
+
+          formSelect.disabled = !state.canWrite || state.loading || state.saving;
+          formAvailability.disabled = !editable;
+          formNotice.disabled = !editable;
+          changeReason.disabled = !editable;
+          confirmChange.disabled = !editable;
+          saveButton.disabled = !editable;
+          resetButton.disabled = !editable;
+
+          $("permissionNotice").innerHTML = "";
+          const strong = document.createElement("strong");
+          const message = document.createElement("span");
+
+          if (state.canWrite) {
+            strong.textContent = selected ? "Authorised editing enabled. " : "Permission verified. ";
+            message.textContent = selected
+              ? "Select and review a registered form before submitting a change."
+              : "Choose a registered form to enable the configuration fields.";
+          } else {
+            strong.textContent = "Read-only mode. ";
+            message.textContent =
+              "Editing requires both an enabled client configuration flag and an explicit canUpdateForms permission from the authenticated server.";
+          }
+
+          $("permissionNotice").append(strong, message);
+        }
+
+        function loadSelectedForm() {
+          const form = selectedForm();
+          state.originalForm = form ? { ...form } : null;
+
+          formAvailability.value = form ? String(form.enabled) : "true";
+          formNotice.value = form ? form.notice : "";
+          changeReason.value = "";
+          confirmChange.checked = false;
+
+          setStatus(editorStatus, "", "warning", true);
+          updateEditorPermission();
+        }
+
+        function validSummary(summary) {
+          if (!isRecord(summary)) return false;
+
+          return Object.keys(statElements).every(key =>
+            Number.isSafeInteger(summary[key]) && summary[key] >= 0
+          );
+        }
+
+        function validAdmin(admin) {
+          if (!isRecord(admin)) return;
+
+          if (typeof admin.name === "string" && admin.name.trim()) {
+            $("adminName").textContent = admin.name.trim().slice(0, 120);
+          }
+
+          if (typeof admin.email === "string" && admin.email.trim()) {
+            $("adminEmail").textContent = admin.email.trim().slice(0, 200);
+          }
+        }
+
+        async function loadForms() {
+          if (state.controller) state.controller.abort();
+
+          const controller = new AbortController();
+          state.controller = controller;
+          const requestId = ++state.sequence;
+
+          state.loading = true;
+          refreshButton.disabled = true;
+          reloadButton.disabled = true;
+          refreshButton.textContent = "Loading…";
+          dashboardStatus.textContent = "Loading form registry and statistics…";
+          dashboardStatus.className = "status warning";
+          registryStatus.textContent = "Retrieving form records…";
+          registryStatus.className = "status warning";
+          updateEditorPermission();
+
+          try {
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { "Accept": "application/json" },
+              signal: controller.signal
+            });
+
+            const payload = await readJson(response);
+            if (requestId !== state.sequence) return;
+
+            if (!response.ok) {
+              throw new Error(explainHttpError(response, payload));
+            }
+
+            const result = normalisePayload(payload);
+            state.forms = result.forms;
+
+            validAdmin(result.data.admin);
+
+            if (validSummary(result.data.summary)) {
+              setStats(result.data.summary);
+            } else {
+              resetStats();
+            }
+
+            state.canWrite =
+              config.adminFormsWriteEnabled === true &&
+              result.data.permissions?.canUpdateForms === true;
+
+            renderRegistry();
+            populateFormSelect();
+
+            $("lastUpdated").textContent =
+              "Updated " + new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              });
+
+            dashboardStatus.textContent =
+              "Form data retrieved from the authenticated administration service.";
+            dashboardStatus.className = "status success";
+
+            registryStatus.textContent =
+              `${state.forms.length.toLocaleString()} registered form(s) loaded.`;
+            registryStatus.className = "status success";
+
+            if (!validSummary(result.data.summary)) {
+              setStatus(
+                editorStatus,
+                "The registry loaded, but the statistics summary was missing or invalid.",
+                "warning"
+              );
+            }
+
+            if (!state.canWrite) {
+              setStatus(
+                editorStatus,
+                "Configuration remains read-only. Verify server permissions and the explicit client write configuration before enabling edits.",
+                "warning"
+              );
+            }
+          } catch (error) {
+            if (error?.name === "AbortError") return;
+            if (requestId !== state.sequence) return;
+
+            state.forms = [];
+            state.canWrite = false;
+            resetStats();
+            renderRegistry();
+            populateFormSelect();
+
+            const message = error instanceof Error
+              ? error.message
+              : "The form service could not be reached.";
+
+            dashboardStatus.textContent = message;
+            dashboardStatus.className = "status error";
+            registryStatus.textContent = message;
+            registryStatus.className = "status error";
+            setStatus(editorStatus, message, "error");
+          } finally {
+            if (requestId === state.sequence) {
+              state.loading = false;
+              refreshButton.disabled = false;
+              reloadButton.disabled = false;
+              refreshButton.textContent = "↻ Refresh form data";
+              updateEditorPermission();
+            }
+          }
+        }
+
+        function validChange() {
+          const form = selectedForm();
+
+          if (!form) {
+            setStatus(editorStatus, "Select a registered form first.", "warning");
+            return false;
+          }
+
+          if (!state.canWrite) {
+            setStatus(editorStatus, "Your account is not authorised to update form configuration.", "error");
+            return false;
+          }
+
+          const reason = changeReason.value.trim();
+          const notice = formNotice.value;
+
+          if (reason.length < 8 || reason.length > 500) {
+            setStatus(editorStatus, "Enter a change reason between 8 and 500 characters.", "warning");
+            changeReason.focus();
+            return false;
+          }
+
+          if (notice.length > 500) {
+            setStatus(editorStatus, "The user-facing notice cannot exceed 500 characters.", "warning");
+            formNotice.focus();
+            return false;
+          }
+
+          if (!confirmChange.checked) {
+            setStatus(editorStatus, "Confirm that you reviewed the impact of this change.", "warning");
+            confirmChange.focus();
+            return false;
+          }
+
+          return true;
+        }
+
+        async function saveConfiguration(event) {
+          event.preventDefault();
+
+          if (state.saving || !validChange()) return;
+
+          const form = selectedForm();
+          if (!form) return;
+
+          const enabled = formAvailability.value === "true";
+          const notice = formNotice.value.trim();
+          const reason = changeReason.value.trim();
+
+          if (enabled !== true && enabled !== false) {
+            setStatus(editorStatus, "Select a valid availability value.", "error");
+            return;
+          }
+
+          const confirmed = window.confirm(
+            `Apply the configuration change to "${form.name}"?`
+          );
+
+          if (!confirmed) return;
+
+          const target = new URL(
+            `${endpoint.pathname.replace(/\/+$/, "")}/${encodeURIComponent(form.id)}/configuration`,
+            window.location.origin
+          );
+
+          if (target.origin !== window.location.origin) {
+            setStatus(editorStatus, "The configuration endpoint must use the same origin.", "error");
+            return;
+          }
+
+          const headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          };
+
+          if (typeof config.csrfToken === "string" && config.csrfToken.trim()) {
+            headers["X-CSRF-Token"] = config.csrfToken.trim();
+          }
+
+          state.saving = true;
+          saveButton.textContent = "Saving…";
+          updateEditorPermission();
+          setStatus(editorStatus, "Submitting the configuration change…", "warning");
+
+          try {
+            const response = await fetch(target.href, {
+              method: "PATCH",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers,
+              body: JSON.stringify({ enabled, notice, reason })
+            });
+
+            const payload = await readJson(response);
+
+            if (!response.ok) {
+              throw new Error(explainHttpError(response, payload));
+            }
+
+            setStatus(
+              editorStatus,
+              "The server accepted the configuration update. Refreshing the registry to verify the saved state…",
+              "success"
+            );
+
+            await loadForms();
+            setStatus(
+              editorStatus,
+              "Configuration update request completed. Check the refreshed registry and audit log to verify the final state.",
+              "success"
+            );
+          } catch (error) {
+            const message = error instanceof Error
+              ? error.message
+              : "The configuration update failed.";
+
+            setStatus(editorStatus, message, "error");
+          } finally {
+            state.saving = false;
+            saveButton.textContent = "Save configuration";
+            updateEditorPermission();
+          }
+        }
+
+        /*
+         * Animated heading, disabled when reduced motion is requested.
+         */
+        const typingText = $("typingText");
+        const phrases = [
+          "Clear forms. Consistent submissions. Better oversight.",
+          "One control centre for form governance.",
+          "Validate every submission. Track every change.",
+          "Reliable workflows start with clear forms."
+        ];
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let phraseIndex = 0;
+        let characterIndex = phrases[0].length;
+        let deleting = false;
+        let typingTimer = null;
+
+        function typeNextCharacter() {
+          if (reducedMotion.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          const phrase = phrases[phraseIndex];
+
+          if (!deleting) {
+            characterIndex++;
+            typingText.textContent = phrase.slice(0, characterIndex);
+
+            if (characterIndex >= phrase.length) {
+              deleting = true;
+              typingTimer = window.setTimeout(typeNextCharacter, 1800);
+              return;
+            }
+
+            typingTimer = window.setTimeout(typeNextCharacter, 42);
+            return;
+          }
+
+          characterIndex--;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex <= 0) {
+            deleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            typingTimer = window.setTimeout(typeNextCharacter, 280);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 24);
+        }
+
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+        } else {
+          typingTimer = window.setTimeout(typeNextCharacter, 1400);
+        }
+
+        reducedMotion.addEventListener?.("change", event => {
+          window.clearTimeout(typingTimer);
+
+          if (event.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          phraseIndex = 0;
+          characterIndex = 0;
+          deleting = false;
+          typeNextCharacter();
+        });
+
+        /*
+         * Responsive navigation.
+         */
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+          menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        window.matchMedia("(min-width: 1101px)")
+          .addEventListener?.("change", event => {
+            if (event.matches) closeNavigation();
+          });
+
+        /*
+         * Registry interactions.
+         */
+        $("registrySearch").addEventListener("input", renderRegistry);
+        $("registryCategory").addEventListener("change", renderRegistry);
+
+        formSelect.addEventListener("change", loadSelectedForm);
+
+        $("formConfigForm").addEventListener("submit", saveConfiguration);
+
+        $("formConfigForm").addEventListener("reset", event => {
+          if (!state.canWrite || state.saving) {
+            event.preventDefault();
+            return;
+          }
+
+          window.setTimeout(loadSelectedForm, 0);
+        });
+
+        refreshButton.addEventListener("click", loadForms);
+        reloadButton.addEventListener("click", loadForms);
+
+        /*
+         * Keep controls read-only until a successful authenticated response
+         * explicitly grants permission and client configuration enables writes.
+         */
+        updateEditorPermission();
+        loadForms();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

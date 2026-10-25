@@ -1,24 +1,2648 @@
+<!-- File: /admin/index.html -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Admin | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="MedOrbits administration workspace for managing users, education resources, applications, careers, documents, payments, reports and platform security.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Administration Dashboard | MedOrbits</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+      --surface-light: linear-gradient(
+        145deg,
+        rgba(20,48,79,.92),
+        rgba(10,24,44,.97)
+      );
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(67,135,217,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(38,92,151,.12),transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    .accent-text {
+      color: var(--blue-bright);
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes floatSoft {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color: rgba(116,184,255,.18); }
+      50% { border-color: rgba(211,173,97,.48); }
+    }
+
+    @keyframes revealUp {
+      from {
+        opacity: 0;
+        transform: translateY(13px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+
+    @keyframes shimmer {
+      from { background-position: 180% 0; }
+      to { background-position: -180% 0; }
+    }
+
+    @keyframes typingBlink {
+      to { visibility: hidden; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong {
+      color: var(--gold-bright);
+    }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover {
+      color: var(--gold-bright);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,182,189,.3);
+      background: rgba(255,182,189,.05);
+      color: var(--danger);
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a {
+      color: var(--blue-bright);
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 29px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .typing-line strong {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      width: 2px;
+      height: 14px;
+      background: var(--gold-bright);
+      animation: typingBlink .8s steps(2,start) infinite;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel,
+    .admin-card,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+      animation: borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong {
+      display: block;
+      font-size: 11px;
+    }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav {
+      display: grid;
+      gap: 5px;
+    }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+
+    .admin-nav .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong {
+      color: var(--gold-bright);
+    }
+
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .status-row .status {
+      flex: 1;
+      margin: 0;
+    }
+
+    .timestamp {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 13px;
+      margin-bottom: 21px;
+    }
+
+    .stat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+      padding: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+      transition: transform .23s,border-color .23s;
+    }
+
+    .stat-card::after {
+      position: absolute;
+      right: -24px;
+      bottom: -35px;
+      width: 100px;
+      height: 100px;
+      border: 1px solid rgba(211,173,97,.1);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-gold);
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.14),rgba(211,173,97,.08));
+      font-size: 20px;
+    }
+
+    .stat-copy {
+      min-width: 0;
+    }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 26px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 23px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .section-heading a {
+      color: var(--gold-bright);
+      font-size: 10px;
+    }
+
+    /* All dashboard action cards use a 2-column layout. */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .admin-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-gold);
+      box-shadow: 0 24px 55px rgba(0,0,0,.35),0 0 25px rgba(116,184,255,.045);
+    }
+
+    .card-image {
+      position: relative;
+      height: 155px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#14395e,#101d30);
+    }
+
+    .card-image::after {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg,rgba(5,13,26,.9),transparent 70%),
+        linear-gradient(115deg,rgba(17,46,77,.12),rgba(211,173,97,.09));
+      content: "";
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease,filter .6s ease;
+    }
+
+    .admin-card:hover .card-image img {
+      transform: scale(1.055);
+      filter: saturate(1.1);
+    }
+
+    .card-image-label {
+      position: absolute;
+      z-index: 1;
+      bottom: 12px;
+      left: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .card-image-label::before {
+      width: 18px;
+      height: 1px;
+      background: var(--gold-bright);
+      content: "";
+    }
+
+    .card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 17px;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .card-title-row h3 {
+      margin: 0 0 7px;
+      font: 600 19px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .card-symbol {
+      display: grid;
+      place-items: center;
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 16px;
+    }
+
+    .card-body p {
+      flex: 1;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-footer small {
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .card-link {
+      color: var(--blue-bright);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .card-link span {
+      display: inline-block;
+      transition: transform .2s;
+    }
+
+    .admin-card:hover .card-link span {
+      transform: translateX(4px);
+    }
+
+    .feature-banner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      position: relative;
+      min-height: 145px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--navy-2);
+    }
+
+    .feature-image img {
+      width: 100%;
+      height: 100%;
+      min-height: 145px;
+      position: absolute;
+      inset: 0;
+      object-fit: cover;
+      opacity: .9;
+    }
+
+    .feature-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .activity-list {
+      display: grid;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(116,184,255,.12);
+    }
+
+    .activity-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .activity-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .activity-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .info-card {
+      padding: 23px;
+      background: var(--surface-light);
+    }
+
+    .info-card h2 {
+      margin: 0 0 9px;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .security-links {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .security-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(5,15,29,.4);
+      color: var(--text-soft);
+      font-size: 9px;
+      transition: border-color .2s,color .2s;
+    }
+
+    .security-links a:hover {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .security-links span {
+      color: var(--blue-bright);
+    }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong {
+      color: var(--gold-bright);
+    }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-bright);
+    }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a {
+        display: block;
+        padding: 11px 8px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions {
+        width: 100%;
+      }
+
+      .heading-actions .btn {
+        flex: 1;
+      }
+
+      .feature-banner {
+        grid-template-columns: minmax(0,1fr) minmax(140px,.55fr);
+      }
+    }
+
+    @media (max-width:560px) {
+      .container {
+        width: calc(100% - 28px);
+      }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap {
+        min-height: 68px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .live-indicator {
+        display: none;
+      }
+
+      .page-main {
+        padding: 29px 0 44px;
+      }
+
+      .page-heading h1 {
+        font-size: clamp(32px,9vw,42px);
+      }
+
+      .heading-actions {
+        flex-direction: column;
+      }
+
+      .heading-actions .btn {
+        width: 100%;
+      }
+
+      .sidebar,
+      .panel,
+      .info-card {
+        padding: 15px;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      /* Maintain 2 × 2 card layouts on mobile. */
+      .admin-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+
+      .card-image {
+        height: 112px;
+      }
+
+      .card-image-label {
+        bottom: 8px;
+        left: 9px;
+        font-size: 7px;
+        letter-spacing: .06em;
+      }
+
+      .card-body {
+        padding: 11px;
+      }
+
+      .card-title-row {
+        gap: 6px;
+      }
+
+      .card-title-row h3 {
+        font-size: 15px;
+      }
+
+      .card-symbol {
+        flex-basis: 29px;
+        width: 29px;
+        height: 29px;
+        font-size: 13px;
+      }
+
+      .card-body p {
+        font-size: 9px;
+        line-height: 1.7;
+      }
+
+      .card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .card-link {
+        font-size: 9px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+        padding: 12px;
+      }
+
+      .stat-copy strong {
+        font-size: 23px;
+      }
+
+      .status-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+
+      .feature-image {
+        min-height: 125px;
+      }
+
+      .feature-image img {
+        min-height: 125px;
+      }
+
+      .security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 8px;
+      }
+
+      .security-links a {
+        align-items: flex-start;
+        padding: 10px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width:360px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand img {
+        width: 34px;
+        height: 34px;
+      }
+
+      .brand strong {
+        font-size: 12px;
+      }
+
+      .admin-grid {
+        gap: 8px;
+      }
+
+      .card-image {
+        height: 94px;
+      }
+
+      .card-body {
+        padding: 9px;
+      }
+
+      .card-title-row h3 {
+        font-size: 13px;
+      }
+
+      .card-symbol {
+        display: none;
+      }
+
+      .stats-grid,
+      .security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .footer-grid {
+        gap: 18px 11px;
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Admin</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about admin. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Administration workspace</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img
+          src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo"
+          width="44"
+          height="44"
+        >
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration centre</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >
+          ☰ MENU
+        </button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html" aria-current="page">Admin home</a>
+        <a href="/admin/users.html">Users</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <span>Administration</span>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Dashboard</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Platform operations · Admin portal</span>
+          <h1>Administration <span class="accent-text">centre.</span></h1>
+          <p>
+            Manage the MedOrbits education and career platform from one
+            workspace. Access user management, admissions, course catalogues,
+            official resources, recruitment, documents, reports and security
+            tools through a unified administration dashboard.
+          </p>
+
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">One platform. Every operation connected.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/settings.html">
+            ⚙ Platform settings
+          </a>
+          <button class="btn" id="refreshDashboard" type="button">
+            ↻ Refresh overview
+          </button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a class="active" href="/admin/index.html" aria-current="page">
+              <span class="nav-icon" aria-hidden="true">▦</span>
+              Dashboard
+            </a>
+
+            <a href="/admin/users.html">
+              <span class="nav-icon" aria-hidden="true">♙</span>
+              User management
+            </a>
+
+            <a href="/admin/applications.html">
+              <span class="nav-icon" aria-hidden="true">▤</span>
+              Applications
+            </a>
+
+            <a href="/admin/documents.html">
+              <span class="nav-icon" aria-hidden="true">▧</span>
+              Documents
+            </a>
+
+            <a href="/admin/courses.html">
+              <span class="nav-icon" aria-hidden="true">▣</span>
+              Course catalogue
+            </a>
+
+            <a href="/admin/colleges.html">
+              <span class="nav-icon" aria-hidden="true">⌂</span>
+              Colleges
+            </a>
+
+            <a href="/admin/universities.html">
+              <span class="nav-icon" aria-hidden="true">⌘</span>
+              Universities
+            </a>
+
+            <a href="/admin/jobs.html">
+              <span class="nav-icon" aria-hidden="true">◇</span>
+              Jobs and careers
+            </a>
+
+            <a href="/admin/recruitment.html">
+              <span class="nav-icon" aria-hidden="true">♧</span>
+              Recruitment
+            </a>
+
+            <a href="/admin/payments.html">
+              <span class="nav-icon" aria-hidden="true">＄</span>
+              Payments
+            </a>
+
+            <a href="/admin/notifications.html">
+              <span class="nav-icon" aria-hidden="true">♢</span>
+              Notifications
+            </a>
+
+            <a href="/admin/reports.html">
+              <span class="nav-icon" aria-hidden="true">▥</span>
+              Reports and analytics
+            </a>
+
+            <a href="/admin/audit-logs.html">
+              <span class="nav-icon" aria-hidden="true">≡</span>
+              Audit logs
+            </a>
+
+            <a href="/admin/security.html">
+              <span class="nav-icon" aria-hidden="true">⬡</span>
+              Security centre
+            </a>
+
+            <a href="/admin/settings.html">
+              <span class="nav-icon" aria-hidden="true">⚙</span>
+              Platform settings
+            </a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Security first.</strong>
+            <br>
+            Administrative access must be verified by the server. Do not
+            rely on this page or hidden links to enforce permissions.
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <!-- Overview statistics -->
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="overviewTitle">Platform overview</h2>
+                <p>
+                  Review the latest metrics returned by the authenticated
+                  administration service.
+                </p>
+              </div>
+            </div>
+
+            <div class="status-row">
+              <div
+                class="status warning"
+                id="dashboardStatus"
+                role="status"
+                aria-live="polite"
+              >
+                Live statistics have not been loaded. Administrative
+                modules are available below.
+              </div>
+              <span class="timestamp" id="lastUpdated">Not refreshed</span>
+            </div>
+
+            <div class="stats-grid" aria-label="Platform statistics">
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">👥</div>
+                <div class="stat-copy">
+                  <span>Total users</span>
+                  <strong id="totalUsers">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">🎓</div>
+                <div class="stat-copy">
+                  <span>Applications</span>
+                  <strong id="totalApplications">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">📚</div>
+                <div class="stat-copy">
+                  <span>Courses</span>
+                  <strong id="totalCourses">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">🏛️</div>
+                <div class="stat-copy">
+                  <span>Institutions</span>
+                  <strong id="totalInstitutions">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">💼</div>
+                <div class="stat-copy">
+                  <span>Job listings</span>
+                  <strong id="totalJobs">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">📁</div>
+                <div class="stat-copy">
+                  <span>Documents</span>
+                  <strong id="totalDocuments">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="heading-actions">
+              <a class="btn" href="/admin/reports.html">View analytics ↗</a>
+              <a class="btn btn-outline" href="/admin/audit-logs.html">
+                Review audit logs
+              </a>
+            </div>
+          </section>
+
+          <!-- Main admin modules: 2 columns on desktop and mobile -->
+          <section aria-labelledby="modulesTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="modulesTitle">Administration <span class="accent-text">modules.</span></h2>
+                <p>Image-led management cards for your main operational areas.</p>
+              </div>
+            </div>
+
+            <div class="admin-grid">
+
+              <a class="admin-card" href="/admin/users.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80"
+                    alt="Professionals collaborating around a table"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">People and access</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>User management</h3>
+                    <span class="card-symbol" aria-hidden="true">♙</span>
+                  </div>
+                  <p>
+                    Manage user records, review account status and administer
+                    authorised roles and access permissions.
+                  </p>
+                  <div class="card-footer">
+                    <small>Identity and permissions</small>
+                    <span class="card-link">Open module <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/applications.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80"
+                    alt="Documents and application paperwork on a desk"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Admissions workflow</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Applications</h3>
+                    <span class="card-symbol" aria-hidden="true">▤</span>
+                  </div>
+                  <p>
+                    Review submitted applications, monitor processing stages
+                    and access authorised application records.
+                  </p>
+                  <div class="card-footer">
+                    <small>Admission operations</small>
+                    <span class="card-link">Review records <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/courses.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80"
+                    alt="University students walking across a campus"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Education catalogue</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Courses and colleges</h3>
+                    <span class="card-symbol" aria-hidden="true">🎓</span>
+                  </div>
+                  <p>
+                    Maintain course listings, college profiles, university
+                    records, education categories and catalogue data.
+                  </p>
+                  <div class="card-footer">
+                    <small>Education resources</small>
+                    <span class="card-link">Manage catalogue <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/documents.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80"
+                    alt="Professional reviewing and signing official documents"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Records and verification</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Documents</h3>
+                    <span class="card-symbol" aria-hidden="true">📁</span>
+                  </div>
+                  <p>
+                    Administer document metadata, review authorised uploads
+                    and oversee verification workflows and access requests.
+                  </p>
+                  <div class="card-footer">
+                    <small>Document operations</small>
+                    <span class="card-link">Manage records <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/jobs.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
+                    alt="Professionals meeting and discussing career opportunities"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Careers and opportunity</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Jobs and careers</h3>
+                    <span class="card-symbol" aria-hidden="true">💼</span>
+                  </div>
+                  <p>
+                    Manage job listings, internships, recruitment workflows,
+                    employer services and career support resources.
+                  </p>
+                  <div class="card-footer">
+                    <small>Career services</small>
+                    <span class="card-link">Manage jobs <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/payments.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=900&q=80"
+                    alt="Customer making a digital payment at a checkout terminal"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Billing and transactions</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Payments and receipts</h3>
+                    <span class="card-symbol" aria-hidden="true">₹</span>
+                  </div>
+                  <p>
+                    Review payment records, receipts, transaction statuses
+                    and authorised billing reconciliation information.
+                  </p>
+                  <div class="card-footer">
+                    <small>Financial operations</small>
+                    <span class="card-link">Review payments <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/notifications.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=900&q=80"
+                    alt="Team planning communications and project updates"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Platform communication</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Notifications</h3>
+                    <span class="card-symbol" aria-hidden="true">🔔</span>
+                  </div>
+                  <p>
+                    Manage approved announcements, account notifications,
+                    service updates and communication delivery records.
+                  </p>
+                  <div class="card-footer">
+                    <small>Communications</small>
+                    <span class="card-link">Open notifications <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/reports.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80"
+                    alt="Business analytics charts displayed on a computer"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Insights and performance</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Reports and analytics</h3>
+                    <span class="card-symbol" aria-hidden="true">▥</span>
+                  </div>
+                  <p>
+                    Review platform metrics, operational summaries and
+                    available reports generated from authorised data.
+                  </p>
+                  <div class="card-footer">
+                    <small>Reporting and insights</small>
+                    <span class="card-link">View reports <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/audit-logs.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80"
+                    alt="Computer workspace used for reviewing digital records"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Accountability and history</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Audit logs</h3>
+                    <span class="card-symbol" aria-hidden="true">≡</span>
+                  </div>
+                  <p>
+                    Inspect authorised audit events, administrative actions,
+                    access history and available operational records.
+                  </p>
+                  <div class="card-footer">
+                    <small>Audit and accountability</small>
+                    <span class="card-link">Review activity <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/security.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80"
+                    alt="Laptop with a secure digital access interface"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Protection and access</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Security centre</h3>
+                    <span class="card-symbol" aria-hidden="true">🛡️</span>
+                  </div>
+                  <p>
+                    Access security controls, review session-management
+                    features and inspect available security events.
+                  </p>
+                  <div class="card-footer">
+                    <small>Security operations</small>
+                    <span class="card-link">Open security <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/settings.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80"
+                    alt="Digital workstation for managing platform settings"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Configuration and control</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Platform settings</h3>
+                    <span class="card-symbol" aria-hidden="true">⚙</span>
+                  </div>
+                  <p>
+                    Access supported configuration tools, service preferences
+                    and administration options available to your role.
+                  </p>
+                  <div class="card-footer">
+                    <small>System configuration</small>
+                    <span class="card-link">Open settings <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="/admin/official-documents.html">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80"
+                    alt="Notebook and paperwork for preparing reference materials"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Official information</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Official resources</h3>
+                    <span class="card-symbol" aria-hidden="true">📖</span>
+                  </div>
+                  <p>
+                    Maintain official-document resource listings and reference
+                    links, subject to verification by the relevant authority.
+                  </p>
+                  <div class="card-footer">
+                    <small>Reference resources</small>
+                    <span class="card-link">Manage resources <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+            </div>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="operationsTitle">
+            <div>
+              <span class="eyebrow">Operations and oversight</span>
+              <h2 id="operationsTitle">
+                Keep every workflow <span class="accent-text">connected.</span>
+              </h2>
+              <p>
+                Review system reports, confirm operational changes and use
+                audit records to maintain accountability across education,
+                career, document and application services.
+              </p>
+              <div class="feature-actions">
+                <a class="btn" href="/admin/reports.html">Explore reports ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">
+                  Audit history
+                </a>
+              </div>
+            </div>
+
+            <div class="feature-image">
+              <img
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1000&q=80"
+                alt="Operations team working together on project planning"
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="activityTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✧</div>
+              <div>
+                <h2 id="activityTitle">Administration quick links</h2>
+                <p>
+                  Useful destinations for routine operational reviews and
+                  access management.
+                </p>
+              </div>
+            </div>
+
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">👥</div>
+                <div class="activity-copy">
+                  <strong>User access review</strong>
+                  <p>
+                    Open <a href="/admin/users.html">user management</a> to
+                    review user records and authorised role-management tools.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🎓</div>
+                <div class="activity-copy">
+                  <strong>Admissions processing</strong>
+                  <p>
+                    Use <a href="/admin/applications.html">applications</a>
+                    to access records and supported processing workflows.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">📚</div>
+                <div class="activity-copy">
+                  <strong>Education catalogue quality</strong>
+                  <p>
+                    Review <a href="/admin/courses.html">courses</a>,
+                    <a href="/admin/colleges.html">colleges</a> and
+                    <a href="/admin/universities.html">universities</a> to
+                    maintain accurate resource information.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🔐</div>
+                <div class="activity-copy">
+                  <strong>Security and accountability</strong>
+                  <p>
+                    Access <a href="/admin/security.html">security controls</a>
+                    and <a href="/admin/audit-logs.html">audit logs</a> for
+                    available security reviews and administrative history.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card" aria-labelledby="securityTitle">
+            <h2 id="securityTitle">
+              Protect the <span class="accent-text">admin workspace.</span>
+            </h2>
+            <p>
+              Administrative pages can expose sensitive user, education,
+              document and transaction information. Enforce access controls
+              on the server and record sensitive administrative actions.
+            </p>
+
+            <div class="security-links">
+              <a href="/admin/security.html">
+                Security centre <span>↗</span>
+              </a>
+              <a href="/admin/audit-logs.html">
+                Audit logs <span>↗</span>
+              </a>
+              <a href="/admin/settings.html">
+                Access configuration <span>↗</span>
+              </a>
+              <a href="/pages/contact.html">
+                Support and assistance <span>↗</span>
+              </a>
+            </div>
+          </section>
+
+          <div class="notice">
+            <strong>Administrative security notice:</strong>
+            This HTML page is an interface, not an authorization boundary.
+            Protect every administrative API and resource with server-side
+            authentication, role-based authorization, input validation,
+            appropriate rate limits and audit logging. Never expose secrets,
+            private documents or unrestricted user data to the browser.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration centre</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/documents.html">Documents</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Admission requirements, course information, fees and
+        deadlines may change. Verify material information with the relevant
+        institution or official authority.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Admin Dashboard
+       *
+       * Suggested dashboard endpoint:
+       * GET /api/admin/dashboard
+       *
+       * Example response:
+       * {
+       *   "summary": {
+       *     "users": 0,
+       *     "applications": 0,
+       *     "courses": 0,
+       *     "institutions": 0,
+       *     "jobs": 0,
+       *     "documents": 0
+       *   },
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "admin@example.com"
+       *   }
+       * }
+       *
+       * This is an integration contract, not a claim that the endpoint
+       * already exists. Configure the actual endpoint in config.js:
+       *
+       * window.MEDORBITS_CONFIG = {
+       *   adminDashboardEndpoint: "/your-real-admin-dashboard-endpoint"
+       * };
+       *
+       * The backend must authenticate the current user and enforce
+       * administrator permissions for every request.
+       */
+
+      const endpoint =
+        window.MEDORBITS_CONFIG?.adminDashboardEndpoint ||
+        "/api/admin/dashboard";
+
+      const $ = id => document.getElementById(id);
+
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const statusBox = $("dashboardStatus");
+      const refreshButton = $("refreshDashboard");
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      const summaryFields = {
+        users: $("totalUsers"),
+        applications: $("totalApplications"),
+        courses: $("totalCourses"),
+        institutions: $("totalInstitutions"),
+        jobs: $("totalJobs"),
+        documents: $("totalDocuments")
+      };
+
+      /*
+       * Animated heading text.
+       */
+      const typingText = $("typingText");
+
+      const phrases = [
+        "One platform. Every operation connected.",
+        "Education resources, organised.",
+        "Applications and records, in one workspace.",
+        "Better oversight. Stronger operations.",
+        "Study. Work. Grow. Together."
+      ];
+
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
+
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        const phrase = phrases[phraseIndex];
+
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1800);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 42);
+          return;
+        }
+
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
+
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 280);
+          return;
+        }
+
+        typingTimer = window.setTimeout(typeNextCharacter, 24);
+      }
+
+      if (reducedMotion.matches) {
+        typingText.textContent = phrases[0];
+      } else {
+        typingTimer = window.setTimeout(typeNextCharacter, 1400);
+      }
+
+      reducedMotion.addEventListener?.("change", event => {
+        window.clearTimeout(typingTimer);
+
+        if (event.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        phraseIndex = 0;
+        characterIndex = 0;
+        deleting = false;
+        typeNextCharacter();
+      });
+
+      /*
+       * Mobile navigation.
+       */
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) {
+          closeNavigation();
+        }
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeNavigation();
+        }
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      /*
+       * Status and summary helpers.
+       */
+      function showStatus(message, type = "warning") {
+        statusBox.textContent = message;
+        statusBox.className = `status ${type}`;
+      }
+
+      function setSummaryValues(summary) {
+        for (const [key, element] of Object.entries(summaryFields)) {
+          const value = summary[key];
+
+          element.textContent =
+            Number.isSafeInteger(value) && value >= 0
+              ? value.toLocaleString()
+              : "--";
+        }
+      }
+
+      function resetSummary() {
+        Object.values(summaryFields).forEach(element => {
+          element.textContent = "--";
+        });
+      }
+
+      async function readJson(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          return {};
+        }
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      /*
+       * Fetch live summary from the actual authenticated admin API.
+       */
+      async function loadDashboard() {
+        refreshButton.disabled = true;
+        refreshButton.textContent = "Loading…";
+
+        showStatus("Loading dashboard statistics…", "warning");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+          const data = await readJson(response);
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              throw new Error(
+                "Authentication required. Sign in with an authorised admin account."
+              );
+            }
+
+            if (response.status === 403) {
+              throw new Error(
+                "Access denied. Your account is not authorised to view admin statistics."
+              );
+            }
+
+            if (response.status === 404) {
+              throw new Error(
+                "The admin dashboard API is not configured at this endpoint. The navigation modules remain available."
+              );
+            }
+
+            if (response.status === 429) {
+              throw new Error(
+                "Too many requests. Please wait before refreshing again."
+              );
+            }
+
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "Dashboard statistics could not be loaded."
+            );
+          }
+
+          if (
+            !data.summary ||
+            typeof data.summary !== "object" ||
+            Array.isArray(data.summary)
+          ) {
+            throw new Error(
+              "The dashboard API returned an invalid summary response."
+            );
+          }
+
+          setSummaryValues(data.summary);
+
+          if (
+            typeof data.admin?.name === "string" &&
+            data.admin.name.trim()
+          ) {
+            $("adminName").textContent = data.admin.name;
+          }
+
+          if (
+            typeof data.admin?.email === "string" &&
+            data.admin.email.trim()
+          ) {
+            $("adminEmail").textContent = data.admin.email;
+          }
+
+          showStatus(
+            "Dashboard statistics were retrieved from the administration service.",
+            "success"
+          );
+
+          $("lastUpdated").textContent =
+            "Updated " +
+            new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
+        } catch (error) {
+          resetSummary();
+
+          showStatus(
+            error instanceof Error
+              ? error.message
+              : "Dashboard statistics could not be loaded.",
+            "error"
+          );
+
+        } finally {
+          refreshButton.disabled = false;
+          refreshButton.textContent = "↻ Refresh overview";
+        }
+      }
+
+      refreshButton.addEventListener("click", loadDashboard);
+
+      loadDashboard();
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

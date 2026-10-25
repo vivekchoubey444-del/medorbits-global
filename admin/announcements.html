@@ -1,24 +1,1626 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Announcements | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Create, schedule, publish and manage MedOrbits announcements, platform notices and important education and career updates.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Announcements | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#061020;
+      --deep:#030812;
+      --navy:#0a1930;
+      --navy2:#102642;
+      --blue:#74b8ff;
+      --blue-bright:#a9d5ff;
+      --blue-soft:#d9edff;
+      --gold:#d3ad61;
+      --gold-bright:#ffe4a2;
+      --text:#f1f5fc;
+      --soft:#c5d3e6;
+      --muted:#91a6c1;
+      --border:rgba(116,184,255,.19);
+      --border-gold:rgba(211,173,97,.32);
+      --success:#9ee8c1;
+      --warning:#ffe0a0;
+      --danger:#ffb6bd;
+      --radius:18px;
+      --shadow:0 25px 75px rgba(0,0,0,.4);
+      --gradient:linear-gradient(115deg,#4e91e0,#9ed2ff 36%,#f4d68f 70%,#b68c45);
+      --surface:linear-gradient(145deg,rgba(17,39,67,.97),rgba(5,14,28,.98));
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:100px}
+    body{
+      position:relative;isolation:isolate;min-height:100vh;margin:0;overflow-x:hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(67,135,217,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color:var(--text);font:400 14px/1.7 "DM Sans",sans-serif;
+    }
+    body::before{
+      position:fixed;z-index:-1;inset:0;
+      background-image:radial-gradient(rgba(169,213,255,.22) .7px,transparent .7px);
+      background-size:33px 33px;opacity:.15;content:"";pointer-events:none;
+    }
+    body::after{
+      position:fixed;z-index:-1;inset:-50%;
+      background:conic-gradient(from 0deg,transparent,rgba(67,135,217,.045),transparent 23%,rgba(211,173,97,.035),transparent 45%);
+      animation:ambientRotate 65s linear infinite;content:"";pointer-events:none;
+    }
+    img{display:block;max-width:100%}
+    a{color:inherit;text-decoration:none}
+    button,input,select,textarea{font:inherit}
+    button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+      outline:2px solid var(--blue-bright);outline-offset:4px;
+    }
+    [hidden]{display:none!important}
+    .container{width:min(1280px,calc(100% - 40px));margin-inline:auto}
+    .skip-link{position:absolute;z-index:10000;top:-70px;left:14px;padding:10px 15px;border-radius:8px;background:var(--blue-soft);color:#061020}
+    .skip-link:focus{top:12px}
+    .accent-text{
+      background:var(--gradient);background-size:220% auto;
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+      animation:gradientFlow 7s linear infinite;
+    }
+    @keyframes gradientFlow{from{background-position:100% center}to{background-position:-120% center}}
+    @keyframes ambientRotate{to{transform:rotate(360deg)}}
+    @keyframes glowPulse{0%,100%{box-shadow:0 0 0 rgba(116,184,255,0)}50%{box-shadow:0 0 22px rgba(116,184,255,.13)}}
+    @keyframes revealUp{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+
+    .announcement-bar{
+      display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;
+      padding:9px 15px;border-bottom:1px solid var(--border);background:#030812;
+      color:var(--soft);font-size:9px;font-weight:700;letter-spacing:.12em;text-align:center;text-transform:uppercase;
+    }
+    .announcement-bar strong{color:var(--gold-bright)}
+    .sparkle{color:var(--blue-bright);animation:glowPulse 3s ease-in-out infinite}
+    .site-header{
+      position:sticky;z-index:1000;top:0;border-bottom:1px solid var(--border);
+      background:rgba(4,12,24,.91);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    }
+    .site-header.scrolled{background:rgba(3,8,18,.98);box-shadow:0 14px 40px rgba(0,0,0,.38)}
+    .nav-wrap{position:relative;display:flex;min-height:78px;justify-content:space-between;align-items:center;gap:20px}
+    .brand{display:inline-flex;align-items:center;gap:10px;flex-shrink:0}
+    .brand img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 11px rgba(116,184,255,.18))}
+    .brand strong{display:block;color:var(--blue-bright);font-size:15px;letter-spacing:.15em;line-height:1.35}
+    .brand small{display:block;color:var(--muted);font-size:8px;letter-spacing:.1em;text-transform:uppercase}
+    .header-right{display:flex;align-items:center;gap:12px}
+    .live-indicator{display:inline-flex;align-items:center;gap:7px;color:var(--success);font-size:9px;white-space:nowrap}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 12px rgba(158,232,193,.6)}
+    .menu-toggle{display:none;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:rgba(116,184,255,.07);color:var(--blue-bright);cursor:pointer}
+    .main-nav{display:flex;align-items:center;gap:15px;font-size:10px}
+    .main-nav>a{color:var(--soft);white-space:nowrap}
+    .main-nav>a:hover,.main-nav>a[aria-current=page]{color:var(--gold-bright)}
+
+    .btn{
+      display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:42px;padding:10px 15px;
+      border:1px solid rgba(169,213,255,.48);border-radius:10px;
+      background:linear-gradient(115deg,#73b8ff,#c5e4ff);color:#071426;
+      font-size:10px;font-weight:700;text-align:center;cursor:pointer;
+      transition:transform .22s,filter .22s,box-shadow .22s;
+    }
+    .btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 7px 23px rgba(116,184,255,.16)}
+    .btn:disabled{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-outline{border-color:var(--border-gold);background:rgba(211,173,97,.05);color:var(--gold-bright)}
+    .btn-danger{border-color:rgba(255,182,189,.35);background:rgba(255,182,189,.07);color:var(--danger)}
+    .btn-small{min-height:34px;padding:7px 10px;font-size:9px}
+
+    .page-main{position:relative;isolation:isolate;min-height:70vh;padding:37px 0 65px;overflow:hidden}
+    .page-main::before{
+      position:absolute;z-index:-1;inset:0;
+      background:radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content:"";pointer-events:none;
+    }
+    .breadcrumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;color:var(--muted);font-size:10px}
+    .breadcrumbs a{color:var(--blue-bright)}
+    .page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:27px;animation:revealUp .7s ease both}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--gold-bright);font-size:9px;font-weight:700;letter-spacing:.17em;text-transform:uppercase}
+    .eyebrow::before{width:25px;height:1px;background:var(--blue);content:""}
+    .page-heading h1{margin:10px 0 9px;font:600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;letter-spacing:-.025em;overflow-wrap:anywhere}
+    .page-heading p{max-width:740px;margin:0;color:var(--muted);font-size:12px;line-height:1.9}
+    .heading-actions{display:flex;flex-wrap:wrap;gap:9px;flex-shrink:0}
+
+    .dashboard-layout{display:grid;grid-template-columns:242px minmax(0,1fr);align-items:start;gap:20px}
+    .sidebar,.panel{min-width:0;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:0 18px 48px rgba(0,0,0,.22)}
+    .sidebar{position:sticky;top:100px;padding:18px}
+    .admin-identity{display:flex;align-items:center;gap:11px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+    .admin-avatar{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid var(--border-gold);border-radius:13px;background:linear-gradient(145deg,#163c62,#302817);color:var(--gold-bright);font:600 16px "Playfair Display",Georgia,serif}
+    .admin-identity strong{display:block;font-size:11px}
+    .admin-identity small{display:block;color:var(--muted);font-size:9px;overflow-wrap:anywhere}
+    .role-tag{display:inline-flex;align-items:center;gap:6px;margin-top:5px;padding:3px 7px;border:1px solid var(--border-gold);border-radius:5px;color:var(--gold-bright);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+    .sidebar-label{margin:19px 0 8px;color:var(--muted);font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+    .admin-nav{display:grid;gap:5px}
+    .admin-nav a{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid transparent;border-radius:9px;color:var(--soft);font-size:10px;transition:background .2s,border-color .2s,color .2s}
+    .admin-nav a:hover,.admin-nav a.active{border-color:var(--border);background:rgba(116,184,255,.09);color:var(--blue-bright)}
+    .nav-icon{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:7px;background:rgba(116,184,255,.07);font-size:13px}
+    .sidebar-note{margin:17px 0 0;padding-top:14px;border-top:1px solid var(--border);color:var(--muted);font-size:9px;line-height:1.9}
+    .sidebar-note strong{color:var(--gold-bright)}
+    .content{display:grid;gap:19px;min-width:0}
+
+    .panel{padding:clamp(17px,2.5vw,25px);animation:revealUp .65s ease both}
+    .panel-heading{display:flex;align-items:flex-start;gap:13px;margin-bottom:19px}
+    .panel-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border:1px solid var(--border-gold);border-radius:12px;background:linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));color:var(--gold-bright);font-size:19px}
+    .panel-heading h2{margin:0 0 5px;font:600 21px/1.3 "Playfair Display",Georgia,serif}
+    .panel-heading p{margin:0;color:var(--muted);font-size:10px;line-height:1.9}
+    .status{margin-bottom:17px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:rgba(116,184,255,.045);color:var(--soft);font-size:10px;line-height:1.8;overflow-wrap:anywhere;white-space:pre-line}
+    .status.success{border-color:rgba(158,232,193,.3);color:var(--success)}
+    .status.error{border-color:rgba(255,182,189,.35);color:var(--danger)}
+    .status.warning{border-color:var(--border-gold);color:var(--gold-bright)}
+    .status.info{color:var(--blue-bright)}
+
+    .hero{
+      position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.7fr);
+      gap:22px;align-items:center;padding:clamp(18px,3vw,28px);overflow:hidden;
+      border:1px solid var(--border-gold);border-radius:var(--radius);
+      background:radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .hero-copy{position:relative;z-index:1;min-width:0}
+    .hero h2{margin:12px 0 10px;font:600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display",Georgia,serif}
+    .hero p{margin:0;color:var(--muted);font-size:11px;line-height:1.9}
+    .hero-art{
+      position:relative;min-height:220px;overflow:hidden;border:1px solid var(--border);border-radius:14px;
+      background:linear-gradient(0deg,rgba(3,8,18,.82),rgba(3,8,18,.05)),url("https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1100&q=85") center/cover;
+    }
+    .hero-art-label{position:absolute;right:13px;bottom:12px;left:13px;color:#fff1ce;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+    .hero-art-label span{display:block;margin-top:3px;color:#d2deed;font-size:8px;font-weight:400;letter-spacing:.04em;text-transform:none}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stat-card{display:flex;align-items:center;gap:11px;min-width:0;padding:15px;border:1px solid var(--border);border-radius:13px;background:radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96))}
+    .stat-icon{display:grid;place-items:center;flex:0 0 39px;width:39px;height:39px;border:1px solid var(--border-gold);border-radius:11px;background:rgba(211,173,97,.07);color:var(--gold-bright);font-size:17px}
+    .stat-copy{min-width:0}
+    .stat-copy span{display:block;color:var(--muted);font-size:9px}
+    .stat-copy strong{display:block;margin-top:3px;color:var(--blue-bright);font:600 24px/1.35 "Playfair Display",Georgia,serif;overflow-wrap:anywhere}
+    .stat-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px}
+
+    .filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;align-items:end}
+    .field{min-width:0}
+    .field label{display:block;margin-bottom:7px;color:var(--soft);font-size:10px;font-weight:600}
+    .field input,.field select,.field textarea{
+      width:100%;min-width:0;min-height:43px;padding:10px 11px;
+      border:1px solid var(--border);border-radius:9px;background:#07162a;color:var(--text);font-size:10px;
+    }
+    .field textarea{min-height:105px;resize:vertical}
+    .field input::placeholder,.field textarea::placeholder{color:#7188a4}
+    .field-help{display:block;margin-top:5px;color:var(--muted);font-size:8px;line-height:1.7}
+    .filter-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+    .toolbar p{margin:0;color:var(--muted);font-size:10px}
+    .toolbar-actions{display:flex;flex-wrap:wrap;gap:8px}
+    .pill{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 9px;border:1px solid var(--border);border-radius:7px;background:rgba(116,184,255,.055);color:var(--soft);font-size:8px;line-height:1.5;overflow-wrap:anywhere}
+    .pill.success{border-color:rgba(158,232,193,.3);color:var(--success)}
+    .pill.warning{border-color:rgba(255,224,160,.32);color:var(--warning)}
+    .pill.danger{border-color:rgba(255,182,189,.4);background:rgba(255,100,115,.07);color:var(--danger)}
+    .pill.info{border-color:rgba(116,184,255,.28);color:var(--blue-bright)}
+    .pill.unknown{color:var(--muted)}
+
+    .announcement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .announcement-card{min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:13px;background:rgba(3,11,22,.5);transition:border-color .2s,transform .2s}
+    .announcement-card:hover{transform:translateY(-2px);border-color:var(--border-gold)}
+    .card-image{position:relative;min-height:145px;overflow:hidden;background:#102642 center/cover no-repeat}
+    .card-image::after{position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,8,18,.85),rgba(3,8,18,.05) 85%);content:""}
+    .card-image-label{position:absolute;z-index:1;right:12px;bottom:10px;left:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .card-image-label strong{color:#fff1ce;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+    .card-body{padding:15px}
+    .card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:9px}
+    .card-body h3{margin:0 0 8px;color:var(--text);font:600 20px/1.35 "Playfair Display",Georgia,serif;overflow-wrap:anywhere}
+    .card-body p{margin:0;color:var(--muted);font-size:10px;line-height:1.85;overflow-wrap:anywhere}
+    .card-details{display:grid;gap:5px;margin-top:13px;padding-top:12px;border-top:1px solid var(--border);color:var(--muted);font-size:9px}
+    .card-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+    .card-actions .btn{flex:1}
+    .empty-state{grid-column:1/-1;padding:28px 16px;border:1px dashed var(--border);border-radius:11px;color:var(--muted);text-align:center;font-size:10px;line-height:1.9}
+    .empty-state strong{display:block;margin-bottom:5px;color:var(--soft);font:600 18px "Playfair Display",Georgia,serif}
+    .pagination{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:15px}
+    .pagination p{margin:0;color:var(--muted);font-size:9px}
+
+    .feature-banner{
+      display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.65fr);align-items:center;gap:22px;
+      min-width:0;padding:24px;overflow:hidden;border:1px solid var(--border-gold);border-radius:var(--radius);
+      background:radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .feature-banner h2{margin:0 0 9px;font:600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif}
+    .feature-banner p{margin:0;color:var(--muted);font-size:10px;line-height:1.9}
+    .feature-image{
+      min-height:165px;overflow:hidden;border:1px solid var(--border);border-radius:13px;
+      background:linear-gradient(135deg,rgba(14,43,74,.3),rgba(5,13,26,.55)),url("https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1000&q=85") center/cover;
+    }
+    .notice{padding:15px 16px;border:1px solid var(--border-gold);border-radius:11px;background:rgba(211,173,97,.045);color:var(--muted);font-size:10px;line-height:1.9}
+    .notice strong{color:var(--gold-bright)}
+
+    dialog{width:min(760px,calc(100% - 24px));max-height:min(90vh,900px);padding:0;overflow:auto;border:1px solid var(--border-gold);border-radius:16px;background:#071426;color:var(--text);box-shadow:var(--shadow)}
+    dialog::backdrop{background:rgba(0,0,0,.74);backdrop-filter:blur(5px)}
+    .dialog-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:18px;border-bottom:1px solid var(--border)}
+    .dialog-header h2{margin:0;font:600 22px "Playfair Display",Georgia,serif;overflow-wrap:anywhere}
+    .dialog-body{padding:18px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .span-two{grid-column:1/-1}
+    .dialog-footer{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:9px;padding-top:17px;border-top:1px solid var(--border);margin-top:17px}
+    .image-preview{display:none;width:100%;max-height:180px;object-fit:cover;margin-top:9px;border:1px solid var(--border);border-radius:10px}
+    .image-preview.visible{display:block}
+
+    .site-footer{padding:40px 0 0;border-top:1px solid var(--border);background:radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),#030812}
+    .footer-grid{display:grid;grid-template-columns:1.35fr repeat(4,minmax(0,1fr));gap:23px;padding-bottom:28px}
+    .footer-brand p{max-width:270px;margin-top:12px;color:var(--muted);font-size:10px;line-height:1.9}
+    .footer-grid h2{margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid var(--border);color:var(--blue-bright);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .footer-links a{display:block;margin:8px 0;color:var(--muted);font-size:10px;overflow-wrap:anywhere;transition:color .2s}
+    .footer-links a:hover{color:var(--gold-bright)}
+    .disclaimer{margin:0 0 15px;padding:13px 15px;border-left:2px solid var(--gold);border-radius:0 8px 8px 0;background:rgba(211,173,97,.035);color:var(--muted);font-size:10px;line-height:1.9}
+    .footer-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:17px 0;border-top:1px solid var(--border);color:var(--muted);font-size:9px}
+    .footer-bottom span:last-child{color:var(--gold-bright);letter-spacing:.1em}
+
+    @media (max-width:1100px){
+      .menu-toggle{display:inline-flex}
+      .main-nav{position:absolute;top:100%;right:0;left:0;display:none;align-items:stretch;flex-direction:column;gap:4px;max-height:calc(100vh - 90px);padding:15px 22px 20px;overflow-y:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 14px 14px;background:rgba(4,12,24,.99);box-shadow:var(--shadow)}
+      .main-nav.open{display:flex}
+      .main-nav>a{display:block;padding:11px 8px}
+      .footer-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .footer-brand{grid-column:1/-1}
+    }
+    @media (max-width:950px){
+      .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .announcement-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:850px){
+      .dashboard-layout{grid-template-columns:1fr}
+      .sidebar{position:static}
+      .admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .page-heading{align-items:flex-start;flex-direction:column}
+      .heading-actions{width:100%}
+      .heading-actions .btn{flex:1}
+      .hero{grid-template-columns:minmax(0,1fr) minmax(150px,.6fr)}
+    }
+    @media (max-width:560px){
+      .container{width:calc(100% - 28px)}
+      .announcement-bar{gap:6px;font-size:8px;letter-spacing:.035em}
+      .nav-wrap{min-height:68px}
+      .brand img{width:38px;height:38px}
+      .brand strong{font-size:13px}
+      .brand small{font-size:7px}
+      .live-indicator{display:none}
+      .page-main{padding:29px 0 44px}
+      .page-heading h1{font-size:clamp(32px,9vw,42px)}
+      .heading-actions{flex-direction:column}
+      .heading-actions .btn{width:100%}
+      .sidebar,.panel{padding:15px}
+      .admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .hero{grid-template-columns:1fr;padding:16px}
+      .hero-art{min-height:145px}
+      .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .stat-card{align-items:flex-start;flex-direction:column;gap:8px;padding:12px}
+      .stat-copy strong{font-size:22px}
+      .filter-grid,.form-grid{grid-template-columns:1fr}
+      .span-two{grid-column:auto}
+      .filter-actions{flex-direction:column}
+      .filter-actions .btn{width:100%}
+      .toolbar{align-items:flex-start;flex-direction:column}
+      .toolbar-actions{width:100%}
+      .toolbar-actions .btn{flex:1}
+      .feature-banner{grid-template-columns:1fr;padding:17px}
+      .feature-image{min-height:135px}
+      .card-actions{flex-direction:column}
+      .card-actions .btn{width:100%}
+      .dialog-footer{flex-direction:column-reverse}
+      .dialog-footer .btn{width:100%}
+      .footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:21px 15px}
+      .footer-brand{grid-column:1/-1}
+      .footer-bottom{flex-direction:column}
+      .pagination{align-items:flex-start;flex-direction:column}
+    }
+    @media (max-width:360px){
+      .container{width:calc(100% - 22px)}
+      .brand img{width:34px;height:34px}
+      .brand strong{font-size:12px}
+      .admin-nav{grid-template-columns:1fr}
+      .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .footer-grid{gap:18px 11px}
+    }
+    @media (prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Announcements</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about announcements. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement-bar">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Announcements and platform communications</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span><strong>MEDORBITS</strong><small>Administration</small></span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator"><span class="live-dot" aria-hidden="true"></span>ADMIN WORKSPACE</span>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/notifications.html">Notifications</a>
+        <a href="/admin/announcements.html" aria-current="page">Announcements</a>
+        <a href="/admin/users.html">Users</a>
+        <a href="/admin/audit-logs.html">Audit logs</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a><span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a><span aria-hidden="true">›</span>
+        <a href="/admin/notifications.html">Communications</a><span aria-hidden="true">›</span>
+        <span aria-current="page">Announcements</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Communications · Publishing workspace</span>
+          <h1>Announcements<span class="accent-text">.</span></h1>
+          <p>
+            Create and manage platform announcements, admission updates,
+            education notices, service information and career opportunities.
+            Review publication status and schedule communications through the
+            authorised MedOrbits administration API.
+          </p>
+        </div>
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/notifications.html">Notifications ↗</a>
+          <button class="btn" id="createAnnouncement" type="button">＋ Create announcement</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Communications</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/subscriptions.html"><span class="nav-icon" aria-hidden="true">◷</span>Subscriptions</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/announcements.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">▤</span>Announcements</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/access-control.html"><span class="nav-icon" aria-hidden="true">⚿</span>Access control</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Publish with confidence.</strong><br>
+            Verify dates, audience, destination links and approval status.
+            Preview important notices before publishing them to users.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">News · Updates · Important notices</span>
+              <h2 id="heroTitle">One platform. <span class="accent-text">One clear message.</span></h2>
+              <p>
+                Keep students, applicants, institutions and professionals
+                informed with timely, accurate announcements. Draft, publish
+                and schedule communications using the configured backend.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="heroCreate" type="button">＋ Write a notice</button>
+                <button class="btn btn-outline" id="refreshAnnouncements" type="button">↻ Refresh records</button>
+              </div>
+            </div>
+            <div class="hero-art" role="img" aria-label="Editorial news and announcement workspace">
+              <div class="hero-art-label">
+                MedOrbits announcements
+                <span>Education · Admissions · Careers · Platform updates</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="overviewTitle">Publishing overview</h2>
+                <p>Counts reflect the announcement records returned by the configured API, not all platform activity.</p>
+              </div>
+            </div>
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">▤</div>
+                <div class="stat-copy"><span>Total loaded</span><strong id="statTotal">--</strong><small>Returned records</small></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◉</div>
+                <div class="stat-copy"><span>Published</span><strong id="statPublished">--</strong><small>Published status</small></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✎</div>
+                <div class="stat-copy"><span>Drafts</span><strong id="statDrafts">--</strong><small>Not yet published</small></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy"><span>Scheduled</span><strong id="statScheduled">--</strong><small>Scheduled status</small></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="filterTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filterTitle">Find an announcement</h2>
+                <p>Filter loaded records by title, category, status and intended audience.</p>
+              </div>
+            </div>
+
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              Announcement records have not been loaded. Connect this page to the authenticated announcements API.
+            </div>
+
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search</label>
+                  <input id="searchInput" type="search" maxlength="150" placeholder="Title, summary, category" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="categoryFilter">Category</label>
+                  <select id="categoryFilter">
+                    <option value="">All categories</option>
+                    <option value="admissions">Admissions</option>
+                    <option value="education">Education</option>
+                    <option value="examinations">Examinations</option>
+                    <option value="careers">Careers</option>
+                    <option value="platform">Platform updates</option>
+                    <option value="events">Events</option>
+                    <option value="important">Important notice</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="statusFilter">Publication status</label>
+                  <select id="statusFilter">
+                    <option value="">All statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="reloadFromServer" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="listTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="listTitle">Announcement library</h2>
+                <p>Review content, publication status, audience and schedule. All changes are submitted to the backend.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No announcement records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportAnnouncements" type="button" disabled>⇩ Export loaded records</button>
+                <button class="btn btn-small" id="createFromList" type="button">＋ New announcement</button>
+              </div>
+            </div>
+
+            <div class="announcement-grid" id="announcementGrid" aria-live="polite">
+              <div class="empty-state">
+                <strong>No announcements loaded</strong>
+                Announcement cards will appear here when returned by the configured API.
+              </div>
+            </div>
+
+            <div class="pagination">
+              <p id="paginationSummary">Showing 0 announcements</p>
+              <button class="btn btn-outline btn-small" id="clearFilters" type="button">Clear filters</button>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="workflowTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✓</div>
+              <div>
+                <h2 id="workflowTitle">Publishing workflow</h2>
+                <p>Use a consistent review process for important public-facing communications.</p>
+              </div>
+            </div>
+            <div class="announcement-grid">
+              <article class="announcement-card">
+                <div class="card-image" style="background-image:linear-gradient(0deg,rgba(3,8,18,.78),rgba(3,8,18,.1)),url('https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1000&q=80')">
+                  <div class="card-image-label"><strong>01 · Prepare</strong><span class="pill info">Draft</span></div>
+                </div>
+                <div class="card-body">
+                  <h3>Prepare accurate content</h3>
+                  <p>Use a specific title, concise summary, correct dates, verified destinations and an appropriate audience.</p>
+                </div>
+              </article>
+              <article class="announcement-card">
+                <div class="card-image" style="background-image:linear-gradient(0deg,rgba(3,8,18,.78),rgba(3,8,18,.1)),url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1000&q=80')">
+                  <div class="card-image-label"><strong>02 · Review</strong><span class="pill warning">Verify</span></div>
+                </div>
+                <div class="card-body">
+                  <h3>Review before release</h3>
+                  <p>Confirm the information is authorised, current and suitable for the selected audience. Follow internal approval rules.</p>
+                </div>
+              </article>
+              <article class="announcement-card">
+                <div class="card-image" style="background-image:linear-gradient(0deg,rgba(3,8,18,.78),rgba(3,8,18,.1)),url('https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1000&q=80')">
+                  <div class="card-image-label"><strong>03 · Publish</strong><span class="pill success">Release</span></div>
+                </div>
+                <div class="card-body">
+                  <h3>Publish or schedule</h3>
+                  <p>Choose the appropriate publication timing and verify the server confirms the requested state change.</p>
+                </div>
+              </article>
+              <article class="announcement-card">
+                <div class="card-image" style="background-image:linear-gradient(0deg,rgba(3,8,18,.78),rgba(3,8,18,.1)),url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80')">
+                  <div class="card-image-label"><strong>04 · Maintain</strong><span class="pill info">Review</span></div>
+                </div>
+                <div class="card-body">
+                  <h3>Maintain published notices</h3>
+                  <p>Correct outdated details, archive expired information and preserve an audit trail for material changes.</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="feature-banner" aria-labelledby="communicationTitle">
+            <div>
+              <span class="eyebrow">Clear communication · Trusted information</span>
+              <h2 id="communicationTitle">Publish responsibly. <span class="accent-text">Keep everyone informed.</span></h2>
+              <p>
+                Use approved content, accessible wording and relevant images.
+                Do not publish confidential information or claim that an
+                announcement is live until the server confirms publication.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="bannerCreate" type="button">Create announcement</button>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Review audit history ↗</a>
+              </div>
+            </div>
+            <div class="feature-image" role="img" aria-label="Professional workspace for planning and reviewing communications"></div>
+          </section>
+
+          <div class="notice">
+            <strong>Administration notice:</strong>
+            This page is a client interface, not a security boundary. The
+            backend must authenticate and authorise every operation, validate
+            announcement fields and publication dates, sanitise rendered
+            content, restrict external image and link destinations as
+            appropriate, enforce approval rules, and record create, update,
+            publish, archive and delete actions in the audit log.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="announcementDialog" aria-labelledby="dialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Content management</span>
+        <h2 id="dialogTitle">Create announcement</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeDialog" type="button">Close ✕</button>
+    </div>
+
+    <div class="dialog-body">
+      <div id="dialogStatus" class="status info" role="status" aria-live="polite">
+        Complete the required fields. Changes are saved through the administration API.
+      </div>
+
+      <form id="announcementForm">
+        <div class="form-grid">
+          <div class="field span-two">
+            <label for="announcementTitle">Announcement title *</label>
+            <input id="announcementTitle" name="title" type="text" maxlength="180" required placeholder="Write a clear, descriptive title">
+          </div>
+
+          <div class="field span-two">
+            <label for="announcementSummary">Summary *</label>
+            <textarea id="announcementSummary" name="summary" maxlength="500" required placeholder="Write a short summary for announcement cards and previews."></textarea>
+            <span class="field-help">Maximum 500 characters. Keep the summary factual and easy to scan.</span>
+          </div>
+
+          <div class="field span-two">
+            <label for="announcementBody">Announcement content *</label>
+            <textarea id="announcementBody" name="body" maxlength="20000" required placeholder="Enter the full announcement content. Plain text is recommended unless your API explicitly supports sanitised rich text."></textarea>
+            <span class="field-help">Do not enter scripts, embedded HTML or confidential user information.</span>
+          </div>
+
+          <div class="field">
+            <label for="announcementCategory">Category *</label>
+            <select id="announcementCategory" name="category" required>
+              <option value="admissions">Admissions</option>
+              <option value="education">Education</option>
+              <option value="examinations">Examinations</option>
+              <option value="careers">Careers</option>
+              <option value="platform">Platform updates</option>
+              <option value="events">Events</option>
+              <option value="important">Important notice</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="announcementAudience">Audience *</label>
+            <select id="announcementAudience" name="audience" required>
+              <option value="everyone">Everyone</option>
+              <option value="students">Students</option>
+              <option value="applicants">Applicants</option>
+              <option value="institutions">Institutions</option>
+              <option value="employers">Employers</option>
+              <option value="registered_users">Registered users</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="announcementStatus">Publication action *</label>
+            <select id="announcementStatus" name="status" required>
+              <option value="draft">Save as draft</option>
+              <option value="published">Publish now</option>
+              <option value="scheduled">Schedule publication</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="announcementDate">Publication date and time</label>
+            <input id="announcementDate" name="publishAt" type="datetime-local">
+            <span class="field-help">Required for scheduled announcements. Use the time zone expected by your backend.</span>
+          </div>
+
+          <div class="field span-two">
+            <label for="announcementImage">Related image URL</label>
+            <input id="announcementImage" name="imageUrl" type="url" maxlength="2000" placeholder="https://example.com/announcement-image.jpg">
+            <span class="field-help">Optional. Use a trusted HTTPS image URL. The server should validate permitted image hosts.</span>
+            <img class="image-preview" id="imagePreview" alt="Preview of the selected announcement image" loading="lazy" referrerpolicy="no-referrer">
+          </div>
+
+          <div class="field span-two">
+            <label for="announcementLink">Related destination URL</label>
+            <input id="announcementLink" name="linkUrl" type="url" maxlength="2000" placeholder="https://medorbits.in/pages/education.html">
+            <span class="field-help">Optional. Use an appropriate HTTPS destination. Avoid sharing private or tokenised URLs.</span>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="btn btn-outline" id="cancelDialog" type="button">Cancel</button>
+          <button class="btn" id="saveAnnouncement" type="submit">Save announcement</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span><strong>MEDORBITS</strong><small>Administration</small></span>
+          </a>
+          <p>A connected education and career platform for resources, admissions, documents and professional opportunities.</p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/announcements.html">Announcements</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Communications</h2>
+          <a href="/admin/notifications.html">Notifications</a>
+          <a href="/admin/announcements.html">Announcement library</a>
+          <a href="/admin/audit-logs.html">Audit logs</a>
+          <a href="/admin/settings.html">Settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Announcements must be accurate, authorised and appropriate for their
+        intended audience. Confirm publication status and dates against the
+        server response before sharing important information.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Announcements Administration
+       *
+       * Default API contract:
+       *   GET    /api/admin/announcements
+       *   POST   /api/admin/announcements
+       *   PUT    /api/admin/announcements/:id
+       *   PATCH  /api/admin/announcements/:id/status
+       *   DELETE /api/admin/announcements/:id
+       *
+       * Optional configuration:
+       *   window.MEDORBITS_CONFIG = {
+       *     adminAnnouncementsEndpoint: "/api/admin/announcements"
+       *   };
+       *
+       * Expected response:
+       * {
+       *   "announcements": [{
+       *     "id": "announcement-123",
+       *     "title": "Application update",
+       *     "summary": "Important application information.",
+       *     "body": "Full announcement content.",
+       *     "category": "admissions",
+       *     "audience": "applicants",
+       *     "status": "draft",
+       *     "publishAt": null,
+       *     "publishedAt": null,
+       *     "imageUrl": null,
+       *     "linkUrl": null,
+       *     "updatedAt": "2026-10-25T10:00:00Z",
+       *     "createdAt": "2026-10-25T09:00:00Z"
+       *   }],
+       *   "admin": { "name": "Administration", "email": "Admin workspace" }
+       * }
+       *
+       * Also accepts { "data": { "announcements": [...] } }.
+       *
+       * Create/update body:
+       * {
+       *   title, summary, body, category, audience, status,
+       *   publishAt, imageUrl, linkUrl
+       * }
+       *
+       * Adapt route names and payload fields to your actual backend.
+       * The server must enforce authentication, granular authorization,
+       * input validation, publication rules, CSRF protection where applicable,
+       * safe rendering and audit logging.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const dialog = $("announcementDialog");
+        const form = $("announcementForm");
+        const statusBox = $("connectionStatus");
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const state = {
+          announcements: [],
+          visible: [],
+          loaded: false,
+          loading: false,
+          saving: false,
+          editingId: null,
+          controller: null,
+          sequence: 0
+        };
+
+        const allowedStatuses = new Set(["draft", "published", "scheduled", "archived"]);
+        const allowedCategories = new Set([
+          "admissions", "education", "examinations", "careers",
+          "platform", "events", "important", "other"
+        ]);
+        const allowedAudiences = new Set([
+          "everyone", "students", "applicants", "institutions",
+          "employers", "registered_users"
+        ]);
+
+        function el(tag, className, text) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (text !== undefined) node.textContent = text;
+          return node;
+        }
+
+        function stringValue(input, fallback = "") {
+          if (typeof input === "string" && input.trim()) return input.trim();
+          if (typeof input === "number" && Number.isFinite(input)) return String(input);
+          return fallback;
+        }
+
+        function safeId(raw) {
+          const id = raw && typeof raw === "object"
+            ? raw.id ?? raw._id ?? raw.announcementId
+            : raw;
+
+          if (typeof id !== "string" && typeof id !== "number") return "";
+          const result = String(id).trim();
+          return result && result.length <= 200 ? result : "";
+        }
+
+        function normaliseStatus(input) {
+          const status = stringValue(input, "draft").toLowerCase();
+          return allowedStatuses.has(status) ? status : "draft";
+        }
+
+        function normaliseCategory(input) {
+          const category = stringValue(input, "other").toLowerCase();
+          return allowedCategories.has(category) ? category : "other";
+        }
+
+        function normaliseAudience(input) {
+          const audience = stringValue(input, "everyone").toLowerCase();
+          return allowedAudiences.has(audience) ? audience : "everyone";
+        }
+
+        function normaliseAnnouncement(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+          const id = safeId(raw);
+          if (!id) return null;
+
+          return {
+            id,
+            title: stringValue(raw.title, "Untitled announcement"),
+            summary: stringValue(raw.summary ?? raw.excerpt, ""),
+            body: stringValue(raw.body ?? raw.content ?? raw.description, ""),
+            category: normaliseCategory(raw.category),
+            audience: normaliseAudience(raw.audience ?? raw.targetAudience),
+            status: normaliseStatus(raw.status ?? raw.publicationStatus),
+            publishAt: raw.publishAt ?? raw.publish_at ?? raw.scheduledAt ?? null,
+            publishedAt: raw.publishedAt ?? raw.published_at ?? null,
+            imageUrl: stringValue(raw.imageUrl ?? raw.image_url, ""),
+            linkUrl: stringValue(raw.linkUrl ?? raw.link_url ?? raw.url, ""),
+            createdAt: raw.createdAt ?? raw.created_at ?? null,
+            updatedAt: raw.updatedAt ?? raw.updated_at ?? null
+          };
+        }
+
+        function humanise(input) {
+          return stringValue(input, "Unknown")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        function formatDate(input) {
+          if ((typeof input !== "string" && typeof input !== "number") || !String(input).trim()) {
+            return "Not provided";
+          }
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) return "Not provided";
+          return date.toLocaleString(undefined, {
+            day: "2-digit", month: "short", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+          });
+        }
+
+        function toDateTimeLocal(input) {
+          if (!input) return "";
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) return "";
+          const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+          return local.toISOString().slice(0, 16);
+        }
+
+        function setStatus(message, type = "info") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+
+        function setDialogStatus(message, type = "info") {
+          $("dialogStatus").textContent = message;
+          $("dialogStatus").className = `status ${type}`;
+        }
+
+        function statusClass(status) {
+          if (status === "published") return "success";
+          if (status === "scheduled") return "warning";
+          if (status === "archived") return "danger";
+          if (status === "draft") return "info";
+          return "unknown";
+        }
+
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured = config.adminAnnouncementsEndpoint || "/api/admin/announcements";
+          let url;
+
+          try {
+            url = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured announcements API endpoint is invalid.");
+          }
+
+          if (url.origin !== window.location.origin) {
+            throw new Error("The announcements API must use the same origin as this page.");
+          }
+          if (url.username || url.password || url.search || url.hash) {
+            throw new Error("The API endpoint must not contain credentials, query parameters or fragments.");
+          }
+
+          return url;
+        }
+
+        function requestHeaders(json = false) {
+          const headers = { Accept: "application/json" };
+          if (json) headers["Content-Type"] = "application/json";
+
+          const csrf = document.querySelector('meta[name="csrf-token"]');
+          if (csrf && csrf.content.trim()) {
+            headers["X-CSRF-Token"] = csrf.content.trim();
+          }
+          return headers;
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.toLowerCase().includes("application/json")) return {};
+          try {
+            const data = await response.json();
+            return data && typeof data === "object" ? data : {};
+          } catch {
+            return {};
+          }
+        }
+
+        function apiError(response, data) {
+          if (response.status === 401) return "Authentication required. Sign in with an authorised administrator account.";
+          if (response.status === 403) return "Access denied. Your account cannot perform this operation.";
+          if (response.status === 404) return "The announcements API route or requested record was not found. Check the backend routes.";
+          if (response.status === 409) return "This announcement has changed or conflicts with its current state. Reload and try again.";
+          if (response.status === 422) return stringValue(data.message, "The server rejected the submitted values. Check the validation requirements.");
+          if (response.status === 429) return "The API rate limit was reached. Wait before trying again.";
+          if (response.status >= 500) return "The server could not complete the announcement operation.";
+          return stringValue(data.message, "The announcements API could not complete the request.");
+        }
+
+        function appendId(base, id, suffix = "") {
+          return `${base.replace(/\/$/, "")}/${encodeURIComponent(id)}${suffix}`;
+        }
+
+        async function sendMutation(url, method, body) {
+          const endpoint = new URL(url, window.location.origin);
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error("Mutation requests must use the same origin as this page.");
+          }
+
+          const response = await fetch(endpoint.href, {
+            method,
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: requestHeaders(true),
+            body: JSON.stringify(body)
+          });
+
+          const data = await readJson(response);
+          if (!response.ok) throw new Error(apiError(response, data));
+          return data;
+        }
+
+        function renderStats() {
+          $("statTotal").textContent = String(state.announcements.length);
+          $("statPublished").textContent = String(state.announcements.filter(item => item.status === "published").length);
+          $("statDrafts").textContent = String(state.announcements.filter(item => item.status === "draft").length);
+          $("statScheduled").textContent = String(state.announcements.filter(item => item.status === "scheduled").length);
+        }
+
+        function emptyState(title, description) {
+          const box = el("div", "empty-state");
+          box.append(el("strong", "", title), el("div", "", description));
+          return box;
+        }
+
+        function createPill(text, type) {
+          return el("span", `pill ${type || "unknown"}`, text);
+        }
+
+        function safeImageUrl(input) {
+          if (!input) return "";
+          try {
+            const url = new URL(input, window.location.origin);
+            if (url.protocol !== "https:" && url.origin !== window.location.origin) return "";
+            if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+            return url.href;
+          } catch {
+            return "";
+          }
+        }
+
+        function applyFilters() {
+          const query = $("searchInput").value.trim().toLowerCase();
+          const category = $("categoryFilter").value;
+          const status = $("statusFilter").value;
+
+          state.visible = state.announcements.filter(item => {
+            if (category && item.category !== category) return false;
+            if (status && item.status !== status) return false;
+
+            if (query) {
+              const searchable = [
+                item.title, item.summary, item.body, item.category,
+                item.audience, item.status, item.id
+              ].join(" ").toLowerCase();
+
+              if (!searchable.includes(query)) return false;
+            }
+            return true;
+          });
+
+          renderAnnouncements();
+        }
+
+        function createCard(item) {
+          const card = el("article", "announcement-card");
+          const image = el("div", "card-image");
+          const imageUrl = safeImageUrl(item.imageUrl);
+
+          if (imageUrl) {
+            image.style.backgroundImage =
+              `linear-gradient(0deg,rgba(3,8,18,.82),rgba(3,8,18,.08)),url("${imageUrl.replace(/["\\\n\r]/g, "")}")`;
+          } else {
+            image.style.backgroundImage =
+              "linear-gradient(135deg,rgba(15,48,82,.96),rgba(5,13,26,.98))";
+          }
+
+          const imageLabel = el("div", "card-image-label");
+          imageLabel.append(
+            el("strong", "", humanise(item.category)),
+            createPill(humanise(item.status), statusClass(item.status))
+          );
+          image.appendChild(imageLabel);
+
+          const body = el("div", "card-body");
+          const meta = el("div", "card-meta");
+          meta.append(
+            createPill(`Audience: ${humanise(item.audience)}`, "info"),
+            createPill(`ID: ${item.id}`, "unknown")
+          );
+
+          body.append(
+            meta,
+            el("h3", "", item.title),
+            el("p", "", item.summary || "No summary supplied.")
+          );
+
+          const details = el("div", "card-details");
+          details.append(
+            el("span", "", `Publication: ${item.status === "published" ? formatDate(item.publishedAt || item.publishAt) : formatDate(item.publishAt)}`),
+            el("span", "", `Updated: ${formatDate(item.updatedAt)}`)
+          );
+          body.appendChild(details);
+
+          const actions = el("div", "card-actions");
+          const edit = el("button", "btn btn-outline btn-small", "Edit");
+          edit.type = "button";
+          edit.addEventListener("click", () => openEditor(item));
+
+          const statusAction = el(
+            "button",
+            "btn btn-small",
+            item.status === "published" ? "Archive" :
+              item.status === "archived" ? "Restore draft" : "Publish"
+          );
+          statusAction.type = "button";
+          statusAction.addEventListener("click", () => changeStatus(item));
+
+          const remove = el("button", "btn btn-danger btn-small", "Delete");
+          remove.type = "button";
+          remove.addEventListener("click", () => deleteAnnouncement(item));
+
+          actions.append(edit, statusAction, remove);
+          body.appendChild(actions);
+          card.append(image, body);
+          return card;
+        }
+
+        function renderAnnouncements() {
+          const grid = $("announcementGrid");
+          grid.replaceChildren();
+
+          if (!state.visible.length) {
+            grid.appendChild(emptyState(
+              state.loaded ? "No matching announcements" : "No announcement data loaded",
+              state.loaded
+                ? "No records match the selected filters. Reset filters to review all loaded announcements."
+                : "Announcement records will appear here when returned by the configured administration API."
+            ));
+          } else {
+            const fragment = document.createDocumentFragment();
+            state.visible.forEach(item => fragment.appendChild(createCard(item)));
+            grid.appendChild(fragment);
+          }
+
+          $("resultSummary").textContent = state.loaded
+            ? `${state.visible.length} visible announcement(s) from ${state.announcements.length} loaded record(s).`
+            : "No announcement records loaded.";
+
+          $("paginationSummary").textContent = state.loaded
+            ? `Showing ${state.visible.length} of ${state.announcements.length} loaded announcement(s).`
+            : "Showing 0 announcements";
+
+          $("exportAnnouncements").disabled = !state.loaded || !state.announcements.length || state.loading;
+          $("clearFilters").disabled = !$("searchInput").value && !$("categoryFilter").value && !$("statusFilter").value;
+          renderStats();
+        }
+
+        function setLoading(loading) {
+          state.loading = loading;
+          ["refreshAnnouncements", "reloadFromServer"].forEach(id => {
+            $(id).disabled = loading;
+          });
+          $("refreshAnnouncements").textContent = loading ? "Loading…" : "↻ Refresh records";
+          $("reloadFromServer").textContent = loading ? "Loading…" : "↻ Reload from server";
+          $("exportAnnouncements").disabled = loading || !state.loaded || !state.announcements.length;
+        }
+
+        async function loadAnnouncements() {
+          if (state.controller) state.controller.abort();
+
+          const controller = new AbortController();
+          state.controller = controller;
+          const sequence = ++state.sequence;
+
+          setLoading(true);
+          setStatus("Loading announcement records from the administration API…", "info");
+
+          try {
+            const endpoint = getEndpoint();
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+
+            const data = await readJson(response);
+            if (sequence !== state.sequence) return;
+            if (!response.ok) throw new Error(apiError(response, data));
+
+            let payload = data;
+            if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+              payload = payload.data;
+            }
+
+            if (!payload || typeof payload !== "object" || Array.isArray(payload) ||
+                !Array.isArray(payload.announcements)) {
+              throw new Error("The API response must contain an announcements array. Adapt the client to your backend response contract.");
+            }
+
+            state.announcements = payload.announcements.map(normaliseAnnouncement).filter(Boolean);
+
+            if (payload.admin && typeof payload.admin === "object" && !Array.isArray(payload.admin)) {
+              $("adminName").textContent = stringValue(payload.admin.name, "Administration");
+              $("adminEmail").textContent = stringValue(payload.admin.email, "Admin workspace");
+            }
+
+            state.loaded = true;
+            applyFilters();
+            setStatus(
+              `Loaded ${state.announcements.length} announcement record(s) at ${new Date().toLocaleTimeString()}.`,
+              "success"
+            );
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (sequence !== state.sequence) return;
+
+            state.announcements = [];
+            state.visible = [];
+            state.loaded = false;
+            renderAnnouncements();
+
+            setStatus(
+              error instanceof Error ? error.message : "Unable to load announcements.",
+              "error"
+            );
+          } finally {
+            if (sequence === state.sequence) setLoading(false);
+          }
+        }
+
+        function openEditor(item = null) {
+          state.editingId = item ? item.id : null;
+          form.reset();
+          $("imagePreview").classList.remove("visible");
+          $("imagePreview").removeAttribute("src");
+
+          $("dialogTitle").textContent = item ? "Edit announcement" : "Create announcement";
+          $("saveAnnouncement").textContent = item ? "Save changes" : "Save announcement";
+
+          if (item) {
+            $("announcementTitle").value = item.title;
+            $("announcementSummary").value = item.summary;
+            $("announcementBody").value = item.body;
+            $("announcementCategory").value = item.category;
+            $("announcementAudience").value = item.audience;
+            $("announcementStatus").value = item.status;
+            $("announcementDate").value = toDateTimeLocal(item.publishAt);
+            $("announcementImage").value = item.imageUrl;
+            $("announcementLink").value = item.linkUrl;
+
+            updateImagePreview();
+            setDialogStatus("Review the existing content carefully before saving changes.", "info");
+          } else {
+            $("announcementStatus").value = "draft";
+            setDialogStatus("Complete the required fields. A draft is not publicly published.", "info");
+          }
+
+          updateScheduleRequirement();
+          if (typeof dialog.showModal === "function") dialog.showModal();
+          else setStatus("This browser does not support the announcement editor dialog.", "warning");
+        }
+
+        function updateScheduleRequirement() {
+          const scheduled = $("announcementStatus").value === "scheduled";
+          $("announcementDate").required = scheduled;
+          $("announcementDate").setAttribute("aria-required", String(scheduled));
+        }
+
+        function updateImagePreview() {
+          const input = $("announcementImage").value.trim();
+          const preview = $("imagePreview");
+          const safe = safeImageUrl(input);
+
+          if (!safe) {
+            preview.removeAttribute("src");
+            preview.classList.remove("visible");
+            return;
+          }
+
+          preview.onload = () => preview.classList.add("visible");
+          preview.onerror = () => preview.classList.remove("visible");
+          preview.src = safe;
+        }
+
+        function validateForm() {
+          const title = $("announcementTitle").value.trim();
+          const summary = $("announcementSummary").value.trim();
+          const body = $("announcementBody").value.trim();
+          const category = $("announcementCategory").value;
+          const audience = $("announcementAudience").value;
+          const status = $("announcementStatus").value;
+          const publishAt = $("announcementDate").value;
+          const imageUrl = $("announcementImage").value.trim();
+          const linkUrl = $("announcementLink").value.trim();
+
+          if (title.length < 3) throw new Error("Enter a title containing at least 3 characters.");
+          if (!summary) throw new Error("Enter a short announcement summary.");
+          if (!body) throw new Error("Enter the announcement content.");
+          if (!allowedCategories.has(category)) throw new Error("Select a valid announcement category.");
+          if (!allowedAudiences.has(audience)) throw new Error("Select a valid audience.");
+          if (!["draft", "published", "scheduled"].includes(status)) {
+            throw new Error("Select a valid publication action.");
+          }
+
+          let publishAtISO = null;
+          if (status === "scheduled") {
+            if (!publishAt) throw new Error("Choose a publication date and time for a scheduled announcement.");
+            const date = new Date(publishAt);
+            if (Number.isNaN(date.getTime())) throw new Error("The publication date and time is invalid.");
+            if (date.getTime() <= Date.now()) throw new Error("Choose a future publication time.");
+            publishAtISO = date.toISOString();
+          } else if (publishAt) {
+            const date = new Date(publishAt);
+            if (Number.isNaN(date.getTime())) throw new Error("The publication date and time is invalid.");
+            publishAtISO = date.toISOString();
+          }
+
+          function validateOptionalUrl(raw, label) {
+            if (!raw) return null;
+            let url;
+            try {
+              url = new URL(raw);
+            } catch {
+              throw new Error(`${label} must be a valid absolute URL.`);
+            }
+            if (url.protocol !== "https:") {
+              throw new Error(`${label} must use HTTPS.`);
+            }
+            if (url.username || url.password) {
+              throw new Error(`${label} must not contain embedded credentials.`);
+            }
+            return url.href;
+          }
+
+          return {
+            title,
+            summary,
+            body,
+            category,
+            audience,
+            status,
+            publishAt: publishAtISO,
+            imageUrl: validateOptionalUrl(imageUrl, "Image URL"),
+            linkUrl: validateOptionalUrl(linkUrl, "Destination URL")
+          };
+        }
+
+        async function saveAnnouncement(event) {
+          event.preventDefault();
+          if (state.saving) return;
+
+          let payload;
+          try {
+            payload = validateForm();
+          } catch (error) {
+            setDialogStatus(error instanceof Error ? error.message : "Please review the submitted fields.", "warning");
+            return;
+          }
+
+          state.saving = true;
+          $("saveAnnouncement").disabled = true;
+          $("saveAnnouncement").textContent = "Saving…";
+          setDialogStatus("Submitting announcement data to the server…", "info");
+
+          try {
+            const base = getEndpoint().pathname.replace(/\/$/, "");
+            const editing = Boolean(state.editingId);
+            const url = editing ? appendId(base, state.editingId) : base;
+
+            await sendMutation(url, editing ? "PUT" : "POST", payload);
+
+            if (dialog.open) dialog.close();
+            setStatus(
+              `The server accepted the ${editing ? "announcement update" : "new announcement"}. Reloading authoritative records.`,
+              "success"
+            );
+            await loadAnnouncements();
+          } catch (error) {
+            setDialogStatus(error instanceof Error ? error.message : "The announcement could not be saved.", "error");
+          } finally {
+            state.saving = false;
+            $("saveAnnouncement").disabled = false;
+            $("saveAnnouncement").textContent = state.editingId ? "Save changes" : "Save announcement";
+          }
+        }
+
+        async function changeStatus(item) {
+          let nextStatus;
+          let confirmation;
+
+          if (item.status === "published") {
+            nextStatus = "archived";
+            confirmation = `Archive "${item.title}"? The server will decide how this affects public visibility.`;
+          } else if (item.status === "archived") {
+            nextStatus = "draft";
+            confirmation = `Restore "${item.title}" as a draft? It will not be published automatically.`;
+          } else {
+            nextStatus = "published";
+            confirmation = `Publish "${item.title}" now? Confirm that the content is approved and ready for its intended audience.`;
+          }
+
+          if (!window.confirm(confirmation)) return;
+
+          try {
+            const base = getEndpoint().pathname.replace(/\/$/, "");
+            await sendMutation(
+              appendId(base, item.id, "/status"),
+              "PATCH",
+              { status: nextStatus }
+            );
+
+            setStatus(`The server accepted the status change to ${nextStatus}. Refreshing records.`, "success");
+            await loadAnnouncements();
+          } catch (error) {
+            setStatus(error instanceof Error ? error.message : "The status change failed.", "error");
+          }
+        }
+
+        async function deleteAnnouncement(item) {
+          const confirmation = `Permanently delete "${item.title}"? This cannot be undone unless your backend supports recovery.`;
+          if (!window.confirm(confirmation)) return;
+
+          try {
+            const base = getEndpoint().pathname.replace(/\/$/, "");
+            await sendMutation(appendId(base, item.id), "DELETE", {});
+            setStatus("The server accepted the deletion. Refreshing records.", "success");
+            await loadAnnouncements();
+          } catch (error) {
+            setStatus(error instanceof Error ? error.message : "The announcement could not be deleted.", "error");
+          }
+        }
+
+        function csvEscape(input) {
+          let text = input == null ? "" : String(input);
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) text = "'" + text;
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+
+        function exportAnnouncements() {
+          if (!state.loaded || !state.announcements.length) {
+            setStatus("There are no loaded announcement records to export.", "warning");
+            return;
+          }
+
+          const rows = [
+            ["ID", "Title", "Summary", "Category", "Audience", "Status", "Publish at", "Published at", "Created at", "Updated at"],
+            ...state.announcements.map(item => [
+              item.id, item.title, item.summary, item.category, item.audience,
+              item.status, item.publishAt || "", item.publishedAt || "",
+              item.createdAt || "", item.updatedAt || ""
+            ])
+          ];
+
+          const csv = "\uFEFF" + rows.map(row => row.map(csvEscape).join(",")).join("\r\n");
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = "medorbits-announcements.csv";
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+          if (mainNav.classList.contains("open") &&
+              !event.target.closest("#mainNav") &&
+              !event.target.closest("#menuToggle")) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+
+        ["createAnnouncement", "heroCreate", "createFromList", "bannerCreate"].forEach(id => {
+          $(id).addEventListener("click", () => openEditor());
+        });
+
+        ["refreshAnnouncements", "reloadFromServer"].forEach(id => {
+          $(id).addEventListener("click", loadAnnouncements);
+        });
+
+        $("filterForm").addEventListener("submit", event => {
+          event.preventDefault();
+          applyFilters();
+        });
+
+        $("searchInput").addEventListener("input", applyFilters);
+        $("categoryFilter").addEventListener("change", applyFilters);
+        $("statusFilter").addEventListener("change", applyFilters);
+
+        $("resetFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+
+        $("clearFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+
+        $("exportAnnouncements").addEventListener("click", exportAnnouncements);
+        form.addEventListener("submit", saveAnnouncement);
+        $("announcementStatus").addEventListener("change", updateScheduleRequirement);
+        $("announcementImage").addEventListener("input", updateImagePreview);
+
+        $("closeDialog").addEventListener("click", () => dialog.close());
+        $("cancelDialog").addEventListener("click", () => dialog.close());
+
+        dialog.addEventListener("close", () => {
+          form.reset();
+          $("imagePreview").removeAttribute("src");
+          $("imagePreview").classList.remove("visible");
+          state.editingId = null;
+        });
+
+        loadAnnouncements();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

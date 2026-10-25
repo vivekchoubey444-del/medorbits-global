@@ -1,129 +1,128 @@
-=============================================================================
 
-MedOrbits | Pre-commit Quality and Security Controls
-
-File: .pre-commit-config.yaml
-
-Purpose: Automated repository hygiene, code quality, and security checks.
-
-=============================================================================
-
-INSTALLATION
-
-python -m pip install pre-commit
-
-pre-commit validate-config
-
-pre-commit install
-
-VALIDATION
-
-pre-commit run –all-files
-
-pre-commit run detect-private-key –all-files
-
-OPTIONAL PRE-PUSH CHECKS
-
-pre-commit install –hook-type pre-push
+# ==============================================================================
+# MedOrbits -- Pre-commit Quality and Security Controls
+#
+# File: .pre-commit-config.yaml
+# Policy version: 3.1.0
+# Minimum pre-commit version: 3.7.0
+#
+# Purpose:
+#   Repository hygiene, file integrity, Python quality and baseline security.
+#
+# Policy:
+#   - Run all applicable hooks, even when one fails.
+#   - Preserve maintained source, public assets, datasets and documentation.
+#   - Exclude generated output, dependencies and local caches.
+#   - Keep application-specific validation in real project scripts and CI.
+#
+# Security note:
+#   These hooks are not a complete secrets scanner or a replacement for CI.
+# ==============================================================================
 
 minimum_pre_commit_version: "3.7.0"
 
-Run all applicable hooks, even when one fails.
-
 fail_fast: false
 
-Exclude generated output, dependency directories, and local caches.
-
-Keep application source, public assets, and project datasets eligible.
-
+# Repository-relative exclusions.
+# Keep these narrow; do not exclude maintained source or public assets.
 exclude: >-
-(?x)^(
-.git/|
-.venv/|
-venv/|
-node_modules/|
-pycache/|
-.pytest_cache/|
-.mypy_cache/|
-.ruff_cache/|
-.tox/|
-htmlcov/|
-coverage/|
-dist/|
-build/|
-site-packages/|
-vendor/|
-reports/generated/|
-tmp/
-)
+  (?x)^(
+    \.git/|
+    \.venv/|
+    venv/|
+    node_modules/|
+    __pycache__/|
+    \.pytest_cache/|
+    \.mypy_cache/|
+    \.ruff_cache/|
+    \.tox/|
+    htmlcov/|
+    coverage/|
+    dist/|
+    build/|
+    site-packages/|
+    vendor/|
+    reports/generated/|
+    tmp/
+  )
 
 repos:
-
---------------------------------------------------
-
-1. General file integrity and repository hygiene
-
---------------------------------------------------
-
-* repo: https://github.com/pre-commit/pre-commit-hooks
+  # ---------------------------------------------------------------------------
+  # 1. General file integrity and repository hygiene
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-    Remove trailing whitespace; preserve Markdown hard line breaks.
-    * id: trailing-whitespace
+      # Remove trailing whitespace while preserving Markdown hard line breaks.
+      - id: trailing-whitespace
         args:
-        * –markdown-linebreak-ext=md
-    Ensure text files end with a newline.
-    * id: end-of-file-fixer
-    Validate standard data and configuration file syntax.
-    * id: check-json
-    * id: check-yaml
-    * id: check-toml
-    Detect common repository integrity issues.
-    * id: check-merge-conflict
-    * id: check-case-conflict
-    * id: check-illegal-windows-names
-    * id: check-symlinks
-    Detect private-key material in files being checked.
-    * id: detect-private-key
-    Reject newly added files larger than 1 MiB.
-    * id: check-added-large-files
+          - --markdown-linebreak-ext=md
+
+      # Ensure text files end with a newline.
+      - id: end-of-file-fixer
+
+      # Validate standard configuration and data formats.
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+
+      # Detect merge conflicts and filesystem portability issues.
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-symlinks
+
+      # Detect common private-key material.
+      - id: detect-private-key
+
+      # Reject newly added files larger than 1 MiB.
+      - id: check-added-large-files
         args:
-        * –maxkb=1024
-    Normalize UTF-8 byte-order markers.
-    * id: fix-byte-order-marker
-    Detect mixed line endings without automatic modification.
-    * id: mixed-line-ending
+          - --maxkb=1024
+
+      # Normalize UTF-8 byte-order markers.
+      - id: fix-byte-order-marker
+
+      # Detect mixed line endings without automatic modification.
+      - id: mixed-line-ending
         args:
-        * –fix=no
+          - --fix=no
 
---------------------------------------------------
+      # Additional useful checks.
+      # Verify that executable scripts have valid shebangs when applicable.
+      - id: check-executables-have-shebangs
 
-2. Python linting and formatting
+      # Detect accidental duplicate JSON keys where supported by the hook.
+      # Keep this only if the pinned hook version provides the selected ID.
+      # - id: check-json
 
---------------------------------------------------
-
-* repo: https://github.com/astral-sh/ruff-pre-commit
+  # ---------------------------------------------------------------------------
+  # 2. Python linting and formatting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.0
     hooks:
-    Apply available automatic lint fixes.
-    * id: ruff
+      # Apply supported automatic lint fixes.
+      - id: ruff
         args:
-        * –fix
-    Format Python source consistently.
-    * id: ruff-format
+          - --fix
 
---------------------------------------------------
+      # Format Python source consistently.
+      - id: ruff-format
 
-3. MedOrbits project validation
-
---------------------------------------------------
-
-Keep project-specific JSON schema validation, application tests, and
-
-comprehensive checks in the existing project scripts and CI workflow.
-
-Add additional local hooks only after verifying that their scripts exist,
-
-their commands are valid, and their staged-file handling is compatible
-
-with pre-commit.
+  # ---------------------------------------------------------------------------
+  # 3. MedOrbits project validation
+  # ---------------------------------------------------------------------------
+  # Add project-specific hooks only when the actual scripts and dependencies
+  # have been verified. Do not add placeholder commands.
+  #
+  # Recommended validation areas:
+  #   - JSON syntax and application-specific JSON schemas
+  #   - HTML, CSS and JavaScript quality
+  #   - Authentication and authorization tests
+  #   - API schema and route validation
+  #   - Dependency and secret scanning
+  #   - Documentation and repository structure
+  #
+  # Keep comprehensive tests and production builds in the existing CI
+  # workflow as well as optional local validation where appropriate.

@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071629">
-  <meta name="description" content="Securely review your MedOrbits application status, submitted information, status history and next steps.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080706">
+  <meta name="description" content="View and manage your MedOrbits education, admission and career applications, application statuses, submitted documents and next steps.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="MedOrbits">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -23,29 +23,30 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #071629;
-      --bg-soft: #0b203b;
-      --surface: #102947;
-      --surface-2: #153657;
-      --surface-3: #081a2e;
-      --accent: #8bbcff;
-      --accent-bright: #d9e9ff;
-      --text: #f2f7ff;
-      --text-soft: #c7d8ee;
-      --muted: #9db2cc;
-      --border: rgba(139, 188, 255, .23);
-      --success: #a8f0d0;
-      --warning: #ffdfa2;
-      --danger: #ffc1ca;
-      --radius: 16px;
-      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+      --bg: #080706;
+      --bg-deep: #030303;
+      --bg-soft: #100e0a;
+      --surface: #15120c;
+      --surface-2: #20190e;
+      --gold: #c99a38;
+      --gold-bright: #f7d98b;
+      --gold-light: #ffedbd;
+      --champagne: #e8c982;
+      --text: #f7f0df;
+      --text-soft: #d4c8ad;
+      --muted: #a99b7f;
+      --border: rgba(220,174,76,.23);
+      --border-bright: rgba(247,217,139,.43);
+      --success: #b8e6bd;
+      --warning: #f6d58a;
+      --danger: #ffb9a9;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.55);
+      --gold-gradient: linear-gradient(115deg,#8f6420 0%,#e6bd61 28%,#fff0b8 48%,#c08a2c 70%,#f4d77f 100%);
+      --gold-surface: linear-gradient(145deg,rgba(35,27,15,.97),rgba(8,7,5,.98));
     }
 
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     html {
       scroll-behavior: smooth;
@@ -53,52 +54,87 @@
     }
 
     body {
+      position: relative;
+      isolation: isolate;
       margin: 0;
       min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(ellipse at 10% 0%, rgba(40, 102, 170, .2), transparent 35%),
-        radial-gradient(ellipse at 90% 40%, rgba(98, 155, 221, .08), transparent 32%),
-        linear-gradient(135deg, #050d1a, #091b31 55%, #102947);
+        radial-gradient(ellipse at 12% 0%,rgba(190,132,34,.13),transparent 35%),
+        radial-gradient(ellipse at 92% 38%,rgba(142,96,26,.09),transparent 34%),
+        linear-gradient(135deg,#030303 0%,#0b0906 48%,#100c06 100%);
       color: var(--text);
-      font: 400 14px/1.7 "DM Sans", sans-serif;
+      font: 400 14px/1.7 "DM Sans",sans-serif;
     }
 
-    img {
-      display: block;
-      max-width: 100%;
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(rgba(247,217,139,.13) .7px,transparent .7px);
+      background-size: 34px 34px;
+      opacity: .14;
+      content: "";
+      pointer-events: none;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button,
-    input,
-    select {
-      font: inherit;
-    }
-
-    button,
-    a {
-      -webkit-tap-highlight-color: transparent;
-    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
 
     button:focus-visible,
     a:focus-visible,
     input:focus-visible,
     select:focus-visible {
-      outline: 2px solid var(--accent-bright);
+      outline: 2px solid var(--gold-light);
       outline-offset: 4px;
     }
 
-    [hidden] {
-      display: none !important;
-    }
+    [hidden] { display: none !important; }
 
     .container {
-      width: min(1180px, calc(100% - 40px));
+      width: min(1180px,calc(100% - 40px));
       margin-inline: auto;
+    }
+
+    .gold-text {
+      color: var(--gold-bright);
+      background: var(--gold-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: goldFlow 6s linear infinite;
+    }
+
+    @keyframes goldFlow {
+      0% { background-position: 100% center; }
+      100% { background-position: -120% center; }
+    }
+
+    @keyframes goldGlow {
+      0%,100% { text-shadow: 0 0 5px rgba(230,189,97,.08); }
+      50% { text-shadow: 0 0 17px rgba(230,189,97,.32); }
+    }
+
+    @keyframes floatSoft {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes cursorBlink {
+      to { visibility: hidden; }
+    }
+
+    @keyframes shimmer {
+      from { background-position: 200% center; }
+      to { background-position: -200% center; }
     }
 
     .skip-link {
@@ -107,16 +143,13 @@
       left: 14px;
       z-index: 10000;
       padding: 10px 15px;
+      border: 1px solid var(--gold);
       border-radius: 8px;
-      background: var(--accent-bright);
-      color: var(--bg);
+      background: var(--gold-light);
+      color: #100c05;
     }
 
-    .skip-link:focus {
-      top: 12px;
-    }
-
-    /* Announcement and navigation */
+    .skip-link:focus { top: 12px; }
 
     .announcement {
       display: flex;
@@ -124,19 +157,20 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      padding: 8px 15px;
-      border-bottom: 1px solid rgba(139, 188, 255, .13);
-      background: #040b15;
-      color: var(--accent-bright);
+      padding: 9px 15px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      background: #030303;
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .1em;
+      letter-spacing: .12em;
       text-align: center;
       text-transform: uppercase;
     }
 
-    .announcement .spark {
-      color: var(--accent);
+    .spark {
+      color: var(--gold-bright);
+      animation: goldGlow 3s ease-in-out infinite;
     }
 
     .site-header {
@@ -144,18 +178,19 @@
       top: 0;
       z-index: 1000;
       border-bottom: 1px solid var(--border);
-      background: rgba(5, 14, 27, .94);
-      backdrop-filter: blur(18px);
-      transition: box-shadow .2s, background .2s;
+      background: rgba(5,5,4,.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .site-header.scrolled {
-      background: rgba(4, 11, 21, .98);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, .25);
+      background: rgba(3,3,3,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.58);
     }
 
     .nav-wrap {
-      min-height: 78px;
+      position: relative;
+      min-height: 76px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -170,16 +205,17 @@
     }
 
     .brand img {
-      width: 45px;
-      height: 45px;
+      width: 44px;
+      height: 44px;
       object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(220,174,76,.18));
     }
 
     .brand strong {
       display: block;
-      color: var(--accent-bright);
+      color: var(--gold-bright);
       font-size: 15px;
-      letter-spacing: .13em;
+      letter-spacing: .15em;
       line-height: 1.35;
     }
 
@@ -187,7 +223,7 @@
       display: block;
       color: var(--muted);
       font-size: 8px;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
@@ -196,16 +232,16 @@
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 9px;
-      background: transparent;
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
       cursor: pointer;
     }
 
     .main-nav {
       display: flex;
       align-items: center;
-      gap: 17px;
-      font-size: 11px;
+      gap: 14px;
+      font-size: 10px;
     }
 
     .main-nav > a,
@@ -215,13 +251,9 @@
     }
 
     .main-nav > a:hover,
-    .nav-trigger:hover {
-      color: var(--accent-bright);
-    }
+    .nav-trigger:hover { color: var(--gold-light); }
 
-    .nav-group {
-      position: relative;
-    }
+    .nav-group { position: relative; }
 
     .nav-trigger {
       padding: 12px 0;
@@ -232,7 +264,7 @@
 
     .nav-trigger span {
       margin-left: 4px;
-      color: var(--accent);
+      color: var(--gold);
     }
 
     .dropdown {
@@ -242,16 +274,14 @@
       display: none;
       width: 245px;
       padding: 9px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-bright);
       border-radius: 12px;
-      background: #102947;
+      background: #100d08;
       box-shadow: var(--shadow);
     }
 
     .nav-group.open .dropdown,
-    .nav-group:focus-within .dropdown {
-      display: grid;
-    }
+    .nav-group:focus-within .dropdown { display: grid; }
 
     .dropdown a {
       padding: 10px 11px;
@@ -261,53 +291,58 @@
     }
 
     .dropdown a:hover {
-      background: rgba(139, 188, 255, .09);
-      color: var(--accent-bright);
+      background: rgba(201,154,56,.1);
+      color: var(--gold-light);
     }
 
-    .nav-cta,
     .btn {
       display: inline-flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      min-height: 41px;
-      padding: 10px 15px;
-      border: 1px solid var(--accent);
-      border-radius: 9px;
-      background: linear-gradient(135deg, #d9e9ff, #82b6f8);
-      color: #071629 !important;
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 1px solid #e2b955;
+      border-radius: 10px;
+      background: var(--gold-gradient);
+      background-size: 180% auto;
+      color: #120d04;
       font-size: 11px;
       font-weight: 700;
+      text-align: center;
       cursor: pointer;
-      transition: transform .2s, filter .2s;
+      transition: transform .22s,filter .22s,box-shadow .22s;
     }
 
-    .btn:hover,
-    .nav-cta:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.06);
-    }
-
-    .btn-outline {
-      border-color: rgba(199, 216, 238, .32);
-      background: transparent;
-      color: var(--accent-bright) !important;
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 25px rgba(201,154,56,.15);
     }
 
     .btn:disabled {
       opacity: .6;
-      cursor: not-allowed;
+      cursor: wait;
       transform: none;
     }
 
-    /* Main page */
+    .btn-outline {
+      border-color: rgba(220,174,76,.36);
+      background: rgba(201,154,56,.035);
+      color: var(--gold-light);
+    }
+
+    .btn-small {
+      min-height: 35px;
+      padding: 7px 11px;
+      font-size: 10px;
+    }
 
     .page-main {
       position: relative;
       isolation: isolate;
       min-height: 70vh;
-      padding: 40px 0 65px;
+      padding: 39px 0 65px;
       overflow: hidden;
     }
 
@@ -316,8 +351,8 @@
       z-index: -1;
       inset: 0;
       background:
-        radial-gradient(ellipse at 15% 10%, rgba(40, 102, 170, .14), transparent 34%),
-        radial-gradient(ellipse at 88% 65%, rgba(98, 155, 221, .08), transparent 32%);
+        radial-gradient(ellipse at 14% 8%,rgba(201,154,56,.09),transparent 34%),
+        radial-gradient(ellipse at 90% 65%,rgba(148,102,30,.07),transparent 32%);
       content: "";
       pointer-events: none;
     }
@@ -331,13 +366,8 @@
       font-size: 11px;
     }
 
-    .breadcrumbs a {
-      color: var(--accent-bright);
-    }
-
-    .breadcrumbs a:hover {
-      text-decoration: underline;
-    }
+    .breadcrumbs a { color: var(--gold-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
 
     .page-heading {
       display: flex;
@@ -345,43 +375,65 @@
       justify-content: space-between;
       gap: 22px;
       margin-bottom: 28px;
+      animation: revealUp .7s ease both;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      color: var(--accent-bright);
+      color: var(--champagne);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .16em;
+      letter-spacing: .17em;
       text-transform: uppercase;
     }
 
     .eyebrow::before {
       width: 25px;
       height: 1px;
-      background: var(--accent);
+      background: var(--gold);
       content: "";
     }
 
     .page-heading h1 {
       margin: 10px 0 9px;
-      font: 600 clamp(32px, 4.3vw, 48px)/1.13 "Playfair Display", Georgia, serif;
+      font: 600 clamp(34px,4.5vw,51px)/1.13 "Playfair Display",Georgia,serif;
       letter-spacing: -.025em;
       overflow-wrap: anywhere;
     }
 
-    .page-heading h1 span {
-      color: var(--accent-bright);
-    }
+    .page-heading h1 span { animation: goldGlow 4s ease-in-out infinite; }
 
     .page-heading p {
-      max-width: 690px;
+      max-width: 700px;
       margin: 0;
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.8;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      margin-top: 9px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .typing-line strong {
+      color: var(--gold-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background: var(--gold-bright);
+      animation: cursorBlink .8s steps(2,start) infinite;
     }
 
     .heading-actions {
@@ -393,50 +445,53 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-columns: 230px minmax(0,1fr);
       align-items: start;
       gap: 19px;
     }
 
     .sidebar,
-    .panel {
+    .panel,
+    .application-card,
+    .quick-card,
+    .info-card {
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      background: linear-gradient(145deg, rgba(16, 41, 71, .95), rgba(5, 13, 26, .94));
-      box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+      background: var(--gold-surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.26);
     }
 
     .sidebar {
       position: sticky;
-      top: 100px;
-      padding: 19px;
+      top: 98px;
+      padding: 18px;
     }
 
     .account-user {
       display: flex;
       align-items: center;
       gap: 11px;
-      padding-bottom: 17px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
 
     .avatar {
       display: grid;
       place-items: center;
-      flex: 0 0 43px;
-      height: 43px;
-      border: 1px solid rgba(139, 188, 255, .35);
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(220,174,76,.45);
       border-radius: 13px;
-      background: linear-gradient(145deg, #173d64, #0b203b);
-      color: var(--accent-bright);
-      font: 600 16px "Playfair Display", Georgia, serif;
+      background: linear-gradient(145deg,#3a2b12,#100c06);
+      color: var(--gold-light);
+      font: 600 16px "Playfair Display",Georgia,serif;
     }
 
     .account-user strong {
       display: block;
       font-size: 11px;
-      overflow-wrap: anywhere;
     }
 
     .account-user small {
@@ -453,18 +508,19 @@
     }
 
     .account-nav a {
-      padding: 10px 11px;
+      padding: 9px 10px;
       border: 1px solid transparent;
       border-radius: 8px;
       color: var(--text-soft);
       font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
     }
 
     .account-nav a:hover,
     .account-nav a.active {
-      border-color: rgba(139, 188, 255, .2);
-      background: rgba(139, 188, 255, .09);
-      color: var(--accent-bright);
+      border-color: rgba(220,174,76,.23);
+      background: rgba(201,154,56,.09);
+      color: var(--gold-light);
     }
 
     .sidebar-note {
@@ -476,336 +532,488 @@
       line-height: 1.8;
     }
 
+    .sidebar-note a {
+      color: var(--gold-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
     .content {
       display: grid;
-      gap: 16px;
+      gap: 18px;
       min-width: 0;
     }
 
     .panel {
-      padding: clamp(17px, 2.5vw, 25px);
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
     }
 
     .panel-heading {
       display: flex;
       align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 20px;
+      gap: 13px;
+      margin-bottom: 18px;
     }
 
-    .panel-heading h2 {
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(201,154,56,.08);
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2,
+    .info-card h2 {
       margin: 0 0 5px;
-      font: 600 21px/1.3 "Playfair Display", Georgia, serif;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
     }
 
-    .panel-heading p {
+    .panel-heading p,
+    .info-card p {
       margin: 0;
       color: var(--muted);
       font-size: 10px;
-      line-height: 1.8;
+      line-height: 1.9;
     }
 
-    .chip {
+    .status {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(201,154,56,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.error {
+      border-color: rgba(255,185,169,.35);
+      color: var(--danger);
+    }
+
+    .status.success {
+      border-color: rgba(184,230,189,.3);
+      color: var(--success);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(150px,.42fr);
+      gap: 11px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 43px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0d0b07;
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .field input::placeholder { color: #82765e; }
+
+    .field select option {
+      background: #100d08;
+      color: var(--text);
+    }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 18px;
+    }
+
+    .filter-pill {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(201,154,56,.025);
+      color: var(--text-soft);
+      font-size: 10px;
+      cursor: pointer;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .filter-pill:hover,
+    .filter-pill[aria-pressed="true"] {
+      border-color: var(--border-bright);
+      background: rgba(201,154,56,.12);
+      color: var(--gold-light);
+    }
+
+    .application-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .application-card {
+      overflow: hidden;
+      transition: border-color .22s,transform .22s,box-shadow .22s;
+    }
+
+    .application-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-bright);
+      box-shadow: 0 22px 50px rgba(0,0,0,.38);
+    }
+
+    .application-cover {
+      position: relative;
+      min-height: 165px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 75% 20%,rgba(247,217,139,.18),transparent 40%),
+        linear-gradient(120deg,#241a0b,#080706);
+    }
+
+    .application-cover::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,rgba(5,4,3,.62),rgba(5,4,3,.06) 80%),
+                  linear-gradient(0deg,rgba(5,4,3,.56),transparent 60%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .application-cover img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: .82;
+      transition: transform .6s,opacity .3s;
+    }
+
+    .application-card:hover .application-cover img {
+      transform: scale(1.035);
+      opacity: .95;
+    }
+
+    .cover-content {
+      position: absolute;
+      z-index: 1;
+      right: 16px;
+      bottom: 15px;
+      left: 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .cover-category {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 6px;
+      color: var(--gold-light);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .cover-content h3 {
+      margin: 0;
+      color: #fff0c8;
+      font: 600 clamp(19px,2.6vw,25px)/1.3 "Playfair Display",Georgia,serif;
+      text-shadow: 0 2px 12px rgba(0,0,0,.6);
+      overflow-wrap: anywhere;
+    }
+
+    .status-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      max-width: 100%;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      background: rgba(139, 188, 255, .07);
-      color: var(--accent-bright);
+      gap: 6px;
+      flex-shrink: 0;
+      padding: 7px 10px;
+      border: 1px solid rgba(247,217,139,.35);
+      border-radius: 999px;
+      background: rgba(9,8,5,.86);
+      color: var(--gold-light);
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: .06em;
       text-align: center;
-      text-transform: uppercase;
-      overflow-wrap: anywhere;
+      backdrop-filter: blur(8px);
     }
 
-    .chip[data-status="completed"] {
-      border-color: rgba(100, 222, 175, .3);
-      background: rgba(100, 222, 175, .06);
-      color: var(--success);
-    }
-
-    .chip[data-status="action-required"],
-    .chip[data-status="pending"],
-    .chip[data-status="under-review"] {
-      border-color: rgba(255, 210, 130, .3);
-      color: var(--warning);
-    }
-
-    .chip[data-status="closed"] {
-      border-color: rgba(255, 133, 151, .3);
-      color: var(--danger);
-    }
-
-    .snapshot {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .stat {
-      min-width: 0;
-      padding: 14px;
-      border: 1px solid rgba(139, 188, 255, .17);
-      border-radius: 11px;
-      background: rgba(5, 13, 26, .45);
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 9px;
-    }
-
-    .stat strong {
-      display: block;
-      margin-top: 6px;
-      color: var(--accent-bright);
-      font: 600 18px/1.4 "Playfair Display", Georgia, serif;
-      overflow-wrap: anywhere;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 11px;
-      margin: 0;
-    }
-
-    .detail-item {
-      min-width: 0;
-      padding: 13px 14px;
-      border: 1px solid rgba(139, 188, 255, .15);
-      border-radius: 10px;
-      background: rgba(5, 13, 26, .3);
-    }
-
-    .detail-item dt {
-      margin-bottom: 5px;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .detail-item dd {
-      margin: 0;
-      color: var(--text);
-      font-size: 12px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .description {
-      margin: 17px 0 0;
-      padding: 14px;
-      border-left: 2px solid var(--accent);
-      border-radius: 0 8px 8px 0;
-      background: rgba(139, 188, 255, .06);
-      color: var(--text-soft);
-      font-size: 11px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .timeline {
-      display: grid;
-      gap: 0;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .timeline li {
-      position: relative;
-      min-width: 0;
-      padding: 0 0 22px 29px;
-      color: var(--text-soft);
-      font-size: 11px;
-      overflow-wrap: anywhere;
-    }
-
-    .timeline li:last-child {
-      padding-bottom: 0;
-    }
-
-    .timeline li::before {
-      position: absolute;
-      top: 5px;
-      left: 3px;
-      width: 10px;
-      height: 10px;
-      border: 2px solid var(--accent);
+    .status-badge::before {
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      background: var(--surface);
+      background: currentColor;
       content: "";
     }
 
-    .timeline li:not(:last-child)::after {
-      position: absolute;
-      top: 17px;
-      bottom: 0;
-      left: 7px;
-      width: 1px;
-      background: var(--border);
-      content: "";
+    .status-badge.status-completed { color: var(--success); }
+    .status-badge.status-pending { color: var(--warning); }
+    .status-badge.status-rejected { color: var(--danger); }
+    .status-badge.status-review { color: var(--gold-bright); }
+
+    .application-body { padding: 17px; }
+
+    .application-meta {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 15px;
     }
 
-    .timeline time {
+    .meta-item { min-width: 0; }
+
+    .meta-item span {
       display: block;
-      margin-top: 4px;
+      margin-bottom: 4px;
       color: var(--muted);
       font-size: 9px;
     }
 
-    .notice {
-      margin: 0;
-      padding: 13px 15px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: rgba(5, 13, 26, .38);
+    .meta-item strong {
+      display: block;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .application-description {
+      margin: 0 0 15px;
       color: var(--muted);
       font-size: 10px;
-      line-height: 1.8;
+      line-height: 1.9;
       overflow-wrap: anywhere;
     }
 
-    .notice.error {
-      border-color: rgba(255, 133, 151, .35);
-      color: var(--danger);
-    }
-
-    .notice.success {
-      border-color: rgba(100, 222, 175, .3);
-      color: var(--success);
-    }
-
-    .notice a {
-      color: var(--accent-bright);
-      font-weight: 700;
-      text-decoration: underline;
-    }
-
-    .loading {
+    .application-footer {
       display: flex;
       align-items: center;
-      gap: 11px;
-      padding: 20px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(5, 13, 26, .4);
-      color: var(--text-soft);
-      font-size: 11px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 13px;
+      border-top: 1px solid rgba(220,174,76,.15);
     }
 
-    .spinner {
-      width: 18px;
-      height: 18px;
-      flex: 0 0 18px;
-      border: 2px solid rgba(139, 188, 255, .22);
-      border-top-color: var(--accent-bright);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
+    .application-id {
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .application-id strong {
+      color: var(--champagne);
+      font-weight: 600;
+    }
+
+    .application-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
     }
 
     .empty-state {
-      padding: 32px 20px;
-      border: 1px dashed rgba(139, 188, 255, .3);
-      border-radius: 13px;
-      background: rgba(5, 13, 26, .25);
+      padding: 35px 18px;
+      border: 1px dashed rgba(220,174,76,.28);
+      border-radius: 14px;
+      background: rgba(201,154,56,.025);
       text-align: center;
     }
 
     .empty-icon {
       display: grid;
       place-items: center;
-      width: 49px;
-      height: 49px;
+      width: 65px;
+      height: 65px;
       margin: 0 auto 13px;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      background: rgba(139, 188, 255, .08);
-      color: var(--accent-bright);
-      font-size: 22px;
+      border-radius: 20px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      font-size: 28px;
     }
 
-    .empty-state h2 {
-      margin: 0 0 8px;
-      font: 600 23px "Playfair Display", Georgia, serif;
+    .empty-state h3 {
+      margin: 0 0 7px;
+      font: 600 22px "Playfair Display",Georgia,serif;
     }
 
     .empty-state p {
-      max-width: 460px;
-      margin: 0 auto 18px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.8;
-    }
-
-    .related-links {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .related-links a {
-      display: block;
-      min-width: 0;
-      padding: 13px;
-      border: 1px solid rgba(139, 188, 255, .17);
-      border-radius: 10px;
-      background: rgba(5, 13, 26, .25);
-      color: var(--accent-bright);
-      font-size: 11px;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-      transition: border-color .2s, background .2s;
-    }
-
-    .related-links a:hover {
-      border-color: var(--accent);
-      background: rgba(139, 188, 255, .07);
-    }
-
-    .related-links small {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 400;
-      line-height: 1.7;
-    }
-
-    .page-note {
-      margin: 22px 0 0;
+      max-width: 450px;
+      margin: 0 auto 17px;
       color: var(--muted);
       font-size: 10px;
       line-height: 1.9;
     }
 
-    /* Footer */
+    .empty-state .empty-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .results-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 17px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .results-footer strong { color: var(--gold-bright); }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .quick-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 170px;
+      padding: 16px;
+      transition: transform .22s,border-color .22s;
+    }
+
+    .quick-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-bright);
+    }
+
+    .quick-icon {
+      display: grid;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(220,174,76,.27);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(201,154,56,.15),rgba(201,154,56,.025));
+      color: var(--gold-bright);
+      font-size: 20px;
+      animation: floatSoft 5s ease-in-out infinite;
+    }
+
+    .quick-card:nth-child(2) .quick-icon { animation-delay: -.8s; }
+    .quick-card:nth-child(3) .quick-icon { animation-delay: -1.6s; }
+
+    .quick-card strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+
+    .quick-card p {
+      flex: 1;
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .quick-card .card-link {
+      margin-top: 12px;
+      color: var(--gold-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .info-card {
+      position: relative;
+      padding: 22px;
+      overflow: hidden;
+    }
+
+    .info-card::before {
+      position: absolute;
+      top: -80px;
+      right: -70px;
+      width: 190px;
+      height: 190px;
+      border: 1px solid rgba(220,174,76,.1);
+      border-radius: 50%;
+      box-shadow: 0 0 0 25px rgba(220,174,76,.018),0 0 0 50px rgba(220,174,76,.012);
+      content: "";
+      pointer-events: none;
+    }
+
+    .info-card h2 { margin-bottom: 8px; }
+
+    .info-links { display: grid; margin-top: 12px; }
+
+    .info-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .info-links a:last-child { border-bottom: 0; }
+    .info-links a span { color: var(--gold-bright); }
+    .info-links a:hover { color: var(--gold-light); }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid rgba(220,174,76,.22);
+      border-radius: 11px;
+      background: rgba(201,154,56,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong { color: var(--gold-bright); }
 
     .site-footer {
-      padding: 43px 0 0;
+      padding: 42px 0 0;
       border-top: 1px solid var(--border);
-      background: #040b15;
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(201,154,56,.07),transparent 38%),
+        #030303;
     }
 
     .footer-grid {
       display: grid;
-      grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
-      gap: 23px;
-      padding-bottom: 28px;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 22px;
+      padding-bottom: 27px;
     }
 
     .footer-brand p {
@@ -819,8 +1027,8 @@
     .footer-grid h2 {
       margin: 0 0 12px;
       padding-bottom: 9px;
-      border-bottom: 1px solid rgba(139, 188, 255, .17);
-      color: var(--accent-bright);
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      color: var(--gold-bright);
       font-size: 9px;
       letter-spacing: .12em;
       text-transform: uppercase;
@@ -831,18 +1039,17 @@
       margin: 8px 0;
       color: var(--muted);
       font-size: 10px;
+      overflow-wrap: anywhere;
     }
 
-    .footer-links a:hover {
-      color: var(--accent-bright);
-    }
+    .footer-links a:hover { color: var(--gold-light); }
 
     .disclaimer {
       margin: 0 0 15px;
       padding: 13px 15px;
-      border-left: 2px solid var(--accent);
+      border-left: 2px solid var(--gold);
       border-radius: 0 8px 8px 0;
-      background: rgba(16, 41, 71, .4);
+      background: rgba(201,154,56,.035);
       color: var(--muted);
       font-size: 10px;
       line-height: 1.9;
@@ -854,15 +1061,18 @@
       flex-wrap: wrap;
       gap: 10px;
       padding: 17px 0;
-      border-top: 1px solid rgba(139, 188, 255, .13);
+      border-top: 1px solid rgba(220,174,76,.13);
       color: var(--muted);
       font-size: 9px;
     }
 
-    @media (max-width: 1100px) {
-      .menu-toggle {
-        display: inline-flex;
-      }
+    .footer-bottom span:last-child {
+      color: var(--champagne);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
 
       .main-nav {
         position: absolute;
@@ -876,13 +1086,14 @@
         max-height: calc(100vh - 90px);
         padding: 15px 22px 20px;
         overflow-y: auto;
-        border-bottom: 1px solid var(--border);
-        background: #071629;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(5,5,4,.99);
+        box-shadow: var(--shadow);
       }
 
-      .main-nav.open {
-        display: flex;
-      }
+      .main-nav.open { display: flex; }
 
       .main-nav > a,
       .nav-trigger {
@@ -899,157 +1110,75 @@
         box-shadow: none;
       }
 
-      .nav-cta {
-        width: 100%;
-      }
-
-      .layout {
-        grid-template-columns: 215px minmax(0, 1fr);
-      }
-
-      .snapshot {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .footer-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .footer-brand {
-        grid-column: 1 / -1;
-      }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
     }
 
-    @media (max-width: 800px) {
-      .container {
-        width: calc(100% - 30px);
-      }
+    @media (max-width:900px) {
+      .quick-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
 
-      .nav-wrap {
-        min-height: 69px;
-      }
+    @media (max-width:800px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
 
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: static;
-      }
-
-      .account-nav {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
+      .account-nav { grid-template-columns: repeat(3,minmax(0,1fr)); }
 
       .page-heading {
         align-items: flex-start;
         flex-direction: column;
       }
 
-      .heading-actions {
-        width: 100%;
-      }
-
-      .heading-actions .btn {
-        flex: 1;
-      }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
     }
 
-    @media (max-width: 560px) {
-      .announcement {
-        gap: 6px;
-        font-size: 8px;
-        letter-spacing: .04em;
-      }
-
-      .page-main {
-        padding: 30px 0 45px;
-      }
-
-      .page-heading h1 {
-        font-size: clamp(31px, 9vw, 42px);
-      }
+    @media (max-width:560px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .page-main { padding: 28px 0 45px; }
+      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+      .typing-line { flex-wrap: wrap; }
 
       .sidebar,
-      .panel {
-        padding: 15px;
-      }
+      .panel,
+      .quick-card,
+      .info-card { padding: 15px; }
 
-      .account-nav {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .snapshot {
-        gap: 8px;
-      }
-
-      .stat {
-        padding: 11px;
-      }
-
-      .stat strong {
-        font-size: 16px;
-      }
-
-      .detail-grid,
-      .related-links {
-        grid-template-columns: 1fr;
-      }
-
-      .panel-heading {
-        align-items: flex-start;
-        flex-direction: column;
-      }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .toolbar { grid-template-columns: 1fr; }
+      .application-meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .cover-content { align-items: flex-start; flex-direction: column; }
+      .application-cover { min-height: 185px; }
+      .application-footer { align-items: flex-start; flex-direction: column; }
+      .application-actions { width: 100%; }
+      .application-actions .btn { flex: 1; }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
 
       .footer-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2,minmax(0,1fr));
         gap: 21px 15px;
       }
 
-      .footer-brand {
-        grid-column: 1 / -1;
-      }
-
-      .footer-bottom {
-        flex-direction: column;
-      }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
     }
 
-    @media (max-width: 360px) {
-      .container {
-        width: calc(100% - 22px);
-      }
-
-      .brand img {
-        width: 37px;
-        height: 37px;
-      }
-
-      .brand strong {
-        font-size: 13px;
-      }
-
-      .brand small {
-        font-size: 7px;
-      }
-
-      .heading-actions {
-        flex-direction: column;
-      }
-
-      .heading-actions .btn {
-        width: 100%;
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .footer-grid,
+      .account-nav,
+      .quick-grid { grid-template-columns: 1fr; }
+      .application-meta { grid-template-columns: 1fr; }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      html {
-        scroll-behavior: auto;
-      }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
 
       *,
       *::before,
@@ -1057,6 +1186,7 @@
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
@@ -1066,31 +1196,24 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <div class="announcement">
-    <span>Your future, your direction</span>
+    <span>Your journey, clearly organised</span>
     <span class="spark" aria-hidden="true">✦</span>
-    <span>Study · Work · Grow -- one connected destination</span>
+    <span>Applications · Documents · Next steps</span>
   </div>
 
   <header class="site-header" id="siteHeader">
     <div class="container nav-wrap">
       <a class="brand" href="/index.html" aria-label="MedOrbits home">
-        <img
-          src="/assets/images/logo/medorbits-logo.png"
-          alt="MedOrbits logo"
-          width="45"
-          height="45">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="44" height="44">
         <span>
           <strong>MEDORBITS</strong>
           <small>Study · Career · Consultancy</small>
         </span>
       </a>
 
-      <button
-        class="menu-toggle"
-        id="menuToggle"
-        type="button"
-        aria-expanded="false"
-        aria-controls="mainNav">
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
         ☰ MENU
       </button>
 
@@ -1135,15 +1258,15 @@
             <a href="/career/internships.html">Internships</a>
             <a href="/career/resume-support.html">Resume support</a>
             <a href="/career/recruitment.html">Recruitment services</a>
-            <a href="/career/employer-services.html">Employer services</a>
           </div>
         </div>
 
         <a href="/pages/about.html">About</a>
         <a href="/pages/contact.html">Contact</a>
-        <a href="/account/settings.html">My Profile</a>
-        <a href="/account/applications.html" aria-current="page">My Applications</a>
-        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+        <a href="/account/index.html">My Account</a>
+        <a href="/account/my-applications.html">My Applications</a>
+        <a href="/account/my-documents.html">My Documents</a>
+        <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
       </nav>
     </div>
   </header>
@@ -1152,31 +1275,36 @@
     <div class="container">
 
       <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a href="/account/dashboard.html">Account</a>
+        <a href="/index.html">Home</a>
         <span aria-hidden="true">›</span>
-        <a href="/account/applications.html">My applications</a>
+        <a href="/account/index.html">My Account</a>
         <span aria-hidden="true">›</span>
-        <span aria-current="page">Application details</span>
+        <span aria-current="page">Application Details</span>
       </nav>
 
       <header class="page-heading">
         <div>
-          <span class="eyebrow">Private account area</span>
-          <h1 id="pageTitle">Application <span>details</span></h1>
+          <span class="eyebrow">Your application centre</span>
+          <h1>Application <span class="gold-text">details.</span></h1>
           <p>
-            Review the information associated with your application,
-            check its latest recorded status and find the appropriate
-            next step.
+            Keep track of your education and career applications, review
+            available status updates, and find the next step for each record
+            through your MedOrbits account.
           </p>
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Every step, in one place.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
         </div>
 
         <div class="heading-actions">
-          <a class="btn btn-outline" href="/account/applications.html">
-            ← All applications
+          <a class="btn btn-outline" href="/account/my-applications.html">
+            ▤ All applications
           </a>
-          <button class="btn" id="refreshButton" type="button" disabled>
-            ↻ Refresh
-          </button>
+          <a class="btn" href="/pages/contact.html">
+            Get support ↗
+          </a>
         </div>
       </header>
 
@@ -1184,169 +1312,188 @@
 
         <aside class="sidebar" aria-label="Account navigation">
           <div class="account-user">
-            <div class="avatar" id="accountAvatar" aria-hidden="true">MO</div>
+            <div class="avatar" aria-hidden="true">MO</div>
             <div>
-              <strong id="accountName">Your account</strong>
-              <small id="accountEmail">Private application area</small>
+              <strong>My account</strong>
+              <small id="accountEmail">Application workspace</small>
             </div>
           </div>
 
           <nav class="account-nav" aria-label="Account menu">
-            <a href="/account/dashboard.html">▦ &nbsp; Dashboard</a>
-            <a href="/account/settings.html">◈ &nbsp; Personal profile</a>
-            <a class="active" href="/account/applications.html" aria-current="page">
-              ▤ &nbsp; My applications
-            </a>
-            <a href="/account/documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/index.html">▦ &nbsp; Account home</a>
+            <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
+            <a href="/account/profile.html">◈ &nbsp; Profile</a>
+            <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
+            <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
+            <a class="active" href="/account/application-details.html" aria-current="page">▧ &nbsp; Application details</a>
+            <a href="/account/my-documents.html">📁 &nbsp; My documents</a>
+            <a href="/account/messages.html">✉ &nbsp; Messages</a>
             <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
-            <a href="/account/settings.html">⚙ &nbsp; Account settings</a>
+            <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
+            <a href="/account/receipts.html">▤ &nbsp; Receipts</a>
+            <a href="/account/saved-colleges.html">☆ &nbsp; Saved colleges</a>
+            <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
+            <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
+            <a href="/account/sessions.html">⌘ &nbsp; Active sessions</a>
+            <a href="/account/security-settings.html">⚙ &nbsp; Security settings</a>
+            <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
           </nav>
 
           <p class="sidebar-note">
-            Application information is private. Sign-in, record ownership
-            and access permissions must be enforced by the server.
+            Need help with a submitted application?
+            <br><a href="/pages/contact.html">Contact support ↗</a>
           </p>
         </aside>
 
         <div class="content">
 
-          <div id="loadingState" class="loading" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
-            <span>Loading your application details…</span>
-          </div>
+          <section class="panel" aria-labelledby="applicationsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="applicationsTitle">Your applications</h2>
+                <p>
+                  Search your records or filter by status. Application details
+                  appear here only when returned by the connected account API.
+                </p>
+              </div>
+            </div>
 
-          <p id="pageMessage" class="notice" role="status" aria-live="polite" hidden></p>
+            <div id="applicationStatus" class="status" role="status" aria-live="polite">
+              Loading application records…
+            </div>
 
-          <section id="emptyState" class="empty-state" hidden aria-labelledby="emptyTitle">
-            <div class="empty-icon" aria-hidden="true">▤</div>
-            <h2 id="emptyTitle">Application details unavailable</h2>
-            <p id="emptyMessage">
-              We could not retrieve this application. Please try again.
-            </p>
-            <div class="heading-actions" style="justify-content:center">
-              <button class="btn" id="retryButton" type="button">Try again</button>
-              <a class="btn btn-outline" href="/account/applications.html">
-                View applications
+            <div class="toolbar">
+              <div class="field">
+                <label for="applicationSearch">Search applications</label>
+                <input id="applicationSearch" type="search"
+                       placeholder="Search course, institution or reference ID…"
+                       autocomplete="off">
+              </div>
+
+              <div class="field">
+                <label for="statusSelect">Application status</label>
+                <select id="statusSelect">
+                  <option value="all">All statuses</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="pending">Pending</option>
+                  <option value="under_review">Under review</option>
+                  <option value="action_required">Action required</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="completed">Completed</option>
+                  <option value="withdrawn">Withdrawn</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-pills" role="group" aria-label="Quick status filters">
+              <button class="filter-pill" type="button" data-filter="all" aria-pressed="true">All applications</button>
+              <button class="filter-pill" type="button" data-filter="pending" aria-pressed="false">Pending</button>
+              <button class="filter-pill" type="button" data-filter="under_review" aria-pressed="false">Under review</button>
+              <button class="filter-pill" type="button" data-filter="action_required" aria-pressed="false">Action required</button>
+              <button class="filter-pill" type="button" data-filter="accepted" aria-pressed="false">Accepted</button>
+            </div>
+
+            <div id="applicationList" class="application-list" aria-live="polite"></div>
+
+            <div id="emptyState" class="empty-state" hidden>
+              <div class="empty-icon" aria-hidden="true">📂</div>
+              <h3 id="emptyTitle">No applications found</h3>
+              <p id="emptyMessage">
+                No application records match your current search. Try another
+                search term or change the status filter.
+              </p>
+              <div class="empty-actions">
+                <button class="btn btn-outline" id="clearFilters" type="button">
+                  Clear filters
+                </button>
+                <a class="btn" href="/pages/apply.html">Explore guidance ↗</a>
+              </div>
+            </div>
+
+            <div class="results-footer">
+              <span id="resultCount">Showing <strong>0</strong> applications</span>
+              <button class="btn btn-outline btn-small" id="refreshApplications" type="button">
+                ↻ Refresh records
+              </button>
+            </div>
+          </section>
+
+          <section aria-labelledby="nextStepsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="nextStepsTitle">Application support</h2>
+                <p>Quick access to the resources commonly needed during an application.</p>
+              </div>
+            </div>
+
+            <div class="quick-grid">
+              <a class="quick-card" href="/account/my-documents.html">
+                <span class="quick-icon" aria-hidden="true">📁</span>
+                <strong>Application documents</strong>
+                <p>Access your document area to review available uploads and document records.</p>
+                <span class="card-link">Open documents →</span>
+              </a>
+
+              <a class="quick-card" href="/account/messages.html">
+                <span class="quick-icon" aria-hidden="true">💬</span>
+                <strong>Messages and updates</strong>
+                <p>Check account messages for any available communication about your requests.</p>
+                <span class="card-link">Open messages →</span>
+              </a>
+
+              <a class="quick-card" href="/pages/contact.html">
+                <span class="quick-icon" aria-hidden="true">🤝</span>
+                <strong>Get assistance</strong>
+                <p>Contact the MedOrbits team if you need help understanding an application record.</p>
+                <span class="card-link">Contact support →</span>
               </a>
             </div>
           </section>
 
-          <div id="applicationContent" hidden>
+          <section class="info-card" aria-labelledby="exploreTitle">
+            <h2 id="exploreTitle">Your next step starts <span class="gold-text">here.</span></h2>
+            <p>
+              Explore education and career resources to help prepare for your
+              next application. Confirm eligibility, deadlines and requirements
+              with the relevant institution or official authority.
+            </p>
 
-            <section class="snapshot" aria-label="Application overview">
-              <div class="stat">
-                <span>Current status</span>
-                <strong id="summaryStatus">--</strong>
-              </div>
-              <div class="stat">
-                <span>Reference number</span>
-                <strong id="summaryReference">--</strong>
-              </div>
-              <div class="stat">
-                <span>Submitted</span>
-                <strong id="summarySubmitted">--</strong>
-              </div>
-              <div class="stat">
-                <span>Last updated</span>
-                <strong id="summaryUpdated">--</strong>
-              </div>
-            </section>
+            <div class="info-links">
+              <a href="/education/courses.html">🎓 &nbsp; Browse courses <span>↗</span></a>
+              <a href="/education/colleges.html">🏛️ &nbsp; Explore colleges <span>↗</span></a>
+              <a href="/education/universities.html">🌐 &nbsp; Explore universities <span>↗</span></a>
+              <a href="/education/admissions/exams.html">📝 &nbsp; Research entrance exams <span>↗</span></a>
+              <a href="/education/resources/fees.html">💳 &nbsp; Review fees and funding <span>↗</span></a>
+              <a href="/education/resources/scholarships.html">🏅 &nbsp; Explore scholarships <span>↗</span></a>
+              <a href="/career/jobs.html">💼 &nbsp; Explore career opportunities <span>↗</span></a>
+            </div>
+          </section>
 
-            <section class="panel" aria-labelledby="applicationSummaryTitle">
-              <div class="panel-heading">
-                <div>
-                  <h2 id="applicationSummaryTitle">Application summary</h2>
-                  <p>Details returned by your authenticated application service.</p>
-                </div>
-                <span class="chip" id="statusBadge" data-status="pending">Pending</span>
-              </div>
-
-              <dl class="detail-grid" id="detailGrid"></dl>
-
-              <p class="description" id="applicationDescription" hidden></p>
-            </section>
-
-            <section class="panel" aria-labelledby="timelineTitle">
-              <div class="panel-heading">
-                <div>
-                  <h2 id="timelineTitle">Status history</h2>
-                  <p>Recorded application updates, where available.</p>
-                </div>
-              </div>
-
-              <ol class="timeline" id="statusTimeline"></ol>
-
-              <p class="notice" id="timelineNotice" hidden>
-                No additional status history was returned for this application.
-              </p>
-            </section>
-
-            <section class="panel" aria-labelledby="nextStepsTitle">
-              <div class="panel-heading">
-                <div>
-                  <h2 id="nextStepsTitle">Your next steps</h2>
-                  <p>Choose the relevant account resource for your application.</p>
-                </div>
-              </div>
-
-              <div class="related-links">
-                <a href="/account/documents.html">
-                  My documents
-                  <small>Review the documents associated with your application.</small>
-                </a>
-                <a href="/account/notifications.html">
-                  Notifications
-                  <small>Check application-related messages and updates.</small>
-                </a>
-                <a href="/account/payments.html">
-                  Payments
-                  <small>Review payment information and receipts, if supported.</small>
-                </a>
-                <a href="/account/support.html">
-                  Application support
-                  <small>Ask for assistance with your application.</small>
-                </a>
-                <a href="/education/admissions/index.html">
-                  Admission guidance
-                  <small>Explore eligibility and admission processes.</small>
-                </a>
-                <a href="/pages/contact.html">
-                  Contact MedOrbits
-                  <small>Find the available support and enquiry channels.</small>
-                </a>
-              </div>
-            </section>
+          <div class="notice">
+            <strong>Application and privacy notice:</strong>
+            Displayed statuses and dates must come from the authenticated
+            application service. A status shown by MedOrbits does not replace
+            an official decision or communication from an institution.
+            Access to application records and documents must be enforced
+            server-side for the currently authenticated user.
           </div>
 
         </div>
       </div>
-
-      <p class="page-note">
-        <strong>Important note:</strong> Application status and history on
-        this page reflect information returned by the configured service.
-        MedOrbits does not guarantee admission, selection, a scholarship,
-        employment, placement or any other particular outcome. Official
-        institutions, regulators and employers retain authority over their
-        respective decisions. Verify current requirements directly with
-        the relevant official source.
-      </p>
-
     </div>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-
       <div class="footer-grid">
 
         <div class="footer-brand">
           <a class="brand" href="/index.html" aria-label="MedOrbits home">
-            <img
-              src="/assets/images/logo/medorbits-logo.png"
-              alt="MedOrbits logo"
-              width="45"
-              height="45"
-              loading="lazy">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="44" height="44" loading="lazy">
             <span>
               <strong>MEDORBITS</strong>
               <small>Study · Career · Consultancy</small>
@@ -1400,12 +1547,11 @@
       </div>
 
       <p class="disclaimer">
-        Information on this website is provided for general guidance and
-        does not replace official advice from institutions, regulators or
-        licensing authorities. Admission, recognition, eligibility, fees,
-        employment and outcomes are not guaranteed. Verify current
-        requirements directly with the relevant official source before
-        making decisions.
+        MedOrbits provides education and career information and consultancy
+        services. Course information, admission rules, fees, eligibility and
+        deadlines can change. Confirm material details with the relevant
+        institution and official authority. Application tracking does not
+        guarantee admission, employment or a particular outcome.
       </p>
 
       <div class="footer-bottom">
@@ -1419,31 +1565,139 @@
     (() => {
       "use strict";
 
+      /*
+       * Application Details API contract
+       *
+       * GET /api/account/applications
+       *
+       * Accepted response shapes:
+       * { "applications": [...] }
+       * { "data": { "applications": [...] } }
+       * [...]
+       *
+       * Recommended application fields:
+       * {
+       *   "id": "app_123",
+       *   "reference": "MO-APP-123",
+       *   "title": "MBBS Admission Guidance",
+       *   "institution": "Institution name",
+       *   "category": "education",
+       *   "status": "under_review",
+       *   "submittedAt": "2026-10-20T10:00:00Z",
+       *   "updatedAt": "2026-10-22T10:00:00Z",
+       *   "description": "Application description",
+       *   "detailsUrl": "/account/application-details.html?id=app_123"
+       * }
+       *
+       * Configure an alternate endpoint through:
+       * window.MEDORBITS_CONFIG.applicationsEndpoint
+       *
+       * The API must authenticate the current user and return only records
+       * that user is authorized to access. Never authorize using a client
+       * supplied user ID. Validate detail URLs server-side before serving
+       * application data or documents.
+       */
+
+      const endpoint =
+        window.MEDORBITS_CONFIG?.applicationsEndpoint ||
+        "/api/account/applications";
+
       const $ = id => document.getElementById(id);
 
       const header = $("siteHeader");
       const menuToggle = $("menuToggle");
-      const nav = $("mainNav");
+      const mainNav = $("mainNav");
       const navGroups = [...document.querySelectorAll(".nav-group")];
 
-      const loadingState = $("loadingState");
-      const pageMessage = $("pageMessage");
+      const statusBox = $("applicationStatus");
+      const applicationList = $("applicationList");
       const emptyState = $("emptyState");
-      const applicationContent = $("applicationContent");
-      const refreshButton = $("refreshButton");
-      const retryButton = $("retryButton");
+      const searchInput = $("applicationSearch");
+      const statusSelect = $("statusSelect");
+      const refreshButton = $("refreshApplications");
 
-      let activeRequest = null;
-      let currentApplicationId = "";
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
 
       $("currentYear").textContent = String(new Date().getFullYear());
 
-      /* ---------------------------------------------------------
-         Navigation
-      --------------------------------------------------------- */
+      let applications = [];
+      let activeFilter = "all";
+      let isLoading = false;
 
+      /* Typing headline animation */
+      const typingText = $("typingText");
+      const phrases = [
+        "Every step, in one place.",
+        "Track your application journey.",
+        "Stay organised and prepared.",
+        "Move forward with confidence."
+      ];
+
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
+
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        const phrase = phrases[phraseIndex];
+
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1600);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 48);
+          return;
+        }
+
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
+
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 280);
+          return;
+        }
+
+        typingTimer = window.setTimeout(typeNextCharacter, 24);
+      }
+
+      if (reducedMotion.matches) {
+        typingText.textContent = phrases[0];
+      } else {
+        typingTimer = window.setTimeout(typeNextCharacter, 1400);
+      }
+
+      reducedMotion.addEventListener?.("change", event => {
+        window.clearTimeout(typingTimer);
+
+        if (event.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        phraseIndex = 0;
+        characterIndex = 0;
+        deleting = false;
+        typeNextCharacter();
+      });
+
+      /* Responsive navigation */
       function closeNavigation() {
-        nav.classList.remove("open");
+        mainNav.classList.remove("open");
         menuToggle.setAttribute("aria-expanded", "false");
         menuToggle.textContent = "☰ MENU";
 
@@ -1455,18 +1709,12 @@
       }
 
       menuToggle.addEventListener("click", () => {
-        const isOpen = nav.classList.toggle("open");
+        const isOpen = mainNav.classList.toggle("open");
 
         menuToggle.setAttribute("aria-expanded", String(isOpen));
         menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
 
-        if (!isOpen) {
-          navGroups.forEach(group => {
-            group.classList.remove("open");
-            group.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
-          });
-        }
+        if (!isOpen) closeNavigation();
       });
 
       navGroups.forEach(group => {
@@ -1490,7 +1738,7 @@
         });
       });
 
-      nav.querySelectorAll("a").forEach(link => {
+      mainNav.querySelectorAll("a").forEach(link => {
         link.addEventListener("click", closeNavigation);
       });
 
@@ -1506,7 +1754,7 @@
         }
 
         if (
-          nav.classList.contains("open") &&
+          mainNav.classList.contains("open") &&
           !event.target.closest("#mainNav") &&
           !event.target.closest("#menuToggle")
         ) {
@@ -1515,10 +1763,7 @@
       });
 
       document.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-          closeNavigation();
-          menuToggle.focus();
-        }
+        if (event.key === "Escape") closeNavigation();
       });
 
       window.addEventListener("scroll", () => {
@@ -1530,540 +1775,480 @@
           if (event.matches) closeNavigation();
         });
 
-      /* ---------------------------------------------------------
-         Safe rendering helpers
-      --------------------------------------------------------- */
+      /* Status labels and display helpers */
+      const statusLabels = {
+        submitted: "Submitted",
+        pending: "Pending",
+        under_review: "Under review",
+        action_required: "Action required",
+        accepted: "Accepted",
+        rejected: "Rejected",
+        completed: "Completed",
+        withdrawn: "Withdrawn"
+      };
 
-      const hasValue = value =>
-        value !== undefined &&
-        value !== null &&
-        value !== "";
+      const statusClasses = {
+        submitted: "status-review",
+        pending: "status-pending",
+        under_review: "status-review",
+        action_required: "status-pending",
+        accepted: "status-completed",
+        rejected: "status-rejected",
+        completed: "status-completed",
+        withdrawn: "status-rejected"
+      };
 
-      function pick(object, keys) {
-        for (const key of keys) {
-          if (hasValue(object?.[key])) return object[key];
-        }
-
-        return "";
-      }
+      const categoryImages = {
+        education:
+          "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=80",
+        medical:
+          "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1400&q=80",
+        career:
+          "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80",
+        documents:
+          "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1400&q=80",
+        default:
+          "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80"
+      };
 
       function normaliseStatus(value) {
         const status = String(value || "pending")
           .trim()
           .toLowerCase()
-          .replace(/[_\s]+/g, "-");
+          .replace(/[\s-]+/g, "_");
 
-        if ([
-          "approved",
-          "completed",
-          "successful",
-          "success"
-        ].includes(status)) {
-          return "completed";
-        }
-
-        if ([
-          "action-required",
-          "needs-action",
-          "documents-required",
-          "awaiting-user",
-          "information-required",
-          "additional-information-required"
-        ].includes(status)) {
-          return "action-required";
-        }
-
-        if ([
-          "under-review",
-          "in-review",
-          "reviewing",
-          "processing"
-        ].includes(status)) {
-          return "under-review";
-        }
-
-        if ([
-          "rejected",
-          "declined",
-          "cancelled",
-          "canceled",
-          "closed"
-        ].includes(status)) {
-          return "closed";
-        }
-
-        if ([
-          "submitted",
-          "received",
-          "pending",
-          "awaiting-review"
-        ].includes(status)) {
-          return "pending";
-        }
-
-        // Preserve unknown statuses rather than incorrectly labelling
-        // an unfamiliar backend status as approved or completed.
-        return "unknown";
+        return Object.hasOwn(statusLabels, status) ? status : "pending";
       }
 
-      const statusLabels = {
-        "completed": "Completed",
-        "action-required": "Action required",
-        "under-review": "Under review",
-        "closed": "Closed",
-        "pending": "Pending",
-        "unknown": "Status update"
-      };
+      function normaliseCategory(value) {
+        const category = String(value || "education").toLowerCase();
 
-      function statusLabel(value) {
-        const normalised = normaliseStatus(value);
-        return statusLabels[normalised] || "Status update";
+        if (/medical|mbbs|health|clinical|medicine/.test(category)) {
+          return "medical";
+        }
+
+        if (/career|job|employment|internship|recruit/.test(category)) {
+          return "career";
+        }
+
+        if (/document|verification|certificate/.test(category)) {
+          return "documents";
+        }
+
+        return "education";
+      }
+
+      function safeText(value, fallback = "Not provided") {
+        if (typeof value !== "string" && typeof value !== "number") {
+          return fallback;
+        }
+
+        const result = String(value).trim();
+        return result || fallback;
       }
 
       function formatDate(value) {
-        if (!hasValue(value)) return "Not provided";
+        if (!value) return "Not available";
 
         const date = new Date(value);
 
         if (Number.isNaN(date.getTime())) {
-          return "Not provided";
+          return "Not available";
         }
 
         return new Intl.DateTimeFormat(undefined, {
-          day: "numeric",
+          year: "numeric",
           month: "short",
-          year: "numeric"
+          day: "numeric"
         }).format(date);
       }
 
-      function formatValue(value) {
-        if (!hasValue(value)) return "";
-
-        if (typeof value === "object") {
-          return "";
-        }
-
-        return String(value);
+      function showStatus(message, type = "") {
+        statusBox.textContent = message;
+        statusBox.className = "status" + (type ? ` ${type}` : "");
+        statusBox.hidden = false;
       }
 
-      function showMessage(message, type = "") {
-        pageMessage.textContent = message;
-        pageMessage.className = "notice" + (type ? " " + type : "");
-        pageMessage.hidden = !message;
+      function createElement(tag, className, text) {
+        const element = document.createElement(tag);
+
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+
+        return element;
       }
 
-      function showEmpty(title, message) {
-        loadingState.hidden = true;
-        applicationContent.hidden = true;
-        emptyState.hidden = false;
+      /*
+       * Only same-origin relative detail links are accepted.
+       * The server must still authorise the requested application.
+       */
+      function safeDetailUrl(value, applicationId) {
+        const fallback = "/account/my-applications.html";
 
-        $("emptyTitle").textContent = title;
-        $("emptyMessage").textContent = message;
-        refreshButton.disabled = false;
-      }
-
-      function showLoading() {
-        emptyState.hidden = true;
-        applicationContent.hidden = true;
-        loadingState.hidden = false;
-        loadingState.querySelector("span:last-child").textContent =
-          "Loading your application details…";
-        showMessage("");
-        refreshButton.disabled = true;
-      }
-
-      function addDetail(label, value) {
-        const displayValue = formatValue(value);
-
-        if (!displayValue) return;
-
-        const item = document.createElement("div");
-        item.className = "detail-item";
-
-        const term = document.createElement("dt");
-        term.textContent = label;
-
-        const description = document.createElement("dd");
-        description.textContent = displayValue;
-
-        item.append(term, description);
-        $("detailGrid").append(item);
-      }
-
-      function addTimelineEntry(title, dateValue) {
-        const item = document.createElement("li");
-        item.append(document.createTextNode(title));
-
-        if (hasValue(dateValue)) {
-          const time = document.createElement("time");
-          time.textContent = formatDate(dateValue);
-          item.append(time);
+        if (typeof value !== "string" || !value.trim()) {
+          return fallback;
         }
-
-        $("statusTimeline").append(item);
-      }
-
-      /* ---------------------------------------------------------
-         Application rendering
-      --------------------------------------------------------- */
-
-      function renderApplication(item) {
-        if (!item || typeof item !== "object" || Array.isArray(item)) {
-          throw new Error("Invalid application response.");
-        }
-
-        const title = pick(item, [
-          "title",
-          "course",
-          "program",
-          "programme",
-          "role",
-          "institution",
-          "college",
-          "company"
-        ]) || "Application details";
-
-        const status = normaliseStatus(item.status);
-        const label = statusLabels[status] || "Status update";
-
-        $("pageTitle").textContent = title;
-        document.title = title + " | Application Details | MedOrbits";
-
-        const reference = pick(item, [
-          "reference",
-          "referenceNumber",
-          "applicationReference",
-          "applicationId",
-          "id"
-        ]);
-
-        const submitted = pick(item, [
-          "submittedAt",
-          "submitted_at",
-          "createdAt",
-          "created_at",
-          "submissionDate"
-        ]);
-
-        const updated = pick(item, [
-          "updatedAt",
-          "updated_at",
-          "modifiedAt",
-          "modified_at",
-          "lastUpdated"
-        ]);
-
-        $("summaryStatus").textContent = label;
-        $("summaryReference").textContent = formatValue(reference) || "Not assigned";
-        $("summarySubmitted").textContent = formatDate(submitted);
-        $("summaryUpdated").textContent = formatDate(updated);
-
-        const badge = $("statusBadge");
-        badge.textContent = label;
-        badge.dataset.status = status;
-
-        const grid = $("detailGrid");
-        grid.replaceChildren();
-
-        addDetail("Application type", pick(item, [
-          "type",
-          "category",
-          "applicationType"
-        ]));
-
-        addDetail("Course / programme", pick(item, [
-          "course",
-          "program",
-          "programme"
-        ]));
-
-        addDetail("Institution / organisation", pick(item, [
-          "institution",
-          "college",
-          "university",
-          "company"
-        ]));
-
-        addDetail("Destination", pick(item, [
-          "destination",
-          "country"
-        ]));
-
-        addDetail("Intake / academic year", pick(item, [
-          "intake",
-          "session",
-          "academicYear",
-          "year"
-        ]));
-
-        addDetail("Application category", pick(item, [
-          "applicationCategory",
-          "quota",
-          "categoryName"
-        ]));
-
-        addDetail("Assigned counsellor", pick(item, [
-          "counsellor",
-          "counselor",
-          "assignedTo"
-        ]));
-
-        addDetail("Preferred location", pick(item, [
-          "preferredLocation",
-          "location"
-        ]));
-
-        addDetail("Next action date", formatValue(pick(item, [
-          "nextActionDate",
-          "followUpDate"
-        ])) ? formatDate(pick(item, [
-          "nextActionDate",
-          "followUpDate"
-        ])) : "");
-
-        const notes = pick(item, [
-          "description",
-          "message",
-          "notes"
-        ]);
-
-        const description = $("applicationDescription");
-
-        if (typeof notes === "string" && notes.trim()) {
-          description.textContent = notes;
-          description.hidden = false;
-        } else {
-          description.textContent = "";
-          description.hidden = true;
-        }
-
-        const timeline = $("statusTimeline");
-        timeline.replaceChildren();
-
-        const history = Array.isArray(item.history)
-          ? item.history
-          : Array.isArray(item.timeline)
-            ? item.timeline
-            : Array.isArray(item.statusHistory)
-              ? item.statusHistory
-              : [];
-
-        if (history.length) {
-          history.forEach(entry => {
-            if (!entry || typeof entry !== "object") return;
-
-            const entryTitle = pick(entry, [
-              "label",
-              "title",
-              "description",
-              "message",
-              "status"
-            ]);
-
-            if (!entryTitle) return;
-
-            addTimelineEntry(
-              statusLabel(entryTitle) === "Status update"
-                ? String(entryTitle)
-                : statusLabel(entryTitle),
-              pick(entry, [
-                "date",
-                "createdAt",
-                "created_at",
-                "at",
-                "timestamp"
-              ])
-            );
-          });
-        } else {
-          addTimelineEntry(
-            statusLabel(item.status),
-            updated || submitted
-          );
-        }
-
-        $("timelineNotice").hidden = timeline.children.length > 0;
-
-        loadingState.hidden = true;
-        emptyState.hidden = true;
-        applicationContent.hidden = false;
-        refreshButton.disabled = false;
-
-        showMessage("");
-      }
-
-      /* ---------------------------------------------------------
-         Authenticated API request
-      --------------------------------------------------------- */
-
-      async function loadApplication() {
-        if (!currentApplicationId) {
-          showEmpty(
-            "Application reference missing",
-            "Open this page using the View details link from your applications list. The required application reference was not provided."
-          );
-          return;
-        }
-
-        if (activeRequest) {
-          activeRequest.abort();
-        }
-
-        activeRequest = new AbortController();
-
-        const signal = activeRequest.signal;
-
-        showLoading();
 
         try {
-          /*
-           * Expected route:
-           * GET /api/applications/:id
-           *
-           * The server must authenticate the current user and verify
-           * ownership of this application before returning its data.
-           *
-           * If your backend uses a different route or response
-           * structure, update this request to match the real API.
-           */
-          const response = await fetch(
-            "/api/applications/" + encodeURIComponent(currentApplicationId),
-            {
-              method: "GET",
-              credentials: "same-origin",
-              cache: "no-store",
-              headers: {
-                "Accept": "application/json"
-              },
-              signal
-            }
+          const url = new URL(value, window.location.origin);
+
+          if (url.origin !== window.location.origin) {
+            return fallback;
+          }
+
+          if (!/^\/account\/[a-zA-Z0-9/_-]+\.html$/.test(url.pathname)) {
+            return fallback;
+          }
+
+          if (applicationId && !url.searchParams.has("id")) {
+            url.searchParams.set("id", String(applicationId));
+          }
+
+          return url.pathname + url.search + url.hash;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function createMetaItem(label, value) {
+        const wrapper = createElement("div", "meta-item");
+        wrapper.append(
+          createElement("span", "", label),
+          createElement("strong", "", value)
+        );
+        return wrapper;
+      }
+
+      function createApplicationCard(application) {
+        const card = createElement("article", "application-card");
+
+        const title = safeText(
+          application.title || application.courseName || application.name,
+          "Application"
+        );
+
+        const institution = safeText(
+          application.institution || application.college || application.organisation,
+          "Institution not specified"
+        );
+
+        const reference = safeText(
+          application.reference || application.referenceId || application.applicationNumber,
+          "Not provided"
+        );
+
+        const status = normaliseStatus(application.status);
+        const category = normaliseCategory(
+          application.category || application.type || title
+        );
+
+        const cover = createElement("div", "application-cover");
+        const image = document.createElement("img");
+
+        image.src = categoryImages[category] || categoryImages.default;
+        image.alt = category === "medical"
+          ? "Healthcare and medical education"
+          : category === "career"
+            ? "Professionals working together"
+            : category === "documents"
+              ? "Application paperwork and documents"
+              : "Students celebrating their education";
+        image.loading = "lazy";
+        image.decoding = "async";
+
+        image.addEventListener("error", () => {
+          image.remove();
+        }, { once: true });
+
+        const coverContent = createElement("div", "cover-content");
+        const titleBlock = document.createElement("div");
+
+        titleBlock.append(
+          createElement("span", "cover-category",
+            category === "medical" ? "✚ Medical education"
+              : category === "career" ? "◆ Career application"
+                : category === "documents" ? "▤ Document request"
+                  : "✦ Education application"),
+          createElement("h3", "", title)
+        );
+
+        const badge = createElement(
+          "span",
+          `status-badge ${statusClasses[status] || ""}`,
+          statusLabels[status] || "Pending"
+        );
+
+        coverContent.append(titleBlock, badge);
+        cover.append(image, coverContent);
+
+        const body = createElement("div", "application-body");
+
+        const meta = createElement("div", "application-meta");
+        meta.append(
+          createMetaItem("Institution / organisation", institution),
+          createMetaItem("Submitted", formatDate(
+            application.submittedAt || application.createdAt
+          )),
+          createMetaItem("Last updated", formatDate(
+            application.updatedAt || application.modifiedAt
+          ))
+        );
+
+        const description = createElement(
+          "p",
+          "application-description",
+          safeText(
+            application.description || application.summary,
+            "Open the application record to review any details supplied by the application service."
+          )
+        );
+
+        const footer = createElement("div", "application-footer");
+        const idLine = createElement("span", "application-id");
+        idLine.append(
+          document.createTextNode("Reference: "),
+          createElement("strong", "", reference)
+        );
+
+        const actions = createElement("div", "application-actions");
+        const detailLink = createElement("a", "btn btn-small", "View details ↗");
+
+        detailLink.href = safeDetailUrl(
+          application.detailsUrl || application.url,
+          application.id
+        );
+
+        const documentsLink = createElement(
+          "a",
+          "btn btn-outline btn-small",
+          "Documents"
+        );
+        documentsLink.href = "/account/my-documents.html";
+
+        actions.append(detailLink, documentsLink);
+        footer.append(idLine, actions);
+        body.append(meta, description, footer);
+        card.append(cover, body);
+
+        return card;
+      }
+
+      function getFilteredApplications() {
+        const query = searchInput.value.trim().toLowerCase();
+        const selectedStatus = statusSelect.value;
+
+        return applications.filter(application => {
+          const status = normaliseStatus(application.status);
+
+          const matchesStatus =
+            (activeFilter === "all" || status === activeFilter) &&
+            (selectedStatus === "all" || status === selectedStatus);
+
+          const searchableText = [
+            application.title,
+            application.courseName,
+            application.name,
+            application.institution,
+            application.college,
+            application.organisation,
+            application.reference,
+            application.referenceId,
+            application.applicationNumber,
+            application.description,
+            application.status,
+            application.category
+          ].filter(Boolean).join(" ").toLowerCase();
+
+          return matchesStatus && searchableText.includes(query);
+        });
+      }
+
+      function renderApplications() {
+        const filtered = getFilteredApplications();
+        const fragment = document.createDocumentFragment();
+
+        filtered.forEach(application => {
+          fragment.append(createApplicationCard(application));
+        });
+
+        applicationList.replaceChildren(fragment);
+
+        const hasResults = filtered.length > 0;
+        emptyState.hidden = hasResults;
+        applicationList.hidden = !hasResults;
+
+        if (!hasResults) {
+          const isSearchActive =
+            Boolean(searchInput.value.trim()) ||
+            activeFilter !== "all" ||
+            statusSelect.value !== "all";
+
+          $("emptyTitle").textContent = isSearchActive
+            ? "No matching applications"
+            : "No applications available";
+
+          $("emptyMessage").textContent = isSearchActive
+            ? "Try another search term or clear the filters to view your available application records."
+            : "No application records were returned for this account. If you recently submitted a request, sign in and refresh later or contact support.";
+
+          $("resultCount").textContent = "Showing 0 applications";
+        } else {
+          $("resultCount").textContent =
+            `Showing ${filtered.length} of ${applications.length} applications`;
+        }
+
+        document.querySelectorAll("[data-filter]").forEach(button => {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.filter === activeFilter)
           );
+        });
+      }
 
-          if (response.status === 401 || response.status === 403) {
-            showEmpty(
-              "Sign in to view this application",
-              "Your application details are private. Sign in to your account and open the application from your applications list."
-            );
+      function extractApplications(data) {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.applications)) return data.applications;
+        if (Array.isArray(data?.data?.applications)) return data.data.applications;
+        if (Array.isArray(data?.data)) return data.data;
+        return null;
+      }
 
-            const signInLink = document.createElement("a");
-            signInLink.href = "/account/login.html";
-            signInLink.className = "btn";
-            signInLink.textContent = "Sign in";
-            $("emptyState").querySelector(".heading-actions").prepend(signInLink);
-            return;
-          }
+      async function readJson(response) {
+        const contentType = response.headers.get("content-type") || "";
 
-          if (response.status === 404) {
-            showEmpty(
-              "Application not found",
-              "We could not find this application for your account. Check the reference in your applications list or contact support."
-            );
-            return;
-          }
+        if (!contentType.includes("application/json")) return {};
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      async function loadApplications() {
+        if (isLoading) return;
+
+        isLoading = true;
+        refreshButton.disabled = true;
+        refreshButton.textContent = "Loading…";
+
+        showStatus("Loading your application records…");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { "Accept": "application/json" }
+          });
+
+          const data = await readJson(response);
 
           if (!response.ok) {
-            if (response.status === 429) {
-              throw new Error("rate-limited");
+            if (response.status === 401) {
+              throw new Error("Sign in to view your application records.");
             }
 
-            throw new Error("service-unavailable");
+            if (response.status === 403) {
+              throw new Error("You are not authorised to view these application records.");
+            }
+
+            if (response.status === 404) {
+              throw new Error("The applications API is not configured yet. You can still use the account navigation and support links.");
+            }
+
+            if (response.status === 429) {
+              throw new Error("Too many requests. Please wait before refreshing again.");
+            }
+
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "Application records could not be loaded."
+            );
           }
 
-          const data = await response.json();
+          const records = extractApplications(data);
 
-          /*
-           * Supported response shapes:
-           * { application: {...} }
-           * { data: {...} }
-           * { item: {...} }
-           * {...application fields...}
-           */
-          const item = data && (
-            data.application ||
-            data.data ||
-            data.item ||
-            data
+          if (!records) {
+            throw new Error("The application service returned an unexpected response format.");
+          }
+
+          applications = records.filter(record =>
+            record &&
+            typeof record === "object" &&
+            !Array.isArray(record)
           );
 
-          if (!item || typeof item !== "object" || Array.isArray(item)) {
-            throw new Error("invalid-response");
-          }
+          const email =
+            typeof data.user?.email === "string"
+              ? data.user.email
+              : typeof data.data?.user?.email === "string"
+                ? data.data.user.email
+                : "";
 
-          renderApplication(item);
+          $("accountEmail").textContent = email || "Application workspace";
+
+          renderApplications();
+
+          showStatus(
+            applications.length
+              ? `${applications.length} application record${applications.length === 1 ? "" : "s"} loaded from your account service.`
+              : "Your account service returned no application records.",
+            "success"
+          );
 
         } catch (error) {
-          if (error.name === "AbortError") return;
+          applications = [];
+          renderApplications();
 
-          console.error(
-            "[MedOrbits] Application details request failed."
+          showStatus(
+            error instanceof Error
+              ? error.message
+              : "Application records could not be loaded.",
+            "error"
           );
 
-          if (error.message === "rate-limited") {
-            showEmpty(
-              "Please wait before trying again",
-              "Too many requests were made in a short period. Wait a moment and try again."
-            );
-          } else if (error.message === "invalid-response") {
-            showEmpty(
-              "Application response unavailable",
-              "The application service returned data in an unexpected format. Please contact support if the problem continues."
-            );
-          } else {
-            showEmpty(
-              "Application could not be loaded",
-              "The application service may be unavailable, or your connection may have been interrupted. Please try again shortly."
-            );
-          }
         } finally {
-          if (activeRequest?.signal === signal) {
-            activeRequest = null;
-          }
+          isLoading = false;
+          refreshButton.disabled = false;
+          refreshButton.textContent = "↻ Refresh records";
         }
       }
 
-      /* ---------------------------------------------------------
-         Page initialisation
-      --------------------------------------------------------- */
+      /* Search and filters */
+      searchInput.addEventListener("input", renderApplications);
 
-      function init() {
-        const params = new URLSearchParams(window.location.search);
-        currentApplicationId = params.get("id") || "";
+      statusSelect.addEventListener("change", () => {
+        activeFilter = "all";
+        renderApplications();
+      });
 
-        /*
-         * Do not accept arbitrary IDs or put private application
-         * records into localStorage, sessionStorage or public JSON.
-         */
-        if (!/^[A-Za-z0-9_-]{1,64}$/.test(currentApplicationId)) {
-          showEmpty(
-            "Application reference missing or invalid",
-            "Please return to My Applications and open a record using its View details link."
-          );
-          return;
-        }
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter || "all";
+          statusSelect.value = "all";
+          renderApplications();
+        });
+      });
 
-        loadApplication();
-      }
+      $("clearFilters").addEventListener("click", () => {
+        searchInput.value = "";
+        statusSelect.value = "all";
+        activeFilter = "all";
+        renderApplications();
+        searchInput.focus();
+      });
 
-      refreshButton.addEventListener("click", loadApplication);
-      retryButton.addEventListener("click", loadApplication);
+      refreshButton.addEventListener("click", loadApplications);
 
-      init();
+      loadApplications();
     })();
   </script>
 
-  <!--
-    Optional shared modules from the documented MedOrbits
-    /assets/js/ architecture.
-
-    Confirm that each file exists and that its public API matches
-    the installed implementation before enabling it. The page's
-    essential navigation and application-detail logic above is
-    self-contained.
-  -->
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/utils.js" defer></script>
   <script src="/assets/js/security.js" defer></script>
-  <script src="/assets/js/navigation.js" defer></script>
   <script src="/assets/js/account.js" defer></script>
   <script src="/assets/js/app.js" defer></script>
   <script src="/assets/js/main.js" defer></script>

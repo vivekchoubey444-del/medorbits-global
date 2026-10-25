@@ -1,24 +1,2994 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Counselling | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Manage MedOrbits counselling enquiries, student guidance requests, admission preferences, counselling status and follow-up operations through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Counselling Management | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(67,135,217,.18), transparent 36%),
+        radial-gradient(ellipse at 96% 32%, rgba(205,164,85,.09), transparent 34%),
+        radial-gradient(ellipse at 45% 100%, rgba(38,92,151,.12), transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, select, textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+    [hidden] { display: none !important; }
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+    .skip-link:focus { top: 12px; }
+    .accent-text {
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .announcement strong { color: var(--gold-bright); }
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+    }
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+    .btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .breadcrumbs a { color: var(--blue-bright); }
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+    .sidebar,
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+    }
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+    .admin-identity strong { display: block; font-size: 11px; }
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .admin-nav { display: grid; gap: 5px; }
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+    .sidebar-note strong { color: var(--gold-bright); }
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+    .status.info { color: var(--blue-bright); }
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(200px,.7fr);
+      gap: 22px;
+      align-items: center;
+      padding: clamp(18px,3vw,28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .hero-copy { position: relative; z-index: 1; min-width: 0; }
+    .hero h2 {
+      margin: 12px 0 10px;
+      font: 600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display",Georgia,serif;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+    .hero-art {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(0deg,rgba(3,8,18,.88),rgba(3,8,18,.06)),
+        url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=85")
+        center/cover;
+    }
+    .hero-art-label {
+      position: absolute;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d2deed;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+    }
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+    }
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+    .stat-copy { min-width: 0; }
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 24px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+    .stat-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 19px;
+    }
+    .mini-list { display: grid; gap: 10px; }
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+    .mini-copy { min-width: 0; flex: 1; }
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .toolbar p { margin: 0; color: var(--muted); font-size: 10px; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+      align-items: end;
+    }
+    .field { min-width: 0; }
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #07162a;
+      color: var(--text);
+      font-size: 10px;
+    }
+    .field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: #7188a4;
+    }
+    .field-help {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+    }
+    .filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 15px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.055);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .pill.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+    .pill.warning {
+      border-color: rgba(255,224,160,.32);
+      color: var(--warning);
+    }
+    .pill.danger {
+      border-color: rgba(255,182,189,.4);
+      background: rgba(255,100,115,.07);
+      color: var(--danger);
+    }
+    .pill.info {
+      border-color: rgba(116,184,255,.28);
+      color: var(--blue-bright);
+    }
+    .pill.unknown { color: var(--muted); }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(3,11,22,.45);
+      scrollbar-width: thin;
+      scrollbar-color: #355777 #081426;
+    }
+    .data-table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .data-table th {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(116,184,255,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(116,184,255,.1);
+      color: var(--text-soft);
+      font-size: 9px;
+      vertical-align: top;
+    }
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+    .data-table tbody tr:hover {
+      background: rgba(116,184,255,.035);
+    }
+    .primary-value {
+      display: block;
+      max-width: 280px;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .secondary-value {
+      display: block;
+      max-width: 300px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+    .table-action {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.05);
+      color: var(--blue-bright);
+      font-size: 9px;
+      cursor: pointer;
+    }
+    .table-action:hover { background: rgba(116,184,255,.12); }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .empty-state {
+      padding: 27px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .pagination p { margin: 0; color: var(--muted); font-size: 9px; }
+    .feature-banner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .feature-image {
+      min-height: 165px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.3),rgba(5,13,26,.55)),
+        url("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=85")
+        center/cover;
+    }
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .notice strong { color: var(--gold-bright); }
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--gold-bright); }
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+    dialog {
+      width: min(760px,calc(100% - 28px));
+      max-width: 760px;
+      max-height: min(85vh,900px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--border-gold);
+      border-radius: 18px;
+      background: linear-gradient(145deg,#102642,#050e1c);
+      color: var(--text);
+      box-shadow: 0 28px 100px rgba(0,0,0,.7);
+    }
+    dialog::backdrop {
+      background: rgba(1,5,12,.8);
+      backdrop-filter: blur(6px);
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dialog-header h2 {
+      margin: 7px 0 0;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+    .dialog-body { padding: 20px; }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 11px;
+    }
+    .detail-item {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.38);
+    }
+    .detail-item.full { grid-column: 1/-1; }
+    .detail-item span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .detail-item strong {
+      display: block;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+      .main-nav.open { display: flex; }
+      .main-nav > a { display: block; padding: 11px 8px; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+    @media (max-width:950px) {
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:850px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .hero { grid-template-columns: minmax(0,1fr) minmax(150px,.6fr); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+    @media (max-width:560px) {
+      .container { width: calc(100% - 28px); }
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+      .nav-wrap { min-height: 68px; }
+      .brand img { width: 38px; height: 38px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .live-indicator { display: none; }
+      .page-main { padding: 29px 0 44px; }
+      .page-heading h1 { font-size: clamp(32px,9vw,42px); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+      .sidebar, .panel { padding: 15px; }
+      .admin-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .hero-art { min-height: 145px; }
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+      .stat-copy strong { font-size: 22px; }
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+      .filter-actions { flex-direction: column; }
+      .filter-actions .btn { width: 100%; }
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .btn { flex: 1; }
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+      .feature-image { min-height: 135px; }
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .pagination { align-items: flex-start; flex-direction: column; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-item.full { grid-column: auto; }
+      .dialog-header, .dialog-body { padding: 15px; }
+    }
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 34px; height: 34px; }
+      .brand strong { font-size: 12px; }
+      .admin-nav { grid-template-columns: 1fr; }
+      .stats-grid,
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+      .footer-grid { gap: 18px 11px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Counselling</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about counselling. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Student guidance and counselling operations</span>
+  </div>
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          SECURE WORKSPACE
+        </span>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/admissions.html">Admissions</a>
+        <a href="/admin/counselling.html" aria-current="page">Counselling</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/applications.html">Student applications</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Counselling</span>
+      </nav>
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Student guidance · Admissions · Follow-up management</span>
+          <h1>Counselling <span class="accent-text">centre.</span></h1>
+          <p>
+            Manage student counselling enquiries, review admission goals,
+            organise guidance requests and monitor follow-up status through
+            the authorised MedOrbits administration API. Student records,
+            contact details and counselling statistics reflect the data
+            actually returned by the backend.
+          </p>
+        </div>
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/applications.html">Applications ↗</a>
+          <button class="btn" id="refreshCounselling" type="button">↻ Refresh records</button>
+        </div>
+      </header>
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Student guidance</span>
+            </div>
+          </div>
+          <p class="sidebar-label">Workspace</p>
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/counselling.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">☷</span>Counselling</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/official-resources.html"><span class="nav-icon" aria-hidden="true">▣</span>Official resources</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/access-control.html"><span class="nav-icon" aria-hidden="true">⚿</span>Access control</a>
+            <a href="/admin/audit-log.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit log</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/backup-status.html"><span class="nav-icon" aria-hidden="true">◈</span>Backup status</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+          <p class="sidebar-note">
+            <strong>Student-first counselling operations.</strong><br>
+            Keep guidance records accurate, restrict access to authorised
+            staff, document follow-up outcomes and protect confidential
+            student information.
+          </p>
+        </aside>
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Guidance · Planning · Student support</span>
+              <h2 id="heroTitle">
+                Every student deserves
+                <span class="accent-text">a clearer pathway.</span>
+              </h2>
+              <p>
+                Bring student enquiries, course interests, admission
+                preferences and counselling follow-ups into one organised
+                workspace. Inspect available records and identify requests
+                that need attention without inventing or assuming student data.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="heroRefresh" type="button">↻ Retrieve counselling records</button>
+                <button class="btn btn-outline" id="heroDirectory" type="button">Explore records ↓</button>
+              </div>
+            </div>
+            <div
+              class="hero-art"
+              role="img"
+              aria-label="University campus architecture representing academic counselling and education planning"
+            >
+              <div class="hero-art-label">
+                Student counselling
+                <span>Listen · Guide · Plan · Follow up</span>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="overviewTitle">Counselling overview</h2>
+                <p>
+                  Counts are calculated from the records currently returned
+                  by the API. If the backend paginates the response, these
+                  figures may represent only the current response.
+                </p>
+              </div>
+            </div>
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">☷</div>
+                <div class="stat-copy">
+                  <span>Loaded requests</span>
+                  <strong id="statTotal">--</strong>
+                  <small>Records returned by the API</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Pending follow-up</span>
+                  <strong id="statPending">--</strong>
+                  <small>Requests awaiting action</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Completed</span>
+                  <strong id="statCompleted">--</strong>
+                  <small>Completed status in loaded records</small>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">!</div>
+                <div class="stat-copy">
+                  <span>Priority requests</span>
+                  <strong id="statPriority">--</strong>
+                  <small>Urgent or high-priority records</small>
+                </div>
+              </article>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="connectionTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⬡</div>
+              <div>
+                <h2 id="connectionTitle">Counselling service connection</h2>
+                <p>
+                  Inspect API availability, the latest request and the
+                  coverage reported by the backend.
+                </p>
+              </div>
+            </div>
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              Counselling records have not been loaded. Connect this page to the authenticated counselling administration API.
+            </div>
+            <div class="two-column">
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">◉</div>
+                <div class="mini-copy">
+                  <strong>Latest counselling request</strong>
+                  <p id="latestRequest">No counselling information loaded.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">↻</div>
+                <div class="mini-copy">
+                  <strong>Last API check</strong>
+                  <p id="lastChecked">Not checked during this session.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">▣</div>
+                <div class="mini-copy">
+                  <strong>Service scope</strong>
+                  <p id="serviceScope">Scope information not reported by the API.</p>
+                </div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">⌘</div>
+                <div class="mini-copy">
+                  <strong>Record coverage</strong>
+                  <p id="recordCoverage">Pagination and coverage information not reported by the API.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="filtersTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filtersTitle">Find a counselling request</h2>
+                <p>
+                  Search available identifiers, student names, course
+                  preferences, application references, counsellors and
+                  counselling notes. Sensitive data should remain protected
+                  by server-side access controls.
+                </p>
+              </div>
+            </div>
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search records</label>
+                  <input
+                    id="searchInput"
+                    name="search"
+                    type="search"
+                    maxlength="150"
+                    placeholder="Reference, student, course"
+                    autocomplete="off"
+                  >
+                </div>
+                <div class="field">
+                  <label for="courseFilter">Course interest</label>
+                  <select id="courseFilter" name="course">
+                    <option value="">All course interests</option>
+                    <option value="mbbs">MBBS</option>
+                    <option value="bds">BDS</option>
+                    <option value="bams">BAMS</option>
+                    <option value="bums">BUMS</option>
+                    <option value="bhms">BHMS</option>
+                    <option value="nursing">Nursing</option>
+                    <option value="paramedical">Paramedical</option>
+                    <option value="btech">BTech</option>
+                    <option value="bba">BBA</option>
+                    <option value="mba">MBA</option>
+                    <option value="other">Other / unspecified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="statusFilter">Counselling status</label>
+                  <select id="statusFilter" name="status">
+                    <option value="">All statuses</option>
+                    <option value="new">New</option>
+                    <option value="pending">Pending</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="follow_up">Follow-up</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="closed">Closed</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="priorityFilter">Priority</label>
+                  <select id="priorityFilter" name="priority">
+                    <option value="">All priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="modeFilter">Counselling mode</label>
+                  <select id="modeFilter" name="mode">
+                    <option value="">All modes</option>
+                    <option value="online">Online</option>
+                    <option value="phone">Phone</option>
+                    <option value="in_person">In person</option>
+                    <option value="email">Email</option>
+                    <option value="other">Other / unspecified</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="sortFilter">Sort records</label>
+                  <select id="sortFilter" name="sort">
+                    <option value="updated-desc">Recently updated</option>
+                    <option value="created-desc">Newest requests</option>
+                    <option value="created-asc">Oldest requests</option>
+                    <option value="priority-desc">Priority first</option>
+                    <option value="student-asc">Student name A–Z</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="reloadFromServer" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+          <section class="panel" id="counsellingDirectory" aria-labelledby="directoryTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">☷</div>
+              <div>
+                <h2 id="directoryTitle">Counselling requests</h2>
+                <p>
+                  Inspect student guidance requests, admission interests,
+                  assigned counsellors, follow-up dates and current status.
+                  Only fields returned by the authorised API are displayed.
+                </p>
+              </div>
+            </div>
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No counselling records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportCounselling" type="button" disabled>
+                  ⇩ Export loaded records
+                </button>
+              </div>
+            </div>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Counselling requests; horizontally scrollable"
+            >
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Request / student</th>
+                    <th scope="col">Course interest</th>
+                    <th scope="col">Counselling mode</th>
+                    <th scope="col">Assigned counsellor</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Follow-up</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="counsellingBody">
+                  <tr>
+                    <td colspan="9">
+                      <div class="empty-state">
+                        <strong>No counselling records loaded</strong>
+                        Records will appear here when returned by the configured administration API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <p id="paginationSummary">Showing 0 requests</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button" disabled>
+                  ← Previous
+                </button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <div class="two-column">
+            <section class="panel" aria-labelledby="guidanceTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">◈</div>
+                <div>
+                  <h2 id="guidanceTitle">Counselling quality standards</h2>
+                  <p>Recommended checks for consistent and student-centred guidance.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Understand student goals</strong>
+                    <p>
+                      Capture course interests, academic preferences,
+                      budget expectations and preferred study location
+                      only when needed and with appropriate notice.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Verify admission information</strong>
+                    <p>
+                      Check eligibility, counselling schedules, official
+                      notices, fees and seat-allocation rules with the
+                      relevant authorised institution or counselling body.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Record useful follow-up</strong>
+                    <p>
+                      Maintain clear next steps, appointment outcomes,
+                      assigned staff and follow-up dates. Avoid unnecessary
+                      personal or sensitive details in free-text notes.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">04</div>
+                  <div class="mini-copy">
+                    <strong>Protect student confidentiality</strong>
+                    <p>
+                      Restrict student contact information, documents,
+                      counselling notes and application history to
+                      staff with a legitimate operational need.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="panel" aria-labelledby="workflowTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">✓</div>
+                <div>
+                  <h2 id="workflowTitle">Counselling workflow</h2>
+                  <p>Suggested stages for managing guidance requests.</p>
+                </div>
+              </div>
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">A</div>
+                  <div class="mini-copy">
+                    <strong>Receive and triage</strong>
+                    <p>
+                      Review new enquiries, confirm the request category
+                      and identify any time-sensitive admission deadlines.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">B</div>
+                  <div class="mini-copy">
+                    <strong>Assign and schedule</strong>
+                    <p>
+                      Route requests to an authorised counsellor, agree
+                      on a suitable communication method and record the
+                      next appointment or follow-up date.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">C</div>
+                  <div class="mini-copy">
+                    <strong>Guide and document</strong>
+                    <p>
+                      Share verified information, record agreed next steps
+                      and update the request status through an authorised
+                      server-side workflow.
+                    </p>
+                  </div>
+                </div>
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">D</div>
+                  <div class="mini-copy">
+                    <strong>Follow up and close</strong>
+                    <p>
+                      Confirm the outcome, document unresolved questions
+                      and close the request only when the workflow
+                      requirements have been satisfied.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="feature-banner" aria-labelledby="integrityTitle">
+            <div>
+              <span class="eyebrow">Education · Student support · Trust</span>
+              <h2 id="integrityTitle">
+                Clear guidance.
+                <span class="accent-text">Confident decisions.</span>
+              </h2>
+              <p>
+                Effective counselling connects student goals with accurate,
+                current and verifiable information. Keep admission guidance
+                transparent, explain important limitations and ensure
+                students can ask questions or correct their information.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/applications.html">Manage applications ↗</a>
+                <a class="btn btn-outline" href="/admin/official-resources.html">Official resources ↗</a>
+              </div>
+            </div>
+            <div
+              class="feature-image"
+              role="img"
+              aria-label="Healthcare education and academic research representing student guidance and academic planning"
+            ></div>
+          </section>
+          <div class="notice">
+            <strong>Privacy and administration notice:</strong>
+            This page is a client interface, not an authorisation boundary.
+            The backend must authenticate administrators, enforce role-based
+            permissions, validate inputs and apply CSRF protection where
+            relevant. Protect student contact information, educational
+            records, documents and counselling notes. Use server-side
+            pagination, secure audit logging, appropriate retention controls
+            and a clear process for correcting inaccurate information.
+            Do not treat counselling guidance as an official admission
+            decision or a guarantee of admission.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <dialog id="counsellingDialog" aria-labelledby="counsellingDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Counselling record</span>
+        <h2 id="counsellingDialogTitle">Request details</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeCounsellingDialog" type="button">
+        Close ✕
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div id="counsellingDialogStatus" class="status info" role="status" aria-live="polite">
+        Details reflect the currently loaded API record.
+      </div>
+      <div id="counsellingDetailGrid" class="detail-grid"></div>
+    </div>
+  </dialog>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents, student guidance and professional opportunities.
+          </p>
+        </div>
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+        <div class="footer-links">
+          <h2>Student support</h2>
+          <a href="/admin/counselling.html">Counselling</a>
+          <a href="/admin/documents.html">Documents</a>
+          <a href="/admin/official-resources.html">Official resources</a>
+          <a href="/admin/colleges.html">Colleges</a>
+          <a href="/admin/universities.html">Universities</a>
+        </div>
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+        </div>
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+      <p class="disclaimer">
+        Counselling guidance is informational and does not guarantee
+        admission, eligibility, a seat allocation or a particular outcome.
+        Verify eligibility, official schedules, fees, recognition and
+        admission decisions with the relevant institution or authorised
+        counselling authority.
+      </p>
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (() => {
+      "use strict";
+      /*
+       * MedOrbits Counselling Management
+       *
+       * Default endpoint:
+       * GET /api/admin/counselling
+       *
+       * Optional runtime configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminCounsellingEndpoint: "/api/admin/counselling"
+       * };
+       *
+       * Expected response:
+       * {
+       *   "counselling": [
+       *     {
+       *       "id": "COUN-001",
+       *       "reference": "COUN-001",
+       *       "studentName": "Student name",
+       *       "studentId": "STU-001",
+       *       "course": "MBBS",
+       *       "mode": "online",
+       *       "status": "pending",
+       *       "priority": "medium",
+       *       "assignedCounsellor": "Counsellor name",
+       *       "createdAt": "2026-10-25T10:00:00Z",
+       *       "updatedAt": "2026-10-25T10:00:00Z",
+       *       "followUpAt": "2026-10-26T10:00:00Z",
+       *       "applicationReference": "APP-001",
+       *       "preferredLocation": "Location",
+       *       "preferredIntake": "2027",
+       *       "message": "Student's guidance request"
+       *     }
+       *   ],
+       *   "meta": {
+       *     "total": 1,
+       *     "page": 1,
+       *     "pageSize": 100,
+       *     "totalPages": 1,
+       *     "scope": "Counselling requests"
+       *   },
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "Admin workspace"
+       *   }
+       * }
+       *
+       * Also accepts:
+       * { "data": { "counselling": [], "meta": {} } }
+       * { "data": { "requests": [], "meta": {} } }
+       * { "requests": [], "meta": {} }
+       * A top-level array of records.
+       *
+       * Adapt the endpoint and field mappings to the actual backend.
+       * This client does not create demonstration student records.
+       *
+       * This page is intentionally read-only. Status changes, assignment,
+       * scheduling and record deletion require separately authorised
+       * backend operations, validation and audit logging.
+       */
+      document.addEventListener("DOMContentLoaded", init);
+      function init() {
+        const $ = id => document.getElementById(id);
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const counsellingDialog = $("counsellingDialog");
+        const statusBox = $("connectionStatus");
+        const PAGE_SIZE = 10;
+        $("currentYear").textContent = String(new Date().getFullYear());
+        const state = {
+          loading: false,
+          controller: null,
+          requestSequence: 0,
+          requests: [],
+          filteredRequests: [],
+          loadedSuccessfully: false,
+          currentPage: 1,
+          meta: null
+        };
+        const validStatuses = new Set([
+          "new",
+          "pending",
+          "scheduled",
+          "in_progress",
+          "follow_up",
+          "completed",
+          "cancelled",
+          "closed",
+          "unknown"
+        ]);
+        const validPriorities = new Set([
+          "urgent",
+          "high",
+          "medium",
+          "low",
+          "normal",
+          "unknown"
+        ]);
+        const validModes = new Set([
+          "online",
+          "phone",
+          "in_person",
+          "email",
+          "other"
+        ]);
+        function element(tag, className, content) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (content !== undefined) node.textContent = content;
+          return node;
+        }
+        function value(input, fallback = "") {
+          if (typeof input === "string" && input.trim()) {
+            return input.trim();
+          }
+          if (typeof input === "number" && Number.isFinite(input)) {
+            return String(input);
+          }
+          return fallback;
+        }
+        function safeText(input, fallback = "", maxLength = 2000) {
+          return value(input, fallback).slice(0, maxLength);
+        }
+        function normaliseKey(input) {
+          return value(input, "unknown")
+            .toLowerCase()
+            .trim()
+            .replace(/[\s-]+/g, "_");
+        }
+        function normaliseStatus(input) {
+          const status = normaliseKey(input);
+          const aliases = {
+            received: "new",
+            open: "pending",
+            awaiting_response: "pending",
+            awaiting_follow_up: "follow_up",
+            followup: "follow_up",
+            follow_up_required: "follow_up",
+            inprogress: "in_progress",
+            resolved: "completed",
+            done: "completed",
+            finished: "completed",
+            withdrawn: "cancelled"
+          };
+          const mapped = aliases[status] || status;
+          return validStatuses.has(mapped) ? mapped : "unknown";
+        }
+        function normalisePriority(input) {
+          const priority = normaliseKey(input);
+          const aliases = {
+            critical: "urgent",
+            emergency: "urgent",
+            high_priority: "high",
+            medium_priority: "medium",
+            low_priority: "low",
+            standard: "normal"
+          };
+          const mapped = aliases[priority] || priority;
+          return validPriorities.has(mapped) ? mapped : "unknown";
+        }
+        function normaliseMode(input) {
+          const mode = normaliseKey(input);
+          const aliases = {
+            virtual: "online",
+            video: "online",
+            video_call: "online",
+            telephone: "phone",
+            call: "phone",
+            face_to_face: "in_person",
+            inperson: "in_person",
+            physical: "in_person",
+            mail: "email"
+          };
+          const mapped = aliases[mode] || mode;
+          return validModes.has(mapped) ? mapped : "other";
+        }
+        function normaliseCourse(input) {
+          return normaliseKey(input);
+        }
+        function getRecordId(raw) {
+          const candidate =
+            raw.id ??
+            raw._id ??
+            raw.counsellingId ??
+            raw.counselling_id ??
+            raw.requestId ??
+            raw.request_id ??
+            raw.reference ??
+            raw.referenceNumber ??
+            raw.reference_number;
+          if (typeof candidate !== "string" && typeof candidate !== "number") {
+            return "";
+          }
+          const id = String(candidate).trim();
+          return id.length > 0 && id.length <= 200 ? id : "";
+        }
+        function nestedObject(input) {
+          return input &&
+            typeof input === "object" &&
+            !Array.isArray(input)
+            ? input
+            : {};
+        }
+        function normaliseRequest(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return null;
+          }
+          const student = nestedObject(raw.student);
+          const courseObject = nestedObject(raw.course);
+          const counsellor = nestedObject(
+            raw.assignedCounsellor ??
+            raw.assigned_counsellor ??
+            raw.counsellor ??
+            raw.assignee
+          );
+          const studentName =
+            raw.studentName ??
+            raw.student_name ??
+            raw.name ??
+            student.name ??
+            [student.firstName ?? student.first_name, student.lastName ?? student.last_name]
+              .filter(Boolean)
+              .join(" ");
+          const course =
+            raw.courseName ??
+            raw.course_name ??
+            raw.course ??
+            raw.programme ??
+            raw.program ??
+            courseObject.name ??
+            courseObject.title;
+          const createdAt =
+            raw.createdAt ??
+            raw.created_at ??
+            raw.submittedAt ??
+            raw.submitted_at ??
+            raw.requestedAt ??
+            raw.requested_at;
+          const updatedAt =
+            raw.updatedAt ??
+            raw.updated_at ??
+            raw.lastUpdated ??
+            raw.last_updated ??
+            raw.modifiedAt ??
+            raw.modified_at;
+          const followUpAt =
+            raw.followUpAt ??
+            raw.follow_up_at ??
+            raw.nextFollowUpAt ??
+            raw.next_follow_up_at ??
+            raw.nextAppointmentAt ??
+            raw.next_appointment_at ??
+            raw.scheduledAt ??
+            raw.scheduled_at;
+          const status = normaliseStatus(
+            raw.status ??
+            raw.counsellingStatus ??
+            raw.counselling_status ??
+            raw.workflowStatus ??
+            raw.workflow_status
+          );
+          const priority = normalisePriority(
+            raw.priority ??
+            raw.urgency ??
+            raw.priorityLevel ??
+            raw.priority_level
+          );
+          const mode = normaliseMode(
+            raw.mode ??
+            raw.counsellingMode ??
+            raw.counselling_mode ??
+            raw.contactMethod ??
+            raw.contact_method
+          );
+          const counsellorName =
+            typeof (
+              raw.assignedCounsellor ??
+              raw.assigned_counsellor ??
+              raw.counsellor ??
+              raw.assignee
+            ) === "string"
+              ? (
+                  raw.assignedCounsellor ??
+                  raw.assigned_counsellor ??
+                  raw.counsellor ??
+                  raw.assignee
+                )
+              : counsellor.name ??
+                counsellor.fullName ??
+                counsellor.full_name ??
+                counsellor.displayName ??
+                counsellor.display_name;
+          const id = getRecordId(raw);
+          if (!id) return null;
+          return {
+            id,
+            reference: safeText(
+              raw.reference ??
+              raw.referenceNumber ??
+              raw.reference_number ??
+              raw.ticketNumber ??
+              raw.ticket_number ??
+              id,
+              id,
+              200
+            ),
+            studentName: safeText(studentName, "Name not reported", 250),
+            studentId: safeText(
+              raw.studentId ??
+              raw.student_id ??
+              student.id ??
+              student.studentId ??
+              student.student_id,
+              "Not reported",
+              200
+            ),
+            course: safeText(
+              typeof course === "object" && course
+                ? course.name ?? course.title
+                : course,
+              "Not reported",
+              200
+            ),
+            mode,
+            status,
+            priority,
+            assignedCounsellor: safeText(
+              counsellorName,
+              "Unassigned",
+              250
+            ),
+            createdAt: createdAt ?? null,
+            updatedAt: updatedAt ?? null,
+            followUpAt: followUpAt ?? null,
+            applicationReference: safeText(
+              raw.applicationReference ??
+              raw.application_reference ??
+              raw.applicationId ??
+              raw.application_id,
+              "Not reported",
+              200
+            ),
+            preferredLocation: safeText(
+              raw.preferredLocation ??
+              raw.preferred_location ??
+              raw.locationPreference ??
+              raw.location_preference ??
+              raw.preferredCity ??
+              raw.preferred_city,
+              "Not reported",
+              300
+            ),
+            preferredIntake: safeText(
+              raw.preferredIntake ??
+              raw.preferred_intake ??
+              raw.academicYear ??
+              raw.academic_year ??
+              raw.intake,
+              "Not reported",
+              100
+            ),
+            email: safeText(
+              raw.email ?? student.email,
+              "Not reported",
+              250
+            ),
+            phone: safeText(
+              raw.phone ??
+              raw.mobile ??
+              raw.phoneNumber ??
+              raw.phone_number ??
+              student.phone ??
+              student.mobile,
+              "Not reported",
+              100
+            ),
+            message: safeText(
+              raw.message ??
+              raw.enquiry ??
+              raw.enquiryMessage ??
+              raw.enquiry_message ??
+              raw.description ??
+              raw.notes,
+              "No message supplied.",
+              4000
+            ),
+            outcome: safeText(
+              raw.outcome ??
+              raw.resolution ??
+              raw.result,
+              "Not reported",
+              1500
+            )
+          };
+        }
+        function formatDate(input) {
+          if (
+            (typeof input !== "string" && typeof input !== "number") ||
+            !String(input).trim()
+          ) {
+            return "Not scheduled";
+          }
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) {
+            return "Not reported";
+          }
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+        function dateValue(input) {
+          if (!input) return 0;
+          const time = Date.parse(input);
+          return Number.isFinite(time) ? time : 0;
+        }
+        function humanise(input) {
+          return value(input, "Unknown")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b\w/g, character => character.toUpperCase());
+        }
+        function statusClass(status) {
+          if (status === "completed" || status === "closed") {
+            return "success";
+          }
+          if (
+            status === "scheduled" ||
+            status === "in_progress" ||
+            status === "follow_up"
+          ) {
+            return "info";
+          }
+          if (status === "pending" || status === "new") {
+            return "warning";
+          }
+          if (status === "cancelled") {
+            return "danger";
+          }
+          return "unknown";
+        }
+        function priorityClass(priority) {
+          if (priority === "urgent" || priority === "high") {
+            return "danger";
+          }
+          if (priority === "medium") {
+            return "warning";
+          }
+          if (priority === "low" || priority === "normal") {
+            return "info";
+          }
+          return "unknown";
+        }
+        function pill(text, className = "unknown") {
+          return element("span", `pill ${className}`, text);
+        }
+        function setStatus(message, type = "info") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+        function setDialogStatus(message, type = "info") {
+          $("counsellingDialogStatus").textContent = message;
+          $("counsellingDialogStatus").className = `status ${type}`;
+        }
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured =
+            config.adminCounsellingEndpoint ||
+            "/api/admin/counselling";
+          let endpoint;
+          try {
+            endpoint = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured counselling API endpoint is invalid.");
+          }
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error(
+              "The counselling API endpoint must use the same origin as this page."
+            );
+          }
+          if (endpoint.username || endpoint.password || endpoint.hash) {
+            throw new Error(
+              "The API endpoint must not contain credentials or a URL fragment."
+            );
+          }
+          return endpoint;
+        }
+        function requestHeaders() {
+          const headers = {
+            Accept: "application/json"
+          };
+          const csrf = document.querySelector('meta[name="csrf-token"]');
+          if (csrf && csrf.content.trim()) {
+            headers["X-CSRF-Token"] = csrf.content.trim();
+          }
+          return headers;
+        }
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+          try {
+            const data = await response.json();
+            return data && typeof data === "object" ? data : {};
+          } catch {
+            return {};
+          }
+        }
+        function apiError(response, data) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+          if (response.status === 403) {
+            return "Access denied. Your account cannot view counselling records.";
+          }
+          if (response.status === 404) {
+            return "The counselling API route was not found. Check the backend route configuration.";
+          }
+          if (response.status === 429) {
+            return "The API rate limit was reached. Wait before trying again.";
+          }
+          if (response.status >= 500) {
+            return "The server could not retrieve counselling records.";
+          }
+          return value(
+            data.message ?? data.error,
+            "The counselling API could not complete the request."
+          );
+        }
+        function renderEmpty(body, colspan, title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = element("div", "empty-state");
+          box.append(
+            element("strong", "", title),
+            element("div", "", description)
+          );
+          cell.colSpan = colspan;
+          cell.appendChild(box);
+          row.appendChild(cell);
+          body.replaceChildren(row);
+        }
+        function updateStats() {
+          const requests = state.requests;
+          $("statTotal").textContent = String(requests.length);
+          $("statPending").textContent = String(
+            requests.filter(request =>
+              ["new", "pending", "follow_up"].includes(request.status)
+            ).length
+          );
+          $("statCompleted").textContent = String(
+            requests.filter(request =>
+              ["completed", "closed"].includes(request.status)
+            ).length
+          );
+          $("statPriority").textContent = String(
+            requests.filter(request =>
+              ["urgent", "high"].includes(request.priority)
+            ).length
+          );
+        }
+        function updateMetaSummary(meta) {
+          if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+            $("serviceScope").textContent =
+              "Scope information not reported by the API.";
+            $("recordCoverage").textContent =
+              "Pagination and coverage information not reported by the API.";
+            return;
+          }
+          $("serviceScope").textContent = safeText(
+            meta.scope ?? meta.description,
+            "The API did not report the service scope.",
+            500
+          );
+          const total = meta.total ?? meta.totalRecords ?? meta.total_records;
+          const page = meta.page ?? meta.currentPage ?? meta.current_page;
+          const pageSize = meta.pageSize ?? meta.page_size ?? meta.limit;
+          const totalPages = meta.totalPages ?? meta.total_pages;
+          const parts = [];
+          if (total !== undefined && total !== null && Number.isFinite(Number(total))) {
+            parts.push(`${Number(total)} total record(s) reported`);
+          }
+          if (page !== undefined && page !== null && Number.isFinite(Number(page))) {
+            parts.push(`page ${Number(page)}`);
+          }
+          if (pageSize !== undefined && pageSize !== null && Number.isFinite(Number(pageSize))) {
+            parts.push(`page size ${Number(pageSize)}`);
+          }
+          if (
+            totalPages !== undefined &&
+            totalPages !== null &&
+            Number.isFinite(Number(totalPages))
+          ) {
+            parts.push(`${Number(totalPages)} page(s)`);
+          }
+          $("recordCoverage").textContent = parts.length
+            ? `${parts.join(" · ")}.`
+            : "The API did not report pagination metadata.";
+        }
+        function applyFilters() {
+          const query = $("searchInput").value.trim().toLowerCase();
+          const selectedCourse = $("courseFilter").value;
+          const selectedStatus = $("statusFilter").value;
+          const selectedPriority = $("priorityFilter").value;
+          const selectedMode = $("modeFilter").value;
+          const sort = $("sortFilter").value;
+          let results = state.requests.filter(request => {
+            if (
+              selectedCourse &&
+              normaliseCourse(request.course) !== selectedCourse &&
+              !(selectedCourse === "other" &&
+                ![
+                  "mbbs", "bds", "bams", "bums", "bhms",
+                  "nursing", "paramedical", "btech", "bba", "mba"
+                ].includes(normaliseCourse(request.course)))
+            ) {
+              return false;
+            }
+            if (selectedStatus && request.status !== selectedStatus) {
+              return false;
+            }
+            if (selectedPriority && request.priority !== selectedPriority) {
+              return false;
+            }
+            if (selectedMode && request.mode !== selectedMode) {
+              return false;
+            }
+            if (query) {
+              const searchable = [
+                request.id,
+                request.reference,
+                request.studentName,
+                request.studentId,
+                request.course,
+                request.mode,
+                request.status,
+                request.priority,
+                request.assignedCounsellor,
+                request.applicationReference,
+                request.preferredLocation,
+                request.preferredIntake,
+                request.message
+              ].join(" ").toLowerCase();
+              if (!searchable.includes(query)) {
+                return false;
+              }
+            }
+            return true;
+          });
+          const priorityOrder = {
+            urgent: 5,
+            high: 4,
+            medium: 3,
+            normal: 2,
+            low: 1,
+            unknown: 0
+          };
+          results.sort((a, b) => {
+            switch (sort) {
+              case "created-desc":
+                return dateValue(b.createdAt) - dateValue(a.createdAt);
+              case "created-asc":
+                return dateValue(a.createdAt) - dateValue(b.createdAt);
+              case "priority-desc":
+                return (
+                  priorityOrder[b.priority] - priorityOrder[a.priority] ||
+                  dateValue(b.createdAt) - dateValue(a.createdAt)
+                );
+              case "student-asc":
+                return a.studentName.localeCompare(b.studentName);
+              case "updated-desc":
+              default:
+                return dateValue(b.updatedAt) - dateValue(a.updatedAt);
+            }
+          });
+          state.filteredRequests = results;
+          state.currentPage = 1;
+          renderRequests();
+        }
+        function renderRequests() {
+          const total = state.filteredRequests.length;
+          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+          state.currentPage = Math.min(state.currentPage, totalPages);
+          const start = (state.currentPage - 1) * PAGE_SIZE;
+          const pageItems = state.filteredRequests.slice(
+            start,
+            start + PAGE_SIZE
+          );
+          if (!pageItems.length) {
+            renderEmpty(
+              $("counsellingBody"),
+              9,
+              state.loadedSuccessfully
+                ? "No matching counselling requests"
+                : "No counselling records loaded",
+              state.loadedSuccessfully
+                ? "No records match the current search and filters."
+                : "Counselling records will appear when returned by the configured API."
+            );
+          } else {
+            const fragment = document.createDocumentFragment();
+            pageItems.forEach(request => {
+              const row = document.createElement("tr");
+              const requestCell = document.createElement("td");
+              requestCell.append(
+                element("span", "primary-value", request.studentName),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Reference: ${request.reference}`
+                ),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Student ID: ${request.studentId}`
+                )
+              );
+              const courseCell = document.createElement("td");
+              courseCell.append(
+                element("span", "primary-value", request.course),
+                element(
+                  "span",
+                  "secondary-value",
+                  `Application: ${request.applicationReference}`
+                )
+              );
+              const modeCell = document.createElement("td");
+              modeCell.appendChild(
+                pill(humanise(request.mode), "info")
+              );
+              const counsellorCell = element(
+                "td",
+                "",
+                request.assignedCounsellor
+              );
+              const priorityCell = document.createElement("td");
+              priorityCell.appendChild(
+                pill(humanise(request.priority), priorityClass(request.priority))
+              );
+              const statusCell = document.createElement("td");
+              statusCell.appendChild(
+                pill(humanise(request.status), statusClass(request.status))
+              );
+              const followUpCell = element(
+                "td",
+                "",
+                formatDate(request.followUpAt)
+              );
+              const updatedCell = element(
+                "td",
+                "",
+                formatDate(request.updatedAt)
+              );
+              const actionCell = document.createElement("td");
+              const actions = element("div", "row-actions");
+              const inspect = element("button", "table-action", "Inspect");
+              inspect.type = "button";
+              inspect.setAttribute(
+                "aria-label",
+                `Inspect counselling request ${request.reference}`
+              );
+              inspect.addEventListener("click", () => inspectRequest(request));
+              actions.appendChild(inspect);
+              actionCell.appendChild(actions);
+              row.append(
+                requestCell,
+                courseCell,
+                modeCell,
+                counsellorCell,
+                priorityCell,
+                statusCell,
+                followUpCell,
+                updatedCell,
+                actionCell
+              );
+              fragment.appendChild(row);
+            });
+            $("counsellingBody").replaceChildren(fragment);
+          }
+          $("resultSummary").textContent = state.loadedSuccessfully
+            ? `${total} matching request(s) from ${state.requests.length} loaded record(s).`
+            : "No counselling records loaded.";
+          $("paginationSummary").textContent = total
+            ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total} request(s) · Page ${state.currentPage} of ${totalPages}`
+            : "Showing 0 requests";
+          $("previousPage").disabled =
+            !state.loadedSuccessfully || state.currentPage <= 1;
+          $("nextPage").disabled =
+            !state.loadedSuccessfully || state.currentPage >= totalPages;
+          $("exportCounselling").disabled =
+            !state.loadedSuccessfully ||
+            !state.requests.length ||
+            state.loading;
+        }
+        function setLoading(loading) {
+          state.loading = loading;
+          [
+            "refreshCounselling",
+            "heroRefresh",
+            "reloadFromServer"
+          ].forEach(id => {
+            $(id).disabled = loading;
+          });
+          $("refreshCounselling").textContent = loading
+            ? "Loading…"
+            : "↻ Refresh records";
+          $("reloadFromServer").textContent = loading
+            ? "Loading…"
+            : "↻ Reload from server";
+          $("exportCounselling").disabled =
+            loading ||
+            !state.loadedSuccessfully ||
+            !state.requests.length;
+        }
+        async function loadCounselling() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+          const controller = new AbortController();
+          state.controller = controller;
+          const requestId = ++state.requestSequence;
+          setLoading(true);
+          setStatus(
+            "Retrieving counselling records from the authenticated administration API…",
+            "info"
+          );
+          try {
+            const endpoint = getEndpoint();
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+            const data = await readJson(response);
+            if (requestId !== state.requestSequence) return;
+            if (!response.ok) {
+              throw new Error(apiError(response, data));
+            }
+            let payload = data;
+            if (
+              payload.data &&
+              typeof payload.data === "object" &&
+              !Array.isArray(payload.data)
+            ) {
+              payload = payload.data;
+            }
+            if (Array.isArray(payload)) {
+              payload = { counselling: payload };
+            }
+            if (!payload || typeof payload !== "object") {
+              throw new Error(
+                "The counselling API returned an unsupported response format."
+              );
+            }
+            const rawRequests =
+              payload.counselling ??
+              payload.requests ??
+              payload.items ??
+              payload.records ??
+              payload.results;
+            if (!Array.isArray(rawRequests)) {
+              throw new Error(
+                "The API response must contain a counselling or requests array. Adapt this client to the actual backend response."
+              );
+            }
+            state.requests = rawRequests
+              .map(normaliseRequest)
+              .filter(Boolean);
+            state.meta =
+              payload.meta &&
+              typeof payload.meta === "object" &&
+              !Array.isArray(payload.meta)
+                ? payload.meta
+                : null;
+            state.loadedSuccessfully = true;
+            state.currentPage = 1;
+            if (
+              payload.admin &&
+              typeof payload.admin === "object" &&
+              !Array.isArray(payload.admin)
+            ) {
+              $("adminName").textContent = value(
+                payload.admin.name,
+                "Administration"
+              );
+              $("adminEmail").textContent = value(
+                payload.admin.email,
+                "Admin workspace"
+              );
+            }
+            updateStats();
+            updateMetaSummary(state.meta);
+            applyFilters();
+            const latest = state.requests
+              .filter(request =>
+                Number.isFinite(Date.parse(request.updatedAt))
+              )
+              .sort((a, b) =>
+                dateValue(b.updatedAt) - dateValue(a.updatedAt)
+              )[0];
+            $("latestRequest").textContent = latest
+              ? `${latest.reference} · ${latest.studentName} · ${formatDate(latest.updatedAt)}`
+              : "No valid update timestamp was reported.";
+            $("lastChecked").textContent = new Date().toLocaleString();
+            if (!state.requests.length) {
+              setStatus(
+                "The API returned no usable counselling records. Check the response fields, database contents and server-side filters.",
+                "warning"
+              );
+            } else {
+              setStatus(
+                `Loaded ${state.requests.length} counselling record(s). Statistics and filters reflect the records returned. Confirm backend pagination before treating this as the complete dataset.`,
+                "success"
+              );
+            }
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+            state.requests = [];
+            state.filteredRequests = [];
+            state.meta = null;
+            state.loadedSuccessfully = false;
+            state.currentPage = 1;
+            [
+              "statTotal",
+              "statPending",
+              "statCompleted",
+              "statPriority"
+            ].forEach(id => {
+              $(id).textContent = "--";
+            });
+            $("latestRequest").textContent =
+              "No counselling information loaded.";
+            $("serviceScope").textContent =
+              "Scope information not reported by the API.";
+            $("recordCoverage").textContent =
+              "Coverage information not reported by the API.";
+            renderEmpty(
+              $("counsellingBody"),
+              9,
+              "Unable to load counselling records",
+              "Check the API route, response format, server availability and administrator permissions."
+            );
+            $("resultSummary").textContent =
+              "Unable to load counselling records.";
+            $("paginationSummary").textContent = "Showing 0 requests";
+            $("previousPage").disabled = true;
+            $("nextPage").disabled = true;
+            $("exportCounselling").disabled = true;
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load counselling records.",
+              "error"
+            );
+            $("lastChecked").textContent =
+              `Last attempt: ${new Date().toLocaleString()}`;
+          } finally {
+            if (requestId === state.requestSequence) {
+              setLoading(false);
+            }
+          }
+        }
+        function addDetail(container, label, text, full = false) {
+          const item = element(
+            "div",
+            full ? "detail-item full" : "detail-item"
+          );
+          item.append(
+            element("span", "", label),
+            element("strong", "", value(text, "Not reported"))
+          );
+          container.appendChild(item);
+        }
+        function inspectRequest(request) {
+          $("counsellingDialogTitle").textContent =
+            `Request ${request.reference}`;
+          setDialogStatus(
+            "These details reflect the currently loaded API record. Student information is confidential and should only be viewed by authorised staff.",
+            "info"
+          );
+          const grid = $("counsellingDetailGrid");
+          grid.replaceChildren();
+          addDetail(grid, "Record ID", request.id);
+          addDetail(grid, "Request reference", request.reference);
+          addDetail(grid, "Student name", request.studentName);
+          addDetail(grid, "Student ID", request.studentId);
+          addDetail(grid, "Course interest", request.course);
+          addDetail(grid, "Counselling mode", humanise(request.mode));
+          addDetail(grid, "Counselling status", humanise(request.status));
+          addDetail(grid, "Priority", humanise(request.priority));
+          addDetail(grid, "Assigned counsellor", request.assignedCounsellor);
+          addDetail(grid, "Application reference", request.applicationReference);
+          addDetail(grid, "Preferred location", request.preferredLocation);
+          addDetail(grid, "Preferred intake", request.preferredIntake);
+          addDetail(grid, "Created at", formatDate(request.createdAt));
+          addDetail(grid, "Last updated", formatDate(request.updatedAt));
+          addDetail(grid, "Next follow-up", formatDate(request.followUpAt));
+          addDetail(grid, "Email", request.email);
+          addDetail(grid, "Phone", request.phone);
+          addDetail(grid, "Student message / notes", request.message, true);
+          addDetail(grid, "Counselling outcome", request.outcome, true);
+          if (typeof counsellingDialog.showModal === "function") {
+            counsellingDialog.showModal();
+          } else {
+            setStatus(
+              "This browser does not support the counselling details dialog.",
+              "warning"
+            );
+          }
+        }
+        function csvEscape(input) {
+          let text = input == null ? "" : String(input);
+          /*
+           * Prefix spreadsheet formula-like values to reduce CSV injection risk.
+           */
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+          }
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        function exportCounselling() {
+          if (!state.loadedSuccessfully || !state.requests.length) {
+            setStatus(
+              "There are no loaded counselling records available to export.",
+              "warning"
+            );
+            return;
+          }
+          const rows = [
+            [
+              "Record ID",
+              "Reference",
+              "Student Name",
+              "Student ID",
+              "Course Interest",
+              "Counselling Mode",
+              "Counselling Status",
+              "Priority",
+              "Assigned Counsellor",
+              "Application Reference",
+              "Preferred Location",
+              "Preferred Intake",
+              "Created At",
+              "Updated At",
+              "Next Follow-up",
+              "Email",
+              "Phone",
+              "Student Message",
+              "Outcome"
+            ],
+            ...state.requests.map(request => [
+              request.id,
+              request.reference,
+              request.studentName,
+              request.studentId,
+              request.course,
+              request.mode,
+              request.status,
+              request.priority,
+              request.assignedCounsellor,
+              request.applicationReference,
+              request.preferredLocation,
+              request.preferredIntake,
+              request.createdAt ?? "",
+              request.updatedAt ?? "",
+              request.followUpAt ?? "",
+              request.email,
+              request.phone,
+              request.message,
+              request.outcome
+            ])
+          ];
+          const csv = "\uFEFF" +
+            rows
+              .map(row => row.map(csvEscape).join(","))
+              .join("\r\n");
+          const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+          });
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = "medorbits-counselling-records.csv";
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+        $("refreshCounselling").addEventListener("click", loadCounselling);
+        $("heroRefresh").addEventListener("click", loadCounselling);
+        $("reloadFromServer").addEventListener("click", loadCounselling);
+        $("heroDirectory").addEventListener("click", () => {
+          $("counsellingDirectory").scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+            block: "start"
+          });
+        });
+        $("filterForm").addEventListener("submit", event => {
+          event.preventDefault();
+          applyFilters();
+        });
+        [
+          "searchInput",
+          "courseFilter",
+          "statusFilter",
+          "priorityFilter",
+          "modeFilter",
+          "sortFilter"
+        ].forEach(id => {
+          $(id).addEventListener(
+            id === "searchInput" ? "input" : "change",
+            applyFilters
+          );
+        });
+        $("resetFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+        $("previousPage").addEventListener("click", () => {
+          if (state.currentPage <= 1) return;
+          state.currentPage--;
+          renderRequests();
+        });
+        $("nextPage").addEventListener("click", () => {
+          const totalPages = Math.max(
+            1,
+            Math.ceil(state.filteredRequests.length / PAGE_SIZE)
+          );
+          if (state.currentPage >= totalPages) return;
+          state.currentPage++;
+          renderRequests();
+        });
+        $("exportCounselling").addEventListener(
+          "click",
+          exportCounselling
+        );
+        $("closeCounsellingDialog").addEventListener("click", () => {
+          counsellingDialog.close();
+        });
+        counsellingDialog.addEventListener("close", () => {
+          $("counsellingDetailGrid").replaceChildren();
+        });
+        counsellingDialog.addEventListener("click", event => {
+          if (event.target === counsellingDialog) {
+            counsellingDialog.close();
+          }
+        });
+        loadCounselling();
+      }
+    })();
+  </script>
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

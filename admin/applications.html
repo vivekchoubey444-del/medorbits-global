@@ -1,24 +1,3143 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Applications | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Manage MedOrbits education, admission and career applications through the authorised administration API. Review applicant details, application progress and verification status.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Applications | MedOrbits Admin</title>
+
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(67,135,217,.18), transparent 36%),
+        radial-gradient(ellipse at 96% 32%, rgba(205,164,85,.09), transparent 34%),
+        radial-gradient(ellipse at 45% 100%, rgba(38,92,151,.12), transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans", sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button, a, input, select, textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .container {
+      width: min(1280px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    .accent-text {
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong {
+      color: var(--gold-bright);
+    }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s, filter .22s, box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+
+    .btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%, rgba(116,184,255,.09), transparent 34%),
+        radial-gradient(ellipse at 93% 55%, rgba(211,173,97,.065), transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a {
+      color: var(--blue-bright);
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display", Georgia, serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display", Georgia, serif;
+    }
+
+    .admin-identity strong {
+      display: block;
+      font-size: 11px;
+    }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav {
+      display: grid;
+      gap: 5px;
+    }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong {
+      color: var(--gold-bright);
+    }
+
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status.info {
+      color: var(--blue-bright);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(200px,.7fr);
+      gap: 22px;
+      align-items: center;
+      padding: clamp(18px,3vw,28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.13),transparent 45%),
+        radial-gradient(ellipse at 0% 100%,rgba(116,184,255,.11),transparent 48%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+
+    .hero h2 {
+      margin: 12px 0 10px;
+      font: 600 clamp(24px,3.4vw,36px)/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .hero-art {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(0deg,rgba(3,8,18,.83),rgba(3,8,18,.08)),
+        url("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80")
+        center/cover;
+    }
+
+    .hero-art-label {
+      position: absolute;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d2deed;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+
+    .stat-copy {
+      min-width: 0;
+    }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 24px/1.35 "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+      align-items: end;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #07162a;
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .field textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: #7188a4;
+    }
+
+    .field-help {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+    }
+
+    .filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 15px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .toolbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.055);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .pill.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .pill.warning {
+      border-color: rgba(255,224,160,.32);
+      color: var(--warning);
+    }
+
+    .pill.danger {
+      border-color: rgba(255,182,189,.4);
+      background: rgba(255,100,115,.07);
+      color: var(--danger);
+    }
+
+    .pill.info {
+      border-color: rgba(116,184,255,.28);
+      color: var(--blue-bright);
+    }
+
+    .pill.unknown {
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(3,11,22,.45);
+      scrollbar-width: thin;
+      scrollbar-color: #355777 #081426;
+    }
+
+    .data-table {
+      width: 100%;
+      min-width: 950px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .data-table th {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-gold);
+      background: rgba(116,184,255,.055);
+      color: var(--blue-bright);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(116,184,255,.1);
+      color: var(--text-soft);
+      font-size: 9px;
+      vertical-align: top;
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(116,184,255,.035);
+    }
+
+    .primary-value {
+      display: block;
+      max-width: 240px;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .secondary-value {
+      display: block;
+      max-width: 260px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .table-action {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(116,184,255,.05);
+      color: var(--blue-bright);
+      font-size: 9px;
+      cursor: pointer;
+    }
+
+    .table-action:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 90px;
+    }
+
+    .empty-state {
+      padding: 27px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display", Georgia, serif;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .pagination p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 19px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .mini-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .feature-banner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      min-height: 165px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg,rgba(14,43,74,.3),rgba(5,13,26,.55)),
+        url("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80")
+        center/cover;
+    }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong {
+      color: var(--gold-bright);
+    }
+
+    dialog {
+      width: min(800px,calc(100% - 24px));
+      max-height: min(88vh,850px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      background: #071426;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop {
+      background: rgba(0,0,0,.74);
+      backdrop-filter: blur(5px);
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dialog-header h2 {
+      margin: 0;
+      font: 600 22px "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+
+    .dialog-body {
+      padding: 18px;
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 9px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .detail-item {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(3,11,22,.35);
+    }
+
+    .detail-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .detail-item strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--text);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-bright);
+    }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a {
+        display: block;
+        padding: 11px 8px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+    }
+
+    @media (max-width:950px) {
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions {
+        width: 100%;
+      }
+
+      .heading-actions .btn {
+        flex: 1;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0,1fr) minmax(150px,.6fr);
+      }
+
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width:560px) {
+      .container {
+        width: calc(100% - 28px);
+      }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap {
+        min-height: 68px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .live-indicator {
+        display: none;
+      }
+
+      .page-main {
+        padding: 29px 0 44px;
+      }
+
+      .page-heading h1 {
+        font-size: clamp(32px,9vw,42px);
+      }
+
+      .heading-actions {
+        flex-direction: column;
+      }
+
+      .heading-actions .btn {
+        width: 100%;
+      }
+
+      .sidebar,
+      .panel {
+        padding: 15px;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+
+      .hero-art {
+        min-height: 145px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .stat-copy strong {
+        font-size: 22px;
+      }
+
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+
+      .filter-actions {
+        flex-direction: column;
+      }
+
+      .filter-actions .btn {
+        width: 100%;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+      }
+
+      .toolbar-actions .btn {
+        flex: 1;
+      }
+
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+
+      .feature-image {
+        min-height: 135px;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dialog-footer {
+        flex-direction: column-reverse;
+      }
+
+      .dialog-footer .btn {
+        width: 100%;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+
+      .pagination {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width:360px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand img {
+        width: 34px;
+        height: 34px;
+      }
+
+      .brand strong {
+        font-size: 12px;
+      }
+
+      .admin-nav {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid,
+      .filter-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .footer-grid {
+        gap: 18px 11px;
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Applications</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about applications. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Application management</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          SECURE WORKSPACE
+        </span>
+        <button class="menu-toggle" id="menuToggle" type="button"
+          aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/users.html">Users</a>
+        <a href="/admin/applications.html" aria-current="page">Applications</a>
+        <a href="/admin/admissions.html">Admissions</a>
+        <a href="/admin/documents.html">Documents</a>
+        <a href="/admin/audit-logs.html">Audit logs</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/admissions.html">Admissions</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Applications</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Application operations · Applicant lifecycle</span>
+          <h1>Application <span class="accent-text">management.</span></h1>
+          <p>
+            Review education, admission and career applications in one
+            controlled workspace. Search applicant records, inspect submitted
+            information, track verification progress and update application
+            status through the authorised administration API.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/admissions.html">Admission overview ↗</a>
+          <button class="btn" id="refreshApplications" type="button">↻ Refresh applications</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Application operations</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html" class="active" aria-current="page"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/application-status.html"><span class="nav-icon" aria-hidden="true">◷</span>Application status</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/official-resources.html"><span class="nav-icon" aria-hidden="true">▣</span>Official resources</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/access-control.html"><span class="nav-icon" aria-hidden="true">⚿</span>Access control</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Protect applicant information.</strong><br>
+            Access only records needed for your assigned duties. Verify
+            submitted information through approved procedures, record
+            decisions accurately and avoid exposing personal documents.
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Education · Admissions · Careers</span>
+              <h2 id="heroTitle">Every application. <span class="accent-text">A clear next step.</span></h2>
+              <p>
+                Maintain an organised view of applicant submissions, selected
+                courses, verification progress and application decisions.
+                All records and changes must be confirmed by the backend.
+              </p>
+              <div class="hero-actions">
+                <button class="btn" id="heroRefresh" type="button">↻ Load applications</button>
+                <a class="btn btn-outline" href="/admin/application-status.html">Application status ↗</a>
+              </div>
+            </div>
+
+            <div class="hero-art" role="img"
+              aria-label="Healthcare and education professional reviewing student application information">
+              <div class="hero-art-label">
+                Application lifecycle management
+                <span>Submission · Verification · Review · Decision</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="overviewTitle">Application overview</h2>
+                <p>Statistics are calculated from the application records returned by the configured API.</p>
+              </div>
+            </div>
+
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">▤</div>
+                <div class="stat-copy">
+                  <span>Total applications</span>
+                  <strong id="statTotal">--</strong>
+                  <small>Loaded application records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Under review</span>
+                  <strong id="statReview">--</strong>
+                  <small>Awaiting review or verification</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Approved</span>
+                  <strong id="statApproved">--</strong>
+                  <small>Approved application records</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">▧</div>
+                <div class="stat-copy">
+                  <span>Documents pending</span>
+                  <strong id="statDocuments">--</strong>
+                  <small>Awaiting document completion</small>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="filtersTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌕</div>
+              <div>
+                <h2 id="filtersTitle">Find an application</h2>
+                <p>Search application IDs, applicant names, email addresses, courses and application categories.</p>
+              </div>
+            </div>
+
+            <div id="connectionStatus" class="status warning" role="status" aria-live="polite">
+              Application data has not been loaded. Connect this page to the authenticated administration API.
+            </div>
+
+            <form id="filterForm">
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="searchInput">Search applications</label>
+                  <input id="searchInput" name="search" type="search"
+                    maxlength="150" placeholder="Application ID, name, email"
+                    autocomplete="off">
+                </div>
+
+                <div class="field">
+                  <label for="statusFilter">Application status</label>
+                  <select id="statusFilter" name="status">
+                    <option value="">All statuses</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="under_review">Under review</option>
+                    <option value="documents_pending">Documents pending</option>
+                    <option value="verified">Verified</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="categoryFilter">Application category</label>
+                  <select id="categoryFilter" name="category">
+                    <option value="">All categories</option>
+                    <option value="education">Education</option>
+                    <option value="admission">Admission</option>
+                    <option value="career">Career</option>
+                    <option value="recruitment">Recruitment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="courseFilter">Course or programme</label>
+                  <select id="courseFilter" name="course">
+                    <option value="">All courses</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="dateFrom">Submitted from</label>
+                  <input id="dateFrom" name="dateFrom" type="date">
+                </div>
+
+                <div class="field">
+                  <label for="dateTo">Submitted until</label>
+                  <input id="dateTo" name="dateTo" type="date">
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn" type="submit">⌕ Apply filters</button>
+                <button class="btn btn-outline" id="resetFilters" type="button">Reset filters</button>
+                <button class="btn btn-outline" id="reloadFromServer" type="button">↻ Reload from server</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="applicationsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="applicationsTitle">Application register</h2>
+                <p>Inspect applicant submissions and update workflow status using authorised server-side operations.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <p id="resultSummary" aria-live="polite">No application records loaded.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="exportApplications" type="button" disabled>⇩ Export loaded records</button>
+              </div>
+            </div>
+
+            <div class="table-wrap" tabindex="0" role="region"
+              aria-label="Application register; horizontally scrollable">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Application</th>
+                    <th scope="col">Applicant</th>
+                    <th scope="col">Course / programme</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="applicationsBody">
+                  <tr>
+                    <td colspan="7">
+                      <div class="empty-state">
+                        <strong>No application data loaded</strong>
+                        Application records will appear here when returned by the configured administration API.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination">
+              <p id="paginationSummary">Showing 0 applications</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button" disabled>← Previous</button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button" disabled>Next →</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="two-column">
+            <section class="panel" aria-labelledby="workflowTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">✓</div>
+                <div>
+                  <h2 id="workflowTitle">Application workflow</h2>
+                  <p>Keep application handling consistent and traceable.</p>
+                </div>
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Submission review</strong>
+                    <p>Confirm that the application contains the required information and has a valid reference ID.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Document verification</strong>
+                    <p>Check required documents through approved verification procedures and record any missing items.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Review and decision</strong>
+                    <p>Apply the appropriate workflow decision, provide a reason where required and preserve the audit trail.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="privacyTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">⬡</div>
+                <div>
+                  <h2 id="privacyTitle">Applicant data protection</h2>
+                  <p>Handle personal information with appropriate access controls.</p>
+                </div>
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">A</div>
+                  <div class="mini-copy">
+                    <strong>Limit access to authorised staff</strong>
+                    <p>Enforce permissions on the server for every application and document request.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">B</div>
+                  <div class="mini-copy">
+                    <strong>Keep decisions traceable</strong>
+                    <p>Record the reviewer, previous and new status, timestamp and reason for each change.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">C</div>
+                  <div class="mini-copy">
+                    <strong>Protect document downloads</strong>
+                    <p>Use authorised document endpoints instead of public file paths or unprotected direct links.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="feature-banner" aria-labelledby="admissionsTitle">
+            <div>
+              <span class="eyebrow">Admissions and applicant services</span>
+              <h2 id="admissionsTitle">Better tracking. <span class="accent-text">Clearer outcomes.</span></h2>
+              <p>
+                Coordinate application reviews with admissions, document
+                verification and applicant support. Keep workflow decisions
+                consistent and ensure that applicants receive accurate updates.
+              </p>
+              <div class="hero-actions">
+                <a class="btn" href="/admin/admissions.html">Open admissions ↗</a>
+                <a class="btn btn-outline" href="/admin/application-status.html">Application status</a>
+              </div>
+            </div>
+            <div class="feature-image" role="img"
+              aria-label="University campus representing education and admission services"></div>
+          </section>
+
+          <div class="notice">
+            <strong>Administration and privacy notice:</strong>
+            This page is a client interface, not an authorization boundary.
+            The backend must authenticate every request, enforce role-based
+            permissions, validate status transitions, protect applicant
+            documents, prevent unauthorised disclosure, apply appropriate
+            CSRF protections where relevant and record successful and rejected
+            operations. Do not place passwords, session tokens, identity
+            documents or other sensitive applicant data in URLs or browser logs.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="applicationDialog" aria-labelledby="applicationDialogTitle">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow">Applicant record</span>
+        <h2 id="applicationDialogTitle">Application details</h2>
+      </div>
+      <button class="btn btn-outline btn-small" id="closeApplicationDialog" type="button">Close ✕</button>
+    </div>
+
+    <div class="dialog-body">
+      <div id="applicationDialogStatus" class="status info" role="status" aria-live="polite">
+        Details reflect the currently loaded API record.
+      </div>
+
+      <div id="applicationDetailGrid" class="detail-grid"></div>
+
+      <form id="statusForm">
+        <div class="field" style="margin-top:16px">
+          <label for="newStatus">Application status</label>
+          <select id="newStatus" name="status" required>
+            <option value="">Select a status</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under review</option>
+            <option value="documents_pending">Documents pending</option>
+            <option value="verified">Verified</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+          <span class="field-help">
+            The backend must validate whether the requested transition is permitted.
+          </span>
+        </div>
+
+        <div class="field" style="margin-top:13px">
+          <label for="statusReason">Reason for status change</label>
+          <textarea id="statusReason" name="reason" maxlength="1000"
+            required placeholder="Enter the review outcome, reason or internal reference."></textarea>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="btn btn-outline" id="cancelStatusEdit" type="button">Cancel</button>
+          <button class="btn" id="saveStatus" type="submit">Save status change</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo"
+              width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/reports.html">Reports</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Resources</h2>
+          <a href="/admin/documents.html">Documents</a>
+          <a href="/admin/official-resources.html">Official resources</a>
+          <a href="/admin/courses.html">Courses</a>
+          <a href="/admin/colleges.html">Colleges</a>
+          <a href="/admin/universities.html">Universities</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        Applicant information is confidential and must be accessed only
+        for authorised operational purposes. Application decisions should
+        follow the applicable admissions, verification and privacy policies.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Application Management
+       *
+       * Default API contract:
+       *
+       * GET   /api/admin/applications
+       * PATCH /api/admin/applications/:id/status
+       *
+       * Optional runtime configuration:
+       *
+       * window.MEDORBITS_CONFIG = {
+       *   adminApplicationsEndpoint: "/api/admin/applications"
+       * };
+       *
+       * Expected GET response:
+       *
+       * {
+       *   "applications": [{
+       *     "id": "APP-2026-001",
+       *     "applicantId": "USER-001",
+       *     "applicantName": "Example Applicant",
+       *     "email": "applicant@example.com",
+       *     "phone": "Not required for this example",
+       *     "course": "MBBS",
+       *     "category": "admission",
+       *     "institution": "Example institution",
+       *     "status": "under_review",
+       *     "documentStatus": "pending",
+       *     "submittedAt": "2026-10-25T10:00:00Z",
+       *     "updatedAt": "2026-10-25T12:00:00Z",
+       *     "reference": "REF-001"
+       *   }],
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "Admin workspace"
+       *   }
+       * }
+       *
+       * Also accepts { "data": { "applications": [...], "admin": {...} } }.
+       *
+       * Status update body:
+       * { "status": "under_review", "reason": "Verification started" }
+       *
+       * Adapt paths and fields to the actual backend implementation.
+       * The server must validate status transitions and permissions and
+       * create an audit record for every successful status change.
+       * This client never fabricates application records or status updates.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const applicationDialog = $("applicationDialog");
+        const statusBox = $("connectionStatus");
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        const PAGE_SIZE = 10;
+
+        const state = {
+          loading: false,
+          saving: false,
+          controller: null,
+          requestSequence: 0,
+          applications: [],
+          filteredApplications: [],
+          loadedSuccessfully: false,
+          selectedApplicationId: null,
+          currentPage: 1
+        };
+
+        const validStatuses = new Set([
+          "submitted",
+          "under_review",
+          "documents_pending",
+          "verified",
+          "approved",
+          "rejected",
+          "withdrawn",
+          "unknown"
+        ]);
+
+        const validCategories = new Set([
+          "education",
+          "admission",
+          "career",
+          "recruitment",
+          "other",
+          "unknown"
+        ]);
+
+        const reviewStatuses = new Set([
+          "submitted",
+          "under_review",
+          "documents_pending"
+        ]);
+
+        function element(tag, className, content) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (content !== undefined) node.textContent = content;
+          return node;
+        }
+
+        function value(input, fallback = "") {
+          if (typeof input === "string" && input.trim()) {
+            return input.trim();
+          }
+
+          if (typeof input === "number" && Number.isFinite(input)) {
+            return String(input);
+          }
+
+          return fallback;
+        }
+
+        function normaliseKey(input) {
+          return value(input, "unknown")
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
+        }
+
+        function normaliseStatus(input) {
+          const status = normaliseKey(input);
+          return validStatuses.has(status) ? status : "unknown";
+        }
+
+        function normaliseCategory(input) {
+          const category = normaliseKey(input);
+          return validCategories.has(category) ? category : "other";
+        }
+
+        function safeId(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return "";
+          }
+
+          const rawId = raw.id ?? raw._id ?? raw.applicationId;
+
+          if (typeof rawId !== "string" && typeof rawId !== "number") {
+            return "";
+          }
+
+          const id = String(rawId).trim();
+
+          return id.length > 0 && id.length <= 200 ? id : "";
+        }
+
+        function normaliseApplication(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return null;
+          }
+
+          const id = safeId(raw);
+          if (!id) return null;
+
+          const applicant = raw.applicant && typeof raw.applicant === "object"
+            ? raw.applicant
+            : {};
+
+          const courseValue = raw.course ?? raw.programme ?? raw.program ?? "";
+          const course = courseValue && typeof courseValue === "object"
+            ? value(courseValue.name ?? courseValue.title ?? courseValue.id, "Not specified")
+            : value(courseValue, "Not specified");
+
+          return {
+            id,
+            applicantId: value(raw.applicantId ?? raw.userId ?? applicant.id, "Not provided"),
+            applicantName: value(
+              raw.applicantName ?? raw.fullName ?? raw.name ??
+              applicant.name ?? applicant.fullName,
+              "Applicant name not provided"
+            ),
+            email: value(raw.email ?? raw.emailAddress ?? applicant.email, ""),
+            course,
+            category: normaliseCategory(raw.category ?? raw.applicationType ?? raw.type),
+            institution: value(
+              raw.institution ?? raw.college ?? raw.university ?? raw.institutionName,
+              "Not specified"
+            ),
+            status: normaliseStatus(raw.status ?? raw.applicationStatus ?? raw.state),
+            documentStatus: normaliseKey(
+              raw.documentStatus ?? raw.documentsStatus ?? raw.verificationStatus
+            ),
+            submittedAt: raw.submittedAt ?? raw.submitted_at ?? raw.createdAt ?? raw.created_at ?? null,
+            updatedAt: raw.updatedAt ?? raw.updated_at ?? raw.modifiedAt ?? null,
+            reference: value(raw.reference ?? raw.referenceNumber ?? raw.applicationNumber, ""),
+            notes: value(raw.notes ?? raw.reviewNotes, ""),
+            qualification: value(raw.qualification ?? raw.previousQualification, ""),
+            intake: value(raw.intake ?? raw.admissionCycle ?? raw.session, ""),
+            phone: value(raw.phone ?? raw.phoneNumber ?? applicant.phone, ""),
+            location: value(raw.location ?? raw.city, "")
+          };
+        }
+
+        function formatDate(input) {
+          if (
+            (typeof input !== "string" && typeof input !== "number") ||
+            !String(input).trim()
+          ) {
+            return "Not provided";
+          }
+
+          const date = new Date(input);
+
+          if (Number.isNaN(date.getTime())) {
+            return "Not provided";
+          }
+
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
+        function formatDateOnly(input) {
+          if (!input) return "";
+
+          const date = new Date(input);
+          if (Number.isNaN(date.getTime())) return "";
+
+          return date.toISOString().slice(0, 10);
+        }
+
+        function humanise(input) {
+          return value(input, "Unknown")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b\w/g, character => character.toUpperCase());
+        }
+
+        function statusClass(status) {
+          if (["approved", "verified"].includes(status)) return "success";
+          if (["submitted", "under_review", "documents_pending"].includes(status)) return "warning";
+          if (["rejected", "withdrawn"].includes(status)) return "danger";
+          if (status === "unknown") return "unknown";
+          return "info";
+        }
+
+        function statusPill(status) {
+          return element("span", `pill ${statusClass(status)}`, humanise(status));
+        }
+
+        function setStatus(message, type = "info") {
+          statusBox.textContent = message;
+          statusBox.className = `status ${type}`;
+        }
+
+        function setDialogStatus(message, type = "info") {
+          $("applicationDialogStatus").textContent = message;
+          $("applicationDialogStatus").className = `status ${type}`;
+        }
+
+        function getEndpoint() {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured = config.adminApplicationsEndpoint || "/api/admin/applications";
+
+          let endpoint;
+
+          try {
+            endpoint = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured applications API endpoint is invalid.");
+          }
+
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error("The applications endpoint must use the same origin as this page.");
+          }
+
+          if (endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+            throw new Error("The endpoint must not contain credentials, query parameters or fragments.");
+          }
+
+          return endpoint;
+        }
+
+        function requestHeaders(includeJson = false) {
+          const headers = {
+            Accept: "application/json"
+          };
+
+          if (includeJson) {
+            headers["Content-Type"] = "application/json";
+          }
+
+          const csrf = document.querySelector('meta[name="csrf-token"]');
+
+          if (csrf && csrf.content.trim()) {
+            headers["X-CSRF-Token"] = csrf.content.trim();
+          }
+
+          return headers;
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            const data = await response.json();
+
+            return data && typeof data === "object" ? data : {};
+          } catch {
+            return {};
+          }
+        }
+
+        function apiError(response, data) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+
+          if (response.status === 403) {
+            return "Access denied. Your account cannot perform this operation.";
+          }
+
+          if (response.status === 404) {
+            return "The applications API route or requested record was not found. Check your backend routes.";
+          }
+
+          if (response.status === 409) {
+            return "The application changed or conflicts with the current workflow. Reload the records and try again.";
+          }
+
+          if (response.status === 422) {
+            return value(data.message, "The server rejected the submitted values. Check the validation requirements.");
+          }
+
+          if (response.status === 429) {
+            return "The API rate limit was reached. Wait before trying again.";
+          }
+
+          if (response.status >= 500) {
+            return "The server could not complete the applications request.";
+          }
+
+          return value(data.message, "The applications API could not complete the request.");
+        }
+
+        function renderEmpty(body, colspan, title, description) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          const box = element("div", "empty-state");
+
+          box.append(
+            element("strong", "", title),
+            element("div", "", description)
+          );
+
+          cell.colSpan = colspan;
+          cell.appendChild(box);
+          row.appendChild(cell);
+          body.replaceChildren(row);
+        }
+
+        function populateCourseFilter() {
+          const select = $("courseFilter");
+          const previousValue = select.value;
+
+          select.replaceChildren(new Option("All courses", ""));
+
+          const courses = [...new Set(
+            state.applications
+              .map(application => application.course)
+              .filter(course => course && course !== "Not specified")
+          )].sort((a, b) => a.localeCompare(b));
+
+          courses.forEach(course => {
+            select.add(new Option(course, course));
+          });
+
+          if ([...select.options].some(option => option.value === previousValue)) {
+            select.value = previousValue;
+          }
+        }
+
+        function updateStats() {
+          const applications = state.applications;
+
+          $("statTotal").textContent = String(applications.length);
+
+          $("statReview").textContent = String(
+            applications.filter(application => reviewStatuses.has(application.status)).length
+          );
+
+          $("statApproved").textContent = String(
+            applications.filter(application => application.status === "approved").length
+          );
+
+          $("statDocuments").textContent = String(
+            applications.filter(application =>
+              application.status === "documents_pending" ||
+              ["pending", "missing", "incomplete", "required"].includes(application.documentStatus)
+            ).length
+          );
+        }
+
+        function applyFilters() {
+          const query = $("searchInput").value.trim().toLowerCase();
+          const status = $("statusFilter").value;
+          const category = $("categoryFilter").value;
+          const course = $("courseFilter").value;
+          const dateFrom = $("dateFrom").value;
+          const dateTo = $("dateTo").value;
+
+          state.filteredApplications = state.applications.filter(application => {
+            if (status && application.status !== status) {
+              return false;
+            }
+
+            if (category && application.category !== category) {
+              return false;
+            }
+
+            if (course && application.course !== course) {
+              return false;
+            }
+
+            if (query) {
+              const haystack = [
+                application.id,
+                application.reference,
+                application.applicantId,
+                application.applicantName,
+                application.email,
+                application.course,
+                application.institution,
+                application.category,
+                application.status
+              ].join(" ").toLowerCase();
+
+              if (!haystack.includes(query)) {
+                return false;
+              }
+            }
+
+            if (dateFrom || dateTo) {
+              if (!application.submittedAt) {
+                return false;
+              }
+
+              const submittedDate = formatDateOnly(application.submittedAt);
+
+              if (!submittedDate) return false;
+              if (dateFrom && submittedDate < dateFrom) return false;
+              if (dateTo && submittedDate > dateTo) return false;
+            }
+
+            return true;
+          });
+
+          state.currentPage = 1;
+          renderApplications();
+        }
+
+        function renderApplications() {
+          updateStats();
+
+          const total = state.filteredApplications.length;
+          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+          state.currentPage = Math.min(state.currentPage, totalPages);
+
+          const start = (state.currentPage - 1) * PAGE_SIZE;
+          const pageItems = state.filteredApplications.slice(start, start + PAGE_SIZE);
+
+          if (!pageItems.length) {
+            renderEmpty(
+              $("applicationsBody"),
+              7,
+              state.loadedSuccessfully ? "No matching applications" : "No application data loaded",
+              state.loadedSuccessfully
+                ? "No applications match your current search and filter criteria."
+                : "Application records will appear here when returned by the configured API."
+            );
+          } else {
+            const fragment = document.createDocumentFragment();
+
+            pageItems.forEach(application => {
+              const row = document.createElement("tr");
+
+              const applicationCell = document.createElement("td");
+              applicationCell.append(
+                element("span", "primary-value", application.id),
+                element("span", "secondary-value", application.reference
+                  ? `Reference: ${application.reference}`
+                  : "Reference not provided")
+              );
+
+              const applicantCell = document.createElement("td");
+              applicantCell.append(
+                element("span", "primary-value", application.applicantName),
+                element("span", "secondary-value", `Account: ${application.applicantId}`)
+              );
+
+              if (application.email) {
+                applicantCell.append(element("span", "secondary-value", application.email));
+              }
+
+              const courseCell = document.createElement("td");
+              courseCell.append(
+                element("span", "primary-value", application.course),
+                element("span", "secondary-value", application.institution)
+              );
+
+              const categoryCell = element("td", "", humanise(application.category));
+              const submittedCell = element("td", "", formatDate(application.submittedAt));
+
+              const statusCell = document.createElement("td");
+              statusCell.appendChild(statusPill(application.status));
+
+              const actionCell = document.createElement("td");
+              const actions = element("div", "row-actions");
+              const inspect = element("button", "table-action", "Inspect");
+
+              inspect.type = "button";
+              inspect.setAttribute(
+                "aria-label",
+                `Inspect application ${application.id}`
+              );
+              inspect.addEventListener("click", () => inspectApplication(application));
+
+              actions.appendChild(inspect);
+              actionCell.appendChild(actions);
+
+              row.append(
+                applicationCell,
+                applicantCell,
+                courseCell,
+                categoryCell,
+                submittedCell,
+                statusCell,
+                actionCell
+              );
+
+              fragment.appendChild(row);
+            });
+
+            $("applicationsBody").replaceChildren(fragment);
+          }
+
+          $("resultSummary").textContent = state.loadedSuccessfully
+            ? `${total} matching application(s) from ${state.applications.length} loaded record(s).`
+            : "No application records loaded.";
+
+          $("paginationSummary").textContent = total
+            ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total} application(s) · Page ${state.currentPage} of ${totalPages}`
+            : "Showing 0 applications";
+
+          $("previousPage").disabled = !state.loadedSuccessfully || state.currentPage <= 1;
+          $("nextPage").disabled = !state.loadedSuccessfully || state.currentPage >= totalPages;
+          $("exportApplications").disabled = !state.loadedSuccessfully || !state.applications.length || state.loading;
+        }
+
+        function setLoading(loading) {
+          state.loading = loading;
+
+          [
+            "refreshApplications",
+            "heroRefresh",
+            "reloadFromServer"
+          ].forEach(id => {
+            $(id).disabled = loading;
+          });
+
+          $("refreshApplications").textContent = loading
+            ? "Loading…"
+            : "↻ Refresh applications";
+
+          $("reloadFromServer").textContent = loading
+            ? "Loading…"
+            : "↻ Reload from server";
+
+          $("exportApplications").disabled =
+            loading || !state.loadedSuccessfully || !state.applications.length;
+        }
+
+        async function loadApplications() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+
+          const controller = new AbortController();
+          state.controller = controller;
+
+          const requestId = ++state.requestSequence;
+
+          setLoading(true);
+          setStatus("Retrieving application records from the administration API…", "info");
+
+          try {
+            const endpoint = getEndpoint();
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+
+            const data = await readJson(response);
+
+            if (requestId !== state.requestSequence) return;
+
+            if (!response.ok) {
+              throw new Error(apiError(response, data));
+            }
+
+            let payload = data;
+
+            if (
+              payload.data &&
+              typeof payload.data === "object" &&
+              !Array.isArray(payload.data)
+            ) {
+              payload = payload.data;
+            }
+
+            if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+              throw new Error("The applications API returned an unsupported response format.");
+            }
+
+            if (!Array.isArray(payload.applications)) {
+              throw new Error(
+                "The API response must contain an applications array. Adapt the client to your backend response contract."
+              );
+            }
+
+            state.applications = payload.applications
+              .map(normaliseApplication)
+              .filter(Boolean);
+
+            state.loadedSuccessfully = true;
+            state.currentPage = 1;
+
+            if (payload.admin && typeof payload.admin === "object" && !Array.isArray(payload.admin)) {
+              $("adminName").textContent = value(payload.admin.name, "Administration");
+              $("adminEmail").textContent = value(payload.admin.email, "Admin workspace");
+            }
+
+            populateCourseFilter();
+            applyFilters();
+
+            setStatus(
+              `Application data loaded at ${new Date().toLocaleTimeString()}. Status changes remain subject to server-side authorization and workflow validation.`,
+              "success"
+            );
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+
+            state.applications = [];
+            state.filteredApplications = [];
+            state.loadedSuccessfully = false;
+            state.currentPage = 1;
+
+            populateCourseFilter();
+            updateStats();
+
+            renderEmpty(
+              $("applicationsBody"),
+              7,
+              "Unable to load applications",
+              "Check the API route, response format, server availability and administrator permissions."
+            );
+
+            $("resultSummary").textContent = "Unable to load application records.";
+            $("paginationSummary").textContent = "Showing 0 applications";
+            $("previousPage").disabled = true;
+            $("nextPage").disabled = true;
+            $("exportApplications").disabled = true;
+
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load application records.",
+              "error"
+            );
+          } finally {
+            if (requestId === state.requestSequence) {
+              setLoading(false);
+              updateStats();
+            }
+          }
+        }
+
+        function addDetail(container, label, text) {
+          const item = element("div", "detail-item");
+
+          item.append(
+            element("span", "", label),
+            element("strong", "", value(text, "Not provided"))
+          );
+
+          container.appendChild(item);
+        }
+
+        function inspectApplication(application) {
+          state.selectedApplicationId = application.id;
+
+          $("applicationDialogTitle").textContent =
+            `Application: ${application.id}`;
+
+          setDialogStatus(
+            "Review the currently loaded record before submitting a status change.",
+            "info"
+          );
+
+          const grid = $("applicationDetailGrid");
+          grid.replaceChildren();
+
+          addDetail(grid, "Application ID", application.id);
+          addDetail(grid, "Reference number", application.reference);
+          addDetail(grid, "Applicant", application.applicantName);
+          addDetail(grid, "Applicant account", application.applicantId);
+          addDetail(grid, "Email address", application.email);
+          addDetail(grid, "Phone", application.phone);
+          addDetail(grid, "Course / programme", application.course);
+          addDetail(grid, "Institution", application.institution);
+          addDetail(grid, "Category", humanise(application.category));
+          addDetail(grid, "Application status", humanise(application.status));
+          addDetail(grid, "Document status", humanise(application.documentStatus));
+          addDetail(grid, "Qualification", application.qualification);
+          addDetail(grid, "Intake / session", application.intake);
+          addDetail(grid, "Location", application.location);
+          addDetail(grid, "Submitted", formatDate(application.submittedAt));
+          addDetail(grid, "Last updated", formatDate(application.updatedAt));
+          addDetail(grid, "Review notes", application.notes);
+
+          $("statusForm").reset();
+          $("newStatus").value = application.status === "unknown" ? "" : application.status;
+          $("saveStatus").disabled = state.saving;
+
+          if (typeof applicationDialog.showModal === "function") {
+            applicationDialog.showModal();
+          } else {
+            setStatus(
+              "This browser does not support the application details dialog.",
+              "warning"
+            );
+          }
+        }
+
+        async function sendMutation(url, method, body) {
+          let endpoint;
+
+          try {
+            endpoint = new URL(url, window.location.origin);
+          } catch {
+            throw new Error("The application API URL is invalid.");
+          }
+
+          if (endpoint.origin !== window.location.origin) {
+            throw new Error("Mutation requests must use the same origin as this page.");
+          }
+
+          const response = await fetch(endpoint.href, {
+            method,
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: requestHeaders(true),
+            body: JSON.stringify(body)
+          });
+
+          const data = await readJson(response);
+
+          if (!response.ok) {
+            throw new Error(apiError(response, data));
+          }
+
+          return data;
+        }
+
+        async function saveStatusChange(event) {
+          event.preventDefault();
+
+          if (state.saving) return;
+
+          const application = state.applications.find(
+            item => item.id === state.selectedApplicationId
+          );
+
+          const newStatus = $("newStatus").value;
+          const reason = $("statusReason").value.trim();
+
+          if (!application) {
+            setDialogStatus(
+              "The selected application is no longer available. Reload the records.",
+              "error"
+            );
+            return;
+          }
+
+          if (!validStatuses.has(newStatus) || newStatus === "unknown") {
+            setDialogStatus("Select a valid application status.", "warning");
+            return;
+          }
+
+          if (reason.length < 5) {
+            setDialogStatus(
+              "Enter a meaningful reason for the status change.",
+              "warning"
+            );
+            $("statusReason").focus();
+            return;
+          }
+
+          if (newStatus === application.status) {
+            setDialogStatus(
+              "The selected status matches the current status. No change was submitted.",
+              "warning"
+            );
+            return;
+          }
+
+          state.saving = true;
+          $("saveStatus").disabled = true;
+          $("saveStatus").textContent = "Saving…";
+
+          setDialogStatus("Submitting the status change to the server…", "info");
+
+          try {
+            const base = getEndpoint().pathname.replace(/\/$/, "");
+            const url = `${base}/${encodeURIComponent(application.id)}/status`;
+
+            await sendMutation(url, "PATCH", {
+              status: newStatus,
+              reason
+            });
+
+            applicationDialog.close();
+
+            setStatus(
+              "The server accepted the status change. Reloading authoritative application records…",
+              "success"
+            );
+
+            await loadApplications();
+          } catch (error) {
+            setDialogStatus(
+              error instanceof Error
+                ? error.message
+                : "The status change could not be completed.",
+              "error"
+            );
+          } finally {
+            state.saving = false;
+            $("saveStatus").disabled = false;
+            $("saveStatus").textContent = "Save status change";
+          }
+        }
+
+        function csvEscape(input) {
+          let text = input == null ? "" : String(input);
+
+          // Prevent spreadsheet formula injection in exported text cells.
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+          }
+
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+
+        function exportApplications() {
+          if (!state.loadedSuccessfully || !state.applications.length) {
+            setStatus(
+              "There are no loaded application records available to export.",
+              "warning"
+            );
+            return;
+          }
+
+          const rows = [
+            [
+              "Application ID",
+              "Reference",
+              "Applicant ID",
+              "Applicant name",
+              "Email",
+              "Course",
+              "Institution",
+              "Category",
+              "Status",
+              "Document status",
+              "Submitted at",
+              "Updated at"
+            ],
+            ...state.applications.map(application => [
+              application.id,
+              application.reference,
+              application.applicantId,
+              application.applicantName,
+              application.email,
+              application.course,
+              application.institution,
+              application.category,
+              application.status,
+              application.documentStatus,
+              application.submittedAt || "",
+              application.updatedAt || ""
+            ])
+          ];
+
+          const csv = "\uFEFF" +
+            rows.map(row => row.map(csvEscape).join(",")).join("\r\n");
+
+          const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+          });
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+
+          link.href = objectUrl;
+          link.download = "medorbits-applications.csv";
+          link.style.display = "none";
+
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+
+        $("refreshApplications").addEventListener("click", loadApplications);
+        $("heroRefresh").addEventListener("click", loadApplications);
+        $("reloadFromServer").addEventListener("click", loadApplications);
+
+        $("filterForm").addEventListener("submit", event => {
+          event.preventDefault();
+          applyFilters();
+        });
+
+        $("searchInput").addEventListener("input", applyFilters);
+        $("statusFilter").addEventListener("change", applyFilters);
+        $("categoryFilter").addEventListener("change", applyFilters);
+        $("courseFilter").addEventListener("change", applyFilters);
+        $("dateFrom").addEventListener("change", applyFilters);
+        $("dateTo").addEventListener("change", applyFilters);
+
+        $("resetFilters").addEventListener("click", () => {
+          $("filterForm").reset();
+          applyFilters();
+        });
+
+        $("previousPage").addEventListener("click", () => {
+          if (state.currentPage <= 1) return;
+
+          state.currentPage--;
+          renderApplications();
+        });
+
+        $("nextPage").addEventListener("click", () => {
+          const totalPages = Math.max(
+            1,
+            Math.ceil(state.filteredApplications.length / PAGE_SIZE)
+          );
+
+          if (state.currentPage >= totalPages) return;
+
+          state.currentPage++;
+          renderApplications();
+        });
+
+        $("exportApplications").addEventListener("click", exportApplications);
+        $("statusForm").addEventListener("submit", saveStatusChange);
+
+        $("closeApplicationDialog").addEventListener("click", () => {
+          applicationDialog.close();
+        });
+
+        $("cancelStatusEdit").addEventListener("click", () => {
+          applicationDialog.close();
+        });
+
+        applicationDialog.addEventListener("close", () => {
+          $("applicationDetailGrid").replaceChildren();
+          $("statusForm").reset();
+          state.selectedApplicationId = null;
+        });
+
+        loadApplications();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

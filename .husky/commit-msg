@@ -1,124 +1,321 @@
+
 #!/usr/bin/env sh
 # ==============================================================================
 # MedOrbits -- Commit Message Validator
 #
-# Format:
+# File: .github/scripts/validate-commit-message.sh
+#
+# Purpose:
+#   Validate the commit subject against the Conventional Commits format.
+#
+# Supported formats:
 #   type(scope): description
 #   type: description
 #   type(scope)!: description
-#
-# Examples:
-#   feat(auth): add email verification
-#   fix(api): handle missing application ID
-#   docs: update installation guide
-#   chore(deps): update dependencies
-#   feat(api)!: remove deprecated endpoint
+#   type!: description
 #
 # Supported types:
-#   feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+#   feat, fix, docs, style, refactor, perf, test, build,
+#   ci, chore, revert
 #
-# This script validates the commit subject line. It does not enforce a complete
-# Conventional Commits body or footer specification.
+# Scope characters:
+#   Letters, numbers, dots, underscores, slashes and hyphens.
+#
+# Rules:
+#   - The first non-empty, non-comment line is the subject.
+#   - The subject must use a supported type.
+#   - Scope and breaking-change markers are optional.
+#   - Exactly one space must follow the colon.
+#   - The description must begin with a non-whitespace character.
+#   - The description must contain at least one letter or number.
+#   - Leading and trailing subject whitespace is prohibited.
+#   - Subject length defaults to 100 characters.
+#   - The maximum length can be configured using MAX_SUBJECT_LENGTH.
+#   - CRLF line endings are supported.
+#
+# Usage:
+#   .github/scripts/validate-commit-message.sh <commit-message-file>
+#   .github/scripts/validate-commit-message.sh --help
+#
+# Configuration:
+#   MAX_SUBJECT_LENGTH=120 .github/scripts/validate-commit-message.sh .git/COMMIT_EDITMSG
+#
+# Compatibility:
+#   POSIX sh, awk, sed, grep, wc, tr
+#
+# Note:
+#   This validates the commit subject, not the complete commit body,
+#   footer, issue references or breaking-change footer specification.
 # ==============================================================================
+
 set -eu
-commit_msg_file="${1:-}"
+
+PROGRAM_NAME=${0##*/}
+DEFAULT_MAX_LENGTH=100
+MAX_SUBJECT_LENGTH=${MAX_SUBJECT_LENGTH:-$DEFAULT_MAX_LENGTH}
+VERBOSE=${VERBOSE:-0}
+
 # ------------------------------------------------------------------------------
-# 1. Validate input
+# Output helpers
 # ------------------------------------------------------------------------------
-if [ -z "$commit_msg_file" ] || [ ! -f "$commit_msg_file" ]; then
-    printf '%s\n' \
-        "ERROR: A valid commit message file must be provided." >&2
-    printf '%s\n' \
-        "Usage: $0 <commit-message-file>" >&2
-    exit 1
+
+info() {
+    printf '%s\n' "$*"
+}
+
+error() {
+    printf 'ERROR: %s\n' "$*" >&2
+}
+
+usage() {
+    cat <<EOF
+MedOrbits Commit Message Validator
+
+Usage:
+  $PROGRAM_NAME <commit-message-file>
+  $PROGRAM_NAME --help
+
+Environment variables:
+  MAX_SUBJECT_LENGTH  Maximum permitted subject length (default: 100)
+  VERBOSE             Set to 1 for additional validation details
+
+Examples:
+  $PROGRAM_NAME .git/COMMIT_EDITMSG
+  MAX_SUBJECT_LENGTH=120 $PROGRAM_NAME .git/COMMIT_EDITMSG
+  VERBOSE=1 $PROGRAM_NAME .git/COMMIT_EDITMSG
+EOF
+}
+
+fail() {
+    error "$1"
+    exit "${2:-1}"
+}
+
+# ------------------------------------------------------------------------------
+# 1. Parse arguments
+# ------------------------------------------------------------------------------
+
+case "${1:-}" in
+    --help|-h)
+        usage
+        exit 0
+        ;;
+    --version|-V)
+        info "MedOrbits Commit Message Validator 2.0.0"
+        exit 0
+        ;;
+    "")
+        usage >&2
+        exit 2
+        ;;
+    -*)
+        fail "Unknown option: $1. Use --help for usage." 2
+        ;;
+esac
+
+commit_msg_file=$1
+
+if [ "$#" -ne 1 ]; then
+    fail "Exactly one commit message file must be provided. Use --help for usage." 2
 fi
+
+if [ ! -f "$commit_msg_file" ]; then
+    fail "Commit message file does not exist or is not a regular file: $commit_msg_file" 2
+fi
+
+if [ ! -r "$commit_msg_file" ]; then
+    fail "Commit message file is not readable: $commit_msg_file" 2
+fi
+
 # ------------------------------------------------------------------------------
-# 2. Read the first non-empty, non-comment line
+# 2. Validate configuration
 # ------------------------------------------------------------------------------
+
+case "$MAX_SUBJECT_LENGTH" in
+    ""|*[!0-9]*)
+        fail "MAX_SUBJECT_LENGTH must be a positive integer." 2
+        ;;
+esac
+
+if [ "$MAX_SUBJECT_LENGTH" -lt 1 ]; then
+    fail "MAX_SUBJECT_LENGTH must be greater than zero." 2
+fi
+
+case "$VERBOSE" in
+    0|1)
+        ;;
+    *)
+        fail "VERBOSE must be either 0 or 1." 2
+        ;;
+esac
+
+# ------------------------------------------------------------------------------
+# 3. Extract the first non-empty, non-comment subject
+#
+# Git-generated comment lines beginning with optional whitespace followed by #
+# are ignored. Strip a trailing carriage return before checking each line so
+# that CRLF files are handled correctly.
+# ------------------------------------------------------------------------------
+
 commit_msg=$(
     awk '
-        /^[[:space:]]*#/ { next }
-        /^[[:space:]]*$/ { next }
         {
             sub(/\r$/, "")
+        }
+
+        /^[[:space:]]*#/ {
+            next
+        }
+
+        /^[[:space:]]*$/ {
+            next
+        }
+
+        {
             print
             exit
         }
     ' "$commit_msg_file"
 )
+
 if [ -z "$commit_msg" ]; then
-    printf '%s\n' "ERROR: Commit message is empty." >&2
-    exit 1
+    fail "Commit message is empty or contains only blank/comment lines."
 fi
-# Reject leading or trailing whitespace in the subject.
+
+# ------------------------------------------------------------------------------
+# 4. Validate subject whitespace
+# ------------------------------------------------------------------------------
+
 trimmed_msg=$(
     printf '%s\n' "$commit_msg" |
-    sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+        sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
 )
+
 if [ "$commit_msg" != "$trimmed_msg" ]; then
-    printf '%s\n' \
-        "ERROR: The commit subject must not start or end with whitespace." >&2
-    exit 1
+    fail "The commit subject must not start or end with whitespace."
 fi
+
+# Reject tabs and other whitespace characters within the required separator.
+# The main format check below requires exactly one ordinary space after ':'.
+
 # ------------------------------------------------------------------------------
-# 3. Validate Conventional Commit subject
-# ------------------------------------------------------------------------------
-# Rules:
-# - Allowed type is required.
-# - Optional scope may contain letters, numbers, dots, underscores, slashes,
-#   and hyphens.
-# - Optional ! marks a breaking change.
-# - A colon and one space are required before the description.
-# - Description must start with a non-whitespace character.
-# - Subject length must not exceed 100 characters.
+# 5. Validate Conventional Commits format
 #
-# POSIX character classes are used for portable shell behavior.
-if ! printf '%s\n' "$commit_msg" | grep -Eq \
-    '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([[:alnum:]._/-]+\))?!?: [^[:space:]].*$'; then
+# Accepted examples:
+#   feat(auth): add email verification
+#   fix(api): handle missing application ID
+#   docs: update installation guide
+#   chore(deps): update dependencies
+#   feat(api)!: remove deprecated endpoint
+#   revert: revert authentication change
+#
+# Rejected examples:
+#   Feature(auth): add verification
+#   feat(auth):  add verification
+#   feat(): add verification
+#   feat(auth): 
+#   feat(auth) add verification
+# ------------------------------------------------------------------------------
+
+commit_pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([[:alnum:]._/-]+\))?!?: [^[:space:]].*$'
+
+if ! printf '%s\n' "$commit_msg" | grep -Eq "$commit_pattern"; then
     cat >&2 <<'EOF'
-ERROR: Invalid commit message format.
+ERROR: Invalid commit subject format.
+
 Required format:
   type(scope): description
   type: description
   type(scope)!: description
+  type!: description
+
 Allowed types:
   feat, fix, docs, style, refactor, perf,
   test, build, ci, chore, revert
+
+Scope characters:
+  Letters, numbers, dots, underscores, slashes and hyphens.
+
 Valid examples:
   feat(auth): add email verification
   fix(api): handle missing application ID
   docs: update installation guide
   chore(deps): update dependencies
   feat(api)!: remove deprecated endpoint
+  feat!: change public API
+
+Check that:
+  - The type is supported and lowercase.
+  - Scope parentheses are balanced and non-empty.
+  - Exactly one space follows the colon.
+  - The description does not begin with whitespace.
 EOF
     exit 1
 fi
-# Count subject characters using the current locale.
-subject_length=$(
-    printf '%s' "$commit_msg" |
-    wc -m |
-    tr -d '[:space:]'
-)
-if [ "$subject_length" -gt 100 ]; then
-    printf '%s\n' \
-        "ERROR: Commit subject exceeds 100 characters." \
-        "Current length: $subject_length" \
-        "Maximum length: 100" >&2
-    exit 1
-fi
-# Avoid descriptions consisting only of punctuation or whitespace.
+
+# ------------------------------------------------------------------------------
+# 6. Extract and validate description
+# ------------------------------------------------------------------------------
+
 description=$(
     printf '%s\n' "$commit_msg" |
-    sed 's/^[^:]*: //'
+        sed 's/^[^:]*: //'
 )
+
+if [ -z "$description" ]; then
+    fail "Commit description must not be empty."
+fi
+
 if ! printf '%s\n' "$description" | grep -Eq '[[:alnum:]]'; then
-    printf '%s\n' \
-        "ERROR: Commit description must contain at least one letter or number." >&2
+    fail "Commit description must contain at least one letter or number."
+fi
+
+# The subject must contain no control characters. Newlines are already removed
+# by selecting a single subject line; this check catches remaining controls.
+if printf '%s' "$commit_msg" | LC_ALL=C grep -Eq '[[:cntrl:]]'; then
+    fail "Commit subject contains an unsupported control character."
+fi
+
+# ------------------------------------------------------------------------------
+# 7. Enforce subject length
+#
+# wc -m counts characters according to the active locale. Under a UTF-8 locale,
+# this counts multibyte characters rather than raw bytes.
+# ------------------------------------------------------------------------------
+
+subject_length=$(
+    printf '%s' "$commit_msg" |
+        wc -m |
+        tr -d '[:space:]'
+)
+
+case "$subject_length" in
+    ""|*[!0-9]*)
+        fail "Could not determine the commit subject length."
+        ;;
+esac
+
+if [ "$subject_length" -gt "$MAX_SUBJECT_LENGTH" ]; then
+    error "Commit subject exceeds the maximum permitted length."
+    error "Current length: $subject_length characters"
+    error "Maximum length: $MAX_SUBJECT_LENGTH characters"
     exit 1
 fi
+
 # ------------------------------------------------------------------------------
-# 4. Report success
+# 8. Optional verbose reporting
 # ------------------------------------------------------------------------------
-printf '%s\n' "Commit message format validated."
-printf 'Subject length: %s/100 characters\n' "$subject_length"
+
+if [ "$VERBOSE" -eq 1 ]; then
+    info "Commit subject: $commit_msg"
+    info "Commit type: $(printf '%s\n' "$commit_msg" | sed 's/^([^:]*//')"
+fi
+
+# ------------------------------------------------------------------------------
+# 9. Report success
+# ------------------------------------------------------------------------------
+
+info "Commit message format validated."
+info "Subject length: $subject_length/$MAX_SUBJECT_LENGTH characters"
+
 exit 0

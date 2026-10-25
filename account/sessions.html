@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071629">
-  <meta name="description" content="Review active and recent MedOrbits account sessions and manage account access securely.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080706">
+  <meta name="description" content="Review and manage active MedOrbits account sessions, identify devices signed in to your account, and revoke sessions you no longer recognize.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="MedOrbits">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -23,866 +23,1141 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #071629;
-      --bg-soft: #0b203b;
-      --surface: #102947;
-      --surface-2: #153657;
-      --surface-3: #081a2e;
-      --accent: #8bbcff;
-      --accent-bright: #d9e9ff;
-      --text: #f2f7ff;
-      --text-soft: #c7d8ee;
-      --muted: #9db2cc;
-      --border: rgba(139,188,255,.23);
-      --success: #a8f0d0;
-      --warning: #ffdfa2;
-      --danger: #ffc1ca;
-      --radius: 16px;
-      --shadow: 0 24px 70px rgba(0,0,0,.28);
+      --bg: #080706;
+      --bg-deep: #030303;
+      --bg-soft: #100e0a;
+      --surface: #15120c;
+      --surface-2: #20190e;
+      --gold: #c99a38;
+      --gold-bright: #f7d98b;
+      --gold-light: #ffedbd;
+      --champagne: #e8c982;
+      --text: #f7f0df;
+      --text-soft: #d4c8ad;
+      --muted: #a99b7f;
+      --border: rgba(220,174,76,.23);
+      --border-bright: rgba(247,217,139,.43);
+      --success: #b8e6bd;
+      --danger: #ffb9a9;
+      --warning: #f3d48b;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.55);
+      --gold-gradient: linear-gradient(
+        115deg,
+        #8f6420 0%,
+        #e6bd61 28%,
+        #fff0b8 48%,
+        #c08a2c 70%,
+        #f4d77f 100%
+      );
+      --gold-surface: linear-gradient(
+        145deg,
+        rgba(35,27,15,.97),
+        rgba(8,7,5,.98)
+      );
     }
 
-    *,*::before,*::after { box-sizing:border-box; }
+    *,*::before,*::after { box-sizing: border-box; }
 
     html {
-      scroll-behavior:smooth;
-      scroll-padding-top:100px;
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
     }
 
     body {
-      margin:0;
-      min-height:100vh;
+      position: relative;
+      isolation: isolate;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(ellipse at 10% 0%,rgba(40,102,170,.2),transparent 35%),
-        radial-gradient(ellipse at 90% 40%,rgba(98,155,221,.08),transparent 32%),
-        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
-      color:var(--text);
-      font:400 14px/1.7 "DM Sans",sans-serif;
+        radial-gradient(ellipse at 12% 0%,rgba(190,132,34,.13),transparent 35%),
+        radial-gradient(ellipse at 92% 38%,rgba(142,96,26,.09),transparent 34%),
+        radial-gradient(ellipse at 50% 100%,rgba(112,73,18,.08),transparent 42%),
+        linear-gradient(135deg,#030303 0%,#0b0906 48%,#100c06 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
     }
 
-    img { display:block;max-width:100%; }
-    a { color:inherit;text-decoration:none; }
-    button,input,select { font:inherit; }
-    button,a,input,select { -webkit-tap-highlight-color:transparent; }
-
-    button:focus-visible,a:focus-visible,input:focus-visible,
-    select:focus-visible {
-      outline:2px solid var(--accent-bright);
-      outline-offset:4px;
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(rgba(247,217,139,.13) .7px,transparent .7px);
+      background-size: 34px 34px;
+      opacity: .16;
+      content: "";
+      pointer-events: none;
     }
 
-    [hidden] { display:none!important; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button,input { font: inherit; }
+    button,a { -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 4px;
+    }
 
     .container {
-      width:min(1180px,calc(100% - 40px));
-      margin-inline:auto;
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .gold-text {
+      color: var(--gold-bright);
+      background: var(--gold-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: goldFlow 6s linear infinite;
+    }
+
+    @keyframes goldFlow {
+      0% { background-position: 100% center; }
+      100% { background-position: -120% center; }
+    }
+
+    @keyframes goldGlow {
+      0%,100% { text-shadow: 0 0 5px rgba(230,189,97,.08); }
+      50% {
+        text-shadow: 0 0 17px rgba(230,189,97,.32),0 0 35px rgba(192,138,44,.13);
+      }
+    }
+
+    @keyframes softFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes borderShimmer {
+      0%,100% { border-color: rgba(220,174,76,.19); }
+      50% { border-color: rgba(247,217,139,.43); }
+    }
+
+    @keyframes cursorBlink { to { visibility: hidden; } }
+
+    @keyframes shieldPulse {
+      0%,100% {
+        box-shadow: 0 0 0 0 rgba(201,154,56,.08),inset 0 0 25px rgba(201,154,56,.05);
+      }
+      50% {
+        box-shadow: 0 0 0 12px rgba(201,154,56,0),inset 0 0 35px rgba(201,154,56,.14);
+      }
     }
 
     .skip-link {
-      position:absolute;
-      top:-70px;
-      left:14px;
-      z-index:10000;
-      padding:10px 15px;
-      border-radius:8px;
-      background:var(--accent-bright);
-      color:var(--bg);
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      background: var(--gold-light);
+      color: #100c05;
     }
 
-    .skip-link:focus { top:12px; }
+    .skip-link:focus { top: 12px; }
 
     .announcement {
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:10px;
-      padding:8px 15px;
-      border-bottom:1px solid rgba(139,188,255,.13);
-      background:#040b15;
-      color:var(--accent-bright);
-      font-size:9px;
-      font-weight:700;
-      letter-spacing:.1em;
-      text-align:center;
-      text-transform:uppercase;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      background: #030303;
+      color: var(--champagne);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
     }
 
-    .spark { color:var(--accent); }
+    .spark {
+      color: var(--gold-bright);
+      animation: goldGlow 3s ease-in-out infinite;
+    }
 
     .site-header {
-      position:sticky;
-      top:0;
-      z-index:1000;
-      border-bottom:1px solid var(--border);
-      background:rgba(5,14,27,.94);
-      backdrop-filter:blur(18px);
-      transition:box-shadow .2s,background .2s;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,5,4,.91);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .site-header.scrolled {
-      background:rgba(4,11,21,.98);
-      box-shadow:0 12px 35px rgba(0,0,0,.25);
+      background: rgba(3,3,3,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.58);
     }
 
     .nav-wrap {
-      min-height:78px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:22px;
+      position: relative;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
     }
 
     .brand {
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      flex-shrink:0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand img {
-      width:45px;
-      height:45px;
-      object-fit:contain;
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(220,174,76,.15));
     }
 
     .brand strong {
-      display:block;
-      color:var(--accent-bright);
-      font-size:15px;
-      letter-spacing:.13em;
-      line-height:1.35;
+      display: block;
+      color: var(--gold-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
     }
 
     .brand small {
-      display:block;
-      color:var(--muted);
-      font-size:8px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
     }
 
     .menu-toggle {
-      display:none;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      background:transparent;
-      color:var(--accent-bright);
-      cursor:pointer;
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      cursor: pointer;
     }
 
     .main-nav {
-      display:flex;
-      align-items:center;
-      gap:17px;
-      font-size:11px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
     }
 
-    .main-nav>a,.nav-trigger {
-      color:var(--text-soft);
-      white-space:nowrap;
-    }
+    .main-nav > a,
+    .nav-trigger { color: var(--text-soft); white-space: nowrap; }
 
-    .main-nav>a:hover,.nav-trigger:hover { color:var(--accent-bright); }
-    .nav-group { position:relative; }
+    .main-nav > a:hover,
+    .nav-trigger:hover { color: var(--gold-light); }
+
+    .nav-group { position: relative; }
 
     .nav-trigger {
-      padding:12px 0;
-      border:0;
-      background:transparent;
-      cursor:pointer;
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
     }
 
-    .nav-trigger span { margin-left:4px;color:var(--accent); }
+    .nav-trigger span { margin-left: 4px; color: var(--gold); }
 
     .dropdown {
-      position:absolute;
-      top:100%;
-      left:-12px;
-      display:none;
-      width:245px;
-      padding:9px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:#102947;
-      box-shadow:var(--shadow);
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      background: #100d08;
+      box-shadow: var(--shadow);
     }
 
     .nav-group.open .dropdown,
-    .nav-group:focus-within .dropdown { display:grid; }
+    .nav-group:focus-within .dropdown { display: grid; }
 
     .dropdown a {
-      padding:10px 11px;
-      border-radius:7px;
-      color:var(--text-soft);
-      font-size:11px;
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
     }
 
     .dropdown a:hover {
-      background:rgba(139,188,255,.09);
-      color:var(--accent-bright);
+      background: rgba(201,154,56,.1);
+      color: var(--gold-light);
     }
 
-    .nav-cta,.btn {
-      display:inline-flex;
-      justify-content:center;
-      align-items:center;
-      gap:8px;
-      min-height:41px;
-      padding:10px 15px;
-      border:1px solid var(--accent);
-      border-radius:9px;
-      background:linear-gradient(135deg,#d9e9ff,#82b6f8);
-      color:#071629!important;
-      font-size:11px;
-      font-weight:700;
-      cursor:pointer;
-      transition:transform .2s,filter .2s;
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 43px;
+      padding: 10px 16px;
+      border: 1px solid #e2b955;
+      border-radius: 10px;
+      background: var(--gold-gradient);
+      background-size: 180% auto;
+      color: #120d04;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
     }
 
-    .btn:hover:not(:disabled),.nav-cta:hover {
-      transform:translateY(-1px);
-      filter:brightness(1.06);
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 25px rgba(201,154,56,.15);
     }
 
-    .btn:disabled { opacity:.55;cursor:not-allowed; }
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
 
     .btn-outline {
-      border-color:rgba(199,216,238,.32);
-      background:transparent;
-      color:var(--accent-bright)!important;
+      border-color: rgba(220,174,76,.36);
+      background: rgba(201,154,56,.035);
+      color: var(--gold-light);
     }
 
     .btn-danger {
-      border-color:rgba(255,193,202,.35);
-      background:rgba(255,193,202,.055);
-      color:var(--danger)!important;
+      border-color: rgba(255,185,169,.35);
+      background: rgba(255,105,82,.07);
+      color: var(--danger);
     }
 
+    .btn-block { width: 100%; }
+
     .page-main {
-      position:relative;
-      isolation:isolate;
-      min-height:70vh;
-      padding:40px 0 65px;
-      overflow:hidden;
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 38px 0 70px;
+      overflow: hidden;
     }
 
     .page-main::before {
-      position:absolute;
-      z-index:-1;
-      inset:0;
+      position: absolute;
+      z-index: -1;
+      inset: 0;
       background:
-        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
-        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
-      content:"";
-      pointer-events:none;
+        radial-gradient(ellipse at 14% 8%,rgba(201,154,56,.09),transparent 34%),
+        radial-gradient(ellipse at 90% 65%,rgba(148,102,30,.07),transparent 32%);
+      content: "";
+      pointer-events: none;
     }
 
     .breadcrumbs {
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-bottom:22px;
-      color:var(--muted);
-      font-size:11px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 23px;
+      color: var(--muted);
+      font-size: 11px;
     }
 
-    .breadcrumbs a { color:var(--accent-bright); }
-    .breadcrumbs a:hover { text-decoration:underline; }
+    .breadcrumbs a { color: var(--gold-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
 
     .page-heading {
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:22px;
-      margin-bottom:28px;
+      margin-bottom: 26px;
+      animation: revealUp .65s ease both;
     }
 
     .eyebrow {
-      display:inline-flex;
-      align-items:center;
-      gap:9px;
-      color:var(--accent-bright);
-      font-size:9px;
-      font-weight:700;
-      letter-spacing:.16em;
-      text-transform:uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--champagne);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
     }
 
     .eyebrow::before {
-      width:25px;
-      height:1px;
-      background:var(--accent);
-      content:"";
+      width: 25px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
     }
 
     .page-heading h1 {
-      margin:10px 0 9px;
-      font:600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
-      letter-spacing:-.025em;
-      overflow-wrap:anywhere;
+      margin: 10px 0;
+      font: 600 clamp(34px,4.5vw,52px)/1.15 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
     }
 
-    .page-heading h1 span { color:var(--accent-bright); }
+    .page-heading h1 span { animation: goldGlow 4s ease-in-out infinite; }
 
     .page-heading p {
-      max-width:690px;
-      margin:0;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.8;
+      max-width: 730px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
     }
 
-    .heading-actions {
-      display:flex;
-      flex-wrap:wrap;
-      gap:9px;
-      flex-shrink:0;
+    .typing-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 27px;
+      margin-top: 9px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .typing-line strong { color: var(--gold-bright); font-weight: 600; }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background: var(--gold-bright);
+      animation: cursorBlink .8s steps(2,start) infinite;
     }
 
     .layout {
-      display:grid;
-      grid-template-columns:240px minmax(0,1fr);
-      align-items:start;
-      gap:19px;
+      display: grid;
+      grid-template-columns: 240px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
     }
 
-    .sidebar,.panel,.session-card,.side-card {
-      min-width:0;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
-      box-shadow:0 18px 48px rgba(0,0,0,.18);
+    .sidebar,.panel,.info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--gold-surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.26);
     }
 
     .sidebar {
-      position:sticky;
-      top:100px;
-      padding:19px;
+      position: sticky;
+      top: 100px;
+      padding: 19px;
+      animation: borderShimmer 7s ease-in-out infinite;
     }
 
     .account-user {
-      display:flex;
-      align-items:center;
-      gap:11px;
-      padding-bottom:17px;
-      border-bottom:1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--border);
     }
 
     .avatar {
-      display:grid;
-      place-items:center;
-      flex:0 0 43px;
-      height:43px;
-      border:1px solid rgba(139,188,255,.35);
-      border-radius:13px;
-      background:linear-gradient(145deg,#173d64,#0b203b);
-      color:var(--accent-bright);
-      font:600 16px "Playfair Display",Georgia,serif;
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(220,174,76,.45);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#3a2b12,#100c06);
+      color: var(--gold-light);
+      font: 600 16px "Playfair Display",Georgia,serif;
     }
 
-    .account-user strong { display:block;font-size:11px; }
-    .account-user small { display:block;color:var(--muted);font-size:9px; }
+    .account-user strong { display: block; font-size: 11px; }
+
+    .account-user small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
 
     .account-nav {
-      display:grid;
-      gap:5px;
-      margin:15px 0;
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
     }
 
     .account-nav a {
-      padding:10px 11px;
-      border:1px solid transparent;
-      border-radius:8px;
-      color:var(--text-soft);
-      font-size:10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
     }
 
-    .account-nav a:hover,.account-nav a.active {
-      border-color:rgba(139,188,255,.2);
-      background:rgba(139,188,255,.09);
-      color:var(--accent-bright);
+    .account-nav a:hover,
+    .account-nav a.active {
+      border-color: rgba(220,174,76,.23);
+      background: rgba(201,154,56,.09);
+      color: var(--gold-light);
     }
 
     .sidebar-note {
-      margin:15px 0 0;
-      padding-top:14px;
-      border-top:1px solid var(--border);
-      color:var(--muted);
-      font-size:9px;
-      line-height:1.8;
+      margin: 15px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
     }
 
     .sidebar-note a {
-      color:var(--accent-bright);
-      text-decoration:underline;
-      text-underline-offset:3px;
+      color: var(--gold-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
 
-    .content { display:grid;gap:18px;min-width:0; }
-    .panel { padding:clamp(17px,2.5vw,25px); }
+    .content { display: grid; gap: 18px; min-width: 0; }
+
+    .panel {
+      padding: clamp(18px,3vw,29px);
+      animation: revealUp .65s ease both;
+    }
 
     .panel-heading {
-      display:flex;
-      align-items:flex-start;
-      gap:13px;
-      margin-bottom:20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 18px;
     }
 
     .panel-icon {
-      display:grid;
-      place-items:center;
-      flex:0 0 43px;
-      width:43px;
-      height:43px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(139,188,255,.08);
-      color:var(--accent-bright);
-      font-size:19px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(201,154,56,.08);
+      color: var(--gold-bright);
+      font-size: 20px;
     }
 
-    .panel-heading h2,.side-card h2 {
-      margin:0 0 5px;
-      font:600 21px/1.3 "Playfair Display",Georgia,serif;
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 22px/1.35 "Playfair Display",Georgia,serif;
     }
 
     .panel-heading p {
-      margin:0;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.8;
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
-    .overview-grid {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
-      margin-bottom:20px;
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 13px;
+      margin: 20px 0;
     }
 
-    .overview-card {
-      padding:16px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(139,188,255,.045);
+    .session-count {
+      color: var(--muted);
+      font-size: 10px;
     }
 
-    .metric-label {
-      display:block;
-      margin-bottom:8px;
-      color:var(--muted);
-      font-size:9px;
-      line-height:1.6;
+    .session-count strong {
+      color: var(--gold-bright);
+      font-size: 15px;
     }
 
-    .overview-card strong {
-      display:block;
-      color:var(--accent-bright);
-      font:600 27px/1.2 "Playfair Display",Georgia,serif;
-      overflow-wrap:anywhere;
+    .session-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+    .status-message {
+      margin: 15px 0;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(201,154,56,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
     }
 
-    .overview-card small {
-      display:block;
-      margin-top:5px;
-      color:var(--muted);
-      font-size:9px;
+    .status-message.success {
+      border-color: rgba(184,230,189,.3);
+      color: var(--success);
     }
 
-    .session-list { display:grid;gap:13px; }
-
-    .session-card { padding:19px; }
-
-    .session-top {
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:15px;
-      margin-bottom:15px;
+    .status-message.error {
+      border-color: rgba(255,185,169,.36);
+      color: var(--danger);
     }
 
-    .device-wrap {
-      display:flex;
-      align-items:flex-start;
-      gap:13px;
-      min-width:0;
+    .status-message.info {
+      border-color: rgba(220,174,76,.28);
+      color: var(--champagne);
+    }
+
+    .session-list { display: grid; gap: 13px; }
+
+    .session-card {
+      min-width: 0;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(201,154,56,.055),transparent 45%),
+        rgba(5,5,4,.68);
+      transition: border-color .2s,transform .2s;
+    }
+
+    .session-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+    }
+
+    .session-card.current {
+      border-color: rgba(184,230,189,.32);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(184,230,189,.055),transparent 45%),
+        rgba(5,5,4,.7);
+    }
+
+    .session-main {
+      display: grid;
+      grid-template-columns: 54px minmax(0,1fr);
+      align-items: start;
+      gap: 14px;
     }
 
     .device-icon {
-      display:grid;
-      place-items:center;
-      flex:0 0 45px;
-      width:45px;
-      height:45px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(139,188,255,.08);
-      color:var(--accent-bright);
-      font-size:21px;
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: linear-gradient(145deg,rgba(201,154,56,.14),rgba(8,7,5,.92));
+      color: var(--gold-bright);
+      font-size: 26px;
     }
 
-    .device-details { min-width:0; }
-
-    .device-details h3 {
-      margin:0 0 5px;
-      font:600 19px/1.35 "Playfair Display",Georgia,serif;
-      overflow-wrap:anywhere;
+    .session-title-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
     }
 
-    .device-details p {
-      margin:0;
-      color:var(--muted);
-      font-size:10px;
-      overflow-wrap:anywhere;
+    .session-title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
     }
 
-    .status {
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      flex-shrink:0;
-      padding:6px 10px;
-      border:1px solid var(--border);
-      border-radius:20px;
-      background:rgba(139,188,255,.06);
-      color:var(--text-soft);
-      font-size:9px;
-      font-weight:700;
-      text-align:center;
+    .session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 7px;
+      border: 1px solid rgba(184,230,189,.27);
+      border-radius: 20px;
+      background: rgba(184,230,189,.055);
+      color: var(--success);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
 
-    .status::before {
-      width:6px;
-      height:6px;
-      border-radius:50%;
-      background:var(--accent);
-      content:"";
+    .session-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
     }
-
-    .status-current {
-      border-color:rgba(168,240,208,.3);
-      background:rgba(168,240,208,.055);
-      color:var(--success);
-    }
-
-    .status-current::before { background:var(--success); }
-
-    .status-recent {
-      border-color:rgba(255,223,162,.3);
-      background:rgba(255,223,162,.055);
-      color:var(--warning);
-    }
-
-    .status-recent::before { background:var(--warning); }
 
     .session-meta {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:13px;
-      padding:15px 0;
-      border-top:1px solid rgba(139,188,255,.13);
-      border-bottom:1px solid rgba(139,188,255,.13);
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px 15px;
+      margin-top: 15px;
+      padding-top: 13px;
+      border-top: 1px solid rgba(220,174,76,.13);
     }
 
-    .meta-item span {
-      display:block;
-      margin-bottom:4px;
-      color:var(--muted);
-      font-size:9px;
+    .meta-item { min-width: 0; }
+
+    .meta-label {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
-    .meta-item strong {
-      display:block;
-      color:var(--text-soft);
-      font-size:10px;
-      font-weight:600;
-      overflow-wrap:anywhere;
+    .meta-value {
+      display: block;
+      color: var(--text-soft);
+      font-size: 10px;
+      overflow-wrap: anywhere;
     }
 
-    .session-bottom {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:12px;
-      margin-top:15px;
+    .session-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
     }
 
-    .session-reference {
-      color:var(--muted);
-      font-size:9px;
-      overflow-wrap:anywhere;
+    .session-footer-note {
+      color: var(--muted);
+      font-size: 9px;
     }
 
-    .session-actions {
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-
-    .session-actions .btn {
-      min-height:35px;
-      padding:8px 11px;
-      font-size:10px;
+    .revoke-button {
+      min-height: 36px;
+      padding: 7px 12px;
+      font-size: 10px;
     }
 
     .empty-state {
-      padding:35px 20px;
-      border:1px dashed var(--border);
-      border-radius:12px;
-      color:var(--muted);
-      text-align:center;
-      font-size:10px;
-      line-height:1.9;
+      padding: 30px 15px;
+      border: 1px dashed var(--border);
+      border-radius: 13px;
+      color: var(--muted);
+      text-align: center;
     }
 
-    .empty-state strong {
-      display:block;
-      margin-bottom:7px;
-      color:var(--text-soft);
-      font:600 21px/1.35 "Playfair Display",Georgia,serif;
+    .empty-state .empty-icon {
+      margin-bottom: 9px;
+      font-size: 35px;
     }
 
-    .notice {
-      padding:14px 16px;
-      border:1px solid rgba(255,223,162,.22);
-      border-radius:10px;
-      background:rgba(255,223,162,.035);
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+    .empty-state h3 {
+      margin: 0 0 6px;
+      color: var(--text-soft);
+      font: 600 20px "Playfair Display",Georgia,serif;
     }
 
-    .notice strong { color:var(--warning); }
-
-    .form-status {
-      margin:0 0 17px;
-      padding:12px 14px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      font-size:10px;
-      line-height:1.8;
-      overflow-wrap:anywhere;
+    .empty-state p {
+      margin: 0;
+      font-size: 10px;
+      line-height: 1.9;
     }
 
-    .form-status.error {
-      border-color:rgba(255,133,151,.35);
-      color:var(--danger);
-      background:rgba(255,133,151,.05);
+    .loading-state {
+      padding: 22px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
     }
 
-    .form-status.success {
-      border-color:rgba(100,222,175,.3);
-      color:var(--success);
-      background:rgba(100,222,175,.05);
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(220px,.72fr);
+      align-items: center;
+      gap: 22px;
     }
 
-    .form-status.info {
-      border-color:var(--border);
-      color:var(--text-soft);
-      background:rgba(139,188,255,.05);
+    .hero-visual {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 255px;
+      padding: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background:
+        radial-gradient(ellipse at 50% 38%,rgba(201,154,56,.17),transparent 50%),
+        linear-gradient(150deg,rgba(33,25,13,.94),rgba(5,5,4,.98));
     }
 
-    .side-card { padding:20px; }
-
-    .side-card>p {
-      margin:0 0 14px;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+    .hero-visual::before,
+    .hero-visual::after {
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      border: 1px solid rgba(220,174,76,.12);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
     }
 
-    .side-links { display:grid; }
-
-    .side-links a {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding:11px 0;
-      border-bottom:1px solid var(--border);
-      color:var(--text-soft);
-      font-size:10px;
+    .hero-visual::after {
+      width: 245px;
+      height: 245px;
+      border-color: rgba(220,174,76,.06);
     }
 
-    .side-links a:last-child { border-bottom:0; }
-    .side-links a span { color:var(--accent); }
-    .side-links a:hover { color:var(--accent-bright); }
+    .visual-art {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: 270px;
+      animation: softFloat 6s ease-in-out infinite;
+    }
+
+    .visual-art img {
+      width: 100%;
+      max-height: 230px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,.35));
+    }
+
+    .art-fallback {
+      display: grid;
+      place-items: center;
+      gap: 10px;
+      width: 180px;
+      min-height: 190px;
+      padding: 20px;
+      border: 1px solid rgba(247,217,139,.45);
+      border-radius: 25px;
+      background:
+        radial-gradient(circle at 50% 20%,rgba(247,217,139,.16),transparent 40%),
+        linear-gradient(145deg,#2c2110,#090806);
+      color: var(--gold-bright);
+      box-shadow: 0 25px 55px rgba(0,0,0,.45),inset 0 0 25px rgba(201,154,56,.08);
+      text-align: center;
+    }
+
+    .art-fallback .shield-emoji {
+      font-size: 57px;
+      line-height: 1.1;
+      filter: drop-shadow(0 0 15px rgba(201,154,56,.25));
+    }
+
+    .art-fallback strong {
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .art-caption {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      left: 12px;
+      z-index: 2;
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .hero-copy h2 {
+      margin: 0 0 9px;
+      font: 600 25px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .hero-copy > p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .security-points { display: grid; gap: 11px; margin-top: 17px; }
+
+    .security-point {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .point-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 30px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+    }
+
+    .info-card { position: relative; padding: 22px; overflow: hidden; }
+
+    .info-card h2 {
+      margin: 0 0 8px;
+      font: 600 22px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card > p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .help-card {
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(8,7,5,.68);
+      transition: transform .2s,border-color .2s;
+    }
+
+    .help-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-bright);
+    }
+
+    .help-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(201,154,56,.07);
+      color: var(--gold-bright);
+      font-size: 21px;
+    }
+
+    .help-card h3 { margin: 0 0 5px; font-size: 11px; }
+
+    .help-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .help-card a {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--gold-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .privacy-notice {
+      padding: 15px 16px;
+      border: 1px solid rgba(220,174,76,.22);
+      border-radius: 11px;
+      background: rgba(201,154,56,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .privacy-notice strong { color: var(--gold-bright); }
 
     .site-footer {
-      padding:43px 0 0;
-      border-top:1px solid var(--border);
-      background:#040b15;
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(201,154,56,.07),transparent 38%),
+        #030303;
     }
 
     .footer-grid {
-      display:grid;
-      grid-template-columns:1.4fr repeat(4,minmax(0,1fr));
-      gap:23px;
-      padding-bottom:28px;
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
     }
 
     .footer-brand p {
-      max-width:270px;
-      margin-top:12px;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
     .footer-grid h2 {
-      margin:0 0 12px;
-      padding-bottom:9px;
-      border-bottom:1px solid rgba(139,188,255,.17);
-      color:var(--accent-bright);
-      font-size:9px;
-      letter-spacing:.12em;
-      text-transform:uppercase;
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(220,174,76,.18);
+      color: var(--gold-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
     .footer-links a {
-      display:block;
-      margin:8px 0;
-      color:var(--muted);
-      font-size:10px;
-      overflow-wrap:anywhere;
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
     }
 
-    .footer-links a:hover { color:var(--accent-bright); }
+    .footer-links a:hover { color: var(--gold-light); }
 
     .disclaimer {
-      margin:0 0 15px;
-      padding:13px 15px;
-      border-left:2px solid var(--accent);
-      border-radius:0 8px 8px 0;
-      background:rgba(16,41,71,.4);
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.9;
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(201,154,56,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
     }
 
     .footer-bottom {
-      display:flex;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      gap:10px;
-      padding:17px 0;
-      border-top:1px solid rgba(139,188,255,.13);
-      color:var(--muted);
-      font-size:9px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(220,174,76,.13);
+      color: var(--muted);
+      font-size: 9px;
     }
 
-    @media(max-width:1100px) {
-      .menu-toggle { display:inline-flex; }
+    .footer-bottom span:last-child {
+      color: var(--champagne);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
 
       .main-nav {
-        position:absolute;
-        top:100%;
-        right:0;
-        left:0;
-        display:none;
-        align-items:stretch;
-        flex-direction:column;
-        gap:4px;
-        max-height:calc(100vh - 90px);
-        padding:15px 22px 20px;
-        overflow-y:auto;
-        border-bottom:1px solid var(--border);
-        background:#071629;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(5,5,4,.99);
+        box-shadow: var(--shadow);
       }
 
-      .main-nav.open { display:flex; }
+      .main-nav.open { display: flex; }
 
-      .main-nav>a,.nav-trigger {
-        display:block;
-        width:100%;
-        padding:11px 8px;
-        text-align:left;
+      .main-nav > a,.nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
       }
 
       .dropdown {
-        position:static;
-        width:100%;
-        margin-bottom:5px;
-        box-shadow:none;
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
       }
 
-      .nav-cta { width:100%; }
-      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .footer-brand { grid-column:1/-1; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
     }
 
-    @media(max-width:900px) {
-      .session-meta { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media (max-width:900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .account-nav { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .hero-grid { grid-template-columns: minmax(0,1fr) minmax(200px,.7fr); }
+      .help-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
 
-    @media(max-width:800px) {
-      .container { width:calc(100% - 30px); }
-      .nav-wrap { min-height:69px; }
-      .layout { grid-template-columns:1fr; }
-      .sidebar { position:static; }
-      .account-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
-
-      .page-heading {
-        align-items:flex-start;
-        flex-direction:column;
-      }
-
-      .heading-actions { width:100%; }
-      .heading-actions .btn { flex:1; }
+    @media (max-width:650px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .page-main { padding: 29px 0 48px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { min-height: 220px; }
+      .visual-art img { max-height: 185px; }
+      .art-fallback { width: 145px; min-height: 155px; }
+      .art-fallback .shield-emoji { font-size: 46px; }
+      .page-heading h1 { font-size: clamp(32px,8vw,43px); }
+      .help-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 21px 15px; }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
     }
 
-    @media(max-width:560px) {
-      .announcement { gap:6px;font-size:8px;letter-spacing:.04em; }
-      .page-main { padding:30px 0 45px; }
-      .page-heading h1 { font-size:clamp(31px,9vw,42px); }
-      .sidebar,.panel,.session-card,.side-card { padding:15px; }
-
-      .account-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-
-      .session-top {
-        align-items:flex-start;
-        flex-direction:column;
-      }
-
-      .session-meta { grid-template-columns:repeat(2,minmax(0,1fr)); }
-
-      .session-bottom {
-        align-items:stretch;
-        flex-direction:column;
-      }
-
-      .session-actions { display:grid;grid-template-columns:1fr 1fr; }
-      .session-actions .btn { width:100%; }
-
-      .heading-actions { flex-direction:column; }
-      .heading-actions .btn { width:100%; }
-
-      .footer-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:21px 15px; }
-      .footer-brand { grid-column:1/-1; }
-      .footer-bottom { flex-direction:column; }
+    @media (max-width:430px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .sidebar,.panel,.info-card { padding: 15px; }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .help-grid { grid-template-columns: 1fr; }
+      .session-main { grid-template-columns: 43px minmax(0,1fr); gap: 10px; }
+      .device-icon { width: 43px; height: 43px; font-size: 22px; }
+      .session-meta { grid-template-columns: 1fr; gap: 9px; }
+      .top-actions { align-items: flex-start; flex-direction: column; }
+      .session-actions { width: 100%; }
+      .session-actions .btn { flex: 1; }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
 
-    @media(max-width:360px) {
-      .container { width:calc(100% - 22px); }
-      .brand img { width:37px;height:37px; }
-      .brand strong { font-size:13px; }
-      .brand small { font-size:7px; }
-      .footer-grid { grid-template-columns:1fr; }
-      .overview-grid { grid-template-columns:1fr; }
-      .session-meta { grid-template-columns:1fr; }
-      .session-actions { grid-template-columns:1fr; }
+    @media (max-width:350px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .account-nav,.footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
+      .session-footer { align-items: stretch; flex-direction: column; }
+      .session-footer .btn { width: 100%; }
     }
 
-    @media(prefers-reduced-motion:reduce) {
-      html { scroll-behavior:auto; }
-
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
       *,*::before,*::after {
-        animation-duration:.01ms!important;
-        animation-iteration-count:1!important;
-        transition-duration:.01ms!important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
@@ -892,34 +1167,28 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <div class="announcement">
-    <span>Your future, your direction</span>
+    <span>Protect your MedOrbits account</span>
     <span class="spark" aria-hidden="true">✦</span>
-    <span>Study · Work · Grow -- one connected destination</span>
+    <span>Review devices · Manage active sessions</span>
   </div>
 
   <header class="site-header" id="siteHeader">
     <div class="container nav-wrap">
       <a class="brand" href="/index.html" aria-label="MedOrbits home">
-        <img src="/assets/images/logo/medorbits-logo.png"
-             alt="MedOrbits logo" width="45" height="45">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45">
         <span>
           <strong>MEDORBITS</strong>
           <small>Study · Career · Consultancy</small>
         </span>
       </a>
 
-      <button class="menu-toggle" id="menuToggle" type="button"
-              aria-expanded="false" aria-controls="mainNav">
-        ☰ MENU
-      </button>
+      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">☰ MENU</button>
 
       <nav class="main-nav" id="mainNav" aria-label="Main navigation">
         <a href="/index.html">Home</a>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Education <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Education <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/education/index.html">Education hub</a>
             <a href="/education/courses.html">Courses</a>
@@ -931,9 +1200,7 @@
         </div>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Admissions <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Admissions <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/education/admissions/index.html">Admission guidance</a>
             <a href="/education/admissions/eligibility.html">Eligibility</a>
@@ -945,9 +1212,7 @@
         </div>
 
         <div class="nav-group">
-          <button class="nav-trigger" type="button" aria-expanded="false">
-            Careers <span aria-hidden="true">⌄</span>
-          </button>
+          <button class="nav-trigger" type="button" aria-expanded="false">Careers <span aria-hidden="true">⌄</span></button>
           <div class="dropdown">
             <a href="/career/index.html">Career hub</a>
             <a href="/career/jobs.html">Find jobs</a>
@@ -963,15 +1228,14 @@
         <a href="/account/index.html">My Account</a>
         <a href="/account/my-applications.html">My Applications</a>
         <a href="/account/my-documents.html">My Documents</a>
-        <a href="/account/sessions.html" aria-current="page">Active Sessions</a>
-        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+        <a href="/account/security-settings.html" aria-current="page">Security</a>
+        <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
       </nav>
     </div>
   </header>
 
   <main class="page-main" id="main-content">
     <div class="container">
-
       <nav class="breadcrumbs" aria-label="Breadcrumb">
         <a href="/index.html">Home</a>
         <span aria-hidden="true">›</span>
@@ -981,157 +1245,230 @@
       </nav>
 
       <header class="page-heading">
-        <div>
-          <span class="eyebrow">Account security</span>
-          <h1>Active <span>sessions.</span></h1>
-          <p>
-            Review devices currently signed in to your MedOrbits account.
-            Sign out sessions you no longer recognize and keep your account
-            access under control.
-          </p>
-        </div>
+        <span class="eyebrow">Account protection · Device management</span>
+        <h1>Your active <span class="gold-text">sessions.</span></h1>
+        <p>
+          Review devices and browsers that are signed in to your MedOrbits
+          account. End sessions you no longer use, and take action if you
+          notice an unfamiliar device or location.
+        </p>
 
-        <div class="heading-actions">
-          <a class="btn btn-outline" href="/account/index.html">← My account</a>
-          <a class="btn" href="/account/change-password.html">Change password ↗</a>
+        <div class="typing-line" aria-live="off">
+          <span aria-hidden="true">✦</span>
+          <strong id="typingText">Your account. Your security. Your future.</strong>
+          <span class="typing-cursor" aria-hidden="true"></span>
         </div>
       </header>
 
       <div class="layout">
-
         <aside class="sidebar" aria-label="Account navigation">
           <div class="account-user">
             <div class="avatar" aria-hidden="true">MO</div>
             <div>
               <strong>My account</strong>
-              <small>Profile and security</small>
+              <small>Account security</small>
             </div>
           </div>
 
           <nav class="account-nav" aria-label="Account menu">
             <a href="/account/index.html">▦ &nbsp; Account home</a>
             <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
-            <a href="/account/edit-profile.html">◈ &nbsp; Edit profile</a>
+            <a href="/account/profile.html">◈ &nbsp; Profile</a>
+            <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
             <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
-            <a href="/account/my-documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/application-details.html">▧ &nbsp; Application details</a>
+            <a href="/account/my-documents.html">📁 &nbsp; My documents</a>
             <a href="/account/messages.html">✉ &nbsp; Messages</a>
             <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
-            <a href="/account/payments.html">＄ &nbsp; Payments</a>
-            <a href="/account/settings.html">⚙ &nbsp; Settings</a>
-            <a href="/account/change-password.html">◉ &nbsp; Change password</a>
+            <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
+            <a href="/account/receipts.html">▤ &nbsp; Receipts</a>
+            <a href="/account/saved-colleges.html">☆ &nbsp; Saved colleges</a>
+            <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
+            <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
             <a class="active" href="/account/sessions.html" aria-current="page">⌘ &nbsp; Active sessions</a>
+            <a href="/account/security-settings.html">⚙ &nbsp; Security settings</a>
+            <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
+            <a href="/account/change-password.html">🔒 &nbsp; Change password</a>
+            <a href="/account/verify-email.html">✉ &nbsp; Verify email</a>
             <a href="/account/verify-phone.html">☎ &nbsp; Verify phone</a>
+            <a href="/account/delete-account.html">⊗ &nbsp; Delete account</a>
           </nav>
 
           <p class="sidebar-note">
-            If you suspect unauthorized access, revoke unfamiliar sessions
-            and change your password. Contact support if you need help.
-            <br><a href="/pages/contact.html">Contact support ↗</a>
+            Never share your password or verification codes. If you suspect
+            unauthorized access, revoke unfamiliar sessions and change your
+            password.
+            <br>
+            <a href="/pages/contact.html">Contact support ↗</a>
           </p>
         </aside>
 
         <div class="content">
-
-          <section class="panel" aria-labelledby="overviewTitle">
+          <section class="panel" aria-labelledby="sessionsTitle">
             <div class="panel-heading">
               <div class="panel-icon" aria-hidden="true">⌘</div>
               <div>
-                <h2 id="overviewTitle">Session overview</h2>
+                <h2 id="sessionsTitle">Devices signed in to your account</h2>
                 <p>
-                  Session information is retrieved from your authenticated
-                  account service. Device and location details may be approximate.
+                  Session information is provided by your account server.
+                  Device and location details may be approximate depending
+                  on the information available to the service.
                 </p>
               </div>
             </div>
 
-            <div id="pageStatus" class="form-status"
-                 role="status" aria-live="polite" tabindex="-1" hidden></div>
-
-            <div class="overview-grid" aria-label="Session statistics">
-              <div class="overview-card">
-                <span class="metric-label">Active sessions</span>
-                <strong id="activeCount">--</strong>
-                <small>Currently active</small>
+            <div class="top-actions">
+              <div class="session-count" id="sessionCount" aria-live="polite">
+                <strong>--</strong> sessions loaded from your account
               </div>
 
-              <div class="overview-card">
-                <span class="metric-label">This device</span>
-                <strong id="currentCount">--</strong>
-                <small>Current session status</small>
-              </div>
-
-              <div class="overview-card">
-                <span class="metric-label">Other devices</span>
-                <strong id="otherCount">--</strong>
-                <small>Sessions on other devices</small>
+              <div class="session-actions">
+                <button class="btn btn-outline" id="refreshSessionsButton" type="button">
+                  ↻ Refresh sessions
+                </button>
+                <button class="btn btn-danger" id="revokeOthersButton" type="button" disabled>
+                  Sign out other devices
+                </button>
               </div>
             </div>
 
-            <div class="session-list" id="sessionList" aria-live="polite">
-              <div class="empty-state">
-                <strong>Loading sessions</strong>
-                Retrieving session information from your account service.
+            <div
+              class="status-message info"
+              id="sessionsStatus"
+              role="status"
+              aria-live="polite"
+            >
+              Connecting to the session service…
+            </div>
+
+            <div class="loading-state" id="sessionsLoading" aria-live="polite">
+              Loading session information…
+            </div>
+
+            <div class="session-list" id="sessionList" aria-label="Active account sessions" hidden></div>
+
+            <section class="empty-state" id="sessionsEmpty" hidden>
+              <div class="empty-icon" aria-hidden="true">🔐</div>
+              <h3>No sessions to display</h3>
+              <p>
+                The service has not returned any active sessions. Refresh the
+                list or sign in again if you believe this is unexpected.
+              </p>
+            </section>
+          </section>
+
+          <section class="panel" aria-labelledby="securityGuideTitle">
+            <div class="hero-grid">
+              <div class="hero-copy">
+                <span class="eyebrow">Your digital safety</span>
+                <h2 id="securityGuideTitle">
+                  Keep your account <span class="gold-text">in your hands.</span>
+                </h2>
+                <p>
+                  Your MedOrbits account may contain application details,
+                  documents, saved education options and career information.
+                  Reviewing signed-in devices helps you spot activity you
+                  do not recognize.
+                </p>
+
+                <div class="security-points">
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">🔎</span>
+                    <span>
+                      <strong>Review unfamiliar activity.</strong>
+                      Check device, browser and last-activity details when available.
+                    </span>
+                  </div>
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">🔑</span>
+                    <span>
+                      <strong>Protect your password.</strong>
+                      Use a strong, unique password and update it if you suspect exposure.
+                    </span>
+                  </div>
+                  <div class="security-point">
+                    <span class="point-icon" aria-hidden="true">🛡️</span>
+                    <span>
+                      <strong>End sessions you do not trust.</strong>
+                      Revoke unfamiliar sessions and review your security settings.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-visual">
+                <div class="visual-art">
+                  <!-- Optional local asset: /assets/images/account/active-sessions.webp -->
+                  <img
+                    id="sessionSecurityImage"
+                    src="/assets/images/account/active-sessions.webp"
+                    alt="Account security illustration representing protected devices and active sessions"
+                    width="320"
+                    height="260"
+                    loading="lazy"
+                    hidden
+                  >
+
+                  <div class="art-fallback" id="sessionArtFallback" aria-hidden="true">
+                    <span class="shield-emoji">🛡️</span>
+                    <strong>Secure access</strong>
+                    <span>✦ ◈ ✦</span>
+                  </div>
+                </div>
+                <div class="art-caption">Device management · MedOrbits account</div>
               </div>
             </div>
           </section>
 
-          <section class="panel" aria-labelledby="securityTitle">
-            <div class="panel-heading">
-              <div class="panel-icon" aria-hidden="true">♙</div>
-              <div>
-                <h2 id="securityTitle">Security recommendations</h2>
-                <p>Review these steps if a device or session looks unfamiliar.</p>
-              </div>
-            </div>
-
-            <div class="session-card">
-              <div class="device-wrap">
-                <div class="device-icon" aria-hidden="true">◈</div>
-                <div class="device-details">
-                  <h3>Secure your account</h3>
-                  <p>
-                    Revoke sessions you do not recognize, update your password
-                    and confirm that your account contact details are correct.
-                  </p>
-                </div>
-              </div>
-
-              <div class="session-bottom">
-                <span class="session-reference">
-                  Revoking a session should invalidate its server-side credentials.
-                </span>
-                <div class="session-actions">
-                  <a class="btn btn-outline" href="/account/change-password.html">Change password</a>
-                  <a class="btn btn-outline" href="/account/verify-phone.html">Verify phone</a>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="side-card" aria-labelledby="helpTitle">
-            <h2 id="helpTitle">Need security assistance?</h2>
+          <section class="info-card" aria-labelledby="helpTitle">
+            <h2 id="helpTitle">Not sure about a <span class="gold-text">session?</span></h2>
             <p>
-              If you cannot identify a session or believe someone has accessed
-              your account without permission, contact MedOrbits support.
-              Never share your password or verification codes.
+              If you see a device or sign-in you cannot identify, take these
+              precautions to help secure your account.
             </p>
 
-            <div class="side-links">
-              <a href="/account/change-password.html">Change password <span aria-hidden="true">↗</span></a>
-              <a href="/account/settings.html">Review account settings <span aria-hidden="true">↗</span></a>
-              <a href="/account/notifications.html">Check notifications <span aria-hidden="true">↗</span></a>
-              <a href="/account/support.html">Account support <span aria-hidden="true">↗</span></a>
-              <a href="/pages/contact.html">Contact MedOrbits <span aria-hidden="true">↗</span></a>
+            <div class="help-grid">
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">🔒</div>
+                <h3>Change your password</h3>
+                <p>
+                  If you suspect someone else has access, update your password
+                  using the official MedOrbits account page.
+                </p>
+                <a href="/account/change-password.html">Change password ↗</a>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">⚙️</div>
+                <h3>Review security settings</h3>
+                <p>
+                  Review available account protection options and keep your
+                  contact details accurate.
+                </p>
+                <a href="/account/security-settings.html">Review settings ↗</a>
+              </article>
+
+              <article class="help-card">
+                <div class="help-icon" aria-hidden="true">💬</div>
+                <h3>Contact support</h3>
+                <p>
+                  Contact MedOrbits if you need help securing your account.
+                  Never send support your password or OTP.
+                </p>
+                <a href="/pages/contact.html">Get assistance ↗</a>
+              </article>
             </div>
           </section>
 
-          <div class="notice">
-            <strong>Security notice:</strong> Session details shown on this page
-            are informational. The backend must enforce session expiration,
-            revocation, authorization and authentication. Hiding a session in
-            the browser does not terminate a server-side session.
+          <div class="privacy-notice">
+            <strong>Security notice:</strong>
+            Session data must come from an authenticated server endpoint.
+            Revocation must be enforced server-side, including invalidating
+            the corresponding session or refresh token. The current session
+            should be identified by the server, not guessed by the browser.
+            Never expose session tokens, cookies or authentication secrets in
+            this page's HTML or JavaScript.
           </div>
-
         </div>
       </div>
     </div>
@@ -1140,11 +1477,9 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
-
         <div class="footer-brand">
           <a class="brand" href="/index.html" aria-label="MedOrbits home">
-            <img src="/assets/images/logo/medorbits-logo.png"
-                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45" loading="lazy">
             <span>
               <strong>MEDORBITS</strong>
               <small>Study · Career · Consultancy</small>
@@ -1194,13 +1529,12 @@
           <a href="/legal/refund-policy.html">Refund policy</a>
           <a href="/legal/disclaimer.html">Disclaimer</a>
         </div>
-
       </div>
 
       <p class="disclaimer">
-        Session information depends on the connected authentication service.
-        Device names, browser information and approximate locations may not
-        uniquely identify a person. Review unfamiliar activity carefully.
+        MedOrbits provides education and career information and consultancy
+        services. Verify important requirements with the relevant institution
+        or official authority.
       </p>
 
       <div class="footer-bottom">
@@ -1215,47 +1549,62 @@
       "use strict";
 
       /*
-       * MEDORBITS -- ACTIVE SESSIONS
+       * MedOrbits active-session API contract
        *
-       * Proposed API contract:
+       * GET /api/account/sessions
        *
-       * GET /api/auth/sessions
+       * Example response:
        * {
        *   "sessions": [
        *     {
        *       "id": "opaque-session-id",
-       *       "deviceName": "iPhone",
-       *       "browser": "Safari",
-       *       "operatingSystem": "iOS",
+       *       "deviceName": "Desktop browser",
+       *       "browser": "Browser name",
+       *       "operatingSystem": "Operating system",
        *       "location": "Approximate location",
-       *       "ipAddress": "masked address",
-       *       "createdAt": "2026-10-20T10:00:00Z",
-       *       "lastActiveAt": "2026-10-25T10:00:00Z",
-       *       "current": true,
-       *       "active": true
+       *       "lastActiveAt": "2026-10-25T12:00:00.000Z",
+       *       "createdAt": "2026-10-20T12:00:00.000Z",
+       *       "isCurrent": true
        *     }
        *   ]
        * }
        *
-       * DELETE /api/auth/sessions/:sessionId
-       * POST   /api/auth/sessions/revoke-others
+       * DELETE /api/account/sessions/:id
        *
-       * These are proposed routes, not verified existing backend routes.
-       * Adapt them to your authentication service.
+       * POST /api/account/sessions/revoke-others
+       * Body: {}
        *
-       * SECURITY REQUIREMENTS:
-       * - Authenticate every request.
-       * - Return only sessions belonging to the signed-in user.
-       * - Use opaque session identifiers and authorize each revocation.
-       * - Revoke server-side credentials, not just browser display entries.
-       * - Protect state-changing requests with your established CSRF controls.
-       * - Never expose session tokens, cookies, refresh tokens or secrets.
+       * Example successful revocation response:
+       * { "revoked": true, "message": "Session revoked" }
+       *
+       * Override endpoint paths with:
+       * window.MEDORBITS_CONFIG.sessions.listEndpoint
+       * window.MEDORBITS_CONFIG.sessions.revokeEndpoint
+       * window.MEDORBITS_CONFIG.sessions.revokeOthersEndpoint
+       *
+       * These are integration contracts, not a claim that these API routes
+       * already exist. Implement and secure the routes on the server.
+       *
+       * IMPORTANT:
+       * - Authenticate and authorize every request.
+       * - Derive the current session from trusted server-side context.
+       * - Never return session tokens, cookies or secrets to this page.
+       * - Validate session IDs and ensure users can only revoke their own sessions.
+       * - Apply CSRF protection when using cookie-based authentication.
+       * - Revoke sessions/tokens on the server, not just in the UI.
+       * - The current session may be excluded from "revoke others".
        */
 
-      const CONFIG = Object.freeze({
-        sessionsEndpoint: "/api/auth/sessions",
-        revokeOthersEndpoint: "/api/auth/sessions/revoke-others"
-      });
+      const config = window.MEDORBITS_CONFIG || {};
+      const sessionConfig = config.sessions || {};
+
+      const endpoints = {
+        list: sessionConfig.listEndpoint || "/api/account/sessions",
+        revoke: sessionConfig.revokeEndpoint || "/api/account/sessions",
+        revokeOthers:
+          sessionConfig.revokeOthersEndpoint ||
+          "/api/account/sessions/revoke-others"
+      };
 
       const $ = id => document.getElementById(id);
 
@@ -1264,16 +1613,455 @@
       const mainNav = $("mainNav");
       const navGroups = [...document.querySelectorAll(".nav-group")];
 
-      const pageStatus = $("pageStatus");
+      const statusBox = $("sessionsStatus");
+      const loading = $("sessionsLoading");
       const sessionList = $("sessionList");
+      const emptyState = $("sessionsEmpty");
+      const countLabel = $("sessionCount");
+      const refreshButton = $("refreshSessionsButton");
+      const revokeOthersButton = $("revokeOthersButton");
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       let sessions = [];
-      let isLoading = false;
-      let requestController = null;
+      let loadingSessions = false;
+      let actionInProgress = false;
 
       $("currentYear").textContent = String(new Date().getFullYear());
 
-      /* Navigation */
+      function showMessage(message, type = "info") {
+        statusBox.textContent = message;
+        statusBox.className = `status-message ${type}`;
+        statusBox.hidden = false;
+      }
+
+      function setButtonBusy(button, busy, busyText, normalText) {
+        button.disabled = busy;
+        button.textContent = busy ? busyText : normalText;
+      }
+
+      async function parseResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          return {};
+        }
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      async function apiRequest(url, options = {}) {
+        const headers = {
+          "Accept": "application/json",
+          ...(options.headers || {})
+        };
+
+        const requestOptions = {
+          credentials: "same-origin",
+          cache: "no-store",
+          ...options,
+          headers
+        };
+
+        if (options.body !== undefined) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(
+          String(requestOptions.method || "GET").toUpperCase()
+        )) {
+          headers["X-CSRF-Token"] = csrfToken;
+        }
+
+        const response = await fetch(url, requestOptions);
+        const data = await parseResponse(response);
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Your session has expired. Sign in again to manage account sessions.");
+          }
+
+          if (response.status === 403) {
+            throw new Error("This action is not authorized. Refresh your session and try again.");
+          }
+
+          if (response.status === 404) {
+            throw new Error(
+              "The session API route is unavailable. Configure the backend endpoint before using session management."
+            );
+          }
+
+          if (response.status === 429) {
+            throw new Error("Too many requests. Wait a moment before trying again.");
+          }
+
+          throw new Error(
+            typeof data.message === "string"
+              ? data.message
+              : "The request could not be completed. Please try again."
+          );
+        }
+
+        return data;
+      }
+
+      function safeText(value, fallback = "Not provided") {
+        if (typeof value !== "string" && typeof value !== "number") {
+          return fallback;
+        }
+
+        const result = String(value).trim();
+        return result || fallback;
+      }
+
+      function formatDate(value) {
+        if (!value || typeof value !== "string") return "Not provided";
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) return "Not provided";
+
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(date);
+      }
+
+      function getDeviceIcon(session) {
+        const source = [
+          session.deviceName,
+          session.operatingSystem,
+          session.browser
+        ].filter(value => typeof value === "string").join(" ").toLowerCase();
+
+        if (/iphone|android|mobile|phone/.test(source)) return "📱";
+        if (/ipad|tablet/.test(source)) return "📲";
+        if (/mac|windows|linux|desktop|computer/.test(source)) return "💻";
+        if (/tv|television/.test(source)) return "📺";
+
+        return "🖥️";
+      }
+
+      function createMetaItem(label, value) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "meta-item";
+
+        const labelElement = document.createElement("span");
+        labelElement.className = "meta-label";
+        labelElement.textContent = label;
+
+        const valueElement = document.createElement("span");
+        valueElement.className = "meta-value";
+        valueElement.textContent = value;
+
+        wrapper.append(labelElement, valueElement);
+        return wrapper;
+      }
+
+      function createSessionCard(session) {
+        const card = document.createElement("article");
+        card.className = `session-card${session.isCurrent === true ? " current" : ""}`;
+
+        const main = document.createElement("div");
+        main.className = "session-main";
+
+        const icon = document.createElement("div");
+        icon.className = "device-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = getDeviceIcon(session);
+
+        const details = document.createElement("div");
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "session-title-row";
+
+        const title = document.createElement("h3");
+        title.className = "session-title";
+        title.textContent = safeText(session.deviceName, "Unknown device");
+
+        titleRow.append(title);
+
+        if (session.isCurrent === true) {
+          const badge = document.createElement("span");
+          badge.className = "session-badge";
+          badge.textContent = "✓ Current session";
+          titleRow.append(badge);
+        }
+
+        const subtitle = document.createElement("p");
+        subtitle.className = "session-subtitle";
+
+        const browser = safeText(session.browser, "Browser not identified");
+        const os = safeText(session.operatingSystem, "Operating system not identified");
+        subtitle.textContent = `${browser} · ${os}`;
+
+        details.append(titleRow, subtitle);
+        main.append(icon, details);
+
+        const meta = document.createElement("div");
+        meta.className = "session-meta";
+
+        meta.append(
+          createMetaItem("Approximate location", safeText(session.location)),
+          createMetaItem("Last active", formatDate(session.lastActiveAt)),
+          createMetaItem("Signed in", formatDate(session.createdAt)),
+          createMetaItem(
+            "Session status",
+            session.isCurrent === true ? "Current device" : "Other device"
+          )
+        );
+
+        const footer = document.createElement("div");
+        footer.className = "session-footer";
+
+        const note = document.createElement("span");
+        note.className = "session-footer-note";
+        note.textContent = session.isCurrent === true
+          ? "This is the session you are using now."
+          : "End this session if you no longer recognize or use this device.";
+
+        footer.append(note);
+
+        if (session.isCurrent !== true) {
+          const revokeButton = document.createElement("button");
+          revokeButton.type = "button";
+          revokeButton.className = "btn btn-danger revoke-button";
+          revokeButton.textContent = "Sign out this device";
+          revokeButton.addEventListener("click", () => revokeSession(session, revokeButton));
+          footer.append(revokeButton);
+        }
+
+        card.append(main, meta, footer);
+        return card;
+      }
+
+      function normaliseSessions(data) {
+        if (Array.isArray(data.sessions)) return data.sessions;
+        if (Array.isArray(data.data?.sessions)) return data.data.sessions;
+        return null;
+      }
+
+      function renderSessions() {
+        sessionList.replaceChildren();
+
+        const fragment = document.createDocumentFragment();
+
+        sessions.forEach(session => {
+          if (!session || typeof session !== "object") return;
+          if (typeof session.id !== "string" || !session.id.trim()) return;
+
+          fragment.append(createSessionCard(session));
+        });
+
+        sessionList.append(fragment);
+
+        const visibleCount = sessionList.childElementCount;
+        countLabel.replaceChildren();
+
+        const number = document.createElement("strong");
+        number.textContent = String(visibleCount);
+
+        countLabel.append(number, document.createTextNode(" sessions returned by your account service"));
+
+        sessionList.hidden = visibleCount === 0;
+        emptyState.hidden = visibleCount !== 0;
+
+        const hasOtherSessions = sessions.some(
+          session => session &&
+            typeof session.id === "string" &&
+            session.isCurrent !== true
+        );
+
+        revokeOthersButton.disabled =
+          loadingSessions || actionInProgress || !hasOtherSessions;
+      }
+
+      async function loadSessions() {
+        if (loadingSessions || actionInProgress) return;
+
+        loadingSessions = true;
+        setButtonBusy(refreshButton, true, "Loading…", "↻ Refresh sessions");
+        loading.hidden = false;
+        sessionList.hidden = true;
+        emptyState.hidden = true;
+
+        try {
+          const data = await apiRequest(endpoints.list, { method: "GET" });
+          const result = normaliseSessions(data);
+
+          if (!result) {
+            throw new Error(
+              "The session service returned an unexpected response. Expected a sessions array."
+            );
+          }
+
+          sessions = result;
+          renderSessions();
+
+          showMessage(
+            typeof data.message === "string"
+              ? data.message
+              : "Session information loaded from the account service.",
+            "success"
+          );
+        } catch (error) {
+          sessions = [];
+          renderSessions();
+
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to load account sessions.",
+            "error"
+          );
+        } finally {
+          loadingSessions = false;
+          loading.hidden = true;
+          setButtonBusy(refreshButton, false, "Loading…", "↻ Refresh sessions");
+          revokeOthersButton.disabled =
+            actionInProgress ||
+            !sessions.some(session => session && session.isCurrent !== true);
+        }
+      }
+
+      async function revokeSession(session, button) {
+        if (actionInProgress) return;
+
+        if (session.isCurrent === true) {
+          showMessage(
+            "This is your current session. Use the account sign-out option if you want to end it.",
+            "info"
+          );
+          return;
+        }
+
+        const deviceName = safeText(session.deviceName, "this device");
+
+        const confirmed = window.confirm(
+          `Sign out "${deviceName}"? That device may need to sign in again.`
+        );
+
+        if (!confirmed) return;
+
+        actionInProgress = true;
+        setButtonBusy(button, true, "Signing out…", "Sign out this device");
+        revokeOthersButton.disabled = true;
+        refreshButton.disabled = true;
+
+        try {
+          const url = `${endpoints.revoke.replace(/\/+$/, "")}/${encodeURIComponent(session.id)}`;
+
+          const data = await apiRequest(url, { method: "DELETE" });
+
+          if (data.revoked !== true) {
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "The server did not confirm that this session was revoked."
+            );
+          }
+
+          showMessage(
+            typeof data.message === "string"
+              ? data.message
+              : "The server confirmed that the session was revoked.",
+            "success"
+          );
+
+          sessions = sessions.filter(item => item.id !== session.id);
+          renderSessions();
+        } catch (error) {
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to revoke this session.",
+            "error"
+          );
+        } finally {
+          actionInProgress = false;
+          refreshButton.disabled = false;
+          renderSessions();
+        }
+      }
+
+      async function revokeOtherSessions() {
+        if (actionInProgress) return;
+
+        const otherSessions = sessions.filter(
+          session => session &&
+            typeof session.id === "string" &&
+            session.isCurrent !== true
+        );
+
+        if (!otherSessions.length) {
+          showMessage("There are no other sessions to sign out.", "info");
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `Sign out ${otherSessions.length} other session(s)? Your current session should remain active if the server supports this operation.`
+        );
+
+        if (!confirmed) return;
+
+        actionInProgress = true;
+        setButtonBusy(
+          revokeOthersButton,
+          true,
+          "Signing out…",
+          "Sign out other devices"
+        );
+        refreshButton.disabled = true;
+
+        try {
+          const data = await apiRequest(endpoints.revokeOthers, {
+            method: "POST",
+            body: JSON.stringify({})
+          });
+
+          if (data.revoked !== true) {
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "The server did not confirm that other sessions were revoked."
+            );
+          }
+
+          showMessage(
+            typeof data.message === "string"
+              ? data.message
+              : "The server confirmed that other sessions were revoked.",
+            "success"
+          );
+
+          /*
+           * Refresh from the server instead of guessing which sessions remain.
+           * The action lock is released before reloading.
+           */
+          sessions = [];
+        } catch (error) {
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to sign out other sessions.",
+            "error"
+          );
+        } finally {
+          actionInProgress = false;
+          refreshButton.disabled = false;
+          revokeOthersButton.disabled = true;
+        }
+
+        await loadSessions();
+      }
+
+      /* Responsive navigation */
 
       function closeNavigation() {
         mainNav.classList.remove("open");
@@ -1282,8 +2070,7 @@
 
         navGroups.forEach(group => {
           group.classList.remove("open");
-          group.querySelector(".nav-trigger")
-            ?.setAttribute("aria-expanded", "false");
+          group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
         });
       }
 
@@ -1293,13 +2080,7 @@
         menuToggle.setAttribute("aria-expanded", String(isOpen));
         menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
 
-        if (!isOpen) {
-          navGroups.forEach(group => {
-            group.classList.remove("open");
-            group.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
-          });
-        }
+        if (!isOpen) closeNavigation();
       });
 
       navGroups.forEach(group => {
@@ -1312,8 +2093,7 @@
 
           navGroups.forEach(other => {
             other.classList.remove("open");
-            other.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
+            other.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
           });
 
           if (shouldOpen) {
@@ -1333,8 +2113,7 @@
         if (!event.target.closest(".nav-group")) {
           navGroups.forEach(group => {
             group.classList.remove("open");
-            group.querySelector(".nav-trigger")
-              ?.setAttribute("aria-expanded", "false");
+            group.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
           });
         }
 
@@ -1360,428 +2139,105 @@
           if (event.matches) closeNavigation();
         });
 
-      /* Safe messages and rendering */
+      /* Animated heading */
 
-      function showStatus(message, type = "info", focus = false) {
-        pageStatus.replaceChildren();
-        pageStatus.textContent = message;
-        pageStatus.className = `form-status ${type}`;
-        pageStatus.hidden = false;
+      const typingText = $("typingText");
 
-        if (focus) pageStatus.focus();
-      }
+      const phrases = [
+        "Your account. Your security. Your future.",
+        "Know which devices can access your account.",
+        "Review sessions. Protect your information.",
+        "Stay in control of your digital access."
+      ];
 
-      function clearStatus() {
-        pageStatus.replaceChildren();
-        pageStatus.className = "form-status";
-        pageStatus.hidden = true;
-      }
+      let phraseIndex = 0;
+      let characterIndex = phrases[0].length;
+      let deleting = false;
+      let typingTimer = null;
 
-      function createElement(tag, className, text) {
-        const element = document.createElement(tag);
-
-        if (className) element.className = className;
-        if (typeof text === "string") element.textContent = text;
-
-        return element;
-      }
-
-      function safeText(value, fallback = "") {
-        return typeof value === "string" ? value : fallback;
-      }
-
-      function safeDate(value) {
-        if (typeof value !== "string" && typeof value !== "number") {
-          return "Not available";
-        }
-
-        const date = new Date(value);
-
-        if (Number.isNaN(date.getTime())) return "Not available";
-
-        return new Intl.DateTimeFormat(undefined, {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        }).format(date);
-      }
-
-      function deviceIcon(session) {
-        const value = [
-          safeText(session.deviceName),
-          safeText(session.operatingSystem),
-          safeText(session.browser)
-        ].join(" ").toLowerCase();
-
-        if (/iphone|ipad|android|mobile|phone|tablet/.test(value)) {
-          return "▯";
-        }
-
-        if (/mac|windows|linux|desktop|laptop/.test(value)) {
-          return "▣";
-        }
-
-        return "▤";
-      }
-
-      function normalizeSession(session) {
-        return {
-          id: safeText(session.id),
-          deviceName: safeText(session.deviceName, "Unknown device"),
-          browser: safeText(session.browser, "Unknown browser"),
-          operatingSystem: safeText(session.operatingSystem, "Unknown system"),
-          location: safeText(session.location, "Not available"),
-          ipAddress: safeText(session.ipAddress, "Not available"),
-          createdAt: session.createdAt,
-          lastActiveAt: session.lastActiveAt,
-          current: session.current === true,
-          active: session.active === true
-        };
-      }
-
-      function updateOverview() {
-        const activeSessions = sessions.filter(session => session.active);
-        const currentSessions = activeSessions.filter(session => session.current);
-        const otherSessions = activeSessions.filter(session => !session.current);
-
-        $("activeCount").textContent = String(activeSessions.length);
-        $("currentCount").textContent = currentSessions.length ? "Yes" : "No";
-        $("otherCount").textContent = String(otherSessions.length);
-      }
-
-      function createMetaItem(label, value) {
-        const item = createElement("div", "meta-item");
-        item.appendChild(createElement("span", "", label));
-        item.appendChild(createElement("strong", "", value));
-        return item;
-      }
-
-      function createSessionCard(session) {
-        const card = createElement("article", "session-card");
-        const top = createElement("div", "session-top");
-        const deviceWrap = createElement("div", "device-wrap");
-
-        const icon = createElement("div", "device-icon", deviceIcon(session));
-        icon.setAttribute("aria-hidden", "true");
-
-        const deviceDetails = createElement("div", "device-details");
-
-        deviceDetails.appendChild(createElement(
-          "h3",
-          "",
-          session.deviceName
-        ));
-
-        deviceDetails.appendChild(createElement(
-          "p",
-          "",
-          `${session.browser} · ${session.operatingSystem}`
-        ));
-
-        deviceWrap.append(icon, deviceDetails);
-        top.appendChild(deviceWrap);
-
-        const badge = createElement(
-          "span",
-          `status ${session.current ? "status-current" : "status-recent"}`,
-          session.current ? "This device" : "Other session"
-        );
-
-        top.appendChild(badge);
-        card.appendChild(top);
-
-        const meta = createElement("div", "session-meta");
-
-        meta.appendChild(createMetaItem(
-          "Last active",
-          safeDate(session.lastActiveAt)
-        ));
-
-        meta.appendChild(createMetaItem(
-          "Session started",
-          safeDate(session.createdAt)
-        ));
-
-        meta.appendChild(createMetaItem(
-          "Approximate location",
-          session.location
-        ));
-
-        meta.appendChild(createMetaItem(
-          "IP address",
-          session.ipAddress
-        ));
-
-        card.appendChild(meta);
-
-        const bottom = createElement("div", "session-bottom");
-
-        bottom.appendChild(createElement(
-          "span",
-          "session-reference",
-          `Session reference: ${session.id}`
-        ));
-
-        const actions = createElement("div", "session-actions");
-
-        if (session.current) {
-          actions.appendChild(createElement(
-            "span",
-            "session-reference",
-            "Your current session cannot be revoked here."
-          ));
-        } else if (session.active) {
-          const revokeButton = createElement(
-            "button",
-            "btn btn-danger",
-            "Sign out this device"
-          );
-
-          revokeButton.type = "button";
-          revokeButton.addEventListener("click", () => {
-            revokeSession(session, revokeButton);
-          });
-
-          actions.appendChild(revokeButton);
-        } else {
-          actions.appendChild(createElement(
-            "span",
-            "session-reference",
-            "Session is inactive."
-          ));
-        }
-
-        bottom.appendChild(actions);
-        card.appendChild(bottom);
-
-        return card;
-      }
-
-      function renderSessions() {
-        sessionList.replaceChildren();
-
-        if (!sessions.length) {
-          const empty = createElement("div", "empty-state");
-
-          empty.appendChild(createElement(
-            "strong",
-            "",
-            "No session records available"
-          ));
-
-          empty.appendChild(document.createTextNode(
-            "Your session service did not return any sessions. Refresh the page or contact support if you believe this is incorrect."
-          ));
-
-          sessionList.appendChild(empty);
+      function typeNextCharacter() {
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
           return;
         }
 
-        const activeSessions = sessions.filter(session => session.active);
+        const phrase = phrases[phraseIndex];
 
-        if (!activeSessions.length) {
-          const empty = createElement("div", "empty-state");
+        if (!deleting) {
+          characterIndex++;
+          typingText.textContent = phrase.slice(0, characterIndex);
 
-          empty.appendChild(createElement(
-            "strong",
-            "",
-            "No active sessions returned"
-          ));
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            typingTimer = window.setTimeout(typeNextCharacter, 1600);
+            return;
+          }
 
-          empty.appendChild(document.createTextNode(
-            "There are no active sessions in the response. Your sign-in service may require you to authenticate again."
-          ));
-
-          sessionList.appendChild(empty);
+          typingTimer = window.setTimeout(typeNextCharacter, 48);
           return;
         }
 
-        activeSessions.forEach(session => {
-          sessionList.appendChild(createSessionCard(session));
-        });
-      }
+        characterIndex--;
+        typingText.textContent = phrase.slice(0, characterIndex);
 
-      async function parseResponse(response) {
-        const contentType = response.headers.get("content-type") || "";
-
-        if (!contentType.includes("application/json")) return {};
-
-        try {
-          return await response.json();
-        } catch {
-          return {};
-        }
-      }
-
-      async function requestJson(url, options = {}) {
-        const response = await fetch(url, {
-          credentials: "same-origin",
-          cache: "no-store",
-          headers: {
-            "Accept": "application/json",
-            ...(options.headers || {})
-          },
-          ...options
-        });
-
-        const data = await parseResponse(response);
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("Your session has expired. Please sign in again.");
-          }
-
-          if (response.status === 403) {
-            throw new Error("You are not authorized to manage these sessions.");
-          }
-
-          if (response.status === 404) {
-            throw new Error(
-              "The session management endpoint is not configured on the server."
-            );
-          }
-
-          if (response.status === 429) {
-            throw new Error("Too many requests. Wait before trying again.");
-          }
-
-          throw new Error(
-            safeText(data.message, "The request could not be completed.")
-          );
-        }
-
-        return data;
-      }
-
-      async function loadSessions() {
-        if (isLoading) return;
-
-        isLoading = true;
-        clearStatus();
-
-        sessionList.replaceChildren();
-
-        sessionList.appendChild(createElement(
-          "div",
-          "empty-state",
-          "Loading account sessions…"
-        ));
-
-        if (requestController) requestController.abort();
-        requestController = new AbortController();
-
-        try {
-          const data = await requestJson(CONFIG.sessionsEndpoint, {
-            method: "GET",
-            signal: requestController.signal
-          });
-
-          if (!Array.isArray(data.sessions)) {
-            throw new Error("The session service returned an invalid response.");
-          }
-
-          sessions = data.sessions
-            .filter(session =>
-              session &&
-              typeof session.id === "string" &&
-              session.id.length > 0
-            )
-            .map(normalizeSession);
-
-          updateOverview();
-          renderSessions();
-
-        } catch (error) {
-          if (error.name === "AbortError") return;
-
-          sessions = [];
-          updateOverview();
-          renderSessions();
-
-          showStatus(error.message, "error", true);
-
-          const empty = createElement("div", "empty-state");
-
-          empty.appendChild(createElement(
-            "strong",
-            "",
-            "Sessions could not be loaded"
-          ));
-
-          empty.appendChild(document.createTextNode(
-            "Check your connection or confirm that the session API is configured."
-          ));
-
-          const retryButton = createElement("button", "btn", "Try again");
-          retryButton.type = "button";
-          retryButton.addEventListener("click", loadSessions);
-
-          empty.appendChild(retryButton);
-          sessionList.replaceChildren(empty);
-
-        } finally {
-          isLoading = false;
-          requestController = null;
-        }
-      }
-
-      async function revokeSession(session, button) {
-        if (!session || !session.id || session.current || !session.active) {
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          typingTimer = window.setTimeout(typeNextCharacter, 280);
           return;
         }
 
-        const confirmed = window.confirm(
-          `Sign out the session for "${session.deviceName}"? That device may need to sign in again.`
-        );
-
-        if (!confirmed) return;
-
-        button.disabled = true;
-        button.textContent = "Signing out…";
-        clearStatus();
-
-        try {
-          /*
-           * Encode the opaque session ID as a URL path segment.
-           * The server must independently authorize ownership.
-           *
-           * If the application requires a CSRF header, add the actual
-           * server-issued token using the existing security implementation.
-           */
-          const endpoint =
-            CONFIG.sessionsEndpoint + "/" + encodeURIComponent(session.id);
-
-          await requestJson(endpoint, {
-            method: "DELETE"
-          });
-
-          /*
-           * Refresh from the server instead of assuming that a successful
-           * browser-side change means a session has been invalidated.
-           */
-          showStatus(
-            "The revocation request was accepted. Refreshing session records.",
-            "success"
-          );
-
-          await loadSessions();
-
-        } catch (error) {
-          showStatus(error.message, "error", true);
-          button.disabled = false;
-          button.textContent = "Sign out this device";
-        }
+        typingTimer = window.setTimeout(typeNextCharacter, 25);
       }
 
-      updateOverview();
+      if (reducedMotion.matches) {
+        typingText.textContent = phrases[0];
+      } else {
+        typingTimer = window.setTimeout(typeNextCharacter, 1400);
+      }
+
+      reducedMotion.addEventListener?.("change", event => {
+        window.clearTimeout(typingTimer);
+
+        if (event.matches) {
+          typingText.textContent = phrases[0];
+          return;
+        }
+
+        phraseIndex = 0;
+        characterIndex = 0;
+        deleting = false;
+        typeNextCharacter();
+      });
+
+      /* Optional local illustration and accessible fallback */
+
+      const sessionImage = $("sessionSecurityImage");
+      const sessionFallback = $("sessionArtFallback");
+
+      sessionImage.addEventListener("load", () => {
+        sessionImage.hidden = false;
+        sessionFallback.hidden = true;
+      });
+
+      sessionImage.addEventListener("error", () => {
+        sessionImage.hidden = true;
+        sessionFallback.hidden = false;
+      });
+
+      /* Actions */
+
+      refreshButton.addEventListener("click", loadSessions);
+      revokeOthersButton.addEventListener("click", revokeOtherSessions);
+
+      /*
+       * Initial load. The UI remains honest if the API is unavailable:
+       * no example devices are inserted and no session is assumed active.
+       */
       loadSessions();
     })();
   </script>
 
-  <!-- Include shared scripts only if they exist in your repository.
-       Avoid duplicating handlers already implemented by these scripts. -->
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/utils.js" defer></script>
   <script src="/assets/js/security.js" defer></script>

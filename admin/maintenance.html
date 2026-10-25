@@ -1,24 +1,3007 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Maintenance | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06140f">
+  <meta name="description" content="Manage MedOrbits platform maintenance, service availability, maintenance notices, scheduled downtime and operational status through the authorised administration API.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Maintenance Control | MedOrbits Admin</title>
+
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06140f;
+      --bg-deep: #020a07;
+      --green-dark: #0b2118;
+      --green: #123b2a;
+      --green-2: #185239;
+      --green-3: #226c49;
+      --green-bright: #55d6a0;
+      --green-light: #9af0c4;
+      --green-soft: #d9ffeb;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1faf5;
+      --text-soft: #c5e3d4;
+      --muted: #8fb5a0;
+      --border: rgba(85, 214, 160, .20);
+      --border-gold: rgba(211, 173, 97, .30);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0, 0, 0, .42);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #2b9c69 0%,
+        #83e6b0 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(15, 49, 37, .97),
+        rgba(4, 17, 12, .98)
+      );
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(43, 156, 105, .19), transparent 36%),
+        radial-gradient(ellipse at 96% 32%, rgba(205, 164, 85, .085), transparent 34%),
+        radial-gradient(ellipse at 45% 100%, rgba(32, 108, 73, .15), transparent 43%),
+        linear-gradient(135deg, #020a07 0%, #071a11 48%, #0a2418 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans", sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(154, 240, 196, .20) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .14;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(43, 156, 105, .05),
+        transparent 23%,
+        rgba(211, 173, 97, .035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button, a, input, select, textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--green-light);
+      outline-offset: 4px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .container {
+      width: min(1280px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: #06140f;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    .accent-text {
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(85, 214, 160, 0); }
+      50% { box-shadow: 0 0 22px rgba(85, 214, 160, .15); }
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(13px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .45; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #020a07;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong {
+      color: var(--gold-bright);
+    }
+
+    .sparkle {
+      color: var(--green-light);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4, 16, 10, .92);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(2, 10, 7, .98);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(85, 214, 160, .19));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--green-light);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158, 232, 193, .6);
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(85, 214, 160, .07);
+      color: var(--green-light);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(154, 240, 196, .45);
+      border-radius: 10px;
+      background: linear-gradient(115deg, #4bb984, #a1edc4);
+      color: #06140f;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s, filter .22s, box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+      box-shadow: 0 7px 23px rgba(85, 214, 160, .17);
+    }
+
+    .btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211, 173, 97, .05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255, 182, 189, .35);
+      background: rgba(255, 182, 189, .07);
+      color: var(--danger);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%, rgba(85, 214, 160, .09), transparent 34%),
+        radial-gradient(ellipse at 93% 55%, rgba(211, 173, 97, .065), transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a {
+      color: var(--green-light);
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--green-bright);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px, 4.3vw, 52px)/1.13 "Playfair Display", Georgia, serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0, 1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg, #185239, #302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display", Georgia, serif;
+    }
+
+    .admin-identity strong {
+      display: block;
+      font-size: 11px;
+    }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav {
+      display: grid;
+      gap: 5px;
+    }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(85, 214, 160, .09);
+      color: var(--green-light);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(85, 214, 160, .07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong {
+      color: var(--gold-bright);
+    }
+
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+
+    .panel {
+      padding: clamp(17px, 2.5vw, 25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(85, 214, 160, .13), rgba(211, 173, 97, .06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(85, 214, 160, .045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .status.success {
+      border-color: rgba(158, 232, 193, .3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255, 182, 189, .35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status.info {
+      color: var(--green-light);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(200px, .7fr);
+      gap: 22px;
+      align-items: center;
+      padding: clamp(18px, 3vw, 28px);
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(211, 173, 97, .13), transparent 45%),
+        radial-gradient(ellipse at 0% 100%, rgba(85, 214, 160, .11), transparent 48%),
+        linear-gradient(120deg, rgba(15, 49, 37, .97), rgba(4, 17, 12, .98));
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+
+    .hero h2 {
+      margin: 12px 0 10px;
+      font: 600 clamp(24px, 3.4vw, 36px)/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .hero-art {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background:
+        linear-gradient(0deg, rgba(2, 10, 7, .88), rgba(2, 10, 7, .08)),
+        url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .hero-art-label {
+      position: absolute;
+      right: 13px;
+      bottom: 12px;
+      left: 13px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero-art-label span {
+      display: block;
+      margin-top: 3px;
+      color: #d0e7d9;
+      font-size: 8px;
+      font-weight: 400;
+      letter-spacing: .04em;
+      text-transform: none;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(85, 214, 160, .11), transparent 54%),
+        linear-gradient(145deg, rgba(15, 49, 37, .92), rgba(4, 17, 12, .96));
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 39px;
+      width: 39px;
+      height: 39px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211, 173, 97, .07);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+
+    .stat-copy {
+      min-width: 0;
+    }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--green-light);
+      font: 600 24px/1.35 "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-copy small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #071a11;
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: #718f7d;
+    }
+
+    .field input:disabled,
+    .field select:disabled,
+    .field textarea:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
+
+    .field-help {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.7;
+    }
+
+    .field input[type="checkbox"] {
+      width: 15px;
+      min-height: 15px;
+      height: 15px;
+      accent-color: var(--green-bright);
+    }
+
+    .check-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin-top: 12px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .check-line input {
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .toolbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(85, 214, 160, .055);
+      color: var(--text-soft);
+      font-size: 8px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .pill.success {
+      border-color: rgba(158, 232, 193, .3);
+      color: var(--success);
+    }
+
+    .pill.warning {
+      border-color: rgba(255, 224, 160, .32);
+      color: var(--warning);
+    }
+
+    .pill.danger {
+      border-color: rgba(255, 182, 189, .4);
+      color: var(--danger);
+    }
+
+    .pill.info {
+      border-color: rgba(85, 214, 160, .28);
+      color: var(--green-light);
+    }
+
+    .pill.unknown {
+      color: var(--muted);
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .service-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(2, 10, 7, .4);
+    }
+
+    .service-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 40px;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211, 173, 97, .06);
+      color: var(--gold-bright);
+      font-size: 17px;
+    }
+
+    .service-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .service-copy h3 {
+      margin: 0 0 5px;
+      color: var(--text);
+      font: 600 16px/1.4 "Playfair Display", Georgia, serif;
+      overflow-wrap: anywhere;
+    }
+
+    .service-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .service-copy .pill {
+      margin-top: 10px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(2, 10, 7, .35);
+    }
+
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211, 173, 97, .055);
+      color: var(--gold-bright);
+      font-size: 12px;
+    }
+
+    .mini-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mini-copy strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 19px;
+    }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211, 173, 97, .045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+
+    .notice strong {
+      color: var(--gold-bright);
+    }
+
+    .maintenance-banner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, .65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(211, 173, 97, .12), transparent 45%),
+        linear-gradient(120deg, rgba(15, 49, 37, .96), rgba(4, 17, 12, .98));
+    }
+
+    .maintenance-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px, 3vw, 30px)/1.3 "Playfair Display", Georgia, serif;
+    }
+
+    .maintenance-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      min-height: 165px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        linear-gradient(135deg, rgba(14, 43, 29, .25), rgba(2, 10, 7, .7)),
+        url("https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80") center/cover;
+    }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%, rgba(85, 214, 160, .08), transparent 38%),
+        #020a07;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4, minmax(0, 1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--green-light);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-bright);
+    }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211, 173, 97, .035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width: 1100px) {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4, 16, 10, .99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a {
+        display: block;
+        padding: 11px 8px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .footer-brand {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 950px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 850px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions {
+        width: 100%;
+      }
+
+      .heading-actions .btn {
+        flex: 1;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 1fr) minmax(150px, .6fr);
+      }
+
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: calc(100% - 28px);
+      }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap {
+        min-height: 68px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .live-indicator {
+        display: none;
+      }
+
+      .page-main {
+        padding: 29px 0 44px;
+      }
+
+      .page-heading h1 {
+        font-size: clamp(32px, 9vw, 42px);
+      }
+
+      .heading-actions {
+        flex-direction: column;
+      }
+
+      .heading-actions .btn {
+        width: 100%;
+      }
+
+      .sidebar,
+      .panel {
+        padding: 15px;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+
+      .hero-art {
+        min-height: 145px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .stat-copy strong {
+        font-size: 22px;
+      }
+
+      .field-grid,
+      .service-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+      }
+
+      .toolbar-actions .btn {
+        flex: 1;
+      }
+
+      .maintenance-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+
+      .feature-image {
+        min-height: 135px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1 / -1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand img {
+        width: 34px;
+        height: 34px;
+      }
+
+      .brand strong {
+        font-size: 12px;
+      }
+
+      .admin-nav {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .footer-grid {
+        gap: 18px 11px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Maintenance</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about maintenance. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>Platform maintenance and availability</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/maintenance.html" aria-current="page">Maintenance</a>
+        <a href="/admin/health.html">System health</a>
+        <a href="/admin/integrations.html">Integrations</a>
+        <a href="/admin/security.html">Security</a>
+        <a href="/admin/audit-logs.html">Audit logs</a>
+        <a href="/admin/settings.html">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/settings.html">Settings</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Maintenance control</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Platform operations · Service availability</span>
+          <h1>Maintenance <span class="accent-text">control.</span></h1>
+          <p>
+            Review platform availability, inspect service health and prepare
+            maintenance notices or scheduled downtime. All operational
+            changes must be authorised, validated and confirmed by the
+            MedOrbits administration backend.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/index.html">← Admin dashboard</a>
+          <button class="btn" id="refreshMaintenance" type="button">↻ Refresh status</button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</a>
+            <a href="/admin/users.html"><span class="nav-icon" aria-hidden="true">♙</span>User management</a>
+            <a href="/admin/applications.html"><span class="nav-icon" aria-hidden="true">▤</span>Applications</a>
+            <a href="/admin/admissions.html"><span class="nav-icon" aria-hidden="true">🎓</span>Admissions</a>
+            <a href="/admin/documents.html"><span class="nav-icon" aria-hidden="true">▧</span>Documents</a>
+            <a href="/admin/courses.html"><span class="nav-icon" aria-hidden="true">▣</span>Course catalogue</a>
+            <a href="/admin/colleges.html"><span class="nav-icon" aria-hidden="true">⌂</span>Colleges</a>
+            <a href="/admin/universities.html"><span class="nav-icon" aria-hidden="true">⌘</span>Universities</a>
+            <a href="/admin/payments.html"><span class="nav-icon" aria-hidden="true">₹</span>Payments</a>
+            <a href="/admin/subscriptions.html"><span class="nav-icon" aria-hidden="true">◷</span>Subscriptions</a>
+            <a href="/admin/recruitment.html"><span class="nav-icon" aria-hidden="true">♧</span>Recruitment</a>
+            <a href="/admin/notifications.html"><span class="nav-icon" aria-hidden="true">♢</span>Notifications</a>
+            <a href="/admin/reports.html"><span class="nav-icon" aria-hidden="true">▥</span>Reports and analytics</a>
+            <a href="/admin/integrations.html"><span class="nav-icon" aria-hidden="true">⌘</span>Integrations</a>
+            <a href="/admin/api-settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>API settings</a>
+            <a class="active" href="/admin/maintenance.html" aria-current="page"><span class="nav-icon" aria-hidden="true">◷</span>Maintenance control</a>
+            <a href="/admin/audit-logs.html"><span class="nav-icon" aria-hidden="true">≡</span>Audit logs</a>
+            <a href="/admin/security.html"><span class="nav-icon" aria-hidden="true">⬡</span>Security centre</a>
+            <a href="/admin/settings.html"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Operational safeguards.</strong>
+            <br>
+            Maintenance controls can affect every user. Confirm the target
+            environment, approved time window, rollback plan and public
+            communication before applying changes.
+          </p>
+        </aside>
+
+        <div class="content">
+          <section class="hero" aria-labelledby="heroTitle">
+            <div class="hero-copy">
+              <span class="eyebrow">Service continuity · Operational readiness</span>
+              <h2 id="heroTitle">Planned downtime. <span class="accent-text">Controlled recovery.</span></h2>
+              <p>
+                Coordinate platform maintenance with a clear change reason,
+                approved schedule and user-facing message. The page displays
+                real maintenance status only when returned by the configured
+                administration API.
+              </p>
+
+              <div class="hero-actions">
+                <button class="btn" id="heroRefresh" type="button">↻ Check platform status</button>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Review audit history ↗</a>
+              </div>
+            </div>
+
+            <div
+              class="hero-art"
+              role="img"
+              aria-label="Digital infrastructure and server technology imagery"
+            >
+              <div class="hero-art-label">
+                Platform reliability and service operations
+                <span>Maintenance planning · Health checks · Recovery</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">◷</div>
+              <div>
+                <h2 id="overviewTitle">Maintenance overview</h2>
+                <p>Overview values are populated from the configured administration endpoint.</p>
+              </div>
+            </div>
+
+            <div class="stats-grid" aria-live="polite">
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◉</div>
+                <div class="stat-copy">
+                  <span>Maintenance mode</span>
+                  <strong id="statMaintenance">--</strong>
+                  <small>Server-reported state</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">✓</div>
+                <div class="stat-copy">
+                  <span>Healthy services</span>
+                  <strong id="statHealthy">--</strong>
+                  <small>Reported healthy</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">!</div>
+                <div class="stat-copy">
+                  <span>Services requiring attention</span>
+                  <strong id="statAttention">--</strong>
+                  <small>Degraded or unavailable</small>
+                </div>
+              </article>
+
+              <article class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Next maintenance</span>
+                  <strong id="statNext" style="font-size:15px">--</strong>
+                  <small>Server-reported schedule</small>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="statusTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">◉</div>
+              <div>
+                <h2 id="statusTitle">Current platform status</h2>
+                <p>Inspect the latest maintenance state and the response from the configured backend.</p>
+              </div>
+            </div>
+
+            <div id="maintenanceStatus" class="status warning" role="status" aria-live="polite">
+              Maintenance status has not been loaded. The page will request the configured administration endpoint.
+            </div>
+
+            <div class="toolbar">
+              <p id="lastLoaded">No successful status refresh yet.</p>
+              <div class="toolbar-actions">
+                <button class="btn btn-outline btn-small" id="checkHealth" type="button">Run health check</button>
+                <a class="btn btn-outline btn-small" href="/admin/health.html">System health ↗</a>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="environmentDisplay">Environment</label>
+                <input id="environmentDisplay" type="text" readonly value="Not reported">
+                <span class="field-help">Confirm that changes target the intended environment.</span>
+              </div>
+
+              <div class="field">
+                <label for="platformStatusDisplay">Platform status</label>
+                <input id="platformStatusDisplay" type="text" readonly value="Unknown">
+                <span class="field-help">The backend must report the authoritative platform status.</span>
+              </div>
+
+              <div class="field">
+                <label for="maintenanceStartDisplay">Maintenance start</label>
+                <input id="maintenanceStartDisplay" type="text" readonly value="Not scheduled">
+                <span class="field-help">Scheduled time reported by the server.</span>
+              </div>
+
+              <div class="field">
+                <label for="maintenanceEndDisplay">Estimated completion</label>
+                <input id="maintenanceEndDisplay" type="text" readonly value="Not scheduled">
+                <span class="field-help">An estimate, not a guaranteed recovery time.</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="servicesTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="servicesTitle">Service availability</h2>
+                <p>Review the service health records returned by the backend. This page does not fabricate service states.</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <p id="serviceSummary" aria-live="polite">No service records loaded.</p>
+              <span class="pill unknown" id="serviceSource">Awaiting API response</span>
+            </div>
+
+            <div class="service-grid" id="servicesGrid">
+              <div class="notice" style="grid-column:1/-1">
+                <strong>No service data loaded.</strong>
+                <br>
+                Actual service cards will appear when the administration API returns service records.
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="scheduleTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">◷</div>
+              <div>
+                <h2 id="scheduleTitle">Maintenance scheduling</h2>
+                <p>
+                  Prepare a controlled maintenance request. Scheduling and
+                  maintenance activation remain unavailable until the
+                  authorised backend explicitly supports these operations.
+                </p>
+              </div>
+            </div>
+
+            <div class="notice" style="margin-bottom:18px">
+              <strong>Backend integration required.</strong>
+              <br>
+              These controls are disabled by default. The server must validate
+              the requested schedule, check permissions, handle timezone
+              conversion and record the result before any maintenance window
+              is considered active.
+            </div>
+
+            <form id="maintenanceForm">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="maintenanceAction">Requested action</label>
+                  <select id="maintenanceAction" name="action" disabled required>
+                    <option value="">Choose an action</option>
+                    <option value="schedule">Schedule maintenance</option>
+                    <option value="enable">Enable maintenance mode now</option>
+                    <option value="disable">Disable maintenance mode</option>
+                    <option value="cancel">Cancel a scheduled window</option>
+                  </select>
+                  <span class="field-help">The server must enforce permissions for each action separately.</span>
+                </div>
+
+                <div class="field">
+                  <label for="maintenanceScope">Maintenance scope</label>
+                  <select id="maintenanceScope" name="scope" disabled required>
+                    <option value="">Choose a scope</option>
+                    <option value="platform">Entire platform</option>
+                    <option value="api">API services</option>
+                    <option value="admissions">Admissions services</option>
+                    <option value="documents">Document services</option>
+                    <option value="payments">Payment services</option>
+                    <option value="careers">Career services</option>
+                  </select>
+                  <span class="field-help">Available scopes must be supported and enforced by the backend.</span>
+                </div>
+
+                <div class="field">
+                  <label for="scheduledStart">Scheduled start</label>
+                  <input
+                    id="scheduledStart"
+                    name="startAt"
+                    type="datetime-local"
+                    disabled
+                    required
+                  >
+                  <span class="field-help">Use the approved maintenance window and verify the server timezone.</span>
+                </div>
+
+                <div class="field">
+                  <label for="scheduledEnd">Estimated completion</label>
+                  <input
+                    id="scheduledEnd"
+                    name="endAt"
+                    type="datetime-local"
+                    disabled
+                    required
+                  >
+                  <span class="field-help">The end time must be later than the start time.</span>
+                </div>
+
+                <div class="field full">
+                  <label for="publicNotice">User-facing maintenance notice</label>
+                  <textarea
+                    id="publicNotice"
+                    name="publicMessage"
+                    maxlength="1000"
+                    placeholder="Explain the expected impact, planned maintenance window and where users can get assistance."
+                    disabled
+                  ></textarea>
+                  <span class="field-help">Do not include credentials, private incident details or personal information.</span>
+                </div>
+
+                <div class="field full">
+                  <label for="changeReason">Internal change reason</label>
+                  <textarea
+                    id="changeReason"
+                    name="reason"
+                    maxlength="500"
+                    placeholder="Document the approved change, operational need and recovery plan."
+                    disabled
+                    required
+                  ></textarea>
+                  <span class="field-help">Provide an auditable reason for the requested operational change.</span>
+                </div>
+              </div>
+
+              <label class="check-line">
+                <input id="confirmImpact" name="confirmImpact" type="checkbox" disabled required>
+                <span>I confirm that the maintenance scope, impact, schedule and recovery plan have been reviewed and authorised.</span>
+              </label>
+
+              <label class="check-line">
+                <input id="confirmCommunication" name="confirmCommunication" type="checkbox" disabled required>
+                <span>I confirm that the relevant users and internal stakeholders will be informed through the approved communication process.</span>
+              </label>
+
+              <div class="hero-actions">
+                <button class="btn" id="submitMaintenance" type="submit" disabled>Submit maintenance request</button>
+                <button class="btn btn-outline" id="resetMaintenance" type="button" disabled>Reset form</button>
+              </div>
+
+              <div id="formStatus" class="status info" role="status" aria-live="polite" hidden></div>
+            </form>
+          </section>
+
+          <div class="two-column">
+            <section class="panel" aria-labelledby="noticeTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">♢</div>
+                <div>
+                  <h2 id="noticeTitle">Maintenance notice</h2>
+                  <p>Review the public notice currently reported by the server.</p>
+                </div>
+              </div>
+
+              <div id="publicNoticeStatus" class="status warning" role="status" aria-live="polite">
+                No public maintenance notice has been loaded.
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Notice status</strong>
+                    <p id="noticeState">Not reported by the backend.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Last updated</strong>
+                    <p id="noticeUpdated">Not reported by the backend.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Public message</strong>
+                    <p id="noticeMessage">No public message available.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="diagnosticsTitle">
+              <div class="panel-heading">
+                <div class="panel-icon" aria-hidden="true">⌘</div>
+                <div>
+                  <h2 id="diagnosticsTitle">Maintenance diagnostics</h2>
+                  <p>Review the latest status request and configuration permissions.</p>
+                </div>
+              </div>
+
+              <div class="mini-list">
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">01</div>
+                  <div class="mini-copy">
+                    <strong>Administration endpoint</strong>
+                    <p id="diagnosticEndpoint">Not checked.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">02</div>
+                  <div class="mini-copy">
+                    <strong>Last response</strong>
+                    <p id="diagnosticResponse">No response recorded.</p>
+                  </div>
+                </div>
+
+                <div class="mini-item">
+                  <div class="mini-icon" aria-hidden="true">03</div>
+                  <div class="mini-copy">
+                    <strong>Maintenance permissions</strong>
+                    <p id="diagnosticPermissions">Not verified. Every maintenance operation must be authorised by the server.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="panel" aria-labelledby="checklistTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✓</div>
+              <div>
+                <h2 id="checklistTitle">Operational readiness checklist</h2>
+                <p>Use these checks before authorising a maintenance window.</p>
+              </div>
+            </div>
+
+            <div class="mini-list">
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">01</div>
+                <div class="mini-copy">
+                  <strong>Confirm scope and dependencies</strong>
+                  <p>Identify affected services, upstream dependencies, background jobs, integrations and user-facing workflows.</p>
+                </div>
+              </div>
+
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">02</div>
+                <div class="mini-copy">
+                  <strong>Prepare recovery and rollback</strong>
+                  <p>Validate backups where relevant, define recovery steps, assign an owner and establish a way to verify service restoration.</p>
+                </div>
+              </div>
+
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">03</div>
+                <div class="mini-copy">
+                  <strong>Communicate service impact</strong>
+                  <p>Publish accurate maintenance times and user guidance through approved channels. Avoid promising an unverified recovery time.</p>
+                </div>
+              </div>
+
+              <div class="mini-item">
+                <div class="mini-icon" aria-hidden="true">04</div>
+                <div class="mini-copy">
+                  <strong>Record and review the change</strong>
+                  <p>Log the authenticated actor, approved reason, requested scope, timestamps, outcome and recovery confirmation without exposing secrets.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="maintenance-banner" aria-labelledby="featureTitle">
+            <div>
+              <span class="eyebrow">Infrastructure governance</span>
+              <h2 id="featureTitle">Planned maintenance. <span class="accent-text">Trusted recovery.</span></h2>
+              <p>
+                Keep platform changes controlled, service status observable
+                and user communication accurate. Verify the real operational
+                state before announcing downtime or successful recovery.
+              </p>
+
+              <div class="hero-actions">
+                <a class="btn" href="/admin/health.html">Open system health ↗</a>
+                <a class="btn btn-outline" href="/admin/audit-logs.html">Open audit history</a>
+              </div>
+            </div>
+
+            <div
+              class="feature-image"
+              role="img"
+              aria-label="Technology components and digital infrastructure imagery"
+            ></div>
+          </section>
+
+          <div class="notice">
+            <strong>Security and availability notice:</strong>
+            This page is an administrative client, not a security boundary.
+            The backend must authenticate administrators, enforce permissions
+            on every endpoint, validate and persist maintenance requests,
+            protect against CSRF, apply rate limits, and maintain audit logs.
+            Do not use client-side controls alone to protect production
+            services or activate a maintenance window.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="44" height="44" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/settings.html">Settings</a>
+          <a href="/admin/maintenance.html">Maintenance control</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Infrastructure</h2>
+          <a href="/admin/health.html">System health</a>
+          <a href="/admin/integrations.html">Integrations</a>
+          <a href="/admin/api-settings.html">API configuration</a>
+          <a href="/admin/security.html">Security centre</a>
+          <a href="/admin/audit-logs.html">Audit logs</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Platform maintenance, service availability and privileged
+        operational actions are governed by authenticated administration
+        policies and the status reported by the relevant backend services.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MedOrbits Maintenance Control
+       *
+       * Default read endpoint:
+       *   GET /api/admin/maintenance
+       *
+       * Optional health endpoint:
+       *   GET /api/health
+       *
+       * Optional configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminMaintenanceEndpoint: "/api/admin/maintenance",
+       *   adminMaintenanceHealthEndpoint: "/api/health",
+       *   adminMaintenanceWriteEnabled: false
+       * };
+       *
+       * Suggested read response:
+       * {
+       *   "data": {
+       *     "admin": {
+       *       "name": "Administration",
+       *       "email": "admin@example.com"
+       *     },
+       *     "environment": "production",
+       *     "platformStatus": "operational",
+       *     "maintenance": {
+       *       "enabled": false,
+       *       "startAt": null,
+       *       "endAt": null,
+       *       "nextAt": null,
+       *       "notice": {
+       *         "active": false,
+       *         "message": "",
+       *         "updatedAt": null
+       *       }
+       *     },
+       *     "services": [
+       *       {
+       *         "id": "service-1",
+       *         "name": "Admissions API",
+       *         "description": "Admissions service",
+       *         "status": "healthy"
+       *       }
+       *     ]
+       *   }
+       * }
+       *
+       * Optional write endpoint:
+       *   POST /api/admin/maintenance
+       *
+       * This client sends maintenance requests only when explicitly enabled.
+       * The server must authenticate and authorize the administrator, validate
+       * every field, enforce approved scopes and schedules, and audit changes.
+       *
+       * Do not rely on this page to enforce maintenance mode or access control.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+        const config = window.MEDORBITS_CONFIG || {};
+
+        const state = {
+          controller: null,
+          sequence: 0,
+          loading: false,
+          loadedSuccessfully: false,
+          maintenance: null,
+          services: [],
+          writeEnabled: config.adminMaintenanceWriteEnabled === true,
+          writeInProgress: false,
+          lastRequestAt: null
+        };
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        function textValue(value, fallback = "") {
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(value);
+          }
+
+          if (typeof value === "boolean") {
+            return String(value);
+          }
+
+          return fallback;
+        }
+
+        function makeElement(tag, className, value) {
+          const element = document.createElement(tag);
+
+          if (className) element.className = className;
+          if (value !== undefined && value !== null) {
+            element.textContent = String(value);
+          }
+
+          return element;
+        }
+
+        function validCount(value) {
+          const number = typeof value === "number" ? value : Number(value);
+
+          return Number.isSafeInteger(number) && number >= 0
+            ? number
+            : null;
+        }
+
+        function setStatus(message, type = "warning") {
+          $("maintenanceStatus").textContent = message;
+          $("maintenanceStatus").className = `status ${type}`;
+        }
+
+        function setFormStatus(message, type = "info") {
+          const status = $("formStatus");
+          status.textContent = message;
+          status.className = `status ${type}`;
+          status.hidden = false;
+        }
+
+        function clearFormStatus() {
+          $("formStatus").textContent = "";
+          $("formStatus").hidden = true;
+          $("formStatus").className = "status info";
+        }
+
+        function sameOriginEndpoint(configured, fallback) {
+          let url;
+
+          try {
+            url = new URL(configured || fallback, window.location.origin);
+          } catch {
+            throw new Error("The configured administration endpoint is invalid.");
+          }
+
+          if (url.origin !== window.location.origin) {
+            throw new Error("The administration endpoint must use this website's origin.");
+          }
+
+          if (url.username || url.password || url.hash) {
+            throw new Error("The endpoint must not contain credentials or a URL fragment.");
+          }
+
+          return url;
+        }
+
+        function getMaintenanceEndpoint() {
+          return sameOriginEndpoint(
+            config.adminMaintenanceEndpoint,
+            "/api/admin/maintenance"
+          );
+        }
+
+        function getHealthEndpoint() {
+          return sameOriginEndpoint(
+            config.adminMaintenanceHealthEndpoint,
+            "/api/health"
+          );
+        }
+
+        function requestHeaders(includeJson = false) {
+          const headers = { Accept: "application/json" };
+
+          if (includeJson) {
+            headers["Content-Type"] = "application/json";
+          }
+
+          const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+          if (csrfMeta && csrfMeta.content.trim()) {
+            headers["X-CSRF-Token"] = csrfMeta.content.trim();
+          }
+
+          return headers;
+        }
+
+        async function parseResponse(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            const payload = await response.json();
+
+            return payload && typeof payload === "object" && !Array.isArray(payload)
+              ? payload
+              : {};
+          } catch {
+            return {};
+          }
+        }
+
+        function responseError(response, payload) {
+          if (response.status === 401) {
+            return "Authentication required. Sign in with an authorised administrator account.";
+          }
+
+          if (response.status === 403) {
+            return "Access denied. Your account is not authorised to manage maintenance.";
+          }
+
+          if (response.status === 404) {
+            return "The maintenance endpoint was not found. Verify the backend route configuration.";
+          }
+
+          if (response.status === 409) {
+            return "The maintenance state changed on the server. Refresh and review the latest status.";
+          }
+
+          if (response.status === 422) {
+            return textValue(
+              payload.message,
+              "The server rejected the request. Review the maintenance requirements."
+            );
+          }
+
+          if (response.status === 429) {
+            return "The request rate limit was reached. Wait before trying again.";
+          }
+
+          if (response.status >= 500) {
+            return "The server encountered an error while processing the request.";
+          }
+
+          return textValue(
+            payload.message,
+            `The request failed with HTTP ${response.status}.`
+          );
+        }
+
+        function formatDate(value, includeTime = true) {
+          if (
+            (typeof value !== "string" && typeof value !== "number") ||
+            !String(value).trim()
+          ) {
+            return "Not scheduled";
+          }
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) {
+            return "Not scheduled";
+          }
+
+          return date.toLocaleString(undefined, includeTime
+            ? {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }
+            : {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              }
+          );
+        }
+
+        function normalizeService(raw) {
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+            return null;
+          }
+
+          const id = raw.id ?? raw.key ?? raw.serviceId;
+          const name = textValue(raw.name ?? raw.label ?? raw.title);
+
+          if (!name) return null;
+
+          const rawStatus = textValue(
+            raw.status ?? raw.health ?? raw.state,
+            "unknown"
+          ).toLowerCase();
+
+          let status = "unknown";
+
+          if (["healthy", "ok", "up", "operational", "connected"].includes(rawStatus)) {
+            status = "healthy";
+          } else if (["degraded", "warning", "partial"].includes(rawStatus)) {
+            status = "degraded";
+          } else if (["unhealthy", "down", "error", "failed", "disconnected"].includes(rawStatus)) {
+            status = "unhealthy";
+          } else if (["disabled", "inactive", "maintenance"].includes(rawStatus)) {
+            status = "disabled";
+          }
+
+          return {
+            id: textValue(id, name),
+            name,
+            description: textValue(raw.description ?? raw.summary, "No description provided."),
+            status
+          };
+        }
+
+        function statusClass(status) {
+          if (status === "healthy") return "success";
+          if (status === "degraded") return "warning";
+          if (status === "unhealthy") return "danger";
+          if (status === "disabled") return "unknown";
+          return "unknown";
+        }
+
+        function displayStatus(status) {
+          const labels = {
+            healthy: "Healthy",
+            degraded: "Degraded",
+            unhealthy: "Unhealthy",
+            disabled: "Disabled",
+            unknown: "Unknown"
+          };
+
+          return labels[status] || "Unknown";
+        }
+
+        function updateReadOnlyField(id, value, fallback = "Not reported") {
+          $(id).value = textValue(value, fallback);
+        }
+
+        function renderServices() {
+          const grid = $("servicesGrid");
+
+          if (!state.services.length) {
+            const empty = makeElement("div", "notice");
+            empty.style.gridColumn = "1 / -1";
+
+            empty.append(
+              makeElement("strong", "", "No service records available."),
+              makeElement(
+                "p",
+                "",
+                "The API did not return any service records. No example services have been inserted."
+              )
+            );
+
+            grid.replaceChildren(empty);
+            $("serviceSummary").textContent = "No service records returned.";
+            $("serviceSource").textContent = "No records";
+            $("serviceSource").className = "pill unknown";
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          state.services.forEach(service => {
+            const card = makeElement("article", "service-card");
+            const icon = makeElement("div", "service-icon", "⌘");
+            icon.setAttribute("aria-hidden", "true");
+
+            const copy = makeElement("div", "service-copy");
+            const title = makeElement("h3", "", service.name);
+            const description = makeElement("p", "", service.description);
+            const status = makeElement(
+              "span",
+              `pill ${statusClass(service.status)}`,
+              displayStatus(service.status)
+            );
+            const identifier = makeElement("p", "", `Service ID: ${service.id}`);
+
+            identifier.style.marginTop = "8px";
+
+            copy.append(title, description, status, identifier);
+            card.append(icon, copy);
+            fragment.appendChild(card);
+          });
+
+          grid.replaceChildren(fragment);
+          $("serviceSummary").textContent =
+            `${state.services.length} service record(s) returned by the API.`;
+          $("serviceSource").textContent = "Server-reported data";
+          $("serviceSource").className = "pill info";
+        }
+
+        function renderNotice(notice) {
+          if (!notice || typeof notice !== "object" || Array.isArray(notice)) {
+            $("publicNoticeStatus").textContent =
+              "No public maintenance notice has been reported by the backend.";
+            $("publicNoticeStatus").className = "status warning";
+            $("noticeState").textContent = "Not reported by the backend.";
+            $("noticeUpdated").textContent = "Not reported by the backend.";
+            $("noticeMessage").textContent = "No public message available.";
+            return;
+          }
+
+          const active = notice.active === true;
+          const message = textValue(notice.message, "No public message available.");
+
+          $("publicNoticeStatus").textContent = active
+            ? `An active maintenance notice is reported by the server.\n${message}`
+            : "The server reports no active public maintenance notice.";
+
+          $("publicNoticeStatus").className = `status ${active ? "warning" : "info"}`;
+          $("noticeState").textContent = active ? "Active" : "Inactive";
+          $("noticeUpdated").textContent = formatDate(notice.updatedAt);
+          $("noticeMessage").textContent = message;
+        }
+
+        function renderOverview(payload) {
+          const maintenance = payload.maintenance &&
+            typeof payload.maintenance === "object" &&
+            !Array.isArray(payload.maintenance)
+            ? payload.maintenance
+            : {};
+
+          state.maintenance = maintenance;
+
+          $("statMaintenance").textContent =
+            maintenance.enabled === true
+              ? "Enabled"
+              : maintenance.enabled === false
+                ? "Disabled"
+                : "Unknown";
+
+          const healthyCount = state.services.filter(
+            service => service.status === "healthy"
+          ).length;
+
+          const attentionCount = state.services.filter(
+            service => ["degraded", "unhealthy"].includes(service.status)
+          ).length;
+
+          $("statHealthy").textContent = String(healthyCount);
+          $("statAttention").textContent = String(attentionCount);
+          $("statNext").textContent = formatDate(maintenance.nextAt, false);
+
+          updateReadOnlyField("environmentDisplay", payload.environment);
+          updateReadOnlyField(
+            "platformStatusDisplay",
+            payload.platformStatus,
+            "Unknown"
+          );
+          updateReadOnlyField(
+            "maintenanceStartDisplay",
+            maintenance.startAt,
+            "Not scheduled"
+          );
+          updateReadOnlyField(
+            "maintenanceEndDisplay",
+            maintenance.endAt,
+            "Not scheduled"
+          );
+
+          if (
+            payload.admin &&
+            typeof payload.admin === "object" &&
+            !Array.isArray(payload.admin)
+          ) {
+            $("adminName").textContent = textValue(
+              payload.admin.name,
+              "Administration"
+            );
+
+            $("adminEmail").textContent = textValue(
+              payload.admin.email,
+              "Admin workspace"
+            );
+          }
+
+          renderNotice(maintenance.notice);
+        }
+
+        function configureFormAvailability() {
+          const form = $("maintenanceForm");
+          const controls = form.querySelectorAll("input, select, textarea, button");
+
+          controls.forEach(control => {
+            control.disabled = !state.writeEnabled || state.writeInProgress;
+          });
+
+          $("submitMaintenance").disabled =
+            !state.writeEnabled ||
+            state.writeInProgress ||
+            !state.loadedSuccessfully;
+
+          $("resetMaintenance").disabled =
+            !state.writeEnabled ||
+            state.writeInProgress;
+
+          $("diagnosticPermissions").textContent = state.writeEnabled
+            ? "Client write mode is enabled by configuration. The server must still authorize every maintenance operation independently."
+            : "Maintenance writes are disabled in this client. Implement and verify the authorised backend endpoint before enabling them.";
+        }
+
+        async function loadMaintenance() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+
+          const controller = new AbortController();
+          state.controller = controller;
+
+          const requestId = ++state.sequence;
+
+          state.loading = true;
+          $("refreshMaintenance").disabled = true;
+          $("heroRefresh").disabled = true;
+          $("checkHealth").disabled = true;
+          $("refreshMaintenance").textContent = "Loading…";
+          $("heroRefresh").textContent = "Loading status…";
+
+          setStatus("Retrieving maintenance state and service availability…", "info");
+          $("diagnosticResponse").textContent = "Request in progress.";
+
+          try {
+            const endpoint = getMaintenanceEndpoint();
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(),
+              signal: controller.signal
+            });
+
+            const result = await parseResponse(response);
+
+            if (requestId !== state.sequence) return;
+
+            if (!response.ok) {
+              throw new Error(responseError(response, result));
+            }
+
+            let payload = result;
+
+            if (
+              payload.data &&
+              typeof payload.data === "object" &&
+              !Array.isArray(payload.data)
+            ) {
+              payload = payload.data;
+            }
+
+            if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+              throw new Error("The API returned an unsupported response format.");
+            }
+
+            const rawServices = payload.services ?? [];
+
+            if (!Array.isArray(rawServices)) {
+              throw new Error("The API returned an invalid services array.");
+            }
+
+            state.services = rawServices
+              .map(normalizeService)
+              .filter(Boolean);
+
+            state.loadedSuccessfully = true;
+            state.lastRequestAt = new Date();
+
+            renderOverview(payload);
+            renderServices();
+
+            const loadedAt = state.lastRequestAt.toLocaleString();
+
+            $("lastLoaded").textContent = `Last successful refresh: ${loadedAt}`;
+            $("diagnosticEndpoint").textContent = endpoint.pathname;
+            $("diagnosticResponse").textContent =
+              `HTTP ${response.status} · ${loadedAt}`;
+
+            const maintenance = state.maintenance || {};
+            const platformStatus = textValue(
+              payload.platformStatus,
+              "unknown"
+            ).toLowerCase();
+
+            const needsAttention = [
+              "degraded",
+              "unhealthy",
+              "down",
+              "error",
+              "partial"
+            ].includes(platformStatus);
+
+            if (maintenance.enabled === true) {
+              setStatus(
+                "The server reports that maintenance mode is enabled. Verify the affected services, public notice and approved recovery plan.",
+                "warning"
+              );
+            } else if (needsAttention) {
+              setStatus(
+                "Configuration loaded, but the backend reports a platform health concern. Review the service records before making changes.",
+                "warning"
+              );
+            } else {
+              setStatus(
+                `Maintenance status loaded successfully at ${new Date().toLocaleTimeString()}. The displayed state reflects the backend response.`,
+                "success"
+              );
+            }
+
+            configureFormAvailability();
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.sequence) return;
+
+            state.loadedSuccessfully = false;
+            state.maintenance = null;
+            state.services = [];
+
+            $("statMaintenance").textContent = "--";
+            $("statHealthy").textContent = "--";
+            $("statAttention").textContent = "--";
+            $("statNext").textContent = "--";
+
+            updateReadOnlyField("environmentDisplay", "");
+            updateReadOnlyField("platformStatusDisplay", "", "Unknown");
+            updateReadOnlyField("maintenanceStartDisplay", "", "Not scheduled");
+            updateReadOnlyField("maintenanceEndDisplay", "", "Not scheduled");
+
+            renderServices();
+            renderNotice(null);
+
+            $("lastLoaded").textContent = "No successful status refresh.";
+            $("diagnosticEndpoint").textContent =
+              "Unable to verify the configured endpoint.";
+            $("diagnosticResponse").textContent =
+              error instanceof Error ? error.message : "Request failed.";
+
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to load maintenance status.",
+              "error"
+            );
+
+            configureFormAvailability();
+          } finally {
+            if (requestId === state.sequence) {
+              state.loading = false;
+              $("refreshMaintenance").disabled = false;
+              $("heroRefresh").disabled = false;
+              $("checkHealth").disabled = false;
+              $("refreshMaintenance").textContent = "↻ Refresh status";
+              $("heroRefresh").textContent = "↻ Check platform status";
+              configureFormAvailability();
+            }
+          }
+        }
+
+        async function checkHealth() {
+          let endpoint;
+
+          try {
+            endpoint = getHealthEndpoint();
+          } catch (error) {
+            setStatus(
+              error instanceof Error ? error.message : "Invalid health endpoint.",
+              "error"
+            );
+            return;
+          }
+
+          $("checkHealth").disabled = true;
+          $("diagnosticEndpoint").textContent = endpoint.pathname;
+          $("diagnosticResponse").textContent = "Health request in progress.";
+
+          try {
+            const started = performance.now();
+
+            const response = await fetch(endpoint.href, {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders()
+            });
+
+            const elapsed = Math.round(performance.now() - started);
+            const result = await parseResponse(response);
+
+            $("diagnosticResponse").textContent =
+              `HTTP ${response.status} · ${elapsed} ms`;
+
+            if (!response.ok) {
+              throw new Error(responseError(response, result));
+            }
+
+            const health = textValue(
+              result.status ?? result.health,
+              "reachable"
+            );
+
+            updateReadOnlyField("platformStatusDisplay", health, "Reachable");
+
+            setStatus(
+              `The health endpoint responded successfully in ${elapsed} ms. This confirms the endpoint response, not the health of every dependent service.`,
+              "success"
+            );
+          } catch (error) {
+            $("diagnosticResponse").textContent = "Health request failed.";
+
+            setStatus(
+              error instanceof Error
+                ? error.message
+                : "The health endpoint could not be reached.",
+              "error"
+            );
+          } finally {
+            $("checkHealth").disabled = false;
+          }
+        }
+
+        function readMaintenanceForm() {
+          const action = $("maintenanceAction").value;
+          const scope = $("maintenanceScope").value;
+          const startValue = $("scheduledStart").value;
+          const endValue = $("scheduledEnd").value;
+          const publicMessage = $("publicNotice").value.trim();
+          const reason = $("changeReason").value.trim();
+
+          const validActions = ["schedule", "enable", "disable", "cancel"];
+          const validScopes = [
+            "platform",
+            "api",
+            "admissions",
+            "documents",
+            "payments",
+            "careers"
+          ];
+
+          if (!validActions.includes(action)) {
+            throw new Error("Choose a valid maintenance action.");
+          }
+
+          if (!validScopes.includes(scope)) {
+            throw new Error("Choose a valid maintenance scope.");
+          }
+
+          if (!startValue || !endValue) {
+            throw new Error("Provide both a start time and an estimated completion time.");
+          }
+
+          const startDate = new Date(startValue);
+          const endDate = new Date(endValue);
+
+          if (
+            Number.isNaN(startDate.getTime()) ||
+            Number.isNaN(endDate.getTime())
+          ) {
+            throw new Error("The maintenance schedule contains an invalid date or time.");
+          }
+
+          if (endDate <= startDate) {
+            throw new Error("Estimated completion must be later than the start time.");
+          }
+
+          if (action === "schedule" && startDate <= new Date()) {
+            throw new Error("A scheduled maintenance window must start in the future.");
+          }
+
+          if (reason.length < 8) {
+            throw new Error("Provide an internal change reason of at least 8 characters.");
+          }
+
+          if (publicMessage.length < 10) {
+            throw new Error("Provide a clear user-facing notice of at least 10 characters.");
+          }
+
+          if (!$("confirmImpact").checked) {
+            throw new Error("Confirm that you have reviewed the maintenance impact and recovery plan.");
+          }
+
+          if (!$("confirmCommunication").checked) {
+            throw new Error("Confirm that the communication plan has been reviewed.");
+          }
+
+          return {
+            action,
+            scope,
+            startAt: startDate.toISOString(),
+            endAt: endDate.toISOString(),
+            publicMessage,
+            reason,
+            confirmImpact: true,
+            confirmCommunication: true
+          };
+        }
+
+        async function submitMaintenance(event) {
+          event.preventDefault();
+          clearFormStatus();
+
+          if (!state.writeEnabled) {
+            setFormStatus(
+              "Maintenance requests are disabled. Implement and review the authenticated backend endpoint before enabling client write mode.",
+              "warning"
+            );
+            return;
+          }
+
+          if (!state.loadedSuccessfully) {
+            setFormStatus(
+              "Load the current server maintenance state before submitting a request.",
+              "warning"
+            );
+            return;
+          }
+
+          let payload;
+
+          try {
+            payload = readMaintenanceForm();
+          } catch (error) {
+            setFormStatus(
+              error instanceof Error ? error.message : "Check the maintenance form.",
+              "error"
+            );
+            return;
+          }
+
+          let endpoint;
+
+          try {
+            endpoint = getMaintenanceEndpoint();
+          } catch (error) {
+            setFormStatus(
+              error instanceof Error ? error.message : "Invalid maintenance endpoint.",
+              "error"
+            );
+            return;
+          }
+
+          const actionLabels = {
+            schedule: "schedule maintenance",
+            enable: "enable maintenance mode",
+            disable: "disable maintenance mode",
+            cancel: "cancel the scheduled maintenance"
+          };
+
+          const confirmed = window.confirm(
+            `Confirm request to ${actionLabels[payload.action]} for scope "${payload.scope}"? The server must validate and audit this operation.`
+          );
+
+          if (!confirmed) return;
+
+          state.writeInProgress = true;
+          configureFormAvailability();
+
+          $("submitMaintenance").textContent = "Submitting…";
+          setFormStatus("Submitting the maintenance request to the authorised server…", "info");
+
+          try {
+            const response = await fetch(endpoint.href, {
+              method: "POST",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: requestHeaders(true),
+              body: JSON.stringify(payload)
+            });
+
+            const result = await parseResponse(response);
+
+            if (!response.ok) {
+              throw new Error(responseError(response, result));
+            }
+
+            if (result.success === false) {
+              throw new Error(
+                textValue(result.message, "The server did not accept the maintenance request.")
+              );
+            }
+
+            setFormStatus(
+              "The server accepted the maintenance request. Refreshing the authoritative maintenance status…",
+              "success"
+            );
+
+            await loadMaintenance();
+
+            setFormStatus(
+              "The request was accepted by the server. Review the refreshed status and audit history to verify the resulting state.",
+              "success"
+            );
+          } catch (error) {
+            setFormStatus(
+              error instanceof Error
+                ? error.message
+                : "Unable to submit the maintenance request.",
+              "error"
+            );
+          } finally {
+            state.writeInProgress = false;
+            $("submitMaintenance").textContent = "Submit maintenance request";
+            configureFormAvailability();
+          }
+        }
+
+        function resetMaintenanceForm() {
+          if (!state.writeEnabled || state.writeInProgress) return;
+
+          $("maintenanceForm").reset();
+          clearFormStatus();
+        }
+
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const header = $("siteHeader");
+
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const open = mainNav.classList.toggle("open");
+
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.textContent = open ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+        if (typeof desktopQuery.addEventListener === "function") {
+          desktopQuery.addEventListener("change", event => {
+            if (event.matches) closeNavigation();
+          });
+        } else if (typeof desktopQuery.addListener === "function") {
+          desktopQuery.addListener(event => {
+            if (event.matches) closeNavigation();
+          });
+        }
+
+        $("refreshMaintenance").addEventListener("click", loadMaintenance);
+        $("heroRefresh").addEventListener("click", loadMaintenance);
+        $("checkHealth").addEventListener("click", checkHealth);
+        $("maintenanceForm").addEventListener("submit", submitMaintenance);
+        $("resetMaintenance").addEventListener("click", resetMaintenanceForm);
+
+        configureFormAvailability();
+        loadMaintenance();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

@@ -1,24 +1,4070 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>System Settings | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="Manage MedOrbits platform configuration, security policies, notifications, integrations, maintenance settings and system preferences through the administration portal.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>System Settings | MedOrbits Admin</title>
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061020;
+      --bg-deep: #030812;
+      --navy: #0a1930;
+      --navy-2: #102642;
+      --navy-3: #163655;
+      --blue: #74b8ff;
+      --blue-bright: #a9d5ff;
+      --blue-soft: #d9edff;
+      --gold: #d3ad61;
+      --gold-bright: #ffe4a2;
+      --text: #f1f5fc;
+      --text-soft: #c5d3e6;
+      --muted: #91a6c1;
+      --border: rgba(116,184,255,.19);
+      --border-gold: rgba(211,173,97,.32);
+      --success: #9ee8c1;
+      --warning: #ffe0a0;
+      --danger: #ffb6bd;
+      --radius: 18px;
+      --shadow: 0 25px 75px rgba(0,0,0,.4);
+      --accent-gradient: linear-gradient(
+        115deg,
+        #4e91e0 0%,
+        #9ed2ff 36%,
+        #f4d68f 70%,
+        #b68c45 100%
+      );
+      --surface: linear-gradient(
+        145deg,
+        rgba(17,39,67,.97),
+        rgba(5,14,28,.98)
+      );
+      --surface-light: linear-gradient(
+        145deg,
+        rgba(20,48,79,.92),
+        rgba(10,24,44,.97)
+      );
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 8% 0%,rgba(67,135,217,.18),transparent 36%),
+        radial-gradient(ellipse at 96% 32%,rgba(205,164,85,.09),transparent 34%),
+        radial-gradient(ellipse at 45% 100%,rgba(38,92,151,.12),transparent 43%),
+        linear-gradient(135deg,#030812 0%,#071426 48%,#091a2e 100%);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(
+        rgba(169,213,255,.22) .7px,
+        transparent .7px
+      );
+      background-size: 33px 33px;
+      opacity: .15;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::after {
+      position: fixed;
+      z-index: -1;
+      inset: -50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(67,135,217,.045),
+        transparent 23%,
+        rgba(211,173,97,.035),
+        transparent 45%
+      );
+      animation: ambientRotate 65s linear infinite;
+      content: "";
+      pointer-events: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .container {
+      width: min(1280px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      z-index: 10000;
+      top: -70px;
+      left: 14px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #061020;
+    }
+
+    .skip-link:focus {
+      top: 12px;
+    }
+
+    .accent-text {
+      color: var(--blue-bright);
+      background: var(--accent-gradient);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 7s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      from { background-position: 100% center; }
+      to { background-position: -120% center; }
+    }
+
+    @keyframes ambientRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(116,184,255,0); }
+      50% { box-shadow: 0 0 22px rgba(116,184,255,.13); }
+    }
+
+    @keyframes borderPulse {
+      0%,100% { border-color: rgba(116,184,255,.18); }
+      50% { border-color: rgba(211,173,97,.48); }
+    }
+
+    @keyframes revealUp {
+      from {
+        opacity: 0;
+        transform: translateY(13px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes typingBlink {
+      to { visibility: hidden; }
+    }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 9px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #030812;
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement strong {
+      color: var(--gold-bright);
+    }
+
+    .sparkle {
+      color: var(--blue-bright);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(4,12,24,.91);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(3,8,18,.98);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+    }
+
+    .nav-wrap {
+      position: relative;
+      display: flex;
+      min-height: 78px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 11px rgba(116,184,255,.18));
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--blue-bright);
+      font-size: 15px;
+      letter-spacing: .15em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--success);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(158,232,193,.6);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(116,184,255,.07);
+      color: var(--blue-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 10px;
+    }
+
+    .main-nav > a {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover,
+    .main-nav > a[aria-current="page"] {
+      color: var(--gold-bright);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(169,213,255,.48);
+      border-radius: 10px;
+      background: linear-gradient(115deg,#73b8ff,#c5e4ff);
+      color: #071426;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .22s,filter .22s,box-shadow .22s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 7px 23px rgba(116,184,255,.16);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .btn-outline {
+      border-color: var(--border-gold);
+      background: rgba(211,173,97,.05);
+      color: var(--gold-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,182,189,.35);
+      background: rgba(255,182,189,.07);
+      color: var(--danger);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 9px;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 37px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 5%,rgba(116,184,255,.09),transparent 34%),
+        radial-gradient(ellipse at 93% 55%,rgba(211,173,97,.065),transparent 33%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .breadcrumbs a {
+      color: var(--blue-bright);
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 27px;
+      animation: revealUp .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(34px,4.3vw,52px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .typing-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 29px;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .typing-line strong {
+      color: var(--blue-bright);
+      font-weight: 600;
+    }
+
+    .typing-cursor {
+      width: 2px;
+      height: 14px;
+      background: var(--gold-bright);
+      animation: typingBlink .8s steps(2,start) infinite;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 242px minmax(0,1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .sidebar,
+    .panel,
+    .admin-card,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(0,0,0,.22);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 18px;
+      animation: borderPulse 8s ease-in-out infinite;
+    }
+
+    .admin-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-gold);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#163c62,#302817);
+      color: var(--gold-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .admin-identity strong {
+      display: block;
+      font-size: 11px;
+    }
+
+    .admin-identity small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border: 1px solid var(--border-gold);
+      border-radius: 5px;
+      color: var(--gold-bright);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      margin: 19px 0 8px;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .admin-nav {
+      display: grid;
+      gap: 5px;
+    }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s,color .2s;
+    }
+
+    .admin-nav a:hover,
+    .admin-nav a.active {
+      border-color: var(--border);
+      background: rgba(116,184,255,.09);
+      color: var(--blue-bright);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 7px;
+      background: rgba(116,184,255,.07);
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      margin: 17px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .sidebar-note strong {
+      color: var(--gold-bright);
+    }
+
+    .content {
+      display: grid;
+      gap: 19px;
+      min-width: 0;
+    }
+
+    .panel {
+      padding: clamp(17px,2.5vw,25px);
+      animation: revealUp .65s ease both;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.13),rgba(211,173,97,.06));
+      color: var(--gold-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.045);
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .status-row .status {
+      flex: 1;
+      margin: 0;
+    }
+
+    .timestamp {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 13px;
+      margin-bottom: 21px;
+    }
+
+    .stat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+      padding: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background:
+        radial-gradient(circle at 100% 0%,rgba(116,184,255,.11),transparent 54%),
+        linear-gradient(145deg,rgba(17,39,67,.92),rgba(6,16,32,.96));
+      transition: transform .23s,border-color .23s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-gold);
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      background: linear-gradient(145deg,rgba(116,184,255,.14),rgba(211,173,97,.08));
+      font-size: 20px;
+    }
+
+    .stat-copy {
+      min-width: 0;
+    }
+
+    .stat-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-copy strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--blue-bright);
+      font: 600 25px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 23px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .section-heading a {
+      color: var(--gold-bright);
+      font-size: 10px;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .admin-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-gold);
+      box-shadow: 0 24px 55px rgba(0,0,0,.35),0 0 25px rgba(116,184,255,.045);
+    }
+
+    .card-image {
+      position: relative;
+      height: 155px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#14395e,#101d30);
+    }
+
+    .card-image::after {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg,rgba(5,13,26,.9),transparent 70%),
+        linear-gradient(115deg,rgba(17,46,77,.12),rgba(211,173,97,.09));
+      content: "";
+      pointer-events: none;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease,filter .6s ease;
+    }
+
+    .admin-card:hover .card-image img {
+      transform: scale(1.055);
+      filter: saturate(1.1);
+    }
+
+    .card-image-label {
+      position: absolute;
+      z-index: 1;
+      bottom: 12px;
+      left: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #fff1ce;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .card-image-label::before {
+      width: 18px;
+      height: 1px;
+      background: var(--gold-bright);
+      content: "";
+    }
+
+    .card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 17px;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .card-title-row h3 {
+      margin: 0 0 7px;
+      font: 600 19px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .card-symbol {
+      display: grid;
+      place-items: center;
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      background: rgba(211,173,97,.07);
+      color: var(--gold-bright);
+      font-size: 16px;
+    }
+
+    .card-body p {
+      flex: 1;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-footer small {
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .card-link {
+      color: var(--blue-bright);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .card-link span {
+      display: inline-block;
+      transition: transform .2s;
+    }
+
+    .admin-card:hover .card-link span {
+      transform: translateX(4px);
+    }
+
+    .feature-banner {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(180px,.65fr);
+      align-items: center;
+      gap: 22px;
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(211,173,97,.12),transparent 45%),
+        linear-gradient(120deg,rgba(16,43,73,.96),rgba(7,17,32,.98));
+    }
+
+    .feature-banner h2 {
+      margin: 0 0 9px;
+      font: 600 clamp(22px,3vw,30px)/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .feature-banner p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .feature-image {
+      position: relative;
+      min-height: 145px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--navy-2);
+    }
+
+    .feature-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 145px;
+      object-fit: cover;
+      opacity: .9;
+    }
+
+    .feature-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .field {
+      display: grid;
+      align-content: start;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field.full-width {
+      grid-column: 1/-1;
+    }
+
+    .field label,
+    .field-label {
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .field small {
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      min-height: 43px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #09182b;
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .field textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: #788da8;
+    }
+
+    .field input:disabled,
+    .field select:disabled,
+    .field textarea:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
+
+    .switch-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 15px 0;
+      border-bottom: 1px solid rgba(116,184,255,.12);
+    }
+
+    .switch-row:last-child {
+      border-bottom: 0;
+    }
+
+    .switch-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .switch-copy strong {
+      display: block;
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .switch-copy p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .switch-control {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 48px;
+      width: 48px;
+      height: 27px;
+      align-items: center;
+    }
+
+    .switch-control input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(145,166,193,.45);
+      border-radius: 99px;
+      background: #17263a;
+      cursor: pointer;
+      transition: background .2s,border-color .2s;
+    }
+
+    .switch-track::before {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: #a6b5c8;
+      content: "";
+      transition: transform .2s,background .2s;
+    }
+
+    .switch-control input:checked + .switch-track {
+      border-color: rgba(158,232,193,.55);
+      background: rgba(49,136,100,.65);
+    }
+
+    .switch-control input:checked + .switch-track::before {
+      transform: translateX(20px);
+      background: var(--success);
+    }
+
+    .switch-control input:focus-visible + .switch-track {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 4px;
+    }
+
+    .switch-control input:disabled + .switch-track {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 19px;
+      padding-top: 17px;
+      border-top: 1px solid var(--border);
+    }
+
+    .panel-actions.align-start {
+      justify-content: flex-start;
+    }
+
+    .inline-help {
+      margin: 0 0 17px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(116,184,255,.04);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .inline-help strong {
+      color: var(--blue-bright);
+    }
+
+    .settings-status {
+      margin-bottom: 16px;
+    }
+
+    .settings-status:empty {
+      display: none;
+    }
+
+    .settings-status:not(:empty) {
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .settings-status.success {
+      border-color: rgba(158,232,193,.3);
+      color: var(--success);
+    }
+
+    .settings-status.error {
+      border-color: rgba(255,182,189,.35);
+      color: var(--danger);
+    }
+
+    .settings-status.warning {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .settings-status.info {
+      border-color: var(--border);
+      color: var(--blue-bright);
+    }
+
+    .system-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .system-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(5,15,29,.4);
+    }
+
+    .system-row strong {
+      display: block;
+      font-size: 10px;
+    }
+
+    .system-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(116,184,255,.05);
+      color: var(--text-soft);
+      font-size: 8px;
+    }
+
+    .status-pill::before {
+      width: 5px;
+      height: 5px;
+      flex: 0 0 5px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .status-pill.active {
+      border-color: rgba(158,232,193,.25);
+      color: var(--success);
+    }
+
+    .status-pill.pending {
+      border-color: rgba(255,224,160,.24);
+      color: var(--warning);
+    }
+
+    .status-pill.unknown {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .empty-state {
+      padding: 25px 18px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .activity-list {
+      display: grid;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(116,184,255,.12);
+    }
+
+    .activity-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.055);
+      color: var(--gold-bright);
+      font-size: 15px;
+    }
+
+    .activity-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .activity-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-copy a {
+      color: var(--blue-bright);
+    }
+
+    .info-card {
+      padding: 23px;
+      background: var(--surface-light);
+    }
+
+    .info-card h2 {
+      margin: 0 0 9px;
+      font: 600 23px/1.35 "Playfair Display",Georgia,serif;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .security-links {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .security-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(5,15,29,.4);
+      color: var(--text-soft);
+      font-size: 9px;
+      transition: border-color .2s,color .2s;
+    }
+
+    .security-links a:hover {
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .security-links span {
+      color: var(--blue-bright);
+    }
+
+    .notice {
+      padding: 15px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 11px;
+      background: rgba(211,173,97,.045);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong {
+      color: var(--gold-bright);
+    }
+
+    .site-footer {
+      padding: 40px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 15% 0%,rgba(116,184,255,.08),transparent 38%),
+        #030812;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--blue-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-bright);
+    }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      background: rgba(211,173,97,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom span:last-child {
+      color: var(--gold-bright);
+      letter-spacing: .1em;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: rgba(4,12,24,.99);
+        box-shadow: var(--shadow);
+      }
+
+      .main-nav.open {
+        display: flex;
+      }
+
+      .main-nav > a {
+        display: block;
+        padding: 11px 8px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width:850px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions {
+        width: 100%;
+      }
+
+      .heading-actions .btn {
+        flex: 1;
+      }
+
+      .feature-banner {
+        grid-template-columns: minmax(0,1fr) minmax(140px,.55fr);
+      }
+    }
+
+    @media (max-width:560px) {
+      .container {
+        width: calc(100% - 28px);
+      }
+
+      .announcement {
+        gap: 6px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap {
+        min-height: 68px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand strong {
+        font-size: 13px;
+      }
+
+      .brand small {
+        font-size: 7px;
+      }
+
+      .live-indicator {
+        display: none;
+      }
+
+      .page-main {
+        padding: 29px 0 44px;
+      }
+
+      .page-heading h1 {
+        font-size: clamp(32px,9vw,42px);
+      }
+
+      .heading-actions {
+        flex-direction: column;
+      }
+
+      .heading-actions .btn {
+        width: 100%;
+      }
+
+      .sidebar,
+      .panel,
+      .info-card {
+        padding: 15px;
+      }
+
+      .admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .admin-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 10px;
+      }
+
+      .card-image {
+        height: 112px;
+      }
+
+      .card-image-label {
+        bottom: 8px;
+        left: 9px;
+        font-size: 7px;
+        letter-spacing: .06em;
+      }
+
+      .card-body {
+        padding: 11px;
+      }
+
+      .card-title-row {
+        gap: 6px;
+      }
+
+      .card-title-row h3 {
+        font-size: 15px;
+      }
+
+      .card-symbol {
+        flex-basis: 29px;
+        width: 29px;
+        height: 29px;
+        font-size: 13px;
+      }
+
+      .card-body p {
+        font-size: 9px;
+        line-height: 1.7;
+      }
+
+      .card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .card-link {
+        font-size: 9px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+      }
+
+      .stat-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+        padding: 12px;
+      }
+
+      .stat-copy strong {
+        font-size: 23px;
+      }
+
+      .status-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .feature-banner {
+        grid-template-columns: 1fr;
+        padding: 17px;
+      }
+
+      .feature-image {
+        min-height: 125px;
+      }
+
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field.full-width {
+        grid-column: auto;
+      }
+
+      .switch-row {
+        gap: 10px;
+      }
+
+      .security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 8px;
+      }
+
+      .security-links a {
+        align-items: flex-start;
+        padding: 10px;
+      }
+
+      .system-row {
+        align-items: flex-start;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand {
+        grid-column: 1/-1;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width:360px) {
+      .container {
+        width: calc(100% - 22px);
+      }
+
+      .brand img {
+        width: 34px;
+        height: 34px;
+      }
+
+      .brand strong {
+        font-size: 12px;
+      }
+
+      .admin-grid {
+        gap: 8px;
+      }
+
+      .card-image {
+        height: 94px;
+      }
+
+      .card-body {
+        padding: 9px;
+      }
+
+      .card-title-row h3 {
+        font-size: 13px;
+      }
+
+      .card-symbol {
+        display: none;
+      }
+
+      .stats-grid,
+      .security-links {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .footer-grid {
+        gap: 18px 11px;
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>System Settings</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about system settings. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits control centre</span>
+    <span class="sparkle" aria-hidden="true">✦</span>
+    <strong>Study · Work · Grow</strong>
+    <span>System configuration</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img
+          src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo"
+          width="44"
+          height="44"
+        >
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>System administration</small>
+        </span>
+      </a>
+
+      <div class="header-right">
+        <span class="live-indicator">
+          <span class="live-dot" aria-hidden="true"></span>
+          ADMIN WORKSPACE
+        </span>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >☰ MENU</button>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Public website</a>
+        <a href="/admin/index.html">Admin home</a>
+        <a href="/admin/users.html">Users</a>
+        <a href="/admin/applications.html">Applications</a>
+        <a href="/admin/admissions.html">Admissions</a>
+        <a href="/admin/settings.html" aria-current="page">Settings</a>
+        <a class="btn btn-outline" href="/account/index.html">My account ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/index.html">Administration</a>
+        <span aria-hidden="true">›</span>
+        <a href="/admin/settings.html">Settings</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">System settings</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Platform operations · Admin portal</span>
+          <h1>System <span class="accent-text">settings.</span></h1>
+          <p>
+            Configure supported MedOrbits platform preferences, review
+            security and notification policies, and manage operational
+            settings through your authenticated administration API.
+            Sensitive infrastructure credentials must remain server-side.
+          </p>
+
+          <div class="typing-line" aria-live="off">
+            <span aria-hidden="true">✦</span>
+            <strong id="typingText">Reliable systems start with thoughtful configuration.</strong>
+            <span class="typing-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/admin/security.html">
+            ⬡ Security centre
+          </a>
+          <button class="btn" id="refreshSettings" type="button">
+            ↻ Refresh settings
+          </button>
+        </div>
+      </header>
+
+      <div class="dashboard-layout">
+
+        <aside class="sidebar" aria-label="Administration sidebar">
+          <div class="admin-identity">
+            <div class="admin-avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="adminName">Administration</strong>
+              <small id="adminEmail">Admin workspace</small>
+              <span class="role-tag">◆ Admin access</span>
+            </div>
+          </div>
+
+          <p class="sidebar-label">Workspace</p>
+
+          <nav class="admin-nav" aria-label="Administration menu">
+            <a href="/admin/index.html">
+              <span class="nav-icon" aria-hidden="true">▦</span>
+              Dashboard
+            </a>
+            <a href="/admin/users.html">
+              <span class="nav-icon" aria-hidden="true">♙</span>
+              User management
+            </a>
+            <a href="/admin/applications.html">
+              <span class="nav-icon" aria-hidden="true">▤</span>
+              Applications
+            </a>
+            <a href="/admin/admissions.html">
+              <span class="nav-icon" aria-hidden="true">🎓</span>
+              Admissions
+            </a>
+            <a href="/admin/documents.html">
+              <span class="nav-icon" aria-hidden="true">▧</span>
+              Documents
+            </a>
+            <a href="/admin/courses.html">
+              <span class="nav-icon" aria-hidden="true">▣</span>
+              Course catalogue
+            </a>
+            <a href="/admin/colleges.html">
+              <span class="nav-icon" aria-hidden="true">⌂</span>
+              Colleges
+            </a>
+            <a href="/admin/universities.html">
+              <span class="nav-icon" aria-hidden="true">⌘</span>
+              Universities
+            </a>
+            <a href="/admin/notifications.html">
+              <span class="nav-icon" aria-hidden="true">♢</span>
+              Notifications
+            </a>
+            <a href="/admin/reports.html">
+              <span class="nav-icon" aria-hidden="true">▥</span>
+              Reports and analytics
+            </a>
+            <a href="/admin/audit-logs.html">
+              <span class="nav-icon" aria-hidden="true">≡</span>
+              Audit logs
+            </a>
+            <a href="/admin/security.html">
+              <span class="nav-icon" aria-hidden="true">⬡</span>
+              Security centre
+            </a>
+            <a class="active" href="/admin/system-settings.html" aria-current="page">
+              <span class="nav-icon" aria-hidden="true">⚙</span>
+              System settings
+            </a>
+          </nav>
+
+          <p class="sidebar-note">
+            <strong>Configuration integrity.</strong>
+            <br>
+            Only authorised administrators should change platform settings.
+            Enforce permissions, validation, audit logging and concurrency
+            controls on the server.
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <!-- System overview -->
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✦</div>
+              <div>
+                <h2 id="overviewTitle">System configuration overview</h2>
+                <p>
+                  The values below are populated from the configured
+                  administration API. They are not inferred from the browser.
+                </p>
+              </div>
+            </div>
+
+            <div class="status-row">
+              <div
+                class="status warning"
+                id="dashboardStatus"
+                role="status"
+                aria-live="polite"
+              >
+                System settings have not been loaded.
+              </div>
+              <span class="timestamp" id="lastUpdated">Not refreshed</span>
+            </div>
+
+            <div class="stats-grid" aria-label="System configuration overview">
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⚙</div>
+                <div class="stat-copy">
+                  <span>Configuration</span>
+                  <strong id="configStatus">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">⬡</div>
+                <div class="stat-copy">
+                  <span>Security policy</span>
+                  <strong id="securityStatus">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">♢</div>
+                <div class="stat-copy">
+                  <span>Notifications</span>
+                  <strong id="notificationStatus">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">🌐</div>
+                <div class="stat-copy">
+                  <span>Integrations</span>
+                  <strong id="integrationStatus">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">🛠</div>
+                <div class="stat-copy">
+                  <span>Maintenance mode</span>
+                  <strong id="maintenanceStatus">--</strong>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon" aria-hidden="true">◷</div>
+                <div class="stat-copy">
+                  <span>Last saved</span>
+                  <strong id="savedStatus">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="heading-actions">
+              <a class="btn" href="#generalSettings">General settings ↓</a>
+              <a class="btn btn-outline" href="#securitySettings">
+                Security controls ↓
+              </a>
+            </div>
+          </section>
+
+          <!-- Image-led settings navigation -->
+          <section aria-labelledby="modulesTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="modulesTitle">
+                  Configuration <span class="accent-text">workspaces.</span>
+                </h2>
+                <p>
+                  Navigate to a settings group to review its supported options.
+                </p>
+              </div>
+            </div>
+
+            <div class="admin-grid">
+
+              <a class="admin-card" href="#generalSettings">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80"
+                    alt="Professional reviewing operational documents at a desk"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Platform configuration</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>General settings</h3>
+                    <span class="card-symbol" aria-hidden="true">⚙</span>
+                  </div>
+                  <p>
+                    Manage platform display name, support contact,
+                    default locale and other approved general preferences.
+                  </p>
+                  <div class="card-footer">
+                    <small>Core preferences</small>
+                    <span class="card-link">Configure <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="#securitySettings">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80"
+                    alt="Digital security and account protection workspace"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Security policy</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Security controls</h3>
+                    <span class="card-symbol" aria-hidden="true">⬡</span>
+                  </div>
+                  <p>
+                    Review approved session policies, sign-in protections,
+                    and security-related configuration.
+                  </p>
+                  <div class="card-footer">
+                    <small>Access protection</small>
+                    <span class="card-link">Review controls <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="#notificationSettings">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1557200134-90327ee9fafa?auto=format&fit=crop&w=900&q=80"
+                    alt="Email and digital communication workspace"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Communications</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Notifications</h3>
+                    <span class="card-symbol" aria-hidden="true">♢</span>
+                  </div>
+                  <p>
+                    Review supported email and in-platform notification
+                    preferences without exposing provider credentials.
+                  </p>
+                  <div class="card-footer">
+                    <small>Communication settings</small>
+                    <span class="card-link">Manage alerts <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="admin-card" href="#integrationSettings">
+                <div class="card-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80"
+                    alt="Electronic components representing connected platform systems"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                  <span class="card-image-label">Connected services</span>
+                </div>
+                <div class="card-body">
+                  <div class="card-title-row">
+                    <h3>Integrations</h3>
+                    <span class="card-symbol" aria-hidden="true">⌘</span>
+                  </div>
+                  <p>
+                    Inspect the integration status returned by the backend.
+                    Secret keys and credentials must never be rendered here.
+                  </p>
+                  <div class="card-footer">
+                    <small>Service connectivity</small>
+                    <span class="card-link">View integrations <span>→</span></span>
+                  </div>
+                </div>
+              </a>
+
+            </div>
+          </section>
+
+          <!-- General settings -->
+          <section class="panel" id="generalSettings" aria-labelledby="generalTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⚙</div>
+              <div>
+                <h2 id="generalTitle">General platform settings</h2>
+                <p>
+                  Update only fields supported by the backend configuration schema.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="settings-status"
+              id="generalMessage"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+            <p class="inline-help">
+              <strong>Configuration source:</strong>
+              General values must be fetched from the server. The form stays
+              unavailable for editing until valid settings have been loaded.
+            </p>
+
+            <form id="generalForm">
+              <fieldset id="generalFieldset" disabled style="border:0;padding:0;margin:0">
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="siteName">Platform display name</label>
+                    <input
+                      id="siteName"
+                      name="siteName"
+                      type="text"
+                      maxlength="100"
+                      autocomplete="organization"
+                      placeholder="MedOrbits"
+                    >
+                    <small>Used in supported platform labels and interface copy.</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="supportEmail">Support email</label>
+                    <input
+                      id="supportEmail"
+                      name="supportEmail"
+                      type="email"
+                      maxlength="254"
+                      autocomplete="email"
+                      placeholder="support@example.com"
+                    >
+                    <small>Use an address monitored by your support team.</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="defaultLocale">Default language</label>
+                    <select id="defaultLocale" name="defaultLocale">
+                      <option value="en">English</option>
+                      <option value="hi">Hindi</option>
+                      <option value="bn">Bengali</option>
+                      <option value="as">Assamese</option>
+                      <option value="ne">Nepali</option>
+                      <option value="mr">Marathi</option>
+                      <option value="gu">Gujarati</option>
+                      <option value="pa">Punjabi</option>
+                      <option value="ur">Urdu</option>
+                      <option value="or">Odia</option>
+                      <option value="fr">French</option>
+                      <option value="de">German</option>
+                      <option value="es">Spanish</option>
+                    </select>
+                    <small>Must match a language supported by the application.</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="defaultTimezone">Default time zone</label>
+                    <select id="defaultTimezone" name="defaultTimezone">
+                      <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                      <option value="UTC">UTC</option>
+                      <option value="Europe/London">Europe/London</option>
+                      <option value="Europe/Berlin">Europe/Berlin</option>
+                      <option value="America/New_York">America/New_York</option>
+                      <option value="Asia/Dubai">Asia/Dubai</option>
+                      <option value="Asia/Singapore">Asia/Singapore</option>
+                    </select>
+                    <small>Used for supported date and time presentation defaults.</small>
+                  </div>
+
+                  <div class="field full-width">
+                    <label for="siteDescription">Platform description</label>
+                    <textarea
+                      id="siteDescription"
+                      name="siteDescription"
+                      maxlength="500"
+                      rows="3"
+                      placeholder="Describe the platform for approved internal settings."
+                    ></textarea>
+                    <small>Maximum 500 characters. Avoid entering personal or confidential information.</small>
+                  </div>
+                </div>
+
+                <div class="panel-actions">
+                  <button class="btn btn-outline" id="resetGeneral" type="button">
+                    Reset form
+                  </button>
+                  <button class="btn" id="saveGeneral" type="submit">
+                    Save general settings
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          </section>
+
+          <!-- Security settings -->
+          <section class="panel" id="securitySettings" aria-labelledby="securitySettingsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⬡</div>
+              <div>
+                <h2 id="securitySettingsTitle">Security and access policy</h2>
+                <p>
+                  Review security preferences provided by the backend.
+                  Authentication and authorisation remain server responsibilities.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="settings-status"
+              id="securityMessage"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+            <div class="switch-list">
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>Require verified email</strong>
+                  <p>
+                    Require a verified email before allowing the configured
+                    account actions. The backend must enforce this policy.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="requireVerifiedEmail"
+                    data-security-key="requireVerifiedEmail"
+                    aria-label="Require verified email"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>Enforce multi-factor authentication</strong>
+                  <p>
+                    Request multi-factor authentication for the configured
+                    protected roles when supported by the identity provider.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="requireMfa"
+                    data-security-key="requireMfa"
+                    aria-label="Enforce multi-factor authentication"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>Notify administrators of security events</strong>
+                  <p>
+                    Enable supported administrator notifications for
+                    security-related events. Notification delivery depends
+                    on configured server services.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="securityNotifications"
+                    data-security-key="securityNotifications"
+                    aria-label="Notify administrators of security events"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn btn-outline" id="resetSecurity" type="button" disabled>
+                Reset form
+              </button>
+              <button class="btn" id="saveSecurity" type="button" disabled>
+                Save security settings
+              </button>
+            </div>
+
+            <div class="feature-actions">
+              <a class="btn btn-outline" href="/admin/security.html">
+                Open security centre ↗
+              </a>
+              <a class="btn btn-outline" href="/admin/audit-logs.html">
+                View audit logs ↗
+              </a>
+            </div>
+          </section>
+
+          <!-- Notification settings -->
+          <section class="panel" id="notificationSettings" aria-labelledby="notificationTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">♢</div>
+              <div>
+                <h2 id="notificationTitle">Notification preferences</h2>
+                <p>
+                  Manage supported communication preferences without exposing
+                  mail-provider secrets or credentials.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="settings-status"
+              id="notificationMessage"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+            <div class="switch-list">
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>Platform email notifications</strong>
+                  <p>
+                    Allow supported transactional emails such as account
+                    and application updates.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="emailNotifications"
+                    data-notification-key="emailNotifications"
+                    aria-label="Platform email notifications"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>In-platform notifications</strong>
+                  <p>
+                    Allow the application to display supported notifications
+                    inside authenticated user accounts.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="inAppNotifications"
+                    data-notification-key="inAppNotifications"
+                    aria-label="In-platform notifications"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="switch-row">
+                <div class="switch-copy">
+                  <strong>Administrator operational alerts</strong>
+                  <p>
+                    Enable configured operational alerts for the
+                    administration team.
+                  </p>
+                </div>
+                <label class="switch-control">
+                  <input
+                    type="checkbox"
+                    id="adminAlerts"
+                    data-notification-key="adminAlerts"
+                    aria-label="Administrator operational alerts"
+                    disabled
+                  >
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn btn-outline" id="resetNotifications" type="button" disabled>
+                Reset form
+              </button>
+              <button class="btn" id="saveNotifications" type="button" disabled>
+                Save notification settings
+              </button>
+            </div>
+          </section>
+
+          <!-- Integration status -->
+          <section class="panel" id="integrationSettings" aria-labelledby="integrationTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌘</div>
+              <div>
+                <h2 id="integrationTitle">Integration status</h2>
+                <p>
+                  Service health is displayed only when the backend returns
+                  corresponding integration metadata.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="settings-status"
+              id="integrationMessage"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+            <div class="system-list" id="integrationList">
+              <div class="empty-state">
+                <strong>Integration status unavailable</strong>
+                Connect the authenticated settings API to load integration metadata.
+              </div>
+            </div>
+
+            <div class="panel-actions align-start">
+              <a class="btn btn-outline" href="/admin/security.html">
+                Review security ↗
+              </a>
+              <button class="btn" id="refreshIntegrations" type="button">
+                ↻ Refresh status
+              </button>
+            </div>
+
+            <p class="inline-help" style="margin-top:17px;margin-bottom:0">
+              <strong>Credential safety:</strong>
+              This page intentionally does not provide inputs for API secrets,
+              database passwords, private keys, session secrets or payment
+              credentials. Manage these through your hosting provider or
+              approved server-side secret-management system.
+            </p>
+          </section>
+
+          <!-- Maintenance -->
+          <section class="panel" id="maintenanceSettings" aria-labelledby="maintenanceTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">🛠</div>
+              <div>
+                <h2 id="maintenanceTitle">Maintenance and availability</h2>
+                <p>
+                  Review maintenance state and the configured operational
+                  message. Changing availability may affect users.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="settings-status"
+              id="maintenanceMessage"
+              role="status"
+              aria-live="polite"
+            ></div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="maintenanceState">Maintenance mode</label>
+                <select id="maintenanceState" disabled>
+                  <option value="false">Disabled</option>
+                  <option value="true">Enabled</option>
+                </select>
+                <small>
+                  A displayed setting is not proof that the server enforces
+                  maintenance mode.
+                </small>
+              </div>
+
+              <div class="field">
+                <label for="maintenanceMessageInput">Maintenance notice</label>
+                <textarea
+                  id="maintenanceMessageInput"
+                  maxlength="500"
+                  rows="3"
+                  placeholder="Scheduled maintenance notice"
+                  disabled
+                ></textarea>
+                <small>Maximum 500 characters. Avoid including internal system details.</small>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn btn-outline" id="resetMaintenance" type="button" disabled>
+                Reset form
+              </button>
+              <button class="btn" id="saveMaintenance" type="button" disabled>
+                Save maintenance settings
+              </button>
+            </div>
+          </section>
+
+          <!-- Operational guidance -->
+          <section class="feature-banner" aria-labelledby="workflowTitle">
+            <div>
+              <span class="eyebrow">Reliable platform operations</span>
+              <h2 id="workflowTitle">
+                Clear configuration. <span class="accent-text">Stronger control.</span>
+              </h2>
+              <p>
+                Keep MedOrbits operational settings documented, apply changes
+                through authenticated server-side workflows, and retain
+                a protected audit history for sensitive administrative updates.
+              </p>
+              <div class="feature-actions">
+                <a class="btn" href="/admin/audit-logs.html">
+                  Review audit history ↗
+                </a>
+                <a class="btn btn-outline" href="/admin/security.html">
+                  Open security centre
+                </a>
+              </div>
+            </div>
+
+            <div class="feature-image">
+              <img
+                src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1000&q=80"
+                alt="Technology professionals collaborating on platform operations"
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="quickLinksTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">✧</div>
+              <div>
+                <h2 id="quickLinksTitle">System administration quick links</h2>
+                <p>
+                  Useful destinations for security, auditing and operational oversight.
+                </p>
+              </div>
+            </div>
+
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">♙</div>
+                <div class="activity-copy">
+                  <strong>Review administrative access</strong>
+                  <p>
+                    Open <a href="/admin/users.html">user management</a>
+                    to review authorised account records and roles.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">⬡</div>
+                <div class="activity-copy">
+                  <strong>Validate security policies</strong>
+                  <p>
+                    Use the <a href="/admin/security.html">security centre</a>
+                    to review supported access controls and security workflows.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">≡</div>
+                <div class="activity-copy">
+                  <strong>Review configuration changes</strong>
+                  <p>
+                    Use <a href="/admin/audit-logs.html">audit logs</a>
+                    to inspect changes recorded by the backend.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">▥</div>
+                <div class="activity-copy">
+                  <strong>Monitor platform operations</strong>
+                  <p>
+                    Review <a href="/admin/reports.html">reports and analytics</a>
+                    and use the configured server monitoring tools for operational health.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card" aria-labelledby="protectionTitle">
+            <h2 id="protectionTitle">
+              Protect platform <span class="accent-text">integrity.</span>
+            </h2>
+            <p>
+              System configuration can influence account access, notification
+              delivery and platform availability. Require explicit permissions
+              for changes, validate payloads on the server, protect secrets,
+              record administrative actions and provide rollback procedures
+              for high-impact settings.
+            </p>
+
+            <div class="security-links">
+              <a href="/admin/security.html">
+                Security centre <span>↗</span>
+              </a>
+              <a href="/admin/audit-logs.html">
+                Audit logs <span>↗</span>
+              </a>
+              <a href="/admin/users.html">
+                User management <span>↗</span>
+              </a>
+              <a href="/pages/contact.html">
+                Support and assistance <span>↗</span>
+              </a>
+            </div>
+          </section>
+
+          <div class="notice">
+            <strong>Important implementation notice:</strong>
+            This page is a user interface, not an authorization boundary.
+            The API must independently enforce administrator permissions,
+            schema validation, CSRF protection where applicable, rate limiting,
+            audit logging and concurrency safeguards. Never expose database
+            credentials, API secrets, private keys, password hashes or session
+            secrets. Maintenance mode and other high-impact controls must be
+            enforced by the backend, not by frontend state alone.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img
+              src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo"
+              width="44"
+              height="44"
+              loading="lazy"
+            >
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>System administration</small>
+            </span>
+          </a>
+          <p>
+            A connected education and career platform for resources,
+            admissions, documents and professional opportunities.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Administration</h2>
+          <a href="/admin/index.html">Dashboard</a>
+          <a href="/admin/users.html">Users</a>
+          <a href="/admin/applications.html">Applications</a>
+          <a href="/admin/admissions.html">Admissions</a>
+          <a href="/admin/system-settings.html">System settings</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+          <a href="/career/employer-services.html">Employer services</a>
+          <a href="/career/resume-support.html">Resume support</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/pages/about.html">About MedOrbits</a>
+          <a href="/pages/contact.html">Contact support</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Users should verify education requirements, official
+        information and platform-related requests with the relevant institution
+        or authority.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * File: /admin/system-settings.html
+       *
+       * Suggested API contract -- implement and authorise these routes
+       * in the backend before enabling configuration changes.
+       *
+       * GET /api/admin/system-settings
+       *
+       * Example response:
+       * {
+       *   "settings": {
+       *     "general": {
+       *       "siteName": "MedOrbits",
+       *       "supportEmail": "support@example.com",
+       *       "defaultLocale": "en",
+       *       "defaultTimezone": "Asia/Kolkata",
+       *       "siteDescription": ""
+       *     },
+       *     "security": {
+       *       "requireVerifiedEmail": true,
+       *       "requireMfa": false,
+       *       "securityNotifications": true
+       *     },
+       *     "notifications": {
+       *       "emailNotifications": true,
+       *       "inAppNotifications": true,
+       *       "adminAlerts": true
+       *     },
+       *     "maintenance": {
+       *       "enabled": false,
+       *       "message": ""
+       *     }
+       *   },
+       *   "integrations": [
+       *     { "name": "Email service", "status": "active" }
+       *   ],
+       *   "admin": {
+       *     "name": "Administration",
+       *     "email": "admin@example.com"
+       *   },
+       *   "updatedAt": "2026-10-25T10:00:00Z"
+       * }
+       *
+       * Suggested mutation routes:
+       * PUT /api/admin/system-settings/general
+       * PUT /api/admin/system-settings/security
+       * PUT /api/admin/system-settings/notifications
+       * PUT /api/admin/system-settings/maintenance
+       *
+       * Expected successful mutation response:
+       * { "success": true, "settings": { ... } }
+       *
+       * These routes and response schemas are integration contracts.
+       * Their existence is not assumed by this frontend.
+       *
+       * Optional configuration:
+       * window.MEDORBITS_CONFIG = {
+       *   adminSystemSettingsEndpoint: "/api/admin/system-settings"
+       * };
+       *
+       * Security:
+       * - Use authenticated same-origin requests.
+       * - Add CSRF headers when the backend requires them.
+       * - Enforce administrator permissions server-side.
+       * - Validate each field against a strict server-side schema.
+       * - Audit every successful settings mutation.
+       * - Do not send secrets or credentials to this page.
+       */
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        const $ = id => document.getElementById(id);
+
+        const header = $("siteHeader");
+        const menuToggle = $("menuToggle");
+        const mainNav = $("mainNav");
+        const refreshButton = $("refreshSettings");
+        const refreshIntegrationsButton = $("refreshIntegrations");
+        const dashboardStatus = $("dashboardStatus");
+        const lastUpdated = $("lastUpdated");
+
+        const generalForm = $("generalForm");
+        const generalFieldset = $("generalFieldset");
+        const generalMessage = $("generalMessage");
+        const securityMessage = $("securityMessage");
+        const notificationMessage = $("notificationMessage");
+        const integrationMessage = $("integrationMessage");
+        const maintenanceMessage = $("maintenanceMessage");
+
+        const generalInputs = {
+          siteName: $("siteName"),
+          supportEmail: $("supportEmail"),
+          defaultLocale: $("defaultLocale"),
+          defaultTimezone: $("defaultTimezone"),
+          siteDescription: $("siteDescription")
+        };
+
+        const securityInputs = {
+          requireVerifiedEmail: $("requireVerifiedEmail"),
+          requireMfa: $("requireMfa"),
+          securityNotifications: $("securityNotifications")
+        };
+
+        const notificationInputs = {
+          emailNotifications: $("emailNotifications"),
+          inAppNotifications: $("inAppNotifications"),
+          adminAlerts: $("adminAlerts")
+        };
+
+        const maintenanceInputs = {
+          enabled: $("maintenanceState"),
+          message: $("maintenanceMessageInput")
+        };
+
+        const summaryFields = {
+          configStatus: $("configStatus"),
+          securityStatus: $("securityStatus"),
+          notificationStatus: $("notificationStatus"),
+          integrationStatus: $("integrationStatus"),
+          maintenanceStatus: $("maintenanceStatus"),
+          savedStatus: $("savedStatus")
+        };
+
+        const state = {
+          loading: false,
+          saving: new Set(),
+          controller: null,
+          requestSequence: 0,
+          settings: null,
+          integrations: [],
+          updatedAt: null,
+          original: {
+            general: null,
+            security: null,
+            notifications: null,
+            maintenance: null
+          }
+        };
+
+        $("currentYear").textContent = String(new Date().getFullYear());
+
+        /*
+         * Validate configured endpoints against the current origin.
+         */
+        function getEndpoint(path) {
+          const config = window.MEDORBITS_CONFIG || {};
+          const configured = config.adminSystemSettingsEndpoint ||
+            "/api/admin/system-settings";
+
+          let base;
+
+          try {
+            base = new URL(configured, window.location.origin);
+          } catch {
+            throw new Error("The configured system-settings endpoint is invalid.");
+          }
+
+          if (base.origin !== window.location.origin) {
+            throw new Error(
+              "System-settings endpoints must use the same origin as this page."
+            );
+          }
+
+          if (!path) return base;
+
+          const next = new URL(path, base);
+
+          if (next.origin !== window.location.origin) {
+            throw new Error("The requested settings route is not same-origin.");
+          }
+
+          return next;
+        }
+
+        function showStatus(message, type = "warning") {
+          dashboardStatus.textContent = message;
+          dashboardStatus.className = `status ${type}`;
+        }
+
+        function showMessage(element, message, type = "info") {
+          element.textContent = message;
+          element.className = `settings-status ${type}`;
+        }
+
+        function clearMessage(element) {
+          element.textContent = "";
+          element.className = "settings-status";
+        }
+
+        function setButtonBusy(button, busy, busyLabel, idleLabel) {
+          button.disabled = busy;
+          button.textContent = busy ? busyLabel : idleLabel;
+        }
+
+        function isPlainObject(value) {
+          return Boolean(
+            value &&
+            typeof value === "object" &&
+            !Array.isArray(value)
+          );
+        }
+
+        function safeText(value, fallback = "") {
+          return typeof value === "string" ? value : fallback;
+        }
+
+        function safeBoolean(value, fallback = false) {
+          return typeof value === "boolean" ? value : fallback;
+        }
+
+        function truncateText(value, maximum) {
+          return safeText(value).trim().slice(0, maximum);
+        }
+
+        function validEmail(value) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+
+        function formatDate(value) {
+          if (typeof value !== "string" || !value.trim()) {
+            return "Not available";
+          }
+
+          const date = new Date(value);
+
+          if (Number.isNaN(date.getTime())) {
+            return "Not available";
+          }
+
+          return date.toLocaleString(undefined, {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+
+        function formatRelativeStatus(value) {
+          return value === true ? "Enabled" :
+            value === false ? "Disabled" : "Unknown";
+        }
+
+        async function readJson(response) {
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.toLowerCase().includes("application/json")) {
+            return {};
+          }
+
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        function getCsrfToken() {
+          const meta = document.querySelector('meta[name="csrf-token"]');
+          return meta && meta.content ? meta.content.trim() : "";
+        }
+
+        async function apiRequest(url, options = {}) {
+          const method = String(options.method || "GET").toUpperCase();
+          const headers = new Headers(options.headers || {});
+
+          headers.set("Accept", "application/json");
+
+          if (options.body !== undefined) {
+            headers.set("Content-Type", "application/json");
+          }
+
+          if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+            const csrfToken = getCsrfToken();
+
+            if (csrfToken) {
+              headers.set("X-CSRF-Token", csrfToken);
+            }
+          }
+
+          const response = await fetch(url, {
+            ...options,
+            method,
+            headers,
+            credentials: "same-origin",
+            cache: "no-store"
+          });
+
+          const data = await readJson(response);
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              throw new Error(
+                "Authentication required. Sign in with an authorised administrator account."
+              );
+            }
+
+            if (response.status === 403) {
+              throw new Error(
+                "Access denied. Your account is not authorised to manage system settings."
+              );
+            }
+
+            if (response.status === 404) {
+              throw new Error(
+                "The system-settings API is not available at the configured endpoint."
+              );
+            }
+
+            if (response.status === 409) {
+              throw new Error(
+                "Settings changed on the server. Refresh the page before trying again."
+              );
+            }
+
+            if (response.status === 429) {
+              throw new Error(
+                "Too many requests. Wait before trying again."
+              );
+            }
+
+            const message = typeof data.message === "string"
+              ? data.message
+              : "The system-settings request failed.";
+
+            throw new Error(message);
+          }
+
+          return data;
+        }
+
+        /*
+         * Responsive navigation.
+         */
+        function closeNavigation() {
+          mainNav.classList.remove("open");
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mainNav.classList.toggle("open");
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+          menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        });
+
+        mainNav.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", closeNavigation);
+        });
+
+        document.addEventListener("click", event => {
+          if (!(event.target instanceof Element)) return;
+
+          if (
+            mainNav.classList.contains("open") &&
+            !event.target.closest("#mainNav") &&
+            !event.target.closest("#menuToggle")
+          ) {
+            closeNavigation();
+          }
+        });
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") closeNavigation();
+        });
+
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 20);
+        }, { passive: true });
+
+        window.matchMedia("(min-width: 1101px)")
+          .addEventListener?.("change", event => {
+            if (event.matches) closeNavigation();
+          });
+
+        /*
+         * Animated heading with reduced-motion support.
+         */
+        const typingText = $("typingText");
+        const reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        );
+
+        const phrases = [
+          "Reliable systems start with thoughtful configuration.",
+          "Security first. Clear operational controls.",
+          "Keep platform settings accountable.",
+          "Protect services, data and user trust."
+        ];
+
+        let phraseIndex = 0;
+        let characterIndex = phrases[0].length;
+        let deleting = false;
+        let typingTimer = null;
+
+        function typeNextCharacter() {
+          if (reducedMotion.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          const phrase = phrases[phraseIndex];
+
+          if (!deleting) {
+            characterIndex++;
+            typingText.textContent = phrase.slice(0, characterIndex);
+
+            if (characterIndex >= phrase.length) {
+              deleting = true;
+              typingTimer = window.setTimeout(typeNextCharacter, 1800);
+              return;
+            }
+
+            typingTimer = window.setTimeout(typeNextCharacter, 42);
+            return;
+          }
+
+          characterIndex--;
+          typingText.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex <= 0) {
+            deleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            typingTimer = window.setTimeout(typeNextCharacter, 280);
+            return;
+          }
+
+          typingTimer = window.setTimeout(typeNextCharacter, 24);
+        }
+
+        if (reducedMotion.matches) {
+          typingText.textContent = phrases[0];
+        } else {
+          typingTimer = window.setTimeout(typeNextCharacter, 1400);
+        }
+
+        reducedMotion.addEventListener?.("change", event => {
+          window.clearTimeout(typingTimer);
+
+          if (event.matches) {
+            typingText.textContent = phrases[0];
+            return;
+          }
+
+          phraseIndex = 0;
+          characterIndex = 0;
+          deleting = false;
+          typeNextCharacter();
+        });
+
+        /*
+         * Settings state and field mapping.
+         */
+        function copySettings(settings) {
+          return JSON.parse(JSON.stringify(settings));
+        }
+
+        function normaliseSettings(payload) {
+          const root = isPlainObject(payload.settings)
+            ? payload.settings
+            : payload;
+
+          const general = isPlainObject(root.general) ? root.general : {};
+          const security = isPlainObject(root.security) ? root.security : {};
+          const notifications = isPlainObject(root.notifications)
+            ? root.notifications
+            : {};
+          const maintenance = isPlainObject(root.maintenance)
+            ? root.maintenance
+            : {};
+
+          return {
+            general: {
+              siteName: safeText(general.siteName),
+              supportEmail: safeText(general.supportEmail),
+              defaultLocale: safeText(general.defaultLocale, "en"),
+              defaultTimezone: safeText(
+                general.defaultTimezone,
+                "Asia/Kolkata"
+              ),
+              siteDescription: safeText(general.siteDescription)
+            },
+            security: {
+              requireVerifiedEmail: safeBoolean(
+                security.requireVerifiedEmail
+              ),
+              requireMfa: safeBoolean(security.requireMfa),
+              securityNotifications: safeBoolean(
+                security.securityNotifications
+              )
+            },
+            notifications: {
+              emailNotifications: safeBoolean(
+                notifications.emailNotifications
+              ),
+              inAppNotifications: safeBoolean(
+                notifications.inAppNotifications
+              ),
+              adminAlerts: safeBoolean(notifications.adminAlerts)
+            },
+            maintenance: {
+              enabled: safeBoolean(maintenance.enabled),
+              message: safeText(maintenance.message)
+            }
+          };
+        }
+
+        function setTextField(input, value) {
+          input.value = safeText(value);
+        }
+
+        function fillFormValues(settings) {
+          Object.entries(generalInputs).forEach(([key, input]) => {
+            setTextField(input, settings.general[key]);
+          });
+
+          Object.entries(securityInputs).forEach(([key, input]) => {
+            input.checked = settings.security[key] === true;
+          });
+
+          Object.entries(notificationInputs).forEach(([key, input]) => {
+            input.checked = settings.notifications[key] === true;
+          });
+
+          maintenanceInputs.enabled.value =
+            settings.maintenance.enabled ? "true" : "false";
+
+          maintenanceInputs.message.value =
+            settings.maintenance.message;
+        }
+
+        function setGroupEnabled(group, enabled) {
+          if (group === "general") {
+            generalFieldset.disabled = !enabled;
+            return;
+          }
+
+          if (group === "security") {
+            Object.values(securityInputs).forEach(input => {
+              input.disabled = !enabled;
+            });
+
+            $("resetSecurity").disabled = !enabled;
+            $("saveSecurity").disabled = !enabled;
+            return;
+          }
+
+          if (group === "notifications") {
+            Object.values(notificationInputs).forEach(input => {
+              input.disabled = !enabled;
+            });
+
+            $("resetNotifications").disabled = !enabled;
+            $("saveNotifications").disabled = !enabled;
+            return;
+          }
+
+          if (group === "maintenance") {
+            Object.values(maintenanceInputs).forEach(input => {
+              input.disabled = !enabled;
+            });
+
+            $("resetMaintenance").disabled = !enabled;
+            $("saveMaintenance").disabled = !enabled;
+          }
+        }
+
+        function setAllFormsEnabled(enabled) {
+          ["general", "security", "notifications", "maintenance"].forEach(
+            group => setGroupEnabled(group, enabled)
+          );
+        }
+
+        function updateOverview() {
+          const settings = state.settings;
+
+          if (!settings) {
+            Object.values(summaryFields).forEach(element => {
+              element.textContent = "--";
+            });
+            return;
+          }
+
+          summaryFields.configStatus.textContent = "Loaded";
+          summaryFields.securityStatus.textContent = "Configured";
+          summaryFields.notificationStatus.textContent = "Configured";
+
+          const integrationCount = state.integrations.length;
+          summaryFields.integrationStatus.textContent =
+            integrationCount.toLocaleString();
+
+          summaryFields.maintenanceStatus.textContent =
+            settings.maintenance.enabled ? "Enabled" : "Disabled";
+
+          summaryFields.savedStatus.textContent = state.updatedAt
+            ? new Date(state.updatedAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              })
+            : "Unknown";
+        }
+
+        function validateSettingsPayload(payload) {
+          if (!isPlainObject(payload)) {
+            throw new Error(
+              "The system-settings API returned an invalid response."
+            );
+          }
+
+          const settings = isPlainObject(payload.settings)
+            ? payload.settings
+            : payload;
+
+          const requiredGroups = [
+            "general",
+            "security",
+            "notifications",
+            "maintenance"
+          ];
+
+          for (const group of requiredGroups) {
+            if (!isPlainObject(settings[group])) {
+              throw new Error(
+                `The API response is missing the "${group}" settings group.`
+              );
+            }
+          }
+
+          const boolKeys = {
+            security: [
+              "requireVerifiedEmail",
+              "requireMfa",
+              "securityNotifications"
+            ],
+            notifications: [
+              "emailNotifications",
+              "inAppNotifications",
+              "adminAlerts"
+            ],
+            maintenance: ["enabled"]
+          };
+
+          for (const [group, keys] of Object.entries(boolKeys)) {
+            for (const key of keys) {
+              if (typeof settings[group][key] !== "boolean") {
+                throw new Error(
+                  `The API response contains an invalid "${group}.${key}" value.`
+                );
+              }
+            }
+          }
+
+          for (const key of [
+            "siteName",
+            "supportEmail",
+            "defaultLocale",
+            "defaultTimezone",
+            "siteDescription"
+          ]) {
+            if (typeof settings.general[key] !== "string") {
+              throw new Error(
+                `The API response contains an invalid "general.${key}" value.`
+              );
+            }
+          }
+
+          if (typeof settings.maintenance.message !== "string") {
+            throw new Error(
+              'The API response contains an invalid "maintenance.message" value.'
+            );
+          }
+
+          if (
+            payload.integrations !== undefined &&
+            !Array.isArray(payload.integrations)
+          ) {
+            throw new Error(
+              "The API returned an invalid integrations collection."
+            );
+          }
+
+          return true;
+        }
+
+        /*
+         * Render integration metadata using textContent only.
+         * Do not render integration credentials or secrets.
+         */
+        function renderIntegrations(integrations) {
+          const list = $("integrationList");
+          const fragment = document.createDocumentFragment();
+
+          if (!integrations.length) {
+            const empty = document.createElement("div");
+            const heading = document.createElement("strong");
+            const description = document.createElement("span");
+
+            empty.className = "empty-state";
+            heading.textContent = "No integration metadata returned";
+            description.textContent =
+              "The backend did not provide any integration status records.";
+
+            empty.append(heading, document.createElement("br"), description);
+            fragment.appendChild(empty);
+            list.replaceChildren(fragment);
+            return;
+          }
+
+          integrations.forEach(item => {
+            if (!isPlainObject(item)) return;
+
+            const row = document.createElement("div");
+            const copy = document.createElement("div");
+            const name = document.createElement("strong");
+            const detail = document.createElement("small");
+            const pill = document.createElement("span");
+
+            const label = truncateText(item.name, 100) || "Unnamed integration";
+            const rawStatus = safeText(item.status).trim().toLowerCase();
+            const validStatuses = new Set([
+              "active",
+              "connected",
+              "healthy",
+              "available",
+              "pending",
+              "disabled",
+              "inactive",
+              "error",
+              "failed",
+              "unknown"
+            ]);
+
+            const status = validStatuses.has(rawStatus)
+              ? rawStatus
+              : "unknown";
+
+            row.className = "system-row";
+            name.textContent = label;
+
+            detail.textContent = truncateText(item.description, 180) ||
+              "Status supplied by the administration API.";
+
+            pill.className = "status-pill " +
+              (["active", "connected", "healthy", "available"].includes(status)
+                ? "active"
+                : ["pending"].includes(status)
+                  ? "pending"
+                  : "unknown");
+
+            pill.textContent = status.charAt(0).toUpperCase() +
+              status.slice(1);
+
+            copy.append(name, detail);
+            row.append(copy, pill);
+            fragment.appendChild(row);
+          });
+
+          if (!fragment.childNodes.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-state";
+            empty.textContent = "No valid integration records were returned.";
+            fragment.appendChild(empty);
+          }
+
+          list.replaceChildren(fragment);
+        }
+
+        function normaliseIntegrations(payload) {
+          if (!Array.isArray(payload.integrations)) return [];
+
+          return payload.integrations
+            .filter(isPlainObject)
+            .map(item => ({
+              name: truncateText(item.name, 100) || "Unnamed integration",
+              description: truncateText(item.description, 180),
+              status: safeText(item.status, "unknown")
+            }));
+        }
+
+        function updateAdminIdentity(payload) {
+          if (!isPlainObject(payload.admin)) return;
+
+          if (
+            typeof payload.admin.name === "string" &&
+            payload.admin.name.trim()
+          ) {
+            $("adminName").textContent = payload.admin.name.trim().slice(0, 100);
+          }
+
+          if (
+            typeof payload.admin.email === "string" &&
+            payload.admin.email.trim()
+          ) {
+            $("adminEmail").textContent =
+              payload.admin.email.trim().slice(0, 254);
+          }
+        }
+
+        /*
+         * Fetch the initial configuration.
+         * Older requests are aborted so stale responses cannot overwrite newer
+         * settings after a refresh.
+         */
+        async function loadSettings() {
+          if (state.controller) {
+            state.controller.abort();
+          }
+
+          const controller = new AbortController();
+          state.controller = controller;
+
+          const requestId = ++state.requestSequence;
+
+          state.loading = true;
+          refreshButton.disabled = true;
+          refreshIntegrationsButton.disabled = true;
+          refreshButton.textContent = "Loading…";
+
+          showStatus("Loading system settings from the administration service…");
+          setAllFormsEnabled(false);
+
+          try {
+            const url = getEndpoint();
+
+            const payload = await apiRequest(url, {
+              method: "GET",
+              signal: controller.signal
+            });
+
+            if (requestId !== state.requestSequence) return;
+
+            validateSettingsPayload(payload);
+
+            const settings = normaliseSettings(payload);
+
+            state.settings = settings;
+            state.original = copySettings(settings);
+            state.integrations = normaliseIntegrations(payload);
+            state.updatedAt = typeof payload.updatedAt === "string"
+              ? payload.updatedAt
+              : null;
+
+            fillFormValues(settings);
+            renderIntegrations(state.integrations);
+            updateOverview();
+            updateAdminIdentity(payload);
+
+            lastUpdated.textContent = state.updatedAt
+              ? "Updated " + formatDate(state.updatedAt)
+              : "Loaded " + new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                });
+
+            setAllFormsEnabled(true);
+
+            showStatus(
+              "System configuration loaded successfully.",
+              "success"
+            );
+
+            clearMessage(generalMessage);
+            clearMessage(securityMessage);
+            clearMessage(notificationMessage);
+            clearMessage(integrationMessage);
+            clearMessage(maintenanceMessage);
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+            if (requestId !== state.requestSequence) return;
+
+            state.settings = null;
+            state.original = {
+              general: null,
+              security: null,
+              notifications: null,
+              maintenance: null
+            };
+            state.integrations = [];
+            state.updatedAt = null;
+
+            updateOverview();
+
+            renderIntegrations([]);
+
+            const message = error instanceof Error
+              ? error.message
+              : "System settings could not be loaded.";
+
+            showStatus(message, "error");
+            showMessage(generalMessage, message, "error");
+            showMessage(securityMessage, message, "error");
+            showMessage(notificationMessage, message, "error");
+            showMessage(integrationMessage, message, "error");
+            showMessage(maintenanceMessage, message, "error");
+          } finally {
+            if (requestId === state.requestSequence) {
+              state.loading = false;
+              refreshButton.disabled = false;
+              refreshIntegrationsButton.disabled = false;
+              refreshButton.textContent = "↻ Refresh settings";
+            }
+          }
+        }
+
+        /*
+         * General settings.
+         */
+        function getGeneralPayload() {
+          return {
+            siteName: truncateText(generalInputs.siteName.value, 100),
+            supportEmail: truncateText(generalInputs.supportEmail.value, 254),
+            defaultLocale: generalInputs.defaultLocale.value,
+            defaultTimezone: generalInputs.defaultTimezone.value,
+            siteDescription: truncateText(
+              generalInputs.siteDescription.value,
+              500
+            )
+          };
+        }
+
+        function validateGeneral(payload) {
+          if (!payload.siteName) {
+            throw new Error("Enter a platform display name.");
+          }
+
+          if (!payload.supportEmail || !validEmail(payload.supportEmail)) {
+            throw new Error("Enter a valid support email address.");
+          }
+
+          const allowedLocales = new Set([
+            "en", "hi", "bn", "as", "ne", "mr", "gu", "pa",
+            "ur", "or", "fr", "de", "es"
+          ]);
+
+          if (!allowedLocales.has(payload.defaultLocale)) {
+            throw new Error("Select a supported default language.");
+          }
+
+          const allowedTimezones = new Set([
+            "Asia/Kolkata",
+            "UTC",
+            "Europe/London",
+            "Europe/Berlin",
+            "America/New_York",
+            "Asia/Dubai",
+            "Asia/Singapore"
+          ]);
+
+          if (!allowedTimezones.has(payload.defaultTimezone)) {
+            throw new Error("Select a supported default time zone.");
+          }
+
+          return payload;
+        }
+
+        generalForm.addEventListener("submit", async event => {
+          event.preventDefault();
+
+          if (!state.settings || state.saving.has("general")) return;
+
+          let payload;
+
+          try {
+            payload = validateGeneral(getGeneralPayload());
+          } catch (error) {
+            showMessage(
+              generalMessage,
+              error instanceof Error ? error.message : "Check the general settings.",
+              "error"
+            );
+            return;
+          }
+
+          const button = $("saveGeneral");
+          state.saving.add("general");
+          setGroupEnabled("general", false);
+          setButtonBusy(
+            button,
+            true,
+            "Saving…",
+            "Save general settings"
+          );
+          showMessage(generalMessage, "Saving general settings…", "info");
+
+          try {
+            const url = getEndpoint("/general");
+
+            const response = await apiRequest(url, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+
+            /*
+             * A successful HTTP response must also confirm success in the
+             * response body before the UI reports a saved change.
+             */
+            if (response.success !== true) {
+              throw new Error(
+                "The server did not confirm that general settings were saved."
+              );
+            }
+
+            await loadSettings();
+
+            showMessage(
+              generalMessage,
+              "General settings saved successfully.",
+              "success"
+            );
+          } catch (error) {
+            showMessage(
+              generalMessage,
+              error instanceof Error
+                ? error.message
+                : "General settings could not be saved.",
+              "error"
+            );
+          } finally {
+            state.saving.delete("general");
+            setButtonBusy(
+              button,
+              false,
+              "Saving…",
+              "Save general settings"
+            );
+
+            setGroupEnabled("general", Boolean(state.settings));
+          }
+        });
+
+        $("resetGeneral").addEventListener("click", () => {
+          if (!state.original.general) return;
+
+          Object.entries(generalInputs).forEach(([key, input]) => {
+            input.value = state.original.general[key];
+          });
+
+          clearMessage(generalMessage);
+        });
+
+        /*
+         * Save a defined settings group through its own endpoint.
+         */
+        async function saveGroup(group, payload, messageElement, buttonId, label) {
+          if (!state.settings || state.saving.has(group)) return;
+
+          const button = $(buttonId);
+
+          state.saving.add(group);
+          setGroupEnabled(group, false);
+          setButtonBusy(button, true, "Saving…", label);
+          showMessage(messageElement, `Saving ${group} settings…`, "info");
+
+          try {
+            const url = getEndpoint("/" + group);
+
+            const response = await apiRequest(url, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+
+            if (response.success !== true) {
+              throw new Error(
+                "The server did not confirm that these settings were saved."
+              );
+            }
+
+            await loadSettings();
+
+            showMessage(
+              messageElement,
+              `${label.replace(/^Save /, "").replace(/ settings$/i, "")} saved successfully.`,
+              "success"
+            );
+          } catch (error) {
+            showMessage(
+              messageElement,
+              error instanceof Error
+                ? error.message
+                : "The settings could not be saved.",
+              "error"
+            );
+          } finally {
+            state.saving.delete(group);
+            setButtonBusy(button, false, "Saving…", label);
+            setGroupEnabled(group, Boolean(state.settings));
+          }
+        }
+
+        /*
+         * Security settings.
+         */
+        function getSecurityPayload() {
+          return {
+            requireVerifiedEmail:
+              securityInputs.requireVerifiedEmail.checked,
+            requireMfa:
+              securityInputs.requireMfa.checked,
+            securityNotifications:
+              securityInputs.securityNotifications.checked
+          };
+        }
+
+        $("saveSecurity").addEventListener("click", () => {
+          saveGroup(
+            "security",
+            getSecurityPayload(),
+            securityMessage,
+            "saveSecurity",
+            "Save security settings"
+          );
+        });
+
+        $("resetSecurity").addEventListener("click", () => {
+          if (!state.original.security) return;
+
+          Object.entries(securityInputs).forEach(([key, input]) => {
+            input.checked = state.original.security[key];
+          });
+
+          clearMessage(securityMessage);
+        });
+
+        /*
+         * Notification settings.
+         */
+        function getNotificationPayload() {
+          return {
+            emailNotifications:
+              notificationInputs.emailNotifications.checked,
+            inAppNotifications:
+              notificationInputs.inAppNotifications.checked,
+            adminAlerts:
+              notificationInputs.adminAlerts.checked
+          };
+        }
+
+        $("saveNotifications").addEventListener("click", () => {
+          saveGroup(
+            "notifications",
+            getNotificationPayload(),
+            notificationMessage,
+            "saveNotifications",
+            "Save notification settings"
+          );
+        });
+
+        $("resetNotifications").addEventListener("click", () => {
+          if (!state.original.notifications) return;
+
+          Object.entries(notificationInputs).forEach(([key, input]) => {
+            input.checked = state.original.notifications[key];
+          });
+
+          clearMessage(notificationMessage);
+        });
+
+        /*
+         * Maintenance settings are intentionally treated as high impact.
+         * The backend must confirm the mutation and enforce the resulting state.
+         */
+        function getMaintenancePayload() {
+          return {
+            enabled: maintenanceInputs.enabled.value === "true",
+            message: truncateText(maintenanceInputs.message.value, 500)
+          };
+        }
+
+        $("saveMaintenance").addEventListener("click", async () => {
+          if (!state.settings || state.saving.has("maintenance")) return;
+
+          const payload = getMaintenancePayload();
+          const isChangingState =
+            payload.enabled !== state.original.maintenance.enabled;
+
+          if (
+            isChangingState &&
+            !window.confirm(
+              payload.enabled
+                ? "Enable maintenance mode? This may restrict platform access for users."
+                : "Disable maintenance mode? The platform may become available to users."
+            )
+          ) {
+            return;
+          }
+
+          await saveGroup(
+            "maintenance",
+            payload,
+            maintenanceMessage,
+            "saveMaintenance",
+            "Save maintenance settings"
+          );
+        });
+
+        $("resetMaintenance").addEventListener("click", () => {
+          if (!state.original.maintenance) return;
+
+          maintenanceInputs.enabled.value =
+            state.original.maintenance.enabled ? "true" : "false";
+
+          maintenanceInputs.message.value =
+            state.original.maintenance.message;
+
+          clearMessage(maintenanceMessage);
+        });
+
+        /*
+         * Refresh controls.
+         */
+        refreshButton.addEventListener("click", () => {
+          loadSettings();
+        });
+
+        refreshIntegrationsButton.addEventListener("click", async () => {
+          if (state.loading) return;
+
+          refreshIntegrationsButton.disabled = true;
+          refreshIntegrationsButton.textContent = "Checking…";
+          showMessage(
+            integrationMessage,
+            "Refreshing integration metadata…",
+            "info"
+          );
+
+          try {
+            const payload = await apiRequest(getEndpoint(), {
+              method: "GET"
+            });
+
+            validateSettingsPayload(payload);
+
+            state.integrations = normaliseIntegrations(payload);
+            renderIntegrations(state.integrations);
+            updateOverview();
+
+            showMessage(
+              integrationMessage,
+              "Integration metadata refreshed from the server.",
+              "success"
+            );
+          } catch (error) {
+            showMessage(
+              integrationMessage,
+              error instanceof Error
+                ? error.message
+                : "Integration metadata could not be refreshed.",
+              "error"
+            );
+          } finally {
+            refreshIntegrationsButton.disabled = false;
+            refreshIntegrationsButton.textContent = "↻ Refresh status";
+          }
+        });
+
+        /*
+         * Load initial data. The endpoint is resolved when requested, so a
+         * deferred config.js can define MEDORBITS_CONFIG before DOMContentLoaded.
+         */
+        loadSettings();
+      }
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>
