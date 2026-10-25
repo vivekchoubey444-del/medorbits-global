@@ -1,40 +1,641 @@
-Dependencies
 
-node_modules/
+# ============================================================
+# MedOrbits -- Root Git Ignore Policy
+# File: .gitignore
+# Policy version: 3.1.1
+# Runtime: Node.js >=20
+# ============================================================
+#
+# SECURITY:
+# - Never commit .env or real credentials.
+# - .gitignore does not untrack committed files.
+# - Rotate exposed credentials and assess Git history if secrets leak.
+# - Keep sanitized templates such as .env.example tracked.
+# ============================================================
 
-Build and test output
 
-coverage/
-dist/
-
-Logs
-
-logs/
-.log
-npm-debug.log
-yarn-debug.log*
-pnpm-debug.log*
-
-Temporary storage
-
-storage/temporary/
-
-Environment variables and secrets
+# ------------------------------------------------------------
+# 01. ENVIRONMENT FILES AND LOCAL CONFIGURATION
+# ------------------------------------------------------------
 
 .env
 .env.*
 !.env.example
+!.env.sample
+!.env.template
+!.env.development.example
+!.env.test.example
+!.env.production.example
+!.env.staging.example
 
-Local operating-system and editor files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging.local
 
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-*.swo
+*.local.env
+local.env
+development.env
+staging.env
+production.env
 
-Temporary files
+secrets.env
+secret.env
+credentials.env
+credentials.local.*
+secrets.local.*
+
+config.local.*
+settings.local.*
+nodemon.local.json
+.envrc.local
+
+
+# ------------------------------------------------------------
+# 02. SECRETS, TOKENS AND CREDENTIALS
+# ------------------------------------------------------------
+
+/secrets/
+/private-secrets/
+/local-secrets/
+/credentials/
+/private-credentials/
+
+api-key.txt
+api-keys.txt
+api_key.txt
+api_keys.txt
+service-account.json
+service-account-key.json
+google-credentials.json
+firebase-adminsdk*.json
+application_default_credentials.json
+cloud-credentials.json
+cloud-service-account.json
+deployment-credentials.json
+
+tokens.json
+access-token.txt
+refresh-token.txt
+session-token.txt
+auth-token.txt
+cookies.txt
+cookies.json
+
+*.secret
+*.secrets
+*.token
+*.tokens
+*.credential
+*.credentials
+
+.auth-cache/
+.token-cache/
+.local-auth/
+
+
+# ------------------------------------------------------------
+# 03. PRIVATE KEYS AND LOCAL TLS MATERIAL
+# ------------------------------------------------------------
+
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+*.ppk
+
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+ssh_host_*
+
+private-key.*
+private_key.*
+server.key
+client.key
+tls.key
+signing-key.*
+signing_key.*
+
+.local-certs/
+.dev-certs/
+certs/private/
+certificates/private/
+
+# Do not globally ignore *.pem, *.crt or *.cer.
+# Inspect files before committing them.
+
+
+# ------------------------------------------------------------
+# 04. DATABASES AND LOCAL BACKUPS
+# ------------------------------------------------------------
+
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+
+/.local-db/
+/.local-database/
+/database/local/
+/database/backups/
+/db/backups/
+/backups/database/
+
+.pgpass
+.pg_service.conf
+.my.cnf
+.mysql_history
+
+# Do not globally ignore SQL migrations, schemas or sanitized fixtures.
+
+
+# ------------------------------------------------------------
+# 05. PRIVATE USER DATA AND DOCUMENTS
+# ------------------------------------------------------------
+
+/private-data/
+/private-data-local/
+/local-private-data/
+/user-data-private/
+/private-uploads/
+/private-documents/
+/private-files/
+/private-storage/
+/private-records/
+
+.local-data/
+.local-uploads/
+.local-storage/
+.local-documents/
+
+*.personal-data
+*.private-export
+*.user-export
+
+
+# ------------------------------------------------------------
+# 06. NODE.JS AND PACKAGE MANAGER ARTIFACTS
+# ------------------------------------------------------------
+
+node_modules/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+.npm/
+.npm-cache/
+.pnpm-store/
+
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+.bun/
+
+# Preserve package.json, package-lock.json and intentional lockfiles.
+
+
+# ------------------------------------------------------------
+# 07. BUILD OUTPUTS AND FRAMEWORK ARTIFACTS
+# ------------------------------------------------------------
+
+/dist/
+/build/
+/out/
+/site-build/
+/release-build/
+/generated-build/
+
+.next/
+.nuxt/
+.nitro/
+.output/
+.svelte-kit/
+.angular/
+
+.parcel-cache/
+.turbo/
+.rspack-cache/
+.webpack-cache/
+.esbuild/
+.vite/
+storybook-static/
+
+
+# ------------------------------------------------------------
+# 08. LOGS, CRASH REPORTS AND RUNTIME FILES
+# ------------------------------------------------------------
+
+/logs/
+/log/
+
+*.log
+*.pid
+*.pid.lock
+*.seed
+
+/pids/
+/.pm2/
+/.pids/
+
+core
+core.*
+*.core
+*.stackdump
+
+crash.log
+error.log
+debug.log
+trace.log
+server-output.log
+application-debug.log
+request-debug.log
+access.log
+error-report.log
+
+
+# ------------------------------------------------------------
+# 09. TEMPORARY FILES
+# ------------------------------------------------------------
 
 *.tmp
 *.temp
+*.swp
+*.swo
+*.swn
+*.orig
+*.rej
+*.patch~
+*~
+
+/tmp/
+/temp/
+/.tmp/
+/.temp/
+/.cache-tmp/
+
+*.lock.tmp
+*.pid.tmp
+
+# Do not ignore package lockfiles.
+
+
+# ------------------------------------------------------------
+# 10. OPERATING SYSTEM FILES
+# ------------------------------------------------------------
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100/
+.Trashes/
+.fseventsd/
+.VolumeIcon.icns
+
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+.directory
+.Trash-*
+.nfs*
+
+
+# ------------------------------------------------------------
+# 11. IDE AND EDITOR STATE
+# ------------------------------------------------------------
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+!.vscode/launch.example.json
+
+.idea/
+*.iml
+.vs/
+
+.*.sw?
+Session.vim
+TAGS
+
+*.code-workspace.local
+workspace.local.json
+
+
+# ------------------------------------------------------------
+# 12. PYTHON AND VIRTUAL ENVIRONMENTS
+# ------------------------------------------------------------
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+ENV/
+virtualenv/
+
+wheels/
+pip-wheel-metadata/
+*.egg
+*.egg-info/
+.eggs/
+
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+coverage.json
+
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+pip-log.txt
+pip-delete-this-directory.txt
+
+
+# ------------------------------------------------------------
+# 13. TESTING AND BROWSER AUTOMATION
+# ------------------------------------------------------------
+
+playwright-report/
+test-results/
+playwright/.cache/
+
+cypress/videos/
+cypress/screenshots/
+
+browser-profile/
+browser-profiles/
+.chrome-profile/
+.firefox-profile/
+
+test-output/
+test-artifacts/
+test-reports/
+/reports/test/
+/reports/coverage/
+
+# Only ignore confidential test fixtures, not sanitized test data.
+/tests/fixtures/private/
+/tests/fixtures/real-user-data/
+/tests/data/private/
+
+
+# ------------------------------------------------------------
+# 14. FRONTEND AND DEVELOPMENT TOOL CACHES
+# ------------------------------------------------------------
+
+*.tsbuildinfo
+
+.sass-cache/
+.storybook-cache/
+.angular/cache/
+
+.cache/
+
+.eslintcache
+.stylelintcache
+.prettier-cache/
+.biome/
+
+
+# ------------------------------------------------------------
+# 15. GENERATED API CLIENTS AND DOCUMENTATION
+# ------------------------------------------------------------
+
+# Keep these rules only if the directories contain generated output.
+/api-client-generated/
+/openapi-generated/
+/swagger-generated/
+/docs-build/
+/documentation-build/
+
+# Do not ignore maintained docs/, official-documents/ or API schemas.
+
+
+# ------------------------------------------------------------
+# 16. LOCAL UPLOADS AND USER-GENERATED FILES
+# ------------------------------------------------------------
+
+/uploads-local/
+/local-uploads/
+/user-uploads-local/
+/storage-local/
+/media-local/
+
+*.uploading
+*.part
+*.partial
+*.chunk
+
+# Do not globally ignore public/assets/ or public/uploads/.
+
+
+# ------------------------------------------------------------
+# 17. DEPLOYMENT AND HOSTING LOCAL STATE
+# ------------------------------------------------------------
+
+.vercel/
+.netlify/
+
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+.serverless/
+.aws-sam/
+.docker/
+
+.terraform/
+*.tfstate
+.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local Compose overrides may contain private configuration.
+docker-compose.override.yaml
+docker-compose.override.yml
+
+
+# ------------------------------------------------------------
+# 18. CLOUD CLI LOCAL STATE
+# ------------------------------------------------------------
+
+.aws/
+.gcloud/
+.azure/
+
+# Review provider-specific rules before adding credential patterns.
+
+
+# ------------------------------------------------------------
+# 19. LOCAL APPLICATION STATE
+# ------------------------------------------------------------
+
+.runtime/
+/.instance/
+
+.metadata-local/
+.project-cache/
+.application-cache/
+
+nodemon-debug.log
+
+
+# ------------------------------------------------------------
+# 20. ARCHIVES AND LARGE FILES
+# ------------------------------------------------------------
+
+# Intentionally do not ignore these globally:
+# *.zip, *.7z, *.rar, *.tar, *.tar.gz
+# *.pdf, *.png, *.jpg, *.xlsx
+#
+# They may be maintained assets, public documents or release files.
+
+
+# ------------------------------------------------------------
+# 21. MACHINE LEARNING AND DATA SCIENCE ARTIFACTS
+# ------------------------------------------------------------
+
+.cache/huggingface/
+.cache/torch/
+.cache/models/
+
+# Enable only if model artifacts should not be tracked:
+# *.pt
+# *.pth
+# *.onnx
+# *.safetensors
+# *.model
+
+# Optional generated datasets; preserve approved source data.
+# /datasets/raw/
+# /datasets/processed/
+# /data/raw/
+# /data/processed/
+
+
+# ------------------------------------------------------------
+# 22. LOCAL TOOL STATE AND PROFILING
+# ------------------------------------------------------------
+
+.deno/
+.volta-local/
+.vscode-test/
+.debug/
+.debug-cache/
+.sessions-local/
+.tasks-local/
+.worktrees-local/
+
+.prof/
+*.prof
+*.profraw
+*.profdata
+
+
+# ------------------------------------------------------------
+# 23. LOCAL API CLIENT STATE
+# ------------------------------------------------------------
+
+.http-client.private.env.json
+.rest-client.private.env.json
+
+.api-history/
+.http-cache/
+.integration-cache/
+
+
+# ------------------------------------------------------------
+# 24. PRIVATE REPORTS AND SECURITY TOOL OUTPUT
+# ------------------------------------------------------------
+
+/exports-private/
+/reports-private/
+/private-reports/
+/confidential-exports/
+/internal-exports/
+
+.secret-scan-local/
+.gitleaks-local/
+.trufflehog-local/
+.dependency-audit-local/
+.security-report-local/
+
+
+# ------------------------------------------------------------
+# 25. OFFICE APPLICATION TEMPORARY FILES
+# ------------------------------------------------------------
+
+~$.doc
+~$.docx
+~$.xls
+~$.xlsx
+~$.ppt
+~$.pptx
+
+
+# ------------------------------------------------------------
+# 26. OPTIONAL GENERATED BUNDLES AND SOURCE MAPS
+# ------------------------------------------------------------
+
+# Uncomment only if the repository does not intentionally track builds.
+# *.min.js
+# *.min.css
+# *.map
+
+
+# ------------------------------------------------------------
+# 27. MEDORBITS SOURCE PRESERVATION
+# ------------------------------------------------------------
+
+# Keep maintained source, sanitized examples, and required configuration:
+# - HTML, CSS, JavaScript, TypeScript and Python source
+# - pages/, assets/, public/assets/ and public website files
+# - Official public documents, brochures and approved media
+# - JSON data, schemas and sanitized test fixtures
+# - Tests, test helpers and test configuration
+# - README, LICENSE, SECURITY and contribution documentation
+# - package.json and dependency lockfiles
+# - .github/workflows/ and reviewed CI configuration
+# - .husky/ and required hooks
+# - Reviewed Dockerfiles and deployment manifests
+# - Database migrations, schemas and development fixtures
+# - Required runtime files such as .nvmrc
+#
+# Ignore rules do not add files to Git or restore ignored parent directories.
+
+
+# ============================================================
+# END OF MEDORBITS ROOT .gitignore
+# ============================================================
