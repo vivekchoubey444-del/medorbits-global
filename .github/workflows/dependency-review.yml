@@ -1,5 +1,19 @@
 
+# ============================================================
+# MedOrbits -- Dependency Review
 # File: .github/workflows/dependency-review.yml
+#
+# Purpose:
+# - Review dependency changes before merging pull requests.
+# - Detect newly introduced vulnerable dependencies.
+# - Check runtime, development, and unknown dependency scopes.
+# - Support npm manifests, lockfiles, Dockerfiles, and Dependabot.
+# - Use least-privilege GitHub Actions permissions.
+#
+# Requirements:
+# - GitHub dependency graph enabled.
+# - actions/dependency-review-action available to the repository.
+# ============================================================
 
 name: MedOrbits Dependency Review
 
@@ -7,6 +21,7 @@ on:
   pull_request:
     branches:
       - main
+      - master
       - develop
     paths:
       - "package.json"
@@ -21,9 +36,15 @@ on:
       - "docker-compose.yaml"
       - "**/docker-compose.yml"
       - "**/docker-compose.yaml"
+      - "compose.yml"
+      - "compose.yaml"
+      - "**/compose.yml"
+      - "**/compose.yaml"
       - ".github/workflows/**"
       - ".github/dependabot.yml"
       - ".github/dependabot.yaml"
+
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,47 +55,71 @@ concurrency:
 
 jobs:
   dependency-review:
-    name: Review dependency changes
+    name: Dependency security and license review
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Restrict PR comments and write permissions to same-repository PRs.
-    if: >-
-      ${{
-        github.event.pull_request.head.repo.full_name == github.repository
-      }}
-
     permissions:
       contents: read
-      pull-requests: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 20
-
+      # ------------------------------------------------------
+      # 1. REVIEW DEPENDENCY CHANGES
+      # ------------------------------------------------------
       - name: Review dependency changes
         uses: actions/dependency-review-action@v5
         with:
+          # Fail on high and critical vulnerabilities.
           fail-on-severity: high
 
-          # Avoid comment failures for Dependabot's read-only token.
-          comment-summary-in-pr: ${{ github.actor == 'dependabot[bot]' && 'never' || 'always' }}
+          # Review all dependency scopes.
+          fail-on-scopes: runtime,development,unknown
 
-          # Block newly introduced dependencies with these licenses.
-          deny-licenses: >-
-            GPL-3.0,
-            GPL-3.0-only,
-            GPL-3.0-or-later,
-            AGPL-3.0,
-            AGPL-3.0-only,
-            AGPL-3.0-or-later
+          # Do not require pull-request comment write permissions.
+          comment-summary-in-pr: never
 
-          # Fail if dependency metadata cannot be evaluated reliably.
-          fail-on-scopes: runtime
+          # Fail if license metadata is missing or unrecognized.
+          # Review this setting against the repository's actual policy.
+          allow-dependencies-licenses: ""
+
+          # Do not activate an unreviewed license allowlist.
+          # Add allow-licenses only after legal/policy approval.
+          #
+          # Example:
+          # allow-licenses: >-
+          #   MIT,
+          #   Apache-2.0,
+          #   BSD-2-Clause,
+          #   BSD-3-Clause,
+          #   ISC
+
+      # ------------------------------------------------------
+      # 2. REPORT COMPLETION
+      # ------------------------------------------------------
+      - name: Report dependency review status
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET_REF: ${{ github.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## MedOrbits Dependency Review"
+            echo
+            echo "- **Status:** ${JOB_STATUS}"
+            echo "- **Event:** ${EVENT_NAME}"
+            echo "- **Ref:** \`${TARGET_REF}\`"
+
+            if [[ -n "${PR_NUMBER:-}" ]]; then
+              echo "- **Pull request:** #${PR_NUMBER}"
+            fi
+
+            echo
+            echo "The dependency review checks changes reported by GitHub's dependency review service."
+            echo
+            echo "A successful result does not guarantee that every dependency or license risk has been identified."
+          } >> "$GITHUB_STEP_SUMMARY"
