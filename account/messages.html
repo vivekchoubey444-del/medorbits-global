@@ -1,24 +1,2427 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Messages | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="Manage your MedOrbits account messages, support conversations and application-related communication securely.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Messages | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/messages.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071629;
+      --bg-soft: #0b203b;
+      --surface: #102947;
+      --surface-2: #153657;
+      --surface-3: #081a2e;
+      --accent: #8bbcff;
+      --accent-bright: #d9e9ff;
+      --text: #f2f7ff;
+      --text-soft: #c7d8ee;
+      --muted: #9db2cc;
+      --border: rgba(139,188,255,.23);
+      --success: #a8f0d0;
+      --warning: #ffdfa2;
+      --danger: #ffc1ca;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *,*::before,*::after { box-sizing:border-box; }
+
+    html {
+      scroll-behavior:smooth;
+      scroll-padding-top:100px;
+    }
+
+    body {
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%,rgba(40,102,170,.2),transparent 35%),
+        radial-gradient(ellipse at 90% 40%,rgba(98,155,221,.08),transparent 32%),
+        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+      color:var(--text);
+      font:400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display:block;max-width:100%; }
+    a { color:inherit;text-decoration:none; }
+    button,input,textarea,select { font:inherit; }
+    button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
+
+    button:focus-visible,a:focus-visible,input:focus-visible,
+    textarea:focus-visible,select:focus-visible {
+      outline:2px solid var(--accent-bright);
+      outline-offset:4px;
+    }
+
+    [hidden] { display:none!important; }
+
+    .container {
+      width:min(1180px,calc(100% - 40px));
+      margin-inline:auto;
+    }
+
+    .skip-link {
+      position:absolute;
+      top:-70px;
+      left:14px;
+      z-index:10000;
+      padding:10px 15px;
+      border-radius:8px;
+      background:var(--accent-bright);
+      color:var(--bg);
+    }
+
+    .skip-link:focus { top:12px; }
+
+    /* Announcement */
+
+    .announcement {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:8px 15px;
+      border-bottom:1px solid rgba(139,188,255,.13);
+      background:#040b15;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-align:center;
+      text-transform:uppercase;
+    }
+
+    .announcement .spark { color:var(--accent); }
+
+    /* Header */
+
+    .site-header {
+      position:sticky;
+      top:0;
+      z-index:1000;
+      border-bottom:1px solid var(--border);
+      background:rgba(5,14,27,.94);
+      backdrop-filter:blur(18px);
+      transition:box-shadow .2s,background .2s;
+    }
+
+    .site-header.scrolled {
+      background:rgba(4,11,21,.98);
+      box-shadow:0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height:78px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:22px;
+    }
+
+    .brand {
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
+    .brand img {
+      width:45px;
+      height:45px;
+      object-fit:contain;
+    }
+
+    .brand strong {
+      display:block;
+      color:var(--accent-bright);
+      font-size:15px;
+      letter-spacing:.13em;
+      line-height:1.35;
+    }
+
+    .brand small {
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .menu-toggle {
+      display:none;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:transparent;
+      color:var(--accent-bright);
+      cursor:pointer;
+    }
+
+    .main-nav {
+      display:flex;
+      align-items:center;
+      gap:17px;
+      font-size:11px;
+    }
+
+    .main-nav>a,.nav-trigger {
+      color:var(--text-soft);
+      white-space:nowrap;
+    }
+
+    .main-nav>a:hover,.nav-trigger:hover { color:var(--accent-bright); }
+    .nav-group { position:relative; }
+
+    .nav-trigger {
+      padding:12px 0;
+      border:0;
+      background:transparent;
+      cursor:pointer;
+    }
+
+    .nav-trigger span { margin-left:4px;color:var(--accent); }
+
+    .dropdown {
+      position:absolute;
+      top:100%;
+      left:-12px;
+      display:none;
+      width:245px;
+      padding:9px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#102947;
+      box-shadow:var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display:grid; }
+
+    .dropdown a {
+      padding:10px 11px;
+      border-radius:7px;
+      color:var(--text-soft);
+      font-size:11px;
+    }
+
+    .dropdown a:hover {
+      background:rgba(139,188,255,.09);
+      color:var(--accent-bright);
+    }
+
+    .nav-cta,.btn {
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      min-height:41px;
+      padding:10px 15px;
+      border:1px solid var(--accent);
+      border-radius:9px;
+      background:linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color:#071629!important;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s,filter .2s;
+    }
+
+    .btn:hover:not(:disabled),.nav-cta:hover {
+      transform:translateY(-1px);
+      filter:brightness(1.06);
+    }
+
+    .btn-outline {
+      border-color:rgba(199,216,238,.32);
+      background:transparent;
+      color:var(--accent-bright)!important;
+    }
+
+    .btn:disabled { opacity:.6;cursor:not-allowed;transform:none; }
+
+    /* Main page */
+
+    .page-main {
+      position:relative;
+      isolation:isolate;
+      min-height:70vh;
+      padding:40px 0 65px;
+      overflow:hidden;
+    }
+
+    .page-main::before {
+      position:absolute;
+      z-index:-1;
+      inset:0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content:"";
+      pointer-events:none;
+    }
+
+    .breadcrumbs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:22px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .breadcrumbs a { color:var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration:underline; }
+
+    .page-heading {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:22px;
+      margin-bottom:28px;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+
+    .eyebrow::before {
+      width:25px;
+      height:1px;
+      background:var(--accent);
+      content:"";
+    }
+
+    .page-heading h1 {
+      margin:10px 0 9px;
+      font:600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing:-.025em;
+      overflow-wrap:anywhere;
+    }
+
+    .page-heading h1 span { color:var(--accent-bright); }
+
+    .page-heading p {
+      max-width:690px;
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.8;
+    }
+
+    .heading-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      flex-shrink:0;
+    }
+
+    .layout {
+      display:grid;
+      grid-template-columns:240px minmax(0,1fr);
+      align-items:start;
+      gap:19px;
+    }
+
+    .sidebar,.panel,.side-card {
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
+      box-shadow:0 18px 48px rgba(0,0,0,.18);
+    }
+
+    .sidebar {
+      position:sticky;
+      top:100px;
+      padding:19px;
+    }
+
+    .account-user {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding-bottom:17px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      height:43px;
+      border:1px solid rgba(139,188,255,.35);
+      border-radius:13px;
+      background:linear-gradient(145deg,#173d64,#0b203b);
+      color:var(--accent-bright);
+      font:600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .account-user strong { display:block;font-size:11px; }
+    .account-user small { display:block;color:var(--muted);font-size:9px; }
+
+    .account-nav {
+      display:grid;
+      gap:5px;
+      margin:15px 0;
+    }
+
+    .account-nav a {
+      padding:10px 11px;
+      border:1px solid transparent;
+      border-radius:8px;
+      color:var(--text-soft);
+      font-size:10px;
+    }
+
+    .account-nav a:hover,.account-nav a.active {
+      border-color:rgba(139,188,255,.2);
+      background:rgba(139,188,255,.09);
+      color:var(--accent-bright);
+    }
+
+    .sidebar-note {
+      margin:15px 0 0;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.8;
+    }
+
+    .content { display:grid;gap:16px;min-width:0; }
+    .panel { padding:clamp(17px,2.5vw,25px); }
+
+    .panel-heading {
+      display:flex;
+      align-items:flex-start;
+      gap:13px;
+      margin-bottom:20px;
+    }
+
+    .panel-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      width:43px;
+      height:43px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(139,188,255,.08);
+      color:var(--accent-bright);
+    }
+
+    .panel-icon svg { width:22px;height:22px; }
+
+    .panel-heading h2,.side-card h2 {
+      margin:0 0 5px;
+      font:600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.8;
+    }
+
+    /* Message toolbar */
+
+    .message-toolbar {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:12px;
+      margin-bottom:17px;
+    }
+
+    .search-wrap { position:relative;min-width:0; }
+
+    .search-wrap svg {
+      position:absolute;
+      top:50%;
+      left:13px;
+      width:17px;
+      height:17px;
+      transform:translateY(-50%);
+      color:var(--muted);
+      pointer-events:none;
+    }
+
+    .form-input,.form-select,.form-textarea {
+      display:block;
+      width:100%;
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:rgba(5,13,26,.52);
+      color:var(--text);
+      font-size:11px;
+      outline:none;
+      transition:border-color .2s,box-shadow .2s;
+    }
+
+    .form-input,.form-select {
+      min-height:45px;
+      padding:11px 13px;
+    }
+
+    .search-input { padding-left:39px; }
+
+    .form-textarea {
+      min-height:100px;
+      padding:12px 13px;
+      line-height:1.7;
+      resize:vertical;
+    }
+
+    .form-input::placeholder,.form-textarea::placeholder { color:#7f96b3; }
+
+    .form-input:focus,.form-select:focus,.form-textarea:focus {
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(139,188,255,.1);
+    }
+
+    .filter-row {
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+      margin-bottom:17px;
+    }
+
+    .filter-button {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      min-height:35px;
+      padding:7px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:rgba(5,13,26,.35);
+      color:var(--text-soft);
+      font-size:10px;
+      cursor:pointer;
+    }
+
+    .filter-button:hover,.filter-button.active {
+      border-color:rgba(139,188,255,.5);
+      background:rgba(139,188,255,.1);
+      color:var(--accent-bright);
+    }
+
+    .filter-count {
+      display:inline-grid;
+      place-items:center;
+      min-width:19px;
+      height:19px;
+      padding:0 5px;
+      border-radius:20px;
+      background:rgba(139,188,255,.14);
+      color:var(--accent-bright);
+      font-size:9px;
+    }
+
+    .message-layout {
+      display:grid;
+      grid-template-columns:minmax(220px,.85fr) minmax(0,1.35fr);
+      gap:14px;
+      align-items:stretch;
+      min-width:0;
+    }
+
+    .conversation-panel,.thread-panel {
+      min-width:0;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(5,13,26,.35);
+    }
+
+    .subpanel-heading {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .subpanel-heading strong {
+      color:var(--text-soft);
+      font-size:11px;
+    }
+
+    .subpanel-heading span {
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .conversation-list {
+      display:grid;
+      max-height:590px;
+      overflow-y:auto;
+    }
+
+    .conversation-item {
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      width:100%;
+      padding:14px 12px;
+      border:0;
+      border-bottom:1px solid rgba(139,188,255,.12);
+      background:transparent;
+      color:inherit;
+      text-align:left;
+      cursor:pointer;
+    }
+
+    .conversation-item:hover { background:rgba(139,188,255,.055); }
+
+    .conversation-item.active {
+      background:rgba(139,188,255,.1);
+      box-shadow:inset 3px 0 0 var(--accent);
+    }
+
+    .conversation-item:focus-visible { outline-offset:-3px; }
+
+    .conversation-avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 37px;
+      width:37px;
+      height:37px;
+      border:1px solid rgba(139,188,255,.3);
+      border-radius:11px;
+      background:linear-gradient(145deg,#173d64,#0b203b);
+      color:var(--accent-bright);
+      font-size:10px;
+      font-weight:700;
+    }
+
+    .conversation-main { flex:1;min-width:0; }
+
+    .conversation-top {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:7px;
+      margin-bottom:4px;
+    }
+
+    .conversation-top strong {
+      color:var(--text-soft);
+      font-size:10px;
+      overflow-wrap:anywhere;
+    }
+
+    .conversation-time {
+      flex-shrink:0;
+      color:var(--muted);
+      font-size:8px;
+    }
+
+    .conversation-subject {
+      display:block;
+      margin-bottom:3px;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:600;
+      overflow-wrap:anywhere;
+    }
+
+    .conversation-preview {
+      display:-webkit-box;
+      overflow:hidden;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.7;
+      overflow-wrap:anywhere;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+    }
+
+    .conversation-meta {
+      display:flex;
+      align-items:center;
+      gap:7px;
+      margin-top:7px;
+    }
+
+    .unread-dot {
+      width:7px;
+      height:7px;
+      flex:0 0 7px;
+      border-radius:50%;
+      background:var(--accent);
+    }
+
+    .message-tag {
+      display:inline-flex;
+      align-items:center;
+      padding:3px 7px;
+      border:1px solid var(--border);
+      border-radius:20px;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.5;
+    }
+
+    .message-tag.unread {
+      border-color:rgba(139,188,255,.35);
+      background:rgba(139,188,255,.08);
+      color:var(--accent-bright);
+    }
+
+    .empty-state {
+      padding:30px 18px;
+      color:var(--muted);
+      text-align:center;
+      font-size:10px;
+      line-height:1.8;
+    }
+
+    .empty-state strong {
+      display:block;
+      margin-bottom:5px;
+      color:var(--text-soft);
+      font-size:12px;
+    }
+
+    /* Conversation thread */
+
+    .thread-header {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding:14px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .thread-heading { flex:1;min-width:0; }
+
+    .thread-heading h3 {
+      margin:0 0 3px;
+      color:var(--text-soft);
+      font-size:11px;
+      overflow-wrap:anywhere;
+    }
+
+    .thread-heading p {
+      margin:0;
+      color:var(--muted);
+      font-size:9px;
+      overflow-wrap:anywhere;
+    }
+
+    .thread-body {
+      display:flex;
+      flex-direction:column;
+      gap:13px;
+      min-height:230px;
+      max-height:400px;
+      padding:15px;
+      overflow-y:auto;
+    }
+
+    .thread-placeholder {
+      display:grid;
+      flex:1;
+      place-content:center;
+      justify-items:center;
+      min-height:200px;
+      color:var(--muted);
+      text-align:center;
+      font-size:10px;
+    }
+
+    .thread-placeholder svg {
+      width:35px;
+      height:35px;
+      margin-bottom:10px;
+      color:var(--accent);
+    }
+
+    .thread-placeholder strong {
+      margin-bottom:5px;
+      color:var(--text-soft);
+      font-size:12px;
+    }
+
+    .message-bubble {
+      max-width:88%;
+      padding:11px 12px;
+      border:1px solid var(--border);
+      border-radius:12px 12px 12px 3px;
+      background:rgba(16,41,71,.8);
+      overflow-wrap:anywhere;
+    }
+
+    .message-bubble.outgoing {
+      align-self:flex-end;
+      border-color:rgba(139,188,255,.3);
+      border-radius:12px 12px 3px 12px;
+      background:rgba(33,75,119,.5);
+    }
+
+    .message-sender {
+      display:block;
+      margin-bottom:5px;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+    }
+
+    .message-content {
+      margin:0;
+      color:var(--text-soft);
+      font-size:10px;
+      line-height:1.8;
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+    }
+
+    .message-time {
+      display:block;
+      margin-top:7px;
+      color:var(--muted);
+      font-size:8px;
+      text-align:right;
+    }
+
+    .thread-composer {
+      padding:14px;
+      border-top:1px solid var(--border);
+      background:rgba(8,26,46,.6);
+    }
+
+    .composer-label {
+      display:block;
+      margin-bottom:7px;
+      color:var(--text-soft);
+      font-size:10px;
+      font-weight:700;
+    }
+
+    .composer-bottom {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .composer-help {
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .composer-counter {
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .form-status {
+      margin:0 0 17px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      font-size:10px;
+      line-height:1.8;
+      overflow-wrap:anywhere;
+    }
+
+    .form-status.error {
+      border-color:rgba(255,133,151,.35);
+      color:var(--danger);
+      background:rgba(255,133,151,.05);
+    }
+
+    .form-status.success {
+      border-color:rgba(100,222,175,.3);
+      color:var(--success);
+      background:rgba(100,222,175,.05);
+    }
+
+    .form-status.info {
+      border-color:var(--border);
+      color:var(--text-soft);
+      background:rgba(139,188,255,.05);
+    }
+
+    .side-card { padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.14); }
+    .side-card h2 { margin:0 0 12px;font:600 21px/1.3 "Playfair Display",Georgia,serif; }
+
+    .side-card>p {
+      margin:0 0 13px;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.8;
+    }
+
+    .security-list {
+      display:grid;
+      gap:15px;
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+
+    .security-list li { display:flex;align-items:flex-start;gap:10px; }
+
+    .security-list svg {
+      width:17px;
+      height:17px;
+      flex:0 0 auto;
+      margin-top:2px;
+      color:var(--success);
+    }
+
+    .security-list strong {
+      display:block;
+      margin-bottom:3px;
+      color:var(--text-soft);
+      font-size:10px;
+    }
+
+    .security-list span {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.7;
+    }
+
+    .side-links { display:grid; }
+
+    .side-links a {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:11px 0;
+      border-bottom:1px solid var(--border);
+      color:var(--text-soft);
+      font-size:10px;
+    }
+
+    .side-links a:last-child { border-bottom:0; }
+    .side-links a span { color:var(--accent); }
+    .side-links a:hover { color:var(--accent-bright); }
+
+    .important-note {
+      margin-top:22px;
+      padding:17px 19px;
+      border:1px solid rgba(255,223,162,.2);
+      border-radius:11px;
+      background:rgba(255,223,162,.035);
+    }
+
+    .important-note h2 {
+      margin:0 0 6px;
+      color:var(--warning);
+      font-size:11px;
+    }
+
+    .important-note p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    /* Footer */
+
+    .site-footer {
+      padding:43px 0 0;
+      border-top:1px solid var(--border);
+      background:#040b15;
+    }
+
+    .footer-grid {
+      display:grid;
+      grid-template-columns:1.4fr repeat(4,minmax(0,1fr));
+      gap:23px;
+      padding-bottom:28px;
+    }
+
+    .footer-brand p {
+      max-width:270px;
+      margin-top:12px;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-grid h2 {
+      margin:0 0 12px;
+      padding-bottom:9px;
+      border-bottom:1px solid rgba(139,188,255,.17);
+      color:var(--accent-bright);
+      font-size:9px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .footer-links a {
+      display:block;
+      margin:8px 0;
+      color:var(--muted);
+      font-size:10px;
+      overflow-wrap:anywhere;
+    }
+
+    .footer-links a:hover { color:var(--accent-bright); }
+
+    .disclaimer {
+      margin:0 0 15px;
+      padding:13px 15px;
+      border-left:2px solid var(--accent);
+      border-radius:0 8px 8px 0;
+      background:rgba(16,41,71,.4);
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-bottom {
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:17px 0;
+      border-top:1px solid rgba(139,188,255,.13);
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    @media(max-width:1100px) {
+      .menu-toggle { display:inline-flex; }
+
+      .main-nav {
+        position:absolute;
+        top:100%;
+        right:0;
+        left:0;
+        display:none;
+        align-items:stretch;
+        flex-direction:column;
+        gap:4px;
+        max-height:calc(100vh - 90px);
+        padding:15px 22px 20px;
+        overflow-y:auto;
+        border-bottom:1px solid var(--border);
+        background:#071629;
+      }
+
+      .main-nav.open { display:flex; }
+
+      .main-nav>a,.nav-trigger {
+        display:block;
+        width:100%;
+        padding:11px 8px;
+        text-align:left;
+      }
+
+      .dropdown {
+        position:static;
+        width:100%;
+        margin-bottom:5px;
+        box-shadow:none;
+      }
+
+      .nav-cta { width:100%; }
+      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column:1/-1; }
+    }
+
+    @media(max-width:900px) {
+      .message-layout { grid-template-columns:minmax(0,1fr); }
+      .conversation-list { max-height:330px; }
+      .thread-body { max-height:430px; }
+    }
+
+    @media(max-width:800px) {
+      .container { width:calc(100% - 30px); }
+      .nav-wrap { min-height:69px; }
+      .layout { grid-template-columns:1fr; }
+      .sidebar { position:static; }
+
+      .page-heading {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .heading-actions { width:100%; }
+      .heading-actions .btn { flex:1; }
+    }
+
+    @media(max-width:560px) {
+      .announcement { gap:6px;font-size:8px;letter-spacing:.04em; }
+      .page-main { padding:30px 0 45px; }
+      .page-heading h1 { font-size:clamp(31px,9vw,42px); }
+      .sidebar,.panel,.side-card { padding:15px; }
+
+      .message-toolbar { grid-template-columns:1fr; }
+      .filter-row { gap:6px; }
+      .filter-button { flex:1; }
+      .composer-bottom { align-items:stretch;flex-direction:column; }
+      .composer-bottom .btn { width:100%; }
+      .heading-actions { flex-direction:column; }
+      .heading-actions .btn { width:100%; }
+
+      .footer-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:21px 15px;
+      }
+
+      .footer-brand { grid-column:1/-1; }
+      .footer-bottom { flex-direction:column; }
+    }
+
+    @media(max-width:360px) {
+      .container { width:calc(100% - 22px); }
+      .brand img { width:37px;height:37px; }
+      .brand strong { font-size:13px; }
+      .brand small { font-size:7px; }
+      .footer-grid { grid-template-columns:1fr; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior:auto; }
+
+      *,*::before,*::after {
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Messages</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about messages. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a href="/account/settings.html">My Profile</a>
+        <a href="/account/applications.html">My Applications</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/account/dashboard.html">My Account</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Messages</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Account communication</span>
+          <h1>Your <span>messages.</span></h1>
+          <p>
+            Review your account conversations, communicate with the
+            MedOrbits support team and keep track of replies to your
+            enquiries. Your messages are available only after authentication.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/account/dashboard.html">← Dashboard</a>
+          <a class="btn btn-outline" href="/account/support.html">Help and support</a>
+        </div>
+      </header>
+
+      <div class="layout">
+
+        <aside class="sidebar" aria-label="Account navigation">
+          <div class="account-user">
+            <div class="avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong>My account</strong>
+              <small>Messages and communication</small>
+            </div>
+          </div>
+
+          <nav class="account-nav" aria-label="Account menu">
+            <a href="/account/dashboard.html">▦ &nbsp; Dashboard</a>
+            <a href="/account/settings.html">◈ &nbsp; Personal profile</a>
+            <a href="/account/applications.html">▤ &nbsp; My applications</a>
+            <a href="/account/documents.html">▧ &nbsp; My documents</a>
+            <a class="active" href="/account/messages.html" aria-current="page">✉ &nbsp; Messages</a>
+            <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
+            <a href="/account/support.html">? &nbsp; Help and support</a>
+            <a href="/account/security.html">◇ &nbsp; Security</a>
+          </nav>
+
+          <p class="sidebar-note">
+            Never send passwords, verification codes, payment card details
+            or sensitive identity documents through an ordinary message.
+            Use approved secure document-upload facilities when required.
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <section class="panel" aria-labelledby="messagesPanelTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 id="messagesPanelTitle">Inbox and conversations</h2>
+                <p>
+                  Search conversations, filter unread messages and open a
+                  conversation to view its message history.
+                </p>
+              </div>
+            </div>
+
+            <div id="pageStatus" class="form-status"
+                 role="status" aria-live="polite" tabindex="-1" hidden></div>
+
+            <div class="message-toolbar">
+              <label class="search-wrap">
+                <span class="skip-link">Search conversations</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="m16 16 4 4"/>
+                </svg>
+                <input class="form-input search-input" id="conversationSearch"
+                       type="search" placeholder="Search messages or subjects..."
+                       autocomplete="off" aria-label="Search conversations">
+              </label>
+
+              <button class="btn btn-outline" id="refreshButton" type="button">
+                ↻ Refresh
+              </button>
+            </div>
+
+            <div class="filter-row" role="group" aria-label="Filter conversations">
+              <button class="filter-button active" type="button" data-filter="all"
+                      aria-pressed="true">All messages</button>
+              <button class="filter-button" type="button" data-filter="unread"
+                      aria-pressed="false">
+                Unread <span class="filter-count" id="unreadCount">0</span>
+              </button>
+              <button class="filter-button" type="button" data-filter="support"
+                      aria-pressed="false">Support</button>
+              <button class="filter-button" type="button" data-filter="applications"
+                      aria-pressed="false">Applications</button>
+            </div>
+
+            <div class="message-layout">
+
+              <section class="conversation-panel" aria-labelledby="conversationListTitle">
+                <div class="subpanel-heading">
+                  <strong id="conversationListTitle">Conversations</strong>
+                  <span id="conversationCount">Loading…</span>
+                </div>
+
+                <div class="conversation-list" id="conversationList"
+                     aria-label="Conversation list" aria-live="polite">
+                  <div class="empty-state">
+                    <strong>Loading conversations</strong>
+                    Please wait while your inbox is retrieved.
+                  </div>
+                </div>
+              </section>
+
+              <section class="thread-panel" aria-labelledby="threadTitle">
+                <div class="thread-header">
+                  <div class="conversation-avatar" id="threadAvatar" aria-hidden="true">MO</div>
+                  <div class="thread-heading">
+                    <h3 id="threadTitle">Select a conversation</h3>
+                    <p id="threadSubtitle">Your selected conversation will appear here.</p>
+                  </div>
+                </div>
+
+                <div class="thread-body" id="threadBody" aria-live="polite"
+                     aria-label="Message history">
+                  <div class="thread-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>
+                    </svg>
+                    <strong>Your conversations</strong>
+                    Choose a conversation from the list to read and reply.
+                  </div>
+                </div>
+
+                <form class="thread-composer" id="replyForm">
+                  <label class="composer-label" for="messageText">Write a reply</label>
+                  <textarea class="form-textarea" id="messageText" name="message"
+                            maxlength="5000" rows="4"
+                            placeholder="Write your message here..."
+                            aria-describedby="composerHelp composerCounter"
+                            disabled required></textarea>
+
+                  <div class="composer-bottom">
+                    <div>
+                      <div class="composer-help" id="composerHelp">
+                        Keep your message relevant and do not include passwords.
+                      </div>
+                      <div class="composer-counter" id="composerCounter">0 / 5000</div>
+                    </div>
+
+                    <button class="btn" id="sendButton" type="submit" disabled>
+                      <span id="sendButtonLabel">Send reply</span>
+                      <span aria-hidden="true">↗</span>
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+            </div>
+          </section>
+
+          <section class="side-card" aria-labelledby="communicationHelpTitle">
+            <h2 id="communicationHelpTitle">Communication and support</h2>
+            <p>
+              Use account messages for ongoing conversations. For a new
+              enquiry, account-access problem or issue that requires
+              assistance, use the official support channels.
+            </p>
+
+            <div class="side-links">
+              <a href="/account/support.html">Account support <span aria-hidden="true">↗</span></a>
+              <a href="/pages/contact.html">Contact MedOrbits <span aria-hidden="true">↗</span></a>
+              <a href="/account/notifications.html">View notifications <span aria-hidden="true">↗</span></a>
+              <a href="/account/applications.html">Check applications <span aria-hidden="true">↗</span></a>
+              <a href="/legal/privacy-policy.html">Privacy policy <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <section class="important-note" aria-labelledby="messageSecurityTitle">
+        <h2 id="messageSecurityTitle">Privacy and messaging security</h2>
+        <p>
+          The inbox must be protected by server-side authentication and
+          conversation-level authorization. A user must only be able to read
+          or reply to conversations they are authorized to access. Validate
+          all message input on the server, apply rate limits, prevent
+          cross-site scripting, protect state-changing requests against CSRF
+          where applicable, and avoid exposing private message content in
+          application logs. Never treat client-side filters or hidden
+          elements as access controls.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>MedOrbits</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        Protect your account information. Never share passwords, verification
+        codes or sensitive payment information in ordinary messages.
+        Use the official MedOrbits website and approved secure upload facilities.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MEDORBITS -- ACCOUNT MESSAGES
+       *
+       * API endpoints below are examples and must be matched to the
+       * actual server routes before deployment.
+       *
+       * Suggested API contract:
+       *
+       * GET  /api/messages
+       * GET  /api/messages/:conversationId
+       * POST /api/messages/:conversationId/replies
+       *
+       * Example inbox response:
+       * {
+       *   "conversations": [
+       *     {
+       *       "id": "conversation-id",
+       *       "participantName": "Support Team",
+       *       "subject": "Account enquiry",
+       *       "preview": "Your enquiry has been received.",
+       *       "category": "support",
+       *       "unread": true,
+       *       "updatedAt": "2026-10-24T10:00:00Z"
+       *     }
+       *   ]
+       * }
+       *
+       * The server must authorize access to each conversation.
+       */
+
+      const CONFIG = Object.freeze({
+        inboxEndpoint: "/api/messages",
+        conversationEndpoint: "/api/messages/",
+        replyEndpoint: "/api/messages/",
+        replySuffix: "/replies",
+        maximumMessageLength: 5000
+      });
+
+      const $ = id => document.getElementById(id);
+
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      const pageStatus = $("pageStatus");
+      const conversationSearch = $("conversationSearch");
+      const conversationList = $("conversationList");
+      const conversationCount = $("conversationCount");
+      const unreadCount = $("unreadCount");
+      const threadAvatar = $("threadAvatar");
+      const threadTitle = $("threadTitle");
+      const threadSubtitle = $("threadSubtitle");
+      const threadBody = $("threadBody");
+      const replyForm = $("replyForm");
+      const messageText = $("messageText");
+      const composerCounter = $("composerCounter");
+      const sendButton = $("sendButton");
+      const sendButtonLabel = $("sendButtonLabel");
+      const refreshButton = $("refreshButton");
+
+      let conversations = [];
+      let activeConversationId = null;
+      let activeFilter = "all";
+      let isLoadingInbox = false;
+      let isLoadingThread = false;
+      let isSending = false;
+      let inboxRequestController = null;
+      let threadRequestController = null;
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      /* Navigation */
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      /* Status helpers */
+
+      function showStatus(message, type = "info", focus = false) {
+        pageStatus.replaceChildren();
+        pageStatus.textContent = message;
+        pageStatus.className = `form-status ${type}`;
+        pageStatus.hidden = false;
+
+        if (focus) pageStatus.focus();
+      }
+
+      function clearStatus() {
+        pageStatus.replaceChildren();
+        pageStatus.className = "form-status";
+        pageStatus.hidden = true;
+      }
+
+      function safeText(value, fallback = "") {
+        return typeof value === "string" ? value : fallback;
+      }
+
+      function safeDate(value) {
+        if (typeof value !== "string" && typeof value !== "number") {
+          return "";
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) return "";
+
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(date);
+      }
+
+      function shortDate(value) {
+        if (typeof value !== "string" && typeof value !== "number") {
+          return "";
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) return "";
+
+        return new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric"
+        }).format(date);
+      }
+
+      function initials(name) {
+        const parts = safeText(name, "MO")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        return parts.slice(0, 2)
+          .map(part => Array.from(part)[0] || "")
+          .join("")
+          .toUpperCase() || "MO";
+      }
+
+      function setBusy(button, label, busy, idleText, busyText) {
+        button.disabled = busy;
+        label.textContent = busy ? busyText : idleText;
+      }
+
+      async function parseResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) return {};
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      function getConversationId(conversation) {
+        return conversation && typeof conversation.id === "string"
+          ? conversation.id
+          : "";
+      }
+
+      function getConversation(id) {
+        return conversations.find(item => getConversationId(item) === id) || null;
+      }
+
+      function safeCategory(value) {
+        return ["support", "applications"].includes(value)
+          ? value
+          : "other";
+      }
+
+      function updateCounts() {
+        unreadCount.textContent = String(
+          conversations.filter(item => item.unread === true).length
+        );
+      }
+
+      /* Build elements with textContent rather than injecting server HTML */
+
+      function createElement(tag, className, text) {
+        const element = document.createElement(tag);
+
+        if (className) element.className = className;
+        if (typeof text === "string") element.textContent = text;
+
+        return element;
+      }
+
+      function renderConversationList() {
+        const query = conversationSearch.value.trim().toLowerCase();
+
+        const filtered = conversations.filter(item => {
+          const matchesFilter =
+            activeFilter === "all" ||
+            (activeFilter === "unread" && item.unread === true) ||
+            safeCategory(item.category) === activeFilter;
+
+          const searchable = [
+            item.participantName,
+            item.subject,
+            item.preview,
+            item.category
+          ].map(value => safeText(value)).join(" ").toLowerCase();
+
+          return matchesFilter && searchable.includes(query);
+        });
+
+        conversationList.replaceChildren();
+        conversationCount.textContent = `${filtered.length} shown`;
+
+        if (!filtered.length) {
+          const empty = createElement("div", "empty-state");
+          empty.appendChild(createElement("strong", "", "No conversations found"));
+          empty.appendChild(document.createTextNode(
+            conversations.length
+              ? "Try a different search or filter."
+              : "Your inbox is empty. New conversations will appear here."
+          ));
+
+          conversationList.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach(item => {
+          const id = getConversationId(item);
+          const name = safeText(item.participantName, "MedOrbits");
+          const button = createElement(
+            "button",
+            "conversation-item" +
+              (id === activeConversationId ? " active" : "")
+          );
+
+          button.type = "button";
+          button.dataset.conversationId = id;
+          button.setAttribute(
+            "aria-pressed",
+            String(id === activeConversationId)
+          );
+
+          const avatar = createElement(
+            "div",
+            "conversation-avatar",
+            initials(name)
+          );
+
+          avatar.setAttribute("aria-hidden", "true");
+
+          const main = createElement("div", "conversation-main");
+          const top = createElement("div", "conversation-top");
+
+          top.appendChild(createElement("strong", "", name));
+          top.appendChild(createElement(
+            "span",
+            "conversation-time",
+            shortDate(item.updatedAt)
+          ));
+
+          main.appendChild(top);
+          main.appendChild(createElement(
+            "span",
+            "conversation-subject",
+            safeText(item.subject, "Message")
+          ));
+
+          main.appendChild(createElement(
+            "span",
+            "conversation-preview",
+            safeText(item.preview, "Open this conversation to view details.")
+          ));
+
+          const meta = createElement("div", "conversation-meta");
+
+          if (item.unread === true) {
+            const dot = createElement("span", "unread-dot");
+            dot.setAttribute("aria-label", "Unread");
+            meta.appendChild(dot);
+          }
+
+          const category = safeCategory(item.category);
+          const tagText = category === "support"
+            ? "Support"
+            : category === "applications"
+              ? "Applications"
+              : "General";
+
+          meta.appendChild(createElement("span", "message-tag", tagText));
+
+          if (item.unread === true) {
+            meta.appendChild(createElement("span", "message-tag unread", "Unread"));
+          }
+
+          main.appendChild(meta);
+          button.append(avatar, main);
+
+          button.addEventListener("click", () => {
+            openConversation(id);
+          });
+
+          conversationList.appendChild(button);
+        });
+      }
+
+      function renderThreadPlaceholder(title, description) {
+        threadBody.replaceChildren();
+
+        const placeholder = createElement("div", "thread-placeholder");
+
+        const icon = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "1.5");
+        icon.setAttribute("aria-hidden", "true");
+
+        const path = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+
+        path.setAttribute(
+          "d",
+          "M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"
+        );
+
+        icon.appendChild(path);
+        placeholder.appendChild(icon);
+        placeholder.appendChild(createElement("strong", "", title));
+        placeholder.appendChild(document.createTextNode(description));
+        threadBody.appendChild(placeholder);
+      }
+
+      function renderThread(messages) {
+        threadBody.replaceChildren();
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+          renderThreadPlaceholder(
+            "No messages yet",
+            "You can start the conversation by writing a reply below."
+          );
+          return;
+        }
+
+        messages.forEach(message => {
+          const outgoing = message.senderType === "user";
+          const bubble = createElement(
+            "article",
+            "message-bubble" + (outgoing ? " outgoing" : "")
+          );
+
+          bubble.appendChild(createElement(
+            "span",
+            "message-sender",
+            safeText(message.senderName, outgoing ? "You" : "MedOrbits")
+          ));
+
+          bubble.appendChild(createElement(
+            "p",
+            "message-content",
+            safeText(message.body)
+          ));
+
+          bubble.appendChild(createElement(
+            "time",
+            "message-time",
+            safeDate(message.createdAt)
+          ));
+
+          threadBody.appendChild(bubble);
+        });
+
+        threadBody.scrollTop = threadBody.scrollHeight;
+      }
+
+      function updateComposerState(enabled) {
+        messageText.disabled = !enabled || isSending;
+        sendButton.disabled = !enabled || isSending;
+      }
+
+      /* Load inbox */
+
+      async function loadInbox(options = {}) {
+        if (isLoadingInbox) return;
+
+        isLoadingInbox = true;
+        refreshButton.disabled = true;
+
+        if (options.showLoading) {
+          conversationList.replaceChildren();
+
+          const loading = createElement(
+            "div",
+            "empty-state",
+            "Retrieving your conversations…"
+          );
+
+          conversationList.appendChild(loading);
+        }
+
+        if (inboxRequestController) inboxRequestController.abort();
+        inboxRequestController = new AbortController();
+
+        try {
+          const response = await fetch(CONFIG.inboxEndpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { "Accept": "application/json" },
+            signal: inboxRequestController.signal
+          });
+
+          const data = await parseResponse(response);
+
+          if (response.status === 401) {
+            showStatus(
+              "Please sign in to access your messages.",
+              "error",
+              true
+            );
+
+            conversationList.replaceChildren();
+
+            const empty = createElement("div", "empty-state");
+            empty.appendChild(createElement("strong", "", "Sign-in required"));
+
+            const link = createElement("a", "text-link", "Go to sign in");
+            link.href = "/account/login.html";
+            empty.appendChild(link);
+
+            conversationList.appendChild(empty);
+            conversations = [];
+            updateCounts();
+            renderConversationList();
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("INBOX_REQUEST_FAILED");
+          }
+
+          if (!Array.isArray(data.conversations)) {
+            throw new Error("INVALID_INBOX_RESPONSE");
+          }
+
+          conversations = data.conversations.filter(item =>
+            item &&
+            typeof item.id === "string" &&
+            item.id.length > 0
+          );
+
+          updateCounts();
+          renderConversationList();
+
+          if (
+            activeConversationId &&
+            !getConversation(activeConversationId)
+          ) {
+            activeConversationId = null;
+            threadTitle.textContent = "Select a conversation";
+            threadSubtitle.textContent =
+              "Your selected conversation will appear here.";
+            threadAvatar.textContent = "MO";
+            renderThreadPlaceholder(
+              "Select a conversation",
+              "Choose a conversation from the list to read and reply."
+            );
+            updateComposerState(false);
+          }
+
+          if (activeConversationId) {
+            const current = getConversation(activeConversationId);
+
+            if (current) {
+              threadTitle.textContent = safeText(
+                current.subject,
+                "Conversation"
+              );
+
+              threadSubtitle.textContent = safeText(
+                current.participantName,
+                "MedOrbits"
+              );
+
+              threadAvatar.textContent = initials(
+                safeText(current.participantName, "MO")
+              );
+            }
+          }
+
+          if (options.announce) {
+            showStatus("Your inbox has been refreshed.", "success");
+          }
+
+        } catch (error) {
+          if (error.name === "AbortError") return;
+
+          showStatus(
+            "Your messages could not be loaded. Please try again. If the issue continues, contact support.",
+            "error",
+            true
+          );
+
+          if (!conversations.length) {
+            conversationList.replaceChildren();
+
+            const empty = createElement("div", "empty-state");
+            empty.appendChild(createElement("strong", "", "Inbox unavailable"));
+            empty.appendChild(document.createTextNode(
+              "Check your connection or try refreshing the inbox."
+            ));
+
+            conversationList.appendChild(empty);
+          }
+
+        } finally {
+          isLoadingInbox = false;
+          refreshButton.disabled = false;
+          inboxRequestController = null;
+        }
+      }
+
+      /* Open a conversation and load its messages */
+
+      async function openConversation(id) {
+        const conversation = getConversation(id);
+
+        if (!conversation || isLoadingThread) return;
+
+        activeConversationId = id;
+        renderConversationList();
+        clearStatus();
+
+        threadTitle.textContent = safeText(
+          conversation.subject,
+          "Conversation"
+        );
+
+        threadSubtitle.textContent = safeText(
+          conversation.participantName,
+          "MedOrbits"
+        );
+
+        threadAvatar.textContent = initials(
+          safeText(conversation.participantName, "MO")
+        );
+
+        updateComposerState(false);
+
+        if (threadRequestController) threadRequestController.abort();
+        threadRequestController = new AbortController();
+
+        isLoadingThread = true;
+
+        renderThreadPlaceholder(
+          "Loading conversation",
+          "Retrieving the latest messages…"
+        );
+
+        try {
+          const response = await fetch(
+            CONFIG.conversationEndpoint +
+              encodeURIComponent(id),
+            {
+              method: "GET",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { "Accept": "application/json" },
+              signal: threadRequestController.signal
+            }
+          );
+
+          const data = await parseResponse(response);
+
+          if (response.status === 401) {
+            showStatus("Your session has expired. Please sign in again.", "error", true);
+            renderThreadPlaceholder(
+              "Sign-in required",
+              "Sign in again to view this conversation."
+            );
+            return;
+          }
+
+          if (response.status === 403 || response.status === 404) {
+            showStatus(
+              "This conversation is unavailable or you do not have permission to view it.",
+              "error",
+              true
+            );
+            renderThreadPlaceholder(
+              "Conversation unavailable",
+              "Return to the inbox and select another conversation."
+            );
+            return;
+          }
+
+          if (!response.ok || !Array.isArray(data.messages)) {
+            throw new Error("THREAD_REQUEST_FAILED");
+          }
+
+          if (activeConversationId !== id) return;
+
+          renderThread(data.messages);
+          updateComposerState(true);
+
+          /*
+           * Mark unread as read only after the server confirms the action.
+           * If your backend supports a read endpoint, call it here.
+           * Do not mark messages as read only in local UI state.
+           */
+
+          if (conversation.unread === true) {
+            try {
+              const readResponse = await fetch(
+                CONFIG.conversationEndpoint +
+                  encodeURIComponent(id) +
+                  "/read",
+                {
+                  method: "POST",
+                  credentials: "same-origin",
+                  cache: "no-store",
+                  headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({})
+                }
+              );
+
+              if (readResponse.ok) {
+                conversation.unread = false;
+                updateCounts();
+                renderConversationList();
+              }
+            } catch {
+              /* The conversation can still be read if marking read fails. */
+            }
+          }
+
+        } catch (error) {
+          if (error.name === "AbortError") return;
+
+          showStatus(
+            "Unable to load this conversation. Please try again.",
+            "error",
+            true
+          );
+
+          renderThreadPlaceholder(
+            "Unable to load messages",
+            "Refresh your inbox and try opening this conversation again."
+          );
+
+        } finally {
+          isLoadingThread = false;
+          threadRequestController = null;
+        }
+      }
+
+      /* Search and filters */
+
+      conversationSearch.addEventListener("input", renderConversationList);
+
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter || "all";
+
+          document.querySelectorAll("[data-filter]").forEach(item => {
+            const active = item === button;
+            item.classList.toggle("active", active);
+            item.setAttribute("aria-pressed", String(active));
+          });
+
+          renderConversationList();
+        });
+      });
+
+      refreshButton.addEventListener("click", () => {
+        clearStatus();
+        loadInbox({ showLoading: true, announce: true });
+      });
+
+      messageText.addEventListener("input", () => {
+        composerCounter.textContent =
+          `${messageText.value.length} / ${CONFIG.maximumMessageLength}`;
+      });
+
+      /* Send reply */
+
+      replyForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearStatus();
+
+        if (!activeConversationId) {
+          showStatus("Select a conversation before sending a reply.", "error", true);
+          return;
+        }
+
+        const body = messageText.value.trim();
+
+        if (!body) {
+          showStatus("Enter a message before sending.", "error", true);
+          messageText.focus();
+          return;
+        }
+
+        if (body.length > CONFIG.maximumMessageLength) {
+          showStatus(
+            `Your message must be ${CONFIG.maximumMessageLength} characters or fewer.`,
+            "error",
+            true
+          );
+          messageText.focus();
+          return;
+        }
+
+        if (isSending) return;
+
+        const conversationId = activeConversationId;
+        isSending = true;
+
+        setBusy(
+          sendButton,
+          sendButtonLabel,
+          true,
+          "Send reply",
+          "Sending…"
+        );
+
+        messageText.disabled = true;
+
+        try {
+          const response = await fetch(
+            CONFIG.replyEndpoint +
+              encodeURIComponent(conversationId) +
+              CONFIG.replySuffix,
+            {
+              method: "POST",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+              },
+              body: JSON.stringify({ body })
+            }
+          );
+
+          const data = await parseResponse(response);
+
+          if (response.status === 401) {
+            showStatus(
+              "Your session has expired. Sign in again before sending a reply.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 403 || response.status === 404) {
+            showStatus(
+              "You cannot reply to this conversation. Refresh your inbox or contact support.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 429) {
+            showStatus(
+              "You have sent messages too quickly. Please wait before trying again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 400 || response.status === 422) {
+            showStatus(
+              "The reply could not be accepted. Check the message and try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (!response.ok || data.success !== true) {
+            showStatus(
+              "Your reply could not be sent. Please try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          messageText.value = "";
+          composerCounter.textContent =
+            `0 / ${CONFIG.maximumMessageLength}`;
+
+          showStatus("Your reply has been sent.", "success");
+
+          await openConversation(conversationId);
+          await loadInbox();
+
+        } catch {
+          showStatus(
+            "Unable to connect to the messaging service. Please try again.",
+            "error",
+            true
+          );
+        } finally {
+          isSending = false;
+
+          setBusy(
+            sendButton,
+            sendButtonLabel,
+            false,
+            "Send reply",
+            "Sending…"
+          );
+
+          updateComposerState(Boolean(activeConversationId));
+        }
+      });
+
+      /* Initial state */
+
+      renderThreadPlaceholder(
+        "Your conversations",
+        "Choose a conversation from the list to read and reply."
+      );
+
+      updateComposerState(false);
+      loadInbox({ showLoading: true });
+    })();
+  </script>
+
+  <!-- Load only shared scripts that exist and are compatible with this page.
+       Avoid duplicate navigation or messaging handlers. -->
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

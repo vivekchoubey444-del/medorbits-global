@@ -1,47 +1,265 @@
-MedOrbits -- Python Project Configuration
 
-File: pyproject.toml
+# ============================================================
+# MedOrbits -- Python Quality, Security & Testing Toolchain
+# File: pyproject.toml
+# Python target: 3.12+
+# ============================================================
 
 [project]
 name = "medorbits"
-version = "0.1.0"
-description = "Python utilities, data validation, and quality checks for MedOrbits."
+version = "1.0.0"
+description = "MedOrbits application, integrations and quality tooling"
 requires-python = ">=3.12"
-dependencies = []
 
-[tool.pytest.ini_options]
-testpaths = ["python/tests"]
-pythonpath = ["."]
-addopts = [
-"-ra",
-"–strict-config",
-"–strict-markers",
-]
-strict_markers = true
+# ============================================================
+# RUFF -- CORE CONFIGURATION
+# ============================================================
 
 [tool.ruff]
 line-length = 100
+indent-width = 4
 target-version = "py312"
-src = ["python"]
+
+# MedOrbits currently organizes Python code under python/.
+# Include src/ and tests/ to support additional layouts if present.
+src = ["python", "src", "tests"]
+
+respect-gitignore = true
+force-exclude = true
+output-format = "concise"
+show-fixes = true
+show-source = true
+
+exclude = [
+    ".git",
+    ".github",
+    ".hg",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "build",
+    "dist",
+    "site-packages",
+    "node_modules",
+    "vendor",
+    "generated",
+    "__pycache__",
+]
+
+# ============================================================
+# RUFF -- LINTING
+# ============================================================
 
 [tool.ruff.lint]
 select = [
-"E",    # pycodestyle errors
-"F",    # Pyflakes
-"W",    # pycodestyle warnings
-"I",    # Import sorting
-"UP",   # Python modernization
-"B",    # Common bug patterns
-"S",    # Security-oriented static checks
+    "E",       # pycodestyle errors
+    "F",       # Pyflakes
+    "W",       # pycodestyle warnings
+    "I",       # Import sorting
+    "UP",      # Python modernization
+    "B",       # Bugbear
+    "S",       # Security-oriented checks
+    "A",       # Built-in name shadowing
+    "ARG",     # Unused arguments
+    "ASYNC",   # Async programming
+    "BLE",     # Blind exception handling
+    "C4",      # Comprehension improvements
+    "DTZ",     # Timezone-aware datetime checks
+    "EM",      # Exception message practices
+    "ERA",     # Commented-out code
+    "EXE",     # Executable file checks
+    "FBT",     # Boolean argument checks
+    "FLY",     # String formatting modernization
+    "FURB",    # Modern Python idioms
+    "G",       # Logging format checks
+    "ICN",     # Import conventions
+    "INP",     # Package structure checks
+    "ISC",     # Implicit string concatenation
+    "LOG",     # Logging practices
+    "N",       # Naming conventions
+    "PERF",    # Performance checks
+    "PGH",     # Pygrep hygiene
+    "PIE",     # Miscellaneous improvements
+    "PLC",     # Pylint conventions
+    "PLE",     # Pylint errors
+    "PLR",     # Pylint refactoring
+    "PLW",     # Pylint warnings
+    "PT",      # Pytest best practices
+    "PTH",     # pathlib recommendations
+    "PYI",     # Type stub checks
+    "RET",     # Return statement checks
+    "RSE",     # Raise statement checks
+    "RUF",     # Ruff-specific checks
+    "SLOT",    # __slots__ checks
+    "SIM",     # Code simplification
+    "T10",     # Debugger detection
+    "T20",     # Accidental print statements
+    "TC",      # Type-checking imports
+    "TID",     # Tidy imports
+    "TRY",     # Exception-handling practices
+    "YTT",     # sys.version checks
 ]
-ignore = []
+
+ignore = [
+    "E501",    # Line wrapping is handled by Ruff formatting.
+]
+
+# Require explicit commands for code modifications.
+fix = false
+unsafe-fixes = false
+
+# ============================================================
+# RUFF -- IMPORT SORTING
+# ============================================================
+
+[tool.ruff.lint.isort]
+known-first-party = ["medorbits"]
+combine-as-imports = true
+force-sort-within-sections = true
+force-single-line = false
+order-by-type = true
+split-on-trailing-comma = true
+
+# ============================================================
+# RUFF -- BUGBEAR
+# ============================================================
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+]
+
+# ============================================================
+# RUFF -- ERROR MESSAGE LENGTH
+# ============================================================
+
+[tool.ruff.lint.flake8-errmsg]
+max-string-length = 100
+
+# ============================================================
+# RUFF -- COMPLEXITY THRESHOLDS
+# ============================================================
+
+[tool.ruff.lint.pylint]
+max-args = 7
+max-branches = 15
+max-returns = 8
+max-statements = 60
+
+# ============================================================
+# RUFF -- TEST AND SCRIPT EXCEPTIONS
+# ============================================================
 
 [tool.ruff.lint.per-file-ignores]
 "python/tests/**/*.py" = [
-"S101",  # Allow assert statements in tests
+    "S101",     # Assertions are expected in tests.
+    "S105",     # Placeholder password literals in tests.
+    "S106",     # Placeholder credential arguments in tests.
+    "PLR2004",  # Numeric constants in assertions.
 ]
+"tests/**/*.py" = [
+    "S101",
+    "S105",
+    "S106",
+    "PLR2004",
+]
+"**/test_*.py" = [
+    "S101",
+    "S105",
+    "S106",
+    "PLR2004",
+]
+"**/conftest.py" = [
+    "S101",
+]
+"python/scripts/**/*.py" = [
+    "T201",     # Permit deliberate CLI output.
+]
+"scripts/**/*.py" = [
+    "T201",
+]
+
+# ============================================================
+# RUFF -- FORMATTER
+# ============================================================
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = 88
+skip-magic-trailing-comma = false
+preview = false
+
+# ============================================================
+# COVERAGE -- BRANCH AND LINE COVERAGE
+# ============================================================
+
+[tool.coverage.run]
+branch = true
+
+# Matches the current python/ source organization.
+source = ["python"]
+relative_files = true
+
+omit = [
+    "python/tests/*",
+    "*/tests/*",
+    "*/migrations/*",
+    "*/generated/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = true
+fail_under = 80
+
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "raise AssertionError",
+]
+
+# ============================================================
+# MYPY -- STATIC TYPE CHECKING
+# ============================================================
+
+[tool.mypy]
+python_version = "3.12"
+files = ["python"]
+mypy_path = "python"
+
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+strict_equality = true
+
+pretty = true
+show_error_codes = true
+show_column_numbers = true
+follow_imports = "normal"
+
+exclude = '(?x)(^|/)(build|dist|generated|migrations|\.venv|venv)/'
+
+# ============================================================
+# END OF CONFIGURATION
+# ============================================================

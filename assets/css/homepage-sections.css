@@ -1,0 +1,749 @@
+/* =========================================================
+   MEDORBITS | HOMEPAGE SECTION DESIGN SYSTEM
+   Theme       : Sapphire Blue / Premium Dark
+   Layout      : 2 x 2 desktop | 2-column tablet | 1-column phone
+   File        : /assets/css/homepage-sections.css
+   Compatibility:
+   - Existing homepage HTML and JSON loader
+   - Existing .json-section-* class names
+   - No JavaScript or additional dependencies
+   - Existing stretched CTA anchor interaction
+========================================================= */
+/* =========================================================
+   01. DESIGN TOKENS
+========================================================= */
+:root {
+  --json-blue-950: #04101f;
+  --json-blue-900: #071629;
+  --json-blue-850: #0a1d34;
+  --json-blue-800: #102947;
+  --json-blue-750: #153657;
+  --json-blue-700: #19466f;
+  --json-blue-light: #d9e9ff;
+  --json-blue-soft: #a9cbf5;
+  --json-blue-muted: #a9bdd5;
+  --json-blue-accent: #78b4ff;
+  --json-border: rgba(139, 188, 255, 0.22);
+  --json-border-hover: rgba(139, 188, 255, 0.62);
+  --json-surface: rgba(12, 31, 54, 0.96);
+  --json-surface-raised: rgba(17, 43, 73, 0.98);
+  --json-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  --json-shadow-hover:
+    0 20px 46px rgba(0, 0, 0, 0.28),
+    0 6px 16px rgba(0, 0, 0, 0.16);
+  --json-radius: 18px;
+  --json-radius-mobile: 15px;
+  --json-transition:
+    260ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  --json-image-transition:
+    600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --json-focus-ring:
+    0 0 0 3px rgba(139, 188, 255, 0.2);
+  --json-font-sans:
+    var(--sans, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif);
+  --json-font-serif:
+    var(--serif, "Playfair Display", Georgia, serif);
+}
+/* =========================================================
+   02. SECTION FOUNDATION
+========================================================= */
+.json-section {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  max-width: 100%;
+  scroll-margin-top: 100px;
+  overflow: hidden;
+}
+.json-section,
+.json-section * {
+  box-sizing: border-box;
+}
+.json-section img {
+  max-width: 100%;
+}
+.json-section .section-head {
+  position: relative;
+  min-width: 0;
+  margin-bottom: clamp(22px, 3vw, 32px);
+}
+.json-section .section-head h2 {
+  margin-top: 0;
+  color: var(--text, #f2f7ff);
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.json-section .section-head h2 span {
+  color: var(--blue-light, var(--json-blue-light));
+  background: linear-gradient(
+    100deg,
+    #e4efff 0%,
+    #a8ceff 48%,
+    #79b6ff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.json-section .section-head p {
+  max-width: 720px;
+  color: var(--muted, var(--json-blue-muted));
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+/* =========================================================
+   03. RESPONSIVE GRID
+========================================================= */
+.json-section-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: clamp(14px, 1.8vw, 22px);
+  width: 100%;
+  min-width: 0;
+}
+/* =========================================================
+   04. PREMIUM CARD
+========================================================= */
+.json-section-card {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 0.78fr)
+    minmax(0, 1.22fr);
+  align-items: stretch;
+  min-width: 0;
+  min-height: 235px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--border, var(--json-border));
+  border-radius: var(--json-radius);
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(102, 167, 245, 0.16),
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(38, 104, 178, 0.1),
+      transparent 52%
+    ),
+    linear-gradient(
+      145deg,
+      #112d4d 0%,
+      #0b2039 48%,
+      #071629 100%
+    );
+  box-shadow: var(--json-shadow);
+  transition:
+    transform var(--json-transition),
+    border-color var(--json-transition),
+    box-shadow var(--json-transition);
+  -webkit-tap-highlight-color: transparent;
+}
+/* Soft sapphire lighting. */
+.json-section-card::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    125deg,
+    rgba(158, 203, 255, 0.075) 0%,
+    transparent 34%,
+    transparent 72%,
+    rgba(83, 147, 222, 0.07) 100%
+  );
+  content: "";
+  opacity: 0.8;
+  pointer-events: none;
+  transition: opacity var(--json-transition);
+}
+/* Subtle top-edge reflection. */
+.json-section-card::after {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(217, 233, 255, 0.42),
+    transparent
+  );
+  content: "";
+  opacity: 0.48;
+  pointer-events: none;
+  transition: opacity var(--json-transition);
+}
+/* Hover effects are limited to devices with real hover. */
+.json-section-card:focus-within {
+  border-color: var(--json-blue-light);
+  box-shadow:
+    var(--json-focus-ring),
+    var(--json-shadow);
+}
+/* =========================================================
+   05. IMAGE PANEL
+========================================================= */
+.json-section-image-wrap {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(
+      145deg,
+      #16385e,
+      #0b1e35
+    );
+}
+.json-section-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 235px;
+  object-fit: cover;
+  object-position: center;
+  background: #0b1e35;
+  filter:
+    saturate(0.88)
+    brightness(0.84);
+  transform: scale(1.001);
+  transform-origin: center;
+  transition:
+    transform var(--json-image-transition),
+    filter 450ms ease;
+}
+/* Gradient overlay improves visual integration. */
+.json-section-image-wrap::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(4, 11, 21, 0.02) 0%,
+      rgba(4, 11, 21, 0.08) 55%,
+      rgba(4, 11, 21, 0.38) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(4, 11, 21, 0.22),
+      transparent 42%
+    );
+  content: "";
+  pointer-events: none;
+}
+/* =========================================================
+   06. NUMBER BADGE
+========================================================= */
+.json-section-number {
+  position: absolute;
+  z-index: 2;
+  top: 13px;
+  left: 13px;
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 33px;
+  padding: 5px 9px;
+  border: 1px solid rgba(217, 233, 255, 0.34);
+  border-radius: 10px;
+  background: rgba(4, 14, 27, 0.86);
+  color: #e3efff;
+  font-family: var(--json-font-sans);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.15);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition:
+    background var(--json-transition),
+    border-color var(--json-transition);
+}
+/* =========================================================
+   07. CONTENT PANEL
+========================================================= */
+.json-section-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(17px, 2vw, 23px);
+}
+.json-section-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(139, 188, 255, 0.28);
+  border-radius: 13px;
+  background: linear-gradient(
+    145deg,
+    rgba(139, 188, 255, 0.14),
+    rgba(139, 188, 255, 0.045)
+  );
+  color: var(--blue-light, var(--json-blue-light));
+  font-size: 19px;
+  line-height: 1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 5px 14px rgba(0, 0, 0, 0.08);
+  transition:
+    transform var(--json-transition),
+    border-color var(--json-transition),
+    background var(--json-transition);
+}
+/* =========================================================
+   08. CARD HEADING
+========================================================= */
+.json-section-content h3 {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 10px;
+  color: #f2f7ff;
+  font-family: var(--json-font-serif);
+  font-size: clamp(17px, 1.55vw, 22px);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.018em;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  transition: color var(--json-transition);
+}
+/* =========================================================
+   09. DESCRIPTION
+========================================================= */
+.json-section-content p {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 16px;
+  color: var(--muted, var(--json-blue-muted));
+  font-family: var(--json-font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+.json-section-content p a {
+  color: var(--json-blue-light);
+  text-decoration: underline;
+  text-decoration-color: rgba(217, 233, 255, 0.45);
+  text-underline-offset: 3px;
+}
+.json-section-content p a:hover {
+  text-decoration-color: currentColor;
+}
+/* =========================================================
+   10. CALL TO ACTION
+========================================================= */
+.json-section-link {
+  position: static;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin-top: auto;
+  padding: 9px 0 2px;
+  color: var(--blue-light, var(--json-blue-light));
+  font-family: var(--json-font-sans);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition:
+    color var(--json-transition),
+    gap var(--json-transition);
+}
+.json-section-link svg,
+.json-section-link .icon {
+  flex: 0 0 auto;
+  transition:
+    transform var(--json-transition);
+}
+/* Retain the existing full-card clickable behavior. */
+.json-section-link::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+}
+/* Keep a visible keyboard focus indicator. */
+.json-section-link:focus {
+  outline: none;
+}
+.json-section-link:focus-visible {
+  outline: 2px solid var(--json-blue-light);
+  outline-offset: -5px;
+  border-radius: 4px;
+}
+/* =========================================================
+   11. STATUS, EMPTY AND ERROR STATES
+========================================================= */
+.json-section-status {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid var(--json-border);
+  border-radius: 15px;
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(83, 147, 222, 0.1),
+      transparent 58%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(13, 35, 64, 0.92),
+      rgba(7, 22, 41, 0.96)
+    );
+  color: var(--json-blue-muted);
+  font-family: var(--json-font-sans);
+  font-size: 13px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.json-section-status a {
+  color: var(--json-blue-light);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: rgba(217, 233, 255, 0.5);
+  text-underline-offset: 4px;
+}
+/* =========================================================
+   12. LARGE DESKTOP
+========================================================= */
+@media (min-width: 1200px) {
+  .json-section-grid {
+    gap: 22px;
+  }
+  .json-section-card {
+    min-height: 250px;
+  }
+  .json-section-image {
+    min-height: 250px;
+  }
+  .json-section-content {
+    padding: 24px;
+  }
+  .json-section-icon {
+    width: 44px;
+    height: 44px;
+  }
+}
+/* =========================================================
+   13. TABLET
+   Two cards per row; image above content.
+========================================================= */
+@media (max-width: 800px) {
+  .json-section {
+    scroll-margin-top: 85px;
+  }
+  .json-section-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 15px;
+  }
+  .json-section-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 155px minmax(0, 1fr);
+    min-height: 0;
+  }
+  .json-section-image-wrap {
+    height: 155px;
+    min-height: 155px;
+  }
+  .json-section-image {
+    height: 100%;
+    min-height: 155px;
+  }
+  .json-section-content {
+    padding: 17px;
+  }
+  .json-section-icon {
+    width: 39px;
+    height: 39px;
+    margin-bottom: 12px;
+    font-size: 18px;
+  }
+  .json-section-content h3 {
+    font-size: clamp(17px, 2.3vw, 20px);
+  }
+  .json-section-content p {
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .json-section-link {
+    font-size: 12px;
+  }
+}
+/* =========================================================
+   14. SMALL PHONES
+   One card per row; image beside content.
+========================================================= */
+@media (max-width: 430px) {
+  .json-section {
+    scroll-margin-top: 76px;
+  }
+  .json-section .section-head {
+    margin-bottom: 20px;
+  }
+  .json-section-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+  }
+  .json-section-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: minmax(190px, auto);
+    min-height: 190px;
+    border-radius: var(--json-radius-mobile);
+  }
+  .json-section-image-wrap {
+    width: 100%;
+    height: 100%;
+    min-height: 190px;
+  }
+  .json-section-image {
+    width: 100%;
+    height: 100%;
+    min-height: 190px;
+  }
+  .json-section-image-wrap::after {
+    background: linear-gradient(
+      90deg,
+      rgba(4, 11, 21, 0.02),
+      rgba(4, 11, 21, 0.22)
+    );
+  }
+  .json-section-number {
+    top: 9px;
+    left: 9px;
+    min-width: 31px;
+    min-height: 29px;
+    padding: 4px 7px;
+    border-radius: 8px;
+    font-size: 9px;
+  }
+  .json-section-content {
+    padding: 14px 13px;
+  }
+  .json-section-icon {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  .json-section-content h3 {
+    margin-bottom: 7px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .json-section-content p {
+    margin-bottom: 11px;
+    font-size: 11px;
+    line-height: 1.72;
+  }
+  .json-section-link {
+    gap: 6px;
+    padding-top: 7px;
+    font-size: 11px;
+  }
+  .json-section-status {
+    padding: 17px;
+    font-size: 12px;
+  }
+}
+/* =========================================================
+   15. EXTRA-SMALL PHONES
+========================================================= */
+@media (max-width: 350px) {
+  .json-section-grid {
+    gap: 10px;
+  }
+  .json-section-card {
+    grid-template-columns: 94px minmax(0, 1fr);
+    grid-template-rows: minmax(180px, auto);
+    min-height: 180px;
+  }
+  .json-section-image-wrap,
+  .json-section-image {
+    min-height: 180px;
+  }
+  .json-section-content {
+    padding: 12px 10px;
+  }
+  .json-section-icon {
+    width: 31px;
+    height: 31px;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+  .json-section-content h3 {
+    font-size: 15px;
+  }
+  .json-section-content p {
+    font-size: 10px;
+    line-height: 1.65;
+  }
+  .json-section-link {
+    gap: 5px;
+    font-size: 10px;
+  }
+}
+/* =========================================================
+   16. HOVER-ENABLED DEVICES
+   Avoid hover-only styling on touchscreens.
+========================================================= */
+@media (hover: hover) and (pointer: fine) {
+  .json-section-card:hover {
+    z-index: 3;
+    transform: translate3d(0, -4px, 0);
+    border-color: var(--json-border-hover);
+    box-shadow: var(--json-shadow-hover);
+  }
+  .json-section-card:hover::before,
+  .json-section-card:hover::after {
+    opacity: 1;
+  }
+  .json-section-card:hover .json-section-image {
+    transform: scale(1.055);
+    filter:
+      saturate(1.02)
+      brightness(0.96);
+  }
+  .json-section-card:hover .json-section-number {
+    border-color: rgba(217, 233, 255, 0.55);
+    background: rgba(13, 38, 67, 0.93);
+  }
+  .json-section-card:hover .json-section-icon {
+    transform: translateY(-2px);
+    border-color: rgba(139, 188, 255, 0.52);
+    background: linear-gradient(
+      145deg,
+      rgba(139, 188, 255, 0.21),
+      rgba(139, 188, 255, 0.07)
+    );
+  }
+  .json-section-card:hover .json-section-content h3 {
+    color: #ffffff;
+  }
+  .json-section-link:hover {
+    gap: 12px;
+    color: #ffffff;
+    text-decoration: underline;
+    text-decoration-color: rgba(217, 233, 255, 0.75);
+    text-underline-offset: 4px;
+  }
+  .json-section-link:hover svg,
+  .json-section-link:hover .icon {
+    transform: translateX(2px);
+  }
+  .json-section-status a:hover {
+    color: #ffffff;
+    text-decoration-color: currentColor;
+  }
+}
+/* =========================================================
+   17. TOUCH DEVICES
+========================================================= */
+@media (hover: none) {
+  .json-section-card:hover {
+    transform: none;
+    box-shadow: var(--json-shadow);
+  }
+  .json-section-card:hover .json-section-image {
+    transform: none;
+    filter:
+      saturate(0.88)
+      brightness(0.84);
+  }
+  .json-section-card:hover .json-section-icon {
+    transform: none;
+  }
+  .json-section-card:hover .json-section-content h3 {
+    color: #f2f7ff;
+  }
+}
+/* =========================================================
+   18. REDUCED MOTION
+========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .json-section-card,
+  .json-section-card::before,
+  .json-section-card::after,
+  .json-section-image,
+  .json-section-number,
+  .json-section-icon,
+  .json-section-content h3,
+  .json-section-link,
+  .json-section-link svg,
+  .json-section-link .icon {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .json-section-card:hover,
+  .json-section-card:hover .json-section-image,
+  .json-section-card:hover .json-section-icon {
+    transform: none;
+  }
+}
+/* =========================================================
+   19. HIGH-CONTRAST ACCESSIBILITY
+========================================================= */
+@media (forced-colors: active) {
+  .json-section-card,
+  .json-section-status {
+    border: 1px solid CanvasText;
+  }
+  .json-section-content h3,
+  .json-section-content p,
+  .json-section-link,
+  .json-section-number,
+  .json-section-status {
+    color: CanvasText;
+  }
+  .json-section-link:focus-visible {
+    outline: 2px solid Highlight;
+  }
+  .json-section-card::before,
+  .json-section-card::after,
+  .json-section-image-wrap::after {
+    display: none;
+  }
+}
+/* =========================================================
+   END | MEDORBITS HOMEPAGE SECTION DESIGN SYSTEM
+========================================================= */

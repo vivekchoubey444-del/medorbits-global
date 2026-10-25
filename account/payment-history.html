@@ -1,24 +1,2176 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Payment History | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="Review your MedOrbits payment history, transaction records, payment statuses and available receipts.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Payment History | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/payment-history.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme:dark;
+      --bg:#071629;
+      --bg-soft:#0b203b;
+      --surface:#102947;
+      --surface-2:#153657;
+      --surface-3:#081a2e;
+      --accent:#8bbcff;
+      --accent-bright:#d9e9ff;
+      --text:#f2f7ff;
+      --text-soft:#c7d8ee;
+      --muted:#9db2cc;
+      --border:rgba(139,188,255,.23);
+      --success:#a8f0d0;
+      --warning:#ffdfa2;
+      --danger:#ffc1ca;
+      --radius:16px;
+      --shadow:0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *,*::before,*::after { box-sizing:border-box; }
+
+    html {
+      scroll-behavior:smooth;
+      scroll-padding-top:100px;
+    }
+
+    body {
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%,rgba(40,102,170,.2),transparent 35%),
+        radial-gradient(ellipse at 90% 40%,rgba(98,155,221,.08),transparent 32%),
+        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+      color:var(--text);
+      font:400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display:block;max-width:100%; }
+    a { color:inherit;text-decoration:none; }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible {
+      outline:2px solid var(--accent-bright);
+      outline-offset:4px;
+    }
+
+    [hidden] { display:none!important; }
+
+    .container {
+      width:min(1180px,calc(100% - 40px));
+      margin-inline:auto;
+    }
+
+    .skip-link {
+      position:absolute;
+      top:-70px;
+      left:14px;
+      z-index:10000;
+      padding:10px 15px;
+      border-radius:8px;
+      background:var(--accent-bright);
+      color:var(--bg);
+    }
+
+    .skip-link:focus { top:12px; }
+
+    .announcement {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:8px 15px;
+      border-bottom:1px solid rgba(139,188,255,.13);
+      background:#040b15;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-align:center;
+      text-transform:uppercase;
+    }
+
+    .spark { color:var(--accent); }
+
+    .site-header {
+      position:sticky;
+      top:0;
+      z-index:1000;
+      border-bottom:1px solid var(--border);
+      background:rgba(5,14,27,.94);
+      backdrop-filter:blur(18px);
+      transition:box-shadow .2s,background .2s;
+    }
+
+    .site-header.scrolled {
+      background:rgba(4,11,21,.98);
+      box-shadow:0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height:78px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:22px;
+    }
+
+    .brand {
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
+    .brand img {
+      width:45px;
+      height:45px;
+      object-fit:contain;
+    }
+
+    .brand strong {
+      display:block;
+      color:var(--accent-bright);
+      font-size:15px;
+      letter-spacing:.13em;
+      line-height:1.35;
+    }
+
+    .brand small {
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .menu-toggle {
+      display:none;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:transparent;
+      color:var(--accent-bright);
+      cursor:pointer;
+    }
+
+    .main-nav {
+      display:flex;
+      align-items:center;
+      gap:17px;
+      font-size:11px;
+    }
+
+    .main-nav>a,.nav-trigger {
+      color:var(--text-soft);
+      white-space:nowrap;
+    }
+
+    .main-nav>a:hover,.nav-trigger:hover { color:var(--accent-bright); }
+
+    .nav-group { position:relative; }
+
+    .nav-trigger {
+      padding:12px 0;
+      border:0;
+      background:transparent;
+      cursor:pointer;
+    }
+
+    .nav-trigger span { margin-left:4px;color:var(--accent); }
+
+    .dropdown {
+      position:absolute;
+      top:100%;
+      left:-12px;
+      display:none;
+      width:245px;
+      padding:9px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#102947;
+      box-shadow:var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display:grid; }
+
+    .dropdown a {
+      padding:10px 11px;
+      border-radius:7px;
+      color:var(--text-soft);
+      font-size:11px;
+    }
+
+    .dropdown a:hover {
+      background:rgba(139,188,255,.09);
+      color:var(--accent-bright);
+    }
+
+    .nav-cta,.btn {
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      min-height:41px;
+      padding:10px 15px;
+      border:1px solid var(--accent);
+      border-radius:9px;
+      background:linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color:#071629!important;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s,filter .2s;
+    }
+
+    .btn:hover,.nav-cta:hover {
+      transform:translateY(-1px);
+      filter:brightness(1.06);
+    }
+
+    .btn:disabled {
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .btn-outline {
+      border-color:rgba(199,216,238,.32);
+      background:transparent;
+      color:var(--accent-bright)!important;
+    }
+
+    .btn-small {
+      min-height:34px;
+      padding:7px 10px;
+      font-size:10px;
+    }
+
+    .page-main {
+      position:relative;
+      isolation:isolate;
+      min-height:70vh;
+      padding:40px 0 65px;
+      overflow:hidden;
+    }
+
+    .page-main::before {
+      position:absolute;
+      z-index:-1;
+      inset:0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content:"";
+      pointer-events:none;
+    }
+
+    .breadcrumbs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:22px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .breadcrumbs a { color:var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration:underline; }
+
+    .page-heading {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:22px;
+      margin-bottom:28px;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+
+    .eyebrow::before {
+      width:25px;
+      height:1px;
+      background:var(--accent);
+      content:"";
+    }
+
+    .page-heading h1 {
+      margin:10px 0 9px;
+      font:600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing:-.025em;
+      overflow-wrap:anywhere;
+    }
+
+    .page-heading h1 span { color:var(--accent-bright); }
+
+    .page-heading p {
+      max-width:690px;
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.8;
+    }
+
+    .heading-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      flex-shrink:0;
+    }
+
+    .layout {
+      display:grid;
+      grid-template-columns:240px minmax(0,1fr);
+      align-items:start;
+      gap:19px;
+    }
+
+    .sidebar,.panel {
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
+      box-shadow:0 18px 48px rgba(0,0,0,.18);
+    }
+
+    .sidebar {
+      position:sticky;
+      top:100px;
+      padding:19px;
+    }
+
+    .account-user {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding-bottom:17px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .avatar {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      height:43px;
+      border:1px solid rgba(139,188,255,.35);
+      border-radius:13px;
+      background:linear-gradient(145deg,#173d64,#0b203b);
+      color:var(--accent-bright);
+      font:600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .account-user strong {
+      display:block;
+      font-size:11px;
+      overflow-wrap:anywhere;
+    }
+
+    .account-user small {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .account-nav {
+      display:grid;
+      gap:5px;
+      margin:15px 0;
+    }
+
+    .account-nav a {
+      padding:10px 11px;
+      border:1px solid transparent;
+      border-radius:8px;
+      color:var(--text-soft);
+      font-size:10px;
+    }
+
+    .account-nav a:hover,.account-nav a.active {
+      border-color:rgba(139,188,255,.2);
+      background:rgba(139,188,255,.09);
+      color:var(--accent-bright);
+    }
+
+    .sidebar-note {
+      margin:15px 0 0;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.8;
+    }
+
+    .sidebar-note a {
+      color:var(--accent-bright);
+      text-decoration:underline;
+      text-underline-offset:3px;
+    }
+
+    .content {
+      display:grid;
+      gap:19px;
+      min-width:0;
+    }
+
+    .panel { padding:clamp(17px,2.5vw,25px); }
+
+    .panel-heading {
+      display:flex;
+      align-items:flex-start;
+      gap:13px;
+      margin-bottom:20px;
+    }
+
+    .panel-icon {
+      display:grid;
+      place-items:center;
+      flex:0 0 43px;
+      width:43px;
+      height:43px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(139,188,255,.08);
+      color:var(--accent-bright);
+      font-size:19px;
+    }
+
+    .panel-heading h2 {
+      margin:0 0 5px;
+      font:600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.8;
+    }
+
+    .summary-grid {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:20px;
+    }
+
+    .summary-card {
+      min-width:0;
+      padding:16px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(139,188,255,.045);
+    }
+
+    .summary-icon {
+      display:inline-block;
+      margin-bottom:7px;
+      color:var(--accent);
+      font-size:17px;
+    }
+
+    .summary-card small {
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.6;
+    }
+
+    .summary-card strong {
+      display:block;
+      margin-top:7px;
+      color:var(--accent-bright);
+      font-size:24px;
+      line-height:1.35;
+      overflow-wrap:anywhere;
+    }
+
+    .summary-card strong.success-text { color:var(--success); }
+
+    .filters {
+      display:grid;
+      grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .field-group { min-width:0; }
+
+    .field-label {
+      display:block;
+      margin-bottom:6px;
+      color:var(--text-soft);
+      font-size:9px;
+      font-weight:700;
+    }
+
+    .field {
+      display:block;
+      width:100%;
+      min-width:0;
+      min-height:41px;
+      padding:10px 11px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:var(--surface-3);
+      color:var(--text);
+      font-size:10px;
+    }
+
+    .field::placeholder { color:#8198b4; }
+
+    .field option {
+      background:var(--surface-3);
+      color:var(--text);
+    }
+
+    .toolbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:15px;
+    }
+
+    .filter-tabs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+
+    .filter-button {
+      min-height:35px;
+      padding:8px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:rgba(8,26,46,.8);
+      color:var(--text-soft);
+      font-size:10px;
+      cursor:pointer;
+    }
+
+    .filter-button:hover,.filter-button.active {
+      border-color:rgba(139,188,255,.48);
+      background:rgba(139,188,255,.13);
+      color:var(--accent-bright);
+    }
+
+    .toolbar-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .toolbar-actions .btn {
+      min-height:35px;
+      padding:8px 11px;
+      font-size:10px;
+    }
+
+    .form-status {
+      display:none;
+      margin-bottom:16px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      font-size:10px;
+      line-height:1.8;
+      overflow-wrap:anywhere;
+    }
+
+    .form-status.visible { display:block; }
+
+    .form-status.info {
+      border-color:rgba(139,188,255,.3);
+      background:rgba(139,188,255,.06);
+      color:var(--accent-bright);
+    }
+
+    .form-status.success {
+      border-color:rgba(168,240,208,.3);
+      background:rgba(168,240,208,.06);
+      color:var(--success);
+    }
+
+    .form-status.error {
+      border-color:rgba(255,193,202,.3);
+      background:rgba(255,193,202,.06);
+      color:var(--danger);
+    }
+
+    .table-wrap {
+      width:100%;
+      overflow-x:auto;
+      border:1px solid var(--border);
+      border-radius:11px;
+    }
+
+    .payment-table {
+      width:100%;
+      border-collapse:collapse;
+      text-align:left;
+      font-size:10px;
+    }
+
+    .payment-table th {
+      padding:13px 12px;
+      background:rgba(139,188,255,.07);
+      color:var(--accent-bright);
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.04em;
+      white-space:nowrap;
+    }
+
+    .payment-table td {
+      padding:14px 12px;
+      border-top:1px solid rgba(139,188,255,.13);
+      color:var(--text-soft);
+      vertical-align:top;
+    }
+
+    .payment-table tbody tr:hover { background:rgba(139,188,255,.035); }
+
+    .transaction-title {
+      display:block;
+      color:var(--text);
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+
+    .transaction-subtitle {
+      display:block;
+      margin-top:4px;
+      color:var(--muted);
+      font-size:9px;
+      overflow-wrap:anywhere;
+    }
+
+    .amount {
+      color:var(--accent-bright);
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .status-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 8px;
+      border:1px solid var(--border);
+      border-radius:6px;
+      font-size:8px;
+      font-weight:700;
+      white-space:nowrap;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .status-pill::before {
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:currentColor;
+      content:"";
+    }
+
+    .status-pill.paid,.status-pill.success,.status-pill.completed {
+      border-color:rgba(168,240,208,.24);
+      background:rgba(168,240,208,.06);
+      color:var(--success);
+    }
+
+    .status-pill.pending,.status-pill.processing {
+      border-color:rgba(255,223,162,.25);
+      background:rgba(255,223,162,.06);
+      color:var(--warning);
+    }
+
+    .status-pill.failed,.status-pill.cancelled,.status-pill.refunded {
+      border-color:rgba(255,193,202,.25);
+      background:rgba(255,193,202,.06);
+      color:var(--danger);
+    }
+
+    .table-action {
+      display:inline-block;
+      padding:4px 0;
+      border:0;
+      background:transparent;
+      color:var(--accent-bright);
+      font-size:9px;
+      cursor:pointer;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    .table-action:hover { text-decoration:underline; }
+
+    .table-action:disabled {
+      cursor:not-allowed;
+      opacity:.5;
+    }
+
+    .empty-state {
+      padding:40px 20px;
+      border:1px dashed rgba(139,188,255,.25);
+      border-radius:12px;
+      text-align:center;
+    }
+
+    .empty-icon {
+      display:grid;
+      place-items:center;
+      width:62px;
+      height:62px;
+      margin:0 auto 15px;
+      border:1px solid var(--border);
+      border-radius:20px;
+      background:rgba(139,188,255,.07);
+      color:var(--accent-bright);
+      font-size:25px;
+    }
+
+    .empty-state h3 {
+      margin:0 0 7px;
+      font:600 21px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .empty-state p {
+      max-width:410px;
+      margin:0 auto;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .pagination {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .pagination p {
+      margin:0;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .pagination-actions {
+      display:flex;
+      gap:8px;
+    }
+
+    .pagination-actions .btn { min-height:34px;padding:7px 11px; }
+
+    .details-grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .detail-card {
+      min-width:0;
+      padding:15px;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:rgba(8,26,46,.55);
+    }
+
+    .detail-card small {
+      display:block;
+      margin-bottom:5px;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .detail-card strong {
+      display:block;
+      color:var(--text-soft);
+      font-size:11px;
+      overflow-wrap:anywhere;
+    }
+
+    .receipt-note {
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      margin-top:16px;
+      padding:15px;
+      border:1px solid rgba(139,188,255,.2);
+      border-radius:11px;
+      background:rgba(139,188,255,.045);
+    }
+
+    .receipt-note .note-icon {
+      color:var(--accent-bright);
+      font-size:18px;
+    }
+
+    .receipt-note p {
+      margin:0;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .receipt-note a {
+      color:var(--accent-bright);
+      text-decoration:underline;
+      text-underline-offset:3px;
+    }
+
+    .site-footer {
+      padding:43px 0 0;
+      border-top:1px solid var(--border);
+      background:#040b15;
+    }
+
+    .footer-grid {
+      display:grid;
+      grid-template-columns:1.4fr repeat(4,minmax(0,1fr));
+      gap:23px;
+      padding-bottom:28px;
+    }
+
+    .footer-brand p {
+      max-width:270px;
+      margin-top:12px;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-grid h2 {
+      margin:0 0 12px;
+      padding-bottom:9px;
+      border-bottom:1px solid rgba(139,188,255,.17);
+      color:var(--accent-bright);
+      font-size:9px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .footer-links a {
+      display:block;
+      margin:8px 0;
+      color:var(--muted);
+      font-size:10px;
+      overflow-wrap:anywhere;
+    }
+
+    .footer-links a:hover { color:var(--accent-bright); }
+
+    .disclaimer {
+      margin:0 0 15px;
+      padding:13px 15px;
+      border-left:2px solid var(--accent);
+      border-radius:0 8px 8px 0;
+      background:rgba(16,41,71,.4);
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.9;
+    }
+
+    .footer-bottom {
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:17px 0;
+      border-top:1px solid rgba(139,188,255,.13);
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    @media(max-width:1100px) {
+      .menu-toggle { display:inline-flex; }
+
+      .main-nav {
+        position:absolute;
+        top:100%;
+        right:0;
+        left:0;
+        display:none;
+        align-items:stretch;
+        flex-direction:column;
+        gap:4px;
+        max-height:calc(100vh - 90px);
+        padding:15px 22px 20px;
+        overflow-y:auto;
+        border-bottom:1px solid var(--border);
+        background:#071629;
+      }
+
+      .main-nav.open { display:flex; }
+
+      .main-nav>a,.nav-trigger {
+        display:block;
+        width:100%;
+        padding:11px 8px;
+        text-align:left;
+      }
+
+      .dropdown {
+        position:static;
+        width:100%;
+        margin-bottom:5px;
+        box-shadow:none;
+      }
+
+      .nav-cta { width:100%; }
+      .footer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column:1/-1; }
+    }
+
+    @media(max-width:800px) {
+      .container { width:calc(100% - 30px); }
+      .nav-wrap { min-height:69px; }
+      .layout { grid-template-columns:1fr; }
+      .sidebar { position:static; }
+      .account-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+      .page-heading {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .heading-actions { width:100%; }
+      .heading-actions .btn { flex:1; }
+      .filters { grid-template-columns:1fr 1fr; }
+      .filters .field-group:first-child { grid-column:1/-1; }
+    }
+
+    @media(max-width:560px) {
+      .announcement { gap:6px;font-size:8px;letter-spacing:.04em; }
+      .page-main { padding:30px 0 45px; }
+      .page-heading h1 { font-size:clamp(31px,9vw,42px); }
+      .sidebar,.panel { padding:15px; }
+
+      .account-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+      .heading-actions {
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .heading-actions .btn { width:100%; }
+      .summary-grid { gap:7px; }
+      .summary-card { padding:11px; }
+      .summary-card strong { font-size:19px; }
+
+      .filters { grid-template-columns:1fr; }
+      .filters .field-group:first-child { grid-column:auto; }
+
+      .toolbar { align-items:stretch; }
+      .toolbar-actions { display:grid;grid-template-columns:1fr 1fr; }
+      .toolbar-actions .btn { width:100%; }
+
+      .table-wrap { overflow:visible;border:0; }
+      .payment-table,.payment-table tbody { display:block;width:100%; }
+      .payment-table thead { display:none; }
+
+      .payment-table tr {
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:12px;
+        margin-bottom:12px;
+        padding:14px;
+        border:1px solid var(--border);
+        border-radius:11px;
+        background:rgba(8,26,46,.65);
+      }
+
+      .payment-table td {
+        display:block;
+        min-width:0;
+        padding:0;
+        border:0;
+        overflow-wrap:anywhere;
+      }
+
+      .payment-table td::before {
+        display:block;
+        margin-bottom:4px;
+        color:var(--muted);
+        font-size:8px;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:.04em;
+        content:attr(data-label);
+      }
+
+      .payment-table td:first-child { grid-column:1/-1; }
+      .payment-table td:last-child { grid-column:1/-1; }
+
+      .details-grid { grid-template-columns:1fr; }
+      .pagination { align-items:stretch;flex-direction:column; }
+      .pagination-actions .btn { flex:1; }
+
+      .footer-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:21px 15px;
+      }
+
+      .footer-brand { grid-column:1/-1; }
+      .footer-bottom { flex-direction:column; }
+    }
+
+    @media(max-width:360px) {
+      .container { width:calc(100% - 22px); }
+      .brand img { width:37px;height:37px; }
+      .brand strong { font-size:13px; }
+      .brand small { font-size:7px; }
+      .summary-card strong { font-size:17px; }
+      .footer-grid { grid-template-columns:1fr; }
+      .footer-brand { grid-column:auto; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior:auto; }
+      *,*::before,*::after {
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Payment History</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about payment history. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a href="/account/index.html">My Account</a>
+        <a href="/account/applications.html">My Applications</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/account/index.html">My account</a>
+        <span aria-hidden="true">›</span>
+        <a href="/account/payments.html">Payments</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Payment history</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Personal workspace · Transactions</span>
+          <h1>Payment <span>history</span></h1>
+          <p>
+            Review payments associated with your MedOrbits account, check
+            transaction statuses and access receipts provided by the payment service.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/account/payments.html">
+            ＄ Payments
+          </a>
+          <a class="btn" href="/account/index.html">
+            My account ↗
+          </a>
+        </div>
+      </header>
+
+      <div class="layout">
+
+        <aside class="sidebar" aria-label="Account navigation">
+          <div class="account-user">
+            <div class="avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong>My MedOrbits account</strong>
+              <small>Profile and account services</small>
+            </div>
+          </div>
+
+          <nav class="account-nav" aria-label="Account menu">
+            <a href="/account/index.html">▦ &nbsp; Account home</a>
+            <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
+            <a href="/account/edit-profile.html">◈ &nbsp; Edit profile</a>
+            <a href="/account/settings.html">⚙ &nbsp; Account settings</a>
+            <a href="/account/applications.html">▤ &nbsp; My applications</a>
+            <a href="/account/documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
+            <a href="/account/payments.html">＄ &nbsp; Payments</a>
+            <a class="active" href="/account/payment-history.html" aria-current="page">▤ &nbsp; Payment history</a>
+            <a href="/account/change-password.html">◉ &nbsp; Change password</a>
+            <a href="/account/verify-phone.html">☎ &nbsp; Verify phone</a>
+            <a href="/account/delete-account.html">⊗ &nbsp; Delete account</a>
+          </nav>
+
+          <p class="sidebar-note">
+            Keep transaction references and payment confirmations for your records.
+            Never share payment passwords, OTPs or card security codes.
+            <br>
+            <a href="/pages/contact.html">Contact support ↗</a>
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <section class="panel" aria-labelledby="historyTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">＄</div>
+              <div>
+                <h2 id="historyTitle">Your transactions</h2>
+                <p>Payment records are retrieved from the configured account service.</p>
+              </div>
+            </div>
+
+            <div class="form-status" id="pageStatus" role="status" aria-live="polite"></div>
+
+            <div class="summary-grid" aria-label="Payment summary">
+              <div class="summary-card">
+                <span class="summary-icon" aria-hidden="true">↗</span>
+                <small>Successful payments</small>
+                <strong id="successfulCount">--</strong>
+              </div>
+              <div class="summary-card">
+                <span class="summary-icon" aria-hidden="true">＄</span>
+                <small>Total paid</small>
+                <strong id="totalPaid">--</strong>
+              </div>
+              <div class="summary-card">
+                <span class="summary-icon" aria-hidden="true">◷</span>
+                <small>Pending payments</small>
+                <strong id="pendingCount">--</strong>
+              </div>
+            </div>
+
+            <div class="filters">
+              <div class="field-group">
+                <label class="field-label" for="searchInput">Search transactions</label>
+                <input class="field" id="searchInput" type="search"
+                       placeholder="Transaction ID, service or reference"
+                       autocomplete="off">
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="dateFrom">From date</label>
+                <input class="field" id="dateFrom" type="date">
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="dateTo">To date</label>
+                <input class="field" id="dateTo" type="date">
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <div class="filter-tabs" role="group" aria-label="Filter payment status">
+                <button class="filter-button active" type="button" data-filter="all" aria-pressed="true">All</button>
+                <button class="filter-button" type="button" data-filter="success" aria-pressed="false">Successful</button>
+                <button class="filter-button" type="button" data-filter="pending" aria-pressed="false">Pending</button>
+                <button class="filter-button" type="button" data-filter="failed" aria-pressed="false">Failed</button>
+                <button class="filter-button" type="button" data-filter="refunded" aria-pressed="false">Refunded</button>
+              </div>
+
+              <div class="toolbar-actions">
+                <button class="btn btn-outline" id="resetFiltersButton" type="button">Reset filters</button>
+                <button class="btn" id="refreshButton" type="button">↻ Refresh</button>
+              </div>
+            </div>
+
+            <div class="table-wrap" id="tableWrap" hidden>
+              <table class="payment-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Transaction</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Payment method</th>
+                    <th scope="col">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon" aria-hidden="true">◌</div>
+              <h3 id="emptyTitle">Loading payment history</h3>
+              <p id="emptyDescription">Please wait while your transaction records are retrieved.</p>
+            </div>
+
+            <div class="pagination" id="pagination" hidden>
+              <p id="resultCount">Showing 0 transactions</p>
+              <div class="pagination-actions">
+                <button class="btn btn-outline btn-small" id="previousPage" type="button">← Previous</button>
+                <button class="btn btn-outline btn-small" id="nextPage" type="button">Next →</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="detailsTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▤</div>
+              <div>
+                <h2 id="detailsTitle">Payment record details</h2>
+                <p>Select a transaction to inspect its available details.</p>
+              </div>
+            </div>
+
+            <div class="details-grid" id="detailsGrid">
+              <div class="detail-card">
+                <small>Transaction ID</small>
+                <strong id="detailTransactionId">Select a transaction</strong>
+              </div>
+              <div class="detail-card">
+                <small>Payment status</small>
+                <strong id="detailStatus">--</strong>
+              </div>
+              <div class="detail-card">
+                <small>Service or description</small>
+                <strong id="detailDescription">--</strong>
+              </div>
+              <div class="detail-card">
+                <small>Payment reference</small>
+                <strong id="detailReference">--</strong>
+              </div>
+              <div class="detail-card">
+                <small>Payment date</small>
+                <strong id="detailDate">--</strong>
+              </div>
+              <div class="detail-card">
+                <small>Amount and currency</small>
+                <strong id="detailAmount">--</strong>
+              </div>
+            </div>
+
+            <div class="toolbar-actions" style="margin-top:16px">
+              <a class="btn btn-outline" id="receiptButton" href="/pages/contact.html" hidden>
+                View receipt ↗
+              </a>
+              <button class="btn btn-outline" id="clearDetailsButton" type="button">
+                Clear selection
+              </button>
+            </div>
+
+            <div class="receipt-note">
+              <span class="note-icon" aria-hidden="true">ⓘ</span>
+              <p>
+                Receipts are available only when provided by the configured
+                payment service. For a missing receipt, duplicate charge or
+                payment-status concern, contact
+                <a href="/pages/contact.html">MedOrbits support</a> with your
+                transaction reference. Never include full card numbers or security codes.
+              </p>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>MedOrbits</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        Payment history is account-specific. Transaction status, amounts and
+        receipts must be verified against the payment provider and server-side
+        records. This page does not initiate charges or issue refunds.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = id => document.getElementById(id);
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      /* Responsive site navigation */
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        if (!isOpen) closeNavigation();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive:true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      /*
+       * Suggested backend endpoints:
+       *
+       * GET /api/payments/history
+       *
+       * Example response:
+       * {
+       *   "transactions": [{
+       *     "id": "transaction-id",
+       *     "transactionId": "MO-2026-0001",
+       *     "description": "Application guidance service",
+       *     "amount": 1500,
+       *     "currency": "INR",
+       *     "status": "success",
+       *     "method": "UPI",
+       *     "reference": "provider-reference",
+       *     "createdAt": "2026-10-25T10:00:00Z",
+       *     "receiptUrl": "/api/payments/transaction-id/receipt"
+       *   }]
+       * }
+       *
+       * Configure window.MEDORBITS_CONFIG.paymentHistoryEndpoint in
+       * /assets/js/config.js to override the default endpoint.
+       *
+       * The server must authenticate the user and return only transactions
+       * owned by that user. Verify payment states using trusted provider
+       * records or signed webhooks; never trust client-supplied payment status.
+       */
+
+      const HISTORY_ENDPOINT =
+        window.MEDORBITS_CONFIG?.paymentHistoryEndpoint ||
+        "/api/payments/history";
+
+      const pageStatus = $("pageStatus");
+      const tableWrap = $("tableWrap");
+      const tableBody = $("paymentTableBody");
+      const emptyState = $("emptyState");
+      const refreshButton = $("refreshButton");
+      const resetFiltersButton = $("resetFiltersButton");
+      const searchInput = $("searchInput");
+      const dateFrom = $("dateFrom");
+      const dateTo = $("dateTo");
+      const pagination = $("pagination");
+      const resultCount = $("resultCount");
+      const previousPage = $("previousPage");
+      const nextPage = $("nextPage");
+
+      const PAGE_SIZE = 10;
+      let transactions = [];
+      let activeFilter = "all";
+      let currentPage = 1;
+      let loading = false;
+      let selectedTransactionId = null;
+
+      function showStatus(message, type = "info") {
+        pageStatus.textContent = message;
+        pageStatus.className = "form-status visible " + type;
+      }
+
+      function clearStatus() {
+        pageStatus.textContent = "";
+        pageStatus.className = "form-status";
+      }
+
+      async function getJson(url) {
+        const response = await fetch(url, {
+          method:"GET",
+          credentials:"same-origin",
+          cache:"no-store",
+          headers:{ "Accept":"application/json" }
+        });
+
+        let data = {};
+
+        if (response.status !== 204) {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            data = await response.json().catch(() => ({}));
+          } else {
+            await response.text().catch(() => "");
+          }
+        }
+
+        if (!response.ok) {
+          const message = typeof data.message === "string"
+            ? data.message
+            : response.status === 401
+              ? "Your session may have expired. Sign in to view payment history."
+              : response.status === 403
+                ? "You are not permitted to view these payment records."
+                : response.status === 404
+                  ? "The payment history service is not configured on the server."
+                  : response.status === 429
+                    ? "Too many requests. Please wait and try again."
+                    : "Payment history could not be loaded. Please try again.";
+
+          throw new Error(message);
+        }
+
+        return data;
+      }
+
+      function safeDate(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
+      function formatDate(value) {
+        const date = safeDate(value);
+        if (!date) return "Date unavailable";
+
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle:"medium",
+          timeStyle:"short"
+        }).format(date);
+      }
+
+      function normalizeStatus(value) {
+        const status = String(value || "").toLowerCase().trim();
+
+        if (["paid","success","successful","completed","succeeded"].includes(status)) {
+          return "success";
+        }
+
+        if (["pending","processing","created","initiated","awaiting_payment"].includes(status)) {
+          return "pending";
+        }
+
+        if (["refunded","partially_refunded"].includes(status)) {
+          return "refunded";
+        }
+
+        if (["failed","failure","cancelled","canceled","declined","expired"].includes(status)) {
+          return "failed";
+        }
+
+        return "unknown";
+      }
+
+      function statusLabel(status) {
+        const labels = {
+          success:"Successful",
+          pending:"Pending",
+          failed:"Failed",
+          refunded:"Refunded",
+          unknown:"Unconfirmed"
+        };
+
+        return labels[normalizeStatus(status)] || "Unconfirmed";
+      }
+
+      function formatMoney(amount, currency) {
+        const numericAmount = Number(amount);
+        const code = typeof currency === "string" && /^[A-Z]{3}$/.test(currency)
+          ? currency
+          : "INR";
+
+        if (!Number.isFinite(numericAmount)) return "Not available";
+
+        try {
+          return new Intl.NumberFormat("en-IN", {
+            style:"currency",
+            currency:code,
+            maximumFractionDigits:2
+          }).format(numericAmount);
+        } catch {
+          return code + " " + numericAmount.toFixed(2);
+        }
+      }
+
+      function transactionId(transaction) {
+        const value = transaction.transactionId ?? transaction.id;
+        return value == null ? "" : String(value);
+      }
+
+      function transactionDate(transaction) {
+        return safeDate(
+          transaction.createdAt ||
+          transaction.created_at ||
+          transaction.paidAt ||
+          transaction.date
+        );
+      }
+
+      function transactionStatus(transaction) {
+        return normalizeStatus(
+          transaction.status ||
+          transaction.paymentStatus ||
+          transaction.payment_status
+        );
+      }
+
+      function transactionAmount(transaction) {
+        return transaction.amount ?? transaction.total ?? transaction.amountPaid;
+      }
+
+      function transactionCurrency(transaction) {
+        return transaction.currency || "INR";
+      }
+
+      function createElement(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = String(text);
+        return element;
+      }
+
+      function createCell(label, content) {
+        const td = document.createElement("td");
+        td.dataset.label = label;
+        if (content instanceof Node) {
+          td.append(content);
+        } else {
+          td.textContent = String(content ?? "--");
+        }
+        return td;
+      }
+
+      function updateSummary() {
+        const successful = transactions.filter(item =>
+          transactionStatus(item) === "success"
+        );
+
+        const pending = transactions.filter(item =>
+          transactionStatus(item) === "pending"
+        );
+
+        const total = successful.reduce((sum, item) => {
+          const amount = Number(transactionAmount(item));
+          return sum + (Number.isFinite(amount) ? amount : 0);
+        }, 0);
+
+        const currencies = new Set(successful.map(transactionCurrency));
+
+        $("successfulCount").textContent = String(successful.length);
+        $("pendingCount").textContent = String(pending.length);
+
+        /*
+         * Avoid combining unlike currencies into a misleading total.
+         */
+        if (currencies.size === 0) {
+          $("totalPaid").textContent = formatMoney(0, "INR");
+        } else if (currencies.size === 1) {
+          $("totalPaid").textContent = formatMoney(
+            total,
+            [...currencies][0]
+          );
+        } else {
+          $("totalPaid").textContent = "Multiple currencies";
+        }
+      }
+
+      function getFilteredTransactions() {
+        const query = searchInput.value.trim().toLowerCase();
+        const fromValue = dateFrom.value;
+        const toValue = dateTo.value;
+
+        return transactions.filter(transaction => {
+          const status = transactionStatus(transaction);
+
+          if (activeFilter === "success" && status !== "success") return false;
+          if (activeFilter === "pending" && status !== "pending") return false;
+          if (activeFilter === "failed" && status !== "failed") return false;
+          if (activeFilter === "refunded" && status !== "refunded") return false;
+
+          const date = transactionDate(transaction);
+
+          if (fromValue) {
+            const from = new Date(fromValue + "T00:00:00");
+            if (!date || date < from) return false;
+          }
+
+          if (toValue) {
+            const to = new Date(toValue + "T23:59:59.999");
+            if (!date || date > to) return false;
+          }
+
+          if (query) {
+            const searchable = [
+              transactionId(transaction),
+              transaction.description,
+              transaction.serviceName,
+              transaction.reference,
+              transaction.paymentReference,
+              transaction.method,
+              transaction.paymentMethod,
+              transaction.provider
+            ].filter(Boolean).join(" ").toLowerCase();
+
+            if (!searchable.includes(query)) return false;
+          }
+
+          return true;
+        });
+      }
+
+      function safeReceiptUrl(value) {
+        if (typeof value !== "string" || !value.trim()) return null;
+
+        try {
+          const url = new URL(value, window.location.origin);
+
+          if (url.origin !== window.location.origin) return null;
+          if (!["http:", "https:"].includes(url.protocol)) return null;
+
+          return url.href;
+        } catch {
+          return null;
+        }
+      }
+
+      function selectTransaction(transaction) {
+        selectedTransactionId = transactionId(transaction);
+
+        $("detailTransactionId").textContent =
+          transactionId(transaction) || "Not available";
+
+        $("detailStatus").textContent = statusLabel(transaction.status);
+        $("detailDescription").textContent =
+          transaction.description || transaction.serviceName || "Not available";
+
+        $("detailReference").textContent =
+          transaction.reference || transaction.paymentReference || "Not available";
+
+        $("detailDate").textContent = formatDate(
+          transaction.createdAt ||
+          transaction.created_at ||
+          transaction.paidAt ||
+          transaction.date
+        );
+
+        $("detailAmount").textContent = formatMoney(
+          transactionAmount(transaction),
+          transactionCurrency(transaction)
+        );
+
+        const receiptUrl = safeReceiptUrl(transaction.receiptUrl || transaction.receipt_url);
+        const receiptButton = $("receiptButton");
+
+        if (receiptUrl) {
+          receiptButton.href = receiptUrl;
+          receiptButton.hidden = false;
+          receiptButton.target = "_blank";
+          receiptButton.rel = "noopener noreferrer";
+        } else {
+          receiptButton.hidden = true;
+          receiptButton.removeAttribute("href");
+          receiptButton.removeAttribute("target");
+          receiptButton.removeAttribute("rel");
+        }
+
+        $("detailsTitle").scrollIntoView({
+          behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+          block:"nearest"
+        });
+      }
+
+      function clearDetails() {
+        selectedTransactionId = null;
+        $("detailTransactionId").textContent = "Select a transaction";
+        $("detailStatus").textContent = "--";
+        $("detailDescription").textContent = "--";
+        $("detailReference").textContent = "--";
+        $("detailDate").textContent = "--";
+        $("detailAmount").textContent = "--";
+        $("receiptButton").hidden = true;
+        $("receiptButton").removeAttribute("href");
+      }
+
+      function renderTable() {
+        tableBody.replaceChildren();
+
+        const filtered = getFilteredTransactions();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageRows = filtered.slice(start, start + PAGE_SIZE);
+
+        tableWrap.hidden = pageRows.length === 0;
+        emptyState.hidden = pageRows.length !== 0;
+
+        if (pageRows.length === 0) {
+          $("emptyTitle").textContent = transactions.length
+            ? "No matching transactions"
+            : "No payment records found";
+
+          $("emptyDescription").textContent = transactions.length
+            ? "Try changing your search term, status or date range."
+            : "When payments are recorded against your account, they will appear here.";
+
+          pagination.hidden = true;
+          resultCount.textContent = "Showing 0 transactions";
+          return;
+        }
+
+        pageRows.forEach(transaction => {
+          const tr = document.createElement("tr");
+
+          const title = createElement(
+            "span",
+            "transaction-title",
+            transaction.description || transaction.serviceName || "MedOrbits service"
+          );
+
+          const sub = createElement(
+            "span",
+            "transaction-subtitle",
+            transactionId(transaction) || "Transaction ID unavailable"
+          );
+
+          const transactionCell = document.createElement("td");
+          transactionCell.dataset.label = "Transaction";
+          transactionCell.append(title, sub);
+
+          const dateCell = createCell(
+            "Date",
+            formatDate(
+              transaction.createdAt ||
+              transaction.created_at ||
+              transaction.paidAt ||
+              transaction.date
+            )
+          );
+
+          const amountElement = createElement(
+            "span",
+            "amount",
+            formatMoney(transactionAmount(transaction), transactionCurrency(transaction))
+          );
+
+          const amountCell = createCell("Amount", amountElement);
+
+          const status = transactionStatus(transaction);
+          const statusElement = createElement(
+            "span",
+            "status-pill " + status,
+            statusLabel(status)
+          );
+
+          const statusCell = createCell("Status", statusElement);
+
+          const methodCell = createCell(
+            "Payment method",
+            transaction.method || transaction.paymentMethod || "Not available"
+          );
+
+          const actions = document.createElement("div");
+
+          const detailsButton = createElement("button", "table-action", "Details");
+          detailsButton.type = "button";
+          detailsButton.addEventListener("click", () => selectTransaction(transaction));
+          actions.append(detailsButton);
+
+          const receiptUrl = safeReceiptUrl(transaction.receiptUrl || transaction.receipt_url);
+
+          if (receiptUrl) {
+            const receiptLink = createElement("a", "table-action", " · Receipt ↗");
+            receiptLink.href = receiptUrl;
+            receiptLink.target = "_blank";
+            receiptLink.rel = "noopener noreferrer";
+            actions.append(receiptLink);
+          }
+
+          const actionCell = createCell("Actions", actions);
+
+          tr.append(
+            transactionCell,
+            dateCell,
+            amountCell,
+            statusCell,
+            methodCell,
+            actionCell
+          );
+
+          tableBody.append(tr);
+        });
+
+        pagination.hidden = false;
+        resultCount.textContent =
+          `Showing ${start + 1}–${start + pageRows.length} of ${filtered.length} transactions`;
+
+        previousPage.disabled = currentPage <= 1;
+        nextPage.disabled = currentPage >= totalPages;
+      }
+
+      async function loadTransactions() {
+        if (loading) return;
+
+        loading = true;
+        refreshButton.disabled = true;
+        clearStatus();
+
+        tableWrap.hidden = true;
+        pagination.hidden = true;
+        emptyState.hidden = false;
+        $("emptyTitle").textContent = "Loading payment history";
+        $("emptyDescription").textContent =
+          "Please wait while your transaction records are retrieved.";
+
+        try {
+          const result = await getJson(HISTORY_ENDPOINT);
+
+          const rows = Array.isArray(result)
+            ? result
+            : Array.isArray(result.transactions)
+              ? result.transactions
+              : Array.isArray(result.payments)
+                ? result.payments
+                : null;
+
+          if (!rows) {
+            throw new Error("The server returned an unexpected payment history format.");
+          }
+
+          transactions = rows.filter(item =>
+            item && typeof item === "object" && transactionId(item)
+          );
+
+          updateSummary();
+          currentPage = 1;
+          renderTable();
+
+          if (!transactions.length) {
+            showStatus("No payment transactions were returned for this account.", "info");
+          }
+        } catch (error) {
+          transactions = [];
+          updateSummary();
+          renderTable();
+
+          $("emptyTitle").textContent = "Payment history unavailable";
+          $("emptyDescription").textContent =
+            "Check your connection or sign-in status. If the problem continues, contact support.";
+
+          showStatus(error.message, "error");
+        } finally {
+          loading = false;
+          refreshButton.disabled = false;
+        }
+      }
+
+      function resetFilters() {
+        searchInput.value = "";
+        dateFrom.value = "";
+        dateTo.value = "";
+        activeFilter = "all";
+        currentPage = 1;
+
+        document.querySelectorAll("[data-filter]").forEach(button => {
+          const selected = button.dataset.filter === "all";
+          button.classList.toggle("active", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+
+        clearStatus();
+        renderTable();
+      }
+
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          currentPage = 1;
+
+          document.querySelectorAll("[data-filter]").forEach(item => {
+            const selected = item === button;
+            item.classList.toggle("active", selected);
+            item.setAttribute("aria-pressed", String(selected));
+          });
+
+          renderTable();
+        });
+      });
+
+      searchInput.addEventListener("input", () => {
+        currentPage = 1;
+        renderTable();
+      });
+
+      dateFrom.addEventListener("change", () => {
+        if (dateFrom.value && dateTo.value && dateFrom.value > dateTo.value) {
+          showStatus("The start date must not be later than the end date.", "error");
+          return;
+        }
+
+        clearStatus();
+        currentPage = 1;
+        renderTable();
+      });
+
+      dateTo.addEventListener("change", () => {
+        if (dateFrom.value && dateTo.value && dateFrom.value > dateTo.value) {
+          showStatus("The end date must not be earlier than the start date.", "error");
+          return;
+        }
+
+        clearStatus();
+        currentPage = 1;
+        renderTable();
+      });
+
+      refreshButton.addEventListener("click", loadTransactions);
+      resetFiltersButton.addEventListener("click", resetFilters);
+
+      previousPage.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+        }
+      });
+
+      nextPage.addEventListener("click", () => {
+        const totalPages = Math.max(
+          1,
+          Math.ceil(getFilteredTransactions().length / PAGE_SIZE)
+        );
+
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+        }
+      });
+
+      $("clearDetailsButton").addEventListener("click", clearDetails);
+
+      loadTransactions();
+    })();
+  </script>
+
+  <!-- Shared MedOrbits scripts -->
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/navigation.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

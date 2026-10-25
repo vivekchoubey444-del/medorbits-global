@@ -2,18 +2,26 @@
 "name": "medorbits",
 "version": "0.1.0",
 "private": true,
-"description": "MedOrbits -- Education, Admissions, Careers, and Recruitment",
+"description": "MedOrbits -- Education, Admissions, Career Guidance, Recruitment, and Application Services",
 "type": "module",
+"license": "UNLICENSED",
 "engines": {
-"node": ">=20"
+"node": ">=20.0.0"
 },
 "scripts": {
+"check": "npm run check:syntax && npm run check:json && npm run check:python",
+"check:syntax": "node –check scripts/check-json.mjs",
 "check:json": "node scripts/check-json.mjs",
 "check:json:strict": "node scripts/check-json.mjs –strict",
-"check:syntax": "node –check scripts/check-json.mjs",
 "check:python": "python -m pytest",
 "lint:python": "python -m ruff check .",
+"lint:python:fix": "python -m ruff check –fix .",
+"format:python": "python -m ruff format .",
 "format:python:check": "python -m ruff format –check .",
-"check": "npm run check:syntax && npm run check:json"
+"check:quality": "npm run lint:python && npm run format:python:check",
+"check:all": "npm run check && npm run check:quality",
+"test": "python -m pytest",
+"test:verbose": "python -m pytest -v",
+"validate": "npm run check:all"
 }
 }

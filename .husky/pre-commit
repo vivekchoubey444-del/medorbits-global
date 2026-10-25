@@ -1,0 +1,141 @@
+
+#!/usr/bin/env sh
+# MedOrbits pre-commit quality checks
+# Purpose: Run configured quality checks before allowing a commit.
+
+set -eu
+
+echo ""
+echo "MedOrbits: Running pre-commit checks..."
+echo ""
+
+# --------------------------------------------------
+# 1. Locate the repository root
+# --------------------------------------------------
+if ! repo_root=$(git rev-parse --show-toplevel 2>/dev/null); then
+    echo "ERROR: Unable to determine the Git repository root." >&2
+    exit 1
+fi
+
+cd "$repo_root"
+
+# --------------------------------------------------
+# 2. Verify required project files and tools
+# --------------------------------------------------
+if [ ! -f package.json ]; then
+    echo "ERROR: package.json was not found at the repository root." >&2
+    exit 1
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+    echo "ERROR: Node.js is required to run pre-commit checks." >&2
+    exit 1
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+    echo "ERROR: npm is required to run pre-commit checks." >&2
+    exit 1
+fi
+
+# --------------------------------------------------
+# 3. Detect configured npm scripts
+# Return codes:
+#   0 = script exists
+#   1 = script is not configured
+#   2 = package.json could not be inspected
+# --------------------------------------------------
+has_script() {
+    node -e '
+        const fs = require("node:fs");
+
+        try {
+            const pkg = JSON.parse(
+                fs.readFileSync("package.json", "utf8")
+            );
+
+            const name = process.argv[1];
+
+            process.exit(
+                pkg.scripts &&
+                typeof pkg.scripts[name] === "string" &&
+                pkg.scripts[name].trim() !== ""
+                    ? 0
+                    : 1
+            );
+        } catch (error) {
+            console.error(
+                "ERROR: Unable to read package.json:",
+                error.message
+            );
+            process.exit(2);
+        }
+    ' "$1"
+}
+
+# --------------------------------------------------
+# 4. Run configured quality checks
+# --------------------------------------------------
+checks_run=0
+checks_skipped=0
+
+run_check() {
+    check_name=$1
+    script_name=$2
+
+    if has_script "$script_name"; then
+        :
+    else
+        result=$?
+
+        if [ "$result" -gt 1 ]; then
+            echo "ERROR: Could not inspect npm script '$script_name'." >&2
+            exit 1
+        fi
+
+        echo "WARNING: Skipping $check_name."
+        echo "Reason: npm script '$script_name' is not configured."
+
+        checks_skipped=$((checks_skipped + 1))
+        return 0
+    fi
+
+    echo ""
+    echo "----------------------------------------"
+    echo "Running $check_name..."
+    echo "----------------------------------------"
+
+    if npm run "$script_name"; then
+        checks_run=$((checks_run + 1))
+        echo "PASS: $check_name"
+    else
+        echo "FAIL: $check_name" >&2
+        echo "Commit blocked because a configured check failed." >&2
+        exit 1
+    fi
+}
+
+# Always run ESLint when configured.
+run_check "ESLint" "lint"
+
+# Optional full checks.
+if [ "${MEDORBITS_PRECOMMIT_FULL:-0}" = "1" ]; then
+    run_check "Prettier formatting validation" "format:check"
+    run_check "Automated tests" "test"
+else
+    echo ""
+    echo "INFO: Skipping optional formatting and test checks."
+    echo "INFO: Set MEDORBITS_PRECOMMIT_FULL=1 to enable them."
+fi
+
+# --------------------------------------------------
+# 5. Report results
+# --------------------------------------------------
+echo ""
+echo "========================================"
+echo "MedOrbits: Pre-commit checks completed."
+echo "Configured checks passed: $checks_run"
+echo "Checks skipped: $checks_skipped"
+echo "========================================"
+echo ""
+
+exit 0

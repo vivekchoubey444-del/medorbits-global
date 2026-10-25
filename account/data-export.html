@@ -1,0 +1,1796 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="Request, review and download an authorized copy of your personal data from your MedOrbits account.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Data Export | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/data-export.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071629;
+      --bg-soft: #0b203b;
+      --surface: #102947;
+      --surface-2: #153657;
+      --accent: #8bbcff;
+      --accent-bright: #d9e9ff;
+      --text: #f2f7ff;
+      --text-soft: #c7d8ee;
+      --muted: #9db2cc;
+      --border: rgba(139,188,255,.23);
+      --success: #a8f0d0;
+      --warning: #ffdfa2;
+      --danger: #ffc1ca;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(40,102,170,.20), transparent 35%),
+        radial-gradient(ellipse at 90% 40%, rgba(98,155,221,.08), transparent 32%),
+        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent-bright);
+      outline-offset: 4px;
+    }
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+    .skip-link {
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--accent-bright);
+      color: var(--bg);
+    }
+    .skip-link:focus { top: 12px; }
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid rgba(139,188,255,.13);
+      background: #040b15;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .spark { color: var(--accent); }
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,14,27,.94);
+      backdrop-filter: blur(18px);
+    }
+    .site-header.scrolled {
+      background: rgba(4,11,21,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+    .nav-wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+    .brand strong {
+      display: block;
+      color: var(--accent-bright);
+      font-size: 15px;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--accent-bright);
+      cursor: pointer;
+    }
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+    .main-nav > a,
+    .nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+    .main-nav > a:hover,
+    .nav-trigger:hover {
+      color: var(--accent-bright);
+    }
+    .nav-group { position: relative; }
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #102947;
+      box-shadow: var(--shadow);
+    }
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown {
+      display: grid;
+    }
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+    .dropdown a:hover {
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 41px;
+      padding: 10px 15px;
+      border: 1px solid var(--accent);
+      border-radius: 9px;
+      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color: #071629;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .2s,filter .2s;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-outline {
+      border-color: rgba(199,216,238,.32);
+      background: transparent;
+      color: var(--accent-bright);
+    }
+    .btn-danger {
+      border-color: rgba(255,193,202,.35);
+      background: rgba(255,193,202,.05);
+      color: var(--danger);
+    }
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 40px 0 65px;
+      overflow: hidden;
+    }
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content: "";
+      pointer-events: none;
+    }
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 28px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--accent);
+      content: "";
+    }
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+    .page-heading h1 span { color: var(--accent-bright); }
+    .page-heading p {
+      max-width: 710px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0,1fr);
+      align-items: start;
+      gap: 19px;
+    }
+    .sidebar,
+    .panel,
+    .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
+      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+    }
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 19px;
+    }
+    .account-user {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--border);
+    }
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(139,188,255,.35);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#173d64,#0b203b);
+      color: var(--accent-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+    .account-user strong {
+      display: block;
+      font-size: 11px;
+    }
+    .account-user small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+    .account-nav {
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
+    }
+    .account-nav a {
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+    .account-nav a:hover,
+    .account-nav a.active {
+      border-color: rgba(139,188,255,.2);
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+    .sidebar-note {
+      margin: 15px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+    .sidebar-note a {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .content {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+    .panel { padding: clamp(17px,2.5vw,25px); }
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.08);
+      color: var(--accent-bright);
+      font-size: 19px;
+    }
+    .panel-heading h2,
+    .info-card h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+    .panel-heading p,
+    .info-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .status {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-soft);
+      background: rgba(139,188,255,.05);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+    .status.error {
+      border-color: rgba(255,193,202,.35);
+      color: var(--danger);
+    }
+    .status.success {
+      border-color: rgba(168,240,208,.3);
+      color: var(--success);
+    }
+    .status.warning {
+      border-color: rgba(255,223,162,.3);
+      color: var(--warning);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 16px;
+    }
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+    .field.full { grid-column: 1/-1; }
+    .field label {
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      padding: 11px 12px;
+      border: 1px solid rgba(139,188,255,.27);
+      border-radius: 9px;
+      background: rgba(4,13,25,.65);
+      color: var(--text);
+      font-size: 11px;
+    }
+    .field select { color-scheme: dark; }
+    .field small {
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+    .choice-list {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(139,188,255,.035);
+      cursor: pointer;
+    }
+    .choice input {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      margin: 3px 0 0;
+      accent-color: #8bbcff;
+    }
+    .choice strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text);
+      font-size: 10px;
+    }
+    .choice small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 17px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+    .check-row input {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      margin-top: 3px;
+      accent-color: #8bbcff;
+    }
+    .check-row a,
+    .text-link {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .form-actions,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 19px;
+    }
+    .request-list {
+      display: grid;
+      gap: 12px;
+    }
+    .request-card {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.035);
+    }
+    .request-card h3 {
+      margin: 0 0 7px;
+      font-size: 12px;
+    }
+    .request-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+    .request-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 15px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .request-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      color: var(--text-soft);
+      background: rgba(139,188,255,.06);
+      font-size: 9px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .request-status.ready {
+      border-color: rgba(168,240,208,.3);
+      color: var(--success);
+    }
+    .request-status.failed {
+      border-color: rgba(255,193,202,.35);
+      color: var(--danger);
+    }
+    .request-status.pending {
+      border-color: rgba(255,223,162,.3);
+      color: var(--warning);
+    }
+    .empty-state {
+      padding: 20px;
+      border: 1px dashed rgba(139,188,255,.3);
+      border-radius: 11px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+      text-align: center;
+    }
+    .notice {
+      padding: 14px 16px;
+      border: 1px solid rgba(255,223,162,.22);
+      border-radius: 10px;
+      background: rgba(255,223,162,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .notice strong { color: var(--warning); }
+    .info-card { padding: 21px; }
+    .info-card h2 { margin-bottom: 9px; }
+    .info-links { display: grid; margin-top: 12px; }
+    .info-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+    .info-links a:last-child { border-bottom: 0; }
+    .info-links a span { color: var(--accent); }
+    .info-links a:hover { color: var(--accent-bright); }
+    .site-footer {
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background: #040b15;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(139,188,255,.17);
+      color: var(--accent-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+    .footer-links a:hover { color: var(--accent-bright); }
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: rgba(16,41,71,.4);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(139,188,255,.13);
+      color: var(--muted);
+      font-size: 9px;
+    }
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border);
+        background: #071629;
+      }
+      .main-nav.open { display: flex; }
+      .main-nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+    @media (max-width:800px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .account-nav {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+    }
+    @media (max-width:560px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .page-main { padding: 30px 0 45px; }
+      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+      .sidebar,
+      .panel,
+      .info-card { padding: 15px; }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .form-grid,
+      .choice-list { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .form-actions .btn,
+      .button-row .btn { width: 100%; }
+    }
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .footer-grid,
+      .account-nav { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+  <button class="menu-toggle" id="menuToggle" type="button"
+          aria-expanded="false" aria-controls="mainNav">
+    ☰ MENU
+  </button>
+  <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+    <a href="/index.html">Home</a>
+    <div class="nav-group">
+      <button class="nav-trigger" type="button" aria-expanded="false">
+        Education <span aria-hidden="true">⌄</span>
+      </button>
+      <div class="dropdown">
+        <a href="/education/index.html">Education hub</a>
+        <a href="/education/courses.html">Courses</a>
+        <a href="/education/colleges.html">Colleges</a>
+        <a href="/education/universities.html">Universities</a>
+        <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+        <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nav-trigger" type="button" aria-expanded="false">
+        Admissions <span aria-hidden="true">⌄</span>
+      </button>
+      <div class="dropdown">
+        <a href="/education/admissions/index.html">Admission guidance</a>
+        <a href="/education/admissions/eligibility.html">Eligibility</a>
+        <a href="/education/admissions/exams.html">Entrance exams</a>
+        <a href="/education/admissions/counselling.html">Counselling</a>
+        <a href="/education/resources/fees.html">Fees and funding</a>
+        <a href="/education/resources/scholarships.html">Scholarships</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nav-trigger" type="button" aria-expanded="false">
+        Careers <span aria-hidden="true">⌄</span>
+      </button>
+      <div class="dropdown">
+        <a href="/career/index.html">Career hub</a>
+        <a href="/career/jobs.html">Find jobs</a>
+        <a href="/career/internships.html">Internships</a>
+        <a href="/career/resume-support.html">Resume support</a>
+        <a href="/career/recruitment.html">Recruitment services</a>
+        <a href="/career/employer-services.html">Employer services</a>
+      </div>
+    </div>
+    <a href="/pages/about.html">About</a>
+    <a href="/pages/contact.html">Contact</a>
+    <a href="/account/index.html" aria-current="page">My Account</a>
+    <a href="/account/my-applications.html">My Applications</a>
+    <a href="/account/my-documents.html">My Documents</a>
+    <a href="/account/saved-colleges.html">Saved Colleges</a>
+    <a href="/account/saved-courses.html">Saved Courses</a>
+    <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
+  </nav>
+</div>
+  </header>
+  <main class="page-main" id="main-content">
+    <div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/index.html">Home</a>
+    <span aria-hidden="true">›</span>
+    <a href="/account/index.html">My Account</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Data Export</span>
+  </nav>
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">Your information, your control</span>
+      <h1>Personal data <span>export.</span></h1>
+      <p>
+        Request a copy of personal information associated with your
+        MedOrbits account. Select the categories you need, submit your
+        request securely, and review its status here.
+      </p>
+    </div>
+    <div class="heading-actions">
+      <a class="btn btn-outline" href="/account/privacy-settings.html">
+        ◉ Privacy settings
+      </a>
+      <a class="btn" href="/pages/contact.html">
+        Get support ↗
+      </a>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Account navigation">
+      <div class="account-user">
+        <div class="avatar" aria-hidden="true">MO</div>
+        <div>
+          <strong>My account</strong>
+          <small id="accountEmail">Data export</small>
+        </div>
+      </div>
+      <nav class="account-nav" aria-label="Account menu">
+        <a href="/account/index.html">▦ &nbsp; Account home</a>
+        <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
+        <a href="/account/profile.html">◈ &nbsp; Profile</a>
+        <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
+        <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
+        <a href="/account/application-details.html">▧ &nbsp; Application details</a>
+        <a href="/account/my-documents.html">▧ &nbsp; My documents</a>
+        <a href="/account/messages.html">✉ &nbsp; Messages</a>
+        <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
+        <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
+        <a href="/account/receipts.html">▤ &nbsp; Receipts</a>
+        <a href="/account/saved-colleges.html">☆ &nbsp; Saved colleges</a>
+        <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
+        <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
+        <a href="/account/sessions.html">⌘ &nbsp; Active sessions</a>
+        <a href="/account/security-settings.html">⚙ &nbsp; Security settings</a>
+        <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
+        <a href="/account/change-password.html">🔒 &nbsp; Change password</a>
+        <a href="/account/verify-email.html">✉ &nbsp; Verify email</a>
+        <a href="/account/verify-phone.html">☎ &nbsp; Verify phone</a>
+        <a class="active" href="/account/data-export.html" aria-current="page">⇩ &nbsp; Data export</a>
+        <a href="/account/delete-account.html">⊗ &nbsp; Delete account</a>
+      </nav>
+      <p class="sidebar-note">
+        Data exports can contain sensitive information. Download them
+        only on a trusted device.
+        <br><a href="/pages/contact.html">Contact support ↗</a>
+      </p>
+    </aside>
+    <div class="content">
+      <section class="panel" aria-labelledby="overviewTitle">
+        <div class="panel-heading">
+          <div class="panel-icon" aria-hidden="true">⇩</div>
+          <div>
+            <h2 id="overviewTitle">Your data export workspace</h2>
+            <p>
+              Submit an authenticated request and check its status.
+              Availability depends on the connected account service.
+            </p>
+          </div>
+        </div>
+        <div id="pageStatus" class="status" role="status" aria-live="polite">
+          Export request information has not been loaded.
+        </div>
+        <div class="notice">
+          <strong>Before you begin:</strong>
+          An export may include personal and account-related information.
+          The service may need to verify your identity before preparing
+          the file. Do not share an export file or its download link with
+          unauthorized people.
+        </div>
+        <div class="button-row">
+          <button class="btn" id="refreshRequests" type="button">
+            ↻ Refresh request status
+          </button>
+          <a class="btn btn-outline" href="/legal/privacy-policy.html">
+            Privacy policy ↗
+          </a>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="requestTitle">
+        <div class="panel-heading">
+          <div class="panel-icon" aria-hidden="true">▤</div>
+          <div>
+            <h2 id="requestTitle">Request your personal data</h2>
+            <p>
+              Select the categories to include and the preferred export
+              format. The backend determines which records can be supplied.
+            </p>
+          </div>
+        </div>
+        <form id="exportForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="exportFormat">Export format</label>
+              <select id="exportFormat" name="format" required>
+                <option value="json">JSON -- structured data</option>
+                <option value="csv">CSV -- tabular data, where supported</option>
+              </select>
+              <small>
+                Available formats depend on the server's export implementation.
+              </small>
+            </div>
+            <div class="field">
+              <label for="dateRange">Date range</label>
+              <select id="dateRange" name="dateRange" required>
+                <option value="all">All available account history</option>
+                <option value="12-months">Last 12 months</option>
+                <option value="90-days">Last 90 days</option>
+              </select>
+              <small>
+                The backend must enforce the requested range when applicable.
+              </small>
+            </div>
+            <div class="field full">
+              <label>Data categories</label>
+              <div class="choice-list">
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="profile" checked>
+                  <span>
+                    <strong>Profile information</strong>
+                    <small>Account profile fields and education preferences, where available.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="applications" checked>
+                  <span>
+                    <strong>Applications</strong>
+                    <small>Application records and related status information.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="documents">
+                  <span>
+                    <strong>Document records</strong>
+                    <small>Document metadata and eligible document files, subject to access controls.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="saved-items" checked>
+                  <span>
+                    <strong>Saved items</strong>
+                    <small>Saved courses, colleges and jobs, where available.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="communications">
+                  <span>
+                    <strong>Messages and notifications</strong>
+                    <small>Eligible account messages, alerts and notification records.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="transactions">
+                  <span>
+                    <strong>Payment records</strong>
+                    <small>Available payment history and receipt metadata, subject to applicable restrictions.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="preferences">
+                  <span>
+                    <strong>Privacy preferences</strong>
+                    <small>Communication choices and account preferences.</small>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="checkbox" name="categories" value="activity">
+                  <span>
+                    <strong>Account activity</strong>
+                    <small>Eligible account activity records maintained by the service.</small>
+                  </span>
+                </label>
+              </div>
+              <small>
+                Select only categories you need. Not every category will
+                necessarily contain data, and some records may be excluded
+                where permitted or required by applicable law.
+              </small>
+            </div>
+          </div>
+          <label class="check-row" for="exportAcknowledgement">
+            <input id="exportAcknowledgement" name="acknowledgement"
+                   type="checkbox" required>
+            <span>
+              I understand that this request may require identity
+              verification, processing time and secure access to the
+              resulting export. I have reviewed the
+              <a href="/legal/privacy-policy.html">privacy policy</a>.
+            </span>
+          </label>
+          <div class="form-actions">
+            <button class="btn" id="submitExport" type="submit">
+              Submit export request
+            </button>
+            <button class="btn btn-outline" id="resetForm" type="reset">
+              Reset form
+            </button>
+          </div>
+        </form>
+      </section>
+      <section class="panel" aria-labelledby="requestsTitle">
+        <div class="panel-heading">
+          <div class="panel-icon" aria-hidden="true">⌘</div>
+          <div>
+            <h2 id="requestsTitle">Your export requests</h2>
+            <p>
+              Review requests returned by the authenticated service.
+              Download links appear only for exports confirmed as ready.
+            </p>
+          </div>
+        </div>
+        <div id="requestList" class="request-list">
+          <div class="empty-state">
+            Request history has not been loaded.
+            Select Refresh request status to retrieve your available records.
+          </div>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="securityTitle">
+        <div class="panel-heading">
+          <div class="panel-icon" aria-hidden="true">🔒</div>
+          <div>
+            <h2 id="securityTitle">Protect your exported information</h2>
+            <p>
+              Treat an export file as confidential because it may contain
+              personal information.
+            </p>
+          </div>
+        </div>
+        <div class="request-list">
+          <div class="request-card">
+            <h3>Use a trusted device</h3>
+            <p>
+              Download files only on a device you control. Avoid shared
+              computers and public networks when accessing sensitive records.
+            </p>
+          </div>
+          <div class="request-card">
+            <h3>Keep download links private</h3>
+            <p>
+              Never publish a download URL or send it to another person
+              unless you have confirmed that sharing is appropriate.
+              The backend should use short-lived, authorized downloads.
+            </p>
+          </div>
+          <div class="request-card">
+            <h3>Delete unnecessary copies</h3>
+            <p>
+              When you no longer need an export, remove unnecessary
+              copies from your device and any storage locations you control.
+            </p>
+          </div>
+        </div>
+        <div class="button-row">
+          <a class="btn btn-outline" href="/account/privacy-settings.html">
+            Privacy settings
+          </a>
+          <a class="btn btn-outline" href="/account/security-settings.html">
+            Security settings
+          </a>
+          <a class="btn btn-outline" href="/pages/contact.html">
+            Contact support
+          </a>
+        </div>
+      </section>
+      <section class="info-card" aria-labelledby="relatedTitle">
+        <h2 id="relatedTitle">Related account controls</h2>
+        <p>
+          Manage your account information and privacy choices using
+          the related pages below.
+        </p>
+        <div class="info-links">
+          <a href="/account/profile.html">View profile <span>↗</span></a>
+          <a href="/account/edit-profile.html">Correct profile information <span>↗</span></a>
+          <a href="/account/privacy-settings.html">Manage privacy settings <span>↗</span></a>
+          <a href="/account/security-settings.html">Review account security <span>↗</span></a>
+          <a href="/account/delete-account.html">Review account deletion options <span>↗</span></a>
+          <a href="/legal/privacy-policy.html">Read privacy policy <span>↗</span></a>
+          <a href="/pages/contact.html">Contact MedOrbits support <span>↗</span></a>
+        </div>
+      </section>
+      <div class="notice">
+        <strong>Data access notice:</strong>
+        This page submits requests to the MedOrbits backend. It does not
+        generate an export from browser data. The server must verify the
+        authenticated user, validate selected categories, apply appropriate
+        access controls, record the request and protect export files from
+        unauthorized access.
+      </div>
+    </div>
+  </div>
+</div>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45" loading="lazy">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+      <p>
+        Explore education pathways, admission resources and career
+        opportunities with MedOrbits.
+      </p>
+    </div>
+    <div class="footer-links">
+      <h2>Education</h2>
+      <a href="/education/courses.html">Courses</a>
+      <a href="/education/colleges.html">Colleges</a>
+      <a href="/education/universities.html">Universities</a>
+      <a href="/education/study-in-india/index.html">Study in India</a>
+      <a href="/education/study-abroad/index.html">Study abroad</a>
+    </div>
+    <div class="footer-links">
+      <h2>Student resources</h2>
+      <a href="/education/admissions/eligibility.html">Eligibility</a>
+      <a href="/education/admissions/exams.html">Entrance exams</a>
+      <a href="/education/resources/fees.html">Fees and funding</a>
+      <a href="/education/resources/scholarships.html">Scholarships</a>
+      <a href="/education/admissions/documents.html">Documents</a>
+    </div>
+    <div class="footer-links">
+      <h2>Career services</h2>
+      <a href="/career/jobs.html">Jobs</a>
+      <a href="/career/internships.html">Internships</a>
+      <a href="/career/guidance.html">Career guidance</a>
+      <a href="/career/resume-support.html">Resume support</a>
+      <a href="/career/recruitment.html">Recruitment</a>
+    </div>
+    <div class="footer-links">
+      <h2>MedOrbits</h2>
+      <a href="/pages/about.html">About us</a>
+      <a href="/pages/services.html">Services</a>
+      <a href="/pages/contact.html">Contact</a>
+      <a href="/education/resources/faqs.html">FAQs</a>
+      <a href="/legal/privacy-policy.html">Privacy policy</a>
+      <a href="/legal/terms.html">Terms and conditions</a>
+      <a href="/legal/refund-policy.html">Refund policy</a>
+      <a href="/legal/disclaimer.html">Disclaimer</a>
+    </div>
+  </div>
+  <p class="disclaimer">
+    MedOrbits provides education and career information and consultancy
+    services. Course information, admission rules, fees, eligibility and
+    deadlines can change. Confirm material details with the relevant
+    institution and official authority. A saved item or guidance request
+    is not an admission offer or a guarantee of employment.
+  </p>
+  <div class="footer-bottom">
+    <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+    <span>STUDY · WORK · GROW</span>
+  </div>
+</div>
+  </footer>
+  <script>
+    (() => {
+      "use strict";
+      /*
+       * MedOrbits data-export API contract
+       *
+       * GET  /api/account/data-export
+       * POST /api/account/data-export
+       * GET  /api/account/data-export/:requestId
+       *
+       * GET list response:
+       * {
+       *   "user": { "email": "account@example.com" },
+       *   "requests": [
+       *     {
+       *       "id": "export-request-id",
+       *       "status": "processing",
+       *       "format": "json",
+       *       "createdAt": "2026-10-25T10:00:00Z",
+       *       "expiresAt": null
+       *     }
+       *   ]
+       * }
+       *
+       * POST request:
+       * {
+       *   "format": "json",
+       *   "dateRange": "all",
+       *   "categories": ["profile", "applications"],
+       *   "acknowledgement": true
+       * }
+       *
+       * POST response:
+       * {
+       *   "request": {
+       *     "id": "export-request-id",
+       *     "status": "pending",
+       *     "format": "json",
+       *     "createdAt": "2026-10-25T10:00:00Z"
+       *   }
+       * }
+       *
+       * Request statuses should be one of:
+       * pending, processing, ready, failed, expired
+       *
+       * For ready requests, the server may return a downloadUrl. Prefer
+       * an authenticated same-origin download endpoint. If a signed URL is
+       * used, it must be short-lived and generated securely by the backend.
+       *
+       * Configure endpoint overrides before this script executes:
+       * window.MEDORBITS_CONFIG = {
+       *   dataExportEndpoint: "/api/account/data-export"
+       * };
+       *
+       * The backend must authenticate every request, authorize access to
+       * the current user's requests only, validate categories and format,
+       * rate-limit submissions, and prevent IDOR and CSRF vulnerabilities.
+       */
+      const endpoint =
+        window.MEDORBITS_CONFIG?.dataExportEndpoint ||
+        "/api/account/data-export";
+      const $ = id => document.getElementById(id);
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+      const pageStatus = $("pageStatus");
+      const exportForm = $("exportForm");
+      const submitButton = $("submitExport");
+      const refreshButton = $("refreshRequests");
+      const resetButton = $("resetForm");
+      const requestList = $("requestList");
+      const allowedCategories = new Set([
+        "profile",
+        "applications",
+        "documents",
+        "saved-items",
+        "communications",
+        "transactions",
+        "preferences",
+        "activity"
+      ]);
+      const allowedStatuses = new Set([
+        "pending",
+        "processing",
+        "ready",
+        "failed",
+        "expired"
+      ]);
+      let isBusy = false;
+      $("currentYear").textContent = String(new Date().getFullYear());
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+        if (!isOpen) closeNavigation();
+      });
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+          const shouldOpen = !group.classList.contains("open");
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+      function showStatus(message, type = "") {
+        pageStatus.textContent = message;
+        pageStatus.className = "status" + (type ? ` ${type}` : "");
+      }
+      function setBusy(value) {
+        isBusy = value;
+        submitButton.disabled = value;
+        refreshButton.disabled = value;
+        resetButton.disabled = value;
+        submitButton.textContent = value
+          ? "Please wait…"
+          : "Submit export request";
+      }
+      function safeText(value, fallback = "--") {
+        if (typeof value !== "string" || value.length > 500) {
+          return fallback;
+        }
+        return value;
+      }
+      function formatDate(value) {
+        if (typeof value !== "string" || !value) return "Not provided";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Not provided";
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(date);
+      }
+      function formatStatus(value) {
+        const status = allowedStatuses.has(value) ? value : "pending";
+        return status.charAt(0).toUpperCase() + status.slice(1);
+      }
+      async function readJson(response) {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) return {};
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+          credentials: "same-origin",
+          cache: "no-store",
+          ...options,
+          headers: {
+            "Accept": "application/json",
+            ...(options.body
+              ? { "Content-Type": "application/json" }
+              : {}),
+            ...(options.headers || {})
+          }
+        });
+        const data = await readJson(response);
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Sign in to manage your personal data export.");
+          }
+          if (response.status === 403) {
+            throw new Error(
+              "You are not authorized to access this export request."
+            );
+          }
+          if (response.status === 404 || response.status === 405) {
+            throw new Error(
+              "The data-export API is not configured. No export action was completed."
+            );
+          }
+          if (response.status === 409) {
+            throw new Error(
+              "A conflicting export request was detected. Refresh your request history and try again."
+            );
+          }
+          if (response.status === 413) {
+            throw new Error(
+              "The requested export is too large. Select fewer data categories or contact support."
+            );
+          }
+          if (response.status === 422) {
+            throw new Error(
+              safeText(
+                data.message,
+                "The server rejected the export request. Review your selections."
+              )
+            );
+          }
+          if (response.status === 429) {
+            throw new Error(
+              "Too many export requests. Please wait before trying again."
+            );
+          }
+          throw new Error(
+            safeText(data.message, "The export request could not be completed.")
+          );
+        }
+        return data;
+      }
+      function selectedCategories() {
+        return [...exportForm.querySelectorAll(
+          'input[name="categories"]:checked'
+        )]
+          .map(input => input.value)
+          .filter(value => allowedCategories.has(value));
+      }
+      function createTextElement(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        element.textContent = text;
+        return element;
+      }
+      /*
+       * Only allow a download URL that is same-origin and uses HTTP(S).
+       * Same-origin URLs are preferred because they can use the existing
+       * authenticated session. Do not accept javascript:, data: or arbitrary
+       * external download URLs from the API response.
+       */
+      function safeDownloadUrl(value) {
+        if (typeof value !== "string" || !value.trim()) return null;
+        try {
+          const url = new URL(value, window.location.origin);
+          if (
+            url.origin !== window.location.origin ||
+            !["http:", "https:"].includes(url.protocol)
+          ) {
+            return null;
+          }
+          return url.href;
+        } catch {
+          return null;
+        }
+      }
+      function renderRequests(requests) {
+        requestList.replaceChildren();
+        if (!Array.isArray(requests)) {
+          requestList.append(
+            createTextElement(
+              "div",
+              "empty-state",
+              "The export service returned an invalid request list."
+            )
+          );
+          return;
+        }
+        if (requests.length === 0) {
+          requestList.append(
+            createTextElement(
+              "div",
+              "empty-state",
+              "No export requests were returned for your account. You can submit a request using the form above."
+            )
+          );
+          return;
+        }
+        requests.slice(0, 50).forEach(item => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+          const card = document.createElement("article");
+          card.className = "request-card";
+          const requestId = safeText(item.id, "");
+          card.append(
+            createTextElement(
+              "h3",
+              "",
+              requestId ? `Export request ${requestId}` : "Export request"
+            )
+          );
+          const status = allowedStatuses.has(item.status)
+            ? item.status
+            : "pending";
+          const statusRow = document.createElement("div");
+          const statusClass = status === "ready"
+            ? "ready"
+            : status === "failed" || status === "expired"
+              ? "failed"
+              : "pending";
+          const statusBadge = createTextElement(
+            "span",
+            `request-status ${statusClass}`,
+            formatStatus(status)
+          );
+          statusRow.append(statusBadge);
+          card.append(statusRow);
+          const format = ["json", "csv"].includes(item.format)
+            ? item.format.toUpperCase()
+            : "Not provided";
+          const details = createTextElement(
+            "p",
+            "",
+            `Format: ${format}`
+          );
+          card.append(details);
+          const meta = document.createElement("div");
+          meta.className = "request-meta";
+          meta.append(
+            createTextElement(
+              "span",
+              "",
+              `Requested: ${formatDate(item.createdAt)}`
+            )
+          );
+          if (item.expiresAt) {
+            meta.append(
+              createTextElement(
+                "span",
+                "",
+                `Expiry: ${formatDate(item.expiresAt)}`
+              )
+            );
+          }
+          card.append(meta);
+          if (status === "ready") {
+            const downloadUrl = safeDownloadUrl(item.downloadUrl);
+            if (downloadUrl) {
+              const download = document.createElement("a");
+              download.className = "btn";
+              download.href = downloadUrl;
+              download.textContent = "Download export ↗";
+              download.rel = "nofollow";
+              download.style.marginTop = "13px";
+              /*
+               * The server must independently authorize the download and
+               * enforce expiry. The frontend URL check is not authorization.
+               */
+              card.append(download);
+            } else {
+              card.append(
+                createTextElement(
+                  "p",
+                  "",
+                  "This export is marked ready, but no valid same-origin download URL was provided. Refresh the request or contact support."
+                )
+              );
+            }
+          }
+          if (status === "failed") {
+            card.append(
+              createTextElement(
+                "p",
+                "",
+                "This export request could not be completed. Contact support if you need assistance."
+              )
+            );
+          }
+          if (status === "expired") {
+            card.append(
+              createTextElement(
+                "p",
+                "",
+                "This export has expired. Submit a new request if you still need the data."
+              )
+            );
+          }
+          requestList.append(card);
+        });
+        if (requestList.childElementCount === 0) {
+          requestList.append(
+            createTextElement(
+              "div",
+              "empty-state",
+              "No valid export request records were returned."
+            )
+          );
+        }
+      }
+      async function loadRequests() {
+        if (isBusy) return;
+        setBusy(true);
+        refreshButton.textContent = "Loading…";
+        try {
+          const data = await requestJson(endpoint, {
+            method: "GET"
+          });
+          if (!Array.isArray(data.requests)) {
+            throw new Error(
+              "The export service returned an invalid request history."
+            );
+          }
+          const email =
+            typeof data.user?.email === "string"
+              ? data.user.email
+              : "";
+          $("accountEmail").textContent = email || "Data export";
+          renderRequests(data.requests);
+          showStatus(
+            "Your export request history was retrieved from the account service.",
+            "success"
+          );
+        } catch (error) {
+          showStatus(
+            error instanceof Error
+              ? error.message
+              : "Export request history could not be loaded.",
+            "error"
+          );
+          requestList.replaceChildren(
+            createTextElement(
+              "div",
+              "empty-state",
+              "Request history is unavailable. Refresh later or contact support if the problem continues."
+            )
+          );
+        } finally {
+          setBusy(false);
+          refreshButton.textContent = "↻ Refresh request status";
+        }
+      }
+      async function submitExportRequest(event) {
+        event.preventDefault();
+        if (isBusy) return;
+        if (!exportForm.reportValidity()) return;
+        const categories = selectedCategories();
+        if (categories.length === 0) {
+          showStatus(
+            "Select at least one data category before submitting your request.",
+            "warning"
+          );
+          return;
+        }
+        const acknowledgement = $("exportAcknowledgement").checked;
+        if (!acknowledgement) {
+          showStatus(
+            "Confirm the data-export acknowledgement before submitting.",
+            "warning"
+          );
+          return;
+        }
+        const format = $("exportFormat").value;
+        const dateRange = $("dateRange").value;
+        if (!["json", "csv"].includes(format)) {
+          showStatus("Select a supported export format.", "error");
+          return;
+        }
+        if (!["all", "12-months", "90-days"].includes(dateRange)) {
+          showStatus("Select a supported date range.", "error");
+          return;
+        }
+        setBusy(true);
+        submitButton.textContent = "Submitting…";
+        try {
+          const data = await requestJson(endpoint, {
+            method: "POST",
+            body: JSON.stringify({
+              format,
+              dateRange,
+              categories,
+              acknowledgement: true
+            })
+          });
+          if (
+            !data.request ||
+            typeof data.request !== "object" ||
+            Array.isArray(data.request) ||
+            typeof data.request.id !== "string" ||
+            !data.request.id ||
+            !allowedStatuses.has(data.request.status)
+          ) {
+            throw new Error(
+              "The server response did not confirm a valid export request. Refresh the request history to verify its status."
+            );
+          }
+          showStatus(
+            `The server accepted export request ${data.request.id}. Current status: ${formatStatus(data.request.status)}.`,
+            "success"
+          );
+          exportForm.reset();
+          /*
+           * Load the canonical server history after a confirmed submission.
+           * setBusy is already active, so release it before loading the list.
+           */
+          setBusy(false);
+          await loadRequests();
+        } catch (error) {
+          showStatus(
+            error instanceof Error
+              ? error.message
+              : "The export request could not be submitted.",
+            "error"
+          );
+        } finally {
+          setBusy(false);
+          submitButton.textContent = "Submit export request";
+          refreshButton.textContent = "↻ Refresh request status";
+        }
+      }
+      exportForm.addEventListener("submit", submitExportRequest);
+      resetButton.addEventListener("click", () => {
+        window.setTimeout(() => {
+          showStatus(
+            "The form has been reset. No export request was submitted.",
+            ""
+          );
+        }, 0);
+      });
+      refreshButton.addEventListener("click", loadRequests);
+      /*
+       * Load history on entry. If the backend is not implemented yet,
+       * show a clear message instead of manufacturing request records.
+       */
+      loadRequests();
+    })();
+  </script>
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

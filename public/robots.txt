@@ -1,4 +1,603 @@
+=====================================================================
+
+MEDORBITS | ROBOTS EXCLUSION PROTOCOL
+
+=====================================================================
+
+Website:          https://medorbits.in
+
+Deployment file:  public/robots.txt
+
+Public endpoint:  https://medorbits.in/robots.txt
+
+Protocol:         Robots Exclusion Protocol (REP)
+
+Primary purpose:  Search engine crawling guidance
+
+Sitemap:          https://medorbits.in/sitemap.xml
+
+=====================================================================
+
+POLICY OBJECTIVES
+
+----------------------------------------------
+
+1. Keep public education, admissions, career and information pages
+
+accessible to search engine crawlers.
+
+2. Discourage crawling of account-specific and operational routes.
+
+3. Preserve access to public CSS, JavaScript, fonts and images.
+
+4. Reduce crawling of internal search and selected parameter URLs.
+
+5. Keep crawler-specific rules consistent with the default policy.
+
+6. Publish only rules that correspond to the deployed URL structure.
+
+SECURITY NOTICE
+
+----------------------------------------------
+
+This file is public and is not an access-control mechanism.
+
+Enforce authentication, authorization and private-file protection
+
+on the server. Do not expose secrets, personal records or private
+
+documents through publicly accessible URLs.
+
+=====================================================================
+
+01. DEFAULT CRAWLER POLICY
+
+=====================================================================
+
 User-agent: *
-Disallow: /admin/
+Allow: /
+
+Public static resources
+
+Allow: /assets/
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+Allow: /assets/fonts/
+
+=====================================================================
+
+02. AUTHENTICATION AND ACCOUNT ROUTES
+
+=====================================================================
+
 Disallow: /account/
+Disallow: /accounts/
+Disallow: /auth/
+Disallow: /authentication/
+Disallow: /login/
+Disallow: /logout/
+Disallow: /register/
+Disallow: /registration/
+Disallow: /signup/
+Disallow: /sign-in/
+Disallow: /sign-up/
+Disallow: /password-reset/
+Disallow: /reset-password/
+Disallow: /forgot-password/
+Disallow: /verify-email/
+Disallow: /verify-otp/
+
+=====================================================================
+
+03. DASHBOARDS AND USER-SPECIFIC ROUTES
+
+=====================================================================
+
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /administrator/
+Disallow: /staff/
+Disallow: /internal/
+Disallow: /private/
+Disallow: /user/
+Disallow: /users/
+Disallow: /profile/
+Disallow: /profiles/
+Disallow: /my-account/
+Disallow: /my-applications/
+Disallow: /my-documents/
+Disallow: /my-payments/
+Disallow: /saved/
+Disallow: /notifications/
+Disallow: /messages/
+Disallow: /settings/
+Disallow: /security-settings/
+
+=====================================================================
+
+04. APPLICATIONS, DOCUMENTS AND FILE STORAGE
+
+=====================================================================
+
+Disallow: /application-status/
+Disallow: /application-tracking/
+Disallow: /application-review/
+Disallow: /application-submission/
+Disallow: /uploads/
+Disallow: /uploaded-files/
+Disallow: /documents/private/
+Disallow: /documents/uploads/
+Disallow: /storage/private/
+Disallow: /storage/uploads/
+Disallow: /user-files/
+Disallow: /private-files/
+
+=====================================================================
+
+05. PAYMENTS, BILLING AND TRANSACTIONS
+
+=====================================================================
+
+Disallow: /checkout/
+Disallow: /payment/
+Disallow: /payments/
+Disallow: /billing/
+Disallow: /invoices/
+Disallow: /transactions/
+Disallow: /subscription/
+Disallow: /subscriptions/
+Disallow: /refund-request/
+Disallow: /payment-callback/
+Disallow: /payment-success/
+Disallow: /payment-failure/
+
+=====================================================================
+
+06. APIs, BACKEND AND INTEGRATION ENDPOINTS
+
+=====================================================================
+
 Disallow: /api/
+Disallow: /graphql
+Disallow: /webhooks/
+Disallow: /server/
+Disallow: /backend/
+Disallow: /internal-api/
+
+=====================================================================
+
+07. CONFIGURATION, LOGS AND DEVELOPMENT ROUTES
+
+=====================================================================
+
+Disallow: /config/
+Disallow: /logs/
+Disallow: /debug/
+Disallow: /test/
+Disallow: /tests/
+Disallow: /testing/
+Disallow: /staging/
+Disallow: /development/
+Disallow: /dev/
+Disallow: /tmp/
+Disallow: /temp/
+
+=====================================================================
+
+08. ERROR, OFFLINE AND OPERATIONAL PAGES
+
+=====================================================================
+
+Disallow: /404.html
+Disallow: /403.html
+Disallow: /500.html
+Disallow: /error/
+Disallow: /errors/
+Disallow: /offline.html
+Disallow: /maintenance.html
+Disallow: /health/
+Disallow: /health-check/
+Disallow: /status/
+
+=====================================================================
+
+09. INTERNAL SEARCH AND URL PARAMETER CONTROL
+
+=====================================================================
+
+These patterns are intended for crawl management, not security.
+
+Verify them against actual production URLs before deployment.
+
+Search-engine support for wildcard and query-string matching varies.
+
+Do not block parameters that produce important, unique public content.
+
+Prefer canonical tags for duplicate public URLs where appropriate.
+
+=====================================================================
+
+Internal search results
+
+Disallow: /search?
+Disallow: /search/
+
+Sorting and ordering variants
+
+Disallow: /?sort=
+Disallow: /&sort=
+Disallow: /?order=
+Disallow: /&order=
+
+Session and authentication-related query parameters
+
+Disallow: /?session=
+Disallow: /&session=
+Disallow: /?sessionid=
+Disallow: /&sessionid=
+Disallow: /?token=
+Disallow: /&token=
+Disallow: /?access_token=
+Disallow: /&access_token=
+Disallow: /?auth=
+Disallow: /&auth=
+Disallow: /?password=
+Disallow: /&password=
+Disallow: /?verification=
+Disallow: /&verification=
+Disallow: /*?reset_token=
+Disallow: /&*reset_token=
+
+=====================================================================
+
+10. PUBLIC EDUCATION AND ADMISSIONS CONTENT
+
+=====================================================================
+
+These paths are intended to remain crawlable under the default policy.
+
+Explicit Allow rules do not override a more specific Disallow rule
+
+in every crawler implementation. Avoid overlapping rules unnecessarily.
+
+=====================================================================
+
+Allow: /education/
+Allow: /education/index.html
+Allow: /education/courses.html
+Allow: /education/colleges.html
+Allow: /education/universities.html
+Allow: /education/admissions/
+Allow: /education/resources/
+Allow: /education/study-in-india/
+Allow: /education/study-abroad/
+
+=====================================================================
+
+11. PUBLIC CAREER AND RECRUITMENT CONTENT
+
+=====================================================================
+
+Allow: /career/
+Allow: /career/index.html
+Allow: /career/jobs.html
+Allow: /career/internships.html
+Allow: /career/guidance.html
+Allow: /career/resume-support.html
+Allow: /career/recruitment.html
+Allow: /career/employer-services.html
+
+=====================================================================
+
+12. PUBLIC ORGANISATION AND LEGAL CONTENT
+
+=====================================================================
+
+Allow: /pages/
+Allow: /legal/
+
+=====================================================================
+
+13. GOOGLE SEARCH CRAWLER
+
+=====================================================================
+
+Googlebot receives an explicit policy. Repeat relevant restrictions
+
+here because specific user-agent groups may not inherit the wildcard
+
+group’s rules.
+
+=====================================================================
+
+User-agent: Googlebot
+
+Allow: /
+Allow: /assets/
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+Allow: /assets/fonts/
+Allow: /education/
+Allow: /career/
+Allow: /pages/
+Allow: /legal/
+
+Disallow: /account/
+Disallow: /accounts/
+Disallow: /auth/
+Disallow: /authentication/
+Disallow: /login/
+Disallow: /logout/
+Disallow: /register/
+Disallow: /registration/
+Disallow: /signup/
+Disallow: /sign-in/
+Disallow: /sign-up/
+Disallow: /password-reset/
+Disallow: /reset-password/
+Disallow: /forgot-password/
+Disallow: /verify-email/
+Disallow: /verify-otp/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /administrator/
+Disallow: /staff/
+Disallow: /internal/
+Disallow: /private/
+Disallow: /user/
+Disallow: /users/
+Disallow: /profile/
+Disallow: /profiles/
+Disallow: /my-account/
+Disallow: /my-applications/
+Disallow: /my-documents/
+Disallow: /my-payments/
+Disallow: /saved/
+Disallow: /notifications/
+Disallow: /messages/
+Disallow: /settings/
+Disallow: /security-settings/
+Disallow: /application-status/
+Disallow: /application-tracking/
+Disallow: /application-review/
+Disallow: /application-submission/
+Disallow: /uploads/
+Disallow: /uploaded-files/
+Disallow: /documents/private/
+Disallow: /documents/uploads/
+Disallow: /storage/private/
+Disallow: /storage/uploads/
+Disallow: /user-files/
+Disallow: /private-files/
+Disallow: /checkout/
+Disallow: /payment/
+Disallow: /payments/
+Disallow: /billing/
+Disallow: /invoices/
+Disallow: /transactions/
+Disallow: /subscription/
+Disallow: /subscriptions/
+Disallow: /refund-request/
+Disallow: /payment-callback/
+Disallow: /payment-success/
+Disallow: /payment-failure/
+Disallow: /api/
+Disallow: /graphql
+Disallow: /webhooks/
+Disallow: /server/
+Disallow: /backend/
+Disallow: /internal-api/
+Disallow: /config/
+Disallow: /logs/
+Disallow: /debug/
+Disallow: /test/
+Disallow: /tests/
+Disallow: /testing/
+Disallow: /staging/
+Disallow: /development/
+Disallow: /dev/
+Disallow: /tmp/
+Disallow: /temp/
+Disallow: /404.html
+Disallow: /403.html
+Disallow: /500.html
+Disallow: /error/
+Disallow: /errors/
+Disallow: /offline.html
+Disallow: /maintenance.html
+Disallow: /health/
+Disallow: /health-check/
+Disallow: /status/
+
+=====================================================================
+
+14. GOOGLE IMAGE CRAWLER
+
+=====================================================================
+
+Public image assets may be indexed. Private uploads and user files
+
+should be protected at the server/storage layer.
+
+=====================================================================
+
+User-agent: Googlebot-Image
+
+Allow: /assets/images/
+Allow: /assets/images/logo/
+Allow: /assets/images/colleges/
+Allow: /assets/images/courses/
+Allow: /assets/images/careers/
+
+Disallow: /uploads/
+Disallow: /uploaded-files/
+Disallow: /documents/private/
+Disallow: /documents/uploads/
+Disallow: /storage/private/
+Disallow: /storage/uploads/
+Disallow: /user-files/
+Disallow: /private-files/
+
+=====================================================================
+
+15. BING SEARCH CRAWLER
+
+=====================================================================
+
+User-agent: Bingbot
+
+Allow: /
+Allow: /assets/
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+Allow: /assets/fonts/
+Allow: /education/
+Allow: /career/
+Allow: /pages/
+Allow: /legal/
+
+Disallow: /account/
+Disallow: /accounts/
+Disallow: /auth/
+Disallow: /authentication/
+Disallow: /login/
+Disallow: /logout/
+Disallow: /register/
+Disallow: /registration/
+Disallow: /signup/
+Disallow: /sign-in/
+Disallow: /sign-up/
+Disallow: /password-reset/
+Disallow: /reset-password/
+Disallow: /forgot-password/
+Disallow: /verify-email/
+Disallow: /verify-otp/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /administrator/
+Disallow: /staff/
+Disallow: /internal/
+Disallow: /private/
+Disallow: /user/
+Disallow: /users/
+Disallow: /profile/
+Disallow: /profiles/
+Disallow: /my-account/
+Disallow: /my-applications/
+Disallow: /my-documents/
+Disallow: /my-payments/
+Disallow: /saved/
+Disallow: /notifications/
+Disallow: /messages/
+Disallow: /settings/
+Disallow: /security-settings/
+Disallow: /application-status/
+Disallow: /application-tracking/
+Disallow: /application-review/
+Disallow: /application-submission/
+Disallow: /uploads/
+Disallow: /uploaded-files/
+Disallow: /documents/private/
+Disallow: /documents/uploads/
+Disallow: /storage/private/
+Disallow: /storage/uploads/
+Disallow: /user-files/
+Disallow: /private-files/
+Disallow: /checkout/
+Disallow: /payment/
+Disallow: /payments/
+Disallow: /billing/
+Disallow: /invoices/
+Disallow: /transactions/
+Disallow: /subscription/
+Disallow: /subscriptions/
+Disallow: /refund-request/
+Disallow: /payment-callback/
+Disallow: /payment-success/
+Disallow: /payment-failure/
+Disallow: /api/
+Disallow: /graphql
+Disallow: /webhooks/
+Disallow: /server/
+Disallow: /backend/
+Disallow: /internal-api/
+Disallow: /config/
+Disallow: /logs/
+Disallow: /debug/
+Disallow: /test/
+Disallow: /tests/
+Disallow: /testing/
+Disallow: /staging/
+Disallow: /development/
+Disallow: /dev/
+Disallow: /tmp/
+Disallow: /temp/
+Disallow: /404.html
+Disallow: /403.html
+Disallow: /500.html
+Disallow: /error/
+Disallow: /errors/
+Disallow: /offline.html
+Disallow: /maintenance.html
+Disallow: /health/
+Disallow: /health-check/
+Disallow: /status/
+
+=====================================================================
+
+16. OTHER SEARCH CRAWLERS
+
+=====================================================================
+
+These crawlers use the default policy unless a separate policy is
+
+introduced. Do not create an Allow-only user-agent group unless you
+
+also intend to define the restrictions that group should follow.
+
+=====================================================================
+
+DuckDuckBot
+
+Slurp
+
+Applebot
+
+=====================================================================
+
+17. AI AND OTHER AUTOMATED CRAWLERS
+
+=====================================================================
+
+No blanket AI-crawler restriction is applied by this policy.
+
+If a specific AI crawler policy is required, identify the crawler’s
+
+documented user-agent token and define a dedicated group.
+
+Separate policies may be required for search indexing, model training,
+
+user-triggered retrieval and other automated access purposes.
+
+Robots directives are voluntary crawler guidance, not a substitute
+
+for authentication, authorization, rate limiting or access controls.
+
+=====================================================================
+
+=====================================================================
+
+18. XML SITEMAP DISCOVERY
+
+=====================================================================
+
+Sitemap: https://medorbits.in/sitemap.xml
+
+=====================================================================
+
+END OF MEDORBITS ROBOTS EXCLUSION PROTOCOL
+
+=====================================================================

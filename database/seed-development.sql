@@ -1,1 +1,0 @@
--- Starter SQL file. Review schema, permissions and migration order before execution.

@@ -1,0 +1,129 @@
+=============================================================================
+
+MedOrbits | Pre-commit Quality and Security Controls
+
+File: .pre-commit-config.yaml
+
+Purpose: Automated repository hygiene, code quality, and security checks.
+
+=============================================================================
+
+INSTALLATION
+
+python -m pip install pre-commit
+
+pre-commit validate-config
+
+pre-commit install
+
+VALIDATION
+
+pre-commit run –all-files
+
+pre-commit run detect-private-key –all-files
+
+OPTIONAL PRE-PUSH CHECKS
+
+pre-commit install –hook-type pre-push
+
+minimum_pre_commit_version: "3.7.0"
+
+Run all applicable hooks, even when one fails.
+
+fail_fast: false
+
+Exclude generated output, dependency directories, and local caches.
+
+Keep application source, public assets, and project datasets eligible.
+
+exclude: >-
+(?x)^(
+.git/|
+.venv/|
+venv/|
+node_modules/|
+pycache/|
+.pytest_cache/|
+.mypy_cache/|
+.ruff_cache/|
+.tox/|
+htmlcov/|
+coverage/|
+dist/|
+build/|
+site-packages/|
+vendor/|
+reports/generated/|
+tmp/
+)
+
+repos:
+
+--------------------------------------------------
+
+1. General file integrity and repository hygiene
+
+--------------------------------------------------
+
+* repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    Remove trailing whitespace; preserve Markdown hard line breaks.
+    * id: trailing-whitespace
+        args:
+        * –markdown-linebreak-ext=md
+    Ensure text files end with a newline.
+    * id: end-of-file-fixer
+    Validate standard data and configuration file syntax.
+    * id: check-json
+    * id: check-yaml
+    * id: check-toml
+    Detect common repository integrity issues.
+    * id: check-merge-conflict
+    * id: check-case-conflict
+    * id: check-illegal-windows-names
+    * id: check-symlinks
+    Detect private-key material in files being checked.
+    * id: detect-private-key
+    Reject newly added files larger than 1 MiB.
+    * id: check-added-large-files
+        args:
+        * –maxkb=1024
+    Normalize UTF-8 byte-order markers.
+    * id: fix-byte-order-marker
+    Detect mixed line endings without automatic modification.
+    * id: mixed-line-ending
+        args:
+        * –fix=no
+
+--------------------------------------------------
+
+2. Python linting and formatting
+
+--------------------------------------------------
+
+* repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+    Apply available automatic lint fixes.
+    * id: ruff
+        args:
+        * –fix
+    Format Python source consistently.
+    * id: ruff-format
+
+--------------------------------------------------
+
+3. MedOrbits project validation
+
+--------------------------------------------------
+
+Keep project-specific JSON schema validation, application tests, and
+
+comprehensive checks in the existing project scripts and CI workflow.
+
+Add additional local hooks only after verifying that their scripts exist,
+
+their commands are valid, and their staged-file handling is compatible
+
+with pre-commit.

@@ -1,24 +1,1996 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Edit Profile | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="Review and update your MedOrbits account profile and contact information.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Edit Profile | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/edit-profile.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071629;
+      --bg-soft: #0b203b;
+      --surface: #102947;
+      --surface-2: #153657;
+      --surface-3: #081a2e;
+      --accent: #8bbcff;
+      --accent-bright: #d9e9ff;
+      --text: #f2f7ff;
+      --text-soft: #c7d8ee;
+      --muted: #9db2cc;
+      --border: rgba(139, 188, 255, .23);
+      --success: #a8f0d0;
+      --warning: #ffdfa2;
+      --danger: #ffc1ca;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(40,102,170,.2), transparent 35%),
+        radial-gradient(ellipse at 90% 40%, rgba(98,155,221,.08), transparent 32%),
+        linear-gradient(135deg, #050d1a, #091b31 55%, #102947);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans", sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible, a:focus-visible,
+    input:focus-visible, select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--accent-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1180px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--accent-bright);
+      color: var(--bg);
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid rgba(139,188,255,.13);
+      background: #040b15;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement .spark { color: var(--accent); }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,14,27,.94);
+      backdrop-filter: blur(18px);
+      transition: box-shadow .2s, background .2s;
+    }
+
+    .site-header.scrolled {
+      background: rgba(4,11,21,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--accent-bright);
+      font-size: 15px;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--accent-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+
+    .main-nav > a, .nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover, .nav-trigger:hover {
+      color: var(--accent-bright);
+    }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #102947;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+
+    .nav-cta, .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 41px;
+      padding: 10px 15px;
+      border: 1px solid var(--accent);
+      border-radius: 9px;
+      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color: #071629 !important;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .2s, filter .2s;
+    }
+
+    .btn:hover:not(:disabled), .nav-cta:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .btn-outline {
+      border-color: rgba(199,216,238,.32);
+      background: transparent;
+      color: var(--accent-bright) !important;
+    }
+
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 40px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--accent);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading h1 span { color: var(--accent-bright); }
+
+    .page-heading p {
+      max-width: 690px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0,1fr);
+      align-items: start;
+      gap: 19px;
+    }
+
+    .sidebar, .panel, .side-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
+      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 19px;
+    }
+
+    .account-user {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      height: 43px;
+      border: 1px solid rgba(139,188,255,.35);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#173d64,#0b203b);
+      color: var(--accent-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .account-user strong { display: block; font-size: 11px; }
+    .account-user small { display: block; color: var(--muted); font-size: 9px; }
+
+    .account-nav {
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
+    }
+
+    .account-nav a {
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .account-nav a:hover, .account-nav a.active {
+      border-color: rgba(139,188,255,.2);
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+
+    .sidebar-note {
+      margin: 15px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .content { display: grid; gap: 16px; min-width: 0; }
+
+    .panel { padding: clamp(17px,2.5vw,25px); }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 22px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.08);
+      color: var(--accent-bright);
+    }
+
+    .panel-icon svg { width: 22px; height: 22px; }
+
+    .panel-heading h2, .side-card h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .profile-summary {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.045);
+    }
+
+    .profile-avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 65px;
+      width: 65px;
+      height: 65px;
+      border: 1px solid rgba(139,188,255,.4);
+      border-radius: 18px;
+      background: linear-gradient(145deg,#214c76,#0b203b);
+      color: var(--accent-bright);
+      font: 600 23px "Playfair Display",Georgia,serif;
+    }
+
+    .profile-summary h2 {
+      margin: 0 0 4px;
+      font: 600 19px/1.4 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .profile-summary p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 0 16px;
+    }
+
+    .form-group { min-width: 0; margin-bottom: 20px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .field-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      color: var(--text-soft);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .field-hint { color: var(--muted); font-size: 9px; font-weight: 400; }
+
+    .form-input {
+      display: block;
+      width: 100%;
+      min-height: 47px;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(5,13,26,.52);
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+      transition: border-color .2s,box-shadow .2s;
+    }
+
+    textarea.form-input { min-height: 105px; resize: vertical; }
+
+    .form-input::placeholder { color: #7f96b3; }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139,188,255,.1);
+    }
+
+    .form-input[aria-invalid="true"] { border-color: var(--danger); }
+
+    .field-error {
+      margin: 6px 0 0;
+      color: var(--danger);
+      font-size: 10px;
+    }
+
+    .field-error:empty { display: none; }
+
+    .form-divider {
+      height: 1px;
+      margin: 8px 0 24px;
+      border: 0;
+      background: var(--border);
+    }
+
+    .section-label {
+      margin: 0 0 16px;
+      color: var(--accent-bright);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .security-reminder {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      margin: 8px 0 22px;
+      padding: 13px;
+      border: 1px solid rgba(139,188,255,.2);
+      border-radius: 9px;
+      background: rgba(139,188,255,.05);
+    }
+
+    .security-reminder svg {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 auto;
+      color: var(--accent-bright);
+    }
+
+    .security-reminder p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .security-reminder strong { color: var(--text-soft); }
+
+    .form-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+    .form-status {
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .form-status.error {
+      border-color: rgba(255,133,151,.35);
+      color: var(--danger);
+      background: rgba(255,133,151,.05);
+    }
+
+    .form-status.success {
+      border-color: rgba(100,222,175,.3);
+      color: var(--success);
+      background: rgba(100,222,175,.05);
+    }
+
+    .form-status.info {
+      color: var(--text-soft);
+      background: rgba(139,188,255,.05);
+    }
+
+    .form-status a {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .side-card { padding: 20px; }
+    .side-card h2 { font-size: 19px; margin-bottom: 15px; }
+
+    .side-card > p {
+      margin: 0 0 13px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .security-list, .side-links {
+      display: grid;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .security-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .security-list svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      margin-top: 2px;
+      color: var(--success);
+    }
+
+    .security-list strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .security-list span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.7;
+    }
+
+    .side-links { gap: 0; }
+
+    .side-links a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .side-links a:last-child { border-bottom: 0; }
+    .side-links a span { color: var(--accent); }
+    .side-links a:hover { color: var(--accent-bright); }
+
+    .important-note {
+      margin-top: 22px;
+      padding: 17px 19px;
+      border: 1px solid rgba(255,223,162,.2);
+      border-radius: 11px;
+      background: rgba(255,223,162,.035);
+    }
+
+    .important-note h2 {
+      margin: 0 0 6px;
+      color: var(--warning);
+      font-size: 11px;
+    }
+
+    .important-note p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .site-footer {
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background: #040b15;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(139,188,255,.17);
+      color: var(--accent-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-links a:hover { color: var(--accent-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: rgba(16,41,71,.4);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(139,188,255,.13);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border);
+        background: #071629;
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav > a, .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .nav-cta { width: 100%; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1 / -1; }
+    }
+
+    @media (max-width:800px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+
+      .account-nav { grid-template-columns: repeat(3,minmax(0,1fr)); }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+    }
+
+    @media (max-width:560px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .page-main { padding: 30px 0 45px; }
+      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+
+      .sidebar, .panel, .side-card { padding: 15px; }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: auto; }
+
+      .form-actions, .heading-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions .btn, .heading-actions .btn { width: 100%; }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 21px 15px; }
+      .footer-brand { grid-column: 1 / -1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .profile-summary { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Edit Profile</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about edit profile. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a href="/account/settings.html">My Profile</a>
+        <a href="/account/applications.html">My Applications</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/account/dashboard.html">Account</a>
+        <span aria-hidden="true">›</span>
+        <a href="/account/settings.html">Account settings</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Edit profile</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Personal account area</span>
+          <h1>Edit <span>profile</span></h1>
+          <p>
+            Review your personal information and keep your MedOrbits profile
+            up to date. Changes are submitted securely to the account service
+            and depend on server-side validation.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/account/settings.html">
+            ← Account settings
+          </a>
+          <a class="btn btn-outline" href="/account/dashboard.html">
+            My dashboard
+          </a>
+        </div>
+      </header>
+
+      <div class="layout">
+
+        <aside class="sidebar" aria-label="Account navigation">
+          <div class="account-user">
+            <div class="avatar" id="sidebarAvatar" aria-hidden="true">MO</div>
+            <div>
+              <strong id="sidebarName">Your account</strong>
+              <small>Personal profile</small>
+            </div>
+          </div>
+
+          <nav class="account-nav" aria-label="Account menu">
+            <a href="/account/dashboard.html">▦ &nbsp; Dashboard</a>
+            <a class="active" href="/account/edit-profile.html"
+               aria-current="page">◈ &nbsp; Edit profile</a>
+            <a href="/account/settings.html">⚙ &nbsp; Account settings</a>
+            <a href="/account/applications.html">▤ &nbsp; My applications</a>
+            <a href="/account/documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
+            <a href="/account/payments.html">＄ &nbsp; Payments</a>
+            <a href="/account/change-password.html">◉ &nbsp; Change password</a>
+          </nav>
+
+          <p class="sidebar-note">
+            Keep your contact information accurate. Never share your password,
+            one-time codes or account recovery information with anyone.
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <section class="panel" aria-labelledby="profilePanelTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4"/>
+                  <path d="M4 21v-2a8 8 0 0 1 16 0v2"/>
+                  <path d="m16 11 2 2 4-4"/>
+                </svg>
+              </div>
+              <div>
+                <h2 id="profilePanelTitle">Personal information</h2>
+                <p>Update the information associated with your account.</p>
+              </div>
+            </div>
+
+            <div id="formStatus" class="form-status" role="status"
+                 aria-live="polite" tabindex="-1" hidden></div>
+
+            <div class="profile-summary">
+              <div class="profile-avatar" id="profileAvatar" aria-hidden="true">MO</div>
+              <div>
+                <h2 id="previewName">Your profile</h2>
+                <p id="previewEmail">Your registered email address</p>
+                <p id="profilePreviewHint">Profile preview</p>
+              </div>
+            </div>
+
+            <form id="profileForm" autocomplete="on" novalidate>
+              <h3 class="section-label">Basic information</h3>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="field-label" for="firstName">First name</label>
+                  <input class="form-input" id="firstName" name="firstName"
+                         type="text" autocomplete="given-name"
+                         placeholder="Enter first name" maxlength="80"
+                         required aria-describedby="firstNameError">
+                  <p class="field-error" id="firstNameError"></p>
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="lastName">Last name</label>
+                  <input class="form-input" id="lastName" name="lastName"
+                         type="text" autocomplete="family-name"
+                         placeholder="Enter last name" maxlength="80"
+                         required aria-describedby="lastNameError">
+                  <p class="field-error" id="lastNameError"></p>
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="email">
+                    Email address
+                    <span class="field-hint">Verification may be required</span>
+                  </label>
+                  <input class="form-input" id="email" name="email"
+                         type="email" autocomplete="email"
+                         placeholder="name@example.com" maxlength="254"
+                         required aria-describedby="emailError">
+                  <p class="field-error" id="emailError"></p>
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="phone">Mobile number</label>
+                  <input class="form-input" id="phone" name="phone"
+                         type="tel" autocomplete="tel"
+                         inputmode="tel" placeholder="+91 XXXXX XXXXX"
+                         maxlength="20" aria-describedby="phoneError">
+                  <p class="field-error" id="phoneError"></p>
+                </div>
+              </div>
+
+              <hr class="form-divider">
+
+              <h3 class="section-label">Education and career</h3>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="field-label" for="occupation">Current status</label>
+                  <select class="form-input" id="occupation" name="occupation">
+                    <option value="">Select current status</option>
+                    <option value="student">Student</option>
+                    <option value="working">Working professional</option>
+                    <option value="job-seeker">Job seeker</option>
+                    <option value="business-owner">Business owner</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="qualification">
+                    Highest qualification
+                  </label>
+                  <select class="form-input" id="qualification" name="qualification">
+                    <option value="">Select qualification</option>
+                    <option value="secondary">Secondary (Class 10)</option>
+                    <option value="senior-secondary">Senior secondary (Class 12)</option>
+                    <option value="diploma">Diploma</option>
+                    <option value="undergraduate">Undergraduate degree</option>
+                    <option value="postgraduate">Postgraduate degree</option>
+                    <option value="doctoral">Doctoral degree</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group full">
+                  <label class="field-label" for="institution">
+                    Institution or organisation
+                  </label>
+                  <input class="form-input" id="institution" name="institution"
+                         type="text" autocomplete="organization"
+                         placeholder="College, university or organisation"
+                         maxlength="160">
+                </div>
+
+                <div class="form-group full">
+                  <label class="field-label" for="interests">
+                    Education or career interests
+                  </label>
+                  <input class="form-input" id="interests" name="interests"
+                         type="text" placeholder="e.g. MBBS, BDS, data science, recruitment"
+                         maxlength="250">
+                </div>
+              </div>
+
+              <hr class="form-divider">
+
+              <h3 class="section-label">Location and additional details</h3>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="field-label" for="city">City</label>
+                  <input class="form-input" id="city" name="city"
+                         type="text" autocomplete="address-level2"
+                         placeholder="Enter city" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="state">State or union territory</label>
+                  <input class="form-input" id="state" name="state"
+                         type="text" autocomplete="address-level1"
+                         placeholder="Enter state" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="country">Country</label>
+                  <input class="form-input" id="country" name="country"
+                         type="text" autocomplete="country-name"
+                         placeholder="Enter country" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                  <label class="field-label" for="postalCode">Postal code</label>
+                  <input class="form-input" id="postalCode" name="postalCode"
+                         type="text" autocomplete="postal-code"
+                         placeholder="Enter postal code" maxlength="20">
+                </div>
+
+                <div class="form-group full">
+                  <label class="field-label" for="bio">
+                    About you
+                    <span class="field-hint">Optional · 500 characters maximum</span>
+                  </label>
+                  <textarea class="form-input" id="bio" name="bio"
+                            maxlength="500"
+                            placeholder="Share a short introduction or your goals."
+                            aria-describedby="bioCounter"></textarea>
+                  <p class="field-hint" id="bioCounter">0 / 500 characters</p>
+                </div>
+              </div>
+
+              <div class="security-reminder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6z"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <p>
+                  <strong>Privacy matters.</strong>
+                  Only provide information needed for your account. Do not
+                  enter passwords, payment card details or identity-document
+                  numbers in the About you field.
+                </p>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn" id="submitButton" type="submit">
+                  <span id="submitLabel">Save profile changes</span>
+                  <span aria-hidden="true">↗</span>
+                </button>
+                <button class="btn btn-outline" id="resetButton" type="reset">
+                  Reset changes
+                </button>
+                <a class="btn btn-outline" href="/account/settings.html">
+                  Cancel
+                </a>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="profileHelpTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"/>
+                  <path d="M12 17h.01"/>
+                </svg>
+              </div>
+              <div>
+                <h2 id="profileHelpTitle">Profile management</h2>
+                <p>Important information about account details.</p>
+              </div>
+            </div>
+
+            <ul class="security-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="m5 12 4 4L19 6"/>
+                </svg>
+                <div>
+                  <strong>Keep your email current</strong>
+                  <span>Account recovery and important notifications may rely on your registered email.</span>
+                </div>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="m5 12 4 4L19 6"/>
+                </svg>
+                <div>
+                  <strong>Use an accessible phone number</strong>
+                  <span>Provide a number you control if it is needed for account communication.</span>
+                </div>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="m5 12 4 4L19 6"/>
+                </svg>
+                <div>
+                  <strong>Changes may require verification</strong>
+                  <span>Email, phone and other sensitive account changes should be verified by the server.</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <section class="side-card" aria-labelledby="quickLinksTitle">
+            <h2 id="quickLinksTitle">Account shortcuts</h2>
+            <div class="side-links">
+              <a href="/account/dashboard.html">Account dashboard <span aria-hidden="true">↗</span></a>
+              <a href="/account/settings.html">Account settings <span aria-hidden="true">↗</span></a>
+              <a href="/account/applications.html">My applications <span aria-hidden="true">↗</span></a>
+              <a href="/account/documents.html">My documents <span aria-hidden="true">↗</span></a>
+              <a href="/account/notifications.html">Notifications <span aria-hidden="true">↗</span></a>
+              <a href="/account/change-password.html">Change password <span aria-hidden="true">↗</span></a>
+              <a href="/account/support.html">Help and support <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <section class="important-note" aria-labelledby="importantNoteTitle">
+        <h2 id="importantNoteTitle">Important account security note</h2>
+        <p>
+          This page requires an authenticated server-side profile API.
+          The server must identify the signed-in user from the authenticated
+          session, validate and allowlist submitted fields, enforce access
+          controls, and protect state-changing requests against CSRF where
+          applicable. Never trust a client-supplied user ID to decide which
+          account to modify. Email or mobile changes may require a separate
+          verification process. The interface does not itself guarantee that
+          information has been saved.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>MedOrbits</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Keep your account information accurate and private. MedOrbits will
+        not need your password through an email or chat message. Contact
+        official support if you suspect unauthorized account activity.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * MEDORBITS -- EDIT PROFILE
+       *
+       * Confirm these API routes and the JSON contract against the real
+       * backend before deployment.
+       *
+       * Expected:
+       * GET  /api/users/me
+       * PATCH /api/users/me
+       *
+       * Example GET response:
+       * {
+       *   "profile": {
+       *     "firstName": "Example",
+       *     "lastName": "User",
+       *     "email": "user@example.com"
+       *   }
+       * }
+       *
+       * Example PATCH body: allowlisted profile fields only.
+       */
+
+      const CONFIG = Object.freeze({
+        profileEndpoint: "/api/users/me",
+        minimumNameLength: 1,
+        maximumNameLength: 80,
+        maximumBioLength: 500
+      });
+
+      const $ = id => document.getElementById(id);
+
+      const form = $("profileForm");
+      const formStatus = $("formStatus");
+      const submitButton = $("submitButton");
+      const submitLabel = $("submitLabel");
+      const bio = $("bio");
+      const resetButton = $("resetButton");
+
+      const fields = [
+        "firstName", "lastName", "email", "phone",
+        "occupation", "qualification", "institution",
+        "interests", "city", "state", "country",
+        "postalCode", "bio"
+      ];
+
+      const initialValues = {};
+      let baseline = {};
+      let profileLoaded = false;
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      function getValues() {
+        const values = {};
+
+        fields.forEach(name => {
+          const element = $(name);
+          values[name] = element.value.trim();
+        });
+
+        return values;
+      }
+
+      function getInitialValues() {
+        const values = {};
+
+        fields.forEach(name => {
+          values[name] = initialValues[name] ?? "";
+        });
+
+        return values;
+      }
+
+      function setValues(data) {
+        fields.forEach(name => {
+          if (data[name] === null || data[name] === undefined) {
+            $(name).value = "";
+          } else if (typeof data[name] === "string") {
+            $(name).value = data[name].slice(
+              0,
+              name === "bio" ? CONFIG.maximumBioLength :
+              name === "firstName" || name === "lastName" ? CONFIG.maximumNameLength :
+              undefined
+            );
+          }
+        });
+
+        updatePreview();
+        updateBioCounter();
+      }
+
+      function updatePreview() {
+        const first = $("firstName").value.trim();
+        const last = $("lastName").value.trim();
+        const email = $("email").value.trim();
+
+        const fullName = [first, last].filter(Boolean).join(" ");
+        const initials = [first, last]
+          .filter(Boolean)
+          .map(part => Array.from(part)[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2) || "MO";
+
+        $("previewName").textContent = fullName || "Your profile";
+        $("previewEmail").textContent = email || "Your registered email address";
+        $("sidebarName").textContent = fullName || "Your account";
+        $("profileAvatar").textContent = initials;
+        $("sidebarAvatar").textContent = initials;
+      }
+
+      function updateBioCounter() {
+        $("bioCounter").textContent =
+          `${bio.value.length} / ${CONFIG.maximumBioLength} characters`;
+      }
+
+      function clearStatus() {
+        formStatus.replaceChildren();
+        formStatus.className = "form-status";
+        formStatus.hidden = true;
+      }
+
+      function showStatus(message, type = "info", focus = false) {
+        formStatus.replaceChildren();
+        formStatus.textContent = message;
+        formStatus.className = `form-status ${type}`;
+        formStatus.hidden = false;
+
+        if (focus) formStatus.focus();
+      }
+
+      function setError(name, message) {
+        const input = $(name);
+        const error = $(name + "Error");
+
+        if (!error) return;
+
+        error.textContent = message;
+        input.setAttribute("aria-invalid", message ? "true" : "false");
+      }
+
+      function clearError(name) {
+        setError(name, "");
+      }
+
+      function clearAllErrors() {
+        ["firstName", "lastName", "email", "phone"].forEach(clearError);
+      }
+
+      function validate() {
+        clearAllErrors();
+        let valid = true;
+
+        const first = $("firstName").value.trim();
+        const last = $("lastName").value.trim();
+        const email = $("email").value.trim();
+        const phone = $("phone").value.trim();
+
+        if (
+          first.length < CONFIG.minimumNameLength ||
+          first.length > CONFIG.maximumNameLength
+        ) {
+          setError("firstName", "Enter a first name of up to 80 characters.");
+          valid = false;
+        }
+
+        if (
+          last.length < CONFIG.minimumNameLength ||
+          last.length > CONFIG.maximumNameLength
+        ) {
+          setError("lastName", "Enter a last name of up to 80 characters.");
+          valid = false;
+        }
+
+        if (
+          !email ||
+          email.length > 254 ||
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+        ) {
+          setError("email", "Enter a valid email address.");
+          valid = false;
+        }
+
+        if (phone && !/^[+()\d\s.-]{7,20}$/.test(phone)) {
+          setError("phone", "Enter a valid phone number.");
+          valid = false;
+        }
+
+        return valid;
+      }
+
+      function setSubmitting(value) {
+        submitButton.disabled = value;
+        resetButton.disabled = value;
+        submitLabel.textContent = value
+          ? "Saving changes…"
+          : "Save profile changes";
+      }
+
+      async function parseResponse(response) {
+        const type = response.headers.get("content-type") || "";
+
+        if (type.includes("application/json")) {
+          try {
+            return await response.json();
+          } catch {
+            return {};
+          }
+        }
+
+        return {};
+      }
+
+      function safeProfileFromResponse(data) {
+        if (!data || typeof data !== "object") return null;
+
+        const profile =
+          data.profile && typeof data.profile === "object"
+            ? data.profile
+            : data.user && typeof data.user === "object"
+              ? data.user
+              : null;
+
+        if (!profile) return null;
+
+        const result = {};
+
+        fields.forEach(name => {
+          if (typeof profile[name] === "string") {
+            result[name] = profile[name];
+          }
+        });
+
+        return result;
+      }
+
+      function applyServerProfile(profile) {
+        fields.forEach(name => {
+          initialValues[name] =
+            typeof profile[name] === "string" ? profile[name] : "";
+        });
+
+        baseline = getInitialValues();
+        setValues(baseline);
+        profileLoaded = true;
+        $("profilePreviewHint").textContent = "Profile loaded";
+      }
+
+      async function loadProfile() {
+        setSubmitting(true);
+        showStatus("Loading your account profile…", "info");
+
+        try {
+          const response = await fetch(CONFIG.profileEndpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { "Accept": "application/json" }
+          });
+
+          const data = await parseResponse(response);
+
+          if (response.status === 401) {
+            showStatus(
+              "Sign in to view and edit your account profile.",
+              "error"
+            );
+            addLoginLink();
+            return;
+          }
+
+          if (!response.ok) {
+            showStatus(
+              response.status === 404
+                ? "The profile API endpoint was not found. Verify the configured backend route."
+                : "Your profile could not be loaded. Please try again later.",
+              "error"
+            );
+            return;
+          }
+
+          const profile = safeProfileFromResponse(data);
+
+          if (!profile) {
+            showStatus(
+              "The profile service returned an unexpected response. Check its JSON contract.",
+              "error"
+            );
+            return;
+          }
+
+          applyServerProfile(profile);
+          clearStatus();
+
+        } catch {
+          showStatus(
+            "Unable to connect to the profile service. Check your connection and API configuration.",
+            "error"
+          );
+        } finally {
+          setSubmitting(false);
+        }
+      }
+
+      function addLoginLink() {
+        const link = document.createElement("a");
+        link.href = "/account/login.html";
+        link.textContent = " Sign in";
+
+        formStatus.appendChild(document.createTextNode(" "));
+        formStatus.appendChild(link);
+      }
+
+      async function submitProfile(event) {
+        event.preventDefault();
+        clearStatus();
+
+        if (!profileLoaded) {
+          showStatus(
+            "Your profile has not been loaded from the server. Reload the profile before saving.",
+            "error",
+            true
+          );
+          return;
+        }
+
+        if (!validate()) {
+          const firstInvalid = form.querySelector('[aria-invalid="true"]');
+          firstInvalid?.focus();
+
+          showStatus(
+            "Please correct the highlighted fields before continuing.",
+            "error"
+          );
+          return;
+        }
+
+        const current = getValues();
+        const changed = {};
+
+        fields.forEach(name => {
+          if (current[name] !== (baseline[name] ?? "")) {
+            changed[name] = current[name];
+          }
+        });
+
+        if (Object.keys(changed).length === 0) {
+          showStatus("There are no changes to save.", "info", true);
+          return;
+        }
+
+        setSubmitting(true);
+
+        try {
+          const response = await fetch(CONFIG.profileEndpoint, {
+            method: "PATCH",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(changed)
+          });
+
+          const data = await parseResponse(response);
+
+          if (response.status === 401) {
+            showStatus(
+              "Your session may have expired. Sign in again before updating your profile.",
+              "error",
+              true
+            );
+            addLoginLink();
+            return;
+          }
+
+          if (response.status === 403) {
+            showStatus(
+              "The server did not authorize this change. Refresh your session and try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 404) {
+            showStatus(
+              "The profile update endpoint was not found. Verify the backend route.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 409) {
+            showStatus(
+              "The profile conflicts with existing account information. Review your details and try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 422) {
+            showStatus(
+              "The server rejected one or more profile fields. Check the information and try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 429) {
+            showStatus(
+              "Too many update attempts. Wait before trying again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (!response.ok) {
+            showStatus(
+              "Your profile could not be updated. Please try again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          /*
+           * A successful HTTP status is not enough if the API reports
+           * application-level failure in its response body.
+           */
+          if (data.success === false || data.ok === false) {
+            showStatus(
+              "The server did not confirm that your profile was updated.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          const savedProfile = safeProfileFromResponse(data);
+
+          if (savedProfile) {
+            applyServerProfile(savedProfile);
+          } else {
+            /*
+             * Accept the submitted values only after a successful server
+             * response, assuming the API contract confirms persisted updates
+             * with a successful status. Prefer returning the saved profile.
+             */
+            baseline = current;
+            fields.forEach(name => {
+              initialValues[name] = current[name];
+            });
+            updatePreview();
+          }
+
+          showStatus(
+            "Your profile changes have been saved successfully.",
+            "success",
+            true
+          );
+
+        } catch {
+          showStatus(
+            "Unable to connect to the profile service. Your changes have not been confirmed.",
+            "error",
+            true
+          );
+        } finally {
+          setSubmitting(false);
+        }
+      }
+
+      form.addEventListener("submit", submitProfile);
+
+      fields.forEach(name => {
+        const input = $(name);
+
+        input.addEventListener("input", () => {
+          clearStatus();
+
+          if (["firstName", "lastName", "email", "phone"].includes(name)) {
+            clearError(name);
+          }
+
+          if (name === "firstName" || name === "lastName" || name === "email") {
+            updatePreview();
+          }
+
+          if (name === "bio") updateBioCounter();
+        });
+
+        input.addEventListener("change", () => {
+          clearStatus();
+        });
+      });
+
+      form.addEventListener("reset", event => {
+        /*
+         * Restore the last server-confirmed profile rather than arbitrary
+         * values from the HTML defaults.
+         */
+        if (!profileLoaded) return;
+
+        event.preventDefault();
+        clearStatus();
+        clearAllErrors();
+        setValues(baseline);
+        showStatus("Unsaved changes have been reset.", "info");
+      });
+
+      /* Header navigation */
+
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      updatePreview();
+      updateBioCounter();
+      loadProfile();
+    })();
+  </script>
+
+  <!-- Shared project scripts: retain the reference paths. -->
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/navigation.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

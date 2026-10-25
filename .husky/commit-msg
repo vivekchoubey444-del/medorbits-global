@@ -1,0 +1,59 @@
+
+#!/usr/bin/env sh
+# MedOrbits commit message validation
+# Format: type(scope): description
+# Examples:
+#   feat(auth): add email verification
+#   fix(api): handle missing application ID
+#   docs: update installation guide
+#   chore(deps): update dependencies
+#   feat(api)!: remove deprecated endpoint
+
+set -eu
+
+commit_msg_file="${1:-}"
+
+if [ -z "$commit_msg_file" ] || [ ! -f "$commit_msg_file" ]; then
+    echo "ERROR: Commit message file was not provided or does not exist." >&2
+    exit 1
+fi
+
+# Read the first non-empty, non-comment line.
+commit_msg=$(
+    grep -v '^[[:space:]]*#' "$commit_msg_file" |
+    sed '/^[[:space:]]*$/d' |
+    head -n 1 || true
+)
+
+if [ -z "$commit_msg" ]; then
+    echo "ERROR: Commit message is empty." >&2
+    exit 1
+fi
+
+# Validate Conventional Commit format.
+# Description: 1–100 characters, beginning with a non-whitespace character.
+if ! printf '%s\n' "$commit_msg" | grep -Eq \
+    '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?!?: [^[:space:]].{0,99}$'; then
+    cat >&2 <<'EOF'
+
+Invalid commit message format.
+
+Use: type(scope): short description
+
+Allowed types:
+  feat, fix, docs, style, refactor, perf,
+  test, build, ci, chore, revert
+
+Examples:
+  feat(auth): add email verification
+  fix(api): handle missing application ID
+  docs: update installation guide
+  chore(deps): update dependencies
+  feat(api)!: remove deprecated endpoint
+
+EOF
+    exit 1
+fi
+
+echo "Commit message format validated."
+exit 0

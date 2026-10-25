@@ -1,24 +1,2113 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Support | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16020c">
+  <meta name="description" content="Visit the MedOrbits Support Centre for help with account recovery, document uploads, payments, refund requests, complaints, ticket submission and ticket status.">
+  <meta name="robots" content="index,follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Support Centre | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/support/index.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ======================================================
+       MEDORBITS | SUPPORT CENTRE
+       Ruby Noir · Neon Coral · Champagne Blush
+       Responsive · Accessible · Self-contained
+       ====================================================== */
+
+    :root {
+      color-scheme: dark;
+      --bg: #10020a;
+      --bg-soft: #1c0410;
+      --surface: #2c0718;
+      --surface-2: #430b24;
+      --surface-3: #5a1030;
+      --accent: #ff285f;
+      --accent-hot: #ff174f;
+      --accent-soft: #ff7899;
+      --accent-light: #ffe3eb;
+      --text: #fff5f8;
+      --text-soft: #f6cbd8;
+      --muted: #c99aaa;
+      --border: rgba(255,74,119,.28);
+      --border-strong: rgba(255,92,137,.52);
+      --success: #a8ebc7;
+      --warning: #f7d79c;
+      --radius: 18px;
+      --container: 1180px;
+      --shadow: 0 25px 75px rgba(0,0,0,.42),
+                0 0 35px rgba(255,23,79,.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 10% 5%,rgba(255,23,79,.22),transparent 34%),
+        radial-gradient(ellipse at 95% 40%,rgba(183,18,91,.17),transparent 36%),
+        radial-gradient(ellipse at 45% 100%,rgba(255,58,105,.10),transparent 40%),
+        linear-gradient(135deg,#0c0208 0%,#210414 48%,#31071c 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",Arial,sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--accent-light);
+      outline-offset: 4px;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: #19020c;
+    }
+
+    .container {
+      width: min(var(--container),calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: -80px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--accent-light);
+      color: var(--bg);
+      font-weight: 800;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg,#0d0208,#260416,#0d0208);
+      color: var(--accent-light);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .spark {
+      color: var(--accent);
+      text-shadow: 0 0 12px rgba(255,40,95,.8);
+    }
+
+    /* Header */
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(17,2,11,.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: background .25s ease,box-shadow .25s ease;
+    }
+
+    .site-header.scrolled {
+      background: rgba(12,2,8,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.35);
+    }
+
+    .nav-wrap {
+      position: relative;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--accent-light);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      background: rgba(255,40,95,.06);
+      color: var(--accent-light);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+
+    .main-nav > a,
+    .nav-trigger { color: var(--text-soft); }
+
+    .main-nav > a:hover,
+    .nav-trigger:hover { color: var(--accent-light); }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      white-space: nowrap;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      max-height: 70vh;
+      padding: 9px;
+      overflow-y: auto;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      background: #300719;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(255,40,95,.12);
+      color: var(--accent-light);
+    }
+
+    /* Buttons */
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 45px;
+      padding: 11px 18px;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      background: linear-gradient(120deg,#ffe7ee 0%,#ff9bb5 42%,#ff285f 100%);
+      color: #260414;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 6px 22px rgba(255,23,79,.13);
+      transition: transform .22s ease,filter .22s ease,box-shadow .22s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+      box-shadow: 0 10px 28px rgba(255,23,79,.22);
+    }
+
+    .btn-outline {
+      border-color: rgba(255,213,225,.34);
+      background: rgba(255,40,95,.045);
+      color: var(--accent-light);
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent-soft);
+      background: rgba(255,40,95,.11);
+      box-shadow: none;
+    }
+
+    /* Hero */
+
+    .hero {
+      position: relative;
+      isolation: isolate;
+      padding: 45px 0 58px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 20%,rgba(255,23,79,.14),transparent 44%),
+        radial-gradient(ellipse at 0% 95%,rgba(255,75,125,.08),transparent 34%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 27px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a { color: var(--accent-light); }
+
+    .breadcrumbs a:hover { color: var(--accent-soft); }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.05fr) minmax(280px,.95fr);
+      align-items: center;
+      gap: clamp(30px,6vw,75px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent-light);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 28px;
+      height: 2px;
+      border-radius: 4px;
+      background: var(--accent);
+      box-shadow: 0 0 13px rgba(255,40,95,.55);
+      content: "";
+    }
+
+    .hero h1 {
+      margin: 17px 0 19px;
+      font-family: "Playfair Display",Georgia,serif;
+      font-size: clamp(38px,5vw,62px);
+      font-weight: 700;
+      line-height: 1.13;
+      letter-spacing: -.045em;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(100deg,#fff3f7 0%,#ffb8cb 40%,#ff4b7b 78%,#ff285f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-copy > p {
+      max-width: 570px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 11px;
+      margin-top: 25px;
+    }
+
+    .hero-meta {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,40,95,.045);
+      color: var(--text-soft);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    /* Hero illustration */
+
+    .hero-art {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      min-height: 345px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(255,74,119,.42);
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 50% 45%,rgba(255,40,95,.19),transparent 38%),
+        radial-gradient(ellipse at 50% 100%,rgba(145,12,65,.14),transparent 60%),
+        linear-gradient(145deg,rgba(65,7,34,.95),rgba(17,2,12,.98));
+      box-shadow: 0 30px 80px rgba(0,0,0,.43),
+                  0 0 40px rgba(255,23,79,.09),
+                  inset 0 0 65px rgba(255,40,95,.045);
+      animation: panel-breathe 6s ease-in-out infinite;
+    }
+
+    .art-glow {
+      position: absolute;
+      z-index: -2;
+      top: 50%;
+      left: 50%;
+      width: 72%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: rgba(255,23,79,.12);
+      filter: blur(55px);
+      transform: translate(-50%,-50%);
+      animation: core-glow 5s ease-in-out infinite;
+    }
+
+    .orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      border: 1px solid rgba(255,95,140,.24);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .orbit-one {
+      width: 190px;
+      height: 190px;
+      border-color: rgba(255,119,155,.35);
+      transform: translate(-50%,-50%);
+      animation: orbit-spin 20s linear infinite;
+    }
+
+    .orbit-two {
+      width: 255px;
+      height: 255px;
+      border-style: dashed;
+      border-color: rgba(255,83,128,.22);
+      transform: translate(-50%,-50%);
+      animation: orbit-reverse 34s linear infinite;
+    }
+
+    .orbit-three {
+      width: 315px;
+      height: 315px;
+      border-color: rgba(255,90,137,.11);
+      transform: translate(-50%,-50%);
+      animation: orbit-spin 45s linear infinite;
+    }
+
+    .orbit-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 2;
+      width: 8px;
+      height: 8px;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 50%;
+      background: #ff7899;
+      box-shadow: 0 0 9px #ff285f,0 0 20px rgba(255,40,95,.7);
+    }
+
+    .dot-one { animation: dot-one 9s linear infinite; }
+
+    .dot-two {
+      width: 5px;
+      height: 5px;
+      background: #ffe3eb;
+      animation: dot-two 13s linear infinite;
+    }
+
+    .particle {
+      position: absolute;
+      z-index: -1;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #ff7899;
+      box-shadow: 0 0 12px rgba(255,40,95,.8);
+      animation: particle-float 5s ease-in-out infinite;
+    }
+
+    .particle-one { top: 24%; left: 22%; }
+    .particle-two { top: 30%; right: 19%; animation-delay: -2s; }
+    .particle-three { bottom: 28%; left: 18%; animation-delay: -1.6s; }
+    .particle-four { right: 22%; bottom: 26%; animation-delay: -3s; }
+
+    .hero-emblem {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      width: 115px;
+      height: 115px;
+      place-items: center;
+      border: 1px solid rgba(255,120,153,.45);
+      border-radius: 30px;
+      background: linear-gradient(145deg,rgba(90,16,48,.96),rgba(24,3,15,.98));
+      color: var(--accent-light);
+      font-size: 49px;
+      box-shadow: 0 15px 55px rgba(0,0,0,.35),0 0 32px rgba(255,40,95,.13);
+      transform: rotate(-5deg);
+    }
+
+    .hero-emblem span { transform: rotate(5deg); }
+
+    .art-label {
+      position: absolute;
+      z-index: 4;
+      bottom: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 15px;
+      border: 1px solid rgba(255,105,147,.38);
+      border-radius: 100px;
+      background: linear-gradient(120deg,rgba(46,5,25,.97),rgba(79,8,38,.94));
+      color: var(--accent-light);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .status-light {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #ff4b79;
+      box-shadow: 0 0 12px rgba(255,40,95,.75);
+    }
+
+    /* Search */
+
+    .search-panel {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 15px;
+      background: rgba(44,7,24,.84);
+      box-shadow: 0 14px 40px rgba(0,0,0,.18);
+    }
+
+    .search-icon {
+      width: 40px;
+      flex-shrink: 0;
+      color: var(--accent-soft);
+      font-size: 23px;
+      text-align: center;
+    }
+
+    .search-panel input {
+      width: 100%;
+      min-width: 0;
+      min-height: 45px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .search-panel input::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    .search-panel:focus-within {
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 3px rgba(255,40,95,.08);
+    }
+
+    .search-panel button {
+      min-height: 42px;
+      padding: 9px 15px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(255,40,95,.1);
+      color: var(--accent-light);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .search-result {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* General sections */
+
+    .section { padding: 64px 0; }
+
+    .section.alt {
+      border-block: 1px solid var(--border);
+      background: rgba(13,2,8,.42);
+    }
+
+    .section-heading {
+      max-width: 780px;
+      margin-bottom: 27px;
+    }
+
+    .section-heading h2 {
+      margin: 12px 0 9px;
+      color: var(--text);
+      font-family: "Playfair Display",Georgia,serif;
+      font-size: clamp(28px,4vw,42px);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .section-heading h2 span { color: var(--accent-soft); }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    /* Support cards */
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 16px;
+    }
+
+    .topic-card {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 23px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background:
+        radial-gradient(ellipse at top left,rgba(255,40,95,.075),transparent 58%),
+        linear-gradient(145deg,rgba(53,7,29,.94),rgba(19,3,12,.97));
+      box-shadow: 0 12px 32px rgba(0,0,0,.12);
+      transition: transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+    }
+
+    .topic-card::after {
+      position: absolute;
+      right: -30px;
+      bottom: -40px;
+      width: 110px;
+      height: 110px;
+      border: 1px solid rgba(255,74,119,.10);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    .topic-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-strong);
+      box-shadow: 0 18px 40px rgba(0,0,0,.22),0 0 22px rgba(255,40,95,.05);
+    }
+
+    .topic-icon {
+      display: grid;
+      width: 49px;
+      height: 49px;
+      place-items: center;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,74,119,.36);
+      border-radius: 13px;
+      background: rgba(255,40,95,.09);
+      color: var(--accent-light);
+      font-size: 22px;
+    }
+
+    .topic-card h3 {
+      margin: 0 0 8px;
+      color: var(--accent-light);
+      font-family: "Playfair Display",Georgia,serif;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .topic-card p {
+      flex: 1;
+      margin: 0 0 17px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .topic-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #ffb5c8;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .topic-link:hover { color: var(--accent-light); }
+
+    .topic-card[hidden] { display: none !important; }
+
+    /* Popular shortcuts */
+
+    .shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 13px;
+    }
+
+    .shortcut {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(44,7,24,.55);
+      transition: border-color .2s ease,background .2s ease;
+    }
+
+    .shortcut:hover {
+      border-color: var(--border-strong);
+      background: rgba(65,7,34,.8);
+    }
+
+    .shortcut-icon {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,40,95,.07);
+      color: var(--accent-soft);
+      font-size: 17px;
+    }
+
+    .shortcut strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent-light);
+      font-size: 11px;
+    }
+
+    .shortcut small {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    /* Process */
+
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 13px;
+    }
+
+    .process-step {
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(145deg,rgba(53,7,29,.8),rgba(19,3,12,.9));
+    }
+
+    .process-step b {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--accent-soft);
+      font-family: "Playfair Display",Georgia,serif;
+      font-size: 27px;
+      line-height: 1;
+    }
+
+    .process-step h3 {
+      margin: 0 0 7px;
+      font-size: 12px;
+    }
+
+    .process-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    /* Privacy notice */
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 20px;
+      border: 1px solid rgba(247,215,156,.3);
+      border-radius: 14px;
+      background: linear-gradient(120deg,rgba(247,215,156,.06),rgba(44,7,24,.45));
+    }
+
+    .notice-icon {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      flex-shrink: 0;
+      place-items: center;
+      border: 1px solid rgba(247,215,156,.32);
+      border-radius: 11px;
+      color: var(--warning);
+      font-size: 18px;
+    }
+
+    .notice h3 {
+      margin: 0 0 5px;
+      color: var(--accent-light);
+      font-size: 13px;
+    }
+
+    .notice p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    /* FAQ */
+
+    .faq-list {
+      display: grid;
+      gap: 10px;
+      max-width: 900px;
+    }
+
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(44,7,24,.55);
+    }
+
+    .faq-item summary {
+      position: relative;
+      padding: 17px 45px 17px 18px;
+      color: var(--accent-light);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .faq-item summary::-webkit-details-marker { display: none; }
+
+    .faq-item summary::after {
+      position: absolute;
+      top: 50%;
+      right: 17px;
+      color: var(--accent-soft);
+      content: "+";
+      font-size: 20px;
+      transform: translateY(-50%);
+    }
+
+    .faq-item[open] summary::after { content: "−"; }
+
+    .faq-answer {
+      padding: 0 18px 17px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .faq-answer a {
+      color: var(--accent-light);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* Contact panel */
+
+    .cta-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+      padding: clamp(24px,4vw,42px);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(255,40,95,.15),transparent 50%),
+        linear-gradient(135deg,#35071e,#16020c);
+    }
+
+    .cta-panel h2 {
+      margin: 10px 0;
+      font-family: "Playfair Display",Georgia,serif;
+      font-size: clamp(27px,4vw,39px);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .cta-panel p {
+      max-width: 680px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .contact-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .contact-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(255,40,95,.04);
+      color: var(--text-soft);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .contact-chip:hover { color: var(--accent-light); }
+
+    /* Footer */
+
+    .site-footer {
+      margin-top: auto;
+      padding: 35px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 50% 0%,rgba(116,10,53,.16),transparent 65%),
+        #0d0208;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 26px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: #ffb5c8;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+      transition: color .2s ease;
+    }
+
+    .footer-links a:hover { color: var(--accent-light); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: linear-gradient(90deg,rgba(255,40,95,.075),rgba(44,7,24,.3));
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .footer-bottom strong {
+      color: var(--accent-light);
+      letter-spacing: .1em;
+    }
+
+    .floating {
+      position: fixed;
+      z-index: 900;
+      right: 15px;
+      bottom: 15px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .float-btn {
+      display: grid;
+      width: 43px;
+      height: 43px;
+      place-items: center;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      background: #35071e;
+      color: var(--accent-light);
+      font-size: 17px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+
+    /* Animations */
+
+    @keyframes orbit-spin {
+      from { transform: translate(-50%,-50%) rotate(0deg); }
+      to { transform: translate(-50%,-50%) rotate(360deg); }
+    }
+
+    @keyframes orbit-reverse {
+      from { transform: translate(-50%,-50%) rotate(360deg); }
+      to { transform: translate(-50%,-50%) rotate(0deg); }
+    }
+
+    @keyframes dot-one {
+      from { transform: translate(-50%,-50%) rotate(0deg) translateX(95px); }
+      to { transform: translate(-50%,-50%) rotate(360deg) translateX(95px); }
+    }
+
+    @keyframes dot-two {
+      from { transform: translate(-50%,-50%) rotate(0deg) translateX(128px); }
+      to { transform: translate(-50%,-50%) rotate(-360deg) translateX(128px); }
+    }
+
+    @keyframes core-glow {
+      0%,100% {
+        opacity: .55;
+        transform: translate(-50%,-50%) scale(.88);
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%,-50%) scale(1.08);
+      }
+    }
+
+    @keyframes panel-breathe {
+      0%,100% { border-color: rgba(255,74,119,.35); }
+      50% { border-color: rgba(255,100,145,.57); }
+    }
+
+    @keyframes particle-float {
+      0%,100% { opacity: .35; transform: translate3d(0,0,0); }
+      50% { opacity: 1; transform: translate3d(5px,-13px,0); }
+    }
+
+    /* Responsive */
+
+    @media (max-width: 1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100dvh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 15px 15px;
+        background: rgba(23,3,14,.99);
+        box-shadow: 0 20px 45px rgba(0,0,0,.35);
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        max-height: none;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+      .shortcut-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width: 850px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 28px; }
+      .hero-art { min-height: 300px; }
+      .topic-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .process-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .cta-panel { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 560px) {
+      .container { width: calc(100% - 28px); }
+
+      .announcement {
+        gap: 6px;
+        padding: 8px 10px;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
+
+      .nav-wrap { min-height: 69px; }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+
+      .hero { padding: 32px 0 42px; }
+      .hero h1 { font-size: clamp(36px,9vw,48px); }
+      .hero-copy > p { font-size: 12px; }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { width: 100%; }
+
+      .hero-art {
+        min-height: 245px;
+        border-radius: 22px;
+      }
+
+      .orbit-one { width: 150px; height: 150px; }
+      .orbit-two { width: 205px; height: 205px; }
+      .orbit-three { width: 260px; height: 260px; }
+
+      .hero-emblem {
+        width: 88px;
+        height: 88px;
+        border-radius: 23px;
+        font-size: 38px;
+      }
+
+      .art-label {
+        bottom: 15px;
+        padding: 8px 12px;
+        font-size: 8px;
+      }
+
+      .section { padding: 46px 0; }
+      .topic-grid { grid-template-columns: 1fr; }
+      .shortcut-grid { grid-template-columns: 1fr; }
+      .process-grid { grid-template-columns: 1fr; }
+      .search-panel { gap: 6px; }
+      .search-icon { width: 30px; }
+      .search-panel button { padding-inline: 10px; }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .floating { right: 9px; bottom: 9px; }
+    }
+
+    @media (max-width: 360px) {
+      .container { width: calc(100% - 22px); }
+      .brand { gap: 7px; }
+      .brand img { width: 35px; height: 35px; }
+      .brand strong { font-size: 12px; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
+      .hero-art { min-height: 220px; }
+      .orbit-one { width: 135px; height: 135px; }
+      .orbit-two { width: 175px; height: 175px; }
+      .orbit-three { width: 220px; height: 220px; }
+    }
+
+    @media (hover: none) {
+      .btn:hover,
+      .topic-card:hover { transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .hero h1 span {
+        color: CanvasText;
+        background: none;
+        -webkit-text-fill-color: currentColor;
+      }
+
+      .btn,
+      .btn-outline { border: 1px solid ButtonText; }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Support</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about support. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>MedOrbits support centre</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Guidance · Assistance · Service information</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+          alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+        aria-expanded="false" aria-controls="mainNav"
+        aria-label="Open navigation menu">
+        <span class="menu-symbol" aria-hidden="true">☰</span>
+        <span class="menu-label">MENU</span>
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button"
+            aria-expanded="false" aria-controls="educationDropdown">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="educationDropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/index.html">Study abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button"
+            aria-expanded="false" aria-controls="admissionsDropdown">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="admissionsDropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/entrance-exams.html">Entrance exams</a>
+            <a href="/education/scholarships.html">Scholarships</a>
+            <a href="/education/fee-comparison.html">Fee comparison</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button"
+            aria-expanded="false" aria-controls="careersDropdown">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown" id="careersDropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-builder.html">Resume builder</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/support/index.html" aria-current="page">Support</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="btn" href="#support-options">Find help ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="container">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="/index.html">Home</a>
+          <span aria-hidden="true">›</span>
+          <span aria-current="page">Support Centre</span>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">MedOrbits help desk</span>
+            <h1>Find the right help. <span>Move forward confidently.</span></h1>
+            <p>
+              Welcome to the MedOrbits Support Centre. Find guidance for
+              document uploads, account recovery, payments, refund requests,
+              complaint preparation and support tickets. Choose the topic
+              that matches your issue to find the appropriate next step.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn" href="#support-options">Explore support topics ↗</a>
+              <a class="btn btn-outline" href="/support/submit-ticket.html">Submit a support ticket</a>
+            </div>
+
+            <span class="hero-meta">CLEAR GUIDANCE · RESPONSIBLE SUPPORT · PRIVACY AWARENESS</span>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="art-glow"></div>
+            <span class="orbit orbit-one"></span>
+            <span class="orbit orbit-two"></span>
+            <span class="orbit orbit-three"></span>
+            <span class="orbit-dot dot-one"></span>
+            <span class="orbit-dot dot-two"></span>
+            <span class="particle particle-one"></span>
+            <span class="particle particle-two"></span>
+            <span class="particle particle-three"></span>
+            <span class="particle particle-four"></span>
+            <div class="hero-emblem"><span>?</span></div>
+            <div class="art-label">
+              <span class="status-light"></span>
+              Help starts here
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="support-search">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Search support</span>
+          <h2>What can we <span>help you with?</span></h2>
+          <p>
+            Search the support topics below using a keyword such as
+            "document", "refund", "payment", "account" or "ticket".
+            Select a matching topic to continue.
+          </p>
+        </div>
+
+        <form class="search-panel" id="supportSearch" role="search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="supportQuery" hidden>Search support topics</label>
+          <input id="supportQuery" name="q" type="search"
+            maxlength="100" autocomplete="off"
+            placeholder="Search support topics..." aria-describedby="searchResult">
+          <button type="submit">Search</button>
+          <button type="button" class="btn-reset" id="clearSearch"
+            aria-label="Clear support search" hidden>Clear</button>
+        </form>
+
+        <p class="search-result" id="searchResult" role="status" aria-live="polite">
+          Browse all available support topics below.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="support-options">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Support directory</span>
+          <h2>Choose your <span>support topic.</span></h2>
+          <p>
+            Each section provides a dedicated starting point. Availability
+            of a form or ticket feature depends on the implementation of
+            the linked page.
+          </p>
+        </div>
+
+        <div class="topic-grid" id="topicGrid">
+          <article class="topic-card" data-search="document upload file pdf jpg png attachment file size scan">
+            <div class="topic-icon" aria-hidden="true">▤</div>
+            <h3>Document upload help</h3>
+            <p>
+              Learn how to prepare readable files, troubleshoot common
+              upload issues and share documents through verified channels.
+            </p>
+            <a class="topic-link" href="/support/document-upload-help.html">
+              Open document help <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="frequently asked questions faq answers help common issues">
+            <div class="topic-icon" aria-hidden="true">?</div>
+            <h3>Frequently asked questions</h3>
+            <p>
+              Review common questions about MedOrbits services, website
+              navigation, general guidance and support options.
+            </p>
+            <a class="topic-link" href="/support/faq.html">
+              Browse FAQs <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="help centre help-center guidance resources service support">
+            <div class="topic-icon" aria-hidden="true">⌂</div>
+            <h3>Help centre</h3>
+            <p>
+              Find general service guidance and discover the resources
+              available across the MedOrbits website.
+            </p>
+            <a class="topic-link" href="/support/help-centre.html">
+              Visit help centre <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="payment billing transaction fee invoice receipt failed pending duplicate payment">
+            <div class="topic-icon" aria-hidden="true">₹</div>
+            <h3>Payment support</h3>
+            <p>
+              Find guidance for payment-related questions, transaction
+              references and issues that may need review.
+            </p>
+            <a class="topic-link" href="/support/payment-support.html">
+              View payment guidance <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="refund refund request cancellation reimbursement payment">
+            <div class="topic-icon" aria-hidden="true">↶</div>
+            <h3>Refund requests</h3>
+            <p>
+              Review how to prepare a refund enquiry and identify the
+              relevant transaction or service reference.
+            </p>
+            <a class="topic-link" href="/support/refund-request.html">
+              Explore refund support <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="complaint grievance escalation service concern feedback conduct">
+            <div class="topic-icon" aria-hidden="true">✉</div>
+            <h3>Complaints and grievances</h3>
+            <p>
+              Prepare a clear complaint, describe your concern and
+              identify the appropriate support channel.
+            </p>
+            <a class="topic-link" href="/support/complaints.html">
+              Prepare a complaint <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="submit ticket raise ticket request support issue service">
+            <div class="topic-icon" aria-hidden="true">＋</div>
+            <h3>Submit a support ticket</h3>
+            <p>
+              Visit the ticket submission page to describe an issue
+              and check the available submission process.
+            </p>
+            <a class="topic-link" href="/support/submit-ticket.html">
+              Open ticket submission <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="ticket status track existing ticket reference follow up progress">
+            <div class="topic-icon" aria-hidden="true">◎</div>
+            <h3>Ticket status</h3>
+            <p>
+              Find the status page for an existing ticket. You may need
+              the reference information issued when you submitted it.
+            </p>
+            <a class="topic-link" href="/support/ticket-status.html">
+              Check ticket status <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="account recovery login access password sign in locked account">
+            <div class="topic-icon" aria-hidden="true">⌑</div>
+            <h3>Account recovery</h3>
+            <p>
+              Find guidance for account access issues and recovery
+              steps. Never share your password or verification code.
+            </p>
+            <a class="topic-link" href="/support/account-recovery.html">
+              View recovery guidance <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="contact contact details email reach support team enquiry">
+            <div class="topic-icon" aria-hidden="true">✆</div>
+            <h3>Contact MedOrbits</h3>
+            <p>
+              Find the contact page and choose an appropriate channel
+              for a general question or service enquiry.
+            </p>
+            <a class="topic-link" href="/pages/contact.html">
+              View contact information <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="privacy personal data information protection data request">
+            <div class="topic-icon" aria-hidden="true">◇</div>
+            <h3>Privacy and data</h3>
+            <p>
+              Review the privacy policy before sharing personal
+              information or supporting documents.
+            </p>
+            <a class="topic-link" href="/legal/privacy-policy.html">
+              Read privacy policy <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+
+          <article class="topic-card" data-search="terms conditions refund policy disclaimer legal policies">
+            <div class="topic-icon" aria-hidden="true">§</div>
+            <h3>Policies and terms</h3>
+            <p>
+              Review relevant website terms, refund conditions and
+              service disclaimers before making a request.
+            </p>
+            <a class="topic-link" href="/legal/terms-and-conditions.html">
+              Review website terms <span aria-hidden="true">↗</span>
+            </a>
+          </article>
+        </div>
+
+        <p id="noResults" class="search-result" hidden>
+          No matching support topics were found. Try another keyword or
+          use the contact page to find an appropriate channel.
+        </p>
+      </div>
+    </section>
+
+    <section class="section alt" id="quick-links">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Quick access</span>
+          <h2>Common support <span>shortcuts.</span></h2>
+          <p>
+            Use these direct links when you already know the type
+            of help you need.
+          </p>
+        </div>
+
+        <div class="shortcut-grid">
+          <a class="shortcut" href="/support/document-upload-help.html">
+            <span class="shortcut-icon" aria-hidden="true">▤</span>
+            <span>
+              <strong>Prepare documents</strong>
+              <small>File formats, readability and upload troubleshooting.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/submit-ticket.html">
+            <span class="shortcut-icon" aria-hidden="true">＋</span>
+            <span>
+              <strong>Raise a support ticket</strong>
+              <small>Find the ticket submission process.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/ticket-status.html">
+            <span class="shortcut-icon" aria-hidden="true">◎</span>
+            <span>
+              <strong>Follow up on a ticket</strong>
+              <small>Visit the ticket status page.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/refund-request.html">
+            <span class="shortcut-icon" aria-hidden="true">↶</span>
+            <span>
+              <strong>Request a refund</strong>
+              <small>Find the refund request guidance.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/payment-support.html">
+            <span class="shortcut-icon" aria-hidden="true">₹</span>
+            <span>
+              <strong>Payment issue</strong>
+              <small>Prepare transaction details for a query.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/account-recovery.html">
+            <span class="shortcut-icon" aria-hidden="true">⌑</span>
+            <span>
+              <strong>Recover account access</strong>
+              <small>Find the account recovery guidance.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/complaints.html">
+            <span class="shortcut-icon" aria-hidden="true">✉</span>
+            <span>
+              <strong>Raise a complaint</strong>
+              <small>Prepare details about a service concern.</small>
+            </span>
+          </a>
+
+          <a class="shortcut" href="/support/faq.html">
+            <span class="shortcut-icon" aria-hidden="true">?</span>
+            <span>
+              <strong>Read FAQs</strong>
+              <small>Look for answers to common questions.</small>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-support-works">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">How to get help</span>
+          <h2>Four steps to a <span>clearer request.</span></h2>
+          <p>
+            Preparing useful information can make it easier to understand
+            your issue and identify the appropriate next step.
+          </p>
+        </div>
+
+        <div class="process-grid">
+          <article class="process-step">
+            <b>01</b>
+            <h3>Choose a topic</h3>
+            <p>Start with the page that most closely matches your question or issue.</p>
+          </article>
+
+          <article class="process-step">
+            <b>02</b>
+            <h3>Prepare the details</h3>
+            <p>Describe the issue clearly and include relevant dates or existing references.</p>
+          </article>
+
+          <article class="process-step">
+            <b>03</b>
+            <h3>Use a verified channel</h3>
+            <p>Check the destination and instructions before submitting personal information.</p>
+          </article>
+
+          <article class="process-step">
+            <b>04</b>
+            <h3>Keep your reference</h3>
+            <p>Save any acknowledgement or ticket number you actually receive.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="privacy-notice">
+      <div class="container">
+        <div class="notice">
+          <div class="notice-icon" aria-hidden="true">!</div>
+          <div>
+            <h3>Protect your personal information</h3>
+            <p>
+              Never share passwords, OTPs, PINs, recovery codes or full
+              payment credentials with anyone claiming to provide support.
+              Only provide documents that are necessary for the particular
+              request. Verify the destination before sending files, and
+              consult the
+              <a href="/legal/privacy-policy.html">Privacy Policy</a>
+              for information about personal data handling.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="support-faq">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Support FAQs</span>
+          <h2>Before you <span>contact support.</span></h2>
+          <p>
+            Quick answers to common questions about using the support centre.
+          </p>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>How do I choose the correct support page?</summary>
+            <div class="faq-answer">
+              Select the topic that best matches your issue. Use document
+              upload help for file problems, payment support for transaction
+              questions, refund requests for refund-related enquiries, and
+              complaints for service concerns. If you are unsure, visit the
+              <a href="/pages/contact.html">contact page</a>.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do I check an existing support ticket?</summary>
+            <div class="faq-answer">
+              Visit the <a href="/support/ticket-status.html">ticket status page</a>
+              and follow the instructions provided there. You may need the
+              reference number issued when the ticket was submitted.
+              A status can only be retrieved if the underlying ticket system
+              supports that function.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Does opening a support page automatically create a ticket?</summary>
+            <div class="faq-answer">
+              No. Opening a page does not by itself submit a request.
+              Check the individual page for its submission instructions
+              and confirmation. Do not assume that a ticket has been
+              created unless the system confirms it.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>What should I include when reporting a technical issue?</summary>
+            <div class="faq-answer">
+              Describe what you were trying to do, what happened instead,
+              and approximately when the issue occurred. Include the page
+              name and a relevant error message if available. Do not include
+              passwords, OTPs, payment credentials or unnecessary personal
+              information in screenshots.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can I send documents by email?</summary>
+            <div class="faq-answer">
+              Only send documents by email when the recipient and process
+              have been verified and email is an appropriate channel.
+              Ask for a secure submission method if the documents contain
+              sensitive information. Follow the relevant official portal's
+              file-format and size instructions.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How quickly will support respond?</summary>
+            <div class="faq-answer">
+              This landing page does not promise a response time or
+              resolution deadline. Check the terms or service-specific
+              guidance for any applicable timeframe. Keep any acknowledgement
+              or reference number you receive.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Where can I read MedOrbits policies?</summary>
+            <div class="faq-answer">
+              Visit the
+              <a href="/legal/privacy-policy.html">Privacy Policy</a>,
+              <a href="/legal/terms-and-conditions.html">Terms and Conditions</a>,
+              <a href="/legal/refund-policy.html">Refund Policy</a> and
+              <a href="/legal/disclaimer.html">Disclaimer</a> for the
+              relevant published information.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="contact-support">
+      <div class="container">
+        <div class="cta-panel">
+          <div>
+            <span class="eyebrow">Still need assistance?</span>
+            <h2>Let's identify your next step.</h2>
+            <p>
+              If you cannot find the right topic, visit the contact page
+              or email the published MedOrbits contact address. Explain
+              your question briefly and avoid including sensitive documents
+              until the appropriate channel has been confirmed.
+            </p>
+
+            <div class="contact-strip">
+              <a class="contact-chip" href="mailto:contact@medorbits.in">
+                ✉ contact@medorbits.in
+              </a>
+              <a class="contact-chip" href="/support/faq.html">
+                ? Frequently asked questions
+              </a>
+            </div>
+          </div>
+
+          <a class="btn" href="/pages/contact.html">Contact MedOrbits ↗</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+              alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+
+          <p>
+            Explore education pathways, admission resources, career
+            opportunities and support information with MedOrbits.
+          </p>
+
+          <div class="contact-strip">
+            <a class="contact-chip" href="mailto:contact@medorbits.in">
+              ✉ contact@medorbits.in
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/entrance-exams.html">Entrance exams</a>
+          <a href="/education/scholarships.html">Scholarships</a>
+          <a href="/education/fee-comparison.html">Fee comparison</a>
+          <a href="/official-document.html">Document resources</a>
+          <a href="/support/document-upload-help.html">Document upload help</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/career-guidance.html">Career guidance</a>
+          <a href="/career/resume-builder.html">Resume builder</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Support and legal</h2>
+          <a href="/support/index.html" aria-current="page">Support centre</a>
+          <a href="/support/faq.html">FAQs</a>
+          <a href="/support/payment-support.html">Payment support</a>
+          <a href="/support/refund-request.html">Refund requests</a>
+          <a href="/support/submit-ticket.html">Submit a ticket</a>
+          <a href="/support/ticket-status.html">Ticket status</a>
+          <a href="/support/complaints.html">Complaints</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms-and-conditions.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        <strong>Support disclaimer:</strong>
+        This page is a directory of support resources and does not itself
+        create a ticket, confirm a payment, process a refund or guarantee
+        a response. Use the relevant page and follow its submission
+        instructions. Verify official information with the responsible
+        institution or service provider where applicable.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <strong>STUDY · WORK · GROW</strong>
+        <a href="mailto:contact@medorbits.in">contact@medorbits.in</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="floating" aria-label="Support shortcuts">
+    <a class="float-btn" href="#support-options" aria-label="Browse support topics">?</a>
+    <a class="float-btn" href="/pages/contact.html" aria-label="Contact MedOrbits">✉</a>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      const header = $("#siteHeader");
+      const menuToggle = $("#menuToggle");
+      const menuLabel = $(".menu-label", menuToggle);
+      const menuSymbol = $(".menu-symbol", menuToggle);
+      const mainNav = $("#mainNav");
+      const navGroups = $$(".nav-group");
+
+      $("#currentYear").textContent = String(new Date().getFullYear());
+
+      /* Responsive navigation */
+
+      function setMenuState(isOpen) {
+        mainNav.classList.toggle("open", isOpen);
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.setAttribute(
+          "aria-label",
+          isOpen ? "Close navigation menu" : "Open navigation menu"
+        );
+
+        menuLabel.textContent = isOpen ? "CLOSE" : "MENU";
+        menuSymbol.textContent = isOpen ? "×" : "☰";
+      }
+
+      function closeDropdowns(exceptGroup = null) {
+        navGroups.forEach(group => {
+          if (group === exceptGroup) return;
+
+          group.classList.remove("open");
+          $(".nav-trigger", group).setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function closeNavigation() {
+        setMenuState(false);
+        closeDropdowns();
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = !mainNav.classList.contains("open");
+        setMenuState(isOpen);
+
+        if (!isOpen) closeDropdowns();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = $(".nav-trigger", group);
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+          closeDropdowns();
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      $$("#mainNav a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          closeDropdowns();
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      function updateHeader() {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }
+
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+      const handleDesktopChange = event => {
+        if (event.matches) closeNavigation();
+      };
+
+      if (typeof desktopQuery.addEventListener === "function") {
+        desktopQuery.addEventListener("change", handleDesktopChange);
+      } else {
+        desktopQuery.addListener(handleDesktopChange);
+      }
+
+      /* Client-side support-topic search */
+
+      const searchForm = $("#supportSearch");
+      const searchInput = $("#supportQuery");
+      const clearButton = $("#clearSearch");
+      const searchResult = $("#searchResult");
+      const noResults = $("#noResults");
+      const topicCards = $$(".topic-card");
+
+      function searchTopics(query) {
+        const normalisedQuery = query.trim().toLowerCase();
+        let visibleCount = 0;
+
+        topicCards.forEach(card => {
+          const searchableText = (
+            card.textContent + " " + (card.dataset.search || "")
+          ).toLowerCase();
+
+          const matches = !normalisedQuery ||
+            searchableText.includes(normalisedQuery);
+
+          card.hidden = !matches;
+
+          if (matches) visibleCount += 1;
+        });
+
+        clearButton.hidden = !normalisedQuery;
+        noResults.hidden = visibleCount !== 0;
+
+        if (!normalisedQuery) {
+          searchResult.textContent =
+            "Browse all available support topics below.";
+        } else if (visibleCount === 1) {
+          searchResult.textContent = "1 matching support topic found.";
+        } else {
+          searchResult.textContent =
+            visibleCount + " matching support topics found.";
+        }
+      }
+
+      searchForm.addEventListener("submit", event => {
+        event.preventDefault();
+        searchTopics(searchInput.value);
+
+        $("#support-options").scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+          block: "start"
+        });
+      });
+
+      searchInput.addEventListener("input", () => {
+        searchTopics(searchInput.value);
+      });
+
+      clearButton.addEventListener("click", () => {
+        searchInput.value = "";
+        searchTopics("");
+        searchInput.focus();
+      });
+    })();
+  </script>
+</body>
+</html>

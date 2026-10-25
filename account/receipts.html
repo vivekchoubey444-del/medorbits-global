@@ -1,24 +1,2430 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Receipts | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="View, search and access your MedOrbits payment receipts securely.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Payment Receipts | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/receipts.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071629;
+      --bg-soft: #0b203b;
+      --surface: #102947;
+      --surface-2: #153657;
+      --surface-3: #081a2e;
+      --accent: #8bbcff;
+      --accent-bright: #d9e9ff;
+      --text: #f2f7ff;
+      --text-soft: #c7d8ee;
+      --muted: #9db2cc;
+      --border: rgba(139,188,255,.23);
+      --success: #a8f0d0;
+      --warning: #ffdfa2;
+      --danger: #ffc1ca;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *,*::before,*::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%,rgba(40,102,170,.2),transparent 35%),
+        radial-gradient(ellipse at 90% 40%,rgba(98,155,221,.08),transparent 32%),
+        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button,input,select { font: inherit; }
+    button,a,input,select { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible {
+      outline: 2px solid var(--accent-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--accent-bright);
+      color: var(--bg);
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid rgba(139,188,255,.13);
+      background: #040b15;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .spark { color: var(--accent); }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,14,27,.94);
+      backdrop-filter: blur(18px);
+      transition: box-shadow .2s,background .2s;
+    }
+
+    .site-header.scrolled {
+      background: rgba(4,11,21,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--accent-bright);
+      font-size: 15px;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--accent-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+
+    .main-nav>a,.nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav>a:hover,.nav-trigger:hover {
+      color: var(--accent-bright);
+    }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #102947;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+
+    .nav-cta,.btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 41px;
+      padding: 10px 15px;
+      border: 1px solid var(--accent);
+      border-radius: 9px;
+      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color: #071629 !important;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn:hover:not(:disabled),.nav-cta:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-outline {
+      border-color: rgba(199,216,238,.32);
+      background: transparent;
+      color: var(--accent-bright) !important;
+    }
+
+    .btn-small {
+      min-height: 35px;
+      padding: 8px 12px;
+    }
+
+    .btn-danger {
+      border-color: rgba(255,193,202,.4);
+      background: rgba(255,193,202,.06);
+      color: var(--danger) !important;
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 40px 0 70px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 22px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--accent);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(32px,4.3vw,49px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading h1 span { color: var(--accent-bright); }
+
+    .page-heading p {
+      max-width: 700px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .heading-action { flex-shrink: 0; }
+
+    .account-layout {
+      display: grid;
+      grid-template-columns: 245px minmax(0,1fr);
+      align-items: start;
+      gap: 22px;
+    }
+
+    .panel,.side-card,.summary-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg,rgba(16,41,71,.96),rgba(5,13,26,.95));
+      box-shadow: 0 18px 48px rgba(0,0,0,.2);
+    }
+
+    .account-sidebar { padding: 18px; }
+
+    .account-sidebar h2 {
+      margin: 0 0 5px;
+      font: 600 20px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .sidebar-subtitle {
+      margin: 0 0 17px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .account-nav {
+      display: grid;
+      gap: 5px;
+    }
+
+    .account-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 10px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 10px;
+      transition: background .2s,border-color .2s;
+    }
+
+    .account-nav a:hover {
+      border-color: var(--border);
+      background: rgba(139,188,255,.05);
+    }
+
+    .account-nav a[aria-current="page"] {
+      border-color: var(--border);
+      background: rgba(139,188,255,.11);
+      color: var(--accent-bright);
+      font-weight: 700;
+    }
+
+    .nav-symbol {
+      display: grid;
+      place-items: center;
+      flex: 0 0 29px;
+      width: 29px;
+      height: 29px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      margin: 17px 0;
+      border: 0;
+      background: var(--border);
+    }
+
+    .sidebar-help {
+      padding: 12px;
+      border: 1px solid rgba(139,188,255,.18);
+      border-radius: 10px;
+      background: rgba(139,188,255,.04);
+    }
+
+    .sidebar-help strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .sidebar-help p {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .sidebar-help a {
+      color: var(--accent-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .content-stack { display: grid; gap: 18px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .summary-card {
+      padding: 17px;
+      box-shadow: none;
+    }
+
+    .summary-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .summary-icon {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: rgba(139,188,255,.07);
+      color: var(--accent-bright);
+      font-size: 14px;
+    }
+
+    .summary-value {
+      display: block;
+      color: var(--text);
+      font-size: clamp(19px,2.2vw,27px);
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-note {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.7;
+    }
+
+    .panel { padding: clamp(17px,2.5vw,25px); }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 19px;
+    }
+
+    .panel-header h2 {
+      margin: 0 0 5px;
+      font: 600 22px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .subtle-link {
+      color: var(--accent-bright);
+      font-size: 10px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(180px,1.5fr) repeat(2,minmax(130px,.8fr)) auto;
+      align-items: end;
+      gap: 11px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid rgba(139,188,255,.16);
+      border-radius: 12px;
+      background: rgba(5,13,26,.36);
+    }
+
+    .form-group { min-width: 0; }
+
+    .field-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .form-input,.form-select {
+      display: block;
+      width: 100%;
+      min-height: 43px;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #081a2e;
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .form-input::placeholder { color: #7f96b3; }
+
+    .form-input:focus,.form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139,188,255,.1);
+    }
+
+    .form-select option {
+      background: #102947;
+      color: var(--text);
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 7px;
+    }
+
+    .filter-actions .btn { min-height: 43px; }
+
+    .form-status {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 10px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+
+    .form-status.info {
+      border-color: rgba(139,188,255,.3);
+      background: rgba(139,188,255,.06);
+      color: var(--accent-bright);
+    }
+
+    .form-status.success {
+      border-color: rgba(168,240,208,.3);
+      background: rgba(168,240,208,.06);
+      color: var(--success);
+    }
+
+    .form-status.error {
+      border-color: rgba(255,193,202,.3);
+      background: rgba(255,193,202,.06);
+      color: var(--danger);
+    }
+
+    .form-status a {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      scrollbar-color: #42678e #081a2e;
+    }
+
+    .receipts-table {
+      width: 100%;
+      min-width: 690px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .receipts-table th {
+      padding: 13px 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(139,188,255,.06);
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .receipts-table td {
+      padding: 14px 12px;
+      border-bottom: 1px solid rgba(139,188,255,.12);
+      color: var(--text-soft);
+      font-size: 10px;
+      vertical-align: middle;
+    }
+
+    .receipts-table tbody tr:last-child td { border-bottom: 0; }
+
+    .receipts-table tbody tr:hover {
+      background: rgba(139,188,255,.035);
+    }
+
+    .receipt-id {
+      display: block;
+      color: var(--accent-bright);
+      font-size: 10px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .receipt-subtext {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .amount {
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid rgba(168,240,208,.24);
+      border-radius: 20px;
+      background: rgba(168,240,208,.06);
+      color: var(--success);
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-pill.pending {
+      border-color: rgba(255,223,162,.25);
+      background: rgba(255,223,162,.06);
+      color: var(--warning);
+    }
+
+    .status-pill.failed {
+      border-color: rgba(255,193,202,.25);
+      background: rgba(255,193,202,.06);
+      color: var(--danger);
+    }
+
+    .status-pill.neutral {
+      border-color: var(--border);
+      background: rgba(139,188,255,.05);
+      color: var(--text-soft);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 33px;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(139,188,255,.05);
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .icon-btn:hover:not(:disabled) {
+      background: rgba(139,188,255,.12);
+    }
+
+    .icon-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      padding: 38px 20px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      display: grid;
+      place-items: center;
+      width: 57px;
+      height: 57px;
+      margin: 0 auto 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(139,188,255,.06);
+      color: var(--accent-bright);
+      font-size: 23px;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 7px;
+      font: 600 21px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .empty-state p {
+      max-width: 420px;
+      margin: 0 auto 17px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 17px;
+    }
+
+    .pagination-info {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .pagination-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .pagination-actions .btn {
+      min-height: 34px;
+      padding: 7px 11px;
+      font-size: 9px;
+    }
+
+    .security-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      padding: 15px;
+      border: 1px solid rgba(139,188,255,.19);
+      border-radius: 11px;
+      background: rgba(139,188,255,.045);
+    }
+
+    .security-note .note-icon {
+      flex: 0 0 auto;
+      color: var(--accent-bright);
+      font-size: 17px;
+    }
+
+    .security-note strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .security-note p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.9;
+    }
+
+    .side-stack { display: grid; gap: 16px; }
+
+    .side-card { padding: 20px; }
+
+    .side-card h2 {
+      margin: 0 0 9px;
+      font: 600 20px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .side-card > p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .help-list {
+      display: grid;
+      gap: 15px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .help-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .help-number {
+      display: grid;
+      place-items: center;
+      flex: 0 0 27px;
+      width: 27px;
+      height: 27px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(139,188,255,.06);
+      color: var(--accent-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .help-list strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .help-list span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .side-links { display: grid; }
+
+    .side-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .side-links a:last-child { border-bottom: 0; }
+    .side-links a span { color: var(--accent); }
+    .side-links a:hover { color: var(--accent-bright); }
+
+    .site-footer {
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background: #040b15;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(139,188,255,.17);
+      color: var(--accent-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-links a:hover { color: var(--accent-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: rgba(16,41,71,.4);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(139,188,255,.13);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    @media(max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border);
+        background: #071629;
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav>a,.nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .nav-cta { width: 100%; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media(max-width:900px) {
+      .account-layout { grid-template-columns: 1fr; }
+      .account-sidebar { padding: 15px; }
+      .account-nav {
+        grid-template-columns: repeat(4,minmax(0,1fr));
+      }
+
+      .account-nav a {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .sidebar-divider,.sidebar-help { display: none; }
+      .filters { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .filter-actions { align-self: end; }
+    }
+
+    @media(max-width:700px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-action { width: 100%; }
+      .heading-action .btn { width: 100%; }
+      .summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .summary-card:last-child { grid-column: 1/-1; }
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    }
+
+    @media(max-width:560px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .page-main { padding: 30px 0 45px; }
+      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+      .panel,.side-card,.account-sidebar { padding: 16px; }
+      .summary-card { padding: 13px; }
+      .filters { grid-template-columns: 1fr; }
+      .filter-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .filter-actions .btn { width: 100%; }
+      .panel-header { flex-direction: column; }
+      .pagination { align-items: flex-start; flex-direction: column; }
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media(max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .summary-card:last-child { grid-column: auto; }
+      .account-nav { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Receipts</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about receipts. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a href="/account/profile.html">My Profile</a>
+        <a href="/account/applications.html">My Applications</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/account/index.html">My account</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Payment receipts</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Account finance · Payment records</span>
+          <h1>Your payment <span>receipts</span></h1>
+          <p>
+            Access receipts for payments recorded against your MedOrbits account.
+            Search by receipt number, payment reference or description, and
+            retrieve available documents securely.
+          </p>
+        </div>
+
+        <div class="heading-action">
+          <a class="btn btn-outline" href="/account/payment-history.html">
+            View payment history ↗
+          </a>
+        </div>
+      </header>
+
+      <div class="account-layout">
+        <aside class="panel account-sidebar" aria-label="Account navigation">
+          <h2>My account</h2>
+          <p class="sidebar-subtitle">Manage your profile and services.</p>
+
+          <nav class="account-nav" aria-label="Account menu">
+            <a href="/account/index.html">
+              <span class="nav-symbol" aria-hidden="true">⌂</span>
+              Dashboard
+            </a>
+            <a href="/account/profile.html">
+              <span class="nav-symbol" aria-hidden="true">◎</span>
+              Personal profile
+            </a>
+            <a href="/account/applications.html">
+              <span class="nav-symbol" aria-hidden="true">▤</span>
+              My applications
+            </a>
+            <a href="/account/documents.html">
+              <span class="nav-symbol" aria-hidden="true">▧</span>
+              My documents
+            </a>
+            <a href="/account/notifications.html">
+              <span class="nav-symbol" aria-hidden="true">♧</span>
+              Notifications
+            </a>
+            <a href="/account/payment-history.html">
+              <span class="nav-symbol" aria-hidden="true">₹</span>
+              Payment history
+            </a>
+            <a href="/account/receipts.html" aria-current="page">
+              <span class="nav-symbol" aria-hidden="true">▤</span>
+              Payment receipts
+            </a>
+            <a href="/account/payment-methods.html">
+              <span class="nav-symbol" aria-hidden="true">▣</span>
+              Payment methods
+            </a>
+            <a href="/account/settings.html">
+              <span class="nav-symbol" aria-hidden="true">⚙</span>
+              Account settings
+            </a>
+            <a href="/account/change-password.html">
+              <span class="nav-symbol" aria-hidden="true">⌑</span>
+              Change password
+            </a>
+          </nav>
+
+          <hr class="sidebar-divider">
+
+          <div class="sidebar-help">
+            <strong>Need help with a payment?</strong>
+            <p>Contact support if a payment or receipt is missing or incorrect.</p>
+            <a href="/pages/contact.html">Contact support ↗</a>
+          </div>
+        </aside>
+
+        <div class="content-stack">
+          <section class="summary-grid" aria-label="Receipt summary">
+            <article class="summary-card">
+              <div class="summary-top">
+                <span class="summary-label">Available receipts</span>
+                <span class="summary-icon" aria-hidden="true">▤</span>
+              </div>
+              <strong class="summary-value" id="receiptCount">--</strong>
+              <span class="summary-note">Based on records returned by the server</span>
+            </article>
+
+            <article class="summary-card">
+              <div class="summary-top">
+                <span class="summary-label">Successful payments</span>
+                <span class="summary-icon" aria-hidden="true">✓</span>
+              </div>
+              <strong class="summary-value" id="paidCount">--</strong>
+              <span class="summary-note">Confirmed payment records</span>
+            </article>
+
+            <article class="summary-card">
+              <div class="summary-top">
+                <span class="summary-label">Total paid</span>
+                <span class="summary-icon" aria-hidden="true">₹</span>
+              </div>
+              <strong class="summary-value" id="totalPaid">--</strong>
+              <span class="summary-note">Sum of successful payments in the loaded records</span>
+            </article>
+          </section>
+
+          <section class="panel" aria-labelledby="receiptsTitle">
+            <div class="panel-header">
+              <div>
+                <h2 id="receiptsTitle">Receipt register</h2>
+                <p>Search, filter and access receipts associated with your account.</p>
+              </div>
+              <a class="subtle-link" href="/account/payment-history.html">
+                Payment history ↗
+              </a>
+            </div>
+
+            <div id="pageStatus" class="form-status info"
+                 role="status" aria-live="polite" tabindex="-1" hidden></div>
+
+            <form id="filterForm" class="filters">
+              <div class="form-group">
+                <label class="field-label" for="searchInput">
+                  Search receipts
+                </label>
+                <input class="form-input" id="searchInput" name="search"
+                       type="search" maxlength="120"
+                       placeholder="Receipt ID, reference or description"
+                       autocomplete="off">
+              </div>
+
+              <div class="form-group">
+                <label class="field-label" for="statusFilter">Payment status</label>
+                <select class="form-select" id="statusFilter" name="status">
+                  <option value="all">All statuses</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="field-label" for="periodFilter">Date range</label>
+                <select class="form-select" id="periodFilter" name="period">
+                  <option value="all">All available dates</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                  <option value="365">Last 12 months</option>
+                </select>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn" type="submit">Apply filters</button>
+                <button class="btn btn-outline" id="clearFilters"
+                        type="button">Clear</button>
+              </div>
+            </form>
+
+            <div id="emptyState" class="empty-state" hidden>
+              <div class="empty-icon" aria-hidden="true">▤</div>
+              <h3 id="emptyTitle">No receipts to display</h3>
+              <p id="emptyDescription">
+                Receipts will appear here when payment records are available
+                for your account.
+              </p>
+              <a class="btn btn-outline" href="/account/payment-history.html">
+                View payment history ↗
+              </a>
+            </div>
+
+            <div id="tableContainer" class="table-wrap" hidden>
+              <table class="receipts-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Receipt</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="receiptsBody"></tbody>
+              </table>
+            </div>
+
+            <div class="pagination" id="pagination" hidden>
+              <span class="pagination-info" id="paginationInfo">
+                Showing 0 receipts
+              </span>
+              <div class="pagination-actions">
+                <button class="btn btn-outline" id="previousPage"
+                        type="button" disabled>← Previous</button>
+                <button class="btn btn-outline" id="nextPage"
+                        type="button" disabled>Next →</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="security-note" aria-label="Receipt security information">
+            <span class="note-icon" aria-hidden="true">♢</span>
+            <div>
+              <strong>Keep your financial documents secure</strong>
+              <p>
+                Receipts may contain personal or transaction information.
+                Access them only through your authenticated account and avoid
+                sharing receipt files publicly. Payment status and receipt
+                availability depend on the records confirmed by the server.
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>MedOrbits</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Payment receipts are displayed from account records provided by the
+        MedOrbits backend. Receipt generation, payment confirmation, and
+        document downloads require valid server-side authorization.
+        This page does not replace an official payment-provider confirmation.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = id => document.getElementById(id);
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      /* Responsive navigation */
+
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) closeNavigation();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      /*
+       * Backend contract
+       * ----------------
+       * GET /api/account/receipts?page=1&limit=10
+       *
+       * Expected JSON:
+       * {
+       *   "success": true,
+       *   "items": [{
+       *     "id": "receipt-record-id",
+       *     "receiptNumber": "MO-REC-...",
+       *     "date": "2026-10-25T10:00:00Z",
+       *     "description": "Service description",
+       *     "amount": 1000,
+       *     "currency": "INR",
+       *     "status": "paid",
+       *     "paymentReference": "provider-reference",
+       *     "downloadUrl": "/api/account/receipts/receipt-record-id/download"
+       *   }],
+       *   "pagination": {
+       *     "page": 1,
+       *     "limit": 10,
+       *     "total": 1,
+       *     "pages": 1
+       *   }
+       * }
+       *
+       * Endpoint can be overridden in config.js:
+       * window.MEDORBITS_CONFIG.receiptsEndpoint
+       *
+       * Security requirements:
+       * - The backend must authenticate the current user.
+       * - The backend must scope every query to that user.
+       * - The backend must authorize every receipt download separately.
+       * - Never trust a client-supplied user ID to select receipt records.
+       * - Use HTTPS and appropriate rate limits.
+       */
+
+      const API_ENDPOINT =
+        window.MEDORBITS_CONFIG?.receiptsEndpoint ||
+        "/api/account/receipts";
+
+      const PAGE_SIZE = 10;
+
+      const state = {
+        allItems: [],
+        filteredItems: [],
+        page: 1,
+        serverTotal: 0,
+        serverPages: 1,
+        loading: false,
+        filters: {
+          search: "",
+          status: "all",
+          period: "all"
+        }
+      };
+
+      const statusBox = $("pageStatus");
+      const receiptsBody = $("receiptsBody");
+      const tableContainer = $("tableContainer");
+      const emptyState = $("emptyState");
+      const pagination = $("pagination");
+      const filterForm = $("filterForm");
+      const searchInput = $("searchInput");
+      const statusFilter = $("statusFilter");
+      const periodFilter = $("periodFilter");
+
+      function showStatus(message, type = "info", focus = false) {
+        statusBox.textContent = message;
+        statusBox.className = "form-status " + type;
+        statusBox.hidden = false;
+
+        if (focus) statusBox.focus();
+      }
+
+      function clearStatus() {
+        statusBox.textContent = "";
+        statusBox.className = "form-status info";
+        statusBox.hidden = true;
+      }
+
+      function safeText(value, fallback = "--") {
+        if (typeof value === "string" && value.trim()) {
+          return value.trim();
+        }
+
+        if (typeof value === "number" && Number.isFinite(value)) {
+          return String(value);
+        }
+
+        return fallback;
+      }
+
+      function normalizeStatus(value) {
+        const status = String(value || "").trim().toLowerCase();
+
+        const aliases = {
+          successful: "paid",
+          success: "paid",
+          completed: "paid",
+          complete: "paid",
+          paid: "paid",
+          pending: "pending",
+          processing: "pending",
+          failed: "failed",
+          failure: "failed",
+          cancelled: "failed",
+          canceled: "failed",
+          refunded: "refunded",
+          partially_refunded: "refunded"
+        };
+
+        return aliases[status] || "unknown";
+      }
+
+      function statusLabel(status) {
+        const labels = {
+          paid: "Paid",
+          pending: "Pending",
+          failed: "Failed",
+          refunded: "Refunded",
+          unknown: "Unspecified"
+        };
+
+        return labels[status] || "Unspecified";
+      }
+
+      function formatMoney(amount, currency = "INR") {
+        if (typeof amount !== "number" || !Number.isFinite(amount)) {
+          return "--";
+        }
+
+        try {
+          return new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: /^[A-Z]{3}$/.test(currency) ? currency : "INR",
+            maximumFractionDigits: 2
+          }).format(amount);
+        } catch {
+          return `${currency} ${amount.toFixed(2)}`;
+        }
+      }
+
+      function formatDate(value) {
+        if (!value) return "--";
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) return "--";
+
+        return new Intl.DateTimeFormat("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        }).format(date);
+      }
+
+      function makeElement(tag, className, text) {
+        const element = document.createElement(tag);
+
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+
+        return element;
+      }
+
+      function createCell(text, className = "") {
+        const cell = document.createElement("td");
+
+        if (className) {
+          const span = makeElement("span", className, text);
+          cell.appendChild(span);
+        } else {
+          cell.textContent = text;
+        }
+
+        return cell;
+      }
+
+      function safeReceiptId(item) {
+        return safeText(item.receiptNumber || item.id, "Receipt unavailable");
+      }
+
+      function normalizeItem(item) {
+        if (!item || typeof item !== "object") return null;
+
+        const id = typeof item.id === "string" ? item.id : "";
+        const receiptNumber =
+          typeof item.receiptNumber === "string"
+            ? item.receiptNumber
+            : "";
+
+        /*
+         * Receipt actions require an opaque backend record ID.
+         * Do not build a download route from a displayed receipt number.
+         */
+        if (!id || id.length > 256) return null;
+
+        const rawAmount = item.amount;
+        const amount =
+          typeof rawAmount === "number" && Number.isFinite(rawAmount)
+            ? rawAmount
+            : null;
+
+        const rawDate =
+          typeof item.date === "string" ? item.date :
+          typeof item.createdAt === "string" ? item.createdAt : "";
+
+        return {
+          id,
+          receiptNumber,
+          date: rawDate,
+          description: safeText(item.description || item.serviceName, "Payment"),
+          amount,
+          currency:
+            typeof item.currency === "string" &&
+            /^[A-Z]{3}$/.test(item.currency)
+              ? item.currency
+              : "INR",
+          status: normalizeStatus(item.status || item.paymentStatus),
+          paymentReference: safeText(item.paymentReference, ""),
+          downloadUrl:
+            typeof item.downloadUrl === "string" ? item.downloadUrl : "",
+          createdAt: rawDate
+        };
+      }
+
+      function validateDownloadUrl(rawUrl, receiptId) {
+        if (!rawUrl) return "";
+
+        try {
+          const url = new URL(rawUrl, window.location.origin);
+
+          /*
+           * Only allow same-origin receipt downloads.
+           * Do not follow arbitrary URLs returned in receipt data.
+           */
+          if (url.origin !== window.location.origin) return "";
+
+          if (
+            !url.pathname.startsWith("/api/account/receipts/") ||
+            !url.pathname.endsWith("/download")
+          ) {
+            return "";
+          }
+
+          if (!url.pathname.includes(encodeURIComponent(receiptId))) {
+            return "";
+          }
+
+          return url.pathname + url.search;
+        } catch {
+          return "";
+        }
+      }
+
+      function createActionButton(label, receipt, action) {
+        const button = makeElement("button", "icon-btn", label);
+        button.type = "button";
+        button.addEventListener("click", () => action(receipt, button));
+        return button;
+      }
+
+      async function downloadReceipt(receipt, button) {
+        const downloadUrl = validateDownloadUrl(
+          receipt.downloadUrl,
+          receipt.id
+        );
+
+        if (!downloadUrl) {
+          showStatus(
+            "A verified receipt download link is not available for this record. Contact support if you need a copy.",
+            "error",
+            true
+          );
+          return;
+        }
+
+        const previousText = button.textContent;
+        button.disabled = true;
+        button.textContent = "Preparing…";
+
+        try {
+          const response = await fetch(downloadUrl, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Accept": "application/pdf, application/octet-stream"
+            }
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            showStatus(
+              "Your session may have expired or you are not authorized to access this receipt. Sign in again and retry.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 404) {
+            showStatus(
+              "This receipt document is not available on the server.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (response.status === 429) {
+            showStatus(
+              "Too many download requests. Wait a moment before trying again.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          if (!response.ok) {
+            showStatus(
+              "The receipt could not be downloaded. Please try again later.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          const blob = await response.blob();
+
+          if (!blob.size) {
+            showStatus(
+              "The server returned an empty document. Please contact support.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          const contentType = (
+            response.headers.get("content-type") || ""
+          ).toLowerCase();
+
+          if (
+            contentType.includes("text/html") ||
+            contentType.includes("application/json")
+          ) {
+            showStatus(
+              "The server did not return a receipt document. Check the backend download endpoint.",
+              "error",
+              true
+            );
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          const filenameBase = safeReceiptId(receipt)
+            .replace(/[^a-zA-Z0-9._-]/g, "_")
+            .slice(0, 100);
+
+          anchor.href = objectUrl;
+          anchor.download = `${filenameBase || "medorbits-receipt"}.pdf`;
+          anchor.hidden = true;
+
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+          showStatus(
+            "The receipt document was returned by the server and the download was initiated.",
+            "success"
+          );
+        } catch {
+          showStatus(
+            "Unable to reach the receipt service. Check your connection and try again.",
+            "error",
+            true
+          );
+        } finally {
+          button.disabled = false;
+          button.textContent = previousText;
+        }
+      }
+
+      function printReceipt(receipt) {
+        const downloadUrl = validateDownloadUrl(
+          receipt.downloadUrl,
+          receipt.id
+        );
+
+        if (!downloadUrl) {
+          showStatus(
+            "A verified receipt document is not available to print. Downloadable receipt documents must be supplied by the server.",
+            "error",
+            true
+          );
+          return;
+        }
+
+        /*
+         * Open only a same-origin, server-authorized receipt route.
+         * The backend must authenticate and authorize this request.
+         */
+        const printUrl = new URL(downloadUrl, window.location.origin);
+        printUrl.searchParams.set("print", "1");
+
+        window.open(
+          printUrl.href,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+
+      function renderTable(items) {
+        receiptsBody.replaceChildren();
+
+        items.forEach(receipt => {
+          const row = document.createElement("tr");
+
+          const receiptCell = document.createElement("td");
+          const receiptNumber = makeElement(
+            "span",
+            "receipt-id",
+            safeReceiptId(receipt)
+          );
+          receiptCell.appendChild(receiptNumber);
+
+          if (receipt.paymentReference) {
+            receiptCell.appendChild(
+              makeElement(
+                "span",
+                "receipt-subtext",
+                `Ref: ${receipt.paymentReference}`
+              )
+            );
+          }
+
+          row.appendChild(receiptCell);
+          row.appendChild(createCell(formatDate(receipt.date)));
+          row.appendChild(createCell(receipt.description));
+          row.appendChild(
+            createCell(
+              receipt.amount === null
+                ? "--"
+                : formatMoney(receipt.amount, receipt.currency),
+              "amount"
+            )
+          );
+
+          const statusCell = document.createElement("td");
+          const pill = makeElement(
+            "span",
+            "status-pill",
+            statusLabel(receipt.status)
+          );
+
+          if (receipt.status === "pending") {
+            pill.classList.add("pending");
+          } else if (
+            receipt.status === "failed" ||
+            receipt.status === "refunded"
+          ) {
+            pill.classList.add(
+              receipt.status === "failed" ? "failed" : "neutral"
+            );
+          } else if (receipt.status !== "paid") {
+            pill.classList.add("neutral");
+          }
+
+          statusCell.appendChild(pill);
+          row.appendChild(statusCell);
+
+          const actionsCell = document.createElement("td");
+          const actions = makeElement("div", "row-actions");
+
+          const hasDownload = Boolean(
+            validateDownloadUrl(receipt.downloadUrl, receipt.id)
+          );
+
+          const downloadButton = createActionButton(
+            "↓ PDF",
+            receipt,
+            downloadReceipt
+          );
+          downloadButton.disabled = !hasDownload;
+          downloadButton.setAttribute(
+            "aria-label",
+            `Download receipt ${safeReceiptId(receipt)}`
+          );
+
+          const printButton = createActionButton(
+            "Print",
+            receipt,
+            printReceipt
+          );
+          printButton.disabled = !hasDownload;
+          printButton.setAttribute(
+            "aria-label",
+            `Print receipt ${safeReceiptId(receipt)}`
+          );
+
+          actions.append(downloadButton, printButton);
+          actionsCell.appendChild(actions);
+          row.appendChild(actionsCell);
+
+          receiptsBody.appendChild(row);
+        });
+
+        tableContainer.hidden = items.length === 0;
+      }
+
+      function updateSummary(items, totalRecords) {
+        const paid = items.filter(item => item.status === "paid");
+
+        const total = paid.reduce((sum, item) => {
+          if (item.amount === null) return sum;
+          return sum + item.amount;
+        }, 0);
+
+        const currencies = new Set(
+          paid
+            .filter(item => item.amount !== null)
+            .map(item => item.currency)
+        );
+
+        $("receiptCount").textContent = String(totalRecords);
+        $("paidCount").textContent = String(paid.length);
+
+        if (currencies.size === 0) {
+          $("totalPaid").textContent = "--";
+        } else if (currencies.size === 1) {
+          $("totalPaid").textContent = formatMoney(
+            total,
+            [...currencies][0]
+          );
+        } else {
+          $("totalPaid").textContent = "Multiple";
+        }
+      }
+
+      function filterLocally(items) {
+        const search = state.filters.search.trim().toLowerCase();
+        const selectedStatus = state.filters.status;
+        const period = state.filters.period;
+        const now = Date.now();
+
+        return items.filter(item => {
+          if (selectedStatus !== "all") {
+            if (selectedStatus === "refunded") {
+              if (item.status !== "refunded") return false;
+            } else if (item.status !== selectedStatus) {
+              return false;
+            }
+          }
+
+          if (search) {
+            const searchable = [
+              item.receiptNumber,
+              item.id,
+              item.paymentReference,
+              item.description,
+              item.status
+            ].join(" ").toLowerCase();
+
+            if (!searchable.includes(search)) return false;
+          }
+
+          if (period !== "all") {
+            const timestamp = new Date(item.date).getTime();
+
+            if (!Number.isFinite(timestamp)) return false;
+
+            const cutoff = now - Number(period) * 24 * 60 * 60 * 1000;
+
+            if (timestamp < cutoff || timestamp > now) return false;
+          }
+
+          return true;
+        });
+      }
+
+      function renderPagination(itemsCount, page, totalPages, totalCount) {
+        pagination.hidden = itemsCount === 0;
+
+        $("paginationInfo").textContent =
+          `Page ${page} of ${Math.max(1, totalPages)} · ${totalCount} matching records`;
+
+        $("previousPage").disabled = page <= 1;
+        $("nextPage").disabled = page >= totalPages;
+      }
+
+      function renderCurrentPage() {
+        const filtered = filterLocally(state.allItems);
+        state.filteredItems = filtered;
+
+        const totalPages = Math.max(
+          1,
+          Math.ceil(filtered.length / PAGE_SIZE)
+        );
+
+        state.page = Math.min(Math.max(1, state.page), totalPages);
+
+        const start = (state.page - 1) * PAGE_SIZE;
+        const currentItems = filtered.slice(start, start + PAGE_SIZE);
+
+        renderTable(currentItems);
+
+        emptyState.hidden = currentItems.length > 0;
+
+        if (!currentItems.length) {
+          tableContainer.hidden = true;
+          pagination.hidden = true;
+
+          if (state.allItems.length === 0) {
+            $("emptyTitle").textContent = "No receipts available";
+            $("emptyDescription").textContent =
+              "No receipt records were returned for your account. If you recently made a payment, check payment history or contact support.";
+          } else {
+            $("emptyTitle").textContent = "No matching receipts";
+            $("emptyDescription").textContent =
+              "Try changing the search term, payment status or date range.";
+          }
+        }
+
+        renderPagination(
+          currentItems.length,
+          state.page,
+          totalPages,
+          filtered.length
+        );
+
+        updateSummary(state.allItems, state.serverTotal);
+      }
+
+      function buildEndpoint() {
+        const url = new URL(API_ENDPOINT, window.location.origin);
+
+        if (url.origin !== window.location.origin) {
+          throw new Error("Receipt endpoint must be same-origin.");
+        }
+
+        url.searchParams.set("page", String(state.page));
+        url.searchParams.set("limit", String(PAGE_SIZE));
+
+        if (state.filters.search) {
+          url.searchParams.set("search", state.filters.search);
+        }
+
+        if (state.filters.status !== "all") {
+          url.searchParams.set("status", state.filters.status);
+        }
+
+        if (state.filters.period !== "all") {
+          url.searchParams.set("days", state.filters.period);
+        }
+
+        return url.pathname + url.search;
+      }
+
+      async function loadReceipts({ resetPage = false } = {}) {
+        if (state.loading) return;
+
+        if (resetPage) state.page = 1;
+
+        state.loading = true;
+        clearStatus();
+        showStatus("Loading receipts from your account…", "info");
+
+        $("previousPage").disabled = true;
+        $("nextPage").disabled = true;
+
+        try {
+          const endpoint = buildEndpoint();
+
+          const response = await fetch(endpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+          if (response.status === 401) {
+            showStatus(
+              "Please sign in to view your payment receipts.",
+              "error"
+            );
+            state.allItems = [];
+            state.serverTotal = 0;
+            renderCurrentPage();
+            return;
+          }
+
+          if (response.status === 403) {
+            showStatus(
+              "Your account is not authorized to access these receipts. Sign in with the account used for the payment or contact support.",
+              "error"
+            );
+            state.allItems = [];
+            state.serverTotal = 0;
+            renderCurrentPage();
+            return;
+          }
+
+          if (response.status === 404) {
+            showStatus(
+              "The receipt service endpoint was not found. Verify the configured backend route.",
+              "error"
+            );
+            state.allItems = [];
+            state.serverTotal = 0;
+            renderCurrentPage();
+            return;
+          }
+
+          if (response.status === 429) {
+            showStatus(
+              "Too many receipt requests. Wait briefly before trying again.",
+              "error"
+            );
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("Receipt service request failed.");
+          }
+
+          const contentType = response.headers.get("content-type") || "";
+
+          if (!contentType.includes("application/json")) {
+            throw new Error("The receipt service returned an unexpected response.");
+          }
+
+          const data = await response.json();
+
+          if (
+            !data ||
+            data.success !== true ||
+            !Array.isArray(data.items)
+          ) {
+            throw new Error("The receipt service response was invalid.");
+          }
+
+          state.allItems = data.items
+            .map(normalizeItem)
+            .filter(Boolean);
+
+          const paginationData =
+            data.pagination && typeof data.pagination === "object"
+              ? data.pagination
+              : {};
+
+          const parsedTotal = Number(paginationData.total);
+          const parsedPages = Number(paginationData.pages);
+          const parsedPage = Number(paginationData.page);
+
+          state.serverTotal =
+            Number.isInteger(parsedTotal) && parsedTotal >= 0
+              ? parsedTotal
+              : state.allItems.length;
+
+          state.serverPages =
+            Number.isInteger(parsedPages) && parsedPages > 0
+              ? parsedPages
+              : Math.max(1, Math.ceil(state.serverTotal / PAGE_SIZE));
+
+          if (Number.isInteger(parsedPage) && parsedPage > 0) {
+            state.page = parsedPage;
+          }
+
+          /*
+           * This UI filters the records returned by the current API page.
+           * For accurate filtering across every receipt, the backend must
+           * implement search/status/date filters and return matching
+           * pagination totals.
+           */
+          renderCurrentPage();
+
+          if (state.serverTotal === 0) {
+            clearStatus();
+          } else {
+            showStatus(
+              `Loaded ${state.allItems.length} receipt record(s) from the server.`,
+              "success"
+            );
+          }
+        } catch {
+          state.allItems = [];
+          state.serverTotal = 0;
+          renderCurrentPage();
+
+          showStatus(
+            "Unable to load receipts. Check your connection and confirm that the authenticated receipt API is configured.",
+            "error",
+            true
+          );
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      filterForm.addEventListener("submit", event => {
+        event.preventDefault();
+
+        state.filters.search = searchInput.value.trim().slice(0, 120);
+        state.filters.status = statusFilter.value;
+        state.filters.period = periodFilter.value;
+
+        loadReceipts({ resetPage: true });
+      });
+
+      $("clearFilters").addEventListener("click", () => {
+        searchInput.value = "";
+        statusFilter.value = "all";
+        periodFilter.value = "all";
+
+        state.filters = {
+          search: "",
+          status: "all",
+          period: "all"
+        };
+
+        loadReceipts({ resetPage: true });
+      });
+
+      $("previousPage").addEventListener("click", () => {
+        if (state.page <= 1 || state.loading) return;
+
+        state.page--;
+        loadReceipts();
+      });
+
+      $("nextPage").addEventListener("click", () => {
+        if (state.loading) return;
+
+        if (state.page < state.serverPages) {
+          state.page++;
+          loadReceipts();
+        }
+      });
+
+      /*
+       * Do not populate fake receipt examples.
+       * The page starts by requesting authenticated server data.
+       */
+      loadReceipts();
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/navigation.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>

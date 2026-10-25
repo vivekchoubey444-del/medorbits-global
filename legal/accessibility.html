@@ -1,24 +1,1851 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Accessibility | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#32101f">
+  <meta name="description" content="Read the MedOrbits Accessibility Statement covering website accessibility, keyboard navigation, screen readers, readable content, accessible forms, documents, assistive technologies and accessibility feedback.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Accessibility Statement | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/legal/accessibility.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #170b12;
+      --bg-soft: #24101a;
+      --wine: #32101f;
+      --wine-light: #511a31;
+      --wine-bright: #7e294b;
+      --green: #174b39;
+      --green-light: #21694e;
+      --green-bright: #8cdbb3;
+      --green-pale: #c4f3dc;
+      --gold: #d7b77c;
+      --text: #f8f1f3;
+      --text-soft: #e1cfd6;
+      --muted: #bba4ae;
+      --border: rgba(215,183,124,.19);
+      --green-border: rgba(140,219,179,.24);
+      --surface: #28131e;
+      --surface-2: #321a27;
+      --radius: 16px;
+      --shadow: 0 22px 65px rgba(0,0,0,.28);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 110px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 5% 0%, rgba(126,41,75,.25), transparent 35%),
+        radial-gradient(ellipse at 95% 45%, rgba(33,105,78,.16), transparent 34%),
+        linear-gradient(135deg,#170b12,#24101a 48%,#10291f);
+      color: var(--text);
+      font: 400 14px/1.8 "DM Sans",sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid var(--green-pale);
+      outline-offset: 4px;
+    }
+
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -80px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--green-pale);
+      color: #10291f;
+      font-weight: 700;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #12080e;
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .spark { color: var(--green-bright); }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(23,11,18,.96);
+      backdrop-filter: blur(18px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(18,8,14,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--green-pale);
+      font-size: 15px;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--green-border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--green-pale);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+    }
+
+    .main-nav > a,
+    .nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover,
+    .nav-trigger:hover { color: var(--green-pale); }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--green-bright);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+      background: #24151e;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(140,219,179,.08);
+      color: var(--green-pale);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 1px solid var(--green-bright);
+      border-radius: 9px;
+      background: linear-gradient(135deg,#c4f3dc,#71c99c);
+      color: #10291f;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .btn-outline {
+      border-color: var(--border);
+      background: rgba(255,255,255,.015);
+      color: var(--text-soft);
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 38px 0 70px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 8%,rgba(126,41,75,.15),transparent 35%),
+        radial-gradient(ellipse at 88% 60%,rgba(33,105,78,.11),transparent 32%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a { color: var(--green-pale); }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    .hero {
+      position: relative;
+      padding: clamp(24px,5vw,48px);
+      margin-bottom: 27px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(33,105,78,.26),transparent 42%),
+        linear-gradient(135deg,rgba(81,26,49,.88),rgba(36,16,26,.96) 60%,rgba(23,11,18,.96));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero::after {
+      position: absolute;
+      right: -50px;
+      bottom: -100px;
+      width: 270px;
+      height: 270px;
+      border: 1px solid rgba(140,219,179,.12);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 25px rgba(140,219,179,.025),
+        0 0 0 55px rgba(140,219,179,.02);
+      content: "";
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--green-pale);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--green-bright);
+      content: "";
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 850px;
+      margin: 14px 0;
+      font: 600 clamp(36px,6vw,60px)/1.12 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .hero h1 span { color: var(--green-pale); }
+
+    .hero > p {
+      position: relative;
+      z-index: 1;
+      max-width: 750px;
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    .hero-meta {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 23px;
+    }
+
+    .meta-chip {
+      padding: 7px 11px;
+      border: 1px solid var(--green-border);
+      border-radius: 7px;
+      background: rgba(23,75,57,.25);
+      color: var(--green-pale);
+      font-size: 10px;
+    }
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      padding: 17px 19px;
+      margin-bottom: 25px;
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+      background: rgba(23,75,57,.17);
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .notice-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--green-border);
+      border-radius: 10px;
+      color: var(--green-pale);
+      background: rgba(140,219,179,.07);
+      font-size: 16px;
+    }
+
+    .notice strong { color: var(--green-pale); }
+
+    .legal-layout {
+      display: grid;
+      grid-template-columns: 265px minmax(0,1fr);
+      align-items: start;
+      gap: 22px;
+    }
+
+    .sidebar,
+    .legal-card,
+    .contact-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg,rgba(50,26,39,.96),rgba(29,15,23,.97));
+      box-shadow: 0 16px 45px rgba(0,0,0,.17);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 102px;
+      padding: 19px;
+    }
+
+    .sidebar-label {
+      margin: 0 0 13px;
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .toc {
+      display: grid;
+      gap: 4px;
+    }
+
+    .toc a {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+      line-height: 1.65;
+      transition: background .2s,border-color .2s;
+    }
+
+    .toc a span {
+      flex: 0 0 21px;
+      color: var(--green-bright);
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .toc a:hover,
+    .toc a.active {
+      border-color: var(--green-border);
+      background: rgba(23,75,57,.25);
+      color: var(--green-pale);
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      margin: 17px 0;
+      background: var(--border);
+    }
+
+    .sidebar p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .sidebar .btn { width: 100%; }
+
+    .legal-content {
+      display: grid;
+      gap: 17px;
+      min-width: 0;
+    }
+
+    .legal-card {
+      padding: clamp(19px,3vw,29px);
+      scroll-margin-top: 105px;
+    }
+
+    .section-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 17px;
+    }
+
+    .section-number {
+      display: grid;
+      place-items: center;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+      background: rgba(23,75,57,.25);
+      color: var(--green-pale);
+      font: 600 15px "Playfair Display",Georgia,serif;
+    }
+
+    .section-top h2 {
+      margin: 0 0 5px;
+      font: 600 clamp(19px,2.5vw,24px)/1.4 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .section-top p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .legal-card p {
+      margin: 0 0 13px;
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 2;
+      overflow-wrap: anywhere;
+    }
+
+    .legal-card p:last-child { margin-bottom: 0; }
+
+    .legal-card h3 {
+      margin: 20px 0 8px;
+      color: var(--green-pale);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .legal-card ul,
+    .legal-card ol {
+      display: grid;
+      gap: 8px;
+      padding-left: 21px;
+      margin: 10px 0 15px;
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .legal-card li::marker { color: var(--green-bright); }
+
+    .legal-card a,
+    .contact-card a {
+      color: var(--green-pale);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      overflow-wrap: anywhere;
+    }
+
+    .legal-card a:hover,
+    .contact-card a:hover { color: var(--gold); }
+
+    .inline-highlight {
+      padding: 13px 15px;
+      margin: 15px 0;
+      border-left: 2px solid var(--green-bright);
+      border-radius: 0 8px 8px 0;
+      background: rgba(23,75,57,.17);
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .inline-highlight strong { color: var(--green-pale); }
+
+    .contact-card {
+      padding: 24px;
+      background:
+        radial-gradient(ellipse at 100% 0%,rgba(33,105,78,.2),transparent 48%),
+        linear-gradient(145deg,rgba(50,26,39,.96),rgba(29,15,23,.97));
+    }
+
+    .contact-card h2 {
+      margin: 0 0 9px;
+      font: 600 24px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .contact-card p {
+      margin: 0 0 12px;
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .back-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 15px;
+      color: var(--green-pale);
+      font-size: 10px;
+    }
+
+    .back-top:hover { text-decoration: underline; }
+
+    .site-footer {
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background:
+        radial-gradient(ellipse at 80% 0%,rgba(23,75,57,.12),transparent 40%),
+        #12080e;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+      color: var(--green-pale);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-links a:hover { color: var(--green-pale); }
+
+    .footer-disclaimer {
+      padding: 14px 16px;
+      margin: 0 0 15px;
+      border-left: 2px solid var(--green-bright);
+      border-radius: 0 8px 8px 0;
+      background: rgba(23,75,57,.12);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(215,183,124,.12);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border);
+        background: #1b0c14;
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media (max-width:900px) {
+      .legal-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .toc { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width:600px) {
+      .container { width: calc(100% - 28px); }
+      .nav-wrap { min-height: 69px; }
+      .page-main { padding: 27px 0 45px; }
+      .hero { padding: 23px 19px; border-radius: 16px; }
+      .hero h1 { font-size: clamp(34px,10vw,47px); }
+      .hero > p { font-size: 12px; }
+      .hero-meta { gap: 7px; }
+      .meta-chip { font-size: 9px; }
+      .sidebar,
+      .legal-card,
+      .contact-card { padding: 17px; }
+      .toc { grid-template-columns: 1fr; }
+      .section-top { gap: 10px; }
+      .section-number {
+        flex-basis: 36px;
+        width: 36px;
+        height: 36px;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+      .contact-actions { flex-direction: column; }
+      .contact-actions .btn { width: 100%; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: auto; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Accessibility</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about accessibility. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/legal/terms.html">Legal</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">Accessibility Statement</span>
+      </nav>
+
+      <header class="hero">
+        <span class="eyebrow">Inclusive access · MedOrbits</span>
+        <h1>Accessibility <span>for everyone.</span></h1>
+        <p>
+          MedOrbits aims to make education resources, admission guidance,
+          career information and digital services usable by as many people
+          as possible, including people with disabilities. This statement
+          explains our accessibility approach, practical recommendations,
+          known limitations and how to request assistance or report a barrier.
+        </p>
+        <div class="hero-meta">
+          <span class="meta-chip">Last updated: October 25, 2026</span>
+          <span class="meta-chip">Inclusive digital access</span>
+          <span class="meta-chip">Feedback welcome</span>
+        </div>
+      </header>
+
+      <div class="notice">
+        <div class="notice-icon" aria-hidden="true">♿</div>
+        <div>
+          <strong>Accessibility is an ongoing effort</strong><br>
+          We aim to improve the usability and accessibility of MedOrbits
+          over time. If a page, document, form or feature creates a barrier,
+          please contact us through the
+          <a href="/pages/contact.html">official contact page</a>.
+          We will review the information provided and consider reasonable
+          improvements. This statement does not claim that every part of
+          the website has been independently audited or fully conforms to
+          a particular accessibility standard.
+        </div>
+      </div>
+
+      <div class="legal-layout">
+        <aside class="sidebar" aria-label="Accessibility statement table of contents">
+          <p class="sidebar-label">On this page</p>
+
+          <nav class="toc" id="tableOfContents" aria-label="Page sections">
+            <a href="#purpose"><span>01</span> Purpose and scope</a>
+            <a href="#commitment"><span>02</span> Accessibility commitment</a>
+            <a href="#standards"><span>03</span> Guidelines and standards</a>
+            <a href="#perceivable"><span>04</span> Readable and perceivable content</a>
+            <a href="#keyboard"><span>05</span> Keyboard navigation</a>
+            <a href="#screen-readers"><span>06</span> Screen readers and assistive technology</a>
+            <a href="#visual-design"><span>07</span> Visual design and readability</a>
+            <a href="#navigation"><span>08</span> Navigation and page structure</a>
+            <a href="#forms"><span>09</span> Forms and validation</a>
+            <a href="#images"><span>10</span> Images and non-text content</a>
+            <a href="#media"><span>11</span> Audio and video</a>
+            <a href="#documents"><span>12</span> Documents and downloads</a>
+            <a href="#compatibility"><span>13</span> Browser and device compatibility</a>
+            <a href="#third-party"><span>14</span> Third-party content</a>
+            <a href="#known-limitations"><span>15</span> Known limitations</a>
+            <a href="#improvements"><span>16</span> Testing and improvements</a>
+            <a href="#alternative-access"><span>17</span> Alternative access and assistance</a>
+            <a href="#feedback"><span>18</span> Report an accessibility barrier</a>
+            <a href="#updates"><span>19</span> Statement updates</a>
+            <a href="#contact"><span>20</span> Contact information</a>
+          </nav>
+
+          <div class="sidebar-divider"></div>
+          <p>
+            Need help accessing a page or document? Contact us and identify
+            the affected page or feature. Please avoid sending unnecessary
+            sensitive personal information.
+          </p>
+          <a class="btn" href="/pages/contact.html">Request assistance ↗</a>
+        </aside>
+
+        <div class="legal-content">
+          <section class="legal-card" id="purpose">
+            <div class="section-top">
+              <div class="section-number">01</div>
+              <div>
+                <h2>Purpose and Scope</h2>
+                <p>Where this statement applies</p>
+              </div>
+            </div>
+            <p>
+              This Accessibility Statement describes the approach MedOrbits
+              takes to improving access to its website at
+              <a href="https://medorbits.in/">https://medorbits.in/</a>
+              and to the digital content and services made available through it.
+            </p>
+            <p>
+              The statement is intended for students, applicants, job seekers,
+              employers, visitors and other users who may encounter barriers
+              because of visual, auditory, motor, cognitive, neurological
+              or other accessibility needs.
+            </p>
+            <p>
+              It covers website navigation, written content, forms,
+              application workflows, downloadable documents and relevant
+              interactive features, to the extent those elements are
+              operated or controlled by MedOrbits.
+            </p>
+            <p>
+              Accessibility can vary between pages, devices, browsers,
+              assistive technologies and third-party services. This
+              statement should be read as an explanation of our approach,
+              not a guarantee that every experience is barrier-free.
+            </p>
+          </section>
+
+          <section class="legal-card" id="commitment">
+            <div class="section-top">
+              <div class="section-number">02</div>
+              <div>
+                <h2>Accessibility Commitment</h2>
+                <p>Designing for different users and needs</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits aims to make its digital information easier to
+              perceive, understand and operate. We recognize that people
+              use different devices, input methods and assistive technologies
+              to access online information.
+            </p>
+            <p>Our intended accessibility practices include:</p>
+            <ul>
+              <li>Using meaningful headings and a logical content hierarchy.</li>
+              <li>Providing keyboard-accessible controls where feasible.</li>
+              <li>Maintaining visible focus indicators for interactive elements.</li>
+              <li>Using readable text, suitable spacing and responsive layouts.</li>
+              <li>Providing meaningful alternative text for informative images where appropriate.</li>
+              <li>Labelling forms and communicating errors as clearly as possible.</li>
+              <li>Considering reduced-motion preferences in supported interfaces.</li>
+              <li>Reviewing accessibility reports and prioritizing practical improvements.</li>
+            </ul>
+            <p>
+              These are design objectives and implementation practices,
+              not a representation that every listed feature is already
+              present or works perfectly on every page.
+            </p>
+          </section>
+
+          <section class="legal-card" id="standards">
+            <div class="section-top">
+              <div class="section-number">03</div>
+              <div>
+                <h2>Guidelines and Standards</h2>
+                <p>Accessibility principles we consider</p>
+              </div>
+            </div>
+            <p>
+              Our accessibility work may use the Web Content Accessibility
+              Guidelines (WCAG), published by the World Wide Web Consortium
+              (W3C), as a reference for identifying and addressing common
+              website accessibility barriers.
+            </p>
+            <p>
+              WCAG organizes accessibility around four principles:
+              content should be perceivable, operable, understandable
+              and robust.
+            </p>
+            <ul>
+              <li><strong>Perceivable:</strong> users should be able to access information through the senses available to them.</li>
+              <li><strong>Operable:</strong> interactive features should be usable through supported input methods.</li>
+              <li><strong>Understandable:</strong> information, navigation and controls should be as clear and predictable as possible.</li>
+              <li><strong>Robust:</strong> content should work with a reasonable range of browsers and assistive technologies.</li>
+            </ul>
+            <p>
+              Reference: <a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noopener noreferrer">W3C Web Content Accessibility Guidelines (WCAG) 2.2</a>.
+            </p>
+            <p>
+              Unless an accessibility audit confirms the relevant criteria,
+              MedOrbits does not claim formal certification or full
+              conformance to WCAG or any other technical standard.
+            </p>
+          </section>
+
+          <section class="legal-card" id="perceivable">
+            <div class="section-top">
+              <div class="section-number">04</div>
+              <div>
+                <h2>Readable and Perceivable Content</h2>
+                <p>Making information easier to access</p>
+              </div>
+            </div>
+            <p>
+              We aim to present website information in a structured,
+              readable format. Page content should use clear headings,
+              descriptive link labels and meaningful grouping wherever
+              appropriate.
+            </p>
+            <ul>
+              <li>Use headings to communicate the topic and hierarchy of a section.</li>
+              <li>Write link text that explains its destination or purpose.</li>
+              <li>Keep paragraphs and instructions understandable.</li>
+              <li>Avoid relying on colour alone to communicate important information.</li>
+              <li>Use lists for grouped requirements, steps and related information.</li>
+              <li>Provide text alternatives for meaningful visual information where appropriate.</li>
+            </ul>
+            <p>
+              Some content may originate from external institutions,
+              employers, publishers or other providers. Its structure and
+              accessibility may be outside our direct control.
+            </p>
+          </section>
+
+          <section class="legal-card" id="keyboard">
+            <div class="section-top">
+              <div class="section-number">05</div>
+              <div>
+                <h2>Keyboard Navigation</h2>
+                <p>Using the website without a mouse</p>
+              </div>
+            </div>
+            <p>
+              We aim to support keyboard access for important navigation
+              and interactive controls. Users who cannot operate a mouse
+              should be able to use standard keyboard commands wherever
+              the relevant feature supports them.
+            </p>
+            <h3>Common keyboard commands</h3>
+            <ul>
+              <li><strong>Tab:</strong> move forward between focusable controls.</li>
+              <li><strong>Shift + Tab:</strong> move backward between focusable controls.</li>
+              <li><strong>Enter:</strong> activate a focused link or button.</li>
+              <li><strong>Space:</strong> activate supported buttons and controls.</li>
+              <li><strong>Escape:</strong> close supported menus or overlays.</li>
+            </ul>
+            <p>
+              The exact behaviour depends on the browser, operating system
+              and component. If a keyboard trap, inaccessible control or
+              unexpected focus movement prevents you from completing a
+              task, please report the affected page and the steps that
+              reproduce the issue.
+            </p>
+          </section>
+
+          <section class="legal-card" id="screen-readers">
+            <div class="section-top">
+              <div class="section-number">06</div>
+              <div>
+                <h2>Screen Readers and Assistive Technology</h2>
+                <p>Supporting alternative ways to browse</p>
+              </div>
+            </div>
+            <p>
+              People may access MedOrbits using screen readers, screen
+              magnifiers, speech recognition, switch devices, alternative
+              keyboards and other assistive technologies.
+            </p>
+            <p>
+              Where practical, pages should use semantic HTML elements,
+              meaningful document titles, descriptive accessible names
+              and labels that help assistive technology communicate the
+              purpose of a control.
+            </p>
+            <ul>
+              <li>Use headings to make sections easier to navigate.</li>
+              <li>Provide labels for form fields and useful descriptions for errors.</li>
+              <li>Identify navigation and main content regions where appropriate.</li>
+              <li>Use descriptive text for links and buttons rather than ambiguous labels.</li>
+              <li>Ensure important instructions are available as text, not only as images.</li>
+            </ul>
+            <p>
+              Assistive technology support can differ between browsers and
+              versions. We welcome reports about compatibility problems
+              involving specific screen readers or other tools.
+            </p>
+          </section>
+
+          <section class="legal-card" id="visual-design">
+            <div class="section-top">
+              <div class="section-number">07</div>
+              <div>
+                <h2>Visual Design and Readability</h2>
+                <p>Contrast, scaling and visual comfort</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits uses a dark burgundy and emerald visual theme with
+              contrasting text and accent colours. We aim to preserve
+              sufficient readability across screen sizes and supported
+              display settings.
+            </p>
+            <ul>
+              <li>Use text and background combinations intended to remain distinguishable.</li>
+              <li>Provide visible focus styles for interactive elements.</li>
+              <li>Use responsive layouts that adapt to different viewport widths.</li>
+              <li>Avoid unnecessarily long lines and overly dense content blocks where practical.</li>
+              <li>Respect reduced-motion preferences for supported animated or transitioning elements.</li>
+              <li>Use more than colour alone to distinguish important states or instructions.</li>
+            </ul>
+            <p>
+              Browser zoom, operating-system scaling and user-defined
+              contrast settings may affect the appearance of some elements.
+              If text becomes clipped, overlaps other content or becomes
+              unreadable when enlarged, please let us know.
+            </p>
+          </section>
+
+          <section class="legal-card" id="navigation">
+            <div class="section-top">
+              <div class="section-number">08</div>
+              <div>
+                <h2>Navigation and Page Structure</h2>
+                <p>Predictable browsing and clear page landmarks</p>
+              </div>
+            </div>
+            <p>
+              We aim to use consistent navigation, meaningful page titles,
+              logical content order and clear labels to help users
+              understand where they are and how to find relevant information.
+            </p>
+            <ul>
+              <li>Provide a consistent route to major website sections.</li>
+              <li>Use breadcrumbs or equivalent navigation cues on supported pages.</li>
+              <li>Make important page sections easy to identify.</li>
+              <li>Provide a skip link on pages where it is implemented.</li>
+              <li>Keep mobile navigation usable on smaller screens.</li>
+              <li>Ensure navigation controls communicate their expanded or collapsed state where applicable.</li>
+            </ul>
+            <p>
+              The location, labels and availability of navigation items
+              may vary by page or service. If a menu cannot be opened,
+              closed or navigated using your preferred input method,
+              report the issue through our contact page.
+            </p>
+          </section>
+
+          <section class="legal-card" id="forms">
+            <div class="section-top">
+              <div class="section-number">09</div>
+              <div>
+                <h2>Forms and Validation</h2>
+                <p>Applications, contact forms and data entry</p>
+              </div>
+            </div>
+            <p>
+              Forms may be used to request guidance, submit applications,
+              contact support or provide information for education and
+              career services. We aim to make field labels, instructions
+              and required information understandable.
+            </p>
+            <ul>
+              <li>Clearly identify the purpose of each form field.</li>
+              <li>Indicate required fields and explain applicable formats.</li>
+              <li>Provide useful error messages when validation fails.</li>
+              <li>Avoid relying only on colour to indicate an error.</li>
+              <li>Keep instructions available while a user completes a task where practical.</li>
+              <li>Provide a way to review information before final submission when the workflow supports it.</li>
+            </ul>
+            <p>
+              Some forms may use third-party tools or document-upload
+              services. Their accessibility and technical requirements
+              may vary. If a form prevents you from completing a legitimate
+              request, contact us and identify the form and the step where
+              the problem occurs.
+            </p>
+            <div class="inline-highlight">
+              <strong>Privacy reminder:</strong> When asking for assistance,
+              do not send passwords, one-time codes, payment-card security
+              codes or unnecessary sensitive documents through an ordinary
+              support message.
+            </div>
+          </section>
+
+          <section class="legal-card" id="images">
+            <div class="section-top">
+              <div class="section-number">10</div>
+              <div>
+                <h2>Images and Non-Text Content</h2>
+                <p>Alternative ways to understand visual information</p>
+              </div>
+            </div>
+            <p>
+              Informative images should have meaningful text alternatives
+              where appropriate. Decorative images should not create
+              unnecessary noise for assistive technology.
+            </p>
+            <ul>
+              <li>Provide alternative text for images that convey information.</li>
+              <li>Use descriptive names for image-based controls where needed.</li>
+              <li>Avoid placing essential instructions only inside an image.</li>
+              <li>Use captions or nearby explanatory text for complex diagrams when appropriate.</li>
+              <li>Ensure logos and linked images communicate their purpose.</li>
+            </ul>
+            <p>
+              Some third-party images, legacy graphics or uploaded documents
+              may not have adequate text alternatives. If an image contains
+              essential information that is unavailable to you, tell us
+              which page it appears on and what information you need to access.
+            </p>
+          </section>
+
+          <section class="legal-card" id="media">
+            <div class="section-top">
+              <div class="section-number">11</div>
+              <div>
+                <h2>Audio and Video</h2>
+                <p>Accessing multimedia content</p>
+              </div>
+            </div>
+            <p>
+              Where MedOrbits provides or embeds audio and video content,
+              we aim to consider alternatives that make important
+              information available to users with different sensory needs.
+            </p>
+            <ul>
+              <li>Provide captions for spoken content in video where available and appropriate.</li>
+              <li>Consider transcripts for audio-only material.</li>
+              <li>Avoid autoplaying media with unexpected sound where practical.</li>
+              <li>Make playback controls accessible using supported input methods.</li>
+              <li>Consider descriptions or explanatory text when visual details convey essential information.</li>
+            </ul>
+            <p>
+              Media hosted by third parties may have different controls,
+              captions or accessibility features. Availability may depend
+              on the original publisher and the media platform.
+            </p>
+            <p>
+              If a video or audio item contains essential information
+              that you cannot access, contact us to describe the item
+              and request an accessible alternative where reasonably
+              available.
+            </p>
+          </section>
+
+          <section class="legal-card" id="documents">
+            <div class="section-top">
+              <div class="section-number">12</div>
+              <div>
+                <h2>Documents and Downloads</h2>
+                <p>PDFs, forms and educational resources</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits may provide downloadable documents, application
+              forms, guides, brochures and educational resources. The
+              accessibility of a file can depend on how it was created,
+              scanned, exported or supplied by its original publisher.
+            </p>
+            <ul>
+              <li>Prefer searchable text documents over image-only scans when feasible.</li>
+              <li>Use meaningful document titles and structured headings where supported.</li>
+              <li>Use descriptive link text to identify downloads.</li>
+              <li>Consider accessible alternatives when a document cannot be read with assistive technology.</li>
+              <li>Identify the exact file when requesting help or an alternative format.</li>
+            </ul>
+            <p>
+              Some official forms and institutional documents may be
+              published in formats that MedOrbits does not control.
+              We cannot guarantee that every external document is
+              accessible or editable.
+            </p>
+            <p>
+              If a document is essential to a service and inaccessible
+              to you, contact us. Where reasonably possible, we will
+              consider an alternative way to communicate the relevant
+              information or assist with access.
+            </p>
+          </section>
+
+          <section class="legal-card" id="compatibility">
+            <div class="section-top">
+              <div class="section-number">13</div>
+              <div>
+                <h2>Browser and Device Compatibility</h2>
+                <p>Access across supported devices</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits is designed to be responsive across a range of
+              modern browsers and devices. The experience may differ
+              depending on browser version, operating system, screen
+              size, connection quality and assistive technology.
+            </p>
+            <p>
+              For the best available experience, consider using a
+              supported, up-to-date browser and enabling the accessibility
+              features available on your device.
+            </p>
+            <ul>
+              <li>Browser zoom and text-size settings.</li>
+              <li>Screen readers and spoken-content features.</li>
+              <li>Operating-system contrast and colour adjustments.</li>
+              <li>Keyboard navigation and alternative input devices.</li>
+              <li>Reduced-motion settings where supported.</li>
+            </ul>
+            <p>
+              These suggestions are optional and do not replace our
+              responsibility to consider accessibility in the website
+              design. If a particular browser or device causes a barrier,
+              please include its name and version when reporting the issue,
+              if you can identify them.
+            </p>
+          </section>
+
+          <section class="legal-card" id="third-party">
+            <div class="section-top">
+              <div class="section-number">14</div>
+              <div>
+                <h2>Third-Party Content and Services</h2>
+                <p>External platforms and linked resources</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits may link to or embed content from colleges,
+              universities, examination authorities, government portals,
+              employers, payment providers, video platforms and other
+              external services.
+            </p>
+            <p>
+              We do not control every design decision or technical feature
+              on these external services. Their accessibility may differ
+              from the MedOrbits website.
+            </p>
+            <ul>
+              <li>External websites may use different navigation and login methods.</li>
+              <li>Third-party documents may not include accessible text or structure.</li>
+              <li>Embedded content may depend on external scripts or browser settings.</li>
+              <li>External accessibility features may change without notice to MedOrbits.</li>
+            </ul>
+            <p>
+              If a third-party service is inaccessible, consider contacting
+              that provider directly. You may also inform MedOrbits if the
+              external resource is essential to a MedOrbits-related task,
+              so we can consider whether an alternative source or route
+              is available.
+            </p>
+          </section>
+
+          <section class="legal-card" id="known-limitations">
+            <div class="section-top">
+              <div class="section-number">15</div>
+              <div>
+                <h2>Known Limitations</h2>
+                <p>What may still create accessibility barriers</p>
+              </div>
+            </div>
+            <p>
+              Accessibility is an ongoing process, and some parts of the
+              website may not yet provide the experience we intend.
+              Potential limitations may include:
+            </p>
+            <ul>
+              <li>Older pages or documents that have not been reviewed recently.</li>
+              <li>Scanned PDFs or third-party files without selectable text.</li>
+              <li>External forms, embedded services or media players.</li>
+              <li>Complex tables, graphics or content supplied by external organizations.</li>
+              <li>Occasional issues with focus order, field descriptions or responsive layouts.</li>
+              <li>Differences between assistive technology and browser combinations.</li>
+            </ul>
+            <p>
+              This list describes possible types of limitations and is
+              not a verified audit of current defects. The exact barriers
+              present on the live website should be established through
+              testing and user feedback.
+            </p>
+            <p>
+              We encourage users to report specific issues so they can
+              be assessed, prioritized and addressed where feasible.
+            </p>
+          </section>
+
+          <section class="legal-card" id="improvements">
+            <div class="section-top">
+              <div class="section-number">16</div>
+              <div>
+                <h2>Testing and Improvements</h2>
+                <p>How accessibility can be improved over time</p>
+              </div>
+            </div>
+            <p>
+              Accessibility improvements may include automated checks,
+              manual review, keyboard testing, responsive testing and
+              feedback from people who use assistive technologies.
+            </p>
+            <p>Improvement work may consider:</p>
+            <ul>
+              <li>Document structure, heading hierarchy and page landmarks.</li>
+              <li>Accessible names, labels and descriptions for controls.</li>
+              <li>Keyboard access, focus order and visible focus indicators.</li>
+              <li>Text contrast, zoom behaviour and responsive reflow.</li>
+              <li>Form validation, error communication and submission status.</li>
+              <li>Alternative text, captions and accessible document formats.</li>
+            </ul>
+            <p>
+              Automated testing can identify some technical problems but
+              cannot establish accessibility on its own. Manual review
+              and feedback from users remain important.
+            </p>
+            <p>
+              We may prioritize issues based on their effect on essential
+              tasks, the number of users affected, available alternatives,
+              technical feasibility and applicable legal obligations.
+            </p>
+          </section>
+
+          <section class="legal-card" id="alternative-access">
+            <div class="section-top">
+              <div class="section-number">17</div>
+              <div>
+                <h2>Alternative Access and Assistance</h2>
+                <p>When a feature is difficult to use</p>
+              </div>
+            </div>
+            <p>
+              If an accessibility barrier prevents you from accessing
+              important information or completing a legitimate task,
+              contact MedOrbits and explain what you need to access.
+            </p>
+            <p>
+              Depending on the request and available resources, we may
+              consider reasonable assistance such as:
+            </p>
+            <ul>
+              <li>Providing the relevant information in an alternative text format.</li>
+              <li>Explaining a process or instruction in clearer language.</li>
+              <li>Helping identify an accessible version of a document.</li>
+              <li>Providing guidance on how to locate a page or feature.</li>
+              <li>Reviewing a form or workflow that cannot be completed with your input method.</li>
+            </ul>
+            <p>
+              The assistance available will depend on the nature of the
+              request, the material involved, applicable law and whether
+              the content is controlled by MedOrbits or a third party.
+            </p>
+            <div class="inline-highlight">
+              <strong>Helpful details:</strong> Tell us which page or file
+              you are using, what you were trying to do, what happened,
+              and which format or assistance would help you. You do not
+              need to disclose a diagnosis or unnecessary medical information.
+            </div>
+          </section>
+
+          <section class="legal-card" id="feedback">
+            <div class="section-top">
+              <div class="section-number">18</div>
+              <div>
+                <h2>Report an Accessibility Barrier</h2>
+                <p>How to share feedback or request support</p>
+              </div>
+            </div>
+            <p>
+              We welcome feedback about barriers that make the MedOrbits
+              website difficult to perceive, navigate or use. Reports
+              can help us understand problems that may not be identified
+              through routine testing.
+            </p>
+
+            <h3>What to include in your report</h3>
+            <ul>
+              <li>The page URL or name of the affected document.</li>
+              <li>A short description of the accessibility problem.</li>
+              <li>The action you were trying to complete.</li>
+              <li>The steps that caused the issue, if you can describe them.</li>
+              <li>Your browser, device or assistive technology details, if known.</li>
+              <li>The alternative format or assistance you would prefer.</li>
+            </ul>
+
+            <h3>Protect your privacy</h3>
+            <p>
+              Please do not send passwords, one-time codes, financial
+              credentials or unnecessary sensitive documents. You do not
+              need to provide medical details to report an accessibility
+              issue.
+            </p>
+            <p>
+              Contacting us does not guarantee a specific response time
+              or resolution. We will consider the information provided
+              and assess the issue according to its nature and priority.
+            </p>
+
+            <div class="contact-actions">
+              <a class="btn" href="/pages/contact.html">Report an issue ↗</a>
+              <a class="btn btn-outline" href="/legal/privacy-policy.html">Privacy Policy</a>
+            </div>
+          </section>
+
+          <section class="legal-card" id="updates">
+            <div class="section-top">
+              <div class="section-number">19</div>
+              <div>
+                <h2>Statement Updates</h2>
+                <p>Keeping accessibility information current</p>
+              </div>
+            </div>
+            <p>
+              MedOrbits may update this statement when the website,
+              services, accessibility practices or relevant legal
+              requirements change.
+            </p>
+            <p>
+              The latest version will be published at:
+              <a href="https://medorbits.in/legal/accessibility.html">https://medorbits.in/legal/accessibility.html</a>.
+            </p>
+            <p>
+              The date shown at the top of this page should reflect the
+              date on which the statement was last reviewed or materially
+              updated. It should not be changed to imply that testing or
+              an audit took place when it did not.
+            </p>
+            <p>
+              This statement should be read alongside the
+              <a href="/legal/terms.html">Terms and Conditions</a>,
+              <a href="/legal/privacy-policy.html">Privacy Policy</a> and
+              <a href="/legal/acceptable-use.html">Acceptable Use Policy</a>,
+              where relevant.
+            </p>
+          </section>
+
+          <section class="legal-card" id="contact">
+            <div class="section-top">
+              <div class="section-number">20</div>
+              <div>
+                <h2>Contact Information</h2>
+                <p>Accessibility questions and assistance</p>
+              </div>
+            </div>
+            <p>
+              For accessibility feedback, alternative-format requests
+              or assistance using a MedOrbits page, contact us through
+              the official contact page.
+            </p>
+            <p>
+              Describe the page or feature involved and the barrier
+              you encountered. If you are requesting an alternative
+              format, specify the format that would be most useful.
+            </p>
+
+            <div class="inline-highlight">
+              <strong>Website:</strong>
+              <a href="https://medorbits.in/">https://medorbits.in/</a><br>
+              <strong>Accessibility statement:</strong>
+              <a href="https://medorbits.in/legal/accessibility.html">/legal/accessibility.html</a><br>
+              <strong>Support channel:</strong>
+              <a href="/pages/contact.html">MedOrbits contact page</a>
+            </div>
+
+            <p>
+              Before publication, ensure the contact page contains
+              a working support route and that accessibility feedback
+              can be received and reviewed by the appropriate person.
+            </p>
+
+            <div class="contact-actions">
+              <a class="btn" href="/pages/contact.html">Contact MedOrbits ↗</a>
+              <a class="btn btn-outline" href="/legal/terms.html">Terms and Conditions</a>
+              <a class="btn btn-outline" href="/legal/privacy-policy.html">Privacy Policy</a>
+            </div>
+
+            <a class="back-top" href="#main-content">↑ Back to top</a>
+          </section>
+
+          <section class="contact-card" aria-labelledby="finalNoticeTitle">
+            <h2 id="finalNoticeTitle">A more accessible experience starts with feedback.</h2>
+            <p>
+              We aim to improve the accessibility of MedOrbits over time.
+              Your feedback can help us identify barriers, improve content
+              and make important education and career information easier
+              to access.
+            </p>
+            <p>
+              <strong>Document:</strong> Accessibility Statement<br>
+              <strong>Last updated:</strong> October 25, 2026<br>
+              <strong>Official website:</strong>
+              <a href="https://medorbits.in/">https://medorbits.in/</a>
+            </p>
+            <div class="contact-actions">
+              <a class="btn" href="/pages/contact.html">Share accessibility feedback ↗</a>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Admissions</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/admissions/counselling.html">Counselling</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Careers</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Legal and support</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/acceptable-use.html">Acceptable use</a>
+          <a href="/legal/accessibility.html" aria-current="page">Accessibility</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="footer-disclaimer">
+        MedOrbits aims to improve digital accessibility over time.
+        If you encounter an accessibility barrier, please report it
+        through the official contact page. Verify education, admission
+        and employment information through the relevant official sources.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const header = document.getElementById("siteHeader");
+      const menuToggle = document.getElementById("menuToggle");
+      const mainNav = document.getElementById("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+      const tocLinks = [
+        ...document.querySelectorAll("#tableOfContents a")
+      ];
+
+      const yearElement = document.getElementById("currentYear");
+
+      if (yearElement) {
+        yearElement.textContent = String(new Date().getFullYear());
+      }
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) closeNavigation();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      function updateHeader() {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }
+
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+
+      const desktopQuery = window.matchMedia("(min-width: 1101px)");
+
+      desktopQuery.addEventListener?.("change", event => {
+        if (event.matches) closeNavigation();
+      });
+
+      const sections = tocLinks
+        .map(link => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+
+            tocLinks.forEach(link => {
+              const isActive =
+                link.getAttribute("href") === "#" + entry.target.id;
+
+              link.classList.toggle("active", isActive);
+
+              if (isActive) {
+                link.setAttribute("aria-current", "location");
+              } else {
+                link.removeAttribute("aria-current");
+              }
+            });
+          });
+        }, {
+          rootMargin: "-115px 0px -65% 0px",
+          threshold: 0
+        });
+
+        sections.forEach(section => observer.observe(section));
+      }
+    })();
+  </script>
+</body>
+</html>

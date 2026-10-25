@@ -1,9 +1,161 @@
+=============================================================================
 
-# MedOrbits -- Development and Testing Dependencies
-# Install with: python -m pip install -r requirements-dev.txt
+MEDORBITS -- DEVELOPMENT & TESTING DEPENDENCIES
 
-# Automated testing
+=============================================================================
+
+File:          requirements-dev.txt
+
+Project:       MedOrbits
+
+Website:       https://medorbits.in
+
+Purpose:       Local development, automated testing, linting and code quality
+
+INSTALLATION
+
+python -m pip install -r requirements-dev.txt
+
+RUN TESTS
+
+python -m pytest
+
+RUN LINTING
+
+python -m ruff check .
+
+CHECK FORMATTING
+
+python -m ruff format –check .
+
+AUTO-FORMAT CODE
+
+python -m ruff format .
+
+SECURITY NOTES
+
+1. Install dependencies inside an isolated virtual environment.
+
+2. Review dependency updates before accepting them.
+
+3. Pin exact versions in a generated lock file for reproducible CI builds.
+
+4. Review transitive dependencies and security advisories regularly.
+
+5. Keep development-only packages out of the production installation.
+
+COMPATIBILITY
+
+Target Python version: 3.10+
+
+Verify package compatibility against the Python version used in CI.
+
+VERSION POLICY
+
+The ranges below define supported major-version boundaries; they do not
+
+provide fully reproducible installations. Use a reviewed lock file when
+
+deterministic builds are required.
+
+=============================================================================
+
+--------------------------------------------------–
+
+01. AUTOMATED TESTING
+
+--------------------------------------------------–
+
+Python testing framework
+
 pytest>=8.0,<9.0
 
-# Python linting and static analysis
+--------------------------------------------------–
+
+02. LINTING & STATIC ANALYSIS
+
+--------------------------------------------------–
+
+Fast Python linter and code-quality analyzer
+
 ruff>=0.6,<1.0
+
+--------------------------------------------------–
+
+03. OPTIONAL TESTING UTILITIES
+
+--------------------------------------------------–
+
+Uncomment a package only when the test suite uses it.
+
+Review compatibility and pin resolved versions in the project’s lock file.
+
+Property-based testing
+
+hypothesis>=6.100,<7.0
+
+Mocking and HTTP request testing
+
+responses>=0.25,<1.0
+
+HTTP client for API integration tests
+
+httpx>=0.27,<1.0
+
+Coverage reporting
+
+coverage>=7.6,<8.0
+
+Pytest coverage integration
+
+pytest-cov>=5.0,<7.0
+
+--------------------------------------------------–
+
+04. OPTIONAL SECURITY & DEPENDENCY AUDITING
+
+--------------------------------------------------–
+
+Install separately or enable after reviewing the project’s security workflow.
+
+Python dependency vulnerability auditing
+
+pip-audit>=2.7,<3.0
+
+--------------------------------------------------–
+
+05. OPTIONAL TYPE CHECKING
+
+--------------------------------------------------–
+
+Uncomment if MedOrbits adopts static type checking in its Python codebase.
+
+Static type checker
+
+mypy>=1.11,<2.0
+
+=============================================================================
+
+MAINTENANCE REQUIREMENTS
+
+=============================================================================
+
+- Add only dependencies required by the development and testing workflow.
+
+- Prefer actively maintained packages with compatible Python support.
+
+- Review changelogs and security advisories before upgrading dependencies.
+
+- Do not store credentials, API keys or private repository tokens in this file.
+
+- Do not treat a successful installation as proof that the application is secure.
+
+- Keep production dependencies in the appropriate production requirements file.
+
+- Validate this file in CI using the same supported Python version as the project.
+
+=============================================================================
+
+END OF MEDORBITS DEVELOPMENT REQUIREMENTS
+
+=============================================================================

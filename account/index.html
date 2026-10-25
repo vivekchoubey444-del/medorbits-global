@@ -1,24 +1,1631 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100a17">
-<meta name="description" content="MedOrbits — Education, Admissions, Careers and Recruitment. Verify official requirements before making decisions.">
-<title>Account | MedOrbits</title>
-<link rel="stylesheet" href="../assets/css/styles.css">
-<script defer src="../assets/js/main.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071629">
+  <meta name="description" content="MedOrbits account hub for managing your profile, applications, documents, saved courses, colleges, jobs, payments and account security.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>My Account | MedOrbits</title>
+  <link rel="canonical" href="https://medorbits.in/account/index.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071629;
+      --bg-soft: #0b203b;
+      --surface: #102947;
+      --surface-2: #153657;
+      --accent: #8bbcff;
+      --accent-bright: #d9e9ff;
+      --text: #f2f7ff;
+      --text-soft: #c7d8ee;
+      --muted: #9db2cc;
+      --border: rgba(139,188,255,.23);
+      --success: #a8f0d0;
+      --warning: #ffdfa2;
+      --danger: #ffc1ca;
+      --radius: 16px;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(40,102,170,.20), transparent 35%),
+        radial-gradient(ellipse at 90% 40%, rgba(98,155,221,.08), transparent 32%),
+        linear-gradient(135deg,#050d1a,#091b31 55%,#102947);
+      color: var(--text);
+      font: 400 14px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 2px solid var(--accent-bright);
+      outline-offset: 4px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -70px;
+      left: 14px;
+      z-index: 10000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: var(--accent-bright);
+      color: var(--bg);
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px 15px;
+      border-bottom: 1px solid rgba(139,188,255,.13);
+      background: #040b15;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .spark { color: var(--accent); }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,14,27,.94);
+      backdrop-filter: blur(18px);
+    }
+
+    .site-header.scrolled {
+      background: rgba(4,11,21,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--accent-bright);
+      font-size: 15px;
+      letter-spacing: .13em;
+      line-height: 1.35;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .menu-toggle {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--accent-bright);
+      cursor: pointer;
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      font-size: 11px;
+    }
+
+    .main-nav > a, .nav-trigger {
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .main-nav > a:hover, .nav-trigger:hover {
+      color: var(--accent-bright);
+    }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -12px;
+      display: none;
+      width: 245px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #102947;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:focus-within .dropdown {
+      display: grid;
+    }
+
+    .dropdown a {
+      padding: 10px 11px;
+      border-radius: 7px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .dropdown a:hover {
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 41px;
+      padding: 10px 15px;
+      border: 1px solid var(--accent);
+      border-radius: 9px;
+      background: linear-gradient(135deg,#d9e9ff,#82b6f8);
+      color: #071629;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .btn-outline {
+      border-color: rgba(199,216,238,.32);
+      background: transparent;
+      color: var(--accent-bright);
+    }
+
+    .btn-danger {
+      border-color: rgba(255,193,202,.35);
+      background: rgba(255,193,202,.05);
+      color: var(--danger);
+    }
+
+    .page-main {
+      position: relative;
+      isolation: isolate;
+      min-height: 70vh;
+      padding: 40px 0 65px;
+      overflow: hidden;
+    }
+
+    .page-main::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 10%,rgba(40,102,170,.14),transparent 34%),
+        radial-gradient(ellipse at 88% 65%,rgba(98,155,221,.08),transparent 32%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .breadcrumbs a { color: var(--accent-bright); }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent-bright);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 25px;
+      height: 1px;
+      background: var(--accent);
+      content: "";
+    }
+
+    .page-heading h1 {
+      margin: 10px 0 9px;
+      font: 600 clamp(32px,4.3vw,48px)/1.13 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+      overflow-wrap: anywhere;
+    }
+
+    .page-heading h1 span { color: var(--accent-bright); }
+
+    .page-heading p {
+      max-width: 710px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .heading-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0,1fr);
+      align-items: start;
+      gap: 19px;
+    }
+
+    .sidebar, .panel, .quick-card, .info-card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg,rgba(16,41,71,.95),rgba(5,13,26,.94));
+      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      padding: 19px;
+    }
+
+    .account-user {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(139,188,255,.35);
+      border-radius: 13px;
+      background: linear-gradient(145deg,#173d64,#0b203b);
+      color: var(--accent-bright);
+      font: 600 16px "Playfair Display",Georgia,serif;
+    }
+
+    .account-user strong {
+      display: block;
+      font-size: 11px;
+    }
+
+    .account-user small {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .account-nav {
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
+    }
+
+    .account-nav a {
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .account-nav a:hover,
+    .account-nav a.active {
+      border-color: rgba(139,188,255,.2);
+      background: rgba(139,188,255,.09);
+      color: var(--accent-bright);
+    }
+
+    .sidebar-note {
+      margin: 15px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .sidebar-note a {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .content {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel { padding: clamp(17px,2.5vw,25px); }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      margin-bottom: 19px;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.08);
+      color: var(--accent-bright);
+      font-size: 19px;
+    }
+
+    .panel-heading h2, .info-card h2 {
+      margin: 0 0 5px;
+      font: 600 21px/1.3 "Playfair Display",Georgia,serif;
+    }
+
+    .panel-heading p, .info-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .status {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-soft);
+      background: rgba(139,188,255,.05);
+      font-size: 10px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .status.error {
+      border-color: rgba(255,193,202,.35);
+      color: var(--danger);
+    }
+
+    .status.success {
+      border-color: rgba(168,240,208,.3);
+      color: var(--success);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(139,188,255,.045);
+    }
+
+    .stat-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--accent-bright);
+      font: 600 25px/1.3 "Playfair Display",Georgia,serif;
+      overflow-wrap: anywhere;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 5px 0 15px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font: 600 21px/1.4 "Playfair Display",Georgia,serif;
+    }
+
+    .section-heading a {
+      color: var(--accent-bright);
+      font-size: 10px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .quick-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 165px;
+      padding: 16px;
+      transition: transform .2s,border-color .2s;
+    }
+
+    .quick-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(139,188,255,.55);
+    }
+
+    .quick-icon {
+      display: grid;
+      place-items: center;
+      width: 39px;
+      height: 39px;
+      margin-bottom: 13px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: rgba(139,188,255,.08);
+      color: var(--accent-bright);
+      font-size: 18px;
+    }
+
+    .quick-card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+
+    .quick-card p {
+      flex: 1;
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+    }
+
+    .quick-card .card-link {
+      margin-top: 13px;
+      color: var(--accent-bright);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .activity-list { display: grid; }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(139,188,255,.14);
+    }
+
+    .activity-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .activity-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--accent-bright);
+      background: rgba(139,188,255,.06);
+    }
+
+    .activity-copy { min-width: 0; flex: 1; }
+
+    .activity-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+    }
+
+    .activity-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .activity-copy a {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .info-card { padding: 21px; }
+
+    .info-card h2 { margin-bottom: 9px; }
+
+    .info-links { display: grid; margin-top: 12px; }
+
+    .info-links a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 10px;
+    }
+
+    .info-links a:last-child { border-bottom: 0; }
+    .info-links a span { color: var(--accent); }
+    .info-links a:hover { color: var(--accent-bright); }
+
+    .notice {
+      padding: 14px 16px;
+      border: 1px solid rgba(255,223,162,.22);
+      border-radius: 10px;
+      background: rgba(255,223,162,.035);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .notice strong { color: var(--warning); }
+
+    .site-footer {
+      padding: 43px 0 0;
+      border-top: 1px solid var(--border);
+      background: #040b15;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(4,minmax(0,1fr));
+      gap: 23px;
+      padding-bottom: 28px;
+    }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-grid h2 {
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(139,188,255,.17);
+      color: var(--accent-bright);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-links a:hover { color: var(--accent-bright); }
+
+    .disclaimer {
+      margin: 0 0 15px;
+      padding: 13px 15px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: rgba(16,41,71,.4);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(139,188,255,.13);
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    @media (max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .main-nav {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: none;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        padding: 15px 22px 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--border);
+        background: #071629;
+      }
+
+      .main-nav.open { display: flex; }
+
+      .main-nav > a, .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        margin-bottom: 5px;
+        box-shadow: none;
+      }
+
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media (max-width:900px) {
+      .quick-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width:800px) {
+      .container { width: calc(100% - 30px); }
+      .nav-wrap { min-height: 69px; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+
+      .account-nav {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .stats-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    }
+
+    @media (max-width:560px) {
+      .announcement { gap: 6px; font-size: 8px; letter-spacing: .04em; }
+      .page-main { padding: 30px 0 45px; }
+      .page-heading h1 { font-size: clamp(31px,9vw,42px); }
+
+      .sidebar, .panel, .quick-card, .info-card { padding: 15px; }
+
+      .account-nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .quick-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .heading-actions { flex-direction: column; }
+      .heading-actions .btn { width: 100%; }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 21px 15px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width:360px) {
+      .container { width: calc(100% - 22px); }
+      .brand img { width: 37px; height: 37px; }
+      .brand strong { font-size: 13px; }
+      .brand small { font-size: 7px; }
+      .footer-grid, .account-nav, .stats-grid, .quick-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,*::before,*::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="../index.html">MedOrbits</a>
-<nav aria-label="Main navigation"><a href="../pages/education.html">Education</a><a href="../pages/admissions.html">Admissions</a><a href="../career/index.html">Careers</a><a href="../support/index.html">Support</a></nav></header>
-<main id="main" class="container">
-<p class="eyebrow">Education · Admissions · Careers · Recruitment</p>
-<h1>Account</h1>
-<p class="notice">Starter template: add verified, current information and test all links before publishing.</p>
-<section><h2>Overview</h2><p>Use this page for accurate information about account. Do not publish unverified fees, deadlines, eligibility rules, seat counts, recognition status or service commitments.</p></section>
-<section><h2>Related resources</h2><ul><li><a href="../support/index.html">Support</a></li><li><a href="../legal/privacy-policy.html">Privacy Policy</a></li><li><a href="../legal/terms.html">Terms</a></li></ul></section>
-</main>
-<footer class="site-footer"><p>MedOrbits — Study · Work · Grow</p></footer>
-</body></html>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Your future, your direction</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Study · Work · Grow -- one connected destination</span>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png"
+             alt="MedOrbits logo" width="45" height="45">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button"
+              aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="main-nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/study-in-india/mbbs.html">MBBS in India</a>
+            <a href="/education/study-abroad/mbbs-abroad.html">MBBS abroad</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/resources/fees.html">Fees and funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+            <a href="/career/employer-services.html">Employer services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a href="/account/index.html" aria-current="page">My Account</a>
+        <a href="/account/my-applications.html">My Applications</a>
+        <a href="/account/my-documents.html">My Documents</a>
+        <a href="/account/saved-colleges.html">Saved Colleges</a>
+        <a href="/account/saved-courses.html">Saved Courses</a>
+        <a class="btn" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/index.html">Home</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">My Account</span>
+      </nav>
+
+      <header class="page-heading">
+        <div>
+          <span class="eyebrow">Your personal workspace</span>
+          <h1>My <span>account.</span></h1>
+          <p>
+            Manage your profile, applications, documents, education
+            shortlist, job interests, messages, payments and security
+            settings from one connected MedOrbits workspace.
+          </p>
+        </div>
+
+        <div class="heading-actions">
+          <a class="btn btn-outline" href="/account/edit-profile.html">
+            ◈ Edit profile
+          </a>
+          <a class="btn" href="/pages/contact.html">
+            Get support ↗
+          </a>
+        </div>
+      </header>
+
+      <div class="layout">
+
+        <aside class="sidebar" aria-label="Account navigation">
+          <div class="account-user">
+            <div class="avatar" aria-hidden="true">MO</div>
+            <div>
+              <strong>My account</strong>
+              <small id="accountEmail">Account overview</small>
+            </div>
+          </div>
+
+          <nav class="account-nav" aria-label="Account menu">
+            <a class="active" href="/account/index.html" aria-current="page">▦ &nbsp; Account home</a>
+            <a href="/account/dashboard.html">⌂ &nbsp; Dashboard</a>
+            <a href="/account/profile.html">◈ &nbsp; Profile</a>
+            <a href="/account/edit-profile.html">✎ &nbsp; Edit profile</a>
+            <a href="/account/my-applications.html">▤ &nbsp; My applications</a>
+            <a href="/account/application-details.html">▧ &nbsp; Application details</a>
+            <a href="/account/my-documents.html">▧ &nbsp; My documents</a>
+            <a href="/account/messages.html">✉ &nbsp; Messages</a>
+            <a href="/account/notifications.html">♧ &nbsp; Notifications</a>
+            <a href="/account/payment-history.html">＄ &nbsp; Payment history</a>
+            <a href="/account/receipts.html">▤ &nbsp; Receipts</a>
+            <a href="/account/saved-colleges.html">☆ &nbsp; Saved colleges</a>
+            <a href="/account/saved-courses.html">▣ &nbsp; Saved courses</a>
+            <a href="/account/saved-jobs.html">◇ &nbsp; Saved jobs</a>
+            <a href="/account/sessions.html">⌘ &nbsp; Active sessions</a>
+            <a href="/account/security-settings.html">⚙ &nbsp; Security settings</a>
+            <a href="/account/privacy-settings.html">◉ &nbsp; Privacy settings</a>
+            <a href="/account/change-password.html">🔒 &nbsp; Change password</a>
+            <a href="/account/verify-email.html">✉ &nbsp; Verify email</a>
+            <a href="/account/verify-phone.html">☎ &nbsp; Verify phone</a>
+            <a href="/account/delete-account.html">⊗ &nbsp; Delete account</a>
+          </nav>
+
+          <p class="sidebar-note">
+            Keep your contact details up to date and protect your account
+            credentials.
+            <br><a href="/pages/contact.html">Contact support ↗</a>
+          </p>
+        </aside>
+
+        <div class="content">
+
+          <section class="panel" aria-labelledby="overviewTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">▦</div>
+              <div>
+                <h2 id="overviewTitle">Account overview</h2>
+                <p>
+                  Your personal account workspace and education activity.
+                  Statistics appear only when the connected account service
+                  returns them.
+                </p>
+              </div>
+            </div>
+
+            <div id="accountStatus" class="status" role="status"
+                 aria-live="polite">
+              Account summary has not been loaded.
+              You can open your account pages below.
+            </div>
+
+            <div class="stats-grid" aria-label="Account summary">
+              <div class="stat-card">
+                <span>Applications</span>
+                <strong id="applicationCount">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Saved courses</span>
+                <strong id="courseCount">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Saved colleges</span>
+                <strong id="collegeCount">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Saved jobs</span>
+                <strong id="jobCount">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Documents</span>
+                <strong id="documentCount">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Notifications</span>
+                <strong id="notificationCount">--</strong>
+              </div>
+            </div>
+
+            <div class="quick-actions">
+              <a class="btn" href="/account/dashboard.html">Open dashboard ↗</a>
+              <a class="btn btn-outline" href="/account/edit-profile.html">Update profile</a>
+              <button class="btn btn-outline" id="refreshSummary" type="button">
+                ↻ Refresh summary
+              </button>
+            </div>
+          </section>
+
+          <section aria-labelledby="workspaceTitle">
+            <div class="section-heading">
+              <h2 id="workspaceTitle">Your workspace</h2>
+              <a href="/account/dashboard.html">View dashboard ↗</a>
+            </div>
+
+            <div class="quick-grid">
+              <a class="quick-card" href="/account/profile.html">
+                <span class="quick-icon" aria-hidden="true">◈</span>
+                <strong>My profile</strong>
+                <p>View your available profile information and account details.</p>
+                <span class="card-link">View profile →</span>
+              </a>
+
+              <a class="quick-card" href="/account/edit-profile.html">
+                <span class="quick-icon" aria-hidden="true">✎</span>
+                <strong>Edit profile</strong>
+                <p>Update your personal details and education preferences.</p>
+                <span class="card-link">Edit details →</span>
+              </a>
+
+              <a class="quick-card" href="/account/my-applications.html">
+                <span class="quick-icon" aria-hidden="true">▤</span>
+                <strong>My applications</strong>
+                <p>Review applications and available application statuses.</p>
+                <span class="card-link">View applications →</span>
+              </a>
+
+              <a class="quick-card" href="/account/my-documents.html">
+                <span class="quick-icon" aria-hidden="true">▧</span>
+                <strong>My documents</strong>
+                <p>Access your documents and available document records.</p>
+                <span class="card-link">Manage documents →</span>
+              </a>
+
+              <a class="quick-card" href="/account/messages.html">
+                <span class="quick-icon" aria-hidden="true">✉</span>
+                <strong>Messages</strong>
+                <p>Open your account messages and available conversations.</p>
+                <span class="card-link">Open messages →</span>
+              </a>
+
+              <a class="quick-card" href="/account/notifications.html">
+                <span class="quick-icon" aria-hidden="true">♧</span>
+                <strong>Notifications</strong>
+                <p>Review account alerts and available updates.</p>
+                <span class="card-link">View notifications →</span>
+              </a>
+
+              <a class="quick-card" href="/account/saved-colleges.html">
+                <span class="quick-icon" aria-hidden="true">☆</span>
+                <strong>Saved colleges</strong>
+                <p>Return to colleges you bookmarked for further research.</p>
+                <span class="card-link">Open shortlist →</span>
+              </a>
+
+              <a class="quick-card" href="/account/saved-courses.html">
+                <span class="quick-icon" aria-hidden="true">▣</span>
+                <strong>Saved courses</strong>
+                <p>Review your course shortlist and compare study pathways.</p>
+                <span class="card-link">Open shortlist →</span>
+              </a>
+
+              <a class="quick-card" href="/account/saved-jobs.html">
+                <span class="quick-icon" aria-hidden="true">◇</span>
+                <strong>Saved jobs</strong>
+                <p>Revisit job opportunities you saved for later.</p>
+                <span class="card-link">View saved jobs →</span>
+              </a>
+
+              <a class="quick-card" href="/account/payment-history.html">
+                <span class="quick-icon" aria-hidden="true">＄</span>
+                <strong>Payment history</strong>
+                <p>Review available transaction and payment records.</p>
+                <span class="card-link">View payments →</span>
+              </a>
+
+              <a class="quick-card" href="/account/receipts.html">
+                <span class="quick-icon" aria-hidden="true">▤</span>
+                <strong>Receipts</strong>
+                <p>Access receipts made available through your account.</p>
+                <span class="card-link">View receipts →</span>
+              </a>
+
+              <a class="quick-card" href="/account/security-settings.html">
+                <span class="quick-icon" aria-hidden="true">⚙</span>
+                <strong>Account security</strong>
+                <p>Review security settings and available verification options.</p>
+                <span class="card-link">Manage security →</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="activityTitle">
+            <div class="panel-heading">
+              <div class="panel-icon" aria-hidden="true">⌘</div>
+              <div>
+                <h2 id="activityTitle">Account activity and important links</h2>
+                <p>
+                  Direct access to application records, documents, account
+                  preferences and verification pages.
+                </p>
+              </div>
+            </div>
+
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">▤</div>
+                <div class="activity-copy">
+                  <strong>Application details</strong>
+                  <p>
+                    Review individual application records in
+                    <a href="/account/application-details.html">application details</a>.
+                    Availability depends on your account records.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">✉</div>
+                <div class="activity-copy">
+                  <strong>Email verification</strong>
+                  <p>
+                    Manage email verification through
+                    <a href="/account/verify-email.html">verify email</a>.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">☎</div>
+                <div class="activity-copy">
+                  <strong>Phone verification</strong>
+                  <p>
+                    Access the phone verification page at
+                    <a href="/account/verify-phone.html">verify phone</a>.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">🔒</div>
+                <div class="activity-copy">
+                  <strong>Password management</strong>
+                  <p>
+                    Use <a href="/account/change-password.html">change password</a>
+                    or <a href="/account/reset-password.html">reset password</a>
+                    when appropriate.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">⌘</div>
+                <div class="activity-copy">
+                  <strong>Active sessions</strong>
+                  <p>
+                    Review the
+                    <a href="/account/sessions.html">sessions page</a>
+                    to access available session-management controls.
+                  </p>
+                </div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-icon" aria-hidden="true">◉</div>
+                <div class="activity-copy">
+                  <strong>Privacy and account controls</strong>
+                  <p>
+                    Visit <a href="/account/privacy-settings.html">privacy settings</a>,
+                    <a href="/account/security-settings.html">security settings</a>
+                    or <a href="/account/delete-account.html">delete account</a>.
+                    Account changes should require server-side authorization.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card" aria-labelledby="discoverTitle">
+            <h2 id="discoverTitle">Continue exploring MedOrbits</h2>
+            <p>
+              Use the education and career resources to research your options.
+              Verify current requirements with the relevant institution or
+              official authority before making decisions.
+            </p>
+
+            <div class="info-links">
+              <a href="/education/courses.html">Browse education courses <span>↗</span></a>
+              <a href="/education/colleges.html">Explore colleges <span>↗</span></a>
+              <a href="/education/universities.html">Explore universities <span>↗</span></a>
+              <a href="/education/admissions/exams.html">Research entrance examinations <span>↗</span></a>
+              <a href="/education/resources/fees.html">Review fees and funding <span>↗</span></a>
+              <a href="/education/resources/scholarships.html">Find scholarship information <span>↗</span></a>
+              <a href="/career/jobs.html">Explore job opportunities <span>↗</span></a>
+              <a href="/career/recruitment.html">Recruitment services <span>↗</span></a>
+              <a href="/pages/contact.html">Contact MedOrbits support <span>↗</span></a>
+            </div>
+          </section>
+
+          <div class="notice">
+            <strong>Account and privacy notice:</strong>
+            This page is an account navigation hub. Personal information,
+            application counts, documents, payment records and notifications
+            must be retrieved from an authenticated service. Do not expose
+            private records in public pages or rely on browser-side checks
+            for authorization.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png"
+                 alt="MedOrbits logo" width="45" height="45" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>
+            Explore education pathways, admission resources and career
+            opportunities with MedOrbits.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h2>Education</h2>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/study-in-india/index.html">Study in India</a>
+          <a href="/education/study-abroad/index.html">Study abroad</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Student resources</h2>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance exams</a>
+          <a href="/education/resources/fees.html">Fees and funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>Career services</h2>
+          <a href="/career/jobs.html">Jobs</a>
+          <a href="/career/internships.html">Internships</a>
+          <a href="/career/guidance.html">Career guidance</a>
+          <a href="/career/resume-support.html">Resume support</a>
+          <a href="/career/recruitment.html">Recruitment</a>
+        </div>
+
+        <div class="footer-links">
+          <h2>MedOrbits</h2>
+          <a href="/pages/about.html">About us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/legal/privacy-policy.html">Privacy policy</a>
+          <a href="/legal/terms.html">Terms and conditions</a>
+          <a href="/legal/refund-policy.html">Refund policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+
+      </div>
+
+      <p class="disclaimer">
+        MedOrbits provides education and career information and consultancy
+        services. Course information, admission rules, fees, eligibility and
+        deadlines can change. Confirm material details with the relevant
+        institution and official authority. A saved item or guidance request
+        is not an admission offer or a guarantee of employment.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * Account summary API contract
+       *
+       * GET /api/account/summary
+       *
+       * Example response:
+       * {
+       *   "summary": {
+       *     "applications": 0,
+       *     "savedCourses": 0,
+       *     "savedColleges": 0,
+       *     "savedJobs": 0,
+       *     "documents": 0,
+       *     "notifications": 0
+       *   },
+       *   "user": {
+       *     "email": "verified-account-email"
+       *   }
+       * }
+       *
+       * Configure an alternative endpoint with:
+       * window.MEDORBITS_CONFIG.accountSummaryEndpoint
+       *
+       * The server must authenticate the request and calculate all counts
+       * for the currently authenticated user. Never accept a client-supplied
+       * user ID as authorization to read another user's data.
+       *
+       * This page deliberately does not fabricate account statistics.
+       */
+
+      const endpoint =
+        window.MEDORBITS_CONFIG?.accountSummaryEndpoint ||
+        "/api/account/summary";
+
+      const $ = id => document.getElementById(id);
+
+      const header = $("siteHeader");
+      const menuToggle = $("menuToggle");
+      const mainNav = $("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+
+      const statusBox = $("accountStatus");
+      const refreshButton = $("refreshSummary");
+
+      $("currentYear").textContent = String(new Date().getFullYear());
+
+      const summaryFields = {
+        applications: $("applicationCount"),
+        savedCourses: $("courseCount"),
+        savedColleges: $("collegeCount"),
+        savedJobs: $("jobCount"),
+        documents: $("documentCount"),
+        notifications: $("notificationCount")
+      };
+
+      function closeNavigation() {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰ MENU";
+
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      menuToggle.addEventListener("click", () => {
+        const isOpen = mainNav.classList.toggle("open");
+
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) closeNavigation();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+
+          navGroups.forEach(other => {
+            other.classList.remove("open");
+            other.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      mainNav.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeNavigation);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          navGroups.forEach(group => {
+            group.classList.remove("open");
+            group.querySelector(".nav-trigger")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        if (
+          mainNav.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeNavigation();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNavigation();
+      });
+
+      window.addEventListener("scroll", () => {
+        header.classList.toggle("scrolled", window.scrollY > 20);
+      }, { passive: true });
+
+      window.matchMedia("(min-width: 1101px)")
+        .addEventListener?.("change", event => {
+          if (event.matches) closeNavigation();
+        });
+
+      function showStatus(message, type = "") {
+        statusBox.replaceChildren();
+        statusBox.textContent = message;
+        statusBox.className = "status" + (type ? ` ${type}` : "");
+        statusBox.hidden = false;
+      }
+
+      function setSummaryValues(summary) {
+        const keys = Object.keys(summaryFields);
+
+        keys.forEach(key => {
+          const value = summary[key];
+
+          summaryFields[key].textContent =
+            Number.isSafeInteger(value) && value >= 0
+              ? value.toLocaleString()
+              : "--";
+        });
+      }
+
+      async function readJson(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) return {};
+
+        try {
+          return await response.json();
+        } catch {
+          return {};
+        }
+      }
+
+      async function loadSummary() {
+        refreshButton.disabled = true;
+        refreshButton.textContent = "Loading…";
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+          const data = await readJson(response);
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              throw new Error(
+                "Sign in to view your personal account summary."
+              );
+            }
+
+            if (response.status === 403) {
+              throw new Error(
+                "You are not authorized to view this account summary."
+              );
+            }
+
+            if (response.status === 404) {
+              throw new Error(
+                "The account-summary API is not configured. Your account pages are still available below."
+              );
+            }
+
+            if (response.status === 429) {
+              throw new Error(
+                "Too many requests. Please try refreshing again shortly."
+              );
+            }
+
+            throw new Error(
+              typeof data.message === "string"
+                ? data.message
+                : "The account summary could not be loaded."
+            );
+          }
+
+          if (
+            !data.summary ||
+            typeof data.summary !== "object" ||
+            Array.isArray(data.summary)
+          ) {
+            throw new Error(
+              "The account service returned an invalid summary."
+            );
+          }
+
+          setSummaryValues(data.summary);
+
+          const email =
+            typeof data.user?.email === "string"
+              ? data.user.email
+              : "";
+
+          $("accountEmail").textContent = email || "Account overview";
+
+          showStatus(
+            "Your account summary was retrieved from the account service.",
+            "success"
+          );
+
+        } catch (error) {
+          Object.values(summaryFields).forEach(field => {
+            field.textContent = "--";
+          });
+
+          showStatus(
+            error instanceof Error
+              ? error.message
+              : "The account summary could not be loaded.",
+            "error"
+          );
+
+        } finally {
+          refreshButton.disabled = false;
+          refreshButton.textContent = "↻ Refresh summary";
+        }
+      }
+
+      refreshButton.addEventListener("click", loadSummary);
+
+      loadSummary();
+    })();
+  </script>
+
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/utils.js" defer></script>
+  <script src="/assets/js/security.js" defer></script>
+  <script src="/assets/js/account.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>
