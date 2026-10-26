@@ -1,735 +1,605 @@
+
 #!/usr/bin/env node
 'use strict';
+
 /**
- * MedOrbits -- Branded PDF Generator
- * File: /scripts/brand-pdfs.js
+ * MedOrbits -- PDF Branding Utility
+ *
+ * File: scripts/brand-pdfs.js
  *
  * Purpose:
- *   Generate branded PDF documents using approved MedOrbits branding
- *   assets and a JSON manifest.
+ *   - Discover PDF files recursively.
+ *   - Add consistent MedOrbits document metadata.
+ *   - Preserve original PDF files.
+ *   - Write processed PDFs to a separate output directory.
+ *   - Support dry-run and JSON reporting.
+ *   - Reject symlinked input files and unsafe output paths.
  *
  * Requirements:
- *   Node.js 20+
- *   npm install pdfkit
+ *   - Node.js 20+
+ *   - pdf-lib
  *
  * Usage:
  *   node scripts/brand-pdfs.js --help
  *   node scripts/brand-pdfs.js --dry-run
+ *   node scripts/brand-pdfs.js
  *   node scripts/brand-pdfs.js --json
- *   node scripts/brand-pdfs.js --manifest=assets/documents/brand-pdfs.json
- *   node scripts/brand-pdfs.js --output=storage/generated/brand-pdfs
+ *   node scripts/brand-pdfs.js --input=documents/pdfs
+ *   node scripts/brand-pdfs.js --output=storage/branded-pdfs
  *
- * Default manifest:
- *   assets/documents/brand-pdfs.json
+ * Environment:
+ *   PDF_INPUT_DIR   Default: documents/pdfs
+ *   PDF_OUTPUT_DIR  Default: storage/branded-pdfs
+ *   PDF_AUTHOR      Default: MedOrbits
+ *   PDF_SUBJECT     Default: Official MedOrbits document
  *
- * Default output:
- *   storage/generated/brand-pdfs
- *
- * Security:
- *   - Restricts paths to the repository.
- *   - Rejects symbolic links in source and output paths.
- *   - Does not fetch remote images or documents.
- *   - Validates manifest structure and source files.
- *   - Uses generated output filenames.
- *   - Creates output files with restrictive permissions.
- *   - Does not modify source documents.
- *
- * IMPORTANT:
- *   Generated PDFs are drafts unless reviewed and approved.
- *   Do not use this script to reproduce protected third-party branding
- *   without permission.
+ * Important:
+ *   This script updates PDF metadata. It does not insert a visual logo,
+ *   watermark, header, footer, or modify page content.
+ *   Digital signatures may become invalid when a PDF is modified.
  */
+
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
 const process = require('node:process');
-const PDFDocument = require('pdfkit');
+
+const { PDFDocument } = require('pdf-lib');
+
 const ROOT = path.resolve(__dirname, '..');
-const DEFAULT_MANIFEST = 'assets/documents/brand-pdfs.json';
-const DEFAULT_OUTPUT = 'storage/generated/brand-pdfs';
-const MAX_MANIFEST_BYTES = 2 * 1024 * 1024;
-const MAX_DOCUMENTS = 250;
-const MAX_TITLE_LENGTH = 200;
-const MAX_TEXT_LENGTH = 30_000;
-const MAX_LOGO_BYTES = 5 * 1024 * 1024;
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const BRAND = Object.freeze({
-  name: 'MedOrbits',
-  tagline: 'Education • Admissions • Career Guidance',
-  primary: '#173D35',
-  secondary: '#C6A66B',
-  text: '#24332F',
-  muted: '#64736E',
-  background: '#F6F1E7',
-});
-function errorMessage(error) {
+
+const DEFAULT_INPUT_DIR =
+  process.env.PDF_INPUT_DIR || 'documents/pdfs';
+
+const DEFAULT_OUTPUT_DIR =
+  process.env.PDF_OUTPUT_DIR || 'storage/branded-pdfs';
+
+const DEFAULT_AUTHOR =
+  process.env.PDF_AUTHOR || 'MedOrbits';
+
+const DEFAULT_SUBJECT =
+  process.env.PDF_SUBJECT || 'Official MedOrbits document';
+
+const MAX_PDF_SIZE_BYTES = 250 * 1024 * 1024;
+
+const errors = [];
+const warnings = [];
+const processed = [];
+const skipped = [];
+
+function messageOf(error) {
   return error instanceof Error ? error.message : String(error);
 }
+
 function isInside(parent, child) {
   const relative = path.relative(parent, child);
+
   return (
-    relative !== '..' &&
-    !relative.startsWith(`..${path.sep}`) &&
-    !path.isAbsolute(relative)
+    relative === '' ||
+    (
+      relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative)
+    )
   );
 }
-function resolveRepoPath(input, label) {
-  if (
-    typeof input !== 'string' ||
-    !input.trim() ||
-    input.includes('\0')
-  ) {
-    throw new Error(`${label} must be a valid non-empty path.`);
-  }
-  const resolved = path.resolve(ROOT, input);
-  if (!isInside(ROOT, resolved) || resolved === ROOT) {
-    throw new Error(`${label} must remain inside the repository.`);
-  }
-  return resolved;
-}
-function assertNoSymlinks(target) {
-  const relative = path.relative(ROOT, target);
-  let current = ROOT;
-  for (const segment of relative.split(path.sep).filter(Boolean)) {
-    current = path.join(current, segment);
-    if (!fs.existsSync(current)) continue;
-    const stat = fs.lstatSync(current);
-    if (stat.isSymbolicLink()) {
-      throw new Error(
-        `Symbolic links are not allowed in document paths: ${path.relative(ROOT, current)}`
-      );
-    }
-  }
-}
-function ensureDirectory(directory) {
-  assertNoSymlinks(directory);
-  fs.mkdirSync(directory, {
-    recursive: true,
-    mode: 0o700,
-  });
-  assertNoSymlinks(directory);
-  const stat = fs.lstatSync(directory);
-  if (!stat.isDirectory() || stat.isSymbolicLink()) {
-    throw new Error('Output path must be a real directory.');
-  }
-  if (process.platform !== 'win32') {
-    fs.chmodSync(directory, 0o700);
-  }
-}
+
 function parseArguments(argv) {
   const options = {
     dryRun: false,
     json: false,
     help: false,
-    manifest: DEFAULT_MANIFEST,
-    output: DEFAULT_OUTPUT,
+    input: DEFAULT_INPUT_DIR,
+    output: DEFAULT_OUTPUT_DIR,
+    overwrite: false,
   };
+
   const seen = new Set();
+
   for (const arg of argv) {
     if (arg === '--dry-run') {
       options.dryRun = true;
       continue;
     }
+
     if (arg === '--json') {
       options.json = true;
       continue;
     }
+
+    if (arg === '--overwrite') {
+      options.overwrite = true;
+      continue;
+    }
+
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;
     }
-    const match = arg.match(/^--(manifest|output)=(.*)$/);
+
+    const match = arg.match(/^--(input|output)=(.*)$/);
+
     if (!match) {
       throw new Error(`Unknown argument: ${arg}`);
     }
-    const [, name, value] = match;
-    if (seen.has(name)) {
-      throw new Error(`Option --${name} was provided more than once.`);
+
+    const [, key, value] = match;
+
+    if (seen.has(key)) {
+      throw new Error(`Option --${key} was provided more than once.`);
     }
-    seen.add(name);
+
+    seen.add(key);
+
     if (!value.trim()) {
-      throw new Error(`Option --${name} cannot be empty.`);
+      throw new Error(`Option --${key} cannot be empty.`);
     }
-    options[name] = value;
+
+    options[key] = value;
   }
+
   return options;
 }
-function readJson(file) {
-  const stat = fs.lstatSync(file);
-  if (!stat.isFile() || stat.isSymbolicLink()) {
-    throw new Error('Manifest must be a regular file.');
-  }
-  if (stat.size > MAX_MANIFEST_BYTES) {
-    throw new Error('Manifest exceeds the maximum permitted size.');
-  }
-  let data;
-  try {
-    data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    throw new Error('Manifest contains invalid JSON.');
-  }
-  if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    throw new Error('Manifest root must be an object.');
-  }
-  if (!Array.isArray(data.documents)) {
-    throw new Error('Manifest must contain a documents array.');
-  }
-  if (data.documents.length > MAX_DOCUMENTS) {
-    throw new Error(`Manifest cannot contain more than ${MAX_DOCUMENTS} documents.`);
-  }
-  return data;
-}
-function normalizeText(value, label, maxLength, required = false) {
-  if (value === undefined || value === null) {
-    if (required) throw new Error(`${label} is required.`);
-    return '';
-  }
-  if (typeof value !== 'string') {
-    throw new Error(`${label} must be a string.`);
-  }
-  const result = value.trim();
-  if (required && !result) {
-    throw new Error(`${label} cannot be empty.`);
-  }
-  if (result.length > maxLength) {
-    throw new Error(`${label} exceeds ${maxLength} characters.`);
-  }
-  return result;
-}
-function safeFilename(value) {
-  const normalized = value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-  return normalized || 'document';
-}
-function readSourceFile(file, maxBytes, label) {
-  const resolved = resolveRepoPath(file, label);
-  assertNoSymlinks(resolved);
-  const stat = fs.lstatSync(resolved);
-  if (!stat.isFile() || stat.isSymbolicLink()) {
-    throw new Error(`${label} must be a regular file.`);
-  }
-  if (stat.size > maxBytes) {
-    throw new Error(`${label} exceeds the permitted file size.`);
-  }
-  return {
-    path: resolved,
-    buffer: fs.readFileSync(resolved),
-  };
-}
-function validateHexColor(value, fallback) {
-  if (value === undefined) return fallback;
+
+function resolveRepositoryPath(value, label) {
   if (
     typeof value !== 'string' ||
-    !/^#[0-9a-fA-F]{6}$/.test(value)
+    !value.trim() ||
+    value.includes('\0')
   ) {
-    throw new Error('Brand colors must be six-digit hexadecimal colors.');
+    throw new Error(`${label} is invalid.`);
   }
-  return value;
-}
-function validateDocument(raw, index, manifestDirectory) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new Error(`documents[${index}] must be an object.`);
-  }
-  const title = normalizeText(
-    raw.title,
-    `documents[${index}].title`,
-    MAX_TITLE_LENGTH,
-    true
-  );
-  const description = normalizeText(
-    raw.description,
-    `documents[${index}].description`,
-    MAX_TEXT_LENGTH
-  );
-  const sections = raw.sections === undefined ? [] : raw.sections;
-  if (!Array.isArray(sections) || sections.length > 100) {
-    throw new Error(`documents[${index}].sections must be an array of at most 100 sections.`);
-  }
-  const normalizedSections = sections.map((section, sectionIndex) => {
-    if (
-      !section ||
-      typeof section !== 'object' ||
-      Array.isArray(section)
-    ) {
-      throw new Error(
-        `documents[${index}].sections[${sectionIndex}] must be an object.`
-      );
-    }
-    return {
-      heading: normalizeText(
-        section.heading,
-        `sections[${sectionIndex}].heading`,
-        200
-      ),
-      body: normalizeText(
-        section.body,
-        `sections[${sectionIndex}].body`,
-        MAX_TEXT_LENGTH
-      ),
-      bullets: validateBullets(section.bullets, sectionIndex),
-    };
-  });
-  let logo = null;
-  if (raw.logo) {
-    const logoPath = path.resolve(manifestDirectory, raw.logo);
-    if (!isInside(ROOT, logoPath)) {
-      throw new Error('Logo path must remain inside the repository.');
-    }
-    logo = readSourceFile(
-      path.relative(ROOT, logoPath),
-      MAX_LOGO_BYTES,
-      'Logo'
-    );
-    validateImageSignature(logo.buffer, 'Logo');
-  }
-  let coverImage = null;
-  if (raw.coverImage) {
-    const imagePath = path.resolve(manifestDirectory, raw.coverImage);
-    if (!isInside(ROOT, imagePath)) {
-      throw new Error('Cover image path must remain inside the repository.');
-    }
-    coverImage = readSourceFile(
-      path.relative(ROOT, imagePath),
-      MAX_IMAGE_BYTES,
-      'Cover image'
-    );
-    validateImageSignature(coverImage.buffer, 'Cover image');
-  }
-  const colors = raw.colors || {};
-  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) {
-    throw new Error(`documents[${index}].colors must be an object.`);
-  }
-  return {
-    title,
-    description,
-    sections: normalizedSections,
-    logo,
-    coverImage,
-    colors: {
-      primary: validateHexColor(colors.primary, BRAND.primary),
-      secondary: validateHexColor(colors.secondary, BRAND.secondary),
-      text: validateHexColor(colors.text, BRAND.text),
-      muted: validateHexColor(colors.muted, BRAND.muted),
-      background: validateHexColor(colors.background, BRAND.background),
-    },
-    footer: normalizeText(raw.footer, 'footer', 300),
-    filename: safeFilename(
-      normalizeText(raw.filename || title, 'filename', 200)
-    ),
-  };
-}
-function validateBullets(value, sectionIndex) {
-  if (value === undefined) return [];
-  if (!Array.isArray(value) || value.length > 100) {
+
+  const resolved = path.resolve(ROOT, value);
+
+  if (!isInside(ROOT, resolved) || resolved === ROOT) {
     throw new Error(
-      `sections[${sectionIndex}].bullets must be an array of at most 100 items.`
+      `${label} must be a subdirectory inside the repository.`
     );
   }
-  return value.map((item, index) =>
-    normalizeText(
-      item,
-      `sections[${sectionIndex}].bullets[${index}]`,
-      2000,
-      true
-    )
-  );
+
+  return resolved;
 }
-function validateImageSignature(buffer, label) {
-  const png =
-    buffer.length >= 8 &&
-    buffer.subarray(0, 8).equals(
-      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-    );
-  const jpeg =
-    buffer.length >= 3 &&
-    buffer[0] === 0xff &&
-    buffer[1] === 0xd8 &&
-    buffer[2] === 0xff;
-  const jpg = jpeg;
-  if (!png && !jpg) {
-    throw new Error(`${label} must be a valid PNG or JPEG image.`);
+
+function assertNoSymlinkPath(target) {
+  if (!isInside(ROOT, target)) {
+    throw new Error('Path escapes the repository root.');
   }
-}
-function drawHeader(doc, item) {
-  doc.save();
-  doc.rect(0, 0, doc.page.width, 18)
-    .fill(item.colors.primary);
-  doc.fillColor(item.colors.primary)
-    .fontSize(20)
-    .font('Helvetica-Bold')
-    .text(BRAND.name, 48, 42, {
-      width: 300,
-      lineBreak: false,
-    });
-  doc.fillColor(item.colors.muted)
-    .fontSize(9)
-    .font('Helvetica')
-    .text(BRAND.tagline, 48, 68, {
-      width: 450,
-    });
-  doc.strokeColor(item.colors.secondary)
-    .lineWidth(1.5)
-    .moveTo(48, 94)
-    .lineTo(doc.page.width - 48, 94)
-    .stroke();
-  if (item.logo) {
+
+  const relative = path.relative(ROOT, target);
+  const components = relative.split(path.sep).filter(Boolean);
+
+  let current = ROOT;
+
+  for (const component of components) {
+    current = path.join(current, component);
+
+    let stat;
+
     try {
-      doc.image(item.logo.buffer, doc.page.width - 128, 38, {
-        fit: [80, 42],
-        align: 'right',
-        valign: 'center',
-      });
-    } catch {
-      // The built-in wordmark remains available if the logo is unsupported.
-    }
-  }
-  doc.restore();
-}
-function drawFooter(doc, item, pageNumber) {
-  const footerY = doc.page.height - 48;
-  doc.save();
-  doc.strokeColor(item.colors.secondary)
-    .lineWidth(0.8)
-    .moveTo(48, footerY - 8)
-    .lineTo(doc.page.width - 48, footerY - 8)
-    .stroke();
-  doc.fillColor(item.colors.muted)
-    .fontSize(8)
-    .font('Helvetica')
-    .text(
-      item.footer || `${BRAND.name} | Draft document -- review before distribution`,
-      48,
-      footerY,
-      {
-        width: doc.page.width - 130,
-        ellipsis: true,
-      }
-    );
-  doc.text(String(pageNumber), doc.page.width - 65, footerY, {
-    width: 17,
-    align: 'right',
-  });
-  doc.restore();
-}
-function drawCover(doc, item) {
-  doc.rect(0, 0, doc.page.width, doc.page.height)
-    .fill(item.colors.background);
-  doc.rect(0, 0, doc.page.width, 20)
-    .fill(item.colors.primary);
-  if (item.coverImage) {
-    try {
-      doc.image(item.coverImage.buffer, 48, 80, {
-        fit: [doc.page.width - 96, 180],
-        align: 'center',
-        valign: 'center',
-      });
-    } catch {
-      // Continue with a text-only cover if the image cannot be rendered.
-    }
-  }
-  const top = item.coverImage ? 290 : 160;
-  doc.fillColor(item.colors.primary)
-    .font('Helvetica-Bold')
-    .fontSize(28)
-    .text(BRAND.name, 48, top, {
-      width: doc.page.width - 96,
-      align: 'left',
-    });
-  doc.fillColor(item.colors.secondary)
-    .font('Helvetica-Bold')
-    .fontSize(11)
-    .text('OFFICIAL RESOURCE • DOCUMENT SERIES', 48, top + 43);
-  doc.fillColor(item.colors.text)
-    .font('Helvetica-Bold')
-    .fontSize(25)
-    .text(item.title, 48, top + 75, {
-      width: doc.page.width - 96,
-    });
-  if (item.description) {
-    doc.moveDown(1);
-    doc.fillColor(item.colors.muted)
-      .font('Helvetica')
-      .fontSize(12)
-      .text(item.description, 48, doc.y + 10, {
-        width: doc.page.width - 96,
-        lineGap: 4,
-      });
-  }
-  doc.fillColor(item.colors.muted)
-    .font('Helvetica')
-    .fontSize(9)
-    .text(
-      'Prepared for informational purposes. Verify requirements and dates against the relevant official authority.',
-      48,
-      doc.page.height - 105,
-      {
-        width: doc.page.width - 96,
-        lineGap: 3,
-      }
-    );
-}
-function drawSections(doc, item) {
-  let pageNumber = 1;
-  doc.addPage();
-  drawHeader(doc, item);
-  doc.y = 120;
-  const bottomLimit = doc.page.height - 75;
-  const textWidth = doc.page.width - 96;
-  function ensureSpace(height) {
-    if (doc.y + height <= bottomLimit) return;
-    drawFooter(doc, item, pageNumber);
-    doc.addPage();
-    pageNumber += 1;
-    drawHeader(doc, item);
-    doc.y = 120;
-  }
-  if (!item.sections.length && item.description) {
-    ensureSpace(80);
-    doc.fillColor(item.colors.text)
-      .font('Helvetica')
-      .fontSize(11)
-      .text(item.description, 48, doc.y, {
-        width: textWidth,
-        lineGap: 4,
-      });
-  }
-  for (const section of item.sections) {
-    if (section.heading) {
-      ensureSpace(60);
-      doc.moveDown(0.6);
-      doc.fillColor(item.colors.primary)
-        .font('Helvetica-Bold')
-        .fontSize(15)
-        .text(section.heading, 48, doc.y, {
-          width: textWidth,
-        });
-      doc.moveDown(0.4);
-    }
-    if (section.body) {
-      const lines = Math.ceil(section.body.length / 90);
-      ensureSpace(Math.min(600, Math.max(35, lines * 14)));
-      doc.fillColor(item.colors.text)
-        .font('Helvetica')
-        .fontSize(10.5)
-        .text(section.body, 48, doc.y, {
-          width: textWidth,
-          lineGap: 3,
-        });
-      doc.moveDown(0.5);
-    }
-    for (const bullet of section.bullets) {
-      ensureSpace(50);
-      doc.fillColor(item.colors.secondary)
-        .font('Helvetica-Bold')
-        .fontSize(10)
-        .text('•', 50, doc.y, {
-          width: 12,
-        });
-      doc.fillColor(item.colors.text)
-        .font('Helvetica')
-        .fontSize(10.5)
-        .text(bullet, 68, doc.y, {
-          width: textWidth - 20,
-          lineGap: 3,
-        });
-      doc.moveDown(0.3);
-    }
-  }
-  drawFooter(doc, item, pageNumber);
-}
-function generatePdf(item, outputPath) {
-  return new Promise((resolve, reject) => {
-    const temporaryPath = `${outputPath}.${process.pid}.${crypto
-      .randomBytes(6)
-      .toString('hex')}.tmp`;
-    let settled = false;
-    let stream;
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: {
-        top: 48,
-        bottom: 60,
-        left: 48,
-        right: 48,
-      },
-      bufferPages: false,
-      autoFirstPage: true,
-      info: {
-        Title: item.title,
-        Author: BRAND.name,
-        Subject: 'MedOrbits branded document',
-        Creator: 'MedOrbits PDF Generator',
-      },
-    });
-    function finish(error) {
-      if (settled) return;
-      settled = true;
-      if (error) {
-        try {
-          stream?.destroy();
-        } catch {
-          // Best-effort stream cleanup.
-        }
-        try {
-          fs.unlinkSync(temporaryPath);
-        } catch {
-          // Temporary file may not exist.
-        }
-        reject(error);
-        return;
-      }
-      try {
-        const stat = fs.lstatSync(temporaryPath);
-        if (!stat.isFile() || stat.isSymbolicLink() || stat.size === 0) {
-          throw new Error('Generated PDF is empty or invalid.');
-        }
-        fs.chmodSync(temporaryPath, 0o600);
-        if (fs.existsSync(outputPath)) {
-          throw new Error(
-            'Output already exists; refusing to overwrite an existing PDF.'
-          );
-        }
-        fs.renameSync(temporaryPath, outputPath);
-        resolve({
-          filename: path.basename(outputPath),
-          sizeBytes: fs.statSync(outputPath).size,
-        });
-      } catch (writeError) {
-        try {
-          fs.unlinkSync(temporaryPath);
-        } catch {
-          // Best-effort cleanup.
-        }
-        reject(writeError);
-      }
-    }
-    try {
-      stream = fs.createWriteStream(temporaryPath, {
-        flags: 'wx',
-        mode: 0o600,
-      });
-      stream.on('error', finish);
-      doc.on('error', finish);
-      stream.on('finish', () => finish(null));
-      doc.pipe(stream);
-      drawCover(doc, item);
-      drawSections(doc, item);
-      doc.end();
+      stat = fs.lstatSync(current);
     } catch (error) {
-      finish(error);
+      if (error.code === 'ENOENT') {
+        continue;
+      }
+
+      throw error;
     }
-  });
-}
-async function buildBrandPdfs({
-  manifest = DEFAULT_MANIFEST,
-  output = DEFAULT_OUTPUT,
-  dryRun = false,
-} = {}) {
-  const manifestPath = resolveRepoPath(manifest, 'Manifest');
-  const outputDirectory = resolveRepoPath(output, 'Output directory');
-  assertNoSymlinks(manifestPath);
-  assertNoSymlinks(path.dirname(manifestPath));
-  const manifestData = readJson(manifestPath);
-  const manifestDirectory = path.dirname(manifestPath);
-  const validated = manifestData.documents.map((entry, index) =>
-    validateDocument(entry, index, manifestDirectory)
-  );
-  const filenames = new Set();
-  for (const item of validated) {
-    if (filenames.has(item.filename)) {
+
+    if (stat.isSymbolicLink()) {
       throw new Error(
-        `Duplicate output filename "${item.filename}". Give each document a unique filename.`
+        `Symbolic link is not permitted: ${path.relative(ROOT, current)}`
       );
     }
-    filenames.add(item.filename);
   }
-  const plan = validated.map((item) => ({
-    title: item.title,
-    filename: `${item.filename}.pdf`,
-    output: path.relative(
-      ROOT,
-      path.join(outputDirectory, `${item.filename}.pdf`)
-    ).split(path.sep).join('/'),
-  }));
-  if (dryRun) {
-    return {
-      ok: true,
-      dryRun: true,
-      count: plan.length,
-      documents: plan,
-    };
-  }
-  ensureDirectory(outputDirectory);
-  const generated = [];
-  for (const item of validated) {
-    const outputPath = path.join(
-      outputDirectory,
-      `${item.filename}.pdf`
-    );
-    if (!isInside(outputDirectory, outputPath)) {
-      throw new Error('Generated PDF path escaped the output directory.');
-    }
-    generated.push({
-      title: item.title,
-      output: path.relative(ROOT, outputPath).split(path.sep).join('/'),
-      ...(await generatePdf(item, outputPath)),
-    });
-  }
-  return {
-    ok: true,
-    dryRun: false,
-    count: generated.length,
-    documents: generated,
-  };
 }
+
+function discoverPdfs(directory, outputDirectory) {
+  const results = [];
+
+  function walk(currentDirectory) {
+    let entries;
+
+    try {
+      entries = fs.readdirSync(currentDirectory, {
+        withFileTypes: true,
+      });
+    } catch (error) {
+      errors.push({
+        file: path.relative(ROOT, currentDirectory),
+        message: `Cannot read directory: ${messageOf(error)}`,
+      });
+
+      return;
+    }
+
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentDirectory, entry.name);
+
+      if (entry.isSymbolicLink()) {
+        warnings.push({
+          file: path.relative(ROOT, fullPath),
+          message: 'Symbolic link skipped.',
+        });
+
+        continue;
+      }
+
+      if (isInside(outputDirectory, fullPath)) {
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+
+      if (
+        entry.isFile() &&
+        path.extname(entry.name).toLowerCase() === '.pdf'
+      ) {
+        results.push(fullPath);
+      }
+    }
+  }
+
+  walk(directory);
+
+  return results;
+}
+
+function createOutputPath(inputFile, inputDirectory, outputDirectory) {
+  const relative = path.relative(inputDirectory, inputFile);
+
+  if (!isInside(inputDirectory, inputFile)) {
+    throw new Error('Input file is outside the input directory.');
+  }
+
+  const outputFile = path.resolve(outputDirectory, relative);
+
+  if (!isInside(outputDirectory, outputFile)) {
+    throw new Error('Output file escapes the output directory.');
+  }
+
+  return outputFile;
+}
+
+function ensureOutputDirectory(directory) {
+  assertNoSymlinkPath(directory);
+
+  fs.mkdirSync(directory, {
+    recursive: true,
+    mode: 0o700,
+  });
+
+  assertNoSymlinkPath(directory);
+
+  const stat = fs.lstatSync(directory);
+
+  if (!stat.isDirectory() || stat.isSymbolicLink()) {
+    throw new Error('Output path must be a real directory.');
+  }
+
+  if (process.platform !== 'win32') {
+    fs.chmodSync(directory, 0o700);
+  }
+}
+
+async function brandPdf(inputFile, outputFile, options) {
+  const inputStat = fs.lstatSync(inputFile);
+
+  if (inputStat.isSymbolicLink() || !inputStat.isFile()) {
+    throw new Error('Input must be a regular, non-symlink file.');
+  }
+
+  if (inputStat.size === 0) {
+    throw new Error('PDF file is empty.');
+  }
+
+  if (inputStat.size > MAX_PDF_SIZE_BYTES) {
+    throw new Error(
+      `PDF exceeds the ${MAX_PDF_SIZE_BYTES}-byte size limit.`
+    );
+  }
+
+  if (fs.existsSync(outputFile) && !options.overwrite) {
+    throw new Error(
+      'Output already exists. Use --overwrite to replace it.'
+    );
+  }
+
+  const inputBytes = fs.readFileSync(inputFile);
+
+  let pdf;
+
+  try {
+    pdf = await PDFDocument.load(inputBytes, {
+      updateMetadata: false,
+    });
+  } catch {
+    throw new Error(
+      'Unable to parse PDF. It may be corrupt, encrypted, or unsupported.'
+    );
+  }
+
+  pdf.setTitle(path.basename(inputFile, path.extname(inputFile)));
+  pdf.setAuthor(DEFAULT_AUTHOR);
+  pdf.setSubject(DEFAULT_SUBJECT);
+  pdf.setCreator('MedOrbits PDF Branding Utility');
+  pdf.setProducer('MedOrbits');
+  pdf.setKeywords([
+    'MedOrbits',
+    'document',
+    'branded-pdf',
+  ]);
+
+  const outputBytes = await pdf.save({
+    useObjectStreams: true,
+  });
+
+  const outputDirectory = path.dirname(outputFile);
+
+  fs.mkdirSync(outputDirectory, {
+    recursive: true,
+    mode: 0o700,
+  });
+
+  assertNoSymlinkPath(outputDirectory);
+
+  const temporaryFile = path.join(
+    outputDirectory,
+    `.brand-pdf-${process.pid}-${require('node:crypto')
+      .randomBytes(8)
+      .toString('hex')}.tmp`
+  );
+
+  try {
+    fs.writeFileSync(temporaryFile, outputBytes, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+
+    if (process.platform !== 'win32') {
+      fs.chmodSync(temporaryFile, 0o600);
+    }
+
+    // Verify the generated file can be reopened.
+    const verification = await PDFDocument.load(
+      fs.readFileSync(temporaryFile),
+      { updateMetadata: false }
+    );
+
+    if (verification.getPageCount() !== pdf.getPageCount()) {
+      throw new Error('PDF verification failed: page count changed.');
+    }
+
+    if (fs.existsSync(outputFile) && !options.overwrite) {
+      throw new Error(
+        'Output appeared during processing; refusing to overwrite it.'
+      );
+    }
+
+    fs.renameSync(temporaryFile, outputFile);
+
+    return {
+      input: path.relative(ROOT, inputFile),
+      output: path.relative(ROOT, outputFile),
+      pages: pdf.getPageCount(),
+      sizeBytes: fs.statSync(outputFile).size,
+      status: 'branded',
+    };
+  } finally {
+    try {
+      fs.unlinkSync(temporaryFile);
+    } catch {
+      // Temporary file may already have been renamed.
+    }
+  }
+}
+
+function printHelp() {
+  console.log(`MedOrbits PDF Branding Utility
+
+Usage:
+  node scripts/brand-pdfs.js [options]
+
+Options:
+  --input=PATH     Input PDF directory
+  --output=PATH    Output directory
+  --dry-run        Discover files without modifying anything
+  --json           Print JSON results
+  --overwrite      Allow replacing existing output PDFs
+  -h, --help       Show this help
+
+Environment:
+  PDF_INPUT_DIR
+  PDF_OUTPUT_DIR
+  PDF_AUTHOR
+  PDF_SUBJECT
+
+Default input:
+  ${DEFAULT_INPUT_DIR}
+
+Default output:
+  ${DEFAULT_OUTPUT_DIR}
+
+Original PDFs are never modified in place.
+This utility updates metadata only; it does not add a visual logo or watermark.
+`);
+}
+
 async function main() {
   let options;
+
   try {
     options = parseArguments(process.argv.slice(2));
   } catch (error) {
-    console.error(`[MedOrbits PDFs] ${errorMessage(error)}`);
+    console.error(`[MedOrbits PDF] ${messageOf(error)}`);
     process.exitCode = 2;
     return;
   }
+
   if (options.help) {
-    console.log(`MedOrbits Branded PDF Generator
-Usage:
-  node scripts/brand-pdfs.js [options]
-Options:
-  --manifest=PATH   JSON manifest path
-  --output=PATH     Generated PDF output directory
-  --dry-run         Validate without writing PDFs
-  --json            Output JSON results
-  --help            Show help
-Default manifest: ${DEFAULT_MANIFEST}
-Default output:   ${DEFAULT_OUTPUT}`);
+    printHelp();
     return;
   }
+
+  let inputDirectory;
+  let outputDirectory;
+
   try {
-    const result = await buildBrandPdfs(options);
-    console.log(JSON.stringify(result, null, 2));
+    inputDirectory = resolveRepositoryPath(
+      options.input,
+      'Input directory'
+    );
+
+    outputDirectory = resolveRepositoryPath(
+      options.output,
+      'Output directory'
+    );
+
+    if (
+      inputDirectory === outputDirectory ||
+      isInside(inputDirectory, outputDirectory)
+    ) {
+      throw new Error(
+        'Output directory must not be inside the input directory.'
+      );
+    }
+
+    assertNoSymlinkPath(inputDirectory);
+    assertNoSymlinkPath(outputDirectory);
+
+    const inputStat = fs.lstatSync(inputDirectory);
+
+    if (!inputStat.isDirectory() || inputStat.isSymbolicLink()) {
+      throw new Error('Input path must be a real directory.');
+    }
   } catch (error) {
-    const result = {
-      ok: false,
-      error: errorMessage(error),
-    };
-    console.error(JSON.stringify(result, null, 2));
+    console.error(`[MedOrbits PDF] ${messageOf(error)}`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const files = discoverPdfs(inputDirectory, outputDirectory);
+
+  if (files.length === 0) {
+    warnings.push({
+      file: path.relative(ROOT, inputDirectory),
+      message: 'No PDF files found.',
+    });
+  }
+
+  if (!options.dryRun) {
+    try {
+      ensureOutputDirectory(outputDirectory);
+    } catch (error) {
+      console.error(`[MedOrbits PDF] ${messageOf(error)}`);
+      process.exitCode = 2;
+      return;
+    }
+  }
+
+  for (const inputFile of files) {
+    let outputFile;
+
+    try {
+      outputFile = createOutputPath(
+        inputFile,
+        inputDirectory,
+        outputDirectory
+      );
+
+      if (options.dryRun) {
+        skipped.push({
+          input: path.relative(ROOT, inputFile),
+          output: path.relative(ROOT, outputFile),
+          status: 'dry-run',
+        });
+
+        continue;
+      }
+
+      const result = await brandPdf(
+        inputFile,
+        outputFile,
+        options
+      );
+
+      processed.push(result);
+    } catch (error) {
+      errors.push({
+        file: path.relative(ROOT, inputFile),
+        message: messageOf(error),
+      });
+    }
+  }
+
+  const result = {
+    ok: errors.length === 0,
+    dryRun: options.dryRun,
+    summary: {
+      discovered: files.length,
+      branded: processed.length,
+      skipped: skipped.length,
+      errors: errors.length,
+      warnings: warnings.length,
+    },
+    processed,
+    skipped,
+    errors,
+    warnings,
+  };
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    console.log('\nMedOrbits PDF Branding Utility\n');
+    console.log(`PDFs discovered: ${files.length}`);
+    console.log(`PDFs branded: ${processed.length}`);
+    console.log(`Dry-run entries: ${skipped.length}`);
+    console.log(`Errors: ${errors.length}`);
+    console.log(`Warnings: ${warnings.length}`);
+
+    for (const item of processed) {
+      console.log(`BRANDED: ${item.input} -> ${item.output}`);
+    }
+
+    for (const item of skipped) {
+      console.log(`DRY RUN: ${item.input} -> ${item.output}`);
+    }
+
+    for (const item of errors) {
+      console.error(`ERROR: ${item.file}\n  ${item.message}`);
+    }
+
+    for (const item of warnings) {
+      console.warn(`WARNING: ${item.file}\n  ${item.message}`);
+    }
+
+    console.log(
+      errors.length === 0
+        ? '\nPDF processing completed.'
+        : '\nPDF processing completed with errors.'
+    );
+  }
+
+  if (errors.length > 0) {
     process.exitCode = 1;
   }
 }
+
 if (require.main === module) {
-  main();
+  main().catch((error) => {
+    console.error(`[MedOrbits PDF] ${messageOf(error)}`);
+    process.exitCode = 1;
+  });
 }
+
 module.exports = {
-  BRAND,
-  buildBrandPdfs,
   isInside,
-  safeFilename,
-  validateDocument,
-  validateImageSignature,
+  parseArguments,
+  resolveRepositoryPath,
+  createOutputPath,
 };

@@ -4,23 +4,35 @@
 /**
  * MedOrbits -- Document Manifest Validator
  *
- * Validates document manifest JSON files.
+ * File: scripts/validate-document-manifests.mjs
+ *
+ * Validates document manifest JSON files without modifying repository files.
  *
  * Checks:
- * - Valid JSON syntax
- * - Required manifest fields
- * - Correct field types
- * - Duplicate document IDs
- * - Missing referenced document files
- * - Invalid manifest entries
+ * - Valid JSON syntax, including UTF-8 BOM handling
+ * - Required manifest fields and field types
+ * - Duplicate document IDs across all manifests
+ * - Document title length
+ * - Safe relative document paths
+ * - Path traversal and symlink protection
+ * - Referenced file existence and regular-file status
+ * - Allowed document extensions
+ * - Empty manifests and empty discovery results
  *
  * Usage:
  *   node scripts/validate-document-manifests.mjs
+ *   node scripts/validate-document-manifests.mjs --strict
+ *   node scripts/validate-document-manifests.mjs --json
  *   node scripts/validate-document-manifests.mjs --help
  *
- * Optional environment variables:
+ * Environment variables:
  *   MANIFEST_DIR=./documents/manifests
  *   DOCUMENT_ROOT=./documents
+ *
+ * Exit codes:
+ *   0 = validation passed
+ *   1 = validation errors, or warnings in strict mode
+ *   2 = invalid configuration or runtime failure
  */
 
 import fs from "node:fs";
@@ -42,8 +54,13 @@ const DOCUMENT_ROOT = path.resolve(
 );
 
 const REQUIRED_FIELDS = ["id", "title", "file"];
-
 const VALID_EXTENSIONS = new Set([".pdf", ".doc", ".docx"]);
+const MAX_TITLE_LENGTH = 300;
+
+const args = new Set(process.argv.slice(2));
+const HELP = args.has("--help") || args.has("-h");
+const STRICT = args.has("--strict");
+const JSON_OUTPUT = args.has("--json");
 
 const errors = [];
 const warnings = [];
@@ -51,6 +68,7 @@ const seenIds = new Map();
 
 let manifestsChecked = 0;
 let documentsChecked = 0;
+let entriesChecked = 0;
 
 function reportError(file, message) {
   errors.push({ file, message });
@@ -61,11 +79,12 @@ function reportWarning(file, message) {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value)
-  );
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function isInsideDirectory(parent, target) {
@@ -73,19 +92,35 @@ function isInsideDirectory(parent, target) {
 
   return (
     relative === "" ||
-    (!relative.startsWith(`..${path.sep}`) &&
+    (
       relative !== ".." &&
-      !path.isAbsolute(relative))
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative)
+    )
   );
 }
 
+function readJsonFile(filePath) {
+  const source = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
+
+  if (source.trim() === "") {
+    throw new Error("File is empty.");
+  }
+
+  return JSON.parse(source);
+}
+
 function getJsonFiles(directory) {
-  if (!fs.existsSync(directory)) {
+  let entries;
+
+  try {
+    entries = fs.readdirSync(directory, { withFileTypes: true });
+  } catch (error) {
+    reportError(directory, `Cannot read directory: ${error.message}`);
     return [];
   }
 
-  return fs
-    .readdirSync(directory, { withFileTypes: true })
+  return entries
     .sort((a, b) => a.name.localeCompare(b.name))
     .flatMap((entry) => {
       const fullPath = path.join(directory, entry.name);
@@ -102,14 +137,15 @@ function getJsonFiles(directory) {
         return getJsonFiles(fullPath);
       }
 
-      return entry.isFile() && entry.name.endsWith(".json")
+      return entry.isFile() && entry.name.toLowerCase().endsWith(".json")
         ? [fullPath]
         : [];
     });
 }
 
 function validateDocument(document, manifestPath, index) {
-  const location = `${manifestPath} [entry ${index + 1}]`;
+  const location = `${path.relative(REPO_ROOT, manifestPath)} [entry ${index + 1}]`;
+  entriesChecked += 1;
 
   if (!isPlainObject(document)) {
     reportError(location, "Document entry must be a JSON object.");
@@ -128,7 +164,7 @@ function validateDocument(document, manifestPath, index) {
     }
   }
 
-  if (typeof document.id === "string" && document.id.trim()) {
+  if (typeof document.id === "string" && document.id.trim() !== "") {
     const id = document.id.trim();
 
     if (seenIds.has(id)) {
@@ -141,28 +177,32 @@ function validateDocument(document, manifestPath, index) {
     }
   }
 
-  if (
-    typeof document.title === "string" &&
-    document.title.trim() !== "" &&
-    document.title.length > 300
-  ) {
-    reportError(location, 'Field "title" must not exceed 300 characters.');
+  if (typeof document.title === "string") {
+    if (document.title.trim() === "") {
+      reportError(location, 'Field "title" must not be blank.');
+    } else if (document.title.length > MAX_TITLE_LENGTH) {
+      reportError(
+        location,
+        `Field "title" must not exceed ${MAX_TITLE_LENGTH} characters.`
+      );
+    }
   }
 
-  if (typeof document.file !== "string" || !document.file.trim()) {
+  if (typeof document.file !== "string" || document.file.trim() === "") {
     return;
   }
 
   const fileReference = document.file.trim();
 
   if (
-    path.isAbsolute(fileReference) ||
     fileReference.includes("\0") ||
-    fileReference.includes("\\")
+    fileReference.includes("\\") ||
+    path.posix.isAbsolute(fileReference) ||
+    /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(fileReference)
   ) {
     reportError(
       location,
-      `Invalid document file path "${fileReference}". Use a relative path with forward slashes.`
+      `Invalid document path "${fileReference}". Use a relative path with forward slashes.`
     );
     return;
   }
@@ -177,40 +217,74 @@ function validateDocument(document, manifestPath, index) {
     return;
   }
 
-  const extension = path.extname(resolvedFile).toLowerCase();
+  const extension = path.extname(fileReference).toLowerCase();
 
   if (!VALID_EXTENSIONS.has(extension)) {
     reportWarning(
       location,
-      `Unexpected document extension "${extension || "(none)"}".`
+      `Unexpected document extension "${extension || "(none)"}". Allowed: ${[
+        ...VALID_EXTENSIONS,
+      ].join(", ")}.`
     );
   }
 
-  let stat;
+  /*
+   * Check every existing path component for symlinks. This prevents a
+   * reference from escaping DOCUMENT_ROOT through a symlinked subdirectory.
+   */
+  const relativePath = path.relative(DOCUMENT_ROOT, resolvedFile);
+  const segments = relativePath.split(path.sep);
+  let currentPath = DOCUMENT_ROOT;
 
-  try {
-    stat = fs.lstatSync(resolvedFile);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      reportError(
-        location,
-        `Referenced document does not exist: ${fileReference}`
-      );
-    } else {
-      reportError(
-        location,
-        `Cannot access "${fileReference}": ${error.message}`
-      );
+  for (const segment of segments) {
+    currentPath = path.join(currentPath, segment);
+
+    let componentStat;
+
+    try {
+      componentStat = fs.lstatSync(currentPath);
+    } catch (error) {
+      if (error.code === "ENOENT" || error.code === "ENOTDIR") {
+        reportError(
+          location,
+          `Referenced document does not exist: ${fileReference}`
+        );
+      } else {
+        reportError(
+          location,
+          `Cannot inspect "${fileReference}": ${error.message}`
+        );
+      }
+
+      return;
     }
-    return;
-  }
 
-  if (stat.isSymbolicLink() || !stat.isFile()) {
-    reportError(
-      location,
-      `Referenced document must be a regular, non-symlink file: ${fileReference}`
-    );
-    return;
+    if (componentStat.isSymbolicLink()) {
+      reportError(
+        location,
+        `Document path contains a symbolic link: ${fileReference}`
+      );
+      return;
+    }
+
+    if (
+      currentPath !== resolvedFile &&
+      !componentStat.isDirectory()
+    ) {
+      reportError(
+        location,
+        `Path component is not a directory: ${segment}`
+      );
+      return;
+    }
+
+    if (currentPath === resolvedFile && !componentStat.isFile()) {
+      reportError(
+        location,
+        `Referenced document must be a regular file: ${fileReference}`
+      );
+      return;
+    }
   }
 
   documentsChecked += 1;
@@ -222,10 +296,12 @@ function validateManifest(manifestPath) {
   let parsed;
 
   try {
-    const source = fs.readFileSync(manifestPath, "utf8");
-    parsed = JSON.parse(source);
+    parsed = readJsonFile(manifestPath);
   } catch (error) {
-    reportError(manifestPath, `Invalid JSON: ${error.message}`);
+    reportError(
+      path.relative(REPO_ROOT, manifestPath),
+      `Invalid JSON: ${error.message}`
+    );
     return;
   }
 
@@ -237,14 +313,17 @@ function validateManifest(manifestPath) {
     documents = parsed.documents;
   } else {
     reportError(
-      manifestPath,
+      path.relative(REPO_ROOT, manifestPath),
       'Manifest must be a JSON array or an object containing a "documents" array.'
     );
     return;
   }
 
   if (documents.length === 0) {
-    reportWarning(manifestPath, "Manifest contains no documents.");
+    reportWarning(
+      path.relative(REPO_ROOT, manifestPath),
+      "Manifest contains no documents."
+    );
   }
 
   documents.forEach((document, index) => {
@@ -252,7 +331,7 @@ function validateManifest(manifestPath) {
   });
 }
 
-function printResults() {
+function printTextResults() {
   console.log("\nMedOrbits Document Manifest Validation\n");
 
   for (const error of errors) {
@@ -265,42 +344,80 @@ function printResults() {
 
   console.log("\nSummary");
   console.log(`Manifests checked: ${manifestsChecked}`);
+  console.log(`Entries checked: ${entriesChecked}`);
   console.log(`Documents verified: ${documentsChecked}`);
   console.log(`Errors: ${errors.length}`);
   console.log(`Warnings: ${warnings.length}`);
 
-  if (errors.length > 0) {
+  if (errors.length > 0 || (STRICT && warnings.length > 0)) {
     console.error("\nValidation FAILED.");
-    process.exitCode = 1;
   } else {
     console.log("\nValidation PASSED.");
   }
 }
 
+function printJsonResults() {
+  console.log(
+    JSON.stringify(
+      {
+        validator: "MedOrbits Document Manifest Validator",
+        status:
+          errors.length > 0 || (STRICT && warnings.length > 0)
+            ? "failed"
+            : "passed",
+        strict: STRICT,
+        directories: {
+          manifest: path.relative(REPO_ROOT, MANIFEST_DIR),
+          documents: path.relative(REPO_ROOT, DOCUMENT_ROOT),
+        },
+        summary: {
+          manifestsChecked,
+          entriesChecked,
+          documentsChecked,
+          errors: errors.length,
+          warnings: warnings.length,
+        },
+        errors,
+        warnings,
+      },
+      null,
+      2
+    )
+  );
+}
+
 function main() {
-  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  const supportedArgs = new Set(["--help", "-h", "--strict", "--json"]);
+  const unknownArgs = [...args].filter((arg) => !supportedArgs.has(arg));
+
+  if (unknownArgs.length > 0) {
+    console.error(`Unknown option(s): ${unknownArgs.join(", ")}`);
+    console.error("Use --help to see supported options.");
+    process.exitCode = 2;
+    return;
+  }
+
+  if (HELP) {
     console.log(`
 MedOrbits Document Manifest Validator
 
 Usage:
-  node scripts/validate-document-manifests.mjs
+  node scripts/validate-document-manifests.mjs [options]
 
 Options:
   -h, --help   Show this help message
+  --strict     Treat warnings as validation failures
+  --json       Print machine-readable JSON results
 
 Environment variables:
   MANIFEST_DIR    Manifest directory (default: documents/manifests)
   DOCUMENT_ROOT   Referenced document root (default: documents)
-`);
-    return;
-  }
 
-  if (!fs.existsSync(MANIFEST_DIR)) {
-    console.error(`Manifest directory not found: ${MANIFEST_DIR}`);
-    console.error(
-      "Set MANIFEST_DIR to the directory containing your manifest JSON files."
-    );
-    process.exitCode = 1;
+Examples:
+  node scripts/validate-document-manifests.mjs
+  node scripts/validate-document-manifests.mjs --strict
+  node scripts/validate-document-manifests.mjs --json
+`);
     return;
   }
 
@@ -309,14 +426,30 @@ Environment variables:
   try {
     manifestStat = fs.lstatSync(MANIFEST_DIR);
   } catch (error) {
-    console.error(`Cannot access manifest directory: ${error.message}`);
-    process.exitCode = 1;
+    console.error(`Manifest directory not found or inaccessible: ${error.message}`);
+    process.exitCode = 2;
     return;
   }
 
   if (!manifestStat.isDirectory() || manifestStat.isSymbolicLink()) {
     console.error("MANIFEST_DIR must be a real directory, not a symlink.");
-    process.exitCode = 1;
+    process.exitCode = 2;
+    return;
+  }
+
+  let documentRootStat;
+
+  try {
+    documentRootStat = fs.lstatSync(DOCUMENT_ROOT);
+  } catch (error) {
+    console.error(`Document root not found or inaccessible: ${error.message}`);
+    process.exitCode = 2;
+    return;
+  }
+
+  if (!documentRootStat.isDirectory() || documentRootStat.isSymbolicLink()) {
+    console.error("DOCUMENT_ROOT must be a real directory, not a symlink.");
+    process.exitCode = 2;
     return;
   }
 
@@ -324,7 +457,7 @@ Environment variables:
 
   if (manifestFiles.length === 0) {
     reportError(
-      MANIFEST_DIR,
+      path.relative(REPO_ROOT, MANIFEST_DIR),
       "No JSON manifest files found in the manifest directory."
     );
   }
@@ -333,7 +466,15 @@ Environment variables:
     validateManifest(manifestPath);
   }
 
-  printResults();
+  if (JSON_OUTPUT) {
+    printJsonResults();
+  } else {
+    printTextResults();
+  }
+
+  if (errors.length > 0 || (STRICT && warnings.length > 0)) {
+    process.exitCode = 1;
+  }
 }
 
 main();

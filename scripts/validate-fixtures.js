@@ -1,95 +1,209 @@
 
-'use strict';
+#!/usr/bin/env node
+"use strict";
 
-const fs = require('node:fs');
-const path = require('node:path');
+/**
+ * MedOrbits -- Database Fixture Schema Validator
+ * File: scripts/validate-fixtures.js
+ *
+ * Requirements:
+ *   npm install ajv ajv-formats
+ *
+ * Expected structure:
+ *   database/fixtures/*.fixture.json
+ *   schemas/*.schema.json
+ *
+ * Usage:
+ *   node scripts/validate-fixtures.js
+ *   node scripts/validate-fixtures.js --json
+ *   node scripts/validate-fixtures.js --help
+ *
+ * Safety:
+ * - Read-only validation.
+ * - Never changes fixture or schema files.
+ * - Suitable for local development and CI.
+ */
 
-const ROOT_DIR = path.resolve(__dirname, '..');
-const FIXTURES_DIR = path.join(ROOT_DIR, 'database', 'fixtures');
-const SCHEMAS_DIR = path.join(ROOT_DIR, 'schemas');
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT_DIR = path.resolve(__dirname, "..");
+const FIXTURES_DIR = path.join(ROOT_DIR, "database", "fixtures");
+const SCHEMAS_DIR = path.join(ROOT_DIR, "schemas");
+
+const args = process.argv.slice(2);
+const JSON_OUTPUT = args.includes("--json");
+const HELP = args.includes("--help") || args.includes("-h");
 
 const FIXTURE_SCHEMA_MAP = [
   {
-    fixture: 'applications.fixture.json',
-    schema: 'application-fixture.schema.json'
+    fixture: "applications.fixture.json",
+    schema: "application-fixture.schema.json",
   },
   {
-    fixture: 'colleges.fixture.json',
-    schema: 'college-fixture.schema.json'
+    fixture: "colleges.fixture.json",
+    schema: "college-fixture.schema.json",
   },
   {
-    fixture: 'courses.fixture.json',
-    schema: 'course-fixture.schema.json'
+    fixture: "courses.fixture.json",
+    schema: "course-fixture.schema.json",
   },
   {
-    fixture: 'payments.fixture.json',
-    schema: 'payment-fixture.schema.json'
-  }
+    fixture: "payments.fixture.json",
+    schema: "payment-fixture.schema.json",
+  },
 ];
+
+function relative(filePath) {
+  return path.relative(ROOT_DIR, filePath) || ".";
+}
 
 function readJson(filePath) {
   let content;
 
   try {
-    content = fs.readFileSync(filePath, 'utf8');
+    content = fs.readFileSync(filePath, "utf8");
   } catch (error) {
     throw new Error(
-      `Cannot read "${path.relative(ROOT_DIR, filePath)}": ${error.message}`
+      `Cannot read "${relative(filePath)}": ${error.message}`
     );
+  }
+
+  if (content.charCodeAt(0) === 0xfeff) {
+    content = content.slice(1);
+  }
+
+  if (!content.trim()) {
+    throw new Error(`File is empty: "${relative(filePath)}"`);
   }
 
   try {
     return JSON.parse(content);
   } catch (error) {
     throw new Error(
-      `Invalid JSON in "${path.relative(ROOT_DIR, filePath)}": ${error.message}`
+      `Invalid JSON in "${relative(filePath)}": ${error.message}`
     );
   }
 }
 
-function getValidator() {
+function getAjv() {
   try {
-    return require('ajv/dist/2020').default;
-  } catch {
-    try {
-      return require('ajv').default || require('ajv');
-    } catch {
+    const Ajv2020 = require("ajv/dist/2020").default;
+
+    return new Ajv2020({
+      allErrors: true,
+      strict: true,
+      validateFormats: true,
+      allowUnionTypes: true,
+    });
+  } catch (error) {
+    if (error.code !== "MODULE_NOT_FOUND") {
+      throw error;
+    }
+  }
+
+  throw new Error(
+    "AJV draft 2020-12 support is unavailable. " +
+    "Install a compatible AJV version: npm install ajv ajv-formats."
+  );
+}
+
+function addFormats(ajv) {
+  try {
+    const addFormatsPlugin = require("ajv-formats");
+    const addFormats =
+      addFormatsPlugin.default || addFormatsPlugin;
+
+    addFormats(ajv);
+  } catch (error) {
+    if (error.code === "MODULE_NOT_FOUND") {
       throw new Error(
-        'AJV is not available. Add a compatible AJV version supporting JSON Schema draft 2020-12 to the project dependencies.'
+        "Missing ajv-formats dependency. Install it using " +
+        "npm install ajv-formats."
       );
     }
+
+    throw error;
   }
 }
 
 function formatAjvErrors(errors = []) {
   return errors.map((error) => {
-    const location = error.instancePath || '/';
-    const detail = error.message || 'Schema validation failed';
-    const extra = error.params
-      ? ` (${JSON.stringify(error.params)})`
-      : '';
+    const instancePath = error.instancePath || "/";
+    const keyword = error.keyword || "schema";
+    const detail = error.message || "Schema validation failed";
 
-    return `  - ${location}: ${detail}${extra}`;
+    let extra = "";
+
+    if (error.params && Object.keys(error.params).length > 0) {
+      extra = `; details=${JSON.stringify(error.params)}`;
+    }
+
+    return {
+      path: instancePath,
+      keyword,
+      message: `${instancePath}: ${detail}${extra}`,
+    };
   });
 }
 
+function checkMappings() {
+  const seenFixtures = new Set();
+  const seenSchemas = new Set();
+  const problems = [];
+
+  for (const item of FIXTURE_SCHEMA_MAP) {
+    if (seenFixtures.has(item.fixture)) {
+      problems.push(`Duplicate fixture mapping: ${item.fixture}`);
+    }
+
+    if (seenSchemas.has(item.schema)) {
+      problems.push(`Duplicate schema mapping: ${item.schema}`);
+    }
+
+    seenFixtures.add(item.fixture);
+    seenSchemas.add(item.schema);
+
+    for (const name of [item.fixture, item.schema]) {
+      if (
+        typeof name !== "string" ||
+        name !== path.basename(name) ||
+        name.includes("..") ||
+        !name.endsWith(".json")
+      ) {
+        problems.push(`Unsafe mapping filename: ${String(name)}`);
+      }
+    }
+  }
+
+  return problems;
+}
+
 function validateFixtures() {
-  let Ajv;
   const failures = [];
+  const results = [];
   let validatedCount = 0;
 
+  let ajv;
+
   try {
-    Ajv = getValidator();
+    ajv = getAjv();
+    addFormats(ajv);
   } catch (error) {
-    console.error(`\n[SETUP ERROR] ${error.message}`);
+    console.error(`[SETUP ERROR] ${error.message}`);
     return 2;
   }
 
-  const ajv = new Ajv({
-    allErrors: true,
-    strict: false,
-    validateFormats: false
-  });
+  const mappingProblems = checkMappings();
+
+  if (mappingProblems.length > 0) {
+    for (const message of mappingProblems) {
+      failures.push({
+        fixture: "(mapping configuration)",
+        messages: [message],
+      });
+    }
+  }
 
   for (const item of FIXTURE_SCHEMA_MAP) {
     const fixturePath = path.join(FIXTURES_DIR, item.fixture);
@@ -97,18 +211,18 @@ function validateFixtures() {
 
     if (!fs.existsSync(fixturePath)) {
       failures.push({
-        file: item.fixture,
-        messages: ['Fixture file does not exist.']
+        fixture: item.fixture,
+        messages: ["Fixture file does not exist."],
       });
       continue;
     }
 
     if (!fs.existsSync(schemaPath)) {
       failures.push({
-        file: item.fixture,
+        fixture: item.fixture,
         messages: [
-          `Schema file does not exist: ${path.relative(ROOT_DIR, schemaPath)}`
-        ]
+          `Schema file does not exist: ${relative(schemaPath)}`,
+        ],
       });
       continue;
     }
@@ -121,8 +235,22 @@ function validateFixtures() {
       schema = readJson(schemaPath);
     } catch (error) {
       failures.push({
-        file: item.fixture,
-        messages: [error.message]
+        fixture: item.fixture,
+        messages: [error.message],
+      });
+      continue;
+    }
+
+    if (
+      schema === null ||
+      typeof schema !== "object" ||
+      Array.isArray(schema)
+    ) {
+      failures.push({
+        fixture: item.fixture,
+        messages: [
+          `Schema must be a JSON object: ${item.schema}`,
+        ],
       });
       continue;
     }
@@ -133,55 +261,122 @@ function validateFixtures() {
       validate = ajv.compile(schema);
     } catch (error) {
       failures.push({
-        file: item.fixture,
+        fixture: item.fixture,
         messages: [
-          `Could not compile schema "${item.schema}": ${error.message}`
-        ]
+          `Schema compilation failed (${item.schema}): ${error.message}`,
+        ],
       });
       continue;
     }
 
-    const valid = validate(data);
+    let valid;
+
+    try {
+      valid = validate(data);
+    } catch (error) {
+      failures.push({
+        fixture: item.fixture,
+        messages: [
+          `Validation execution failed: ${error.message}`,
+        ],
+      });
+      continue;
+    }
 
     if (!valid) {
+      const messages = formatAjvErrors(validate.errors).map(
+        (item) => item.message
+      );
+
       failures.push({
-        file: item.fixture,
-        messages: formatAjvErrors(validate.errors)
+        fixture: item.fixture,
+        messages,
       });
+
+      results.push({
+        fixture: item.fixture,
+        schema: item.schema,
+        valid: false,
+        errors: formatAjvErrors(validate.errors),
+      });
+
       continue;
     }
 
-    validatedCount += 1;
-    console.log(`[PASS] ${item.fixture}`);
-  }
+    validatedCount++;
 
-  console.log(
-    `\nFixture validation: ${validatedCount}/${FIXTURE_SCHEMA_MAP.length} passed.`
-  );
+    results.push({
+      fixture: item.fixture,
+      schema: item.schema,
+      valid: true,
+      errors: [],
+    });
 
-  if (failures.length > 0) {
-    console.error('\nValidation errors:');
-
-    for (const failure of failures) {
-      console.error(`\n[FAIL] ${failure.file}`);
-
-      for (const message of failure.messages) {
-        console.error(message);
-      }
+    if (!JSON_OUTPUT) {
+      console.log(`[PASS] ${item.fixture} → ${item.schema}`);
     }
-
-    return 1;
   }
 
-  console.log('All configured fixtures passed schema validation.');
-  return 0;
+  const report = {
+    ok: failures.length === 0,
+    total: FIXTURE_SCHEMA_MAP.length,
+    passed: validatedCount,
+    failed: failures.length,
+    results,
+    failures,
+  };
+
+  if (JSON_OUTPUT) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    console.log(
+      `\nFixture validation: ${validatedCount}/` +
+      `${FIXTURE_SCHEMA_MAP.length} passed.`
+    );
+
+    if (failures.length > 0) {
+      console.error("\nValidation errors:");
+
+      for (const failure of failures) {
+        console.error(`\n[FAIL] ${failure.fixture}`);
+
+        for (const message of failure.messages) {
+          console.error(`  - ${message}`);
+        }
+      }
+    } else {
+      console.log("All configured fixtures passed schema validation.");
+    }
+  }
+
+  return failures.length > 0 ? 1 : 0;
+}
+
+function main() {
+  if (HELP) {
+    console.log(`
+MedOrbits Fixture Validator
+
+Usage:
+  node scripts/validate-fixtures.js [options]
+
+Options:
+  --json       Output a machine-readable JSON report
+  --help, -h   Show help
+`);
+    return 0;
+  }
+
+  return validateFixtures();
 }
 
 if (require.main === module) {
-  process.exitCode = validateFixtures();
+  process.exitCode = main();
 }
 
 module.exports = {
   validateFixtures,
-  FIXTURE_SCHEMA_MAP
+  FIXTURE_SCHEMA_MAP,
+  formatAjvErrors,
+  checkMappings,
 };
