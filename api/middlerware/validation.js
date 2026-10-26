@@ -1,618 +1,893 @@
+
 'use strict';
+
 /**
- * MedOrbits -- Request Validation Middleware
- * File: api/middleware/validation.js
+ * MedOrbits API -- Validation Middleware
+ * File: /api/middleware/validation.js
  *
- * Purpose:
- * - Validate request body, query parameters, and route parameters.
- * - Provide reusable validation rules and sanitization helpers.
- * - Return consistent 400 responses for invalid input.
- * - Avoid mutating the original request data.
+ * Features:
+ * - Schema-based request validation
+ * - Safe field allowlisting
+ * - Request body, query and params validation
+ * - String trimming and normalization
+ * - Field length limits
+ * - Object ID, UUID and numeric ID validation
+ * - Safe nested property access
+ * - Consistent validation errors
  *
- * Dependencies: Express (no additional dependencies required).
+ * Compatible with CommonJS Express applications.
  */
-const DEFAULT_ERROR_CODE = 'VALIDATION_ERROR';
-const MAX_ERRORS = 50;
+
+const DEFAULT_MAX_ERRORS = 50;
+const DEFAULT_MAX_FIELD_LENGTH = 10_000;
+const ALLOWED_REQUEST_SECTIONS = new Set([
+  'body',
+  'query',
+  'params',
+]);
+
+const UNSAFE_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+]);
+
+const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const NUMERIC_ID_PATTERN = /^[1-9]\d*$/;
+
 /**
- * Safely identify plain objects.
+ * Returns true for a plain object.
  */
 function isPlainObject(value) {
   if (value === null || typeof value !== 'object') {
     return false;
   }
+
   const prototype = Object.getPrototypeOf(value);
+
   return prototype === Object.prototype || prototype === null;
 }
+
 /**
- * Escape special characters for regular expressions.
+ * Validate a request section name.
  */
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-/**
- * Normalize a value to a trimmed string.
- */
-function normalizeString(value) {
-  if (typeof value !== 'string') {
-    return value;
+function assertRequestSection(section) {
+  if (!ALLOWED_REQUEST_SECTIONS.has(section)) {
+    throw new TypeError(
+      `Unsupported request section: ${String(section)}`
+    );
   }
-  return value.trim();
 }
+
 /**
- * Escape HTML-sensitive characters for safe HTML text output.
- * Prefer context-aware output encoding at the rendering layer.
+ * Split and validate a dot-separated property path.
  */
-function escapeHtml(value) {
-  if (typeof value !== 'string') {
-    return value;
+function parsePath(path) {
+  if (typeof path !== 'string' || path.trim() === '') {
+    throw new TypeError('Field path must be a non-empty string.');
   }
-  return value.replace(/[&<>"']/g, (character) => {
-    const entities = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    };
-    return entities[character];
-  });
+
+  const segments = path.split('.');
+
+  if (
+    segments.some(
+      (segment) =>
+        segment.length === 0 ||
+        UNSAFE_KEYS.has(segment)
+    )
+  ) {
+    throw new TypeError(`Unsafe or invalid field path: ${path}`);
+  }
+
+  return segments;
 }
+
 /**
- * Create a normalized validation issue.
+ * Read a nested property without traversing unsafe keys.
  */
-function createIssue(field, message, code = DEFAULT_ERROR_CODE) {
-  return {
-    field: String(field || 'request'),
-    message: String(message || 'Invalid value.'),
-    code: String(code),
-  };
+function getNestedValue(object, path) {
+  const segments = Array.isArray(path) ? path : parsePath(path);
+  let current = object;
+
+  for (const segment of segments) {
+    if (
+      current === null ||
+      typeof current !== 'object' ||
+      !Object.prototype.hasOwnProperty.call(current, segment)
+    ) {
+      return undefined;
+    }
+
+    current = current[segment];
+  }
+
+  return current;
 }
+
 /**
- * Send a consistent validation response.
+ * Safely assign a nested property.
+ * Creates plain objects where necessary.
+ */
+function setNestedValue(object, path, value) {
+  if (!isPlainObject(object)) {
+    throw new TypeError('Target must be a plain object.');
+  }
+
+  const segments = Array.isArray(path) ? path : parsePath(path);
+  let current = object;
+
+  for (let index = 0; index < segments.length - 1; index += 1) {
+    const segment = segments[index];
+
+    if (!Object.prototype.hasOwnProperty.call(current, segment)) {
+      current[segment] = Object.create(null);
+    } else if (!isPlainObject(current[segment])) {
+      throw new TypeError(
+        `Cannot assign nested field through non-object: ${segment}`
+      );
+    }
+
+    current = current[segment];
+  }
+
+  current[segments[segments.length - 1]] = value;
+
+  return object;
+}
+
+/**
+ * Send a consistent validation error response.
  */
 function sendValidationError(
   res,
   errors,
-  message = 'Please correct the invalid request fields.'
+  statusCode = 400
 ) {
-  const safeErrors = Array.isArray(errors)
-    ? errors.slice(0, MAX_ERRORS).map((error) => ({
-        field: String(error.field || 'request'),
-        message: String(error.message || 'Invalid value.'),
-        code: String(error.code || DEFAULT_ERROR_CODE),
-      }))
-    : [];
-  return res.status(400).json({
+  return res.status(statusCode).json({
     success: false,
     error: {
-      code: DEFAULT_ERROR_CODE,
-      message,
-      details: safeErrors,
+      code: 'VALIDATION_ERROR',
+      message: 'Request validation failed.',
+      details: errors,
     },
   });
 }
+
 /**
- * Resolve a field from a nested object using dot notation.
+ * Build a normalized validation error.
  */
-function getNestedValue(source, path) {
-  if (!source || typeof source !== 'object') {
-    return undefined;
-  }
-  return String(path)
-    .split('.')
-    .reduce((current, segment) => {
-      if (
-        current === null ||
-        current === undefined ||
-        !Object.prototype.hasOwnProperty.call(current, segment)
-      ) {
-        return undefined;
-      }
-      return current[segment];
-    }, source);
+function makeError(field, message, code = 'INVALID_VALUE') {
+  return {
+    field,
+    message,
+    code,
+  };
 }
+
 /**
- * Set a nested field on a copied object.
- * Rejects prototype-related keys to reduce prototype-pollution risk.
+ * Add a validation error until the configured limit is reached.
  */
-function setNestedValue(target, path, value) {
-  const segments = String(path).split('.');
-  const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
-  if (segments.some((segment) => forbidden.has(segment))) {
-    throw new Error('Unsafe nested property path.');
+function addError(errors, error, maxErrors) {
+  if (errors.length < maxErrors) {
+    errors.push(error);
   }
-  let current = target;
-  for (let index = 0; index < segments.length - 1; index += 1) {
-    const segment = segments[index];
-    if (!isPlainObject(current[segment])) {
-      current[segment] = {};
-    }
-    current = current[segment];
-  }
-  current[segments[segments.length - 1]] = value;
-  return target;
 }
+
 /**
- * Apply a transform to a nested field on a shallow/deep plain-object copy.
- */
-function clonePlainData(value) {
-  if (Array.isArray(value)) {
-    return value.map(clonePlainData);
-  }
-  if (!isPlainObject(value)) {
-    return value;
-  }
-  const result = {};
-  for (const [key, child] of Object.entries(value)) {
-    if (['__proto__', 'prototype', 'constructor'].includes(key)) {
-      continue;
-    }
-    result[key] = clonePlainData(child);
-  }
-  return result;
-}
-/**
- * Common validation rules.
+ * Validate a field against a regular expression.
  *
- * Each rule receives (value, request).
- * Return true when valid; return a string to describe a validation failure.
+ * Resets lastIndex so global/sticky regular expressions
+ * cannot produce inconsistent results across requests.
  */
-const rules = {
+function pattern(regex, message = 'Invalid format.') {
+  if (!(regex instanceof RegExp)) {
+    throw new TypeError('pattern() requires a RegExp.');
+  }
+
+  return (value) => {
+    if (typeof value !== 'string') {
+      return message;
+    }
+
+    regex.lastIndex = 0;
+    const valid = regex.test(value);
+    regex.lastIndex = 0;
+
+    return valid ? true : message;
+  };
+}
+
+/**
+ * Built-in validation rules.
+ *
+ * Each rule returns true when valid or an error message
+ * when invalid. A thrown error is treated as a schema or
+ * validator configuration error, not a user validation error.
+ */
+const rules = Object.freeze({
   required(value) {
-    if (
-      value === undefined ||
-      value === null ||
-      (typeof value === 'string' && value.trim() === '')
-    ) {
+    if (value === undefined || value === null) {
       return 'This field is required.';
     }
+
+    if (typeof value === 'string' && value.trim() === '') {
+      return 'This field is required.';
+    }
+
     return true;
   },
+
   string(value) {
     return typeof value === 'string' || 'Must be a string.';
   },
+
   number(value) {
     return (
       (typeof value === 'number' && Number.isFinite(value)) ||
-      'Must be a valid number.'
+      'Must be a finite number.'
     );
   },
+
   integer(value) {
-    return Number.isInteger(value) || 'Must be an integer.';
+    return Number.isSafeInteger(value) || 'Must be a safe integer.';
   },
+
   boolean(value) {
     return typeof value === 'boolean' || 'Must be a boolean.';
   },
+
+  object(value) {
+    return isPlainObject(value) || 'Must be a plain object.';
+  },
+
   array(value) {
     return Array.isArray(value) || 'Must be an array.';
   },
-  object(value) {
-    return isPlainObject(value) || 'Must be an object.';
-  },
+
   email(value) {
     if (typeof value !== 'string') {
       return 'Must be a valid email address.';
     }
-    const email = value.trim();
-    if (
-      email.length > 254 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
-      return 'Must be a valid email address.';
+
+    if (value.length > 254) {
+      return 'Email address is too long.';
     }
-    return true;
-  },
-  phone(value) {
-    if (typeof value !== 'string') {
-      return 'Must be a valid phone number.';
-    }
-    const normalized = value.replace(/[\s().-]/g, '');
+
+    const emailPattern =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     return (
-      /^\+?[0-9]{7,15}$/.test(normalized) ||
-      'Must be a valid phone number.'
+      emailPattern.test(value) ||
+      'Must be a valid email address.'
     );
   },
+
   url(value) {
     if (typeof value !== 'string') {
       return 'Must be a valid URL.';
     }
+
     try {
       const parsed = new URL(value);
-      if (!['http:', 'https:'].includes(parsed.protocol)) {
-        return 'URL must use HTTP or HTTPS.';
-      }
-      return true;
+
+      return (
+        ['http:', 'https:'].includes(parsed.protocol) ||
+        'URL must use HTTP or HTTPS.'
+      );
     } catch {
       return 'Must be a valid URL.';
     }
   },
-  minLength(length) {
-    return (value) => {
-      if (typeof value !== 'string' && !Array.isArray(value)) {
-        return 'Must be a string or array.';
-      }
-      return (
-        value.length >= length ||
-        `Must contain at least ${length} characters or items.`
-      );
-    };
+
+  min(value, minimum) {
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value)
+    ) {
+      return 'Must be a finite number.';
+    }
+
+    return value >= minimum || `Must be at least ${minimum}.`;
   },
-  maxLength(length) {
-    return (value) => {
-      if (typeof value !== 'string' && !Array.isArray(value)) {
-        return 'Must be a string or array.';
-      }
-      return (
-        value.length <= length ||
-        `Must contain no more than ${length} characters or items.`
-      );
-    };
+
+  max(value, maximum) {
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value)
+    ) {
+      return 'Must be a finite number.';
+    }
+
+    return value <= maximum || `Must be at most ${maximum}.`;
   },
-  min(minimum) {
-    return (value) => {
-      if (typeof value !== 'number' || !Number.isFinite(value)) {
-        return 'Must be a valid number.';
-      }
-      return value >= minimum || `Must be at least ${minimum}.`;
-    };
+
+  minLength(value, minimum) {
+    if (typeof value !== 'string' && !Array.isArray(value)) {
+      return 'Must be a string or array.';
+    }
+
+    return (
+      value.length >= minimum ||
+      `Must contain at least ${minimum} characters or items.`
+    );
   },
-  max(maximum) {
-    return (value) => {
-      if (typeof value !== 'number' || !Number.isFinite(value)) {
-        return 'Must be a valid number.';
-      }
-      return value <= maximum || `Must be no greater than ${maximum}.`;
-    };
+
+  maxLength(value, maximum) {
+    if (typeof value !== 'string' && !Array.isArray(value)) {
+      return 'Must be a string or array.';
+    }
+
+    return (
+      value.length <= maximum ||
+      `Must contain no more than ${maximum} characters or items.`
+    );
   },
-  oneOf(allowedValues) {
-    return (value) =>
+
+  oneOf(value, allowedValues) {
+    if (!Array.isArray(allowedValues)) {
+      throw new TypeError('oneOf requires an array of allowed values.');
+    }
+
+    return (
       allowedValues.includes(value) ||
-      `Must be one of: ${allowedValues.join(', ')}.`;
+      'Value is not an allowed option.'
+    );
   },
-  pattern(expression, message = 'Has an invalid format.') {
-    return (value) => {
-      if (typeof value !== 'string') {
-        return message;
-      }
-      return expression.test(value) || message;
-    };
+
+  matches(value, regex) {
+    if (!(regex instanceof RegExp)) {
+      throw new TypeError('matches requires a RegExp.');
+    }
+
+    if (typeof value !== 'string') {
+      return 'Must be a string.';
+    }
+
+    regex.lastIndex = 0;
+    const valid = regex.test(value);
+    regex.lastIndex = 0;
+
+    return valid || 'Value has an invalid format.';
   },
-  matches(field, message = `Must match ${field}.`) {
-    return (value, req) => {
-      const otherValue = getNestedValue(req.body, field);
-      return value === otherValue || message;
-    };
+
+  objectId(value) {
+    return (
+      (typeof value === 'string' &&
+        OBJECT_ID_PATTERN.test(value)) ||
+      'Must be a valid 24-character object ID.'
+    );
   },
-  custom(validator, message = 'Invalid value.') {
-    return async (value, req) => {
-      const result = await validator(value, req);
-      if (result === true) {
-        return true;
-      }
-      if (typeof result === 'string') {
-        return result;
-      }
-      return result ? true : message;
-    };
+
+  uuid(value) {
+    return (
+      (typeof value === 'string' &&
+        UUID_PATTERN.test(value)) ||
+      'Must be a valid UUID.'
+    );
   },
-};
+
+  numericId(value) {
+    return (
+      ((typeof value === 'number' &&
+        Number.isSafeInteger(value) &&
+        value > 0) ||
+        (typeof value === 'string' &&
+          NUMERIC_ID_PATTERN.test(value))) ||
+      'Must be a positive numeric ID.'
+    );
+  },
+});
+
 /**
- * Validate one value against an array of rule definitions.
+ * Validate a schema definition before processing requests.
  *
- * Rule formats:
- * - 'required'
- * - ['minLength', 8]
- * - { name: 'oneOf', args: [['active', 'inactive']] }
- * - { name: 'custom', args: [validator, 'Custom error message'] }
- */
-async function validateValue(value, fieldRules, req) {
-  const errors = [];
-  const normalizedRules = Array.isArray(fieldRules)
-    ? fieldRules
-    : [fieldRules];
-  for (const rule of normalizedRules) {
-    let name;
-    let args = [];
-    if (typeof rule === 'string') {
-      name = rule;
-    } else if (Array.isArray(rule)) {
-      [name, ...args] = rule;
-    } else if (isPlainObject(rule)) {
-      name = rule.name;
-      args = Array.isArray(rule.args) ? rule.args : [];
-    } else {
-      errors.push('Invalid validation rule configuration.');
-      continue;
-    }
-    const validator = rules[name];
-    if (typeof validator !== 'function') {
-      errors.push(`Unknown validation rule: ${String(name)}.`);
-      continue;
-    }
-    let result;
-    try {
-      result =
-        args.length > 0
-          ? validator(...args)(value, req)
-          : validator(value, req);
-      result = await result;
-    } catch {
-      errors.push('Validation could not be completed.');
-      continue;
-    }
-    if (result !== true) {
-      errors.push(
-        typeof result === 'string' ? result : 'Invalid value.'
-      );
-    }
-  }
-  return errors;
-}
-/**
- * Build request validation middleware.
- *
- * Schema example:
+ * Schema format:
  * {
- *   body: {
- *     email: ['required', 'email'],
- *     password: ['required', ['minLength', 8]]
- *   },
- *   params: {
- *     id: ['required', ['pattern', /^[0-9]+$/, 'Must be a numeric ID.']]
+ *   email: {
+ *     required: true,
+ *     rules: [
+ *       rules.string,
+ *       rules.email
+ *     ]
  *   }
  * }
  *
- * Options:
- * - abortEarly: stop after the first issue.
- * - message: top-level error message.
- * - allowUnknown: permit unspecified fields (default true).
+ * A field definition may also be an array of validator functions.
  */
-function validate(schema = {}, options = {}) {
-  const {
-    abortEarly = false,
-    message = 'Please correct the invalid request fields.',
-    allowUnknown = true,
-  } = options;
-  return async function validationMiddleware(req, res, next) {
-    try {
-      const errors = [];
-      const sections = ['body', 'query', 'params'];
-      for (const section of sections) {
-        const sectionSchema = schema[section];
-        if (!sectionSchema) {
-          continue;
-        }
-        if (!isPlainObject(sectionSchema)) {
-          return next(
-            new Error(`Validation schema for "${section}" must be an object.`)
-          );
-        }
-        const source = req[section] || {};
-        if (!allowUnknown) {
-          for (const field of Object.keys(source)) {
-            if (
-              !Object.prototype.hasOwnProperty.call(sectionSchema, field)
-            ) {
-              errors.push(
-                createIssue(
-                  `${section}.${field}`,
-                  'This field is not allowed.',
-                  'UNKNOWN_FIELD'
-                )
-              );
-              if (abortEarly || errors.length >= MAX_ERRORS) {
-                break;
-              }
-            }
-          }
-        }
-        for (const [field, fieldRules] of Object.entries(sectionSchema)) {
-          const value = getNestedValue(source, field);
-          const fieldErrors = await validateValue(
-            value,
-            fieldRules,
-            req
-          );
-          for (const fieldError of fieldErrors) {
-            errors.push(
-              createIssue(`${section}.${field}`, fieldError)
-            );
-            if (abortEarly || errors.length >= MAX_ERRORS) {
-              break;
-            }
-          }
-          if (abortEarly && errors.length > 0) {
-            break;
-          }
-          if (errors.length >= MAX_ERRORS) {
-            break;
-          }
-        }
-        if (abortEarly && errors.length > 0) {
-          break;
-        }
-        if (errors.length >= MAX_ERRORS) {
-          break;
-        }
-      }
-      if (errors.length > 0) {
-        return sendValidationError(res, errors, message);
-      }
-      return next();
-    } catch (error) {
-      return next(error);
+function validateSchema(schema) {
+  if (!isPlainObject(schema)) {
+    throw new TypeError('Validation schema must be a plain object.');
+  }
+
+  for (const [field, definition] of Object.entries(schema)) {
+    parsePath(field);
+
+    const validators = Array.isArray(definition)
+      ? definition
+      : definition?.rules ?? [];
+
+    if (!Array.isArray(validators)) {
+      throw new TypeError(
+        `Validators for "${field}" must be an array.`
+      );
     }
-  };
+
+    for (const validator of validators) {
+      if (typeof validator !== 'function') {
+        throw new TypeError(
+          `Every validator for "${field}" must be a function.`
+        );
+      }
+    }
+
+    if (
+      !Array.isArray(definition) &&
+      definition !== null &&
+      definition !== undefined &&
+      !isPlainObject(definition)
+    ) {
+      throw new TypeError(
+        `Definition for "${field}" must be an object or validator array.`
+      );
+    }
+  }
+
+  return schema;
 }
+
 /**
- * Reject request bodies containing fields outside an allowlist.
- * This is useful for preventing mass assignment on write endpoints.
+ * Express middleware for validating req.body, req.query or req.params.
+ *
+ * Usage:
+ * validate({
+ *   email: {
+ *     required: true,
+ *     rules: [rules.string, rules.email]
+ *   }
+ * }, 'body')
  */
-function allowOnlyFields(allowedFields = [], section = 'body') {
-  const allowed = new Set(allowedFields);
-  return function allowOnlyFieldsMiddleware(req, res, next) {
+function validate(schema, section = 'body', options = {}) {
+  assertRequestSection(section);
+  validateSchema(schema);
+
+  const maxErrors = Number.isSafeInteger(options.maxErrors)
+    ? Math.max(1, options.maxErrors)
+    : DEFAULT_MAX_ERRORS;
+
+  return function validationMiddleware(req, res, next) {
     const source = req[section];
+
     if (!isPlainObject(source)) {
-      return sendValidationError(res, [
-        createIssue(section, 'Expected an object.', 'INVALID_TYPE'),
-      ]);
-    }
-    const unknownFields = Object.keys(source).filter(
-      (field) => !allowed.has(field)
-    );
-    if (unknownFields.length > 0) {
       return sendValidationError(
         res,
-        unknownFields.map((field) =>
-          createIssue(
-            `${section}.${field}`,
-            'This field is not allowed.',
-            'UNKNOWN_FIELD'
-          )
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
+    }
+
+    const errors = [];
+
+    for (const [field, definition] of Object.entries(schema)) {
+      const path = parsePath(field);
+      const value = getNestedValue(source, path);
+
+      const config = Array.isArray(definition)
+        ? { rules: definition }
+        : definition;
+
+      const validators = config.rules || [];
+      const isRequired = config.required === true;
+
+      if (isRequired) {
+        const requiredResult = rules.required(value);
+
+        if (requiredResult !== true) {
+          addError(
+            errors,
+            makeError(field, requiredResult, 'REQUIRED'),
+            maxErrors
+          );
+
+          if (errors.length >= maxErrors) break;
+          continue;
+        }
+      }
+
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      for (const validator of validators) {
+        let result;
+
+        try {
+          result = validator(value, req);
+        } catch (error) {
+          return next(error);
+        }
+
+        if (result !== true) {
+          addError(
+            errors,
+            makeError(
+              field,
+              typeof result === 'string'
+                ? result
+                : 'Invalid value.',
+              'INVALID_VALUE'
+            ),
+            maxErrors
+          );
+
+          if (errors.length >= maxErrors) break;
+        }
+      }
+
+      if (errors.length >= maxErrors) break;
+    }
+
+    if (errors.length > 0) {
+      return sendValidationError(res, errors);
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Reject unexpected keys in a request section.
+ */
+function allowOnlyFields(
+  allowedFields,
+  section = 'body',
+  options = {}
+) {
+  assertRequestSection(section);
+
+  if (
+    !Array.isArray(allowedFields) ||
+    !allowedFields.every(
+      (field) => typeof field === 'string' && field.length > 0
+    )
+  ) {
+    throw new TypeError('allowedFields must be an array of field names.');
+  }
+
+  const allowedPaths = new Set(
+    allowedFields.map((field) => parsePath(field).join('.'))
+  );
+
+  const allowNested = options.allowNested === true;
+
+  return function allowOnlyFieldsMiddleware(req, res, next) {
+    const source = req[section];
+
+    if (!isPlainObject(source)) {
+      return sendValidationError(
+        res,
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
+    }
+
+    const unexpected = [];
+
+    for (const key of Object.keys(source)) {
+      const safeKey = parsePath(key).join('.');
+
+      if (allowedPaths.has(safeKey)) {
+        continue;
+      }
+
+      if (
+        allowNested &&
+        [...allowedPaths].some((path) => path.startsWith(`${safeKey}.`))
+      ) {
+        continue;
+      }
+
+      unexpected.push(
+        makeError(
+          key,
+          'Unexpected field.',
+          'UNEXPECTED_FIELD'
         )
       );
     }
+
+    if (unexpected.length > 0) {
+      return sendValidationError(res, unexpected);
+    }
+
     return next();
   };
 }
+
 /**
- * Return middleware that checks a request section is a plain object.
+ * Require a request section to be a plain object.
  */
 function requireObject(section = 'body') {
+  assertRequestSection(section);
+
   return function requireObjectMiddleware(req, res, next) {
     if (!isPlainObject(req[section])) {
-      return sendValidationError(res, [
-        createIssue(section, 'Expected an object.', 'INVALID_TYPE'),
-      ]);
+      return sendValidationError(
+        res,
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
     }
+
     return next();
   };
 }
+
 /**
- * Return middleware that trims string fields in the selected request section.
- * Works on a safe copy and supports nested dot-separated field paths.
+ * Clone a plain object before transforming it.
  */
-function trimFields(fields = [], section = 'body') {
+function clonePlainObject(value) {
+  if (!isPlainObject(value)) {
+    throw new TypeError('Expected a plain object.');
+  }
+
+  const clone = Object.create(null);
+
+  for (const key of Object.keys(value)) {
+    if (UNSAFE_KEYS.has(key)) {
+      throw new TypeError(`Unsafe property name: ${key}`);
+    }
+
+    const item = value[key];
+
+    if (Array.isArray(item)) {
+      clone[key] = item.slice();
+    } else if (isPlainObject(item)) {
+      clone[key] = clonePlainObject(item);
+    } else {
+      clone[key] = item;
+    }
+  }
+
+  return clone;
+}
+
+/**
+ * Trim string fields in a request section.
+ *
+ * Nested paths are supported.
+ */
+function trimFields(
+  fields,
+  section = 'body'
+) {
+  assertRequestSection(section);
+
+  if (!Array.isArray(fields)) {
+    throw new TypeError('fields must be an array.');
+  }
+
+  const paths = fields.map(parsePath);
+
   return function trimFieldsMiddleware(req, res, next) {
     if (!isPlainObject(req[section])) {
-      return next();
+      return sendValidationError(
+        res,
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
     }
-    const copy = clonePlainData(req[section]);
+
     try {
-      for (const field of fields) {
-        const currentValue = getNestedValue(copy, field);
-        if (typeof currentValue === 'string') {
-          setNestedValue(copy, field, normalizeString(currentValue));
+      const transformed = clonePlainObject(req[section]);
+
+      for (const path of paths) {
+        const value = getNestedValue(transformed, path);
+
+        if (typeof value === 'string') {
+          setNestedValue(transformed, path, value.trim());
         }
       }
-      req[section] = copy;
+
+      req[section] = transformed;
       return next();
     } catch (error) {
       return next(error);
     }
   };
 }
+
 /**
- * Convert selected string fields to lowercase.
- * Useful for emails and other case-insensitive identifiers.
+ * Convert string fields to lowercase.
+ *
+ * Intended for fields such as email addresses, not display names.
  */
-function lowercaseFields(fields = [], section = 'body') {
+function lowercaseFields(
+  fields,
+  section = 'body'
+) {
+  assertRequestSection(section);
+
+  if (!Array.isArray(fields)) {
+    throw new TypeError('fields must be an array.');
+  }
+
+  const paths = fields.map(parsePath);
+
   return function lowercaseFieldsMiddleware(req, res, next) {
     if (!isPlainObject(req[section])) {
-      return next();
+      return sendValidationError(
+        res,
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
     }
-    const copy = clonePlainData(req[section]);
+
     try {
-      for (const field of fields) {
-        const value = getNestedValue(copy, field);
+      const transformed = clonePlainObject(req[section]);
+
+      for (const path of paths) {
+        const value = getNestedValue(transformed, path);
+
         if (typeof value === 'string') {
-          setNestedValue(copy, field, value.toLowerCase());
+          setNestedValue(
+            transformed,
+            path,
+            value.toLowerCase()
+          );
         }
       }
-      req[section] = copy;
+
+      req[section] = transformed;
       return next();
     } catch (error) {
       return next(error);
     }
   };
 }
+
 /**
- * Ensure request data is not excessively large.
- * Configure express.json({ limit: '...'} ) as the primary body-size defense.
+ * Limit the length of string fields.
+ *
+ * Fields not present in the request are ignored.
  */
-function limitFieldLengths(limits = {}, section = 'body') {
+function limitFieldLengths(
+  fields,
+  maximum = DEFAULT_MAX_FIELD_LENGTH,
+  section = 'body'
+) {
+  assertRequestSection(section);
+
+  if (!Array.isArray(fields)) {
+    throw new TypeError('fields must be an array.');
+  }
+
+  if (
+    !Number.isSafeInteger(maximum) ||
+    maximum < 1
+  ) {
+    throw new TypeError('maximum must be a positive safe integer.');
+  }
+
+  const paths = fields.map(parsePath);
+
   return function limitFieldLengthsMiddleware(req, res, next) {
     const source = req[section];
+
     if (!isPlainObject(source)) {
-      return next();
+      return sendValidationError(
+        res,
+        [
+          makeError(
+            section,
+            `Request ${section} must be a plain object.`,
+            'INVALID_REQUEST_SECTION'
+          ),
+        ]
+      );
     }
+
     const errors = [];
-    for (const [field, maximum] of Object.entries(limits)) {
-      const value = getNestedValue(source, field);
+
+    for (const path of paths) {
+      const value = getNestedValue(source, path);
+
       if (typeof value === 'string' && value.length > maximum) {
         errors.push(
-          createIssue(
-            `${section}.${field}`,
-            `Must contain no more than ${maximum} characters.`,
-            'MAX_LENGTH'
+          makeError(
+            path.join('.'),
+            `Must not exceed ${maximum} characters.`,
+            'FIELD_TOO_LONG'
           )
         );
       }
     }
+
     if (errors.length > 0) {
       return sendValidationError(res, errors);
     }
+
     return next();
   };
 }
+
 /**
- * Validate a Mongo-style or general 24-character hexadecimal identifier.
- * Use only when the application's identifier format requires it.
+ * Validate a MongoDB-style ObjectId.
  */
-function isObjectId(value) {
-  return typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
-}
-/**
- * Validate a UUID string.
- */
-function isUUID(value) {
+function isValidObjectId(value) {
   return (
     typeof value === 'string' &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      value
-    )
+    OBJECT_ID_PATTERN.test(value)
   );
 }
+
 /**
- * Validate a numeric ID represented as a string.
+ * Validate a UUID.
  */
-function isNumericId(value) {
+function isValidUUID(value) {
   return (
-    (typeof value === 'string' && /^[1-9]\d*$/.test(value)) ||
-    (typeof value === 'number' &&
-      Number.isSafeInteger(value) &&
-      value > 0)
+    typeof value === 'string' &&
+    UUID_PATTERN.test(value)
   );
 }
+
+/**
+ * Validate a positive numeric ID.
+ */
+function isValidNumericId(value) {
+  if (
+    typeof value === 'number' &&
+    Number.isSafeInteger(value)
+  ) {
+    return value > 0;
+  }
+
+  return (
+    typeof value === 'string' &&
+    NUMERIC_ID_PATTERN.test(value)
+  );
+}
+
 module.exports = {
-  validate,
   rules,
-  validateValue,
-  sendValidationError,
-  createIssue,
+  pattern,
+  validate,
+  validateSchema,
   allowOnlyFields,
   requireObject,
   trimFields,
   lowercaseFields,
   limitFieldLengths,
+  isValidObjectId,
+  isValidUUID,
+  isValidNumericId,
   getNestedValue,
   setNestedValue,
-  clonePlainData,
-  normalizeString,
-  escapeHtml,
-  escapeRegExp,
-  isPlainObject,
-  isObjectId,
-  isUUID,
-  isNumericId,
+  sendValidationError,
 };

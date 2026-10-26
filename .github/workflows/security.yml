@@ -1,171 +1,119 @@
-
-# File: .github/workflows/security.yml
-
-name: MedOrbits Security
-
+name: Security Checks
 on:
   push:
     branches:
       - main
-      - develop
-
   pull_request:
     branches:
       - main
-      - develop
-
   schedule:
-    # Every Monday at 04:00 UTC
+    # Weekly on Monday at 04:00 UTC.
     - cron: "0 4 * * 1"
-
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
 jobs:
-  # ======================================================
-  # 1. VALIDATE JSON CONFIGURATION
-  # ======================================================
-  validate-json:
-    name: Validate JSON configuration
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-
-      - name: Validate tracked JSON files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          count=0
-
-          while IFS= read -r -d '' file; do
-            echo "Validating: $file"
-
-            node -e '
-              const fs = require("node:fs");
-              const file = process.argv[1];
-
-              try {
-                JSON.parse(fs.readFileSync(file, "utf8"));
-              } catch (error) {
-                console.error(`${file}: ${error.message}`);
-                process.exit(1);
-              }
-            ' "$file"
-
-            count=$((count + 1))
-          done < <(git ls-files -z -- '*.json')
-
-          echo "Validated $count tracked JSON files."
-
-  # ======================================================
-  # 2. AUDIT NPM DEPENDENCIES
-  # ======================================================
   dependency-audit:
-    name: Audit npm dependencies
+    name: npm Dependency Audit
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Verify npm manifests
+          node-version: "22"
+      - name: Check npm dependencies
         shell: bash
         run: |
           set -euo pipefail
-          test -f package.json
-          test -f package-lock.json
-
-      - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Audit all dependencies
-        run: npm audit --audit-level=high
-
-  # ======================================================
-  # 3. CODEQL STATIC ANALYSIS
-  # ======================================================
-  codeql:
-    name: CodeQL JavaScript and TypeScript analysis
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-          build-mode: none
-          queries: security-extended
-
-      - name: Analyze code
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: /language:javascript-typescript
-
-  # ======================================================
-  # 4. SCAN FOR EXPOSED SECRETS
-  # ======================================================
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json found; skipping npm audit."
+            exit 0
+          fi
+          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
+            echo "::error::package.json exists, but no npm lockfile was found."
+            exit 1
+          fi
+          npm audit --audit-level=high
   secret-scan:
-    name: Gitleaks secret scan
+    name: Scan for exposed secrets
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout repository history
-        uses: actions/checkout@v7
+      - name: Checkout full Git history
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Scan for secrets
-        uses: gitleaks/gitleaks-action@v3
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_SUMMARY: "true"
+  repository-security:
+    name: Repository security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check for accidentally committed environment files
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          while IFS= read -r file; do
+            case "$file" in
+              .env.example|.env.sample|.env.template|*/.env.example|*/.env.sample|*/.env.template)
+                continue
+                ;;
+            esac
+            case "$file" in
+              .env|.env.*|*/.env|*/.env.*)
+                echo "::warning file=$file::Tracked environment file found. Verify that it contains no secrets."
+                ;;
+            esac
+          done < <(git ls-files)
+          echo "Environment-file review completed."
+          echo "Gitleaks is responsible for detecting potential secret values."
+      - name: Check workflow permission declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ruby >/dev/null 2>&1; then
+            echo "::notice::Ruby unavailable; skipping YAML permission checks."
+            exit 0
+          fi
+          ruby <<'RUBY'
+          require "yaml"
+          files = Dir.glob(".github/workflows/*.{yml,yaml}")
+          errors = []
+          files.each do |file|
+            begin
+              workflow = YAML.load_file(file, aliases: true)
+              unless workflow.is_a?(Hash)
+                errors << "#{file}: workflow must be a YAML mapping"
+                next
+              end
+              unless workflow.key?("permissions")
+                puts "::warning file=#{file}::No top-level permissions block found; review the workflow's default token permissions."
+              end
+            rescue StandardError => e
+              errors << "#{file}: #{e.message}"
+            end
+          end
+          errors.each { |error| warn "::error::#{error}" }
+          abort "Workflow YAML validation failed." unless errors.empty?
+          puts "Workflow YAML files parsed successfully."
+          RUBY

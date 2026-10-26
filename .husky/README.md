@@ -1,640 +1,239 @@
+MedOrbits — Husky Git Hooks
 
-# MedOrbits — Husky Git Hooks
+Project: MedOrbits
+Release: 2.0.0
+Directory: .husky/
 
-**Directory:** `.husky/`  
-**Purpose:** Local development safeguards, commit-message validation, and pre-push quality checks  
-**Scope:** Developer workstations and repository workflows  
-**Enforcement boundary:** Local hooks provide safeguards; GitHub Actions and repository rules provide remote enforcement.
+1. Purpose
 
-—
+MedOrbits uses Husky Git hooks to run selected validation checks during Git operations.
 
-## 1. Overview
+The hooks help maintain consistent commit messages, detect common syntax errors, run configured tests, and reduce the risk of pushing broken code.
 
-MedOrbits uses Git hooks to identify common quality issues before changes are committed or pushed. The hooks can validate code, enforce commit-message conventions, and run additional checks when explicitly enabled.
+Hooks are local development safeguards. They do not replace GitHub Actions, code review, dependency auditing, or production security testing.
 
-The intended workflow is:
+2. Directory Structure
 
-1. **Pre-commit:** Run lightweight checks before creating a commit.
-2. **Commit-msg:** Validate the prepared commit subject.
-3. **Pre-push:** Run configured quality checks before sending commits to the remote.
-4. **Continuous integration:** Independently validate proposed changes and enforce repository-wide requirements.
-
-The committed scripts define actual hook behaviour. This README describes the intended contract and must be updated whenever the implementation, configuration, dependencies, or CI policies change.
-
-### Design principles
-
-- **Fail clearly:** A configured check that fails must block the associated Git operation.
-- **Stay efficient:** Keep routine commits reasonably fast; reserve expensive checks for explicit full-validation modes or CI.
-- **Avoid false assurances:** Missing optional scripts must never be presented as successfully executed checks.
-- **Remain reproducible:** Use the supported Node.js version and committed lockfile.
-- **Keep enforcement consistent:** Important quality requirements must also run in CI.
-- **Preserve security:** Do not bypass validation to conceal a real defect.
-
-## 2. Directory structure
-
-Expected layout:
-
-```text
 .husky/
 ├── README.md
-├── pre-commit
 ├── commit-msg
+├── pre-commit
 └── pre-push
 
-.github/
-├── scripts/
-│   └── validate-commit-message.sh
-└── workflows/
-    ├── ci.yml
-    └── ...
+Hook	Purpose
+commit-msg	Validates the commit subject against the configured Conventional Commits format.
+pre-commit	Checks staged JSON and JavaScript files and runs configured quality scripts.
+pre-push	Runs repository checks and configured tests before pushing.
+README.md	Documents hook setup, behavior, and troubleshooting.
 
-package.json
-package-lock.json
-```
+The listed hook files must exist in the repository for the corresponding behavior to be available.
 
-This is a reference layout, not a claim that every file exists. Confirm the actual repository structure before adding, removing, or renaming files.
+3. Requirements
 
-### Hook responsibilities
+Before enabling these hooks, verify that the development environment has:
 
-| Hook | Trigger | Primary responsibility |
-|—|—|—|
-| `pre-commit` | Before a commit is created | Fast local quality checks |
-| `commit-msg` | After the commit message is prepared | Validate the commit subject |
-| `pre-push` | Before a push is sent | Run configured quality checks |
-| GitHub Actions | On configured repository events | Independent CI enforcement |
+* Git.
+* Node.js compatible with the project’s engines requirement.
+* npm, if the project uses npm scripts.
+* Husky installed at a version compatible with the repository configuration.
+* The project’s dependencies installed when a hook requires them.
+* Bash where repository scripts such as VERIFY.sh, TEST.sh, or SCHEMA-CHECK.sh are invoked.
 
-A hook’s presence does not prove that Git invokes it. Husky installation, the configured Git hooks path, executable permissions where required, and the installed Husky version all affect execution.
+Some hooks use POSIX shell syntax; others call Bash scripts. Ensure the required shell is available on each supported development platform.
 
-## 3. Requirements and compatibility
+4. Husky Setup
 
-Required tools depend on the checks enabled by the repository.
+For Husky v9, the root package.json commonly includes the following lifecycle script:
 
-- Git
-- Node.js supported by `package.json` and CI; the current hook contract requires Node.js 20 or newer
-- npm compatible with the project and lockfile
-- Husky installed at the repository-approved version
-- Installed project dependencies
-- A consistent `package.json` and `package-lock.json` when using `npm ci`
-- Real npm scripts for every required validation task
+{
+  “scripts”: {
+    “prepare”: “husky”
+  }
+}
 
-Check the environment from the repository root:
+Merge this entry into the existing scripts object. Do not replace existing scripts or create duplicate JSON keys.
 
-```sh
-git —version
-node —version
-npm —version
-npm ls husky —depth=0
-npm run
-```
+Install project dependencies using the approved development setup, then confirm that Husky initializes correctly.
 
-`npm ls husky —depth=0` can exit non-zero when Husky is absent or the dependency tree is inconsistent. Investigate the result rather than treating the exit code alone as proof of a broader project failure.
+Verify the installed Husky version before applying version-specific setup instructions. Older Husky releases use different configuration conventions.
 
-### Husky version policy
+5. Commit Message Convention
 
-Husky setup commands and configuration conventions differ between major versions. Use the documentation matching the version recorded in `package-lock.json`.
+The commit-msg hook validates the first non-comment, non-empty line of the commit message.
 
-Do not combine legacy Husky initialization instructions with newer hook conventions. Avoid adding deprecated bootstrap lines simply because they appear in an older example.
+Expected format:
 
-## 4. Installation and setup
+type(scope): short description
 
-### Step 1 — Install locked dependencies
+Common types include:
 
-```sh
-npm ci
-```
+* feat — new functionality.
+* fix — bug fix.
+* docs — documentation changes.
+* style — formatting-only changes.
+* refactor — code restructuring.
+* perf — performance improvement.
+* test — tests.
+* build — build system or dependencies.
+* ci — continuous integration.
+* chore — maintenance.
+* revert — reverting a previous change.
 
-Use `npm ci` when the project commits a valid lockfile and reproducible installation is required.
+Examples:
 
-If installation fails, investigate lockfile consistency, registry access, platform-specific dependencies, and the supported Node.js version. Do not immediately delete the lockfile or force dependency upgrades.
+feat(admissions): add course search
+fix(api): handle missing application
+docs: update support guide
+test: add schema validation tests
+chore(deps): update dependencies
 
-### Step 2 — Verify Husky installation
+The exact rules are determined by the committed commit-msg hook. Update this documentation if those rules change.
 
-```sh
-npm ls husky —depth=0
-```
+6. Pre-Commit Checks
 
-If Husky is missing and the project intends to use it, install the version approved for the repository:
+The pre-commit hook may perform the following checks:
 
-```sh
-npm install —save-dev husky
-```
+1. Parse staged JSON files.
+2. Check staged JavaScript syntax.
+3. Run the configured lint script when available.
+4. Run the configured check script when available.
 
-Then follow the setup instructions for that installed major version. For versions supporting the initialization workflow:
+The hook should not install dependencies, stage additional files, create commits, or push changes.
 
-```sh
-npx husky init
-```
+Review the actual hook before relying on it as a mandatory quality gate. In particular, confirm how it handles missing dependencies and validation failures.
 
-Review all generated changes. Initialization must not silently replace existing MedOrbits hook logic or change npm scripts without review.
+Recommended additional checks
 
-### Step 3 — Verify Git’s configured hooks path
+Where appropriate, consider integrating:
 
-```sh
+* Unit tests.
+* JSON Schema validation.
+* Formatting checks.
+* Secret scanning.
+* TypeScript validation.
+* Targeted tests for changed application components.
+
+Avoid making every commit unnecessarily slow. Expensive checks can run in CI or before release.
+
+7. Pre-Push Checks
+
+The pre-push hook may check:
+
+* The repository has a valid HEAD.
+* The Git index contains no unresolved merge conflicts.
+* Tracked JSON files have valid syntax.
+* Tracked JavaScript files pass syntax checks.
+* The configured npm test script passes.
+* Available project verification scripts pass.
+
+A pre-push hook can run against a large portion of the repository and may take longer than the pre-commit hook.
+
+Review its actual behavior before relying on it. Missing dependencies or runtime tools should be handled deliberately rather than silently allowing an unverified release.
+
+8. Repository Safety
+
+Husky hooks should preserve developer work and avoid destructive automation.
+
+They should not automatically:
+
+* Run git reset —hard.
+* Run git clean.
+* Delete project files.
+* Rewrite repository history.
+* Resolve merge conflicts without review.
+* Install or upgrade dependencies unexpectedly.
+* Commit or push additional changes.
+* Deploy to production without an authorized release workflow.
+
+Before resolving conflicts, inspect git status, preserve modified and untracked files, and create a backup outside the repository.
+
+9. Troubleshooting
+
+Hooks do not run
+
+Check that:
+
+* Husky is installed and configured for the current version.
+* The Git hooks path is configured correctly.
+* The hook files are present in .husky/.
+* The files are executable where Unix permissions are supported.
+* The repository’s setup command has been run successfully.
+
+Inspect the configured hooks path with:
+
 git config —get core.hooksPath
-```
 
-Husky commonly configures Git to use an internal hooks directory. The exact setup varies by version.
+A hook fails
 
-If the command returns no value, inspect the installed Husky version and initialization process before assuming hooks are active.
+1. Read the complete error output.
+2. Identify the failing command.
+3. Run that command manually.
+4. Fix the underlying issue.
+5. Rerun the relevant check.
+6. Review the staged diff before committing or pushing again.
 
-Also inspect repository status:
+Do not bypass a failing hook merely to complete a release.
 
-```sh
-git status —short
-```
+Missing dependencies
 
-### Step 4 — Verify hook files
+Install dependencies only through the project’s approved workflow. Do not let a hook automatically upgrade packages or rewrite the lockfile.
 
-```sh
-ls -la .husky/
-```
+Line endings or executable permissions
 
-Where appropriate for the installed Husky version and operating system:
+Ensure shell scripts use compatible line endings and that executable permissions are preserved in Git where applicable.
 
-```sh
-chmod +x .husky/pre-commit
-chmod +x .husky/commit-msg
-chmod +x .husky/pre-push
-```
+10. Testing Hooks Safely
 
-Executable permissions alone do not guarantee that Git invokes the hooks. Validate actual execution with a controlled test commit and push.
+Before adopting changes to hooks across the team:
 
-## 5. Expected npm script contract
+1. Test on a temporary branch.
+2. Use a deliberately invalid commit message to confirm rejection.
+3. Introduce an invalid JSON file in a controlled test to confirm detection.
+4. Confirm that a valid commit passes.
+5. Confirm that failed checks do not alter source files.
+6. Verify the behavior in each supported development environment.
 
-The following table describes the intended interface. Check the root `package.json` before relying on any script.
+Do not use live production credentials or real user data during testing.
 
-| Script | Intended purpose | Policy |
-|—|—|—|
-| `lint` | ESLint validation | Optional in the documented lightweight hooks |
-| `format:check` | Formatting validation | Required in full pre-commit mode; optional in pre-push mode unless repository policy makes it mandatory |
-| `test` | Automated tests | Required in full pre-commit and strict pre-push modes |
-| `build` | Production build | Optional in strict pre-push mode unless explicitly made mandatory |
-| `validate:json` | JSON validation | Required when JSON validation mode is enabled |
+11. Local Hooks and CI
 
-### Script integrity requirements
+Local hooks can be bypassed or may not run in every environment. GitHub Actions and other CI checks should independently validate important release requirements.
 
-A script should:
+The release pipeline should verify, as applicable:
 
-- Execute a real validation task.
-- Exit with status `0` only when its checks pass.
-- Return a non-zero status when validation fails.
-- Avoid silently skipping intended target files.
-- Use dependencies declared by the project.
-- Work in the Node.js environment used by CI.
+* Tests and syntax checks.
+* Dependency and lockfile consistency.
+* Security scanning.
+* Required environment configuration.
+* Build success.
+* Release tag and package version consistency.
 
-Do not add placeholder commands that always succeed to satisfy a hook.
+A successful local hook does not certify that a release is secure or production-ready.
 
-### Inspect available scripts
+12. Maintainer Checklist
 
-```sh
-npm run
-```
+Before publishing the MedOrbits 2.0.0 release:
 
-Run configured checks individually:
+* [ ]	Confirm the installed Husky version.
+* [ ]	Verify the root prepare script.
+* [ ]	Confirm all documented hook files exist.
+* [ ]	Test rejection of invalid commit messages.
+* [ ]	Test failure handling for invalid JSON and JavaScript.
+* [ ]	Verify configured npm scripts exist and behave as expected.
+* [ ]	Confirm hooks do not modify or delete user work unexpectedly.
+* [ ]	Verify required checks also run in CI.
+* [ ]	Update this README when hook behavior changes.
 
-```sh
-npm run lint
-npm run format:check
-npm test
-npm run build
-npm run validate:json
-```
+13. Scope and Limitations
 
-These commands represent the intended interface. If a script is not configured, npm will report that it is unavailable. An absent script is not a successful check.
+Husky hooks are local safeguards, not a complete security boundary. They cannot guarantee that every contributor runs the hooks or that every defect is detected.
 
-## 6. Commit-message conventions
+Security incidents must follow the private reporting procedure in SECURITY.md. Ordinary development issues should use the documented support or issue-reporting process.
 
-The `commit-msg` hook should validate the first non-empty, non-comment line of the prepared commit message, subject to the committed validator’s actual implementation.
+Status: Documentation prepared. Verify the actual hook implementations and Husky configuration before treating these checks as enforced release requirements.
 
-### Required format
+⸻
 
-```text
-type(scope): description
-type: description
-type(scope)!: description
-type!: description
-```
+MedOrbits — Education · Admissions · Careers · Recruitment
 
-The scope and breaking-change marker are optional.
-
-### Supported types
-
-| Type | Intended use |
-|—|—|
-| `feat` | Add a feature |
-| `fix` | Correct a defect |
-| `docs` | Documentation changes |
-| `style` | Formatting or style-only changes |
-| `refactor` | Restructure code without intended behaviour changes |
-| `perf` | Improve performance |
-| `test` | Add or update tests |
-| `build` | Build system or dependency changes |
-| `ci` | Continuous integration changes |
-| `chore` | Maintenance tasks |
-| `revert` | Revert an earlier change |
-
-### Valid examples
-
-```text
-feat(auth): add email verification
-fix(api): handle missing application ID
-docs: update installation guide
-test(admin): cover unauthorized access
-build(deps): update approved dependencies
-ci: validate supported Node.js versions
-chore(deps): refresh lockfile
-feat(api)!: remove deprecated endpoint
-revert: restore previous application validation
-```
-
-### Breaking changes
-
-The `!` marker indicates a breaking change:
-
-```text
-feat(api)!: remove deprecated endpoint
-```
-
-A subject marker does not automatically guarantee that the full commit body or footer follows every Conventional Commits requirement. If the project requires a `BREAKING CHANGE:` footer, issue references, or body formatting, implement and test those rules separately.
-
-### Subject validation rules
-
-The documented validator is intended to enforce:
-
-- A supported, lowercase commit type.
-- An optional, non-empty scope using permitted characters.
-- A colon followed by exactly one ordinary space.
-- A non-empty description.
-- A description beginning with a non-whitespace character.
-- A maximum subject length of 100 characters by default.
-- No leading or trailing subject whitespace.
-
-The exact regular expression, character-counting behaviour, and handling of comments or line endings are determined by the committed validator.
-
-### Invalid examples
-
-```text
-Feature(auth): add email verification
-feat(auth):  add email verification
-feat(): add email verification
-feat(auth) add email verification
-feat(auth):
-unknown: update validation
-```
-
-These examples contain an unsupported type, an incorrect separator, an empty scope, or a missing description.
-
-### Character limit
-
-The documented default limit is 100 characters.
-
-If the committed validator supports `MAX_SUBJECT_LENGTH`, the limit can be overridden for a single invocation:
-
-```sh
-MAX_SUBJECT_LENGTH=120 \
-  .github/scripts/validate-commit-message.sh \
-  .git/COMMIT_EDITMSG
-```
-
-Do not assume the override works until the committed script implements it. Keep the README, validator, tests, and CI behaviour synchronized.
-
-## 7. Pre-commit hook
-
-**File:** `.husky/pre-commit`
-
-The intended lightweight workflow is:
-
-1. Identify the repository root.
-2. Verify that required project files and tools are available.
-3. Run `npm run lint` if configured.
-4. Clearly warn if an optional lint script is missing.
-5. Run formatting and test checks when full mode is enabled.
-6. Stop the commit if an executed check fails.
-
-### Standard mode
-
-```sh
-git commit -m “feat: improve validation”
-```
-
-### Full pre-commit mode
-
-If implemented by the committed hook:
-
-```sh
-MEDORBITS_PRECOMMIT_FULL=1 \
-  git commit -m “feat: improve validation”
-```
-
-The variable applies to that command and its child processes. It does not permanently change the environment.
-
-Full mode should only be considered successful when every check required by the implementation has passed. If formatting or testing is not configured, the hook must communicate the omission clearly.
-
-### Recommended scope
-
-Keep default pre-commit checks fast. Run the full test suite or production build locally when needed, and always enforce required checks in CI.
-
-For repositories that require linting before committing, consider staged-file linting rather than linting the entire repository on every commit. Adopt this only when the project has a suitable, tested implementation.
-
-## 8. Commit-msg hook
-
-**File:** `.husky/commit-msg`
-
-The intended workflow is:
-
-1. Accept the commit-message file path supplied by Git.
-2. Verify that the file exists and is readable.
-3. Locate the first non-empty, non-comment subject line.
-4. Validate the subject against the approved convention.
-5. Return a non-zero exit status for an invalid message.
-
-### Manual verification
-
-If the repository’s configured validator supports standalone invocation:
-
-```sh
-.github/scripts/validate-commit-message.sh /path/to/commit-message.txt
-```
-
-Create a temporary message file containing a valid subject and another containing an invalid subject to test both outcomes. Avoid modifying the actual Git commit message file during manual testing.
-
-| Scenario | Expected outcome |
-|—|—|
-| Supported type and valid description | Pass |
-| Unsupported type | Fail |
-| Missing colon or required space | Fail |
-| Empty scope | Fail |
-| Empty description | Fail |
-| Subject exceeds configured maximum | Fail |
-| Empty or comment-only message | Fail |
-
-Confirm these outcomes against the committed validator and its tests.
-
-## 9. Pre-push hook
-
-**File:** `.husky/pre-push`
-
-The intended workflow is:
-
-1. Identify the repository root.
-2. Verify required files and tools.
-3. Validate the root `package.json`.
-4. Run linting if configured.
-5. Warn when optional scripts are absent.
-6. In strict mode, require and execute the test script.
-7. Execute configured formatting and build checks in strict mode.
-8. Run JSON validation when its mode is implemented and enabled.
-9. Block the push if a required or executed check fails.
-
-### Standard mode
-
-```sh
-git push
-```
-
-### Strict mode
-
-If supported by the committed hook:
-
-```sh
-MEDORBITS_PREPUSH_FULL=1 git push
-```
-
-Strict mode should require a real test script. A missing required script must block the push rather than being silently skipped.
-
-Formatting and build validation may remain optional in strict mode only if the implementation and repository policy explicitly permit that behaviour. If either is mandatory for MedOrbits, make it mandatory in both the hook and CI.
-
-### Optional JSON validation
-
-If the hook supports the relevant environment variable and `validate:json` is implemented:
-
-```sh
-MEDORBITS_PREPUSH_JSON=1 git push
-```
-
-To combine both modes:
-
-```sh
-MEDORBITS_PREPUSH_FULL=1 \
-MEDORBITS_PREPUSH_JSON=1 \
-git push
-```
-
-The JSON mode must invoke a real validator. Do not infer support from this documentation alone.
-
-### What pre-push does not guarantee
-
-A successful pre-push hook does not prove that:
-
-- The remote branch has no conflicts.
-- The pushed changes will pass CI.
-- Every required test ran if tests are optional in the current mode.
-- The server will accept the push.
-- Repository branch-protection requirements have been satisfied.
-
-Remote policy and CI remain authoritative.
-
-## 10. Recommended verification matrix
-
-| Scenario | Expected behaviour |
-|—|—|
-| Valid commit subject | Commit-message validation passes |
-| Invalid commit subject | Commit is blocked |
-| Configured lint check fails | Applicable hook fails |
-| Optional lint script is missing | Explicit warning if skipping is supported |
-| Strict mode has no test script | Push is blocked |
-| Required test fails | Operation is blocked |
-| Optional formatting script is missing | Explicit warning if skipping is supported |
-| JSON mode enabled without its validator | Fail clearly; do not claim JSON validation passed |
-| Required project file is missing | Fail with a useful diagnostic |
-| Dependencies are missing | Fail clearly when the check requires them |
-| CI validation fails | Required remote status check prevents merging |
-| Hook is bypassed locally | CI and repository rules still enforce required checks |
-
-Adjust expected outcomes if the committed scripts intentionally implement a different policy.
-
-## 11. GitHub Actions and branch protection
-
-Local hooks are not a security boundary. They can be bypassed, omitted, or disabled in some environments.
-
-For reliable repository-wide enforcement:
-
-- Run required lint, formatting, test, and build checks in GitHub Actions.
-- Use the supported Node.js version from project configuration.
-- Install locked dependencies with `npm ci` where appropriate.
-- Require successful CI checks before merging protected branches.
-- Require pull requests and reviews according to project policy.
-- Validate the revision under review, not an unrelated local working tree.
-- Avoid making CI depend on a developer’s local Husky installation.
-- Use appropriate workflow permissions and pin third-party actions according to repository policy.
-- Keep secrets out of logs and untrusted pull-request execution contexts.
-- Enforce authorization, data validation, and other security-critical controls in the application or server, not only in local hooks.
-
-### Local checks versus CI
-
-| Control | Local hooks | CI / repository rules |
-|—|—|—|
-| Fast feedback before committing | Primary purpose | Secondary |
-| Prevent invalid local commit subjects | Yes, when enabled | Can validate commits independently |
-| Prevent invalid pushes from a workstation | Yes, when enabled | Does not depend on local hooks |
-| Enforce required checks for all contributors | No | Yes, when configured as required |
-| Enforce application authorization | No | Application/server responsibility |
-| Guarantee production readiness | No | CI contributes evidence; deployment controls also matter |
-
-## 12. Troubleshooting
-
-### A hook does not run
-
-Check the repository root, hook path, and installed Husky version:
-
-```sh
-git rev-parse —show-toplevel
-git config —get core.hooksPath
-npm ls husky —depth=0
-```
-
-Inspect the hook files:
-
-```sh
-ls -la .husky/
-```
-
-Check for:
-
-- Missing Husky initialization.
-- Incorrect hook filenames or locations.
-- Shell syntax errors.
-- Invalid quotation marks or copied typographic punctuation.
-- Unexpected line endings.
-- Missing executable permissions where required.
-- A custom Git hooks path that points elsewhere.
-- Environment settings or commands that bypass hooks.
-
-### A commit is rejected
-
-Read the diagnostic and correct the underlying issue.
-
-For a commit-message failure, inspect:
-
-- Type spelling and capitalization.
-- Scope parentheses and allowed characters.
-- Colon and required space.
-- Description content.
-- Subject length.
-- The exact pattern enforced by the committed validator.
-
-### A push is rejected
-
-Run the applicable checks manually:
-
-```sh
-npm run lint
-npm test
-npm run format:check
-npm run build
-```
-
-Only run scripts that are configured. If strict mode requires a missing test script, implement a real test command and verify it locally and in CI.
-
-If the failure is a Git or remote rejection rather than a quality check, inspect the Git output and remote repository policy separately.
-
-### A check is skipped
-
-Inspect the available scripts:
-
-```sh
-npm run
-```
-
-A missing optional script may explain a warning. If the check is required for MedOrbits, add a real implementation, update the hook, and enforce it in CI.
-
-### Dependencies are missing
-
-```sh
-npm ci
-```
-
-Investigate installation errors, supported Node.js versions, registry access, and lockfile consistency before changing dependencies.
-
-### CI and local results differ
-
-Compare:
-
-- Node.js and npm versions.
-- Dependency lockfile and installation procedure.
-- Environment variables.
-- Operating system and shell.
-- Script arguments and working directory.
-- Generated files and environment-specific configuration.
-- The exact Git revision being tested.
-
-Use CI as the authoritative result for required remote checks.
-
-## 13. Security and reliability policy
-
-The following practices apply to all MedOrbits hooks:
-
-1. Never hard-code credentials, tokens, or API keys.
-2. Do not print sensitive environment variables.
-3. Do not treat a missing required check as a pass.
-4. Do not suppress non-zero exit statuses from required validation.
-5. Keep hooks deterministic and reasonably fast.
-6. Quote shell variables when passing paths and arguments.
-7. Validate external input and never execute commit-message content as shell code.
-8. Keep hooks compatible with the declared shell and supported development environments.
-9. Review changes to hook scripts, npm scripts, and CI workflows.
-10. Enforce security-sensitive policies server-side.
-11. Avoid automatic dependency upgrades as part of ordinary commit validation.
-12. Keep error messages actionable without exposing secrets or sensitive repository data.
-
-### Bypass policy
-
-Git provides mechanisms to bypass local hooks. Such bypasses must not be used to evade required checks.
-
-Even if local hooks are bypassed, required CI checks and protected-branch rules should continue to apply. Any emergency exception should follow the repository’s documented review and authorization process.
-
-## 14. Maintenance and change control
-
-Whenever hook behaviour changes:
-
-1. Update the affected hook.
-2. Update this README.
-3. Verify `package.json` and `package-lock.json`.
-4. Confirm every required npm script exists.
-5. Test successful and failing validation cases.
-6. Test standard and strict modes.
-7. Test optional JSON validation if implemented.
-8. Confirm commit-message examples match the actual regular expression.
-9. Run the corresponding CI workflow.
-10. Review the final diff and ensure only intended files are included.
-
-### Definition of done
-
-A hook change is complete when:
-
-- The intended behaviour is implemented.
-- Missing or invalid prerequisites fail clearly.
-- Success and failure paths have been tested.
-- Documentation matches the implementation.
-- CI enforces mandatory repository-wide policy.
-- No secrets or unrelated configuration changes were introduced.
-
-## 15. Final operational checklist
-
-- [ ] Husky is installed at the expected version.
-- [ ] Git is configured to invoke the intended hooks.
-- [ ] `.husky/pre-commit` exists and has been tested.
-- [ ] `.husky/commit-msg` exists and has been tested.
-- [ ] `.husky/pre-push` exists and has been tested.
-- [ ] The commit-message validator is present at its configured location.
-- [ ] Supported npm scripts are documented accurately.
-- [ ] Strict pre-push mode rejects a missing required test script.
-- [ ] Optional JSON validation is implemented before being relied upon.
-- [ ] Standard and strict modes have been verified.
-- [ ] GitHub Actions runs required checks independently.
-- [ ] Protected branches require relevant CI status checks.
-- [ ] Documentation reflects the current implementation.
-
-—
-
-**Maintenance principle:** MedOrbits Git hooks should provide fast, predictable local feedback while CI and repository rules enforce the checks that must apply to every contributor.
+Study · Work · Grow

@@ -1,27 +1,25 @@
-
 "use strict";
 
 /**
- * MedOrbits -- Admissions Routes
- * File: /api/routes/admissions.js
- *
- * Runtime: Node.js 20+
- * Framework: Express
- *
- * Responsibilities:
- * - Register admission-related API endpoints.
- * - Apply authentication and authorization.
- * - Validate incoming request payloads.
- * - Delegate business logic to the admissions service.
- * - Forward unexpected errors to centralized error middleware.
- *
- * Expected integration:
- * - ../middlerware/validation.js
- * - ../services/admissions-service.js
- *
- * Adapt middleware imports and service methods to match the
- * actual exports in your repository.
- */
+
+* MedOrbits -- Admissions API Routes
+* File: /api/routes/admissions.js
+* Runtime: Node.js 20+
+* Framework: Express
+* Mount:
+* app.use("/api/admissions", require("./api/routes/admissions"));
+* Dependencies:
+* ../services/admissions-service
+* ../middlerware/authorization
+* ../middlerware/validation
+* Security:
+* ●	Applicant ownership is derived from req.user by the service.
+* ●	Client input cannot set applicantId, reviewerId, status, or audit fields.
+* ●	Review actions require explicit admissions:review permission.
+* ●	The service enforces workflow transitions, deadlines, and eligibility.
+* ●	Document IDs must be authorized references, not trusted file paths.
+* ●	Unexpected errors are forwarded to centralized error middleware.
+        */
 
 const express = require("express");
 
@@ -30,615 +28,668 @@ const router = express.Router();
 const admissionsService = require("../services/admissions-service");
 
 const {
-  authenticate,
-  authorize
+authenticate,
+authorize
 } = require("../middlerware/authorization");
 
 const {
-  validateBody,
-  validateParams,
-  validateQuery
+validateBody,
+validateParams,
+validateQuery
 } = require("../middlerware/validation");
 
-const RESOURCE_NAME = "admission";
-const RESOURCE_ID_PATTERN = "^[A-Za-z0-9_-]{1,100}$";
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Configuration                                                              /
+/ ––––––––––––––––––––––––––––––––––––– */
 
-/**
- * Validate an identifier using the route parameter schema.
- *
- * This schema is local to this module, so it does not require
- * an additional schema file.
- */
-const admissionIdSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    admissionId: {
-      type: "string",
-      pattern: RESOURCE_ID_PATTERN
-    }
-  },
-  required: ["admissionId"]
-};
+const DIALECT = "https://json-schema.org/draft/2020-12/schema";
 
-/**
- * Pagination query schema.
- */
-const paginationSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    page: {
-      type: "string",
-      pattern: "^[1-9][0-9]{0,5}$"
-    },
-    limit: {
-      type: "string",
-      pattern: "^[1-9][0-9]{0,2}$"
-    },
-    status: {
-      type: "string",
-      enum: [
-        "draft",
-        "submitted",
-        "under-review",
-        "documents-required",
-        "approved",
-        "rejected",
-        "waitlisted",
-        "withdrawn",
-        "closed"
-      ]
-    },
-    course: {
-      type: "string",
-      minLength: 1,
-      maxLength: 150
-    },
-    academicYear: {
-      type: "string",
-      pattern: "^[0-9]{4}(-[0-9]{4})?$"
-    },
-    search: {
-      type: "string",
-      maxLength: 150
-    },
-    sortBy: {
-      type: "string",
-      enum: [
-        "createdAt",
-        "updatedAt",
-        "applicationNumber",
-        "status"
-      ]
-    },
-    sortOrder: {
-      type: "string",
-      enum: ["asc", "desc"]
-    }
-  }
-};
+const ID_PATTERN = "^[A-Za-z0-9_-]{1,100}$";
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_PAGE = 100000;
+const MAX_LIMIT = 100;
 
-/**
- * Application creation schema.
- *
- * Replace or extend this definition to match the actual
- * application.schema.json contract.
- *
- * Server-managed fields, including applicant ownership,
- * internal review decisions, and privileged status changes,
- * must not be accepted from untrusted clients.
- */
-const createAdmissionSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    courseId: {
-      type: "string",
-      minLength: 1,
-      maxLength: 100
-    },
-    institutionId: {
-      type: "string",
-      minLength: 1,
-      maxLength: 100
-    },
-    academicYear: {
-      type: "string",
-      pattern: "^[0-9]{4}-[0-9]{4}$"
-    },
-    applicantDetails: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        firstName: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
-        },
-        lastName: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
-        },
-        email: {
-          type: "string",
-          format: "email",
-          maxLength: 254
-        },
-        phone: {
-          type: "string",
-          pattern: "^\\+[1-9][0-9]{7,14}$"
-        }
-      },
-      required: [
-        "firstName",
-        "lastName",
-        "email",
-        "phone"
-      ]
-    },
-    preferences: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        preferredLocation: {
-          type: "string",
-          maxLength: 150
-        },
-        preferredCourse: {
-          type: "string",
-          maxLength: 150
-        },
-        notes: {
-          type: "string",
-          maxLength: 3000
-        }
-      }
-    },
-    documents: {
-      type: "array",
-      maxItems: 50,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          documentId: {
-            type: "string",
-            minLength: 1,
-            maxLength: 100
-          },
-          documentType: {
-            type: "string",
-            minLength: 1,
-            maxLength: 100
-          }
-        },
-        required: [
-          "documentId",
-          "documentType"
-        ]
-      }
-    }
-  },
-  required: [
-    "courseId",
-    "institutionId",
-    "academicYear",
-    "applicantDetails"
-  ]
-};
+const ADMISSION_STATUSES = [
+"draft",
+"submitted",
+"under-review",
+"documents-required",
+"approved",
+"rejected",
+"waitlisted",
+"withdrawn",
+"closed"
+];
 
-/**
- * Update schema intentionally excludes fields such as:
- * applicantId, status, reviewerId, approvedAt, and createdAt.
- *
- * Only fields approved for applicant editing should be added.
- */
-const updateAdmissionSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  type: "object",
-  additionalProperties: false,
-  minProperties: 1,
-  properties: {
-    applicantDetails: {
-      type: "object",
-      additionalProperties: false,
-      minProperties: 1,
-      properties: {
-        firstName: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
-        },
-        lastName: {
-          type: "string",
-          minLength: 1,
-          maxLength: 100
-        },
-        email: {
-          type: "string",
-          format: "email",
-          maxLength: 254
-        },
-        phone: {
-          type: "string",
-          pattern: "^\\+[1-9][0-9]{7,14}$"
-        }
-      }
-    },
-    preferences: {
-      type: "object",
-      additionalProperties: false,
-      minProperties: 1,
-      properties: {
-        preferredLocation: {
-          type: "string",
-          maxLength: 150
-        },
-        preferredCourse: {
-          type: "string",
-          maxLength: 150
-        },
-        notes: {
-          type: "string",
-          maxLength: 3000
-        }
-      }
-    }
-  }
-};
+const REVIEW_DECISIONS = [
+"approved",
+"rejected",
+"documents-required",
+"waitlisted"
+];
 
-/**
- * Ensure the configured service method exists.
- * Missing methods are integration errors, not client errors.
- */
-function requireServiceMethod(methodName) {
-  if (
-    !admissionsService ||
-    typeof admissionsService[methodName] !== "function"
-  ) {
-    const error = new Error(
-      `Admissions service method "${methodName}" is not configured.`
-    );
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Response helpers                                                           /
+/ ––––––––––––––––––––––––––––––––––––– */
 
-    error.status = 500;
-    error.code = "SERVICE_CONFIGURATION_ERROR";
-
-    throw error;
-  }
-
-  return admissionsService[methodName].bind(admissionsService);
+function setResponseHeaders(res) {
+res.set({
+"Cache-Control": "no-store, no-cache, must-revalidate, private",
+Pragma: "no-cache",
+Expires: "0",
+"X-Content-Type-Options": "nosniff"
+});
 }
 
-/**
- * Route-level async error forwarding.
- */
+function successResponse(
+res,
+data,
+message,
+statusCode = 200
+) {
+setResponseHeaders(res);
+
+return res.status(statusCode).json({
+success: true,
+message,
+data
+});
+}
+
+function failureResponse(res, statusCode, code, message) {
+setResponseHeaders(res);
+
+return res.status(statusCode).json({
+success: false,
+error: {
+code,
+message
+}
+});
+}
+
 function asyncHandler(handler) {
-  return function wrappedHandler(req, res, next) {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
+return function wrappedHandler(req, res, next) {
+Promise.resolve()
+.then(() => handler(req, res, next))
+.catch(next);
+};
+}
+
+function httpError(status, code, message) {
+const error = new Error(message);
+error.status = status;
+error.statusCode = status;
+error.code = code;
+error.expose = status < 500;
+
+return error;
+}
+
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Service helpers                                                            /
+/ ––––––––––––––––––––––––––––––––––––– */
+
+function requireServiceMethod(methodName) {
+if (
+!admissionsService ||
+typeof admissionsService[methodName] !== "function"
+) {
+throw httpError(
+500,
+"ADMISSIONS_SERVICE_MISCONFIGURED",
+"A required admissions service operation is unavailable."
+);
+}
+
+return admissionsService[methodName].bind(admissionsService);
+}
+
+async function callAdmissionsService(methodName, …args) {
+return requireServiceMethod(methodName)(…args);
+}
+
+function requireResult(result, res) {
+if (result === null || result === undefined) {
+failureResponse(
+res,
+404,
+"ADMISSION_NOT_FOUND",
+"The requested admission was not found."
+);
+
+return false;
+
+}
+
+return true;
 }
 
 /**
- * Standard success response.
- */
-function successResponse(res, data, message, statusCode = 200) {
-  return res.status(statusCode).json({
-    success: true,
-    message,
-    data
-  });
+
+* URL query values are strings.
+* Keep pagination bounded even if validation middleware is misconfigured.
+    */
+    function parsePositiveInteger(value, fallback, maximum) {
+    if (value === undefined) {
+    return fallback;
+    }
+
+const normalized = String(value);
+
+if (!/^[1-9]\d*$/.test(normalized)) {
+throw httpError(
+400,
+"INVALID_PAGINATION",
+"Pagination parameters must be positive integers."
+);
 }
 
-/**
- * GET /api/admissions
- *
- * List admissions visible to the authenticated user.
- * The service must enforce applicant ownership or administrative
- * access and must apply pagination at the database level.
- */
-router.get(
-  "/",
-  authenticate,
-  authorize("admissions:read"),
-  validateQuery(paginationSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("listAdmissions")({
-      user: req.user,
-      query: {
-        page: Number(req.query.page || 1),
-        limit: Math.min(Number(req.query.limit || 20), 100),
-        status: req.query.status,
-        course: req.query.course,
-        academicYear: req.query.academicYear,
-        search: req.query.search,
-        sortBy: req.query.sortBy || "createdAt",
-        sortOrder: req.query.sortOrder || "desc"
-      }
-    });
+const parsed = Number(normalized);
 
-    return successResponse(
-      res,
-      result,
-      "Admissions retrieved successfully."
-    );
-  })
+if (!Number.isSafeInteger(parsed)) {
+throw httpError(
+400,
+"INVALID_PAGINATION",
+"Pagination parameters are outside the supported range."
 );
+}
+
+return Math.min(parsed, maximum);
+}
+
+function getPagination(query) {
+return {
+page: parsePositiveInteger(
+query.page,
+DEFAULT_PAGE,
+MAX_PAGE
+),
+limit: parsePositiveInteger(
+query.limit,
+DEFAULT_LIMIT,
+MAX_LIMIT
+)
+};
+}
+
+function getListFilters(query) {
+return {
+…getPagination(query),
+status: query.status,
+course: query.course,
+academicYear: query.academicYear,
+search: query.search,
+sortBy: query.sortBy || "createdAt",
+sortOrder: query.sortOrder || "desc"
+};
+}
+
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Validation schemas                                                         /
+/ ––––––––––––––––––––––––––––––––––––– */
+
+const admissionIdSchema = {
+$schema: DIALECT,
+type: "object",
+properties: {
+admissionId: {
+type: "string",
+pattern: ID_PATTERN
+}
+},
+required: ["admissionId"],
+additionalProperties: false
+};
+
+const paginationSchema = {
+$schema: DIALECT,
+type: "object",
+properties: {
+page: {
+type: "string",
+pattern: "^[1-9]{0,5}$"
+},
+limit: {
+type: "string",
+pattern: "^[1-9]{0,2}$"
+},
+status: {
+type: "string",
+enum: ADMISSION_STATUSES
+},
+course: {
+type: "string",
+minLength: 1,
+maxLength: 150
+},
+academicYear: {
+type: "string",
+pattern: "^[0-9]{4}(?:-[0-9]{4})?$"
+},
+search: {
+type: "string",
+minLength: 1,
+maxLength: 150
+},
+sortBy: {
+type: "string",
+enum: [
+"createdAt",
+"updatedAt",
+"applicationNumber",
+"status"
+]
+},
+sortOrder: {
+type: "string",
+enum: ["asc", "desc"]
+}
+},
+additionalProperties: false
+};
+
+const applicantDetailsSchema = {
+type: "object",
+properties: {
+firstName: {
+type: "string",
+minLength: 1,
+maxLength: 100,
+pattern: ".\S."
+},
+lastName: {
+type: "string",
+minLength: 1,
+maxLength: 100,
+pattern: ".\S."
+},
+email: {
+type: "string",
+format: "email",
+maxLength: 254
+},
+phone: {
+type: "string",
+pattern: "^\+[1-9][0-9]{7,14}$"
+}
+},
+required: [
+"firstName",
+"lastName",
+"email",
+"phone"
+],
+additionalProperties: false
+};
+
+const preferencesSchema = {
+type: "object",
+properties: {
+preferredLocation: {
+type: "string",
+maxLength: 150
+},
+preferredCourse: {
+type: "string",
+maxLength: 150
+},
+notes: {
+type: "string",
+maxLength: 3000
+}
+},
+additionalProperties: false
+};
+
+const documentsSchema = {
+type: "array",
+maxItems: 50,
+items: {
+type: "object",
+properties: {
+documentId: {
+type: "string",
+pattern: ID_PATTERN
+},
+documentType: {
+type: "string",
+minLength: 1,
+maxLength: 100
+}
+},
+required: [
+"documentId",
+"documentType"
+],
+additionalProperties: false
+}
+};
+
+const createAdmissionSchema = {
+$schema: DIALECT,
+type: "object",
+properties: {
+courseId: {
+type: "string",
+pattern: ID_PATTERN
+},
+institutionId: {
+type: "string",
+pattern: ID_PATTERN
+},
+academicYear: {
+type: "string",
+pattern: "^[0-9]{4}-[0-9]{4}$"
+},
+applicantDetails: applicantDetailsSchema,
+preferences: preferencesSchema,
+documents: documentsSchema
+},
+required: [
+"courseId",
+"institutionId",
+"academicYear",
+"applicantDetails"
+],
+additionalProperties: false
+};
+
+const updateAdmissionSchema = {
+$schema: DIALECT,
+type: "object",
+minProperties: 1,
+properties: {
+applicantDetails: {
+…applicantDetailsSchema,
+required: undefined,
+minProperties: 1
+},
+preferences: {
+…preferencesSchema,
+minProperties: 1
+},
+documents: documentsSchema
+},
+additionalProperties: false
+};
+
+const reviewAdmissionSchema = {
+$schema: DIALECT,
+type: "object",
+properties: {
+decision: {
+type: "string",
+enum: REVIEW_DECISIONS
+},
+note: {
+type: "string",
+maxLength: 3000
+}
+},
+required: ["decision"],
+additionalProperties: false
+};
+
+const withdrawAdmissionSchema = {
+$schema: DIALECT,
+type: "object",
+properties: {
+reason: {
+type: "string",
+maxLength: 2000
+}
+},
+additionalProperties: false
+};
+
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Applicant routes                                                           /
+/ ––––––––––––––––––––––––––––––––––––– */
 
 /**
- * POST /api/admissions
- *
- * Create an admission application for the authenticated user.
- * Applicant ownership must be derived from req.user on the server.
- */
-router.post(
-  "/",
-  authenticate,
-  authorize("admissions:create"),
-  validateBody(createAdmissionSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("createAdmission")({
-      user: req.user,
-      payload: req.body
-    });
 
-    return successResponse(
-      res,
-      result,
-      "Admission application created successfully.",
-      201
-    );
-  })
-);
-
-/**
- * GET /api/admissions/:admissionId
- *
- * Retrieve one admission application after authorization.
- */
-router.get(
-  "/:admissionId",
-  authenticate,
-  authorize("admissions:read"),
-  validateParams(admissionIdSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("getAdmissionById")({
-      user: req.user,
-      admissionId: req.params.admissionId
-    });
-
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "ADMISSION_NOT_FOUND",
-          message: "The requested admission was not found."
-        }
-      });
+* GET /api/admissions
+* The service must return only records the caller is permitted to view.
+* Administrative visibility must be enforced by server-side permissions.
+    */
+    router.get(
+    "/",
+    authenticate,
+    authorize("admissions:read"),
+    validateQuery(paginationSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "listAdmissions",
+    {
+    user: req.user,
+    query: getListFilters(req.query)
     }
-
-    return successResponse(
-      res,
-      result,
-      "Admission retrieved successfully."
     );
-  })
-);
+    return successResponse(
+    res,
+    result,
+    "Admissions retrieved successfully."
+    );
+    })
+    );
 
 /**
- * PATCH /api/admissions/:admissionId
- *
- * Update applicant-editable fields only.
- * The service must verify ownership and enforce workflow rules.
- */
-router.patch(
-  "/:admissionId",
-  authenticate,
-  authorize("admissions:update"),
-  validateParams(admissionIdSchema),
-  validateBody(updateAdmissionSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("updateAdmission")({
-      user: req.user,
-      admissionId: req.params.admissionId,
-      payload: req.body
-    });
 
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "ADMISSION_NOT_FOUND",
-          message: "The requested admission was not found."
-        }
-      });
+* POST /api/admissions
+* The service derives applicant ownership from req.user.
+* Client-supplied ownership and status fields are rejected by schema.
+    */
+    router.post(
+    "/",
+    authenticate,
+    authorize("admissions:create"),
+    validateBody(createAdmissionSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "createAdmission",
+    {
+    user: req.user,
+    payload: req.body
     }
-
-    return successResponse(
-      res,
-      result,
-      "Admission updated successfully."
     );
-  })
-);
+    return successResponse(
+    res,
+    result,
+    "Admission application created successfully.",
+    201
+    );
+    })
+    );
 
 /**
- * POST /api/admissions/:admissionId/submit
- *
- * Submit a previously created draft.
- * Submission eligibility, document completeness, deadlines,
- * and status transitions must be enforced by the service.
- */
-router.post(
-  "/:admissionId/submit",
-  authenticate,
-  authorize("admissions:submit"),
-  validateParams(admissionIdSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("submitAdmission")({
-      user: req.user,
-      admissionId: req.params.admissionId
-    });
 
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "ADMISSION_NOT_FOUND",
-          message: "The requested admission was not found."
-        }
-      });
+* GET /api/admissions/:admissionId/status
+* Registered before the generic ID route for explicit route ordering.
+* Return only applicant-visible status information.
+    */
+    router.get(
+    "/:admissionId/status",
+    authenticate,
+    authorize("admissions:read"),
+    validateParams(admissionIdSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "getAdmissionStatus",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId
     }
-
-    return successResponse(
-      res,
-      result,
-      "Admission submitted successfully."
     );
-  })
-);
-
-/**
- * POST /api/admissions/:admissionId/withdraw
- *
- * Withdraw an application if the current workflow permits it.
- */
-router.post(
-  "/:admissionId/withdraw",
-  authenticate,
-  authorize("admissions:withdraw"),
-  validateParams(admissionIdSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("withdrawAdmission")({
-      user: req.user,
-      admissionId: req.params.admissionId
-    });
-
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "ADMISSION_NOT_FOUND",
-          message: "The requested admission was not found."
-        }
-      });
+    if (!requireResult(result, res)) {
+    return;
     }
-
     return successResponse(
-      res,
-      result,
-      "Admission withdrawal processed successfully."
+    res,
+    result,
+    "Admission status retrieved successfully."
     );
-  })
-);
+    })
+    );
 
 /**
- * GET /api/admissions/:admissionId/status
- *
- * Return the current application status without exposing
- * internal moderation notes or restricted reviewer data.
- */
-router.get(
-  "/:admissionId/status",
-  authenticate,
-  authorize("admissions:read"),
-  validateParams(admissionIdSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("getAdmissionStatus")({
-      user: req.user,
-      admissionId: req.params.admissionId
-    });
 
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "ADMISSION_NOT_FOUND",
-          message: "The requested admission was not found."
-        }
-      });
+* POST /api/admissions/:admissionId/submit
+    */
+    router.post(
+    "/:admissionId/submit",
+    authenticate,
+    authorize("admissions:submit"),
+    validateParams(admissionIdSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "submitAdmission",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId
     }
-
-    return successResponse(
-      res,
-      result,
-      "Admission status retrieved successfully."
     );
-  })
-);
+    if (!requireResult(result, res)) {
+    return;
+    }
+    return successResponse(
+    res,
+    result,
+    "Admission submission processed successfully."
+    );
+    })
+    );
 
 /**
- * POST /api/admissions/:admissionId/review
- *
- * Administrative review endpoint.
- *
- * The admissions:review permission must only be granted to
- * authorized reviewers. The service must validate permitted
- * state transitions and record an audit event.
- */
-router.post(
-  "/:admissionId/review",
-  authenticate,
-  authorize("admissions:review"),
-  validateParams(admissionIdSchema),
-  asyncHandler(async (req, res) => {
-    const reviewSchema = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        decision: {
-          type: "string",
-          enum: [
-            "approved",
-            "rejected",
-            "documents-required",
-            "waitlisted"
-          ]
-        },
-        note: {
-          type: "string",
-          maxLength: 3000
-        }
-      },
-      required: ["decision"]
-    };
 
-    const validateReview = validateBody(reviewSchema);
+* POST /api/admissions/:admissionId/withdraw
+    */
+    router.post(
+    "/:admissionId/withdraw",
+    authenticate,
+    authorize("admissions:withdraw"),
+    validateParams(admissionIdSchema),
+    validateBody(withdrawAdmissionSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "withdrawAdmission",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId,
+    reason: req.body.reason
+    }
+    );
+    if (!requireResult(result, res)) {
+    return;
+    }
+    return successResponse(
+    res,
+    result,
+    "Admission withdrawal processed successfully."
+    );
+    })
+    );
 
-    // Run the project's standard validation middleware before
-    // processing the review decision.
-    return validateReview(req, res, (validationError) => {
-      if (validationError) {
-        return res.status(500).json({
-          success: false,
-          error: {
-            code: "VALIDATION_PIPELINE_ERROR",
-            message: "The review request could not be validated."
-          }
-        });
-      }
+/**
 
-      return asyncHandler(async () => {
-        const result = await requireServiceMethod("reviewAdmission")({
-          user: req.user,
-          admissionId: req.params.admissionId,
-          decision: req.body.decision,
-          note: req.body.note
-        });
+* PATCH /api/admissions/:admissionId
+* Applicants may update only fields allowed by the workflow.
+* The service must enforce ownership and editability of the application.
+    */
+    router.patch(
+    "/:admissionId",
+    authenticate,
+    authorize("admissions:update"),
+    validateParams(admissionIdSchema),
+    validateBody(updateAdmissionSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "updateAdmission",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId,
+    payload: req.body
+    }
+    );
+    if (!requireResult(result, res)) {
+    return;
+    }
+    return successResponse(
+    res,
+    result,
+    "Admission updated successfully."
+    );
+    })
+    );
 
-        return successResponse(
-          res,
-          result,
-          "Admission review processed successfully."
-        );
-      })(req, res, next);
-    });
-  })
-);
+/**
+
+* GET /api/admissions/:admissionId
+    */
+    router.get(
+    "/:admissionId",
+    authenticate,
+    authorize("admissions:read"),
+    validateParams(admissionIdSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "getAdmissionById",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId
+    }
+    );
+    if (!requireResult(result, res)) {
+    return;
+    }
+    return successResponse(
+    res,
+    result,
+    "Admission retrieved successfully."
+    );
+    })
+    );
+
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Reviewer routes                                                            /
+/ ––––––––––––––––––––––––––––––––––––– */
+
+/**
+
+* POST /api/admissions/:admissionId/review
+* Review permission must be granted only to authorized reviewers.
+* The service must validate state transitions and write an audit record.
+    */
+    router.post(
+    "/:admissionId/review",
+    authenticate,
+    authorize("admissions:review"),
+    validateParams(admissionIdSchema),
+    validateBody(reviewAdmissionSchema),
+    asyncHandler(async (req, res) => {
+    const result = await callAdmissionsService(
+    "reviewAdmission",
+    {
+    user: req.user,
+    admissionId: req.params.admissionId,
+    decision: req.body.decision,
+    note: req.body.note
+    }
+    );
+    if (!requireResult(result, res)) {
+    return;
+    }
+    return successResponse(
+    res,
+    result,
+    "Admission review processed successfully."
+    );
+    })
+    );
+
+/* ––––––––––––––––––––––––––––––––––––– /
+/ Export                                                                     /
+/ ––––––––––––––––––––––––––––––––––––– */
 
 module.exports = router;

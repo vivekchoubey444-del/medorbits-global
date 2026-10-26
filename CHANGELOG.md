@@ -1,48 +1,45 @@
-Below is an expanded, professional CHANGELOG.md for MedOrbits. It uses structured tables for release metadata, change classification, compatibility impact, verification evidence, release governance, and maintenance responsibilities. It preserves the important distinction between documented policy and changes that have actually been verified.
-
 MedOrbits — Changelog
 
 Project: MedOrbits
 Website: https://medorbits.in
 File: CHANGELOG.md
 Document Version: 2.0.0
-Changelog Format: Keep a Changelog–inspired
-Versioning Policy: Semantic Versioning where applicable
+Format: Keep a Changelog–inspired
+Versioning: Semantic Versioning where applicable
 Date Standard: ISO 8601 (YYYY-MM-DD)
 Current Documented Release: No release history verified
-Maintenance Status: Update with every relevant release
+Maintenance: Update for significant accepted changes and releases
 Verification Policy: Evidence-based; no unverified release claims
 
 ⸻
 
 Table of Contents
 
-1. Purpose and Scope⁠￼
-2. Changelog Objectives⁠￼
-3. Documentation Principles⁠￼
-4. Change Classification⁠￼
-5. Versioning and Release Identification⁠￼
-6. Release Status and Evidence⁠￼
-7. Change History⁠￼
-8. Release Entry Template⁠￼
-9. Breaking Changes and Compatibility⁠￼
-10. Migration and Upgrade Documentation⁠￼
-11. Security and Privacy Reporting⁠￼
-12. Dependency and Runtime Changes⁠￼
-13. Data, Education and Admissions Changes⁠￼
-14. API and Integration Changes⁠￼
-15. Website and User Experience Changes⁠￼
-16. Database and Data Migration Changes⁠￼
-17. Infrastructure and Deployment Changes⁠￼
-18. Documentation and Developer Experience⁠￼
-19. Release Readiness Checklist⁠￼
-20. Release Verification Matrix⁠￼
-21. Maintenance and Governance⁠￼
-22. Corrections and Historical Integrity⁠￼
-23. Automation and Continuous Integration⁠￼
-24. Related Project Records⁠￼
-25. Limitations and Disclaimer⁠￼
-26. Document Control⁠￼
+1. Purpose and Scope
+2. Objectives and Principles
+3. Change Classification
+4. Versioning and Release Identification
+5. Release Status and Evidence
+6. Change History
+7. Release Entry Template
+8. Breaking Changes and Compatibility
+9. Migration and Upgrade Documentation
+10. Security and Privacy Reporting
+11. Dependencies and Runtime
+12. Education and Admissions Content
+13. APIs and Integrations
+14. Website and User Experience
+15. Database and Data Migrations
+16. Infrastructure and Deployment
+17. Documentation and Developer Experience
+18. Release Readiness Checklist
+19. Verification Matrix
+20. Maintenance and Governance
+21. Historical Integrity
+22. Automation and Continuous Integration
+23. Related Records
+24. Limitations and Disclaimer
+25. Document Control
 
 ⸻
 
@@ -50,30 +47,30 @@ Table of Contents
 
 This changelog records significant, user-visible and operationally relevant changes to MedOrbits.
 
-It serves as a structured history of improvements, fixes, security updates, privacy safeguards, compatibility changes, content corrections, deprecations, removals and releases across the project.
+It provides a structured history of features, improvements, fixes, security and privacy changes, compatibility updates, content corrections, deprecations, removals and releases.
 
-The changelog is intended to provide a reliable record for users, developers, contributors, administrators, maintainers, security reviewers and release managers.
+The changelog complements Git history, code reviews, test reports, release records, deployment evidence and technical documentation. It does not replace them.
 
 1.1 Intended audience
 
 Audience	Primary purpose
 Website users	Understand meaningful functionality and user-experience changes
 Applicants and learners	Identify relevant changes to educational information and application workflows
-Contributors	Review the evolution of the codebase and project conventions
-Developers	Understand API, runtime, dependency and configuration changes
-Administrators	Identify operational, access-control and management changes
-Security reviewers	Track publicly disclosable security improvements
+Contributors	Understand project conventions and development history
+Developers	Review API, runtime, dependency and configuration changes
+Administrators	Understand operational and access-control changes
+Security reviewers	Review publicly disclosable security improvements
 Release managers	Prepare accurate release notes and verify release readiness
-Future maintainers	Understand when behavior changed and the associated rationale
+Future maintainers	Understand behavioral changes and technical rationale
 
-1.2 Scope of recorded changes
+1.2 Scope
 
-Record changes when they materially affect one or more of the following:
+Record changes when they materially affect:
 
 * Application functionality and supported workflows.
 * Website pages, navigation, accessibility and responsive behavior.
 * APIs, integrations, authentication and authorization.
-* Database structures, migrations and data validation.
+* Database schemas, migrations and data validation.
 * Educational, admissions, career and institutional information.
 * Applicant documents, application processing and privacy safeguards.
 * Dependencies, runtimes, build tools and development workflows.
@@ -81,235 +78,158 @@ Record changes when they materially affect one or more of the following:
 * Security controls, vulnerability remediation and privacy practices.
 * Project documentation, policies and contribution requirements.
 
-Routine edits, formatting-only changes and other low-impact internal modifications may be omitted unless they affect maintenance, compatibility, reliability or project governance.
+Routine formatting-only changes may be omitted unless they affect maintenance, compatibility, reliability or governance.
 
 1.3 Evidence requirement
 
-Every statement must reflect the actual status of the change.
-
-Evidence available	Appropriate description
-Proposed issue or design	Planned or proposed; do not list as completed
+Available evidence	Appropriate description
+Proposal or design	Proposed; not completed
 Local implementation	Implemented locally; not necessarily merged or released
-Reviewed and merged change	Merged or accepted; not necessarily deployed
+Reviewed change	Reviewed; not necessarily merged
+Merged change	Merged; not necessarily deployed
 Automated test result	Tests passed for the recorded scope and environment
 Build artifact	Build completed for the recorded configuration
 Verified deployment record	Deployed to the identified environment
-Published release tag or release record	Released under the verified version identifier
-Security remediation evidence	Remediation completed and verified to the documented extent
+Published release record	Released under the verified identifier
+Security remediation evidence	Remediation verified to the documented extent
 
-A changelog entry is not, by itself, proof that a feature is deployed, a test has passed, a vulnerability has been eliminated or a release is available in production.
-
-⸻
-
-2. Changelog Objectives
-
-MedOrbits uses this changelog to maintain a clear, consistent and auditable summary of meaningful project changes.
-
-Objective	Requirement	Expected result
-Transparency	Describe significant changes accurately	Readers understand what changed
-Traceability	Link verified issues, commits, pull requests and releases where practical	Changes can be investigated
-Compatibility awareness	Identify breaking changes and affected interfaces	Users can plan upgrades
-Security awareness	Record authorized, publicly disclosable security improvements	Readers understand relevant remediation
-Privacy awareness	Document material changes to personal-data handling	Data-handling changes remain visible
-Release consistency	Use standardized versions, dates and headings	Release records remain predictable
-Operational readiness	Record material deployment and migration requirements	Maintainers can plan safe releases
-Historical integrity	Preserve the meaning of previous release records	The changelog remains trustworthy
-Maintainability	Keep entries concise, structured and relevant	Future contributors can understand project evolution
+A changelog entry is not, by itself, proof that a feature is deployed, tests have passed, a vulnerability has been eliminated or a release is available in production.
 
 ⸻
 
-3. Documentation Principles
+2. Objectives and Principles
 
-3.1 Accuracy and completeness
+MedOrbits maintains this changelog to provide transparency, traceability, compatibility awareness and historical integrity.
+
+2.1 Documentation principles
 
 * Document changes that have actually occurred at the status claimed.
 * Distinguish implemented, reviewed, merged, tested, deployed and released states.
-* Avoid claiming a feature is production-ready solely because its source code exists.
-* Record important limitations and unresolved issues where relevant.
-* Do not invent dates, version identifiers, test results, release URLs or issue references.
+* Do not claim production readiness solely because source code exists.
+* Do not invent dates, version identifiers, test results, links or issue references.
+* Describe the practical impact of changes rather than only listing modified files.
+* Record important limitations and unresolved issues when relevant.
 * Correct material inaccuracies transparently.
+* Keep entries concise, relevant and verifiable.
 
-3.2 Traceability
+2.2 Traceability
 
-Where practical, include verified references to:
+Where practical, associate significant changes with verified:
 
 * Git commits and tags.
 * Pull requests and code reviews.
 * Issue tracker records.
 * Automated test and build results.
-* Migration scripts and migration instructions.
+* Migration scripts and instructions.
 * Deployment records.
 * Security advisories.
-* Relevant authoritative content sources.
+* Authoritative education and admissions sources.
 
-Use permanent references where available. If a reference is private, do not publish confidential information merely to make the changelog appear complete.
+Do not expose confidential information merely to make a changelog entry appear complete.
 
-3.3 User relevance
+2.3 Security and privacy
 
-Prioritize the effects of a change over an inventory of files modified.
+Never include passwords, API keys, access tokens, private keys, database credentials, sensitive applicant records, confidential incident details or unapproved vulnerability information.
 
-Prefer:
-
-Corrected application-form validation so invalid required fields are rejected with an actionable error.
-
-Avoid an entry that merely states:
-
-Updated several JavaScript files.
-
-File names may be included when useful, but the primary description should explain the behavioral, technical or operational impact.
-
-3.4 Security and privacy
-
-Never include:
-
-* Passwords, API keys, tokens or private keys.
-* Database credentials or sensitive environment variables.
-* Personal applicant records or unnecessary personal information.
-* Confidential incident-response details.
-* Private vulnerability reports or unapproved exploit instructions.
-* Internal infrastructure details that create an avoidable security risk.
-
-Security entries must comply with the project’s disclosure process and applicable obligations.
-
-3.5 Consistency
-
-Element	Convention
-Release date	YYYY-MM-DD
-Version number	MAJOR.MINOR.PATCH, where applicable
-Upcoming changes	Unreleased
-Change headings	Standardized categories listed in Section 4
-Breaking changes	Explicitly labeled and explained
-Migration instructions	Linked or summarized in the relevant entry
-References	Verified links or identifiers
-Empty categories	Omit from finalized release entries
-Unknown information	Mark as unverified or omit until confirmed
+Security and privacy entries must follow applicable disclosure procedures and obligations.
 
 ⸻
 
-4. Change Classification
+3. Change Classification
 
-Use only the categories that meaningfully apply to a change. Do not retain empty categories merely to satisfy a template.
+Use only categories that meaningfully apply to each change. Omit empty categories in finalized release entries.
 
-Category	Purpose	Typical examples
-Added	Introduces new functionality	New pages, APIs, workflows or supported features
-Changed	Alters existing behavior	Revised validation rules, configuration or navigation
-Improved	Enhances an existing capability	Accessibility, performance, reliability or usability improvements
-Fixed	Corrects incorrect or defective behavior	Regression fixes, broken links or incorrect responses
-Security	Records security-related changes	Authorization fixes, dependency remediation or hardened input validation
-Privacy	Records material privacy changes	Data minimization, access restrictions or retention updates
-Deprecated	Announces planned removal or replacement	An API scheduled for retirement
-Removed	Records functionality that has been removed	Retired routes, obsolete features or unsupported configuration
-Compatibility	Describes supported-environment changes	Python, Node.js, browser or dependency compatibility
-Data and Content	Records changes to data and published information	Dataset updates, corrected admissions details or schema changes
-Migration	Describes required upgrade procedures	Database migration, configuration conversion or data transformation
-Developer Experience	Improves development and maintenance workflows	Testing, linting, type checking and local setup
-Infrastructure	Records operational and deployment changes	CI/CD, hosting, monitoring and backup procedures
-Documentation	Records material documentation updates	Setup guides, policies, API references and operational instructions
-Performance	Records measurable performance-related changes	Reduced response latency or resource consumption
-Accessibility	Records accessibility-specific changes	Keyboard navigation, semantic markup and assistive-technology support
+Category	Purpose
+Added	New functionality, pages, APIs or workflows
+Changed	Changes to existing behavior, configuration or interfaces
+Improved	Usability, accessibility, reliability or maintainability improvements
+Fixed	Corrections to defective or incorrect behavior
+Security	Substantiated security-related changes
+Privacy	Material changes to personal-data handling
+Deprecated	Features or interfaces scheduled for removal
+Removed	Removed functionality or unsupported configuration
+Compatibility	Runtime, dependency, API or environment changes
+Data and Content	Dataset updates and verified informational corrections
+Migration	Required application, database or configuration upgrade steps
+Performance	Substantiated performance improvements
+Accessibility	Accessibility-specific improvements
+Infrastructure	Hosting, CI/CD, monitoring and deployment changes
+Documentation	Material documentation and policy changes
+Developer Experience	Testing, linting, formatting and development workflow changes
 
-4.1 Category selection rules
+Classification rules
 
-1. Choose the category that best describes the principal impact.
-2. Use additional categories when a change has distinct, meaningful effects.
-3. Avoid repeating the same description under several headings.
+1. Select the category that best describes the principal impact.
+2. Use multiple categories only when a change has distinct impacts.
+3. Do not claim performance gains without appropriate evidence.
 4. Use Security only for substantiated security changes.
-5. Use Fixed for corrected defects, including security defects when appropriate; a dedicated Security entry may also be warranted for a security-sensitive fix.
-6. Use Compatibility for changes affecting supported environments or interfaces.
-7. Use Migration when users or operators must perform an upgrade step.
-8. Use Performance for substantiated performance improvements, preferably with measurements and test conditions.
-9. Do not imply that a change is externally visible if it is internal-only.
+5. Document breaking changes and required migrations explicitly.
+6. Avoid repeating identical descriptions across multiple categories.
+7. Do not imply external availability when a change exists only in a development branch.
 
 ⸻
 
-5. Versioning and Release Identification
+4. Versioning and Release Identification
 
-MedOrbits uses Semantic Versioning where appropriate and where the project has an applicable versioned release policy.
+MedOrbits uses Semantic Versioning where applicable and where the project has an appropriate versioned release policy.
 
-The standard format is:
+The standard format is MAJOR.MINOR.PATCH.
 
-MAJOR.MINOR.PATCH
+Component	Typical increment
+MAJOR	An incompatible change to a stable public interface or supported workflow
+MINOR	Backward-compatible functionality added
+PATCH	Backward-compatible fixes
 
-Component	Increment when	Example
-MAJOR	An incompatible change is made to a stable public interface or supported workflow	2.0.0
-MINOR	Backward-compatible functionality is added	1.4.0
-PATCH	Backward-compatible fixes are released	1.3.2
+Examples such as 2.0.0, 1.4.0 and 1.3.2 explain version syntax only; they do not establish that those MedOrbits releases exist.
 
-These examples explain version syntax; they do not establish that the corresponding MedOrbits releases exist.
-
-5.1 Versioning considerations
-
-Before selecting a release version, assess changes to:
-
-* Public APIs and response formats.
-* Database schemas and migration requirements.
-* Environment variables and configuration files.
-* Authentication, authorization and session behavior.
-* Applicant document access and processing.
-* Supported Node.js and Python versions.
-* Dependency requirements and installation procedures.
-* Website routes and externally used URLs.
-* Deployment, recovery and rollback procedures.
-* Integration contracts and data formats.
-
-The version increment must follow the project’s actual release policy. During initial development, compatibility guarantees may be limited; important breaking changes should still be documented explicitly.
-
-5.2 Version consistency
-
-Where npm versioning applies, verify the relevant package metadata and release records.
+4.1 Version consistency
 
 Artifact	Verification requirement
-package.json	Confirm the declared package version
-package-lock.json	Confirm the root package version and lockfile consistency
-Git tag	Confirm the tag exists and points to the intended commit
-Release record	Confirm the published version and date
-Changelog	Confirm the version, date and content match the release
-Deployment record	Confirm the environment and deployment status, if claimed
+package.json	Verify the declared package version
+package-lock.json	Verify root package version and lockfile consistency
+Git tag	Verify that the tag exists and points to the intended commit
+Release record	Verify the published version and date
+Changelog	Verify version, date and descriptions
+Deployment record	Verify environment and deployment status before claiming deployment
 
-Do not assume that a Git tag, package version, public deployment or published release exists until verified.
+A version number, Git tag or deployment must not be treated as verified until supporting evidence is available.
 
 ⸻
 
-6. Release Status and Evidence
+5. Release Status and Evidence
 
-The status of a change must be clear to anyone reading the entry.
-
-6.1 Recommended lifecycle
-
-Status	Meaning	May be described as released?
+Status	Meaning	Can be described as released?
 Proposed	Suggested but not implemented	No
 In development	Work is in progress	No
-Implemented	Code or documentation exists	No
-Reviewed	Relevant review has occurred	No
+Implemented	Source or content change exists	No
+Reviewed	Review has occurred	No
 Merged	Accepted into the relevant branch	No
-Tested	Tests were run for a defined scope	No, not by itself
+Tested	Tests were run for a defined scope	Not by itself
 Release candidate	Prepared for release evaluation	No
-Released	Formal release has been verified	Yes
-Deployed	Deployment to a specified environment has been verified	Only if a release is independently verified
-Withdrawn	A release has been withdrawn or superseded	Describe the status explicitly
+Released	Formal release verified	Yes
+Deployed	Deployment to a specified environment verified	Only if release status is independently verified
+Withdrawn	Release withdrawn or superseded	State explicitly
 
-These statuses are not interchangeable. A deployment may occur without a formal versioned release, and a release may exist before deployment to every environment.
+5.1 Evidence record
 
-6.2 Evidence record
-
-For significant changes, maintain an internal verification record where appropriate.
+For significant changes, maintain an internal record containing relevant details:
 
 Field	Description
-Change reference	Issue, pull request or other verified identifier
-Affected component	Application, API, database, content or infrastructure
+Change reference	Verified issue, pull request or other identifier
+Component	Application, API, database, content or infrastructure
 Implementation reference	Commit or merged change
-Validation performed	Tests, checks or manual verification actually completed
+Validation	Tests and checks actually performed
 Environment	Local, test, staging or production
 Result	Pass, fail, partial, blocked or not run
 Reviewer	Authorized reviewer, where applicable
 Release association	Verified version or deployment identifier
 Limitations	Outstanding defects, exclusions or known risks
 
-Not every field needs to appear in the public changelog. Internal records should contain enough evidence to support the public statements without disclosing confidential information.
+Internal records should support public statements without disclosing confidential information.
 
 ⸻
 
-7. Change History
+6. Change History
 
 Unreleased
 
@@ -317,9 +237,9 @@ Status: Release pending verification
 Release date: Not applicable
 Documented release history: No release history verified
 
-This section is reserved for accepted changes intended for a future release. Entries should be added when their implementation status and description are supported by evidence.
+This section is reserved for accepted changes intended for a future release.
 
-No completed feature, fix, security remediation or deployment is asserted by the placeholder entries below.
+No completed feature, fix, security remediation or deployment is asserted by the placeholders below.
 
 Added
 
@@ -377,187 +297,138 @@ Documentation and Developer Experience
 
 * No verified entries recorded.
 
-Important: These placeholders indicate that no verified entries have been supplied for this document. They do not establish that no changes have occurred in the repository. Replace or remove them after reviewing the relevant change history.
+Historical integrity note: These placeholders mean that no verified entries have been supplied for this document. They do not establish that no changes have occurred in the repository.
 
-7.1 Historical release policy
-
-No dated release entries are included until the relevant version, date, changes and release status have been verified.
-
-When a historical release is confirmed, add it below the Unreleased section, ordered from newest to oldest.
+When historical releases are verified, add their entries below the Unreleased section, ordered from newest to oldest.
 
 ⸻
 
-8. Release Entry Template
+7. Release Entry Template
 
-Use the following template when preparing a confirmed release. Remove sections that do not apply and replace every placeholder before publication.
+Use this template for a confirmed release. Remove irrelevant sections and replace every placeholder before publication.
 
 ## [X.Y.Z] — YYYY-MM-DD
-
 Release status: Released
 Compatibility impact: Compatible / Breaking changes / Not applicable
 Release reference: [Verified URL or identifier]
-
-Summary
-
+### Summary
 [Concise description of the release and its primary impact.]
+### Added
+- [New functionality and its impact.]
+### Changed
+- [Changes to existing behavior, interfaces or configuration.]
+### Improved
+- [Verified reliability, usability, accessibility or maintenance improvements.]
+### Fixed
+- [Defect corrected and behavior affected.]
+### Security
+- [Publicly disclosable security improvement and verified reference.]
+### Privacy
+- [Verified change to personal-data handling.]
+### Deprecated
+- [Feature scheduled for removal and replacement guidance.]
+### Removed
+- [Removed functionality and its impact.]
+### Compatibility
+- [Runtime, dependency, API or integration changes.]
+### Data and Content
+- [Verified dataset, schema or informational correction.]
+### Migration
+- [Required upgrade steps and verification instructions.]
+### Performance and Accessibility
+- [Verified changes and relevant evidence.]
+### Infrastructure
+- [Deployment, CI/CD, monitoring or operational changes.]
+### Documentation and Developer Experience
+- [Relevant documentation, testing or contributor workflow changes.]
+### References
+- Issues: [Verified references]
+- Pull requests: [Verified references]
+- Commits: [Verified references]
+- Advisories: [Verified public references, if applicable]
+- Migration guide: [Verified link, if applicable]
 
-Added
-
-* [New functionality and its user or operational impact.]
-
-Changed
-
-* [Existing behavior, interfaces or configuration that changed.]
-
-Improved
-
-* [Verified improvements to reliability, usability, accessibility or maintainability.]
-
-Fixed
-
-* [Defect corrected and the behavior affected.]
-
-Security
-
-* [Publicly disclosable security improvement and verified reference.]
-
-Privacy
-
-* [Verified change to personal-data handling or privacy safeguards.]
-
-Deprecated
-
-* [Feature or interface scheduled for removal, timeline if confirmed, and replacement guidance.]
-
-Removed
-
-* [Removed functionality and the resulting impact.]
-
-Compatibility
-
-* [Runtime, dependency, API or integration compatibility changes.]
-
-Data and Content
-
-* [Verified dataset, schema or informational correction.]
-
-Migration
-
-* [Required upgrade steps, prerequisites and verification instructions.]
-
-Performance and Accessibility
-
-* [Verified performance or accessibility changes and relevant evidence.]
-
-Infrastructure
-
-* [Relevant deployment, CI/CD, monitoring or operational changes.]
-
-Documentation and Developer Experience
-
-* [Relevant documentation, testing or contributor-workflow changes.]
-
-References
-
-* Issues: [Verified references]
-* Pull requests: [Verified references]
-* Commits: [Verified references]
-* Advisories: [Verified public references, if applicable]
-* Migration guide: [Verified link, if applicable]
-
-8.1 Release entry quality requirements
-
-A finalized entry should:
-
-* Identify the release unambiguously.
-* State the release date only when verified.
-* Summarize meaningful changes without reproducing commit history.
-* Describe compatibility and migration effects.
-* Distinguish verified outcomes from known limitations.
-* Use valid links and identifiers.
-* Avoid exposing confidential or sensitive information.
-* Omit irrelevant or empty categories.
+A finalized entry must identify the release unambiguously, state verified metadata, explain compatibility and migration effects, and avoid confidential information or unsupported claims.
 
 ⸻
 
-9. Breaking Changes and Compatibility
+8. Breaking Changes and Compatibility
 
 A breaking change invalidates a previously supported interface, workflow, configuration, data format or compatibility assumption.
 
-A change can be breaking even when it does not cause an obvious runtime error. For example, a stricter validation rule may reject previously accepted requests, and a permission change may prevent an existing integration from accessing a resource.
+A change can be breaking even if it does not cause an obvious runtime error. Stricter validation may reject previously accepted requests, while changed permissions may prevent an existing integration from accessing a resource.
 
-9.1 Breaking-change impact matrix
+8.1 Impact matrix
 
 Area	Potential breaking change	Documentation required
-Website routes	URL removal or route behavior change	Affected URL, replacement and redirect behavior
-API	Endpoint, field or response-contract change	Old and new contract, affected clients
-Authentication	Session or token behavior change	Reauthentication and integration steps
-Authorization	Permission requirements change	Required roles and access-policy changes
-Database	Schema or constraint change	Migration sequence, backup and validation
-Configuration	Environment variable renamed or removed	New variable, default behavior and deployment steps
-Runtime	Supported version minimum changes	Required runtime and upgrade instructions
-Dependencies	Major upgrade changes supported behavior	Compatibility notes and installation steps
-Documents	File format, access or retention workflow changes	Affected users, storage implications and required actions
-Educational data	Schema or interpretation changes	Data source, transformation and consumer impact
+Website routes	URL removed or behavior changed	Affected URL, replacement and redirect behavior
+API	Endpoint, field or response contract changed	Old and new contract and affected clients
+Authentication	Session or token behavior changed	Reauthentication and integration steps
+Authorization	Permission requirements changed	New roles and access rules
+Database	Schema or constraint changed	Migration sequence, backup and validation
+Configuration	Environment variable renamed or removed	Replacement variable and deployment steps
+Runtime	Minimum supported version changed	Required runtime and upgrade instructions
+Dependencies	Major upgrade changes behavior	Compatibility and installation notes
+Documents	Access, format or retention workflow changed	User impact and required actions
+Education data	Schema or interpretation changed	Source, transformation and consumer impact
 
-9.2 Required explanation
+8.2 Required explanation
 
 For each significant breaking change, document:
 
 1. What changed: Identify the affected interface or behavior.
-2. Who is affected: Identify users, maintainers, administrators or integrations impacted.
-3. Why it changed: Explain the technical, security or operational reason when useful.
+2. Who is affected: Identify users, maintainers, administrators or integrations.
+3. Why it changed: Explain the rationale when useful.
 4. Required action: Describe configuration, code, migration or workflow changes.
 5. Removed behavior: State what is no longer supported.
-6. Verification: Provide suitable tests or checks to confirm a successful upgrade.
-7. Rollback considerations: Explain material rollback constraints where relevant.
+6. Verification: Provide checks for a successful upgrade.
+7. Rollback: Explain material rollback constraints where relevant.
 
-Do not describe a change as backward-compatible without considering existing users, clients, stored data and deployment assumptions.
+Do not describe a change as backward-compatible without considering existing clients, stored data and deployment assumptions.
 
 ⸻
 
-10. Migration and Upgrade Documentation
+9. Migration and Upgrade Documentation
 
 Changes involving databases, application data, storage, environment variables or externally consumed APIs require particular care.
 
-10.1 Migration record
+9.1 Migration record
 
 Field	What to document
-Migration identifier	Verified migration filename or identifier
+Migration identifier	Verified filename or identifier
 Affected version	Version or schema state requiring migration
 Target version	Version or schema state after migration
-Prerequisites	Required runtime, backup, permissions or configuration
+Prerequisites	Runtime, backup, permissions or configuration
 Execution order	Required migration sequence
 Data impact	Records or structures affected
 Downtime	Expected downtime only when assessed
-Validation	Queries, tests or checks used to verify the result
+Validation	Queries, tests or checks used
 Rollback	Available rollback procedure and limitations
-Recovery	Recovery steps if migration fails
+Recovery	Steps if migration fails
 Owner	Responsible maintenance role, where applicable
 
-10.2 Migration policy
+9.2 Migration policy
 
 * Do not claim a migration is reversible unless rollback has been evaluated.
-* Avoid destructive data changes without documented safeguards.
-* Document required backups before risky schema or data transformations.
-* Identify migrations that must be completed before application deployment.
-* Document configuration changes alongside the code changes that require them.
-* Include instructions for validating the upgraded application.
-* Record known incompatibilities between old and new application versions.
-* Avoid publishing sensitive records or database contents in migration examples.
+* Document suitable backups before risky schema or data transformations.
+* Identify migrations that must finish before application deployment.
+* Document configuration changes alongside the code requiring them.
+* Provide instructions for validating the upgraded application.
+* Record incompatibilities between old and new application versions.
+* Do not publish sensitive records or database contents in migration examples.
 
-A changelog entry may summarize migration requirements, but detailed instructions should live in a dedicated migration guide when the procedure is substantial.
+Substantial migration procedures should have a dedicated guide.
 
 ⸻
 
-11. Security and Privacy Reporting
+10. Security and Privacy Reporting
 
-Security and privacy changes should be recorded accurately and only at an appropriate level of disclosure.
+Security and privacy changes must be recorded accurately and at an appropriate level of disclosure.
 
-11.1 Security reporting requirements
+10.1 Security reporting requirements
 
-Requirement	Expected practice
-Accuracy	State what was changed and what was verified
+Requirement	Practice
+Accuracy	State what changed and what was verified
 Disclosure	Follow the project’s vulnerability disclosure procedure
 Confidentiality	Exclude secrets, private reports and unnecessary exploit details
 Remediation	Identify relevant upgrades or configuration actions
@@ -565,31 +436,18 @@ Verification	Distinguish implementation from confirmed remediation
 Traceability	Reference a verified public advisory when authorized
 Scope	Avoid claiming broader protection than the change provides
 
-Potentially relevant areas include:
+Potentially relevant areas include authentication, session management, authorization, input validation, rate limiting, document access, file uploads, database access, dependencies, secrets, audit logging and administrative controls.
 
-* Authentication and session management.
-* Authorization and role-based access control.
-* Input validation and output encoding.
-* Rate limiting and abuse prevention.
-* Document access and file-upload handling.
-* Database access and query safety.
-* Secret management and configuration.
-* Dependency security.
-* Audit logging and incident response.
-* Administrative access controls.
-* Data retention and deletion workflows.
+10.2 Example wording
 
-11.2 Security entry examples
+The following are examples, not claims that these changes have occurred:
 
-The following examples illustrate appropriate phrasing. They are not claims that these changes have occurred in MedOrbits.
+* Implemented, testing incomplete: “Implemented a proposed correction to the affected access-control path; validation remains pending.”
+* Tested in a defined environment: “Updated access-control checks and verified the affected test cases in the documented test environment.”
+* Dependency updated: “Updated the affected dependency; compatibility and vulnerability status should be assessed against the resolved package version.”
+* Advisory published: “Addressed the issue described in [verified advisory reference], with the required upgrade documented.”
 
-Situation	Appropriate wording
-Fix implemented, testing incomplete	“Implemented a proposed correction to the affected access-control path; validation remains pending.”
-Fix tested in a defined environment	“Updated access-control checks and verified the affected test cases in the documented test environment.”
-Dependency updated	“Updated the affected dependency; compatibility and vulnerability status should be assessed against the resolved package version.”
-Advisory published	“Addressed the issue described in [verified advisory reference], with the required upgrade documented.”
-
-11.3 Privacy reporting requirements
+10.3 Privacy reporting
 
 Document material changes to:
 
@@ -601,216 +459,162 @@ Document material changes to:
 * User-facing privacy notices.
 * Data export and account-management workflows.
 
-Do not disclose affected individuals’ information. Do not claim legal or regulatory compliance solely because a code change, policy update or checklist has been completed.
+Do not disclose personal information or claim legal compliance solely because a code change or checklist has been completed.
 
-A changelog does not replace the security reporting process, incident records, privacy notices or legally required notifications.
+This changelog does not replace security reporting, incident records, privacy notices or legally required notifications.
 
 ⸻
 
-12. Dependency and Runtime Changes
+11. Dependencies and Runtime
 
 Record dependency changes when they materially affect security, supported environments, installation, compatibility, builds or runtime behavior.
 
-12.1 Relevant dependency areas
+Relevant areas include:
 
-Area	Examples
-JavaScript runtime	Node.js support range
-JavaScript packages	npm dependencies and lockfile changes
-Python runtime	Supported Python versions
-Python packages	Runtime and development dependencies
-Frameworks	Express, testing frameworks and application libraries
-Testing	pytest, test plugins and browser-testing tools
-Static analysis	Linters, formatters and type checkers
-Build system	Bundlers, asset pipelines and build scripts
-External services	SDKs, API clients and service integrations
+* Node.js and Python runtime versions.
+* npm dependencies and lockfiles.
+* Python packages and development dependencies.
+* Frameworks, SDKs and external service clients.
+* Testing frameworks and test plugins.
+* Linters, formatters, type checkers and build tools.
+* Asset pipelines and deployment tooling.
 
-12.2 What to record
+For material changes, document the package or runtime, previous and new versions when verified, reason for the change, compatibility implications, relevant advisories, installation changes and tests performed.
 
-For material updates, include:
-
-* Package or runtime name.
-* Previous and new version where verified.
-* Reason for the change.
-* Compatibility implications.
-* Relevant security advisory, if verified and appropriate.
-* Installation or configuration changes.
-* Tests performed and any known limitations.
-
-A version constraint update is not proof that the application has been tested on every permitted version. An updated package is not, by itself, proof that a vulnerability has been fully resolved.
+A version constraint update is not proof that the application has been tested on every permitted version. An updated package is not proof that a vulnerability has been fully resolved.
 
 ⸻
 
-13. Data, Education and Admissions Changes
+12. Education and Admissions Content
 
 MedOrbits includes education-related information and may present admissions, examinations, careers, recruitment and application guidance. Changes to this information must be distinguished from changes to the software that displays it.
 
-13.1 Content change classification
+12.1 Content change records
 
-Change type	Example	Evidence to retain
-New content	Addition of an education or career resource	Content record and review status
-Correction	Correction of inaccurate explanatory text	Source and correction rationale
-Official requirement update	Change to an eligibility or application requirement	Relevant official source and verification date
-Deadline update	Change to an application or examination date	Authoritative publication and effective date
-Fee update	Change to a published fee	Official fee schedule or authority
-Data schema update	New or renamed dataset field	Schema change and affected consumers
-Source replacement	Replacing an outdated source	Old and new source references
-Content withdrawal	Removing obsolete or unsupported guidance	Reason and impact assessment
+Change type	Example	Evidence
+New content	Addition of an education resource	Content record and review status
+Correction	Correction of inaccurate explanatory text	Source and rationale
+Official requirement update	Eligibility or application requirement changed	Relevant official source and effective date
+Deadline update	Examination or application date changed	Authoritative publication
+Fee update	Published fee changed	Official fee schedule or authority
+Schema update	Dataset field added or renamed	Schema change and affected consumers
+Source replacement	Outdated source replaced	Old and new source references
+Content withdrawal	Obsolete guidance removed	Reason and impact assessment
 
-13.2 Educational and admissions verification
+12.2 Verification requirements
 
-When appropriate, record:
+Where applicable, record:
 
-* The relevant institution, authority or official publication.
+* The institution, authority or official publication.
 * The date the source was checked.
 * The effective date of the requirement, if specified.
 * Whether the change is confirmed, provisional or awaiting clarification.
-* Which pages, datasets or workflows were affected.
+* The affected pages, datasets or workflows.
 * Whether cached or previously published information must be refreshed.
 
-Do not present an informational correction as an official institutional announcement unless the relevant institution issued or authorized it.
+Do not present an informational correction as an official institutional announcement unless the institution issued or authorized it.
 
-Do not include personal applicant information, confidential application documents or private case details in public release notes.
+Do not include personal applicant information or confidential documents in public release notes.
 
 ⸻
 
-14. API and Integration Changes
+13. APIs and Integrations
 
-Changes to APIs and external integrations can affect the website, administrative tools, mobile clients, automated processes and third-party consumers.
+API and integration changes can affect websites, administrative tools, mobile clients, automated processes and third-party consumers.
 
-14.1 API change matrix
-
-Change	Compatibility concern	Recommended changelog detail
-New endpoint	Existing clients may not know about it	Endpoint purpose, access requirements and availability
-Removed endpoint	Existing integrations may fail	Retirement status and replacement
-Request field added	Required fields may affect old clients	Whether the field is optional or mandatory
+Change	Compatibility concern	Recommended detail
+New endpoint	Existing clients may not know about it	Purpose, access requirements and availability
+Removed endpoint	Integrations may fail	Retirement status and replacement
+Request field changed	Old clients may send invalid payloads	Required and optional fields
 Response field changed	Consumer parsing may break	Old and new behavior
-Authentication change	Existing credentials or sessions may stop working	Required client or user action
-Permission change	Previously permitted operations may be denied	New role or permission requirements
+Authentication change	Sessions or credentials may stop working	Required client action
+Permission change	Previously permitted operations may be denied	New role requirements
 Validation change	Previously accepted payloads may be rejected	Updated validation rules
-Rate-limit change	Clients may encounter additional rejections	New limits, if verified, and retry guidance
-Error-format change	Clients may fail to process responses	Updated error contract
+Rate-limit change	Clients may encounter more rejections	Verified limits and retry guidance
+Error-format change	Clients may fail to parse responses	Updated error contract
 External provider change	Integration behavior may differ	Provider, affected operation and upgrade steps
 
-14.2 Integration verification
+Where applicable, verify request and response schemas, authentication, error handling, timeout and retry behavior, supported consumers, rate limiting, provider configuration and integration tests.
 
-Where applicable, verify:
-
-* API request and response schemas.
-* Authentication and authorization requirements.
-* Error-handling behavior.
-* Timeout and retry behavior.
-* Compatibility with supported consumers.
-* Rate limiting and abuse-prevention behavior.
-* External provider configuration.
-* Contract tests and integration tests.
-
-Do not claim an external integration works solely because its configuration or client dependency was added.
+Adding a client dependency or configuration does not prove an external integration works.
 
 ⸻
 
-15. Website and User Experience Changes
+14. Website and User Experience
 
 Document significant changes to website pages, navigation, accessibility, responsive layouts, forms and user workflows.
 
 Area	Changes worth recording
-Navigation	Route changes, menu behavior and information architecture
-Responsive design	Material changes to mobile, tablet or desktop behavior
+Navigation	Route changes, menus and information architecture
+Responsive design	Material mobile, tablet or desktop behavior
 Accessibility	Keyboard navigation, focus behavior and semantic structure
 Forms	Validation, required fields and submission workflows
 Search	Search behavior, filters and result presentation
-Content presentation	Material changes to how educational or career information is shown
+Content presentation	Material changes to education or career information
 Authentication	Sign-in, sign-out, session and account workflows
 Administration	Management interfaces and administrative capabilities
-Error handling	User-facing validation, recovery and error messages
-Performance	Measured improvements to loading or interaction responsiveness
+Error handling	User-facing validation and recovery messages
+Performance	Measured loading or interaction improvements
 Browser support	Changes to supported browser capabilities
 Localization	Language, translation or regional-format changes
 
-Avoid describing a page as fully accessible, responsive or production-ready without the appropriate verification. Where useful, record the browsers, devices, test methods or performance measurements used.
+Do not describe a page as fully accessible, responsive or production-ready without appropriate verification. Record browsers, devices, test methods or performance measurements when useful.
 
 ⸻
 
-16. Database and Data Migration Changes
+15. Database and Data Migrations
 
 Record database changes that affect schema compatibility, data integrity, application behavior, operational safety or recovery.
 
-16.1 Database change types
+Relevant changes include tables, columns, indexes, constraints, data types, defaults, relationships, migration scripts, data transformations, queries, audit records, retention, backup and restoration procedures, database drivers and environment configuration.
 
-* Tables, columns, indexes and constraints.
-* Data types and default values.
-* Relationships and referential integrity.
-* Migration scripts and migration ordering.
-* Data normalization or transformation.
-* Query behavior and indexing.
-* Audit records and retention.
-* Backup and restoration procedures.
-* Database driver or ORM changes.
-* Development, test and production configuration.
-
-16.2 Required considerations
+Required considerations
 
 Consideration	Verification question
 Schema compatibility	Can the intended application version operate with the resulting schema?
 Data integrity	Are existing records preserved or transformed as intended?
-Migration ordering	Must one migration complete before another?
+Migration ordering	Must one migration finish before another?
 Backups	Is a suitable backup required before execution?
-Downtime	Is downtime necessary and has the impact been assessed?
-Rollback	Can the schema and data safely be restored?
-Concurrency	Can writes during migration cause inconsistency?
-Permissions	Does the migration use appropriately scoped credentials?
+Downtime	Is downtime necessary and has its impact been assessed?
+Rollback	Can schema and data safely be restored?
+Concurrency	Could writes during migration cause inconsistency?
+Permissions	Are migration credentials appropriately scoped?
 Testing	Has the migration been tested against representative data?
 Monitoring	Are failures and unexpected results observable?
 
-Record only the checks actually performed. If a migration has not been tested against production-like data, do not imply that it has.
+Record only checks actually performed. Do not imply that a migration has been tested against production-like data if it has not.
 
 ⸻
 
-17. Infrastructure and Deployment Changes
+16. Infrastructure and Deployment
 
 Infrastructure changes can affect availability, configuration, reliability, recovery and release operations.
 
-17.1 Relevant areas
+Relevant areas include hosting, CI/CD, environment configuration, networking, CORS, database operations, monitoring, logging, secret injection, build artifacts, recovery and graceful shutdown.
 
-Area	Examples
-Hosting	Hosting configuration or service changes
-CI/CD	Build, test, validation and deployment workflows
-Environment configuration	Environment variable names or required settings
-Networking	Routing, CORS or service communication changes
-Database operations	Connection handling, migrations and backups
-Monitoring	Health checks, alerts and diagnostics
-Logging	Structured logs, redaction and retention behavior
-Recovery	Backup restoration and rollback procedures
-Secrets	Secret injection and rotation procedures
-Build artifacts	Packaging and deployment output
-Availability	Changes to startup, readiness or graceful shutdown
+Deployment claims
 
-17.2 Deployment claims
+* Deployment configuration updated: Configuration changed.
+* Build completed: The recorded build succeeded.
+* Deployed to staging: A staging deployment was verified.
+* Released: Formal release status was verified.
+* Available in production: Evidence confirms that the intended production environment is serving the release.
 
-Use precise descriptions:
-
-* “Deployment configuration updated” means configuration changed.
-* “Build completed” means the recorded build succeeded.
-* “Deployed to staging” means a staging deployment was verified.
-* “Released” means the formal release status was verified.
-* “Available in production” requires evidence that the intended production environment is serving the release.
-
-Do not equate a successful build with a successful deployment or a successful deployment with complete operational verification.
+A successful build does not establish a successful deployment, and a successful deployment does not establish complete operational verification.
 
 ⸻
 
-18. Documentation and Developer Experience
+17. Documentation and Developer Experience
 
 Document material improvements to development, testing, setup, maintenance and project governance.
 
-18.1 Relevant project records
-
-File or resource	Changelog relevance
+Resource	Purpose
 README.md	Project overview and setup instructions
 CHANGELOG.md	Release history and change descriptions
-CONTRIBUTING.md	Contribution and review procedures
+CONTRIBUTING.md	Contribution workflow
 CODE_OF_CONDUCT.md	Community standards and reporting arrangements
 SECURITY.md	Security reporting and response guidance
-LICENSE	Licensing terms and verified ownership information
+LICENSE	Applicable licensing terms
 pytest.ini	Python test discovery and execution policy
 requirements-dev.txt	Python development dependencies
 mypy.ini	Python type-checking configuration
@@ -820,254 +624,213 @@ API specifications	Endpoint and contract documentation
 Migration guides	Database and application upgrade procedures
 CI workflows	Automated validation and release processes
 
-The existence of a documentation file does not prove that the described process is operational. Verify referenced links, contact details, scripts and workflows before making such claims.
+These are reference examples, not confirmation that every file exists in the repository.
 
-18.2 Developer experience changes
+Meaningful developer-experience changes may include improved test discovery, better local setup, stronger validation, clearer architecture documentation, more reproducible builds or improved CI reporting.
 
-Examples of meaningful changes include:
-
-* Improved test discovery or failure diagnostics.
-* New automated validation.
-* Better local setup instructions.
-* More reliable formatting, linting or type-checking.
-* Expanded integration or regression coverage.
-* Clearer architecture and module documentation.
-* Improved CI reporting.
-* More reproducible builds.
-* Updated contributor requirements.
-
-Document the practical impact and any new prerequisites.
+Verify referenced links, contact details, scripts and workflows before claiming that a process is operational.
 
 ⸻
 
-19. Release Readiness Checklist
+18. Release Readiness Checklist
 
-Complete the applicable checks before declaring a formal release.
+Complete applicable checks before declaring a formal release.
 
-19.1 Source and review
+Source and review
 
 * [ ]	Confirm the intended changes are included.
 * [ ]	Review the relevant diff and commit history.
-* [ ]	Verify that the release does not contain unintended temporary files.
+* [ ]	Check for unintended temporary files.
 * [ ]	Check for exposed secrets and confidential data.
 * [ ]	Review material configuration and dependency changes.
-* [ ]	Confirm that changelog statements match the actual implementation.
+* [ ]	Confirm changelog statements match the implementation.
 
-19.2 Testing and quality
+Testing and quality
 
-* [ ]	Run the applicable automated tests.
+* [ ]	Run applicable automated tests.
 * [ ]	Review test failures and skipped tests.
-* [ ]	Run relevant syntax and data-validation checks.
+* [ ]	Run syntax and data-validation checks.
 * [ ]	Run linting, formatting and type checking where configured.
-* [ ]	Validate important regression and compatibility paths.
+* [ ]	Verify important regression and compatibility paths.
 * [ ]	Record known limitations and unresolved high-impact defects.
 
-19.3 Security and privacy
+Security and privacy
 
 * [ ]	Review relevant access-control changes.
 * [ ]	Inspect material dependency security findings.
 * [ ]	Verify secret handling and environment configuration.
-* [ ]	Review document and personal-data access behavior where affected.
-* [ ]	Follow applicable security disclosure procedures.
+* [ ]	Review document and personal-data access where affected.
+* [ ]	Follow applicable disclosure procedures.
 * [ ]	Avoid unsupported security or compliance claims.
 
-19.4 Compatibility and migration
+Compatibility and migration
 
 * [ ]	Verify package version and lockfile consistency where applicable.
 * [ ]	Document breaking changes.
 * [ ]	Validate migration prerequisites and execution order.
 * [ ]	Review backup, rollback and recovery requirements.
 * [ ]	Verify environment configuration changes.
-* [ ]	Document required actions for users or integration owners.
+* [ ]	Document required actions for users and integration owners.
 
-19.5 Release and deployment
+Release and deployment
 
 * [ ]	Confirm the intended release identifier.
 * [ ]	Verify the release date.
 * [ ]	Verify release references and tags.
 * [ ]	Confirm the build result for the recorded environment.
-* [ ]	Confirm deployment status before claiming deployment.
+* [ ]	Verify deployment status before claiming deployment.
 * [ ]	Review monitoring and recovery requirements.
 * [ ]	Finalize the changelog entry.
 
-19.6 Publication
+Publication
 
 * [ ]	Remove unresolved template placeholders.
 * [ ]	Remove irrelevant empty sections.
 * [ ]	Verify links and references.
-* [ ]	Check the entry for confidential information.
+* [ ]	Check for confidential information.
 * [ ]	Preserve previous release history.
 * [ ]	Publish only statements supported by evidence.
 
-Checklist policy: This list defines a recommended process. Its presence does not mean the checks have been completed.
+This checklist defines a recommended process. Its presence does not mean that any check has been completed.
 
 ⸻
 
-20. Release Verification Matrix
+19. Verification Matrix
 
-Use this matrix to help reviewers distinguish evidence from assumptions.
-
-Release claim	Minimum evidence to seek	Status if evidence is unavailable
+Release claim	Evidence to seek	Status if unavailable
 Feature implemented	Relevant source or content change	Unverified
 Change reviewed	Review record or approved pull request	Unverified
 Change merged	Relevant branch or merge record	Unverified
-Tests passed	Test output from the identified run	Unverified
+Tests passed	Output from the identified test run	Unverified
 Build passed	Build result for the relevant configuration	Unverified
 Dependency updated	Resolved dependency metadata or lockfile diff	Unverified
-Migration completed	Migration execution and verification evidence	Unverified
-Security issue remediated	Relevant fix plus appropriate verification	Unverified
+Migration completed	Execution and verification evidence	Unverified
+Security issue remediated	Relevant fix and appropriate verification	Unverified
 Release published	Verified release record or equivalent	Unverified
 Deployment completed	Deployment record for the identified environment	Unverified
 Production availability confirmed	Appropriate production verification	Unverified
-Official content corrected	Relevant authoritative source and review record	Unverified
+Official content corrected	Authoritative source and review record	Unverified
 Rollback tested	Evidence of an actual rollback test	Unverified
 
-The required depth of evidence depends on the risk and impact of the change. Security-sensitive, destructive and data-migration changes warrant stronger verification than routine documentation edits.
+The required depth of evidence depends on risk. Security-sensitive, destructive and data-migration changes warrant stronger verification than routine documentation edits.
 
 ⸻
 
-21. Maintenance and Governance
+20. Maintenance and Governance
 
 The changelog should be maintained as part of the normal development and release workflow.
 
-21.1 Responsibilities
+20.1 Responsibilities
 
 Role	Responsibility
-Contributor	Propose an accurate entry for a significant change
+Contributor	Propose accurate entries for significant changes
 Reviewer	Check clarity, impact and factual accuracy
-Maintainer	Ensure the entry matches the accepted change
+Maintainer	Ensure entries match accepted changes
 Release manager	Consolidate entries and verify release metadata
 Security owner	Review security-related disclosure where applicable
 Content reviewer	Verify authoritative information where relevant
 Operations owner	Confirm operational and deployment claims
 Project owner	Approve publication according to project governance
 
-A single individual may perform multiple roles. These responsibilities describe the process, not confirmed staffing arrangements for MedOrbits.
+These are recommended responsibilities, not confirmed staffing arrangements.
 
-21.2 Update frequency
+20.2 Update frequency
 
-Event	Expected changelog action
-Significant change accepted	Add or update the appropriate Unreleased entry
+Event	Expected action
+Significant change accepted	Add or update the relevant Unreleased entry
 Breaking change introduced	Document impact and migration requirements
-Dependency update with material impact	Record compatibility, installation or security implications
+Material dependency update	Record compatibility, installation or security implications
 Security fix prepared	Coordinate an appropriately scoped entry
 Release candidate prepared	Review and consolidate pending entries
 Formal release published	Create the dated version section
 Release withdrawn or superseded	Record the status and relevant implications
-Material historical error discovered	Correct it transparently
+Historical error discovered	Correct it transparently
 
-21.3 Review cadence
-
-Review the changelog:
-
-* During pull-request or change review when an entry is required.
-* During release preparation.
-* After material release or deployment corrections.
-* When a compatibility or migration issue is discovered.
-* When project release conventions change.
-
-Do not delay recording important changes until the end of a long development cycle.
+Review the changelog during change review, release preparation, material corrections, compatibility incidents and updates to release conventions.
 
 ⸻
 
-22. Corrections and Historical Integrity
+21. Historical Integrity
 
-The changelog must preserve a reliable historical record.
-
-22.1 Correction policy
+21.1 Corrections
 
 If an entry is inaccurate:
 
 1. Identify the inaccurate statement.
 2. Verify the correct information against available evidence.
 3. Correct the entry without inventing missing details.
-4. Add an explanatory note when the correction materially changes the interpretation of a published release.
+4. Explain material corrections when they change the interpretation of a published release.
 5. Preserve relevant historical context.
-6. Review any associated documentation or release references that may also be incorrect.
+6. Review associated documentation and references.
 
-22.2 Release withdrawal and supersession
+21.2 Withdrawn and superseded releases
 
 When a release is withdrawn, superseded or found to contain a serious defect:
 
 * Preserve the original version and date where verified.
-* Clearly identify the withdrawal or supersession status.
+* Clearly identify its withdrawal or supersession status.
 * Explain the impact at an appropriate level.
 * Reference a replacement release only when verified.
 * Include required upgrade or mitigation guidance.
-* Avoid silently deleting material release history.
+* Do not silently delete material release history.
 
-22.3 Confidential corrections
-
-If a correction relates to a sensitive security issue or private incident, disclose only what is appropriate for the public record. Retain detailed internal evidence in the appropriate restricted system.
+Sensitive security or incident details should remain in appropriate restricted systems where necessary.
 
 ⸻
 
-23. Automation and Continuous Integration
+22. Automation and Continuous Integration
 
-Automation can improve consistency and reduce manual release errors. It must not substitute for evidence or human review.
+Automation can improve consistency but must not replace evidence or human review.
 
-23.1 Recommended automation
-
-Automation	Purpose	Important limitation
-Changelog presence check	Detect missing required entries	Cannot determine whether descriptions are accurate
-Markdown linting	Identify formatting issues	Does not validate release facts
-Link checking	Identify broken references	Does not prove the referenced claim is correct
-Version consistency check	Compare package and release versions	Does not prove a release was published
+Automation	Purpose	Limitation
+Changelog presence check	Detect missing entries	Cannot establish factual accuracy
+Markdown linting	Identify formatting problems	Does not validate release facts
+Link checking	Identify broken references	Does not prove the claim is correct
+Version consistency check	Compare package and release versions	Does not prove publication
 Release-tag validation	Check tag and commit associations	Does not prove deployment
 Test-report collection	Preserve test outcomes	Applies only to the recorded run and scope
 Dependency review	Identify version and security changes	Does not prove all findings are resolved
-Template placeholder check	Detect unfinished release entries	Requires meaningful review beyond text matching
-Release-note generation	Summarize commits or pull requests	Generated descriptions require human validation
+Placeholder detection	Identify unfinished release entries	Requires human review
+Release-note generation	Summarize commits or pull requests	Generated descriptions need validation
 
-23.2 Automation policy
-
-* Generate reports from actual repository and CI data.
-* Do not automatically mark a release as successful solely because a workflow completed.
-* Keep secrets out of generated reports and public release notes.
-* Validate generated links before publication.
-* Review generated summaries for inaccurate or misleading claims.
-* Preserve the distinction between test, build, release and deployment status.
-
-23.3 Suggested release workflow
+Suggested release workflow
 
 1. Collect accepted changes.
 2. Review and consolidate the Unreleased section.
 3. Identify breaking changes and migration requirements.
-4. Run the applicable quality and security checks.
+4. Run applicable quality and security checks.
 5. Verify the release identifier and date.
 6. Prepare and review the release entry.
-7. Publish the release using the project’s actual release process.
+7. Publish through the project’s actual release process.
 8. Verify the published release record.
 9. Record deployment status separately when applicable.
-10. Preserve test, build and release evidence in the appropriate systems.
+10. Preserve test, build and release evidence.
 
 ⸻
 
-24. Related Project Records
+23. Related Records
 
-The changelog should complement, rather than duplicate, the project’s source history and technical documentation.
+Resource	Purpose
+README.md	Project overview and setup
+CONTRIBUTING.md	Contribution workflow
+SECURITY.md	Vulnerability reporting
+LICENSE	Licensing terms
+API documentation	Current endpoint behavior and contracts
+Migration guides	Upgrade procedures
+Test reports	Test execution evidence
+CI/CD records	Build and deployment evidence
+Git history	Commit-level traceability
+Release records	Published release metadata
+Official education sources	Authoritative admissions requirements
+Incident records	Restricted security or operational investigations
 
-Resource	Purpose	Relationship to this changelog
-README.md	Project overview and setup	Describes the current project rather than every historical change
-CONTRIBUTING.md	Contribution workflow	Explains how contributors should propose changes
-SECURITY.md	Vulnerability reporting	Defines security reporting and handling
-LICENSE	Licensing terms	Establishes applicable license terms
-API documentation	API contracts	Describes current endpoints and behavior
-Migration guides	Upgrade procedures	Provides detailed steps for specific changes
-Test reports	Test execution evidence	Supports claims about a particular test run
-CI/CD records	Build and deployment evidence	Supports relevant operational statements
-Git history	Source-level history	Provides commit-level traceability
-Release records	Published release metadata	Confirms version and release status
-Official education sources	Authoritative requirements	Supports relevant educational and admissions corrections
-Incident records	Security or operational investigations	Retains details that may not belong in public changelog entries
-
-Only include links that have been verified in the actual repository or authoritative source. A path in this table is a suggested resource name, not confirmation that the file exists.
+Only include links verified in the repository or an authoritative source. Listed paths are suggested resource names, not confirmation that those files exist.
 
 ⸻
 
-25. Limitations and Disclaimer
+24. Limitations and Disclaimer
 
-This changelog records changes known to the project maintainers and documented with the evidence available to them.
+This changelog records changes known to project maintainers and documented with the evidence available to them.
 
 It does not guarantee that every internal modification, defect, security issue, incident, deployment event or operational change is recorded.
 
@@ -1081,13 +844,13 @@ It does not replace:
 * Privacy notices and applicable legal obligations.
 * Formal release approval and deployment records.
 
-The absence of an entry does not prove that a change did not occur. Likewise, the presence of an entry does not prove that a feature is currently available or that a claimed outcome has been independently validated.
+The absence of an entry does not prove that a change did not occur. The presence of an entry does not prove that a feature is currently available or that an outcome has been independently validated.
 
-Readers should consult the relevant release, source, test, deployment or authoritative-content records when they require stronger verification.
+Consult the relevant source, test, release, deployment or authoritative-content records when stronger verification is required.
 
 ⸻
 
-26. Document Control
+25. Document Control
 
 Field	Value
 Project	MedOrbits
@@ -1100,16 +863,16 @@ Versioning policy	Semantic Versioning where applicable
 Date format	ISO 8601 (YYYY-MM-DD)
 Maintenance owner	Authorized MedOrbits project maintainers
 Update trigger	Significant accepted changes and relevant releases
-Verification standard	Claims supported by repository, test, release or other appropriate evidence
+Verification standard	Claims supported by appropriate evidence
 Current documented release	No release history verified
 Publication status	Requires review against actual repository and release records
 
 Final maintenance requirement
 
-Before publishing this document, verify its contents against the actual MedOrbits repository. Add only confirmed release history, replace placeholders when supporting evidence becomes available, and ensure every published release entry accurately represents the change and its verified status.
+Before publishing this document, verify it against the actual MedOrbits repository. Add only confirmed release history, replace placeholders when supporting evidence becomes available, and ensure every published release entry accurately represents the change and its verified status.
+
+Keep the Unreleased section at the top and move verified entries into dated version sections when preparing formal releases. Pay particular attention to API compatibility, applicant-document handling, security changes, database migrations and official admissions information because these areas can have significant user or operational consequences.
+
+⸻
 
 End of MedOrbits Changelog.
-
-Recommended repository practice
-
-Keep the Unreleased section at the top and move its verified entries into a dated version section when preparing a formal release. For MedOrbits, give particular attention to API compatibility, applicant-document handling, security changes, database migrations, and official admissions information because these areas can have significant user or operational consequences.

@@ -1,177 +1,199 @@
-
-name: "🐛 Bug Report"
-description: Report a bug or unexpected behavior in MedOrbits.
-title: "[BUG]: "
+name: Bug report
+description: Report a reproducible bug or unexpected behavior in MedOrbits.
+title: "[Bug]: "
 labels:
-  - bug
-assignees: []
+
+* bug
+* triage
+    assignees: []
 
 body:
-  - type: markdown
+
+* type: markdown
     attributes:
-      value: |
-        Thank you for helping improve MedOrbits.
+    value: |
+    Thank you for helping improve MedOrbits.
 
-        Before submitting, check existing issues for duplicates.
-        Do not include passwords, API keys, access tokens, personal
-        documents, private user data, or other confidential information.
+Before submitting, please check existing issues for duplicates.
+Report one problem per issue and remove any personal, confidential,
+medical, financial, or authentication information from screenshots
+and logs.
 
-  - type: dropdown
+* type: checkboxes
+    id: checks
+    attributes:
+    label: Pre-submission checklist
+    description: Confirm these items before submitting your report.
+    options:
+    - label: I searched existing issues for a similar report.
+    required: true
+    - label: I can describe the steps needed to reproduce the problem.
+    required: true
+    - label: I removed passwords, tokens, personal data, and other secrets from the evidence.
+    required: true
+* type: dropdown
     id: area
     attributes:
-      label: Affected Area
-      description: Select the part of MedOrbits where the problem occurred.
-      options:
-        - Website / User Interface
-        - Authentication / Login
-        - User Profile / Account
-        - Education / College Information
-        - Medical Admissions
-        - Career / Jobs / Recruitment
-        - Search / Filters
-        - Application Forms
-        - API / Backend
-        - Database
-        - Admin Dashboard
-        - Deployment / Infrastructure
-        - Performance
-        - Accessibility
-        - Security
-        - Other
+    label: Affected area
+    description: Select the part of MedOrbits where the problem occurs.
+    options:
+    - Website or user interface
+    - Education and admissions
+    - College or university information
+    - Careers, jobs, or recruitment
+    - Account, login, or authentication
+    - Forms or document uploads
+    - Search or filtering
+    - API or backend
+    - Database or data integrity
+    - Payments or subscriptions
+    - Accessibility or localization
+    - Performance or availability
+    - Deployment or infrastructure
+    - Security concern (do not disclose vulnerabilities publicly)
+    - Other
     validations:
-      required: true
-
-  - type: textarea
-    id: summary
-    attributes:
-      label: Bug Summary
-      description: Clearly describe the problem.
-      placeholder: Describe what went wrong and where it happened.
-    validations:
-      required: true
-
-  - type: textarea
-    id: reproduction
-    attributes:
-      label: Steps to Reproduce
-      description: Provide numbered, repeatable steps.
-      placeholder: |
-        1. Open ...
-        2. Navigate to ...
-        3. Select ...
-        4. Observe the error.
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected Behavior
-      description: What should have happened?
-      placeholder: Describe the expected result.
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual Behavior
-      description: What happened instead?
-      placeholder: Describe the actual result and any visible error.
-    validations:
-      required: true
-
-  - type: textarea
-    id: evidence
-    attributes:
-      label: Screenshots or Error Logs
-      description: Add relevant screenshots, sanitized logs, or error messages.
-      placeholder: |
-        Paste relevant error messages here.
-        Remove credentials, tokens, and personal information first.
-    validations:
-      required: false
-
-  - type: dropdown
+    required: true
+* type: dropdown
     id: severity
     attributes:
-      label: Impact
-      description: Select the impact of this bug.
-      options:
-        - Critical - Core service unavailable or major data integrity issue
-        - High - Important functionality unusable
-        - Medium - Functionality impaired with a workaround
-        - Low - Minor issue or visual defect
+    label: Impact
+    description: Choose the level that best describes the user impact.
+    options:
+    - Critical -- widespread outage or major data-integrity impact
+    - High -- major feature unavailable with no practical workaround
+    - Medium -- feature impaired but a workaround exists
+    - Low -- minor issue or cosmetic defect
+    - Not sure
     validations:
-      required: true
-
-  - type: dropdown
-    id: frequency
+    required: true
+* type: textarea
+    id: summary
     attributes:
-      label: Reproducibility
-      description: How often does the problem occur?
-      options:
-        - Every time
-        - Frequently
-        - Occasionally
-        - Only once
-        - Unable to determine
+    label: Bug summary
+    description: Describe what is broken and who or what is affected.
+    placeholder: A clear and concise description of the problem.
     validations:
-      required: true
-
-  - type: input
-    id: page_url
+    required: true
+* type: textarea
+    id: reproduction
     attributes:
-      label: Affected Page or Endpoint
-      description: Provide the relevant URL or API path, without private query parameters or tokens.
-      placeholder: "/education/india/mbbs.html"
+    label: Steps to reproduce
+    description: List the exact steps that trigger the problem.
+    placeholder: |
+    Open the affected page.
+    Select the relevant option.
+    Submit the form.
+    Observe the unexpected result.
     validations:
-      required: false
-
-  - type: input
-    id: browser
+    required: true
+* type: textarea
+    id: expected
     attributes:
-      label: Browser and Version
-      description: Include the browser and version, if applicable.
-      placeholder: "Safari 26.x, Chrome 140.x"
+    label: Expected behavior
+    description: Explain what you expected to happen.
+    placeholder: Describe the correct behavior.
     validations:
-      required: false
-
-  - type: input
-    id: operating_system
+    required: true
+* type: textarea
+    id: actual
     attributes:
-      label: Operating System
-      description: Include the OS and version, if applicable.
-      placeholder: "iOS, Android, Windows, macOS, or Linux"
+    label: Actual behavior
+    description: Explain what happened instead, including any visible error.
+    placeholder: Describe the observed behavior or error message.
     validations:
-      required: false
-
-  - type: input
+    required: true
+* type: dropdown
+    id: reproducibility
+    attributes:
+    label: Reproducibility
+    options:
+    - Every time
+    - Frequently
+    - Occasionally
+    - Happened once
+    - Unable to determine
+    validations:
+    required: true
+* type: input
+    id: page-url
+    attributes:
+    label: Affected page or endpoint
+    description: Provide a public URL or API route if applicable. Do not include private query parameters or access tokens.
+    placeholder: "https://example.com/affected-page"
+* type: input
+    id: app-version
+    attributes:
+    label: MedOrbits version or commit
+    description: Provide the release version or Git commit hash if known.
+    placeholder: "2.0.0 or a commit hash"
+* type: dropdown
     id: environment
     attributes:
-      label: Environment
-      description: Identify the affected deployment.
-      placeholder: "Production, staging, local development, or preview"
+    label: Environment
+    options:
+    - Production
+    - Preview or staging
+    - Local development
+    - CI or automated tests
+    - Other or unknown
     validations:
-      required: false
-
-  - type: textarea
-    id: additional_context
+    required: true
+* type: dropdown
+    id: device
     attributes:
-      label: Additional Context
-      description: Include relevant configuration, recent changes, or workarounds.
-      placeholder: Add any other information that could help reproduce or diagnose the issue.
+    label: Device type
+    options:
+    - Desktop or laptop
+    - Mobile phone
+    - Tablet
+    - Server or CI runner
+    - Other
+    - Unknown
     validations:
-      required: false
-
-  - type: checkboxes
-    id: checklist
+    required: true
+* type: input
+    id: operating-system
     attributes:
-      label: Pre-submission Checklist
-      options:
-        - label: I checked for existing reports of this bug.
-          required: true
-        - label: I provided steps to reproduce the issue.
-          required: true
-        - label: I removed secrets and sensitive information from the report.
-          required: true
+    label: Operating system
+    placeholder: "e.g. iOS, Android, Windows, macOS, Linux"
+* type: input
+    id: browser-runtime
+    attributes:
+    label: Browser or runtime
+    description: Include version when known.
+    placeholder: "e.g. Safari, Chrome, Node.js"
+* type: textarea
+    id: logs
+    attributes:
+    label: Relevant error messages or logs
+    description: |
+    Paste only the relevant, redacted error output.
+    Never include passwords, cookies, API keys, authorization headers,
+    private user records, or production secrets.
+    render: text
+* type: textarea
+    id: evidence
+    attributes:
+    label: Screenshots or additional evidence
+    description: |
+    Attach screenshots or describe other evidence.
+    Redact personal information and confidential data before uploading.
+* type: textarea
+    id: workaround
+    attributes:
+    label: Workaround
+    description: Explain any temporary workaround, or state that none is known.
+    placeholder: Optional
+* type: textarea
+    id: additional-context
+    attributes:
+    label: Additional context
+    description: Include relevant details that do not fit elsewhere.
+    placeholder: Optional
+* type: markdown
+    attributes:
+    value: |
+    Security notice: Do not report exploitable vulnerabilities, exposed credentials,
+    or private user data in a public issue. Follow the repository’s SECURITY.md
+    for the designated private reporting process.

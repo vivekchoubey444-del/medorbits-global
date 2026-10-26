@@ -1,135 +1,105 @@
-name: Generate Lockfile
+name: Lockfile Validation
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - ".github/workflows/lockfile.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - ".github/workflows/lockfile.yml"
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: generate-lockfile-${{ github.ref }}
-  cancel-in-progress: false
+  group: lockfile-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
-  lock:
-    name: Generate and validate package-lock.json
+  validate-lockfile:
+    name: Validate npm lockfile
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Only allow manual runs on main.
-    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
           persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Verify required files
+          node-version: "22"
+      - name: Check package manifest and lockfile
         shell: bash
         run: |
           set -euo pipefail
           if [[ ! -f package.json ]]; then
-            echo "::error::package.json is missing."
+            echo "::error::Root package.json is missing."
             exit 1
           fi
-          node -e "
-            const fs = require('node:fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
-              throw new Error('package.json must contain a JSON object.');
+          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
+            echo "::error::No npm lockfile found. Generate and commit one before running this workflow."
+            exit 1
+          fi
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const file = fs.existsSync("npm-shrinkwrap.json")
+              ? "npm-shrinkwrap.json"
+              : "package-lock.json";
+            const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+            if (![2, 3].includes(lock.lockfileVersion)) {
+              throw new Error(`Unsupported lockfile version: ${lock.lockfileVersion}`);
             }
-            if (!pkg.name) {
-              throw new Error('package.json must define a package name.');
+            if (!lock.packages || !lock.packages[""]) {
+              throw new Error("Lockfile root package metadata is missing.");
             }
-            console.log('package.json is valid.');
-            console.log('Package:', pkg.name);
-          "
-      - name: Generate lockfile
+            const root = lock.packages[""];
+            if (root.name && pkg.name && root.name !== pkg.name) {
+              throw new Error("Lockfile package name does not match package.json.");
+            }
+            if (root.version && pkg.version && root.version !== pkg.version) {
+              throw new Error("Lockfile package version does not match package.json.");
+            }
+            console.log(`Manifest valid: ${pkg.name || "unnamed"}`);
+            console.log(`Lockfile valid: ${file}`);
+            console.log(`Lockfile version: ${lock.lockfileVersion}`);
+          '
+      - name: Verify lockfile synchronization
         shell: bash
         run: |
           set -euo pipefail
-          # Generate only the lockfile; do not run package lifecycle scripts.
           npm install \
             --package-lock-only \
             --ignore-scripts \
             --no-audit \
-            --no-fund
-      - name: Validate generated lockfile
+            --no-fund \
+            --dry-run
+      - name: Verify reproducible dependency installation
         shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid or missing lockfileVersion.');
-          }
-          if (lock.name && lock.name !== pkg.name) {
-            throw new Error('Package name does not match the lockfile.');
-          }
-          if (
-            lock.version &&
-            pkg.version &&
-            lock.version !== pkg.version
-          ) {
-            throw new Error('Package version does not match the lockfile.');
-          }
-          if (
-            lock.packages?.['']?.name &&
-            lock.packages[''].name !== pkg.name
-          ) {
-            throw new Error('Root package name mismatch.');
-          }
-          if (
-            lock.packages?.['']?.version &&
-            pkg.version &&
-            lock.packages[''].version !== pkg.version
-          ) {
-            throw new Error('Root package version mismatch.');
-          }
-          console.log('Lockfile JSON and metadata are valid.');
-          console.log('Lockfile version:', lock.lockfileVersion);
-          NODE
-      - name: Verify lockfile consistency
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Check generated changes
-        id: changes
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f package-lock.json ]]; then
-            echo "::error::Lockfile generation did not produce package-lock.json."
-            exit 1
-          fi
-          git diff --check -- package-lock.json
-          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            if git diff --quiet -- package-lock.json &&
-               [[ -z "$(git ls-files --others --exclude-standard -- package-lock.json)" ]]; then
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-              echo "package-lock.json is already up to date."
-              exit 0
-            fi
-          else
-            echo "::notice::package-lock.json is new and not tracked yet."
-          fi
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "A lockfile change is ready for review."
-      - name: Upload lockfile for review
-        if: steps.changes.outputs.changed == 'true'
+          npm ci \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund \
+            --dry-run
+      - name: Upload existing lockfile
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/upload-artifact@v4
         with:
-          name: medorbits-generated-lockfile
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 7
-      - name: Report result
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Lockfile generation and validation completed."
-          echo "No repository files were committed or pushed."
-          echo "Review the artifact before adding the lockfile to main."
+          name: validated-lockfile-${{ github.run_id }}
+          path: |
+            package-lock.json
+            npm-shrinkwrap.json
+          if-no-files-found: warn
+          retention-days: 14

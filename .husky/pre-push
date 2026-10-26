@@ -1,448 +1,111 @@
-
 #!/usr/bin/env sh
-# ==============================================================================
-# MedOrbits -- Pre-push Validation Hook
-#
+# ============================================================
+# MedOrbits -- Pre-Push Safety Gate
 # File: .husky/pre-push
-# Shell: POSIX sh
+# Release: 2.0.0
 #
-# Standard mode:
-#   Run ESLint when configured.
-#
-# Strict mode:
-#   MEDORBITS_PREPUSH_FULL=1
-#   Require automated tests; run configured formatting and build checks.
-#
-# JSON mode:
-#   MEDORBITS_PREPUSH_JSON=1
-#   Require and run validate:json.
-#
-# Combined mode:
-#   MEDORBITS_PREPUSH_FULL=1 MEDORBITS_PREPUSH_JSON=1 git push
-#
-# Requirements:
-#   - Git repository
-#   - Node.js >= 20
-#   - npm
-#   - Root package.json
-#
-# Important:
-#   This hook checks the current working tree, not each pushed commit in
-#   isolation. CI must independently validate pushed commits.
-# ==============================================================================
-
+# Runs read-only checks before a Git push.
+# Does not install dependencies, modify files, commit, or push.
+# ============================================================
 set -eu
-
-PROGRAM_NAME=${0##*/}
-
-checks_passed=0
-checks_skipped=0
-checks_required=0
-checks_failed=0
-
-strict_mode=${MEDORBITS_PREPUSH_FULL:-0}
-json_mode=${MEDORBITS_PREPUSH_JSON:-0}
-
-# ------------------------------------------------------------------------------
-# Output helpers
-# ------------------------------------------------------------------------------
-
-info() {
-    printf '%s\n' "$*"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "[MedOrbits] ERROR: Not inside a Git repository." >&2
+  exit 1
 }
-
-warn() {
-    printf 'WARNING: %s\n' "$*" >&2
-}
-
-error() {
-    printf 'ERROR: %s\n' "$*" >&2
-}
-
-die() {
-    error "$1"
-    exit "${2:-1}"
-}
-
-section() {
-    printf '\n%s\n' "=================================================="
-    printf '%s\n' "$1"
-    printf '%s\n' "=================================================="
-}
-
-usage() {
-    cat <<EOF
-MedOrbits Pre-push Validation
-
-Usage:
-  $PROGRAM_NAME
-  $PROGRAM_NAME --help
-
-Environment:
-  MEDORBITS_PREPUSH_FULL=0|1
-      Enable strict test, formatting and build validation.
-
-  MEDORBITS_PREPUSH_JSON=0|1
-      Require the validate:json npm script.
-
-Examples:
-  git push
-  MEDORBITS_PREPUSH_FULL=1 git push
-  MEDORBITS_PREPUSH_JSON=1 git push
-  MEDORBITS_PREPUSH_FULL=1 MEDORBITS_PREPUSH_JSON=1 git push
-EOF
-}
-
-# ------------------------------------------------------------------------------
-# 1. Validate arguments
-# ------------------------------------------------------------------------------
-
-if [ "$#" -gt 0 ]; then
-    case "$1" in
-        --help|-h)
-            usage
-            exit 0
-            ;;
-        *)
-            die "This hook does not accept positional arguments. Use --help for usage." 2
-            ;;
-    esac
+cd "$ROOT"
+echo "[MedOrbits] Running pre-push checks..."
+# ------------------------------------------------------------
+# 1. Require a valid repository HEAD
+# ------------------------------------------------------------
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+  echo "[MedOrbits] ERROR: No valid HEAD commit exists." >&2
+  exit 1
 fi
-
-# ------------------------------------------------------------------------------
-# 2. Validate feature flags
-# ------------------------------------------------------------------------------
-
-case "$strict_mode" in
-    0|1) ;;
-    *)
-        die "MEDORBITS_PREPUSH_FULL must be 0 or 1." 2
-        ;;
-esac
-
-case "$json_mode" in
-    0|1) ;;
-    *)
-        die "MEDORBITS_PREPUSH_JSON must be 0 or 1." 2
-        ;;
-esac
-
-section "MedOrbits: Pre-push validation"
-
-info "Strict mode: $strict_mode"
-info "JSON validation: $json_mode"
-
-# ------------------------------------------------------------------------------
-# 3. Locate repository root
-# ------------------------------------------------------------------------------
-
-if ! command -v git >/dev/null 2>&1; then
-    die "Git is required but was not found in PATH."
+echo "[MedOrbits] Repository HEAD is valid."
+# ------------------------------------------------------------
+# 2. Block pushes while the Git index has unresolved conflicts
+# ------------------------------------------------------------
+if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+  echo "[MedOrbits] ERROR: Unresolved merge conflicts exist." >&2
+  git diff --name-only --diff-filter=U >&2 || true
+  exit 1
 fi
-
-if ! repo_root=$(git rev-parse --show-toplevel 2>/dev/null); then
-    die "Unable to determine the Git repository root."
-fi
-
-if ! cd "$repo_root"; then
-    die "Unable to enter the repository root."
-fi
-
-info "Repository root: $repo_root"
-
-# ------------------------------------------------------------------------------
-# 4. Verify required files and tools
-# ------------------------------------------------------------------------------
-
-if [ ! -f package.json ] || [ ! -r package.json ]; then
-    die "A readable package.json is required at the repository root."
-fi
-
-if ! command -v node >/dev/null 2>&1; then
-    die "Node.js was not found in PATH."
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-    die "npm was not found in PATH."
-fi
-
-# ------------------------------------------------------------------------------
-# 5. Validate runtime
-# ------------------------------------------------------------------------------
-
-section "Checking runtime"
-
-if ! node_version=$(node -p 'process.versions.node' 2>/dev/null); then
-    die "Unable to determine the Node.js version."
-fi
-
-node_major=${node_version%%.*}
-
-case "$node_major" in
-    ""|*[!0-9]*)
-        die "Could not parse Node.js version: $node_version"
-        ;;
-esac
-
-if [ "$node_major" -lt 20 ]; then
-    die "Node.js >= 20 is required. Current version: $node_version"
-fi
-
-if ! npm_version=$(npm --version 2>/dev/null); then
-    die "Unable to determine the npm version."
-fi
-
-info "PASS: Node.js $node_version"
-info "PASS: npm $npm_version"
-
-# ------------------------------------------------------------------------------
-# 6. Validate package.json
-# ------------------------------------------------------------------------------
-
-section "Validating project configuration"
-
-if ! node -e '
-"use strict";
-
-const fs = require("node:fs");
-
-function fail(message) {
-    console.error(`ERROR: ${message}`);
-    process.exit(1);
-}
-
-let pkg;
-
-try {
-    pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-} catch (error) {
-    fail(`Cannot parse package.json: ${error.message}`);
-}
-
-if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg)) {
-    fail("package.json must contain a JSON object.");
-}
-
-for (const key of ["scripts", "engines"]) {
-    if (
-        pkg[key] !== undefined &&
-        (
-            pkg[key] === null ||
-            typeof pkg[key] !== "object" ||
-            Array.isArray(pkg[key])
-        )
-    ) {
-        fail(`The ${key} field must be an object when present.`);
-    }
-}
-
-if (
-    pkg.engines &&
-    pkg.engines.node !== undefined &&
-    typeof pkg.engines.node !== "string"
-) {
-    fail("engines.node must be a string when specified.");
-}
-
-if (
-    pkg.scripts &&
-    Object.entries(pkg.scripts).some(
-        ([name, value]) =>
-            typeof name !== "string" ||
-            typeof value !== "string"
-    )
-) {
-    fail("Every npm script must have a string value.");
-}
-
-console.log("PASS: package.json is valid.");
-'; then
-    die "Project configuration validation failed."
-fi
-
-# ------------------------------------------------------------------------------
-# 7. Detect npm scripts
-#
-# Return codes:
-#   0 = Script exists and is non-empty.
-#   1 = Script is not configured.
-#   2 = Configuration could not be inspected.
-# ------------------------------------------------------------------------------
-
-has_script() {
-    node -e '
-"use strict";
-
-const fs = require("node:fs");
-
-try {
-    const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-    const name = process.argv[1];
-
-    if (
-        pkg === null ||
-        typeof pkg !== "object" ||
-        Array.isArray(pkg) ||
-        (
-            pkg.scripts !== undefined &&
-            (
-                pkg.scripts === null ||
-                typeof pkg.scripts !== "object" ||
-                Array.isArray(pkg.scripts)
-            )
-        )
-    ) {
-        console.error("ERROR: Invalid package.json script configuration.");
-        process.exit(2);
-    }
-
-    const script = pkg.scripts && pkg.scripts[name];
-
-    process.exit(
-        typeof script === "string" && script.trim() !== ""
-            ? 0
-            : 1
-    );
-} catch (error) {
-    console.error(`ERROR: Cannot inspect package.json: ${error.message}`);
-    process.exit(2);
-}
-' "$1"
-}
-
-# ------------------------------------------------------------------------------
-# 8. Run a configured npm script
-#
-# Arguments:
-#   $1 = Human-readable check name
-#   $2 = npm script name
-#   $3 = 1 if mandatory; otherwise 0
-#
-# Missing mandatory scripts block the push.
-# Missing optional scripts are reported as skipped.
-# Any executed script failure blocks the push.
-# ------------------------------------------------------------------------------
-
-run_check() {
-    check_name=$1
-    script_name=$2
-    required=$3
-
-    case "$required" in
-        0|1) ;;
-        *)
-            die "Internal configuration error: invalid required flag."
-            ;;
-    esac
-
-    printf '\n%s\n' "----------------------------------------"
-    printf 'CHECK: %s\n' "$check_name"
-    printf 'SCRIPT: npm run %s\n' "$script_name"
-    printf '%s\n' "----------------------------------------"
-
-    if has_script "$script_name"; then
-        :
-    else
-        script_status=$?
-
-        if [ "$script_status" -gt 1 ]; then
-            checks_failed=$((checks_failed + 1))
-            error "Unable to inspect npm script: $script_name"
-            exit 1
+echo "[MedOrbits] No unresolved index conflicts."
+# ------------------------------------------------------------
+# 3. Validate tracked JSON files
+# ------------------------------------------------------------
+if command -v node >/dev/null 2>&1; then
+  JSON_FILES="$(git ls-files '*.json' '*.schema.json' '*.shema.json')"
+  if [ -n "$JSON_FILES" ]; then
+    printf '%s\n' "$JSON_FILES" |
+      while IFS= read -r file; do
+        [ -f "$file" ] || continue
+        if ! node -e \
+          'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
+          "$file" >/dev/null 2>&1; then
+          echo "[MedOrbits] ERROR: Invalid JSON: $file" >&2
+          exit 1
         fi
-
-        if [ "$required" -eq 1 ]; then
-            checks_required=$((checks_required + 1))
-            checks_failed=$((checks_failed + 1))
-            error "Required npm script '$script_name' is missing."
-            error "Add a valid validation script to package.json."
-            exit 1
-        fi
-
-        checks_skipped=$((checks_skipped + 1))
-        warn "Skipping $check_name: '$script_name' is not configured."
-        return 0
-    fi
-
-    if npm run "$script_name"; then
-        checks_passed=$((checks_passed + 1))
-
-        if [ "$required" -eq 1 ]; then
-            checks_required=$((checks_required + 1))
-        fi
-
-        info "PASS: $check_name"
-    else
-        script_status=$?
-
-        checks_failed=$((checks_failed + 1))
-        error "$check_name failed with exit status $script_status."
-        error "Push blocked because validation did not pass."
-        exit 1
-    fi
-}
-
-# ------------------------------------------------------------------------------
-# 9. Standard quality checks
-# ------------------------------------------------------------------------------
-
-section "Standard quality checks"
-
-run_check "ESLint" "lint" 0
-
-# ------------------------------------------------------------------------------
-# 10. Optional JSON validation
-# ------------------------------------------------------------------------------
-
-section "JSON validation"
-
-if [ "$json_mode" -eq 1 ]; then
-    info "Dedicated JSON validation is enabled."
-    run_check "JSON validation" "validate:json" 1
+      done
+    echo "[MedOrbits] JSON validation passed."
+  else
+    echo "[MedOrbits] No tracked JSON files found."
+  fi
 else
-    checks_skipped=$((checks_skipped + 1))
-    info "JSON validation is disabled."
-    info "Enable it with MEDORBITS_PREPUSH_JSON=1."
+  echo "[MedOrbits] WARNING: Node.js unavailable; JSON validation skipped." >&2
 fi
-
-# ------------------------------------------------------------------------------
-# 11. Strict validation
-# ------------------------------------------------------------------------------
-
-section "Strict validation"
-
-if [ "$strict_mode" -eq 1 ]; then
-    info "Strict validation mode is enabled."
-
-    run_check "Automated tests" "test" 1
-    run_check "Formatting validation" "format:check" 0
-    run_check "Production build" "build" 0
+# ------------------------------------------------------------
+# 4. Check tracked JavaScript syntax
+# ------------------------------------------------------------
+if command -v node >/dev/null 2>&1; then
+  JS_FILES="$(git ls-files '*.js' '*.mjs' '*.cjs')"
+  if [ -n "$JS_FILES" ]; then
+    printf '%s\n' "$JS_FILES" |
+      while IFS= read -r file; do
+        [ -f "$file" ] || continue
+        if ! node --check "$file"; then
+          echo "[MedOrbits] ERROR: JavaScript syntax check failed: $file" >&2
+          exit 1
+        fi
+      done
+    echo "[MedOrbits] JavaScript syntax validation passed."
+  else
+    echo "[MedOrbits] No tracked JavaScript files found."
+  fi
 else
-    checks_skipped=$((checks_skipped + 3))
-
-    info "Strict validation mode is disabled."
-    info "Tests, formatting validation and build were not run."
-    info "Enable them with MEDORBITS_PREPUSH_FULL=1."
+  echo "[MedOrbits] WARNING: Node.js unavailable; JavaScript validation skipped." >&2
 fi
-
-# ------------------------------------------------------------------------------
-# 12. Final report
-# ------------------------------------------------------------------------------
-
-section "Validation summary"
-
-info "Result: PASSED"
-info "Checks passed:   $checks_passed"
-info "Checks skipped:  $checks_skipped"
-info "Required passed: $checks_required"
-info "Checks failed:   $checks_failed"
-info "Strict mode:     $strict_mode"
-info "JSON mode:       $json_mode"
-
-if [ "$checks_skipped" -gt 0 ]; then
-    warn "Some checks were skipped or disabled. Review the output above."
+# ------------------------------------------------------------
+# 5. Run configured tests, when available
+# ------------------------------------------------------------
+if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
+  if [ ! -d node_modules ]; then
+    echo "[MedOrbits] WARNING: node_modules is missing; npm tests skipped." >&2
+  elif node -e '
+    const p = require("./package.json");
+    process.exit(p.scripts && p.scripts.test ? 0 : 1);
+  ' >/dev/null 2>&1; then
+    echo "[MedOrbits] Running npm test..."
+    npm test
+  else
+    echo "[MedOrbits] No npm test script configured; skipping."
+  fi
+else
+  echo "[MedOrbits] WARNING: npm or package.json unavailable; tests skipped." >&2
 fi
-
-printf '\n%s\n\n' "MedOrbits: Pre-push validation completed successfully."
-
+# ------------------------------------------------------------
+# 6. Optional project verification scripts
+# ------------------------------------------------------------
+for script in VERIFY.sh TEST.sh; do
+  if [ -f "$script" ]; then
+    echo "[MedOrbits] Running $script..."
+    if ! bash "$script"; then
+      echo "[MedOrbits] ERROR: $script failed." >&2
+      exit 1
+    fi
+  else
+    echo "[MedOrbits] $script not found; skipping."
+  fi
+done
+echo "[MedOrbits] Pre-push checks passed."
 exit 0

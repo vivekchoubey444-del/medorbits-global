@@ -28,7 +28,7 @@ Important: JSON Schema validation does not replace authentication, authorization
 
 2. Directory structure
 
-The following structure reflects the files identified in the current project screenshot and the schema work completed for MedOrbits.
+The following structure reflects the files identified during MedOrbits development. Verify the actual repository before importing or referencing schemas.
 
 api/
 └── schemas/
@@ -45,13 +45,13 @@ api/
     ├── job.schema.json
     └── user.schema.json
 
-The screenshot shows these files, but it does not establish that every file has the correct content or compiles successfully.
+The listed filenames do not guarantee that each file has valid content or compiles successfully.
 
-Other schemas, such as application.shema.json, may also exist or be added later. Verify the actual repository before importing or referencing them.
+Other schemas, such as application.shema.json, may exist or be added later. Check the repository before creating duplicate contracts.
 
 Schema responsibilities
 
-File	Responsibility
+File	Intended responsibility
 application.schema.json	Application submissions and education/admission application data
 application.shema.json	Alternative application schema filename, if retained
 job.schema.json	Job-posting data using the singular naming convention
@@ -65,31 +65,31 @@ pagination.shema.json	Pagination, sorting, searching, and filtering parameters
 career.shema.json	Career resources and career-related data, if implemented
 colleges.shema.json	College and institution data, if implemented
 
-This table documents intended responsibilities. It does not confirm that each schema has been implemented or integrated into API routes.
+These descriptions document intended responsibilities, not verified implementation status.
 
 3. Filename and reference conventions
 
-The current repository contains both .shema.json and .schema.json filenames.
+The repository currently uses both .shema.json and .schema.json naming conventions.
 
-The conventional spelling is .schema.json. However, renaming an existing file without updating all imports and references can break the application.
+The conventional spelling is .schema.json. However, renaming existing files without updating imports and references can break the application.
 
 Until the repository is standardized:
 
 1. Preserve existing filenames when modifying their contents.
-2. Ensure every $id corresponds to the intended schema identity.
+2. Ensure every $id identifies the intended schema.
 3. Check every local $ref and filesystem import.
-4. Update tests and middleware whenever filenames change.
-5. Avoid creating duplicate schemas that define conflicting versions of the same contract.
+4. Update tests and middleware when filenames change.
+5. Avoid duplicate schemas that define conflicting versions of the same contract.
 
-Example reference to a schema file:
+Example reference:
 
 {
   “$ref”: “./common.shema.json#/$defs/identifier”
 }
 
-The referenced file must actually exist at the resolved location and contain the referenced definition.
+The referenced file must exist at the resolved location and contain the requested definition.
 
-Recommendation: Plan a controlled migration to .schema.json once all imports, $id values, tests, and API references have been identified.
+Plan a controlled migration to .schema.json once imports, $id values, tests, and API references have been identified.
 
 4. Schema design standards
 
@@ -102,10 +102,10 @@ Where appropriate, each schema should define:
 * type: Expected data type.
 * properties: Supported object properties.
 * required: Mandatory fields.
-* additionalProperties: Whether unspecified properties are allowed.
+* additionalProperties: Whether unspecified properties are permitted.
 * $defs: Reusable definitions.
 * $ref: References to existing definitions.
-* Constraints: Lengths, numeric bounds, formats, patterns, enumerations, and array limits.
+* Constraints: lengths, numeric bounds, formats, patterns, enumerations, and array limits.
 
 Example:
 
@@ -113,11 +113,10 @@ Example:
   “$schema”: “https://json-schema.org/draft/2020-12/schema”,
   “$id”: “https://medorbits.in/api/schemas/example.schema.json”,
   “title”: “Example Schema”,
+  “description”: “Example request contract.”,
   “type”: “object”,
   “additionalProperties”: false,
-  “required”: [
-    “id”
-  ],
+  “required”: [“id”],
   “properties”: {
     “id”: {
       “type”: “string”,
@@ -127,7 +126,7 @@ Example:
   }
 }
 
-Use additionalProperties: false for strict request objects when appropriate. Do not apply it indiscriminately to extensible metadata or objects designed to accept additional fields.
+Use additionalProperties: false for strict request objects when appropriate. Do not apply it indiscriminately to extensible metadata.
 
 Separate request schemas, administrative schemas, database models, and public response schemas when their permitted properties differ.
 
@@ -160,7 +159,7 @@ Files:
 * /api/schemas/job.schema.json
 * /api/schemas/jobs.shema.json
 
-The singular and plural filenames should not be assumed to be interchangeable.
+The singular and plural filenames must not be assumed to be interchangeable.
 
 Document which file represents the canonical job record and which, if any, represents a collection or alternative contract.
 
@@ -194,7 +193,7 @@ Possible properties include:
 
 Use dedicated registration, profile-update, administrative-update, and response schemas instead of exposing one unrestricted account schema to all endpoints.
 
-Never allow an ordinary user to modify privileged account fields by including them in a request.
+Never allow an ordinary user to modify privileged account fields through a request.
 
 Sensitive fields, including password hashes, authentication secrets, private verification data, and internal security metadata, must not appear in ordinary API responses.
 
@@ -218,7 +217,7 @@ Potential reusable definitions include:
 
 Use $defs for reusable definitions and reference them consistently.
 
-Do not assume that a top-level definitions library validates all API responses. Define separate response schemas or reference the appropriate $defs entries.
+A definitions library does not automatically validate all API responses. Define separate response schemas or reference the appropriate $defs entries.
 
 When using a local $ref, confirm that the validator can resolve the referenced file and definition.
 
@@ -285,16 +284,16 @@ Supported parameters may include:
 * sortOrder: Ascending or descending.
 * search: Search term.
 * filters: Endpoint-specific filter values.
-* fields: Requested response fields.
+* fields: Requested response fields, where supported.
 * includeTotal: Whether to return total record counts.
 
-The current schema limits page size to 100 records. Enforce the same maximum in the API.
+The documented maximum page size is 100 records. Enforce the same maximum in the API.
 
 Query-string conversion
 
 Query parameters normally arrive as strings. Convert and validate them before executing queries.
 
-For example:
+Example:
 
 GET /api/jobs?page=2&limit=20&sortOrder=desc
 
@@ -359,7 +358,7 @@ Reject invalid requests before relevant persistence operations. Unexpected schem
 
 Ajv supports JSON Schema Draft 2020-12 through its dedicated implementation.
 
-Official documentation: https://ajv.js.org/
+Official documentation: Ajv
 
 Install dependencies if they are not already present:
 
@@ -367,11 +366,11 @@ npm install ajv ajv-formats
 
 The following is an illustrative CommonJS validator. Adapt the path and exported middleware to the existing MedOrbits architecture.
 
-‘use strict’;
-const fs = require(‘node:fs’);
-const path = require(‘node:path’);
-const Ajv2020 = require(‘ajv/dist/2020’).default;
-const addFormats = require(‘ajv-formats’);
+“use strict”;
+const fs = require(“node:fs”);
+const path = require(“node:path”);
+const Ajv2020 = require(“ajv/dist/2020”).default;
+const addFormats = require(“ajv-formats”);
 const ajv = new Ajv2020({
   allErrors: true,
   strict: true
@@ -379,31 +378,29 @@ const ajv = new Ajv2020({
 addFormats(ajv);
 const schemaPath = path.join(
   __dirname,
-  ‘application.schema.json’
+  “application.schema.json”
 );
 const applicationSchema = JSON.parse(
-  fs.readFileSync(schemaPath, ‘utf8’)
+  fs.readFileSync(schemaPath, “utf8”)
 );
-const validateApplication = ajv.compile(
-  applicationSchema
-);
+const validateApplication = ajv.compile(applicationSchema);
 function validateApplicationPayload(req, res, next) {
   if (!validateApplication(req.body)) {
-    const errors = (
-      validateApplication.errors || []
-    ).map((error) => ({
-      path: error.instancePath,
-      keyword: error.keyword,
-      message: error.message
-    }));
-    // Send only a generic message to the client.
-    // Keep sanitized diagnostic details in approved server logs.
+    const errors = (validateApplication.errors || []).map(
+      (error) => ({
+        path: error.instancePath,
+        keyword: error.keyword,
+        message: error.message
+      })
+    );
+    // Send a generic message to the client.
+    // Route diagnostics through the approved server logger.
     req.validationDiagnostics = errors;
     return res.status(400).json({
       success: false,
       error: {
-        code: ‘VALIDATION_ERROR’,
-        message: ‘The submitted data is invalid.’
+        code: “VALIDATION_ERROR”,
+        message: “The submitted data is invalid.”
       }
     });
   }
@@ -414,22 +411,22 @@ module.exports = validateApplicationPayload;
 Integration notes
 
 * This example assumes CommonJS and that the schema file is in the same directory as the validator module.
-* If middleware resides in /api/middlerware/, resolve the schema path relative to the actual directory structure.
+* If middleware resides in /api/middlerware/, resolve schema paths relative to the actual directory structure.
 * Use the exact filename present in the repository.
 * Compile schemas once during initialization or through a controlled cache.
 * Use a dedicated validator instance for Draft 2020-12.
 * Enable and test format validation.
 * Ensure invalid requests stop before the controller or service executes.
-* Route unexpected errors through the centralized error handler.
+* Route unexpected errors through centralized error handling.
 * Do not return submitted values, stack traces, or sensitive diagnostic data to clients.
 
-Do not copy this example into production without verifying the existing middleware exports, route definitions, module system, and error-handling conventions.
+Do not copy this example into production without verifying the existing middleware exports, route definitions, module system, and error-handling conventions. Local $ref resolution also requires a deliberate schema-loading strategy; parsing a single file does not automatically make every external reference resolvable.
 
 14. Validation standards
 
 Required fields
 
-A property is not mandatory simply because it appears under properties. Use required where field presence is necessary.
+A property is not mandatory simply because it appears under properties. Use required when field presence is necessary.
 
 Types and formats
 
@@ -445,7 +442,7 @@ Supported JSON types include:
 
 Use appropriate constraints such as minLength, maxLength, pattern, format, enum, minimum, maximum, minItems, and maxItems.
 
-Formats such as date, date-time, email, uri, and uuid must be tested against the validator configuration. Format declarations may otherwise act as annotations.
+Formats such as date, date-time, email, uri, and uuid must be tested against the validator configuration. Format declarations may otherwise act as annotations rather than enforced assertions.
 
 Cross-field validation
 
@@ -464,8 +461,6 @@ Enforce such rules in the appropriate domain or service layer, even if a schema 
 15. Error-response conventions
 
 Use a consistent API error format.
-
-Example:
 
 {
   “success”: false,
@@ -545,7 +540,7 @@ The schema test suite should:
 7. Run API integration tests against the actual routes.
 8. Fail the build if a required schema is missing or invalid.
 
-Do not treat successful JSON parsing as proof that a schema compiles or matches the API implementation.
+Successful JSON parsing alone does not prove that a schema compiles or matches the API implementation.
 
 18. Versioning and compatibility
 
@@ -566,7 +561,7 @@ Do not create duplicate schemas without documenting which contract is canonical 
 19. Related project files
 
 File	Responsibility
-/api/middlerware/validation.js	Request validation integration
+/api/middlerware/validation.js	Request-validation integration
 /api/middlerware/error-handler.js	Centralized error handling
 /api/routes/	API route definitions
 /api/services/application-service.js	Application business logic
@@ -578,10 +573,10 @@ The directory spelling middlerware is retained to match the supplied project str
 
 20. Official references
 
-* JSON Schema documentation: https://json-schema.org/docs
-* JSON Schema specification: https://json-schema.org/specification
-* JSON Schema learning resources: https://json-schema.org/learn
-* Ajv documentation: https://ajv.js.org/
+* JSON Schema documentation
+* JSON Schema specification
+* JSON Schema learning resources
+* Ajv documentation
 
 21. Production-readiness checklist
 
@@ -598,10 +593,8 @@ The directory spelling middlerware is retained to match the supplied project str
 * [ ]	Automated tests pass.
 * [ ]	Schema changes are reviewed for compatibility.
 * [ ]	Sensitive data and secrets are excluded from committed examples.
-* [ ]	Documentation matches the implemented routes and contracts.
+* [ ]	Documentation matches implemented routes and contracts.
 
 ⸻
 
 Maintenance note: This README documents the intended schema architecture. Verify actual schema contents, validator settings, middleware exports, filenames, and route integrations before treating any recommendation as verified implementation behavior.
-
-End of documentation.

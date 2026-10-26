@@ -1,20 +1,21 @@
 
 /**
  * MedOrbits API Server
- * File: server.js
+ * File: /server.js
  *
  * Runtime: Node.js >= 20.19.0
+ * Framework: Express 5
  * Module system: ES Modules
  *
- * Responsibilities:
- * - Express 5 HTTP server
+ * Features:
+ * - Validated environment configuration
  * - PostgreSQL connection pool
- * - Helmet, CORS, compression and rate limiting
- * - Request IDs and structured logs
+ * - Helmet, CORS, compression and API rate limiting
+ * - Request IDs and structured JSON logs
  * - Liveness, readiness and API discovery
  * - Validated dynamic Express router registration
- * - Consistent JSON errors and success responses
- * - Optional static asset serving
+ * - Consistent JSON responses and error handling
+ * - Optional restricted static asset serving
  * - Graceful shutdown and startup failure handling
  */
 
@@ -33,6 +34,7 @@ import http from "node:http";
 import pg from "pg";
 
 const { Pool } = pg;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -42,12 +44,17 @@ const __dirname = path.dirname(__filename);
 
 function readString(name, fallback = "") {
   const value = process.env[name];
+
   return typeof value === "string" && value.trim()
     ? value.trim()
     : fallback;
 }
 
-function readInteger(name, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) {
+function readInteger(
+  name,
+  fallback,
+  { min = 1, max = Number.MAX_SAFE_INTEGER } = {}
+) {
   const raw = process.env[name];
 
   if (raw === undefined || raw.trim() === "") {
@@ -60,7 +67,11 @@ function readInteger(name, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } 
 
   const value = Number(raw.trim());
 
-  if (!Number.isSafeInteger(value) || value < min || value > max) {
+  if (
+    !Number.isSafeInteger(value) ||
+    value < min ||
+    value > max
+  ) {
     throw new Error(`${name} must be between ${min} and ${max}.`);
   }
 
@@ -82,18 +93,30 @@ function readBoolean(name, fallback = false) {
   throw new Error(`${name} must be "true" or "false".`);
 }
 
-const environment = readString("NODE_ENV", "development");
+function readEnum(name, fallback, allowedValues) {
+  const value = readString(name, fallback);
 
-if (!["development", "test", "production"].includes(environment)) {
-  throw new Error(
-    'NODE_ENV must be "development", "test", or "production".'
-  );
+  if (!allowedValues.includes(value)) {
+    throw new Error(
+      `${name} must be one of: ${allowedValues.join(", ")}.`
+    );
+  }
+
+  return value;
 }
+
+const environment = readEnum(
+  "NODE_ENV",
+  "development",
+  ["development", "test", "production"]
+);
 
 const bodyLimit = readString("BODY_LIMIT", "1mb");
 
 if (!/^\d+(?:b|kb|mb|gb)$/i.test(bodyLimit)) {
-  throw new Error("BODY_LIMIT must look like 1024b, 1mb, or 2gb.");
+  throw new Error(
+    "BODY_LIMIT must look like 1024b, 1mb, or 2gb."
+  );
 }
 
 const databaseUrl = readString("DATABASE_URL");
@@ -105,12 +128,38 @@ const configuredOrigins = readString(
     : "http://localhost:3000,http://127.0.0.1:3000"
 );
 
-const allowedOrigins = new Set(
-  configuredOrigins
-    .split(",")
-    .map((origin) => origin.trim().replace(/\/+$/, ""))
-    .filter(Boolean)
-);
+const allowedOrigins = new Set();
+
+for (const entry of configuredOrigins.split(",")) {
+  const value = entry.trim();
+
+  if (!value) continue;
+
+  let parsed;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      `ALLOWED_ORIGINS contains an invalid URL: ${value}`
+    );
+  }
+
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.username ||
+    parsed.password ||
+    parsed.pathname !== "/" ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      `ALLOWED_ORIGINS must contain origins only: ${value}`
+    );
+  }
+
+  allowedOrigins.add(parsed.origin);
+}
 
 if (environment === "production" && !databaseUrl) {
   throw new Error("DATABASE_URL is required in production.");
@@ -126,52 +175,83 @@ const staticDirectorySetting = readString("STATIC_DIRECTORY");
 
 const CONFIG = Object.freeze({
   appName: "MedOrbits",
+
   version: readString(
     "APP_VERSION",
     process.env.npm_package_version || "0.1.0"
   ),
+
   environment,
   production: environment === "production",
+
   host: readString("HOST", "0.0.0.0"),
-  port: readInteger("PORT", 3000, { min: 1, max: 65535 }),
+
+  port: readInteger("PORT", 3000, {
+    min: 1,
+    max: 65535
+  }),
+
   apiPrefix: "/api/v1",
   bodyLimit,
   allowedOrigins,
+
   rateLimit: readInteger("API_RATE_LIMIT", 300, {
     min: 1,
     max: 1000000
   }),
+
   rateWindowMs: readInteger("API_RATE_WINDOW_MS", 900000, {
     min: 1000,
     max: 86400000
   }),
+
   shutdownTimeoutMs: readInteger("SHUTDOWN_TIMEOUT_MS", 15000, {
     min: 1000,
     max: 300000
   }),
-  dbPoolMax: readInteger("DB_POOL_MAX", 10, { min: 1, max: 100 }),
-  dbConnectionTimeoutMs: readInteger("DB_CONNECTION_TIMEOUT_MS", 5000, {
-    min: 100,
-    max: 120000
+
+  readinessTimeoutMs: readInteger(
+    "READINESS_TIMEOUT_MS",
+    3000,
+    { min: 100, max: 60000 }
+  ),
+
+  dbPoolMax: readInteger("DB_POOL_MAX", 10, {
+    min: 1,
+    max: 100
   }),
+
+  dbConnectionTimeoutMs: readInteger(
+    "DB_CONNECTION_TIMEOUT_MS",
+    5000,
+    { min: 100, max: 120000 }
+  ),
+
   dbIdleTimeoutMs: readInteger("DB_IDLE_TIMEOUT_MS", 30000, {
     min: 1000,
     max: 600000
   }),
-  dbStatementTimeoutMs: readInteger("DB_STATEMENT_TIMEOUT_MS", 15000, {
-    min: 100,
-    max: 300000
-  }),
+
+  dbStatementTimeoutMs: readInteger(
+    "DB_STATEMENT_TIMEOUT_MS",
+    15000,
+    { min: 100, max: 300000 }
+  ),
+
   trustProxyHops: readInteger("TRUST_PROXY_HOPS", 0, {
     min: 0,
     max: 32
   }),
+
   databaseSsl: readBoolean("DATABASE_SSL", false),
+
   databaseSslRejectUnauthorized: readBoolean(
     "DATABASE_SSL_REJECT_UNAUTHORIZED",
     true
   ),
+
   staticDirectory: staticDirectorySetting,
+
   enableRequestLogs: readBoolean("ENABLE_REQUEST_LOGS", true)
 });
 
@@ -183,9 +263,10 @@ const app = express();
 const server = http.createServer(app);
 
 let shuttingDown = false;
-let shutdownStarted = false;
+let shutdownPromise = null;
 let serverStarted = false;
 let fatalErrorSeen = false;
+let databaseAvailable = false;
 
 const mountedRoutes = [];
 
@@ -217,7 +298,7 @@ function log(level, message, metadata = {}) {
 
   const output = JSON.stringify(entry);
 
-  if (level === "error" || level === "fatal") {
+  if (level === "fatal" || level === "error") {
     console.error(output);
   } else if (level === "warn") {
     console.warn(output);
@@ -235,7 +316,7 @@ export function sendSuccess(res, data, statusCode = 200, meta) {
     success: true,
     requestId: res.getHeader("X-Request-ID") || null,
     data,
-    ...(meta && Object.keys(meta).length ? { meta } : {})
+    ...(meta && Object.keys(meta).length > 0 ? { meta } : {})
   });
 }
 
@@ -272,10 +353,18 @@ export const pool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
       max: CONFIG.dbPoolMax,
-      connectionTimeoutMillis: CONFIG.dbConnectionTimeoutMs,
-      idleTimeoutMillis: CONFIG.dbIdleTimeoutMs,
-      statement_timeout: CONFIG.dbStatementTimeoutMs,
+
+      connectionTimeoutMillis:
+        CONFIG.dbConnectionTimeoutMs,
+
+      idleTimeoutMillis:
+        CONFIG.dbIdleTimeoutMs,
+
+      statement_timeout:
+        CONFIG.dbStatementTimeoutMs,
+
       application_name: "medorbits-api",
+
       ...(CONFIG.databaseSsl
         ? {
             ssl: {
@@ -288,8 +377,6 @@ export const pool = databaseUrl
   : null;
 
 app.locals.pool = pool;
-
-let databaseAvailable = false;
 
 if (pool) {
   pool.on("error", (error) => {
@@ -307,15 +394,11 @@ if (pool) {
 /* -------------------------------------------------------------------------- */
 
 app.use((req, res, next) => {
-  const suppliedId = req.get("X-Request-ID");
-
-  const requestId =
-    typeof suppliedId === "string" &&
-    /^[A-Za-z0-9._-]{1,100}$/.test(suppliedId)
-      ? suppliedId
-      : randomUUID();
+  // Generate server-controlled IDs instead of trusting caller input.
+  const requestId = randomUUID();
 
   req.id = requestId;
+
   res.setHeader("X-Request-ID", requestId);
 
   const startedAt = process.hrtime.bigint();
@@ -360,7 +443,9 @@ app.use((req, res, next) => {
 
 app.use(
   helmet({
-    contentSecurityPolicy: CONFIG.production ? undefined : false,
+    // Default Helmet CSP is retained.
+    // Configure a custom policy if this server serves a frontend
+    // that requires additional script, image, font, or API sources.
     crossOriginEmbedderPolicy: false
   })
 );
@@ -368,22 +453,39 @@ app.use(
 app.use(
   cors({
     origin(origin, callback) {
-      // Non-browser clients may omit Origin.
-      if (!origin) return callback(null, true);
+      // Requests without Origin can include non-browser clients.
+      // Authentication and authorization must still be enforced
+      // independently of CORS.
+      if (!origin) {
+        return callback(null, true);
+      }
 
-      const normalized = origin.replace(/\/+$/, "");
+      let normalized;
 
-      if (CONFIG.allowedOrigins.has(normalized)) {
+      try {
+        normalized = new URL(origin).origin;
+      } catch {
+        const error = new Error("Invalid request origin.");
+        error.code = "CORS_ORIGIN_DENIED";
+        error.status = 403;
+
+        return callback(error);
+      }
+
+      if (allowedOrigins.has(normalized)) {
         return callback(null, true);
       }
 
       const error = new Error("Origin denied by CORS policy.");
+
       error.status = 403;
       error.code = "CORS_ORIGIN_DENIED";
 
       return callback(error);
     },
+
     credentials: true,
+
     methods: [
       "GET",
       "HEAD",
@@ -393,11 +495,13 @@ app.use(
       "DELETE",
       "OPTIONS"
     ],
+
     allowedHeaders: [
       "Content-Type",
       "Authorization",
       "X-Request-ID"
     ],
+
     exposedHeaders: [
       "X-Request-ID",
       "RateLimit-Limit",
@@ -405,6 +509,7 @@ app.use(
       "RateLimit-Reset",
       "Retry-After"
     ],
+
     maxAge: 600,
     optionsSuccessStatus: 204
   })
@@ -418,7 +523,10 @@ app.use(
   express.json({
     limit: CONFIG.bodyLimit,
     strict: true,
-    type: ["application/json", "application/*+json"]
+    type: [
+      "application/json",
+      "application/*+json"
+    ]
   })
 );
 
@@ -439,15 +547,15 @@ app.use(compression());
 const apiLimiter = rateLimit({
   windowMs: CONFIG.rateWindowMs,
   limit: CONFIG.rateLimit,
+
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  skip: (req) => req.method === "OPTIONS",
-  handler(_req, res) {
-    res.setHeader(
-      "Retry-After",
-      String(Math.ceil(CONFIG.rateWindowMs / 1000))
-    );
 
+  skip: (req) => req.method === "OPTIONS",
+
+  handler(_req, res) {
+    // express-rate-limit supplies standard rate-limit headers.
+    // Do not invent a Retry-After duration that may be inaccurate.
     return sendError(
       res,
       429,
@@ -460,7 +568,7 @@ const apiLimiter = rateLimit({
 app.use(CONFIG.apiPrefix, apiLimiter);
 
 /* -------------------------------------------------------------------------- */
-/* Health and discovery                                                       */
+/* Liveness and readiness                                                     */
 /* -------------------------------------------------------------------------- */
 
 app.get("/health", (_req, res) => {
@@ -473,6 +581,28 @@ app.get("/health", (_req, res) => {
   });
 });
 
+async function queryWithTimeout(queryable, sql, timeoutMs) {
+  let timeout;
+
+  try {
+    return await Promise.race([
+      queryable.query(sql),
+
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          const error = new Error("Database readiness check timed out.");
+          error.code = "READINESS_TIMEOUT";
+          reject(error);
+        }, timeoutMs);
+
+        timeout.unref?.();
+      })
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 app.get("/ready", async (req, res) => {
   if (shuttingDown || !serverStarted || !pool) {
     return sendError(
@@ -484,12 +614,19 @@ app.get("/ready", async (req, res) => {
   }
 
   try {
-    await pool.query("SELECT 1");
+    await queryWithTimeout(
+      pool,
+      "SELECT 1",
+      CONFIG.readinessTimeoutMs
+    );
+
     databaseAvailable = true;
 
     return sendSuccess(res, {
       status: "ready",
-      dependencies: { database: "available" }
+      dependencies: {
+        database: "available"
+      }
     });
   } catch (error) {
     databaseAvailable = false;
@@ -509,11 +646,15 @@ app.get("/ready", async (req, res) => {
   }
 });
 
+/* -------------------------------------------------------------------------- */
+/* API discovery                                                              */
+/* -------------------------------------------------------------------------- */
+
 app.get("/api", (_req, res) => {
   return sendSuccess(res, {
     service: CONFIG.appName,
     version: CONFIG.version,
-    apiBase: CONFIG.apiPrefix,
+
     endpoints: {
       liveness: "/health",
       readiness: "/ready",
@@ -527,7 +668,10 @@ app.get(CONFIG.apiPrefix, (_req, res) => {
   return sendSuccess(res, {
     service: CONFIG.appName,
     version: CONFIG.version,
-    routes: mountedRoutes.map((route) => route.path)
+    apiBase: CONFIG.apiPrefix,
+
+    // These are mounted prefixes, not a complete endpoint inventory.
+    routes: mountedRoutes.map(({ path: routePath }) => routePath)
   });
 });
 
@@ -535,22 +679,22 @@ app.get(CONFIG.apiPrefix, (_req, res) => {
 /* Dynamic route registration                                                 */
 /* -------------------------------------------------------------------------- */
 
-// Only optional routes are skipped. A present but invalid route fails startup.
-// Verify candidate filenames against the actual repository before deployment.
+// Adapt these candidates to the filenames actually present in /routes.
+// Missing modules are optional; ambiguous candidates and invalid exports
+// fail startup instead of silently mounting the wrong module.
 
 const routeDefinitions = [
-  { prefix: "/health", candidates: ["health.js", "health.routes.js"] },
-  { prefix: "/auth", candidates: ["auth.js", "auth.routes.js"] },
-  { prefix: "/users", candidates: ["users.js", "user.routes.js", "users.routes.js"] },
-  { prefix: "/admissions", candidates: ["admissions.js", "admissions.routes.js"] },
-  { prefix: "/documents", candidates: ["documents.js", "document.routes.js"] },
-  { prefix: "/jobs", candidates: ["jobs.js", "jobs.routes.js"] },
-  { prefix: "/support", candidates: ["support.js", "support.routes.js"] },
-  { prefix: "/properties", candidates: ["properties.js", "property.routes.js"] },
-  { prefix: "/search", candidates: ["search.js", "search.routes.js"] },
-  { prefix: "/visits", candidates: ["visits.js", "visit.routes.js"] },
-  { prefix: "/offers", candidates: ["offers.js", "offer.routes.js"] },
-  { prefix: "/applications", candidates: ["applications.js", "application.routes.js"] }
+  { prefix: "/auth", candidates: ["auth.routes.js", "auth.js"] },
+  { prefix: "/users", candidates: ["user.routes.js", "users.routes.js", "users.js"] },
+  { prefix: "/admissions", candidates: ["admissions.routes.js", "admissions.js"] },
+  { prefix: "/documents", candidates: ["document.routes.js", "documents.js"] },
+  { prefix: "/jobs", candidates: ["jobs.routes.js", "jobs.js"] },
+  { prefix: "/support", candidates: ["support.routes.js", "support.js"] },
+  { prefix: "/properties", candidates: ["property.routes.js", "properties.js"] },
+  { prefix: "/search", candidates: ["search.routes.js", "search.js"] },
+  { prefix: "/visits", candidates: ["visit.routes.js", "visits.js"] },
+  { prefix: "/offers", candidates: ["offer.routes.js", "offers.js"] },
+  { prefix: "/applications", candidates: ["application.routes.js", "applications.js"] }
 ];
 
 function isExpressRouter(value) {
@@ -562,7 +706,9 @@ function isExpressRouter(value) {
 }
 
 async function loadRouter(absolutePath, filename) {
-  const imported = await import(pathToFileURL(absolutePath).href);
+  const imported = await import(
+    pathToFileURL(absolutePath).href
+  );
 
   const candidates = [
     imported.router,
@@ -575,8 +721,8 @@ async function loadRouter(absolutePath, filename) {
 
   if (!router) {
     throw new TypeError(
-      `${filename} must export an Express Router, for example ` +
-      "`export default router` or `export { router }`."
+      `${filename} must export an Express Router. ` +
+      "Use `export default router` or `export { router }`."
     );
   }
 
@@ -587,50 +733,58 @@ async function registerRoutes() {
   const routesDirectory = path.join(__dirname, "routes");
 
   for (const definition of routeDefinitions) {
-    let selectedFile;
-    let absolutePath;
+    const matches = definition.candidates
+      .map((filename) => ({
+        filename,
+        absolutePath: path.join(routesDirectory, filename)
+      }))
+      .filter(({ absolutePath }) => fs.existsSync(absolutePath));
 
-    for (const filename of definition.candidates) {
-      const candidate = path.join(routesDirectory, filename);
-
-      if (!fs.existsSync(candidate)) continue;
-
-      if (!fs.statSync(candidate).isFile()) {
-        throw new Error(`Route candidate is not a file: ${filename}`);
-      }
-
-      selectedFile = filename;
-      absolutePath = candidate;
-      break;
-    }
-
-    if (!selectedFile) {
+    if (matches.length === 0) {
       log("warn", "Optional route module not found.", {
         prefix: definition.prefix,
         candidates: definition.candidates
       });
+
       continue;
+    }
+
+    if (matches.length > 1) {
+      throw new Error(
+        `Ambiguous route modules for ${definition.prefix}: ` +
+        matches.map(({ filename }) => filename).join(", ")
+      );
+    }
+
+    const [{ filename, absolutePath }] = matches;
+
+    const stats = fs.statSync(absolutePath);
+
+    if (!stats.isFile()) {
+      throw new Error(
+        `Route module is not a regular file: ${filename}`
+      );
     }
 
     const mountPath = `${CONFIG.apiPrefix}${definition.prefix}`;
 
     try {
-      const router = await loadRouter(absolutePath, selectedFile);
+      const router = await loadRouter(absolutePath, filename);
 
       app.use(mountPath, router);
 
       mountedRoutes.push({
-        file: selectedFile,
+        file: filename,
         path: mountPath
       });
 
       log("info", "API route mounted.", {
-        filename: selectedFile,
+        filename,
         mountPath
       });
     } catch (error) {
       log("fatal", "API route registration failed.", {
-        filename: selectedFile,
+        filename,
         mountPath,
         errorName: error.name || "Error",
         errorMessage: error.message
@@ -656,16 +810,22 @@ function registerStaticFiles() {
     );
   }
 
-  const directory = path.resolve(__dirname, CONFIG.staticDirectory);
+  const directory = path.resolve(
+    __dirname,
+    CONFIG.staticDirectory
+  );
+
   const relative = path.relative(__dirname, directory);
 
   if (
+    relative === "" ||
+    relative === "." ||
     relative === ".." ||
     relative.startsWith(`..${path.sep}`) ||
     path.isAbsolute(relative)
   ) {
     throw new Error(
-      "STATIC_DIRECTORY must remain inside the server directory."
+      "STATIC_DIRECTORY must be a non-root directory inside the server directory."
     );
   }
 
@@ -678,29 +838,39 @@ function registerStaticFiles() {
     );
   }
 
+  // Do not configure a private uploads, documents, or secrets directory
+  // as a public static root. Keep private files outside the public web root.
+
   app.use(
     express.static(directory, {
       index: false,
       dotfiles: "deny",
       etag: true,
       fallthrough: true,
+      redirect: false,
       maxAge: CONFIG.production ? "1d" : 0,
+
       setHeaders(res, filePath) {
         if (/\.(?:html|json)$/i.test(filePath)) {
           res.setHeader("Cache-Control", "no-cache");
         }
+
+        res.setHeader("X-Content-Type-Options", "nosniff");
       }
     })
   );
 
-  log("info", "Static assets enabled.", { directory: relative });
+  log("info", "Static assets enabled.", {
+    directory: relative
+  });
 }
 
 /* -------------------------------------------------------------------------- */
-/* Not-found and error handlers                                               */
+/* Error handlers                                                             */
 /* -------------------------------------------------------------------------- */
 
 function registerErrorHandlers() {
+  // Not-found handler
   app.use((req, res) => {
     return sendError(
       res,
@@ -710,6 +880,7 @@ function registerErrorHandlers() {
     );
   });
 
+  // Express error middleware
   app.use((error, req, res, _next) => {
     if (res.headersSent) {
       log("error", "Error after response headers were sent.", {
@@ -717,6 +888,7 @@ function registerErrorHandlers() {
         errorName: error.name || "Error",
         errorCode: error.code || null
       });
+
       return;
     }
 
@@ -732,14 +904,13 @@ function registerErrorHandlers() {
       status = 413;
       code = "PAYLOAD_TOO_LARGE";
       message = "The request body is too large.";
-    } else if (error.type === "encoding.unsupported") {
+    } else if (
+      error.type === "encoding.unsupported" ||
+      error.type === "charset.unsupported"
+    ) {
       status = 415;
       code = "UNSUPPORTED_ENCODING";
-      message = "The request encoding is not supported.";
-    } else if (error.type === "charset.unsupported") {
-      status = 415;
-      code = "UNSUPPORTED_CHARSET";
-      message = "The request character set is not supported.";
+      message = "The request encoding or character set is not supported.";
     } else if (error.code === "CORS_ORIGIN_DENIED") {
       status = 403;
       code = "CORS_ORIGIN_DENIED";
@@ -776,7 +947,11 @@ function registerErrorHandlers() {
       message = "The service is temporarily unavailable.";
     }
 
-    if (!Number.isInteger(status) || status < 400 || status > 599) {
+    if (
+      !Number.isInteger(status) ||
+      status < 400 ||
+      status > 599
+    ) {
       status = 500;
       code = "INTERNAL_SERVER_ERROR";
       message = "An unexpected server error occurred.";
@@ -789,6 +964,7 @@ function registerErrorHandlers() {
       status,
       errorName: error.name || "Error",
       errorCode: error.code || null,
+
       ...(status >= 500 && !CONFIG.production
         ? { errorMessage: error.message }
         : {})
@@ -805,7 +981,7 @@ function registerErrorHandlers() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Shutdown                                                                   */
+/* HTTP shutdown                                                              */
 /* -------------------------------------------------------------------------- */
 
 function closeHttpServer() {
@@ -821,80 +997,100 @@ function closeHttpServer() {
   });
 }
 
-export async function shutdown(signal = "manual", { fatal = false } = {}) {
-  if (shutdownStarted) return;
+export function shutdown(
+  signal = "manual",
+  { fatal = false } = {}
+) {
+  if (shutdownPromise) return shutdownPromise;
 
-  shutdownStarted = true;
   shuttingDown = true;
 
-  log("warn", "Graceful shutdown initiated.", { signal, fatal });
-
-  const timeout = setTimeout(() => {
-    log("fatal", "Shutdown timed out; forcing connection closure.", {
-      signal
+  shutdownPromise = (async () => {
+    log("warn", "Graceful shutdown initiated.", {
+      signal,
+      fatal
     });
 
-    server.closeAllConnections?.();
+    let shutdownFailed = false;
 
-    if (pool) {
-      void pool.end().catch(() => {});
+    const timeout = setTimeout(() => {
+      log("fatal", "Shutdown timed out; forcing connection closure.", {
+        signal
+      });
+
+      server.closeAllConnections?.();
+
+      if (pool) {
+        void pool.end().catch(() => {});
+      }
+
+      process.exit(1);
+    }, CONFIG.shutdownTimeoutMs);
+
+    timeout.unref();
+
+    try {
+      await closeHttpServer();
+    } catch (error) {
+      shutdownFailed = true;
+
+      log("error", "HTTP server shutdown failed.", {
+        errorName: error.name || "Error",
+        errorCode: error.code || null
+      });
     }
 
-    process.exit(1);
-  }, CONFIG.shutdownTimeoutMs);
+    try {
+      if (pool) await pool.end();
+    } catch (error) {
+      shutdownFailed = true;
 
-  timeout.unref();
+      log("error", "PostgreSQL pool shutdown failed.", {
+        errorName: error.name || "Error",
+        errorCode: error.code || null
+      });
+    }
 
-  let shutdownFailed = false;
+    clearTimeout(timeout);
 
-  try {
-    await closeHttpServer();
-  } catch (error) {
-    shutdownFailed = true;
-    log("error", "HTTP server shutdown failed.", {
-      errorName: error.name || "Error",
-      errorCode: error.code || null
+    const exitCode =
+      fatal || fatalErrorSeen || shutdownFailed ? 1 : 0;
+
+    log(exitCode === 0 ? "info" : "error", "Shutdown completed.", {
+      exitCode
     });
-  }
 
-  try {
-    if (pool) await pool.end();
-  } catch (error) {
-    shutdownFailed = true;
-    log("error", "PostgreSQL pool shutdown failed.", {
-      errorName: error.name || "Error",
-      errorCode: error.code || null
-    });
-  }
+    process.exitCode = exitCode;
+  })();
 
-  clearTimeout(timeout);
-
-  const exitCode =
-    fatal || fatalErrorSeen || shutdownFailed ? 1 : 0;
-
-  log(exitCode === 0 ? "info" : "error", "Shutdown completed.", {
-    exitCode
-  });
-
-  process.exitCode = exitCode;
+  return shutdownPromise;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Startup                                                                     */
+/* Startup                                                                    */
 /* -------------------------------------------------------------------------- */
 
 export async function startServer() {
   if (serverStarted) return server;
+
   if (shuttingDown) {
-    throw new Error("Startup cancelled because shutdown has started.");
+    throw new Error(
+      "Startup cancelled because shutdown has started."
+    );
   }
 
   await registerRoutes();
+
+  if (shuttingDown) {
+    throw new Error("Startup cancelled before static registration.");
+  }
+
   registerStaticFiles();
   registerErrorHandlers();
 
   if (pool) {
     await pool.query("SELECT 1");
+
     databaseAvailable = true;
 
     log("info", "PostgreSQL connection established.", {
@@ -948,7 +1144,6 @@ export async function startServer() {
 /* Direct execution                                                           */
 /* -------------------------------------------------------------------------- */
 
-// Importing server.js in tests does not automatically start a listener.
 const isDirectExecution =
   process.argv[1] &&
   pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;

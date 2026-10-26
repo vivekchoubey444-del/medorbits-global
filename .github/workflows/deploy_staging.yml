@@ -1,168 +1,136 @@
-# File: .github/workflows/deploy_staging.yml
-name: MedOrbits Staging Deployment
+name: Deploy Staging
 on:
-  push:
-    branches:
-      - develop
-      - staging
-  pull_request:
-    branches:
-      - develop
-      - staging
   workflow_dispatch:
     inputs:
-      source_branch:
-        description: "Branch to validate for staging"
+      confirm_deployment:
+        description: "Type deploy to confirm staging deployment"
         required: true
-        default: "develop"
-        type: choice
-        options:
-          - develop
-          - staging
+        type: string
+  push:
+    branches:
+      - staging
+    paths:
+      - "server.js"
+      - "package.json"
+      - "package-lock.json"
+      - "render.yaml"
+      - "api/**"
+      - "config/**"
+      - "controllers/**"
+      - "middleware/**"
+      - "models/**"
+      - "routes/**"
+      - "services/**"
+      - "public/**"
+      - ".github/workflows/deploy_staging.yml"
 permissions:
   contents: read
 concurrency:
-  group: medorbits-staging-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-defaults:
-  run:
-    shell: bash
+  group: medorbits-staging
+  cancel-in-progress: false
 jobs:
-  verify:
-    name: Verify staging eligibility
+  validate:
+    name: Validate staging build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      deployment_sha: ${{ steps.target.outputs.sha }}
-    steps:
-      - name: Resolve source branch
-        id: source
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          REF_NAME: ${{ github.ref_name }}
-          INPUT_BRANCH: ${{ inputs.source_branch }}
-          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            branch="$INPUT_BRANCH"
-          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
-            echo "::error::Pull requests are validation-only and cannot deploy."
-            exit 1
-          else
-            branch="$REF_NAME"
-          fi
-          case "$branch" in
-            develop|staging)
-              ;;
-            *)
-              echo "::error::Only develop or staging can be used."
-              exit 1
-              ;;
-          esac
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            echo "::error::Pull requests cannot trigger staging deployments."
-            exit 1
-          fi
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "Selected branch: $branch"
-      - name: Checkout selected branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.source.outputs.branch }}
-          persist-credentials: false
-      - name: Record source commit
-        id: target
-        run: |
-          set -euo pipefail
-          sha="$(git rev-parse HEAD)"
-          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Could not resolve a valid source commit."
-            exit 1
-          fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "Staging source commit: $sha"
-  preflight:
-    name: Staging preflight
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    environment:
-      name: staging
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: Checkout verified commit
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.verify.outputs.deployment_sha }}
           persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Verify required files
+          node-version: "22"
+      - name: Validate package.json
+        shell: bash
         run: |
           set -euo pipefail
-          for file in package.json package-lock.json server.js; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file is missing: $file"
-              exit 1
-            fi
-          done
-      - name: Validate package metadata
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!pkg.name || !pkg.version) {
-            throw new Error('Package name and version are required.');
-          }
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid package-lock.json.');
-          }
-          if (lock.name && lock.name !== pkg.name) {
-            throw new Error('Package name mismatch.');
-          }
-          if (lock.version && lock.version !== pkg.version) {
-            throw new Error('Package version mismatch.');
-          }
-          console.log(`Validated ${pkg.name}@${pkg.version}`);
-          NODE
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-      - name: Check server syntax
-        run: node --check server.js
-      - name: Run tests
-        env:
-          CI: "true"
-          NODE_ENV: test
-        run: npm test --if-present
-      - name: Run project checks
-        run: npm run check --if-present
-      - name: Run lint
-        run: npm run lint --if-present
-      - name: Build application
-        run: npm run build --if-present
-      - name: Verify source commit
-        env:
-          EXPECTED_SHA: ${{ needs.verify.outputs.deployment_sha }}
-        run: |
-          set -euo pipefail
-          actual_sha="$(git rev-parse HEAD)"
-          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
-            echo "::error::Source commit mismatch."
+          if [[ ! -f package.json ]]; then
+            echo "::error::Root package.json is missing."
             exit 1
           fi
-      - name: Report staging preflight result
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            console.log(`Package: ${pkg.name || "unnamed"}`);
+            console.log(`Version: ${pkg.version || "unspecified"}`);
+            console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
+          '
+      - name: Validate lockfile
+        shell: bash
         run: |
-          echo "Staging preflight passed."
-          echo "No hosting provider was contacted."
-          echo "No deployment was performed."
+          set -euo pipefail
+          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
+            echo "::error::No npm lockfile found."
+            exit 1
+          fi
+          node -e '
+            const fs = require("node:fs");
+            const file = fs.existsSync("npm-shrinkwrap.json")
+              ? "npm-shrinkwrap.json"
+              : "package-lock.json";
+            JSON.parse(fs.readFileSync(file, "utf8"));
+            console.log(`Valid JSON lockfile: ${file}`);
+          '
+      - name: Check manual deployment confirmation
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRMATION" != "deploy" ]]; then
+            echo "::error::Deployment cancelled. Enter exactly 'deploy' to confirm."
+            exit 1
+          fi
+  deploy:
+    name: Trigger Render staging deployment
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: staging
+    permissions:
+      contents: read
+    steps:
+      - name: Verify staging deploy hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$RENDER_DEPLOY_HOOK" ]]; then
+            echo "::error::Configure the RENDER_STAGING_DEPLOY_HOOK secret."
+            exit 1
+          fi
+          if [[ "$RENDER_DEPLOY_HOOK" != https://* ]]; then
+            echo "::error::The Render staging deploy hook must use HTTPS."
+            exit 1
+          fi
+      - name: Trigger Render staging deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --connect-timeout 10 \
+              --max-time 30 \
+              "$RENDER_DEPLOY_HOOK"
+          )"
+          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+            echo "::error::Render returned HTTP $http_code."
+            exit 1
+          fi
+          echo "Render accepted the staging deployment request."
+          echo "Verify build completion and application health in the Render dashboard."

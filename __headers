@@ -1,20 +1,104 @@
+
+# ==============================================================================
+# MedOrbits -- HTTP Headers and Security Policy
+# File: /__headers
+# Format: Netlify-compatible headers configuration
+# ==============================================================================
+
 /*
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-X-Frame-Options: SAMEORIGIN
-Permissions-Policy: camera=(), microphone=(), geolocation=()
-Strict-Transport-Security: max-age=31536000
-Cross-Origin-Opener-Policy: same-origin
-X-Permitted-Cross-Domain-Policies: none
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000
+  Cross-Origin-Opener-Policy: same-origin
+  X-Permitted-Cross-Domain-Policies: none
+
+# ------------------------------------------------------------------------------
+# Root route
+# ------------------------------------------------------------------------------
 
 /
-Cache-Control: no-cache
-X-Robots-Tag: index, follow
+  Cache-Control: no-cache
+  X-Robots-Tag: index, follow
+  X-Content-Type-Options: nosniff
+
+# ------------------------------------------------------------------------------
+# Static assets
+# ------------------------------------------------------------------------------
 
 /assets/*
-Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# CSS assets
+/assets/css/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# JavaScript assets
+/assets/js/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# Image assets
+/assets/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# Font assets
+/assets/fonts/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# Icons and favicons
+/assets/icons/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
+# ------------------------------------------------------------------------------
+# HTML pages
+# ------------------------------------------------------------------------------
 
 /*.html
-Cache-Control: no-cache
-X-Content-Type-Options: nosniff
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: index, follow
+
+# ------------------------------------------------------------------------------
+# JSON data
+# ------------------------------------------------------------------------------
+
+/*.json
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+
+# ------------------------------------------------------------------------------
+# Sitemap and crawler directives
+# ------------------------------------------------------------------------------
+
+/sitemap.xml
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+
+/robots.txt
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+
+# ------------------------------------------------------------------------------
+# Error pages
+# ------------------------------------------------------------------------------
+
+/404.html
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow
+
+# ------------------------------------------------------------------------------
+# Offline page
+# ------------------------------------------------------------------------------
+
+/offline.html
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow

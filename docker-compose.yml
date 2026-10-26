@@ -1,172 +1,183 @@
 # ============================================================
-# MEDORBITS -- PRODUCTION DOCKER COMPOSE
-# Docker Compose v2
+# MEDORBITS -- HARDENED DOCKER COMPOSE
+# Production-oriented application deployment
+#
+# File: /docker-compose.yml
+#
+# Features:
+#   - Non-root application container
+#   - Read-only root filesystem
+#   - Least-privilege security configuration
+#   - Persistent private, temporary, and log storage
+#   - Health checks and graceful shutdown
+#   - Resource and process limits
+#   - Rotating container logs
+#   - Explicit environment configuration
+#   - Localhost-only published port by default
+#   - No automatic database migrations
+#   - No automatic image publishing
+#   - No destructive volume cleanup
+#
+# Commands:
+#   docker compose config -q
+#   docker compose build
+#   docker compose up -d
+#   docker compose ps
+#   docker compose logs --tail=100 app
+#   docker compose stop
+#   docker compose down
+#
+# IMPORTANT:
+#   Save the supplied production Dockerfile as /Dockerfile.
+#   Configure SESSION_SECRET before starting Compose.
 # ============================================================
 name: medorbits
 services:
-  # ----------------------------------------------------------
-  # 1. MEDORBITS APPLICATION
-  # ----------------------------------------------------------
   app:
+    image: medorbits:local
     build:
       context: .
       dockerfile: Dockerfile
-    image: medorbits:latest
-    restart: unless-stopped
     init: true
-    read_only: true
-    env_file:
-      - .env
+    restart: unless-stopped
+    # --------------------------------------------------------
+    # Runtime environment
+    # --------------------------------------------------------
     environment:
       NODE_ENV: production
-      APP_ENV: production
-      HOST: 0.0.0.0
-      PORT: 3000
-      API_PREFIX: /api/v1
-      DB_CLIENT: mysql
-      DB_HOST: mysql
-      DB_PORT: "3306"
-      DB_NAME: ${DB_NAME:-medorbits}
-      DB_USER: ${DB_USER:-medorbits_app}
-      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      REDIS_ENABLED: ${REDIS_ENABLED:-true}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      HOST: "0.0.0.0"
+      PORT: "3000"
+      API_PREFIX: "/api/v1"
+      # Required application secret.
+      # Supply it through the deployment environment or .env.
+      SESSION_SECRET: "${SESSION_SECRET:?Set SESSION_SECRET before starting}"
+      # PostgreSQL configuration.
+      # Leave DATABASE_URL unset only if your application
+      # does not require it or uses another configuration.
+      DATABASE_URL: "${DATABASE_URL:-}"
+      # Match these settings to the actual application code.
+      DATABASE_SSL: "${DATABASE_SSL:-false}"
+      # Logging
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      # Optional integration credentials.
+      # Set these only when required by your application.
+      AI_API_KEY: "${AI_API_KEY:-}"
+      AI_API_URL: "${AI_API_URL:-}"
+      AI_MODEL: "${AI_MODEL:-}"
+    # --------------------------------------------------------
+    # Network exposure
+    # --------------------------------------------------------
     ports:
-      - "${APP_BIND_IP:-127.0.0.1}:${APP_PORT:-3000}:3000"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - frontend
-      - backend
+      # Safe default for a reverse proxy on the same host.
+      # For a different containerized proxy, use a shared
+      # Docker network and avoid publishing the app port.
+      - name: medorbits-http
+        target: 3000
+        published: "${APP_PORT:-3000}"
+        host_ip: "${APP_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+    expose:
+      - "3000"
+    # --------------------------------------------------------
+    # Persistent application storage
+    # --------------------------------------------------------
     volumes:
-      - app-private-storage:/app/storage/private
-      - app-temporary-storage:/app/storage/temporary
-      - app-logs:/app/storage/logs
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+      - type: volume
+        source: app_private
+        target: /app/storage/private
+        volume:
+          nocopy: false
+      - type: volume
+        source: app_temporary
+        target: /app/storage/temporary
+        volume:
+          nocopy: false
+      - type: volume
+        source: app_logs
+        target: /app/storage/logs
+        volume:
+          nocopy: false
+    # --------------------------------------------------------
+    # Container hardening
+    # --------------------------------------------------------
+    read_only: true
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    pids_limit: 256
-    mem_limit: 768m
-    cpus: 1.50
+    # Temporary writable space for Node.js and dependencies
+    # that need /tmp. UID/GID 1000 matches the standard node
+    # user in the supplied official Node Alpine image.
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,uid=1000,gid=1000,mode=1770
+    # --------------------------------------------------------
+    # Resource limits
+    # Tune after measuring actual application usage.
+    # --------------------------------------------------------
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 200
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    # --------------------------------------------------------
+    # Graceful shutdown
+    # --------------------------------------------------------
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    # --------------------------------------------------------
+    # Health monitoring
+    # Requires GET /health to return HTTP 2xx.
+    # --------------------------------------------------------
     healthcheck:
       test:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:3000/health', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        - >-
+          fetch('http://127.0.0.1:3000/health',
+          { signal: AbortSignal.timeout(4000) })
+          .then(response => process.exit(response.ok ? 0 : 1))
+          .catch(() => process.exit(1))
       interval: 30s
       timeout: 5s
+      start_period: 30s
       retries: 3
-      start_period: 40s
-    stop_grace_period: 25s
+    # --------------------------------------------------------
+    # Bounded container logs
+    # Application logs written to /app/storage/logs are
+    # separate and need their own rotation policy.
+    # --------------------------------------------------------
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "5"
-  # ----------------------------------------------------------
-  # 2. MYSQL DATABASE
-  # ----------------------------------------------------------
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    stop_grace_period: 60s
-    environment:
-      MYSQL_DATABASE: ${DB_NAME:-medorbits}
-      MYSQL_USER: ${DB_USER:-medorbits_app}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
-    expose:
-      - "3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
+    # --------------------------------------------------------
+    # Networking
+    # User-defined bridge permits normal outbound connections.
+    # Avoid internal: true unless outbound access is unnecessary.
+    # --------------------------------------------------------
     networks:
-      - backend
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: 1g
-    cpus: 2.00
-    pids_limit: 256
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent'
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-  # ----------------------------------------------------------
-  # 3. REDIS
-  # ----------------------------------------------------------
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
-    # Require authentication and persist Redis data.
-    command:
-      - sh
-      - -c
-      - 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
-    expose:
-      - "6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - backend
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: 256m
-    cpus: 1.00
-    pids_limit: 128
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping 2>/dev/null | grep -q PONG'
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-# ------------------------------------------------------------
-# 4. PERSISTENT VOLUMES
-# ------------------------------------------------------------
+      - medorbits_network
+    # Avoid container_name so future replicas can be created.
+# ============================================================
+# Named volumes
+# Persistent data survives ordinary container recreation.
+# Back up important data before any volume-management action.
+# ============================================================
 volumes:
-  mysql-data:
-    name: medorbits-mysql-data
-  redis-data:
-    name: medorbits-redis-data
-  app-private-storage:
-    name: medorbits-private-storage
-  app-temporary-storage:
-    name: medorbits-temporary-storage
-  app-logs:
-    name: medorbits-logs
-# ------------------------------------------------------------
-# 5. NETWORK SEGMENTATION
-# ------------------------------------------------------------
+  app_private:
+    name: medorbits_private_data
+  app_temporary:
+    name: medorbits_temporary_data
+  app_logs:
+    name: medorbits_application_logs
+# ============================================================
+# Application network
+# ============================================================
 networks:
-  frontend:
-    name: medorbits-frontend
+  medorbits_network:
+    name: medorbits_network
     driver: bridge
-  backend:
-    name: medorbits-backend
-    driver: bridge
-    internal: true

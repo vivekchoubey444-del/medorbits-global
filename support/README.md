@@ -2,22 +2,20 @@ MedOrbits Support Centre
 
 Support Directory · Technical Documentation
 
-Project: MedOrbits
-Module: Support Centre
-Directory: /support/
-Primary page: /support/index.html
-Documentation: /support/README.md
-Website: https://medorbits.in
-Design system: Ruby Noir · Neon Coral · Champagne Blush
-Document version: 1.0.0
-
-⸻
+* Project: MedOrbits
+* Module: Support Centre
+* Directory: /support/
+* Primary page: /support/index.html
+* Documentation: /support/README.md
+* Website: https://medorbits.in
+* Design system: Ruby Noir · Neon Coral · Champagne Blush
+* Document version: 1.0.0
 
 1. Overview
 
 The MedOrbits Support Centre is the central entry point for users seeking assistance with website navigation, account access, document uploads, payments, refund enquiries, complaints, support tickets, and privacy-related questions.
 
-This directory provides a consistent support experience across dedicated pages, with clear navigation, accessible interactions, responsive layouts, and privacy-conscious guidance.
+This directory provides a consistent support experience through dedicated pages, clear navigation, accessible interactions, responsive layouts, and privacy-conscious guidance.
 
 The Support Centre is an informational interface. Ticket creation, ticket tracking, payment verification, account recovery, and refund processing require the relevant functional page and any necessary backend integration.
 
@@ -34,7 +32,7 @@ The Support Centre is an informational interface. Ticket creation, ticket tracki
 
 3. Directory Structure
 
-The following structure describes the intended support module. Confirm that every referenced page exists before publishing links to it.
+The following structure describes the intended support module. Verify every referenced page before publishing links to it.
 
 support/
 ├── README.md
@@ -53,13 +51,13 @@ Page responsibilities
 
 File	Purpose
 index.html	Main Support Centre and support directory
-account-recovery.html	Guidance for account access and recovery
+account-recovery.html	Account access and recovery guidance
 complaints.html	Complaint and grievance guidance
 document-upload-help.html	Document preparation and upload troubleshooting
 faq.html	Frequently asked support questions
 help-centre.html	General help resources and service guidance
 payment-support.html	Payment enquiries and transaction troubleshooting
-refund-request.html	Refund request preparation and relevant policy guidance
+refund-request.html	Refund request preparation and policy guidance
 submit-ticket.html	Support request submission interface
 ticket-status.html	Existing ticket lookup and status interface
 README.md	Module documentation, route inventory, and maintenance guidance
@@ -92,19 +90,19 @@ Typography
 
 * DM Sans: Body text, navigation, buttons, labels, and interface elements.
 * Playfair Display: Main headings and selected editorial elements.
-* Fallback fonts: Arial and Georgia for resilient rendering.
+* Fallbacks: Arial and Georgia.
 
 Layout standards
 
 * Maximum content width: 1180px.
 * Standard card corner radius: 18px.
-* Mobile-first responsive behavior at defined breakpoints.
+* Mobile-first responsive behavior.
 * Soft gradients and layered backgrounds.
 * Visible borders and strong text contrast.
 * Consistent spacing, button styling, and hover states.
-* Reduced-motion support for users who request less animation.
+* Reduced-motion support through prefers-reduced-motion.
 
-Do not introduce pure-white section backgrounds or transparent sections that conflict with the established design system.
+Do not introduce pure-white section backgrounds or visually unbounded transparent sections that conflict with the established design system.
 
 5. Main Page Components
 
@@ -128,20 +126,20 @@ Provides access to the main website sections:
 * Support
 * Contact
 
-Dropdown menus expose related destinations. The navigation collapses into a mobile menu at narrower viewport widths.
+Dropdown menus expose related destinations. Navigation collapses into a mobile menu at narrower viewport widths.
 
 5.3 Hero section
 
-Introduces the Support Centre with a primary heading, explanatory text, a decorative animated illustration, and two primary actions:
+Introduces the Support Centre with a primary heading, explanatory text, decorative animated illustration, and two primary actions:
 
 * Explore support topics
 * Submit a support ticket
 
-The illustration is decorative and should remain hidden from assistive technology.
+The illustration is decorative and must be hidden from assistive technology using aria-hidden=“true” where appropriate.
 
 5.4 Support search
 
-The search component supports keyword filtering across support-topic cards.
+The search component filters predefined support-topic cards using client-side keyword matching.
 
 Example queries:
 
@@ -153,17 +151,17 @@ Example queries:
 * complaint
 * privacy
 
-Search behavior is client-side and filters the predefined cards. It does not search a database, external knowledge base, or ticket-management system.
+Search is limited to the cards rendered on the page. It does not search a database, external knowledge base, or ticket-management system.
 
 5.5 Support directory
 
-Displays twelve support-related cards, including document help, FAQs, payment support, refund requests, complaints, ticket submission, ticket status, account recovery, contact information, privacy, and legal policies.
+Displays twelve support-related cards covering document help, FAQs, payment support, refund requests, complaints, ticket submission, ticket status, account recovery, contact information, privacy, legal policies, and related resources.
 
-Each card contains an icon, title, description, and destination link.
+Each card contains an icon, title, description, and destination link. The final number of cards should match the actual implemented page.
 
 5.6 Quick-access shortcuts
 
-Provides direct links to commonly used support actions, reducing the number of navigation steps required.
+Provides direct links to commonly used support actions, reducing navigation steps.
 
 5.7 Support process
 
@@ -178,23 +176,21 @@ Explains a four-step process:
 
 Warns users not to disclose passwords, one-time passwords (OTPs), PINs, recovery codes, or complete payment credentials.
 
-Users should only submit documents necessary for the particular request.
+Users should submit only the documents necessary for their particular request.
 
 5.9 Frequently asked questions
 
-Uses native HTML <details> and <summary> elements for expandable answers. This provides a lightweight accordion interface without requiring a separate JavaScript accordion library.
+Uses native HTML <details> and <summary> elements for expandable answers. This provides a lightweight accordion without requiring a separate JavaScript accordion library.
 
 5.10 Contact panel and footer
 
 Provides the published contact address, contact-page link, education resources, career services, support destinations, and legal policies.
 
-The footer also includes a support disclaimer explaining that the directory itself does not create tickets or process refunds.
+The footer must explain that the directory itself does not create tickets or process refunds.
 
 6. Navigation and URL Conventions
 
-The Support Centre uses root-relative paths so that internal links do not depend on the current page’s directory.
-
-Examples:
+Use root-relative paths for internal website destinations.
 
 /support/index.html
 /support/faq.html
@@ -211,21 +207,21 @@ Examples:
 /legal/refund-policy.html
 /legal/disclaimer.html
 
+These are documented destinations, not proof that the corresponding files or backend features exist.
+
 Link maintenance rules
 
 1. Use root-relative paths for internal website destinations.
-2. Preserve consistent naming and URL conventions across pages.
-3. Verify that every destination exists before release.
+2. Preserve consistent naming and URL conventions.
+3. Verify every destination before release.
 4. Avoid placeholder links and non-functional navigation.
 5. Use the correct canonical URL for each indexable page.
-6. Ensure breadcrumb links reflect the actual page hierarchy.
+6. Ensure breadcrumbs reflect the actual page hierarchy.
 7. Update navigation, shortcuts, and footer links together when routes change.
-
-The routes above are documented destinations and must not be treated as proof that the corresponding files or backend features already exist.
 
 7. JavaScript Functionality
 
-The main page uses a self-contained JavaScript module.
+The main page uses a self-contained JavaScript module based on native browser APIs.
 
 Navigation
 
@@ -237,7 +233,7 @@ The navigation script manages:
 * Closing navigation with the Escape key.
 * Closing menus when the user clicks outside them.
 * Closing navigation after a link is selected.
-* Updating the header appearance when scrolling.
+* Updating header appearance when scrolling.
 
 Support-topic search
 
@@ -252,6 +248,8 @@ The search script:
 * Clears the search and restores all cards.
 * Scrolls to the support directory when the form is submitted.
 
+Search-result counts should be announced through an accessible live region, such as aria-live=“polite”.
+
 Current year
 
 The footer year is generated dynamically from the browser’s local date.
@@ -260,11 +258,11 @@ Dependencies
 
 The supplied implementation uses native browser APIs and does not require a frontend framework.
 
-Google Fonts are loaded externally. A system-font fallback remains available if the font service cannot be reached.
+Google Fonts may be loaded externally. System-font fallbacks must remain available if the font service cannot be reached.
 
 8. Accessibility Requirements
 
-Maintain the following accessibility practices across the Support Centre.
+Maintain these accessibility practices across the Support Centre:
 
 * Use semantic HTML landmarks: header, nav, main, section, and footer.
 * Provide a working skip-to-content link.
@@ -274,13 +272,13 @@ Maintain the following accessibility practices across the Support Centre.
 * Keep button labels descriptive.
 * Use aria-expanded and aria-controls where appropriate.
 * Announce search results through a live region.
-* Use sufficient contrast between text, backgrounds, and interactive elements.
+* Maintain sufficient contrast between text, backgrounds, and interactive elements.
 * Respect prefers-reduced-motion.
 * Supply meaningful alternative text for informative images.
 * Hide decorative imagery from assistive technology.
 * Avoid relying on colour alone to convey status or meaning.
 
-Accessibility should be tested using keyboard navigation, a screen reader, browser zoom, and mobile viewport sizes.
+Test keyboard navigation, screen-reader behavior, browser zoom, and mobile viewport sizes.
 
 9. Privacy and Security
 
@@ -298,11 +296,20 @@ User-facing safeguards
 
 Implementation safeguards
 
-If support forms are connected to a backend, implement appropriate server-side validation, access control, secure session management, CSRF protection where applicable, rate limiting, and safe file-upload handling.
+If support forms are connected to a backend, implement appropriate:
+
+* Server-side validation.
+* Authentication and access control.
+* Secure session management.
+* CSRF protection where applicable.
+* Rate limiting.
+* Safe file-upload handling.
+* Authorization checks for ticket access.
+* Appropriate audit logging for sensitive operations.
 
 File uploads should enforce permitted file types, size limits, server-side content validation, and appropriate storage permissions. Consider malware scanning and private document storage where applicable.
 
-Do not store API secrets, database credentials, authentication tokens, or private configuration values in this directory’s public frontend files.
+Do not store API secrets, database credentials, authentication tokens, or private configuration values in public frontend files.
 
 10. Functional Boundaries
 
@@ -324,23 +331,21 @@ Do not display a success message, ticket reference, payment confirmation, or ref
 
 11. Search Engine Metadata
 
-The supplied main page includes:
+The main HTML page should include:
 
 * A descriptive page title.
 * A meta description.
 * A canonical URL.
-* A robots directive.
+* An appropriate robots directive.
 * A theme colour.
 * A favicon.
 * Language and viewport declarations.
 
 Each indexable support page should have a unique title and description that accurately reflect its content.
 
-For the documentation file, search-engine metadata is not applicable in the same way as it is to an HTML page. Markdown documentation is primarily intended for maintainers and repository users.
+Markdown documentation is intended primarily for maintainers and repository users; HTML search metadata is not applicable in the same way.
 
 12. Quality Assurance Checklist
-
-Before releasing changes to the Support Centre, verify the following.
 
 Structure and navigation
 
@@ -349,7 +354,7 @@ Structure and navigation
 * [ ]	Navigation dropdowns work with mouse, touch, and keyboard.
 * [ ]	The mobile menu opens and closes correctly.
 * [ ]	Breadcrumbs point to valid destinations.
-* [ ]	Footer links match the current website routes.
+* [ ]	Footer links match current website routes.
 * [ ]	No unintended localhost URLs remain.
 
 Search and interactions
@@ -357,7 +362,7 @@ Search and interactions
 * [ ]	Searching for a known keyword returns relevant cards.
 * [ ]	Clearing the search restores every card.
 * [ ]	An unmatched query displays the empty state.
-* [ ]	Search result announcements are accessible.
+* [ ]	Search-result announcements are accessible.
 * [ ]	FAQ items expand and collapse.
 * [ ]	No JavaScript errors appear in the browser console.
 
@@ -384,17 +389,17 @@ When adding or updating a support page:
 
 1. Create the page using the established MedOrbits visual system.
 2. Add the route to the appropriate navigation, directory card, shortcut, or footer section.
-3. Verify the destination and any associated form behavior.
+3. Verify the destination and associated form behavior.
 4. Add relevant keywords to the support card’s search metadata.
 5. Review privacy, accessibility, and mobile usability.
 6. Update this README when the directory structure or implemented functionality changes.
-7. Run the applicable quality checks before deployment.
+7. Run applicable quality checks before deployment.
 
 Keep the support directory concise, task-oriented, and consistent with the rest of the website.
 
 14. Disclaimer
 
-This README documents the intended structure and behavior of the MedOrbits Support Centre based on its supplied page implementation. It does not establish that all linked pages, integrations, or backend services are deployed or operational.
+This README documents the intended structure and behavior of the MedOrbits Support Centre based on the supplied specification. It does not establish that all linked pages, integrations, or backend services are deployed or operational.
 
 Users should follow the instructions published on the relevant page and verify applicable admission, employment, payment, refund, and privacy information with the responsible organization where necessary.
 

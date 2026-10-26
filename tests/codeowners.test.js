@@ -1,83 +1,95 @@
+
 'use strict';
+
 /**
  * MedOrbits -- CODEOWNERS Validation Tests
  *
  * File: tests/codeowners.test.js
- *
- * Requirements:
- * - Node.js >= 20
- * - Jest
- * - Repository ownership file: .github/CODEOWNERS
+ * Runtime: Node.js >= 20
+ * Test framework: Jest
  *
  * Validates:
- * - File existence, type, readability, UTF-8 encoding and line endings.
+ * - CODEOWNERS existence, file type, UTF-8, size and line endings.
  * - Default repository ownership.
  * - Required repository and security-sensitive ownership rules.
- * - Rule parsing, owner syntax and formatting.
- * - Duplicate rules and conflicting mandatory ownership.
- * - Rule ordering and potentially ineffective mandatory rules.
- * - Common GitHub CODEOWNERS pattern restrictions.
+ * - Owner-reference syntax and rule formatting.
+ * - Duplicate patterns and conflicting required ownership.
+ * - Unsupported CODEOWNERS pattern constructs.
+ * - Required rule ordering.
  *
  * Limitations:
- * - This is a policy and structural validator, not a complete GitHub parser.
- * - It cannot confirm that users or teams exist or have repository access.
- * - Run a pull request on GitHub to verify actual CODEOWNERS behavior.
+ * - This is a structural and policy validator, not a complete
+ *   implementation of GitHub's CODEOWNERS matching engine.
+ * - It cannot verify GitHub usernames, team existence, repository
+ *   permissions, branch protection, or review assignment.
+ * - Actual behavior must be verified in GitHub.
  */
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { TextDecoder } = require('node:util');
+
 const EXPECTED_OWNER = '@vivekchoubey444-del';
+
 const CODEOWNERS_PATH = path.resolve(
   __dirname,
   '..',
   '.github',
   'CODEOWNERS'
 );
-const REQUIRED_EXACT_RULES = [
+
+const MAX_CODEOWNERS_BYTES = 1024 * 1024;
+
+const REQUIRED_EXACT_RULES = Object.freeze([
   '*',
   '/src/',
   '/.github/',
   '/package.json',
-];
-const REQUIRED_SECURITY_RULES = [
+]);
+
+const REQUIRED_SECURITY_RULES = Object.freeze([
   '/src/auth/',
   '/src/middleware/',
   '/src/validators/',
   '/src/controllers/',
   '/src/services/',
   '/src/repositories/',
-];
-const REQUIRED_RULES = [
+]);
+
+const REQUIRED_RULES = Object.freeze([
   ...REQUIRED_EXACT_RULES,
   ...REQUIRED_SECURITY_RULES,
-];
-const MAX_CODEOWNERS_BYTES = 1024 * 1024;
-/**
- * Expected rule policy.
- *
- * Set this to false if your repository intentionally permits additional
- * owners on mandatory rules. The default preserves your original policy.
- */
+]);
+
 const REQUIRE_SINGLE_OWNER_ON_REQUIRED_RULES = true;
+
+const OWNER_SEGMENT_PATTERN =
+  /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
+
+const EMAIL_OWNER_PATTERN =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * Decode UTF-8 strictly so invalid byte sequences cannot silently become
- * replacement characters.
+ * Decode UTF-8 strictly.
  */
 function decodeUtf8(buffer) {
   return new TextDecoder('utf-8', {
     fatal: true,
   }).decode(buffer);
 }
+
 /**
- * Parse CODEOWNERS lines.
+ * Parse CODEOWNERS rules.
  *
- * In CODEOWNERS, comments should occupy their own lines.
- * A # inside a pattern must not automatically be treated as a comment.
- *
- * This parser checks structure; it does not implement GitHub's complete
- * pattern-matching engine.
+ * Full-line comments and blank lines are ignored.
+ * This parser deliberately does not claim to implement GitHub's
+ * complete CODEOWNERS or gitignore pattern-matching semantics.
  */
 function parseCodeownersRules(source) {
+  if (typeof source !== 'string') {
+    throw new TypeError('CODEOWNERS source must be a string.');
+  }
+
   return source
     .split(/\r?\n/)
     .map((raw, index) => ({
@@ -85,11 +97,13 @@ function parseCodeownersRules(source) {
       raw,
       trimmed: raw.trim(),
     }))
-    .filter(({ trimmed }) => {
-      return trimmed.length > 0 && !trimmed.startsWith('#');
-    })
+    .filter(({ trimmed }) => (
+      trimmed.length > 0 &&
+      !trimmed.startsWith('#')
+    ))
     .map(({ lineNumber, raw, trimmed }) => {
       const tokens = trimmed.split(/\s+/);
+
       return {
         lineNumber,
         raw,
@@ -100,63 +114,177 @@ function parseCodeownersRules(source) {
       };
     });
 }
+
 /**
- * Check the structural form of a GitHub user, organization/team reference,
- * or email owner.
+ * Validate a GitHub-style owner reference syntactically.
  *
- * This is deliberately a syntax check only; it cannot verify that the
- * referenced account, organization, team or email is accepted by GitHub.
+ * This does not establish whether the account or team exists.
  */
 function isValidOwner(owner) {
   if (typeof owner !== 'string' || owner.length === 0) {
     return false;
   }
+
   if (owner.startsWith('@')) {
     const reference = owner.slice(1);
+
     if (!reference || /\s/.test(reference)) {
       return false;
     }
+
     const parts = reference.split('/');
+
     if (parts.length > 2) {
       return false;
     }
-    const validSegment = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
-    return parts.every((part) => validSegment.test(part));
+
+    return parts.every((part) =>
+      OWNER_SEGMENT_PATTERN.test(part)
+    );
   }
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(owner);
+
+  return EMAIL_OWNER_PATTERN.test(owner);
 }
+
 /**
- * Patterns using these constructs are unsupported in GitHub CODEOWNERS.
+ * Reject pattern constructs unsupported by GitHub CODEOWNERS.
+ *
+ * GitHub does not support negation or character ranges in CODEOWNERS
+ * patterns. Backslash escaping is also not supported as it is in some
+ * other pattern-matching contexts.
  */
 function hasUnsupportedPatternSyntax(pattern) {
+  if (typeof pattern !== 'string' || pattern.length === 0) {
+    return true;
+  }
+
   return (
     pattern.startsWith('!') ||
-    /\[[^\]]*\]/.test(pattern) ||
+    /[[\]]/.test(pattern) ||
     pattern.includes('\\')
   );
 }
+
+/**
+ * Validate the structure of a CODEOWNERS pattern.
+ *
+ * This is a conservative structural check, not a GitHub glob engine.
+ */
+function isStructurallyValidPattern(pattern) {
+  if (
+    typeof pattern !== 'string' ||
+    pattern.length === 0 ||
+    /\s/.test(pattern) ||
+    pattern.includes('\0') ||
+    hasUnsupportedPatternSyntax(pattern)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Read the CODEOWNERS file without allowing a missing file or read error
+ * to become a misleading empty successful test fixture.
+ */
+function readCodeownersFile() {
+  const result = {
+    exists: false,
+    regularFile: false,
+    readable: false,
+    content: '',
+    buffer: Buffer.alloc(0),
+    decodeError: null,
+    readError: null,
+    statError: null,
+  };
+
+  try {
+    const stats = fs.statSync(CODEOWNERS_PATH);
+    result.exists = true;
+    result.regularFile = stats.isFile();
+
+    if (!result.regularFile) {
+      return result;
+    }
+
+    if (stats.size > MAX_CODEOWNERS_BYTES) {
+      result.readError = new Error(
+        `CODEOWNERS exceeds ${MAX_CODEOWNERS_BYTES} bytes.`
+      );
+      return result;
+    }
+
+    result.buffer = fs.readFileSync(CODEOWNERS_PATH);
+
+    if (result.buffer.length > MAX_CODEOWNERS_BYTES) {
+      result.readError = new Error(
+        `CODEOWNERS exceeds ${MAX_CODEOWNERS_BYTES} bytes.`
+      );
+      return result;
+    }
+
+    result.readable = true;
+
+    try {
+      result.content = decodeUtf8(result.buffer);
+    } catch (error) {
+      result.decodeError = error;
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      result.exists = false;
+    } else if (
+      error.code === 'EACCES' ||
+      error.code === 'EPERM'
+    ) {
+      result.readError = error;
+    } else {
+      result.statError = error;
+    }
+  }
+
+  return result;
+}
+
 describe('MedOrbits CODEOWNERS', () => {
-  let fileExists = false;
-  let isRegularFile = false;
-  let content = '';
-  let rawBuffer = Buffer.alloc(0);
-  let lines = [];
-  let activeLines = [];
-  let parsedRules = [];
-  let readError = null;
-  let statError = null;
-  let decodeError = null;
-  /**
-   * Return all parsed rules matching an exact pattern.
-   */
+  let file;
+  let lines;
+  let activeLines;
+  let parsedRules;
+
+  beforeAll(() => {
+    file = readCodeownersFile();
+
+    lines = file.content.split(/\r?\n/);
+
+    activeLines = lines.filter((line) => {
+      const trimmed = line.trim();
+
+      return (
+        trimmed.length > 0 &&
+        !trimmed.startsWith('#')
+      );
+    });
+
+    parsedRules = parseCodeownersRules(file.content);
+  });
+
   function rulesForPattern(pattern) {
     return parsedRules.filter(
       (rule) => rule.pattern === pattern
     );
   }
-  /**
-   * Return whether a required pattern assigns the expected owner.
-   */
+
+  function lastRuleForPattern(pattern) {
+    const matches = rulesForPattern(pattern);
+
+    return matches.length
+      ? matches[matches.length - 1]
+      : undefined;
+  }
+
   function hasOwnerRule(pattern, owner = EXPECTED_OWNER) {
     return parsedRules.some(
       (rule) =>
@@ -164,244 +292,220 @@ describe('MedOrbits CODEOWNERS', () => {
         rule.owners.includes(owner)
     );
   }
-  /**
-   * Return the last explicit rule for a pattern.
-   *
-   * GitHub uses the last matching rule for a file. This helper checks
-   * duplicate exact patterns, but does not simulate arbitrary glob matches.
-   */
-  function lastRuleForPattern(pattern) {
-    const matchingRules = rulesForPattern(pattern);
-    return matchingRules.length
-      ? matchingRules[matchingRules.length - 1]
-      : undefined;
-  }
-  /**
-   * Check whether a required pattern has exactly one rule and the intended
-   * owner. Exact patterns are compared literally.
-   */
+
   function requiredRuleHasExpectedPolicy(pattern) {
-    const matchingRules = rulesForPattern(pattern);
-    if (matchingRules.length !== 1) {
+    const matches = rulesForPattern(pattern);
+
+    if (matches.length !== 1) {
       return false;
     }
-    const rule = matchingRules[0];
+
+    const rule = matches[0];
+
     if (!rule.owners.includes(EXPECTED_OWNER)) {
       return false;
     }
+
     if (
       REQUIRE_SINGLE_OWNER_ON_REQUIRED_RULES &&
       rule.owners.length !== 1
     ) {
       return false;
     }
+
     return true;
   }
-  beforeAll(() => {
-    try {
-      fileExists = fs.existsSync(CODEOWNERS_PATH);
-      if (!fileExists) {
-        return;
-      }
-      const stats = fs.statSync(CODEOWNERS_PATH);
-      isRegularFile = stats.isFile();
-      if (!isRegularFile) {
-        return;
-      }
-      if (stats.size > MAX_CODEOWNERS_BYTES) {
-        readError = new Error(
-          `CODEOWNERS exceeds the ${MAX_CODEOWNERS_BYTES}-byte test limit.`
-        );
-        return;
-      }
-      rawBuffer = fs.readFileSync(CODEOWNERS_PATH);
-      try {
-        content = decodeUtf8(rawBuffer);
-      } catch (error) {
-        decodeError = error;
-        return;
-      }
-      lines = content.split(/\r?\n/);
-      activeLines = lines.filter((line) => {
-        const trimmed = line.trim();
-        return trimmed.length > 0 && !trimmed.startsWith('#');
-      });
-      parsedRules = parseCodeownersRules(content);
-    } catch (error) {
-      readError = error;
-    }
-  });
+
   describe('File existence and readability', () => {
-    test('CODEOWNERS file exists', () => {
-      expect(fs.existsSync(CODEOWNERS_PATH)).toBe(true);
+    test('CODEOWNERS exists', () => {
+      expect(file.exists).toBe(true);
     });
-    test('CODEOWNERS path points to a regular file', () => {
-      expect(fileExists).toBe(true);
-      expect(isRegularFile).toBe(true);
+
+    test('CODEOWNERS is a regular file', () => {
+      expect(file.regularFile).toBe(true);
     });
-    test('CODEOWNERS file can be read without filesystem errors', () => {
-      expect(readError).toBeNull();
-      expect(fileExists).toBe(true);
-      expect(isRegularFile).toBe(true);
+
+    test('CODEOWNERS is readable', () => {
+      expect(file.readable).toBe(true);
+      expect(file.readError).toBeNull();
+      expect(file.statError).toBeNull();
     });
+
     test('CODEOWNERS is valid UTF-8', () => {
-      expect(decodeError).toBeNull();
-      if (rawBuffer.length > 0) {
-        expect(() => decodeUtf8(rawBuffer)).not.toThrow();
+      expect(file.decodeError).toBeNull();
+
+      if (file.readable) {
+        expect(() => decodeUtf8(file.buffer)).not.toThrow();
       }
     });
+
     test('CODEOWNERS is not empty or comment-only', () => {
-      expect(content.trim().length).toBeGreaterThan(0);
+      expect(file.content.trim().length).toBeGreaterThan(0);
       expect(activeLines.length).toBeGreaterThan(0);
       expect(parsedRules.length).toBeGreaterThan(0);
     });
-    test('CODEOWNERS does not exceed the configured size limit', () => {
-      expect(rawBuffer.length).toBeLessThanOrEqual(
+
+    test('CODEOWNERS does not exceed the size limit', () => {
+      expect(file.buffer.length).toBeLessThanOrEqual(
         MAX_CODEOWNERS_BYTES
       );
     });
+
     test('CODEOWNERS contains no null bytes', () => {
-      expect(content).not.toContain('\0');
+      expect(file.content).not.toContain('\0');
     });
-    test('CODEOWNERS contains no unexpected carriage returns', () => {
-      expect(content).not.toMatch(/\r(?!\n)/);
+
+    test('CODEOWNERS contains no bare carriage returns', () => {
+      expect(file.content).not.toMatch(/\r(?!\n)/);
     });
-    test('CODEOWNERS has a final newline', () => {
-      expect(content.endsWith('\n')).toBe(true);
+
+    test('CODEOWNERS ends with a newline', () => {
+      expect(file.content.endsWith('\n')).toBe(true);
     });
-    test('CODEOWNERS is located under the expected .github directory', () => {
+
+    test('CODEOWNERS is in the expected directory', () => {
       expect(path.basename(CODEOWNERS_PATH)).toBe('CODEOWNERS');
+
       expect(
         path.basename(path.dirname(CODEOWNERS_PATH))
       ).toBe('.github');
     });
-  });
-  describe('Default repository ownership', () => {
-    test('contains the correct default owner', () => {
-      expect(content).toMatch(
-        /^\*\s+@vivekchoubey444-del\s*$/m
-      );
+
+    test('CODEOWNERS path is absolute', () => {
+      expect(path.isAbsolute(CODEOWNERS_PATH)).toBe(true);
     });
-    test('defines the default wildcard rule exactly once', () => {
+  });
+
+  describe('Default repository ownership', () => {
+    test('contains the expected default owner rule', () => {
+      expect(
+        parsedRules.some(
+          (rule) =>
+            rule.pattern === '*' &&
+            rule.owners.includes(EXPECTED_OWNER)
+        )
+      ).toBe(true);
+    });
+
+    test('default wildcard rule appears exactly once', () => {
       expect(rulesForPattern('*')).toHaveLength(1);
     });
-    test('default wildcard rule assigns the expected owner', () => {
+
+    test('default wildcard rule has the expected owner policy', () => {
       const rule = lastRuleForPattern('*');
+
       expect(rule).toBeDefined();
-      expect(rule.owners).toContain(EXPECTED_OWNER);
+      expect(rule.owners).toEqual([EXPECTED_OWNER]);
     });
+
     test('default wildcard rule appears before required specific rules', () => {
       const defaultRule = lastRuleForPattern('*');
+
       expect(defaultRule).toBeDefined();
+
       for (const pattern of REQUIRED_RULES.filter(
         (item) => item !== '*'
       )) {
         const rule = lastRuleForPattern(pattern);
+
         expect(rule).toBeDefined();
+
         expect(rule.lineNumber).toBeGreaterThan(
           defaultRule.lineNumber
         );
       }
     });
-    test('default wildcard rule has the expected owner policy', () => {
-      const rule = lastRuleForPattern('*');
-      expect(rule).toBeDefined();
-      expect(rule.owners).toEqual([EXPECTED_OWNER]);
-    });
   });
-  describe('Required repository ownership rules', () => {
-    test('assigns ownership to the src directory', () => {
-      expect(content).toMatch(
-        /^\/src\/\s+@vivekchoubey444-del\s*$/m
-      );
-    });
-    test('assigns ownership to GitHub configuration and workflows', () => {
-      expect(content).toMatch(
-        /^\/\.github\/\s+@vivekchoubey444-del\s*$/m
-      );
-    });
-    test('assigns ownership to package.json', () => {
-      expect(content).toMatch(
-        /^\/package\.json\s+@vivekchoubey444-del\s*$/m
-      );
-    });
+
+  describe('Required repository ownership', () => {
     test.each(REQUIRED_EXACT_RULES)(
-      'contains the required rule: %s',
+      'contains exactly one required rule for %s',
       (pattern) => {
-        expect(hasOwnerRule(pattern)).toBe(true);
-      }
-    );
-    test('every required exact rule is defined exactly once', () => {
-      for (const pattern of REQUIRED_EXACT_RULES) {
         expect(rulesForPattern(pattern)).toHaveLength(1);
       }
-    });
-    test('every required exact rule has the expected ownership policy', () => {
-      for (const pattern of REQUIRED_EXACT_RULES) {
+    );
+
+    test.each(REQUIRED_EXACT_RULES)(
+      'assigns the required owner policy to %s',
+      (pattern) => {
         expect(
           requiredRuleHasExpectedPolicy(pattern)
         ).toBe(true);
       }
-    });
-    test('all required exact rules have valid line numbers', () => {
-      for (const pattern of REQUIRED_EXACT_RULES) {
-        const rule = lastRuleForPattern(pattern);
-        expect(rule).toBeDefined();
-        expect(rule.lineNumber).toBeGreaterThan(0);
-      }
+    );
+
+    test('all required exact rules exist', () => {
+      const missing = REQUIRED_EXACT_RULES.filter(
+        (pattern) => rulesForPattern(pattern).length === 0
+      );
+
+      expect(missing).toEqual([]);
     });
   });
-  describe('Security-sensitive component ownership', () => {
+
+  describe('Security-sensitive ownership', () => {
     test.each(REQUIRED_SECURITY_RULES)(
-      'assigns ownership to %s',
+      'contains a rule for %s',
       (pattern) => {
         expect(hasOwnerRule(pattern)).toBe(true);
       }
     );
-    test('covers every required security-sensitive directory', () => {
-      const missingRules = REQUIRED_SECURITY_RULES.filter(
-        (pattern) => !hasOwnerRule(pattern)
+
+    test('all security-sensitive rules have the required policy', () => {
+      const violations = REQUIRED_SECURITY_RULES.filter(
+        (pattern) => !requiredRuleHasExpectedPolicy(pattern)
       );
-      expect(missingRules).toEqual([]);
+
+      expect(violations).toEqual([]);
     });
-    test('security-sensitive rules appear after the default wildcard rule', () => {
+
+    test('security rules appear after the default wildcard', () => {
       const defaultRule = lastRuleForPattern('*');
+
       expect(defaultRule).toBeDefined();
+
       for (const pattern of REQUIRED_SECURITY_RULES) {
         const rule = lastRuleForPattern(pattern);
+
         expect(rule).toBeDefined();
+
         expect(rule.lineNumber).toBeGreaterThan(
           defaultRule.lineNumber
         );
       }
     });
-    test('security-sensitive rules follow the required owner policy', () => {
-      for (const pattern of REQUIRED_SECURITY_RULES) {
-        expect(
-          requiredRuleHasExpectedPolicy(pattern)
-        ).toBe(true);
-      }
-    });
-    test('security-sensitive rules do not contain duplicate exact patterns', () => {
-      for (const pattern of REQUIRED_SECURITY_RULES) {
-        expect(rulesForPattern(pattern)).toHaveLength(1);
-      }
-    });
   });
+
   describe('Rule syntax and structure', () => {
-    test('every active rule has a pattern and at least one owner', () => {
+    test('every active rule has at least one owner', () => {
       expect(parsedRules.length).toBeGreaterThan(0);
+
       for (const rule of parsedRules) {
         expect(rule.pattern.length).toBeGreaterThan(0);
         expect(rule.owners.length).toBeGreaterThan(0);
       }
     });
-    test('every owner has a structurally valid reference', () => {
-      const invalidOwners = [];
+
+    test('every pattern has structurally supported syntax', () => {
+      const invalid = parsedRules
+        .filter(
+          (rule) => !isStructurallyValidPattern(rule.pattern)
+        )
+        .map((rule) => ({
+          line: rule.lineNumber,
+          pattern: rule.pattern,
+        }));
+
+      expect(invalid).toEqual([]);
+    });
+
+    test('every owner reference is syntactically valid', () => {
+      const invalid = [];
+
       for (const rule of parsedRules) {
         for (const owner of rule.owners) {
           if (!isValidOwner(owner)) {
-            invalidOwners.push({
+            invalid.push({
               line: rule.lineNumber,
               pattern: rule.pattern,
               owner,
@@ -409,211 +513,155 @@ describe('MedOrbits CODEOWNERS', () => {
           }
         }
       }
-      expect(invalidOwners).toEqual([]);
+
+      expect(invalid).toEqual([]);
     });
-    test('does not contain duplicate owner references within a rule', () => {
+
+    test('owner references are unique within each rule', () => {
       for (const rule of parsedRules) {
         expect(new Set(rule.owners).size).toBe(
           rule.owners.length
         );
       }
     });
-    test('does not contain duplicate exact patterns', () => {
+
+    test('there are no duplicate exact patterns', () => {
       const patterns = parsedRules.map(
         (rule) => rule.pattern
       );
-      const duplicates = patterns.filter(
-        (pattern, index) => patterns.indexOf(pattern) !== index
-      );
-      expect(duplicates).toEqual([]);
+
+      expect(new Set(patterns).size).toBe(patterns.length);
     });
-    test('does not contain unsupported pattern syntax', () => {
-      const invalidPatterns = parsedRules
-        .filter((rule) =>
-          hasUnsupportedPatternSyntax(rule.pattern)
-        )
-        .map((rule) => ({
-          line: rule.lineNumber,
-          pattern: rule.pattern,
-        }));
-      expect(invalidPatterns).toEqual([]);
-    });
-    test('does not contain empty patterns', () => {
-      for (const rule of parsedRules) {
-        expect(rule.pattern.trim()).not.toBe('');
-      }
-    });
-    test('does not contain empty owner tokens', () => {
-      for (const rule of parsedRules) {
-        expect(rule.owners.every(Boolean)).toBe(true);
-      }
-    });
-    test('does not contain whitespace inside individual owner tokens', () => {
-      for (const rule of parsedRules) {
-        for (const owner of rule.owners) {
-          expect(owner).not.toMatch(/\s/);
-        }
-      }
-    });
-    test('does not contain trailing whitespace on active lines', () => {
+
+    test('active lines contain no trailing whitespace', () => {
       for (const rule of parsedRules) {
         expect(rule.raw).not.toMatch(/[ \t]+$/);
       }
     });
-    test('does not contain leading whitespace on active rules', () => {
+
+    test('active rules contain no leading whitespace', () => {
       for (const rule of parsedRules) {
         expect(rule.raw).not.toMatch(/^[ \t]+/);
       }
     });
-    test('does not contain duplicate normalized active lines', () => {
-      const normalizedLines = parsedRules.map(
+
+    test('active lines contain no duplicate normalized rules', () => {
+      const normalized = parsedRules.map(
         (rule) => rule.normalized
       );
-      expect(new Set(normalizedLines).size).toBe(
-        normalizedLines.length
-      );
+
+      expect(new Set(normalized).size).toBe(normalized.length);
     });
-    test('does not contain malformed rules with only a pattern', () => {
-      const malformedRules = parsedRules
-        .filter((rule) => rule.tokens.length < 2)
-        .map((rule) => ({
-          line: rule.lineNumber,
-          raw: rule.raw,
-        }));
-      expect(malformedRules).toEqual([]);
-    });
-  });
-  describe('Required ownership policy integrity', () => {
-    test('all mandatory rules are present', () => {
-      const missingRules = REQUIRED_RULES.filter(
-        (pattern) => rulesForPattern(pattern).length === 0
-      );
-      expect(missingRules).toEqual([]);
-    });
-    test('all mandatory rules assign the expected owner', () => {
-      const incorrectRules = REQUIRED_RULES.filter(
-        (pattern) => !hasOwnerRule(pattern)
-      );
-      expect(incorrectRules).toEqual([]);
-    });
-    test('all mandatory rules have exactly one declaration', () => {
-      const duplicatedRules = REQUIRED_RULES.filter(
-        (pattern) => rulesForPattern(pattern).length !== 1
-      );
-      expect(duplicatedRules).toEqual([]);
-    });
-    test('mandatory rules do not contain unexpected additional owners', () => {
-      if (!REQUIRE_SINGLE_OWNER_ON_REQUIRED_RULES) {
-        return;
-      }
-      const violations = [];
-      for (const pattern of REQUIRED_RULES) {
-        const rules = rulesForPattern(pattern);
-        for (const rule of rules) {
-          if (
-            rule.owners.length !== 1 ||
-            rule.owners[0] !== EXPECTED_OWNER
-          ) {
-            violations.push({
-              line: rule.lineNumber,
-              pattern,
-              owners: rule.owners,
-            });
-          }
-        }
-      }
-      expect(violations).toEqual([]);
-    });
-    test('the default-owner declaration is not duplicated', () => {
-      const defaultRules = parsedRules.filter(
-        (rule) => rule.pattern === '*'
-      );
-      expect(defaultRules).toHaveLength(1);
-    });
-    test('required rules are not overridden by duplicate exact patterns', () => {
-      const violations = [];
-      for (const pattern of REQUIRED_RULES) {
-        const rules = rulesForPattern(pattern);
-        if (rules.length !== 1) {
-          violations.push({
-            pattern,
-            count: rules.length,
-          });
-        }
-      }
-      expect(violations).toEqual([]);
-    });
-  });
-  describe('Comments and formatting', () => {
-    test('comment-only lines are ignored when parsing ownership rules', () => {
-      const commentOnlyLines = lines.filter(
-        (line) => line.trim().startsWith('#')
-      );
-      for (const line of commentOnlyLines) {
-        expect(
-          parseCodeownersRules(line)
-        ).toHaveLength(0);
-      }
-    });
-    test('blank lines are ignored when parsing ownership rules', () => {
-      expect(parseCodeownersRules('')).toEqual([]);
-      expect(parseCodeownersRules('\n')).toEqual([]);
-      expect(parseCodeownersRules('   \n')).toEqual([]);
-    });
-    test('the parsed rule count matches the active line count', () => {
-      expect(parsedRules).toHaveLength(activeLines.length);
-    });
-    test('all parsed rules have positive line numbers', () => {
+
+    test('every rule has a positive line number', () => {
       for (const rule of parsedRules) {
         expect(Number.isInteger(rule.lineNumber)).toBe(true);
         expect(rule.lineNumber).toBeGreaterThan(0);
       }
     });
-    test('all mandatory patterns have a single owner reference', () => {
-      for (const pattern of REQUIRED_RULES) {
-        const rule = lastRuleForPattern(pattern);
-        expect(rule).toBeDefined();
-        expect(rule.owners).toContain(EXPECTED_OWNER);
-      }
-    });
   });
-  describe('Regression and diagnostics', () => {
-    test('the expected owner constant is a valid owner reference', () => {
-      expect(isValidOwner(EXPECTED_OWNER)).toBe(true);
+
+  describe('Required ownership integrity', () => {
+    test('all mandatory patterns are present', () => {
+      const missing = REQUIRED_RULES.filter(
+        (pattern) => rulesForPattern(pattern).length === 0
+      );
+
+      expect(missing).toEqual([]);
     });
-    test('the configured path is absolute', () => {
-      expect(path.isAbsolute(CODEOWNERS_PATH)).toBe(true);
+
+    test('all mandatory patterns assign the expected owner', () => {
+      const incorrect = REQUIRED_RULES.filter(
+        (pattern) => !hasOwnerRule(pattern)
+      );
+
+      expect(incorrect).toEqual([]);
     });
-    test('every required rule has a positive line number', () => {
-      for (const pattern of REQUIRED_RULES) {
-        const rule = lastRuleForPattern(pattern);
-        expect(rule).toBeDefined();
-        expect(rule.lineNumber).toBeGreaterThan(0);
-      }
+
+    test('all mandatory patterns follow the configured owner policy', () => {
+      const violations = REQUIRED_RULES.filter(
+        (pattern) => !requiredRuleHasExpectedPolicy(pattern)
+      );
+
+      expect(violations).toEqual([]);
     });
-    test('the parser preserves each rule pattern', () => {
-      for (const rule of parsedRules) {
-        expect(rule.normalized.split(/\s+/)[0]).toBe(
-          rule.pattern
-        );
-      }
-    });
-    test('the parser preserves all owner tokens', () => {
-      for (const rule of parsedRules) {
-        expect(rule.normalized.split(/\s+/).slice(1)).toEqual(
-          rule.owners
-        );
-      }
-    });
-    test('required-rule configuration contains no duplicate patterns', () => {
+
+    test('required rule configuration has no duplicate patterns', () => {
       expect(new Set(REQUIRED_RULES).size).toBe(
         REQUIRED_RULES.length
       );
     });
-    test('security-sensitive configuration contains no duplicate patterns', () => {
+
+    test('security rule configuration has no duplicate patterns', () => {
       expect(new Set(REQUIRED_SECURITY_RULES).size).toBe(
         REQUIRED_SECURITY_RULES.length
       );
+    });
+
+    test('the expected owner is syntactically valid', () => {
+      expect(isValidOwner(EXPECTED_OWNER)).toBe(true);
+    });
+  });
+
+  describe('Parser regression tests', () => {
+    test('ignores full-line comments', () => {
+      expect(
+        parseCodeownersRules('# comment\n').length
+      ).toBe(0);
+    });
+
+    test('ignores blank lines', () => {
+      expect(parseCodeownersRules('').length).toBe(0);
+      expect(parseCodeownersRules('\n').length).toBe(0);
+      expect(parseCodeownersRules('   \n').length).toBe(0);
+    });
+
+    test('preserves pattern and owner tokens', () => {
+      const sample = '* @example-owner\n';
+      const parsed = parseCodeownersRules(sample);
+
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].pattern).toBe('*');
+      expect(parsed[0].owners).toEqual(['@example-owner']);
+    });
+
+    test('records accurate source line numbers', () => {
+      const parsed = parseCodeownersRules(
+        '# heading\n\n* @example-owner\n/src/ @example-owner\n'
+      );
+
+      expect(parsed.map((rule) => rule.lineNumber)).toEqual([
+        3,
+        4,
+      ]);
+    });
+
+    test('rejects malformed owner references', () => {
+      expect(isValidOwner('')).toBe(false);
+      expect(isValidOwner('@')).toBe(false);
+      expect(isValidOwner('@org/')).toBe(false);
+      expect(isValidOwner('@org/team/extra')).toBe(false);
+      expect(isValidOwner('@bad owner')).toBe(false);
+      expect(isValidOwner('not-an-email')).toBe(false);
+    });
+
+    test('accepts structurally valid owner references', () => {
+      expect(isValidOwner('@example-user')).toBe(true);
+      expect(isValidOwner('@example-org/example-team')).toBe(true);
+      expect(isValidOwner('owner@example.com')).toBe(true);
+    });
+
+    test('detects unsupported pattern constructs', () => {
+      expect(hasUnsupportedPatternSyntax('!private/')).toBe(true);
+      expect(hasUnsupportedPatternSyntax('/src/[ab].js')).toBe(true);
+      expect(hasUnsupportedPatternSyntax('/src/file\\name')).toBe(true);
+      expect(hasUnsupportedPatternSyntax('/src/')).toBe(false);
+      expect(hasUnsupportedPatternSyntax('*')).toBe(false);
+    });
+
+    test('rejects non-string parser input', () => {
+      expect(() => parseCodeownersRules(null)).toThrow(TypeError);
+      expect(() => parseCodeownersRules({})).toThrow(TypeError);
     });
   });
 });

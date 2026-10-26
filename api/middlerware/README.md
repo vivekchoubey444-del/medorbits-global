@@ -1,465 +1,338 @@
 MedOrbits API Middleware
 
-File: /api/middlerware/README.md
-Project: MedOrbits
-Runtime: Node.js 20+
+Directory: api/middleware/
+Runtime: Node.js
 Framework: Express.js
-Status: Middleware documentation and integration guide
+Module system: CommonJS
+Purpose: Centralized API security, request validation, authorization, rate limiting, and error handling.
 
 ⸻
 
-1. Overview
-
-The middlerware/ directory contains reusable Express.js middleware responsible for protecting API routes, validating incoming requests, enforcing request limits, and managing errors.
-
-Middleware must be integrated consistently across authentication, applications, documents, payments, user accounts, and administrative endpoints.
-
-Directory structure
+1. Directory structure
 
 api/
-└── middlerware/
+└── middleware/
+    ├── README.md
+    ├── authentication.js
     ├── authorization.js
-    ├── error-handler.js
-    ├── rate-limit.js
     ├── validation.js
-    └── README.md
+    ├── rate-limit.js
+    └── error-handler.js
 
-Naming compatibility: The directory is intentionally named middlerware to match the requested project structure. Although middleware is the conventional spelling, do not rename this directory without updating every import and deployment reference.
-
-⸻
+Use the spelling middleware consistently throughout the repository.
 
 2. Middleware responsibilities
 
-authorization.js
+File	Responsibility
+authentication.js	Verifies access tokens and establishes the authenticated user context.
+authorization.js	Enforces role-based access control (RBAC), permission checks, and resource ownership.
+validation.js	Validates request fields, allowed properties, data formats, and field constraints.
+rate-limit.js	Limits request frequency to reduce abuse, brute-force attempts, and excessive resource consumption.
+error-handler.js	Normalizes errors, logs safe diagnostic information, and returns consistent JSON responses.
 
-Purpose: Restrict access to protected resources.
+Authentication
 
-Responsibilities:
+Authentication determines whether a request is associated with a valid identity.
 
-* Verify authentication credentials using the project’s established authentication mechanism.
-* Reject missing, invalid, expired, or revoked credentials.
-* Attach verified user identity and permitted claims to the request.
-* Enforce role-based access control for administrative and restricted operations.
-* Prevent unauthorized access to another user’s applications or documents.
-* Return appropriate 401 Unauthorized or 403 Forbidden responses.
+* Verify tokens using the configured authentication mechanism.
+* Reject missing, invalid, or expired credentials.
+* Populate req.user only from trusted, verified identity information.
+* Do not trust identity, roles, or permissions supplied in request bodies or query parameters.
 
-Security requirements:
+Authorization
 
-* Never trust user IDs, roles, or permissions supplied in request bodies.
-* Verify credentials cryptographically using the configured authentication mechanism.
-* Do not expose tokens, session secrets, or credential contents in logs.
-* Apply ownership checks at the resource or service layer where necessary.
+Authorization determines whether the authenticated user may perform a particular action.
 
-error-handler.js
+* Use authorizeRoles() for role restrictions.
+* Use authorizePermissions() to require all specified permissions.
+* Use authorizeAnyPermission() to require at least one specified permission.
+* Use requireOwnership() when access depends on resource ownership.
+* Use requireAuthenticated() when a route requires authentication without a specific role restriction.
 
-Purpose: Provide consistent API error responses.
+For sensitive operations, obtain current roles and permissions from a trusted database or authorization service.
 
-Responsibilities:
+Request validation
 
-* Normalize application and validation errors.
-* Map known errors to appropriate HTTP status codes.
-* Generate a request or correlation ID where supported.
-* Log diagnostic information securely on the server.
-* Prevent stack traces and internal implementation details from reaching production clients.
-* Delegate errors to Express when response headers have already been sent.
+Validate untrusted request data before passing it to business logic.
 
-The error handler must use Express’s four-argument signature:
+* Use validate() for schema-based field validation.
+* Use allowOnlyFields() to reject unexpected fields.
+* Use requireObject() to enforce object-shaped request sections.
+* Use trimFields() and lowercaseFields() for appropriate normalization.
+* Use limitFieldLengths() to enforce maximum string lengths.
+* Use the supplied identifier validators where applicable.
 
-(err, req, res, next)
+Input validation does not replace parameterized database queries, authorization, or context-specific output encoding.
 
-It should be mounted after route registration and any custom not-found handler.
+Rate limiting
 
-rate-limit.js
+The rate limiter exports three middleware instances:
 
-Purpose: Reduce abuse and excessive API traffic.
+Export	Default policy
+apiLimiter	300 requests per IP per 15 minutes
+authLimiter	10 requests per IP per 15 minutes
+sensitiveLimiter	20 requests per IP per minute
 
-Apply appropriate limits to:
+Defaults can be overridden with environment variables. These values should be tuned to actual traffic and endpoint sensitivity.
 
-* Authentication and account recovery.
-* Application submission and modification.
-* Document uploads and downloads.
-* Contact forms and support tickets.
-* Expensive search or AI-assisted endpoints.
-* Administrative and sensitive operations.
+The default in-memory store is not shared across multiple application instances. Configure a compatible shared store, such as Redis, for multi-instance deployments.
 
-Requirements:
+Central error handling
 
-* Configure limits according to endpoint sensitivity and expected traffic.
-* Return 429 Too Many Requests when a request exceeds its permitted limit.
-* Configure a shared store for distributed deployments where required.
-* Consider trusted proxy configuration when determining client IP addresses.
-* Avoid relying solely on in-memory counters across multiple server instances.
+The error handler exports:
 
-Do not impose one restrictive global limit without considering normal application traffic.
+* AppError — application-level errors.
+* asyncHandler — forwards rejected asynchronous handlers to Express.
+* notFoundHandler — handles requests that do not match a route.
+* errorHandler — generates the final JSON error response.
 
-validation.js
-
-Purpose: Validate incoming request data before business logic executes.
-
-Validation should cover:
-
-* Request body fields.
-* URL parameters.
-* Query parameters.
-* Supported content types.
-* Field lengths, data types, formats, and allowed values.
-* Application identifiers and document metadata.
-* Pagination and filtering parameters.
-* File size and file type requirements where uploads are supported.
-
-Validation requirements:
-
-* Reject malformed or unexpected input.
-* Use explicit allowlists for accepted fields.
-* Validate data at the server, regardless of frontend validation.
-* Avoid silently accepting invalid values.
-* Never treat validation as a substitute for authorization.
-* Use the project’s existing schema definitions where possible.
+The error handler must be mounted after routes. In production, unexpected errors must not expose stack traces, SQL details, internal paths, secrets, or database messages.
 
 ⸻
 
-3. Recommended request lifecycle
+3. Recommended Express middleware order
 
-Use the following order as a baseline. Adjust it to match existing application initialization, authentication requirements, and route-specific policies.
+Register middleware in a deliberate order. Express executes middleware in the order in which it is mounted. Error-handling middleware uses four arguments and belongs at the end of the normal request pipeline. See the official Express middleware guide and error-handling guide.
 
-Incoming Request
-       |
-       v
-Security Headers and CORS
-       |
-       v
-Request ID and Logging
-       |
-       v
-Body Parsing and Size Limits
-       |
-       v
-General Rate Limiting
-       |
-       v
-Route Matching
-       |
-       v
-Authentication / Authorization
-       |
-       v
-Request Validation
-       |
-       v
-Controller and Service
-       |
-       v
-Database / External Services
-       |
-       v
-Consistent API Response
+Example integration in the application bootstrap file:
 
-Errors should be passed to the centralized error handler.
-
-Route-specific middleware must be applied where needed. For example, login routes may need a dedicated authentication rate limit, while public health checks may require a different policy.
-
-⸻
-
-4. Integration examples
-
-These examples illustrate the expected integration pattern. Confirm actual exports and function signatures in each implementation before copying imports.
-
-4.1 Application-level configuration
-
+‘use strict’;
 const express = require(‘express’);
+const {
+  apiLimiter,
+} = require(‘./api/middleware/rate-limit’);
+const {
+  notFoundHandler,
+  errorHandler,
+} = require(‘./api/middleware/error-handler’);
 const app = express();
-app.disable(‘x-powered-by’);
-app.use(express.json({
-  limit: ‘1mb’,
-}));
+// 1. Configure trust proxy only for your actual deployment topology.
+// Example: app.set(‘trust proxy’, 1);
+// Do not enable this blindly.
+// 2. Parse request bodies with explicit size limits.
+app.use(express.json({ limit: ‘1mb’ }));
 app.use(express.urlencoded({
   extended: false,
-  limit: ‘1mb’,
+  limit: ‘100kb’,
 }));
-// Register security, logging, and rate-limiting
-// middleware according to the existing server setup.
-// Register API routers here.
-// Register the not-found handler and error handler last.
+// 3. Apply API-wide rate limiting.
+app.use(‘/api’, apiLimiter);
+// 4. Mount your API routers.
+// Replace this example with your existing router imports.
+// app.use(‘/api/auth’, authRoutes);
+// app.use(‘/api/users’, userRoutes);
+// app.use(‘/api/applications’, applicationRoutes);
+// 5. Handle unmatched routes.
+app.use(notFoundHandler);
+// 6. Handle errors last.
+app.use(errorHandler);
+module.exports = app;
 
-Do not add duplicate parsers, security headers, or rate limiters if server.js already configures them.
-
-4.2 Protecting a route
-
-Example only; replace the illustrative exports with the actual exports from authorization.js and validation.js.
-
-router.post(
-  ‘/applications’,
-  authenticate,
-  validateApplication,
-  applicationController.create
-);
-
-For administrative operations, enforce the required role and resource permissions independently of request validation.
-
-4.3 Centralized error handling
-
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: ‘NOT_FOUND’,
-      message: ‘The requested resource was not found.’,
-    },
-  });
-});
-app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err);
-  }
-  const status =
-    Number.isInteger(err.statusCode) &&
-    err.statusCode >= 400 &&
-    err.statusCode <= 599
-      ? err.statusCode
-      : 500;
-  if (status >= 500) {
-    // Use the project’s structured logger here.
-    // Do not log secrets or sensitive request bodies.
-  }
-  res.status(status).json({
-    success: false,
-    error: {
-      code: status >= 500
-        ? ‘INTERNAL_SERVER_ERROR’
-        : ‘REQUEST_ERROR’,
-      message: status >= 500
-        ? ‘An unexpected server error occurred.’
-        : err.message || ‘The request could not be processed.’,
-    },
-  });
-});
-
-Important: This is a reference implementation, not a verified replacement for the existing error handler. Ensure the production implementation maps known error classes, sanitizes client-visible messages, and does not expose arbitrary internal error messages.
+Integration warning: adapt this example to the existing application bootstrap. Do not replace working router registrations, database initialization, session setup, security middleware, or deployment-specific configuration merely to match this example.
 
 ⸻
 
-5. API response conventions
+4. Authentication and authorization on routes
 
-Use a consistent response structure across endpoints.
+Authentication must precede authorization.
 
-Successful response
+const {
+  authenticate,
+} = require(‘../middleware/authentication’);
+const {
+  authorizeRoles,
+  authorizePermissions,
+  requireOwnership,
+} = require(‘../middleware/authorization’);
+// Administrator-only endpoint.
+router.get(
+  ‘/admin’,
+  authenticate,
+  authorizeRoles(‘admin’),
+  adminController.dashboard
+);
+// Permission-protected endpoint.
+router.get(
+  ‘/applications’,
+  authenticate,
+  authorizePermissions(‘applications:read’),
+  applicationController.list
+);
+// Ownership must be resolved from the actual stored resource.
+router.get(
+  ‘/applications/:id’,
+  authenticate,
+  requireOwnership(async (req) => {
+    const application = await applicationService.findById(
+      req.params.id
+    );
+    return application ? application.userId : null;
+  }),
+  applicationController.getById
+);
 
-{
-  “success”: true,
-  “data”: {},
-  “requestId”: “request-correlation-id”
-}
+The controller and service names above are illustrative. Replace them with existing project modules.
 
-Client error
+Ownership alone is insufficient when a particular operation also requires a permission, organizational scope, or administrative approval.
+
+⸻
+
+5. Validation on routes
+
+Example of a registration route using the validation middleware:
+
+const {
+  rules,
+  validate,
+  trimFields,
+  lowercaseFields,
+  allowOnlyFields,
+} = require(‘../middleware/validation’);
+router.post(
+  ‘/register’,
+  trimFields([‘name’, ‘email’]),
+  lowercaseFields([‘email’]),
+  allowOnlyFields(
+    [‘name’, ‘email’, ‘password’],
+    ‘body’
+  ),
+  validate({
+    name: {
+      required: true,
+      rules: [
+        rules.string,
+        (value) => rules.minLength(value, 2),
+      ],
+    },
+    email: {
+      required: true,
+      rules: [
+        rules.string,
+        rules.email,
+      ],
+    },
+    password: {
+      required: true,
+      rules: [
+        rules.string,
+        (value) =>
+          value.length >= 12 ||
+          ‘Password must contain at least 12 characters.’,
+      ],
+    },
+  }),
+  registrationController.register
+);
+
+This example illustrates middleware composition. Confirm that the password policy matches the application’s actual security requirements and that password hashing and account-creation safeguards are implemented by the service layer.
+
+⸻
+
+6. Rate-limiting configuration
+
+Set these environment variables as appropriate for the deployment:
+
+API_RATE_LIMIT_WINDOW_MS=900000
+API_RATE_LIMIT_MAX=300
+AUTH_RATE_LIMIT_WINDOW_MS=900000
+AUTH_RATE_LIMIT_MAX=10
+SENSITIVE_RATE_LIMIT_WINDOW_MS=60000
+SENSITIVE_RATE_LIMIT_MAX=20
+
+Do not commit real credentials, tokens, or secrets to the repository.
+
+For authentication endpoints, consider account-based throttling in addition to IP-based throttling. Avoid configurations that let clients spoof their IP through untrusted forwarding headers.
+
+⸻
+
+7. Error response format
+
+Expected errors should follow a consistent response structure:
 
 {
   “success”: false,
   “error”: {
     “code”: “VALIDATION_ERROR”,
-    “message”: “One or more fields are invalid.”
-  },
-  “requestId”: “request-correlation-id”
+    “message”: “One or more request fields are invalid.”,
+    “requestId”: “example-request-id”
+  }
 }
 
-The requestId field is optional if correlation IDs are not implemented. Do not fabricate an ID or expose internal database identifiers unnecessarily.
+The actual response fields depend on the middleware that produces the error. Do not assume every middleware returns identical fields unless that behavior is implemented and tested.
 
-Recommended HTTP status codes
+Use HTTP status codes consistently:
 
 Status	Meaning
-400	Malformed request or invalid input
+400	Invalid request data
 401	Missing or invalid authentication
-403	Insufficient permissions
-404	Resource not found
-409	Conflicting operation
-413	Request or upload too large
-415	Unsupported media type
-422	Semantically invalid data, if adopted consistently
+403	Authenticated but not authorized
+404	Resource or route not found
+409	Resource conflict
+413	Request payload too large
 429	Rate limit exceeded
-500	Unexpected internal error
-503	Service temporarily unavailable
-
-Choose one consistent policy for validation errors (400 or 422) across the API.
+500	Unexpected server error
 
 ⸻
 
-6. Environment configuration
+8. Dependency requirements
 
-Middleware must read sensitive configuration from environment variables or the project’s configuration module.
+The rate limiter requires express-rate-limit.
 
-Potential settings include:
+npm install express-rate-limit
 
-NODE_ENV=production
-SESSION_SECRET=
-JWT_SECRET=
-RATE_LIMIT_WINDOW_MS=
-RATE_LIMIT_MAX=
-
-These names are illustrative. Use only the variables required by the actual implementation.
-
-Rules:
-
-* Never commit real secrets to version control.
-* Never use placeholder or development secrets in production.
-* Fail startup when mandatory security configuration is missing.
-* Keep environment-specific rate limits configurable.
-* Rotate compromised credentials promptly.
-* Avoid logging environment variables.
-
-Do not introduce JWT_SECRET if the existing authentication system uses another credential mechanism.
+Other imports and dependencies should be consistent with the existing package.json and lockfile. Do not install duplicate packages or regenerate the lockfile unnecessarily.
 
 ⸻
 
-7. File uploads and document security
+9. Verification checklist
 
-Because MedOrbits handles educational applications and official documents, upload-related endpoints require additional controls.
+After adding or updating middleware files:
 
-* Authenticate users before accepting private document uploads.
-* Check ownership and permissions before retrieving or deleting documents.
-* Enforce file-size limits and allowed extensions.
-* Inspect actual file content instead of trusting the supplied MIME type.
-* Generate server-side storage names instead of trusting filenames.
-* Store private documents outside publicly accessible static directories.
-* Prevent executable files and path traversal.
-* Use malware scanning where available and appropriate.
-* Avoid returning storage paths or private URLs to unauthorized users.
-* Apply appropriate retention, access logging, and deletion policies.
+* [ ]	Confirm all imports resolve to existing paths.
+* [ ]	Confirm authentication.js exports the authenticate middleware used by routes.
+* [ ]	Confirm authorization.js exports the functions referenced by route files.
+* [ ]	Confirm validation schemas match the actual request payloads.
+* [ ]	Confirm rate-limit configuration loads in development and production.
+* [ ]	Confirm malformed JSON and oversized payloads receive safe responses.
+* [ ]	Confirm unknown routes reach notFoundHandler.
+* [ ]	Confirm errorHandler is registered last.
+* [ ]	Confirm unauthorized users cannot access protected resources.
+* [ ]	Confirm users cannot access another user’s resources by changing an ID.
+* [ ]	Confirm production responses do not expose stack traces or secrets.
+* [ ]	Confirm rate limiting works correctly behind the configured proxy.
+* [ ]	Test middleware behavior using automated tests before deployment.
 
-Do not assume that validation.js alone provides secure file-upload handling.
+Run syntax checks from the repository root:
 
-⸻
+node —check api/middleware/authentication.js
+node —check api/middleware/authorization.js
+node —check api/middleware/validation.js
+node —check api/middleware/rate-limit.js
+node —check api/middleware/error-handler.js
 
-8. Testing checklist
-
-Before deployment, test the following scenarios.
-
-Authorization
-
-* [ ]	Missing credentials are rejected.
-* [ ]	Invalid and expired credentials are rejected.
-* [ ]	Restricted roles cannot access administrative endpoints.
-* [ ]	Users cannot access another user’s private application or documents.
-* [ ]	Public endpoints remain accessible as intended.
-
-Error handling
-
-* [ ]	Validation errors return consistent responses.
-* [ ]	Unknown routes return 404.
-* [ ]	Unexpected errors return sanitized 500 responses.
-* [ ]	Stack traces and secrets are not exposed in production.
-* [ ]	Errors after response headers are sent are delegated correctly.
-
-Rate limiting
-
-* [ ]	Requests within the configured limit succeed.
-* [ ]	Excess requests return 429.
-* [ ]	Authentication endpoints have suitable limits.
-* [ ]	Limits behave correctly across server instances when using a shared store.
-* [ ]	Proxy and client-IP handling are configured correctly.
-
-Validation
-
-* [ ]	Missing required fields are rejected.
-* [ ]	Invalid types and formats are rejected.
-* [ ]	Oversized requests are rejected.
-* [ ]	Unexpected fields are handled according to policy.
-* [ ]	Malformed JSON produces a controlled client error.
-* [ ]	Validation failures do not modify persistent data.
+These commands check JavaScript syntax; they do not verify runtime imports, configuration, database access, or security behavior. Run the project’s test suite and a deployment smoke test as well.
 
 ⸻
 
-9. Troubleshooting
+10. Security and maintenance rules
 
-Middleware export is undefined
+1. Keep authentication, authorization, validation, rate limiting, and error handling as separate responsibilities.
+2. Never trust client-provided role or permission values.
+3. Use parameterized database operations and enforce authorization at the service or data-access boundary where appropriate.
+4. Avoid logging passwords, access tokens, cookies, private documents, or sensitive personal information.
+5. Use HTTPS in production.
+6. Configure proxy trust and rate-limit storage according to the real deployment architecture.
+7. Keep dependencies updated and review security advisories.
+8. Preserve existing route contracts and exports when improving middleware.
+9. Do not overwrite unrelated files or delete untracked files during middleware maintenance.
+10. Back up or commit known-good changes before resolving Git conflicts.
 
-Symptom: Express reports that a route callback is undefined.
+References
 
-Check:
-
-1. The export style in the middleware file.
-2. The import or require() statement.
-3. The exported property name.
-4. Whether a middleware factory requires invocation.
-5. Whether a circular dependency is preventing initialization.
-
-Do not fix this by passing an arbitrary object to router.get() or router.post(). Express expects callable route handlers.
-
-Errors are not reaching the error handler
-
-Check that:
-
-* The handler has four arguments.
-* Errors are passed to next(err) when required.
-* Asynchronous errors are forwarded according to the installed Express version.
-* The error handler is registered after the relevant routes.
-* No earlier middleware sends a response and then continues the chain.
-
-Rate limiting behaves inconsistently
-
-Check the configured store, proxy trust settings, deployment topology, and the order in which rate-limit middleware is mounted.
-
-Validation blocks legitimate requests
-
-Compare the incoming payload with the API schema and frontend form. Update the schema deliberately rather than bypassing validation.
+* Express: Using middleware
+* Express: Error handling
+* Express: Security best practices
 
 ⸻
 
-10. Maintenance standards
-
-When changing middleware:
-
-1. Preserve existing module export conventions.
-2. Keep middleware focused on a single responsibility.
-3. Avoid embedding database business logic in generic middleware.
-4. Use structured logging and sanitized error responses.
-5. Add unit tests for new behavior and regression cases.
-6. Update route integration and API documentation together.
-7. Review dependencies for security advisories.
-8. Verify behavior locally before deploying to Render.
-9. Keep authentication, authorization, and resource ownership checks separate.
-10. Document any new environment variables and operational requirements.
-
-⸻
-
-11. Related project files
-
-File or directory	Responsibility
-api/server.js	Application initialization and middleware registration
-api/routes/	API route definitions
-api/controllers/	Request handling
-api/services/application-service.js	Application business logic
-api/services/audit-service.js	Audit event handling
-api/services/notification-service.js	Notifications
-api/schemas/application.schema.json	Application data schema
-api/openapi.yaml	API contract and endpoint documentation
-api/worker.js	Background processing
-
-Verify the paths against the actual repository structure before adding imports or references.
-
-⸻
-
-12. Deployment readiness
-
-Before releasing middleware changes to production:
-
-* [ ]	All middleware modules load successfully.
-* [ ]	Every route callback is a function.
-* [ ]	Authentication and authorization tests pass.
-* [ ]	Error responses are sanitized.
-* [ ]	Rate limiting is configured for the production topology.
-* [ ]	Input and upload limits are enforced.
-* [ ]	Required environment variables are configured in Render.
-* [ ]	No secrets are committed to GitHub.
-* [ ]	Automated tests pass.
-* [ ]	Application startup and health checks succeed.
-
-Official references
-
-* Express.js — Using middleware
-* Express.js — Error handling
-* Express.js — Production security best practices
-
-⸻
-
-End of documentation
-
-This README describes the intended middleware contract and integration practices. It does not certify that the existing middleware implementations already satisfy every requirement; verify their source code and tests before treating the API as production-ready.
+Maintenance principle: Middleware should fail safely, return predictable responses, and enforce security controls without exposing internal implementation details. Changes should be tested against the actual MedOrbits application before deployment.

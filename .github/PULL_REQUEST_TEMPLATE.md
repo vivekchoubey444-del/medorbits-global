@@ -1,152 +1,173 @@
+MedOrbits — Pull Request
 
-# MedOrbits — Pull Request
+Thank you for contributing to MedOrbits! Please complete this template so reviewers can understand the purpose, scope, and impact of your changes.
 
-Thank you for contributing to MedOrbits. Complete the relevant sections so maintainers can review the changes, verify testing, and assess security and deployment impact.
+1. Summary
 
-## 1. Summary
+What does this pull request change?
 
-<!— Describe what this pull request changes, why it is needed, and the problem it solves. —>
+<!— Describe the change and why it is needed. —>
 
-## 2. Related Issues
+2. Related Issues
 
-Closes #
+<!— Link related issues, bug reports, or feature requests. —>
 
-Related issues:
+* Closes #
+* Related to #
 
-<!— Link related issues when applicable. Use closing keywords only when this PR should close the issue. —>
-
-## 3. Type of Change
+3. Change Type
 
 Select all that apply.
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Refactoring or code cleanup
-- [ ] Documentation update
-- [ ] Security improvement
-- [ ] Performance improvement
-- [ ] Accessibility improvement
-- [ ] Database or migration change
-- [ ] Dependency update
-- [ ] Build, CI/CD, or infrastructure change
-- [ ] Breaking change
+* [ ]	Bug fix
+* [ ]	New feature
+* [ ]	Enhancement or refactoring
+* [ ]	Documentation update
+* [ ]	Performance improvement
+* [ ]	Accessibility or localization improvement
+* [ ]	Security improvement
+* [ ]	Dependency update
+* [ ]	Database schema or migration change
+* [ ]	CI/CD or infrastructure change
+* [ ]	Breaking change
 
-## 4. Changes Made
+4. Affected Areas
 
-<!— Summarize the key implementation changes. —>
+Select all that apply.
 
-## 5. Testing and Validation
+* [ ]	Frontend, HTML, CSS, or JavaScript
+* [ ]	Backend, API, routes, or controllers
+* [ ]	Authentication or authorization
+* [ ]	Education and admissions
+* [ ]	Careers, jobs, or recruitment
+* [ ]	Forms, uploads, or document handling
+* [ ]	Database, models, or migrations
+* [ ]	Configuration or environment variables
+* [ ]	Tests and quality assurance
+* [ ]	GitHub Actions or repository tooling
+* [ ]	Deployment or infrastructure
+* [ ]	Documentation or policies
+* [ ]	Other
 
-Select only the checks actually performed.
+5. Implementation Details
 
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] API or end-to-end tests
-- [ ] Linting and formatting checks
-- [ ] Build and repository validation
-- [ ] Database migration and rollback checks
-- [ ] Accessibility checks
-- [ ] Relevant security checks
-- [ ] Manual testing
-- [ ] Not applicable (explain below)
+<!— Explain how the change works. Mention important design decisions,
+     affected files, dependencies, or implementation trade-offs. —>
 
-### Commands and Actual Results
+6. Testing and Validation
 
-| Command or check | Actual result |
-|—|—|
-| | |
-| | |
+Describe the tests performed and their results.
 
-<!— Record actual outcomes, including failures and skipped checks. Do not claim a check passed unless it was run successfully. —>
+* [ ]	Tests added or updated where appropriate
+* [ ]	Relevant automated tests passed
+* [ ]	Linting and static checks passed where configured
+* [ ]	JSON, YAML, and configuration files validated where applicable
+* [ ]	Relevant route and API behavior checked
+* [ ]	Error handling and edge cases considered
+* [ ]	Manual testing completed where appropriate
+* [ ]	Any unrun or failing checks are documented below
 
-### Testing Limitations or Outstanding Failures
+Commands executed and results:
 
-<!— Describe untested scenarios, known failures, or follow-up validation required. Enter “None” if applicable. —>
+# Example commands — run only those supported by this repository.
+npm test
+npm run lint
+bash VERIFY.sh
+bash TEST.sh
+<!— Replace these examples with the commands actually executed.
+     Do not claim checks passed unless you ran them. —>
 
-## 6. Security and Privacy
+7. Security and Privacy
 
-Select the statements that have been verified or reviewed as applicable.
+* [ ]	No credentials, tokens, passwords, or private keys added
+* [ ]	No confidential user data included in code, logs, fixtures, or screenshots
+* [ ]	Input validation and authorization considered where relevant
+* [ ]	Dependencies and third-party integrations reviewed where relevant
+* [ ]	Security-sensitive changes are identified for appropriate review
+* [ ]	No security-sensitive change is being disclosed through an inappropriate public channel
 
-- [ ] No credentials, secrets, access tokens, or sensitive personal data are committed.
-- [ ] Input validation and authorization have been reviewed, where applicable.
-- [ ] Authentication and session handling have been reviewed, where applicable.
-- [ ] File uploads, document storage, and access controls have been reviewed, where applicable.
-- [ ] Payment processing, sensitive financial data, and webhook verification have been reviewed, where applicable.
-- [ ] Dependencies and security implications have been considered.
-- [ ] Security documentation has been updated where necessary.
-- [ ] Security impact has been assessed, and remaining risks are documented.
+Security considerations:
 
-### Security Notes
+<!— Explain any relevant security implications, or state “Not applicable” with a reason. —>
 
-<!— Explain relevant risks, mitigations, and review requirements. Never include secrets or sensitive exploit details. —>
+8. Database and Data Integrity
 
-## 7. Database and Configuration
+Complete this section if the change affects data storage or persistence.
 
-- [ ] No database or environment configuration changes.
-- [ ] Required database migrations are included and documented.
-- [ ] Migration rollback or recovery considerations have been reviewed.
-- [ ] New or changed environment variables are documented without exposing secret values.
-- [ ] Database schema and data compatibility have been considered.
-- [ ] Deployment and operational changes are documented, where applicable.
+* [ ]	No database changes
+* [ ]	Schema or migration changes are included and reviewed
+* [ ]	Migration order and rollback implications considered
+* [ ]	Existing data compatibility considered
+* [ ]	Backup or recovery requirements documented where relevant
 
-### Configuration or Migration Notes
+Migration or data impact:
 
-<!— Describe configuration changes, migration order, compatibility requirements, or recovery steps. Enter “None” if not applicable. —>
+<!— Describe schema changes, migration commands, compatibility concerns,
+     and recovery steps where applicable. —>
 
-## 8. User Interface and Accessibility
+9. Configuration and Dependencies
 
-- [ ] Responsive layouts have been checked on relevant screen sizes.
-- [ ] Keyboard navigation and focus behavior have been considered.
-- [ ] Semantic HTML, labels, contrast, and screen-reader usability have been considered.
-- [ ] Loading, empty, error, and success states have been reviewed, where applicable.
-- [ ] Screenshots or recordings are attached when useful.
-- [ ] Not applicable to this change.
+* [ ]	No new configuration required
+* [ ]	Required environment variables documented
+* [ ]	No real secrets committed
+* [ ]	Dependency manifests and lockfiles are consistent
+* [ ]	New dependencies are justified
+* [ ]	Configuration changes are documented
 
-### Visual Evidence or Accessibility Notes
+Configuration or dependency notes:
 
-<!— Include relevant details or explain why this section does not apply. —>
+<!— List new variables, dependencies, configuration requirements, or none. —>
 
-## 9. Documentation
+10. User Interface and Accessibility
 
-- [ ] Relevant documentation has been updated.
-- [ ] API specifications and examples have been updated, where applicable.
-- [ ] README files and configuration examples have been updated, where applicable.
-- [ ] Security, support, or operational documentation has been updated, where applicable.
-- [ ] Breaking changes and migration instructions are documented.
-- [ ] No documentation changes are required.
+Complete where relevant.
 
-## 10. Dependencies and Compatibility
+* [ ]	Responsive behavior checked
+* [ ]	Keyboard navigation considered
+* [ ]	Labels, contrast, and accessible interaction considered
+* [ ]	Loading, empty, and error states considered
+* [ ]	Screenshots or recordings attached when useful
+* [ ]	Not applicable
 
-- [ ] No dependency changes.
-- [ ] Dependency changes have been reviewed for compatibility and security.
-- [ ] Lockfiles have been updated consistently with the package manager.
-- [ ] Supported Node.js versions and runtime compatibility have been considered.
-- [ ] Backward compatibility has been maintained, or breaking changes are documented.
+Screenshots or visual evidence:
 
-## 11. Deployment Notes
+<!— Attach before-and-after screenshots when they help reviewers. Redact sensitive information. —>
 
-<!— Mention feature flags, required environment variables, migrations, deployment order, restart requirements, rollback steps, and compatibility concerns. Never include secret values. Enter “None” if not applicable. —>
+11. Deployment and Compatibility
 
-## 12. Known Issues and Follow-up Work
+* [ ]	No special deployment steps required
+* [ ]	Deployment configuration updated where necessary
+* [ ]	Environment or infrastructure requirements documented
+* [ ]	API and client compatibility considered
+* [ ]	Rollback or recovery approach considered
+* [ ]	Breaking changes documented
+* [ ]	Documentation updated where necessary
 
-<!— List known limitations, deferred work, or follow-up issues. Enter “None” if there are no known items. —>
+Deployment notes:
 
-## 13. Reviewer Guidance
+<!— Describe deployment steps, compatibility requirements, and rollback considerations. —>
 
-<!— Identify important files, design decisions, test scenarios, or risks reviewers should focus on. —>
+12. Documentation
 
-## 14. Final Checklist
+* [ ]	README or relevant documentation updated
+* [ ]	API or configuration documentation updated where applicable
+* [ ]	Changelog updated where required by project policy
+* [ ]	No documentation changes needed
 
-- [ ] Changes are focused and follow project conventions.
-- [ ] I have reviewed my changes and removed unrelated files and generated artifacts.
-- [ ] Relevant tests have been run, and actual results are recorded.
-- [ ] Known failures and testing limitations are disclosed.
-- [ ] Related issues and follow-up tasks are linked where applicable.
-- [ ] Required documentation and configuration examples are updated.
-- [ ] No credentials, secrets, or confidential personal information are included.
-- [ ] I have reviewed `CONTRIBUTING.md` and `SECURITY.md`, where relevant.
-- [ ] I have permission to submit this contribution under the repository’s `LICENSE`.
+13. Reviewer Guidance
 
-## 15. Additional Context
+<!— Highlight important files, design decisions, risks, or areas needing extra attention. —>
 
-<!— Add any additional information needed to review this pull request. —>
+14. Final Checklist
+
+* [ ]	Changes are focused and relevant to this pull request
+* [ ]	Unrelated changes have been excluded
+* [ ]	No unintended file deletions or overwrites
+* [ ]	New files and generated artifacts have been reviewed
+* [ ]	Tests and validation results are reported accurately
+* [ ]	I have reviewed my own changes
+* [ ]	I understand that required reviews and CI checks must pass before merging
+
+⸻
+
+Maintainer review: Merge only after required reviews, relevant checks, and any necessary security or deployment reviews are complete.

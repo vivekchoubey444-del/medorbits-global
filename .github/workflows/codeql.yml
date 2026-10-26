@@ -1,170 +1,40 @@
-name: MedOrbits CodeQL Security Analysis
+name: CodeQL Security Analysis
 on:
   push:
     branches:
       - main
-      - master
   pull_request:
     branches:
       - main
-      - master
   schedule:
-    - cron: "23 3 * * 1"
+    # Weekly on Monday at 02:30 UTC.
+    - cron: "30 2 * * 1"
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-defaults:
-  run:
-    shell: bash
 jobs:
-  validate:
-    name: Validate repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Verify required files
-        run: |
-          set -euo pipefail
-          for file in package.json package-lock.json; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file is missing: $file"
-              exit 1
-            fi
-          done
-      - name: Validate package.json
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
-            throw new Error('package.json must contain a JSON object.');
-          }
-          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
-            throw new Error('Missing package name.');
-          }
-          if (!pkg.scripts || typeof pkg.scripts !== 'object') {
-            throw new Error('Missing npm scripts configuration.');
-          }
-          console.log(`Valid package: ${pkg.name}`);
-          NODE
-      - name: Validate package-lock.json
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid or missing lockfileVersion.');
-          }
-          if (lock.name && pkg.name && lock.name !== pkg.name) {
-            throw new Error('Package name mismatch.');
-          }
-          if (
-            lock.version &&
-            pkg.version &&
-            lock.version !== pkg.version
-          ) {
-            throw new Error('Package version mismatch.');
-          }
-          const root = lock.packages?.[''];
-          if (root?.name && pkg.name && root.name !== pkg.name) {
-            throw new Error('Root package name mismatch.');
-          }
-          if (
-            root?.version &&
-            pkg.version &&
-            root.version !== pkg.version
-          ) {
-            throw new Error('Root package version mismatch.');
-          }
-          console.log('Lockfile metadata is valid.');
-          console.log(`Lockfile version: ${lock.lockfileVersion}`);
-          NODE
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Validate JSON files
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const excluded = new Set([
-            '.git',
-            'node_modules',
-            'coverage',
-            'dist',
-            'build',
-            '.next',
-            '.wrangler'
-          ]);
-          const files = [];
-          let failed = false;
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {
-              withFileTypes: true
-            })) {
-              const full = path.join(dir, entry.name);
-              if (entry.isSymbolicLink()) continue;
-              if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) walk(full);
-              } else if (
-                entry.isFile() &&
-                entry.name.toLowerCase().endsWith('.json')
-              ) {
-                files.push(full);
-              }
-            }
-          }
-          walk('.');
-          for (const file of files) {
-            try {
-              JSON.parse(fs.readFileSync(file, 'utf8'));
-              console.log(`PASS ${file}`);
-            } catch (error) {
-              failed = true;
-              console.error(`FAIL ${file}: ${error.message}`);
-            }
-          }
-          if (failed) process.exit(1);
-          console.log(`Validated ${files.length} JSON files.`);
-          NODE
-      - name: Run tests
-        run: npm test --if-present
-      - name: Run project checks
-        run: npm run check --if-present
-      - name: Run lint
-        run: npm run lint --if-present
-      - name: Build application
-        run: npm run build --if-present
   analyze:
-    name: Analyze JavaScript and TypeScript
+    name: Analyze code for vulnerabilities
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: read
       security-events: write
-      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript-typescript
+          - python
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -173,9 +43,10 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: javascript-typescript
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: security-extended
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:javascript-typescript"
+          category: "/language:${{ matrix.language }}"

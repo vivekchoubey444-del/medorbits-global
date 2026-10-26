@@ -1,185 +1,99 @@
-# =============================================================================
-# MEDORBITS | DEVELOPMENT & TESTING DEPENDENCIES
-# =============================================================================
-#
-# File:        requirements-dev.txt
-# Project:     MedOrbits
-# Website:     https://www.medorbits.in/
-# Purpose:     Automated testing, linting, formatting and code quality
-# Python:      3.10+
-#
-# Install:
-#   python -m pip install -r requirements-dev.txt
-#
-# IMPORTANT:
-#   - Install inside an isolated virtual environment.
-#   - Keep production dependencies in a separate requirements file.
-#   - Review and lock resolved versions for reproducible CI builds.
-#   - Optional packages below remain disabled until required.
-# =============================================================================
-# -----------------------------------------------------------------------------
-# 01 | AUTOMATED TESTING
-# -----------------------------------------------------------------------------
-pytest>=8.0,<9.0
-# -----------------------------------------------------------------------------
-# 02 | LINTING & CODE FORMATTING
-# -----------------------------------------------------------------------------
-ruff>=0.6,<1.0
-# -----------------------------------------------------------------------------
-# 03 | OPTIONAL TESTING UTILITIES
-# -----------------------------------------------------------------------------
-#
-# Uncomment only the packages actually used by the project's tests.
-#
-# Property-based testing:
-# hypothesis>=6.100,<7.0
-#
-# Mock HTTP requests:
-# responses>=0.25,<1.0
-#
-# HTTP client for API integration tests:
-# httpx>=0.27,<1.0
-#
-# Coverage reporting:
-# coverage>=7.6,<8.0
-#
-# Pytest coverage integration:
-# pytest-cov>=5.0,<7.0
-# -----------------------------------------------------------------------------
-# 04 | OPTIONAL SECURITY & DEPENDENCY AUDITING
-# -----------------------------------------------------------------------------
-#
-# Uncomment when Python dependency vulnerability auditing is part of CI.
-#
-# Python dependency vulnerability auditing:
-# pip-audit>=2.7,<3.0
-# -----------------------------------------------------------------------------
-# 05 | OPTIONAL STATIC TYPE CHECKING
-# -----------------------------------------------------------------------------
-#
-# Uncomment if static type checking is adopted by the Python codebase.
-#
-# Static type checker:
-# mypy>=1.11,<2.0
-# =============================================================================
-# QUICK START
-# =============================================================================
-#
-# 1. Create a virtual environment:
-#
-#    python -m venv .venv
-#
-# 2. Activate the environment:
-#
-#    Windows PowerShell:
-#      .\.venv\Scripts\Activate.ps1
-#
-#    Windows Command Prompt:
-#      .venv\Scripts\activate.bat
-#
-#    Linux / macOS:
-#      source .venv/bin/activate
-#
-# 3. Upgrade pip:
-#
-#    python -m pip install --upgrade pip
-#
-# 4. Install development dependencies:
-#
-#    python -m pip install -r requirements-dev.txt
-#
-# =============================================================================
-# TESTING, LINTING & FORMATTING
-# =============================================================================
-#
-# Run automated tests:
-#    python -m pytest
-#
-# Run tests with verbose output:
-#    python -m pytest -v
-#
-# Run Python linting:
-#    python -m ruff check .
-#
-# Check formatting without changing files:
-#    python -m ruff format --check .
-#
-# Format Python files:
-#    python -m ruff format .
-#
-# Apply supported automatic lint fixes:
-#    python -m ruff check --fix .
-#
-# Run linting and formatting checks together:
-#    python -m ruff check . && python -m ruff format --check .
-#
-# =============================================================================
-# OPTIONAL COVERAGE WORKFLOW
-# =============================================================================
-#
-# After enabling coverage and pytest-cov above:
-#
-# Run tests with coverage:
-#    python -m pytest --cov --cov-report=term-missing
-#
-# Generate an HTML coverage report:
-#    python -m pytest --cov --cov-report=html
-#
-# =============================================================================
-# OPTIONAL SECURITY AUDIT
-# =============================================================================
-#
-# After enabling pip-audit above:
-#
-# Audit the current environment:
-#    python -m pip_audit
-#
-# Audit installed packages and review reported vulnerabilities.
-#
-# =============================================================================
-# INSTALLATION & SECURITY POLICY
-# =============================================================================
-#
-# 1. Install development packages inside an isolated virtual environment.
-#
-# 2. Review package releases, changelogs and security advisories before
-#    upgrading dependencies.
-#
-# 3. Keep development-only dependencies separate from production packages.
-#
-# 4. Review transitive dependencies and vulnerability reports regularly.
-#
-# 5. Never store passwords, API keys, access tokens or private credentials
-#    in this file.
-#
-# 6. A successful installation, lint check or test run does not prove that
-#    the application is secure or production-ready.
-#
-# 7. Configure pytest, Ruff and coverage centrally in pyproject.toml when
-#    appropriate for the existing project structure.
-#
-# 8. Add optional dependencies only when tests or engineering workflows
-#    actually require them.
-#
-# 9. Use CI to validate the supported Python version and required checks.
-#
-# 10. Review lock-file changes before merging dependency updates.
-#
-# =============================================================================
-# VERSION & COMPATIBILITY POLICY
-# =============================================================================
-#
-# Target Python version: 3.10+
-#
-# Version ranges define accepted releases; they do not guarantee identical
-# dependency resolution across machines or over time.
-#
-# For reproducible CI builds:
-#   - Resolve and review exact dependency versions.
-#   - Maintain a reviewed lock file or fully pinned requirements file.
-#   - Validate installation on supported Python versions.
-#   - Review dependency updates before merging.
-#
-# =============================================================================
-# END OF MEDORBITS DEVELOPMENT REQUIREMENTS
-# =============================================================================
+============================================================
+
+MedOrbits Python Dependencies
+
+File: /requirements.txt
+
+Purpose:
+
+Reproducible baseline for repository Python utilities,
+
+validation scripts, security checks, and optional API tools.
+
+Python:
+
+Recommended: Python 3.12
+
+Installation:
+
+python -m pip install -r requirements.txt
+
+IMPORTANT:
+
+Review imports in the repository before installing.
+
+Remove packages that are not used by your Python code.
+
+Pin and audit the final dependency set for production.
+
+============================================================
+
+––––––––––––––
+
+HTTP and API clients
+
+––––––––––––––
+
+requests>=2.32.4,<3.0.0
+httpx>=0.27.2,<1.0.0
+
+––––––––––––––
+
+Environment and configuration
+
+––––––––––––––
+
+python-dotenv>=1.0.1,<2.0.0
+PyYAML>=6.0.2,<7.0.0
+
+––––––––––––––
+
+Data validation and serialization
+
+––––––––––––––
+
+jsonschema>=4.23.0,<5.0.0
+pydantic>=2.9.2,<3.0.0
+
+––––––––––––––
+
+HTML parsing and validation helpers
+
+––––––––––––––
+
+beautifulsoup4>=4.12.3,<5.0.0
+lxml>=5.3.0,<7.0.0
+
+––––––––––––––
+
+Retry and resilience utilities
+
+––––––––––––––
+
+tenacity>=9.0.0,<10.0.0
+
+––––––––––––––
+
+Testing
+
+––––––––––––––
+
+pytest>=8.3.3,<9.0.0
+pytest-cov>=5.0.0,<7.0.0
+
+––––––––––––––
+
+Code quality and static analysis
+
+––––––––––––––
+
+ruff>=0.7.0,<1.0.0
+bandit>=1.7.10,<2.0.0
+
+––––––––––––––
+
+Dependency vulnerability checks
+
+––––––––––––––
+
+pip-audit>=2.7.3,<3.0.0

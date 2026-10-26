@@ -1,0 +1,48 @@
+#!/usr/bin/env sh
+# MedOrbits -- Commit Message Validation
+# Enforces Conventional Commits format.
+# Example: feat(admissions): add course search
+set -eu
+COMMIT_MSG_FILE="${1:-}"
+if [ -z "$COMMIT_MSG_FILE" ] || [ ! -f "$COMMIT_MSG_FILE" ]; then
+  echo "[MedOrbits] ERROR: Commit message file was not provided or does not exist." >&2
+  exit 1
+fi
+# Read the commit message, excluding comment lines and blank lines.
+MESSAGE="$(grep -v '^[[:space:]]*#' "$COMMIT_MSG_FILE" | sed '/^[[:space:]]*$/d')"
+if [ -z "$MESSAGE" ]; then
+  echo "[MedOrbits] ERROR: Commit message cannot be empty." >&2
+  exit 1
+fi
+# Validate the first non-comment, non-empty line.
+SUBJECT="$(printf '%s\n' "$MESSAGE" | sed -n '1p')"
+# Accepted examples:
+# feat: add course search
+# fix(api): handle missing application
+# docs: update support guide
+# chore(deps): update dependencies
+#
+# Optional breaking-change marker:
+# feat!: change admissions API
+# feat(api)!: change API response
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .{1,100}$'
+if ! printf '%s\n' "$SUBJECT" | grep -Eq "$PATTERN"; then
+  echo "[MedOrbits] ERROR: Invalid commit message." >&2
+  echo "" >&2
+  echo "Use Conventional Commits:" >&2
+  echo "  type(scope): short description" >&2
+  echo "" >&2
+  echo "Allowed types:" >&2
+  echo "  feat, fix, docs, style, refactor, perf," >&2
+  echo "  test, build, ci, chore, revert" >&2
+  echo "" >&2
+  echo "Examples:" >&2
+  echo "  feat(admissions): add course search" >&2
+  echo "  fix(api): handle missing application" >&2
+  echo "  docs: update support guide" >&2
+  echo "  chore(deps): update dependencies" >&2
+  echo "  feat!: change public API" >&2
+  exit 1
+fi
+echo "[MedOrbits] Commit message validated."
+exit 0

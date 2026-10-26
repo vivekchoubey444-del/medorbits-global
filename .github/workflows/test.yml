@@ -1,0 +1,93 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  repository-checks:
+    name: Repository and JSON Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify repository manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f package.json ]]; then
+            echo "::notice::No root package.json found. Node.js project tests will be skipped."
+            exit 0
+          fi
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg.name) {
+              console.log("::warning::package.json does not define a package name.");
+            }
+            console.log(`Package: ${pkg.name || "(unnamed)"}`);
+            console.log(`Version: ${pkg.version || "(unspecified)"}`);
+            console.log(`Test script: ${pkg.scripts?.test || "(not configured)"}`);
+          '
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          count=0
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            if node -e '
+              const fs = require("node:fs");
+              JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            ' "$file"; then
+              echo "PASS: $file"
+            else
+              echo "::error file=$file::Invalid JSON syntax."
+              failed=1
+            fi
+          done < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.agent-backup' -prune -o \
+              -type f -name '*.json' -print0
+          )
+          echo "Checked $count JSON file(s)."
+          exit "$failed"
+      - name: Run project tests
+        if: ${{ hashFiles('package.json') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
+            echo "::warning::No npm lockfile found. Cannot run reproducible npm ci."
+            echo "Commit a lockfile to enable dependency installation and project tests."
+            exit 0
+          fi
+          if ! node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.test ? 0 : 1);
+          '; then
+            echo "::notice::No npm test script is configured; skipping project tests."
+            exit 0
+          fi
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test

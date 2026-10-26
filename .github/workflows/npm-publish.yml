@@ -1,143 +1,115 @@
-name: Node.js Package
+name: Publish to npm
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Expected package version to publish (for example, 2.0.0)"
+        required: true
+        type: string
+      confirm_publish:
+        description: "Type publish to confirm npm publication"
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: npm-publish-${{ github.event.release.tag_name }}
+  group: npm-publish
   cancel-in-progress: false
 jobs:
-  build:
-    name: Validate and test package
+  validate:
+    name: Validate package
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - name: Checkout release tag
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-      - name: Validate package metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f package.json || {
-            echo "::error::package.json is missing."
-            exit 1
-          }
-          test -f package-lock.json || {
-            echo "::error::package-lock.json is missing."
-            exit 1
-          }
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!pkg.name || !pkg.version) {
-            throw new Error('Package name and version are required.');
-          }
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid package-lock.json.');
-          }
-          if (lock.name && lock.name !== pkg.name) {
-            throw new Error('Package name mismatch.');
-          }
-          if (
-            lock.version &&
-            lock.version !== pkg.version
-          ) {
-            throw new Error('Package version mismatch.');
-          }
-          if (pkg.private === true) {
-            throw new Error('Private packages must not be published.');
-          }
-          if (
-            !pkg.publishConfig ||
-            pkg.publishConfig.registry !== 'https://registry.npmjs.org/'
-          ) {
-            throw new Error(
-              'Set publishConfig.registry to https://registry.npmjs.org/ before publishing.'
-            );
-          }
-          console.log(`Package: ${pkg.name}@${pkg.version}`);
-          NODE
-      - name: Verify release tag matches package version
-        shell: bash
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Verify release confirmation and package metadata
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+          CONFIRMATION: ${{ inputs.confirm_publish }}
+        shell: bash
         run: |
           set -euo pipefail
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          if [[ "$RELEASE_TAG" != "v$PACKAGE_VERSION" &&
-                "$RELEASE_TAG" != "$PACKAGE_VERSION" ]]; then
-            echo "::error::Release tag does not match package.json version."
-            echo "Release tag: $RELEASE_TAG"
-            echo "Package version: $PACKAGE_VERSION"
+          if [[ "$CONFIRMATION" != "publish" ]]; then
+            echo "::error::Publication cancelled. Enter exactly 'publish' to confirm."
             exit 1
           fi
-      - name: Install dependencies
+          if [[ ! "$EXPECTED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Enter a valid semantic version."
+            exit 1
+          fi
+          if [[ ! -f package.json || ! -f package-lock.json ]]; then
+            echo "::error::Both package.json and package-lock.json are required."
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          const expected = process.env.EXPECTED_VERSION;
+          if (!pkg.name) throw new Error("package.json must define a package name.");
+          if (pkg.private === true) throw new Error("Private packages cannot be published.");
+          if (pkg.version !== expected) {
+            throw new Error(`Expected version ${expected}, found ${pkg.version}.`);
+          }
+          if (lock.version !== pkg.version) {
+            throw new Error("package-lock.json version does not match package.json.");
+          }
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
+          NODE
+      - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run tests
-        run: npm test
-      - name: Verify package contents
+      - name: Run package tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test
+          else
+            echo "::error::No test script is configured. Add and run package tests before publishing."
+            exit 1
+          fi
+      - name: Validate publish package contents
         run: npm pack --dry-run
-  publish-npm:
-    name: Publish to npm
-    needs: build
+  publish:
+    name: Publish package to npm
+    needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: npm-production
+    timeout-minutes: 10
+    environment: npm-production
     permissions:
       contents: read
       id-token: write
     steps:
-      - name: Checkout release tag
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org/
-      - name: Validate npm publishing configuration
-        shell: bash
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Verify package version
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          if (pkg.private === true) {
-            throw new Error('Refusing to publish a private package.');
-          }
-          if (
-            pkg.publishConfig?.registry !==
-            'https://registry.npmjs.org/'
-          ) {
-            throw new Error(
-              'Package registry is not explicitly configured for npm.'
-            );
-          }
-          console.log('npm publishing configuration is valid.');
-          NODE
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Publish package
+          node -e '
+            const pkg = require("./package.json");
+            if (pkg.version !== process.env.EXPECTED_VERSION) {
+              throw new Error("Package version changed after validation.");
+            }
+          '
+      - name: Publish using npm trusted publishing
         run: npm publish --provenance

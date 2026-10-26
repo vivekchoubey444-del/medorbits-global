@@ -1,1117 +1,552 @@
-
 #!/usr/bin/env node
-
 'use strict';
-
 /**
- * MedOrbits -- Static Security Audit
- * ----------------------------------
- * File: scripts/check-security.mjs
+ * MedOrbits -- Security Configuration Checker
+ * File: /scripts/check-security.mjs
  * Runtime: Node.js >= 20
- * Dependencies: None
+ * Dependencies: None for static checks.
  *
- * Checks:
- * - Exposed credentials and secret-like values in tracked project files.
- * - Accidental .env files and private key files.
- * - Unsafe environment configuration and hardcoded API keys.
- * - Common insecure JavaScript patterns.
- * - SQL injection risk patterns.
- * - Unsafe child-process execution patterns.
- * - Weak cryptographic and password-handling patterns.
- * - CORS wildcard and insecure cookie configuration patterns.
- * - HTTP URLs and disabled TLS verification.
- * - Sensitive files inside public website directories.
- * - Dependency declarations and lockfile presence.
- * - Git ignore coverage for common sensitive files.
- * - Oversized files and suspicious executable permissions where supported.
- *
- * Usage:
- *   node scripts/check-security.mjs
- *   node scripts/check-security.mjs --strict
- *   node scripts/check-security.mjs --root .
- *   node scripts/check-security.mjs --exclude uploads
- *   node scripts/check-security.mjs --include-hidden
- *   node scripts/check-security.mjs --json
- *
- * Exit codes:
- *   0 = no blocking findings
- *   1 = security findings detected
- *   2 = configuration or runtime failure
+ * Performs read-only configuration checks.
+ * Optional npm audit requires npm, package-lock.json, and registry access.
  *
  * Important:
- * - This is a heuristic static audit, not a penetration test.
- * - Findings require human review; matches can be false positives.
- * - Never print actual secret values in the report.
- * - No network requests are made.
- * - No project files are modified.
+ * Static indicators do not prove that security controls are effective.
  */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { performance } from 'node:perf_hooks';
-
-const DEFAULT_IGNORED_DIRECTORIES = [
-  'node_modules',
-  '.git',
-  '.next',
-  'dist',
-  'build',
-  'coverage',
-  '__pycache__',
-  '.cache',
-  '.turbo',
-  '.vercel',
-  '.netlify',
-  'vendor',
-];
-
-const MAX_FILE_SIZE_MB = 5;
-const MAX_REPORTED_FINDINGS = 2000;
-
-const TEXT_EXTENSIONS = new Set([
-  '.js',
-  '.mjs',
-  '.cjs',
-  '.ts',
-  '.tsx',
-  '.jsx',
-  '.json',
-  '.yaml',
-  '.yml',
-  '.toml',
-  '.ini',
-  '.conf',
-  '.config',
-  '.html',
-  '.htm',
-  '.css',
-  '.scss',
-  '.sass',
-  '.less',
-  '.md',
-  '.txt',
-  '.sh',
-  '.bash',
-  '.sql',
-  '.env',
-  '.example',
-  '.sample',
-  '.xml',
-  '.properties',
-  '.pem',
-  '.key',
-  '.crt',
-  '.cer',
-]);
-
-const EXIT_CODES = Object.freeze({
-  SUCCESS: 0,
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+const ROOT_DEFAULT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
+const MAX_TEXT_BYTES = 2 * 1024 * 1024;
+const MAX_FINDINGS = 500;
+const AUDIT_TIMEOUT_MS = 120_000;
+const EXIT = Object.freeze({
+  OK: 0,
   FINDINGS: 1,
-  CONFIGURATION_ERROR: 2,
+  CONFIG: 2,
 });
-
-function printHelp() {
-  console.log(`
-MedOrbits Static Security Audit
-
-Usage:
-  node scripts/check-security.mjs [options]
-
-Options:
-  --root <directory>
-      Project root. Defaults to the current working directory.
-
-  --exclude <name>
-      Exclude a directory by name. Can be repeated.
-
-  --include-hidden
-      Include hidden files and directories, except excluded directories.
-
-  --strict
-      Treat warnings as failures.
-
-  --json
-      Output a machine-readable JSON report.
-
-  --help, -h
-      Display this help.
-
-Examples:
-  node scripts/check-security.mjs
-  node scripts/check-security.mjs --strict
-  node scripts/check-security.mjs --root .
-  node scripts/check-security.mjs --exclude uploads --exclude temp
-  node scripts/check-security.mjs --include-hidden
-  node scripts/check-security.mjs --json
-`);
-}
-
-function parseArguments(args) {
+const SECRET_NAMES = [
+  'SESSION_SECRET',
+  'JWT_SECRET',
+  'DATABASE_URL',
+  'JWT_PRIVATE_KEY',
+  'ENCRYPTION_KEY',
+  'API_SECRET',
+  'AI_API_KEY',
+  'ADMIN_TOKEN',
+];
+const PLACEHOLDERS = [
+  /^change[-_ ]?me$/i,
+  /^your[-_ ].*$/i,
+  /^replace[-_ ].*$/i,
+  /^example$/i,
+  /^placeholder$/i,
+  /^secret$/i,
+  /^password$/i,
+  /^123456+$/,
+  /^<.*>$/,
+  /^todo$/i,
+  /^default$/i,
+  /^insert[-_ ].*$/i,
+  /^generate[-_ ].*$/i,
+];
+const IGNORED_DIRECTORIES = new Set([
+  '.git', 'node_modules', '.next', 'dist', 'build',
+  'coverage', '.cache', '.turbo', '.vercel', '.netlify',
+]);
+function parseArgs(argv) {
   const options = {
-    root: process.cwd(),
+    root: ROOT_DEFAULT,
     strict: false,
-    includeHidden: false,
-    jsonOutput: false,
-    excludedDirectories: new Set(DEFAULT_IGNORED_DIRECTORIES),
-    errors: [],
+    json: false,
+    audit: false,
     help: false,
   };
-
-  for (let index = 0; index < args.length; index += 1) {
-    const argument = args[index];
-
-    if (argument === '--help' || argument === '-h') {
-      options.help = true;
-      continue;
-    }
-
-    if (argument === '--strict') {
-      options.strict = true;
-      continue;
-    }
-
-    if (argument === '--include-hidden') {
-      options.includeHidden = true;
-      continue;
-    }
-
-    if (argument === '--json') {
-      options.jsonOutput = true;
-      continue;
-    }
-
-    if (argument === '--root') {
-      const value = args[index + 1];
-
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') options.help = true;
+    else if (arg === '--strict') options.strict = true;
+    else if (arg === '--json') options.json = true;
+    else if (arg === '--audit') options.audit = true;
+    else if (arg === '--root') {
+      const value = argv[i + 1];
       if (!value || value.startsWith('--')) {
-        options.errors.push('--root requires a directory path.');
-        continue;
+        throw new Error('--root requires a directory.');
       }
-
-      options.root = path.resolve(process.cwd(), value);
-      index += 1;
-      continue;
+      options.root = path.resolve(value);
+      i += 1;
+    } else {
+      throw new Error(`Unknown argument: ${arg}`);
     }
-
-    if (argument === '--exclude') {
-      const value = args[index + 1];
-
-      if (!value || value.startsWith('--')) {
-        options.errors.push('--exclude requires a directory name.');
-        continue;
-      }
-
-      if (
-        value === '.' ||
-        value === '..' ||
-        value.includes('/') ||
-        value.includes('\\')
-      ) {
-        options.errors.push(
-          `Invalid exclusion "${value}". Supply a directory name, not a path.`,
-        );
-        continue;
-      }
-
-      options.excludedDirectories.add(value);
-      index += 1;
-      continue;
-    }
-
-    options.errors.push(`Unknown option: ${argument}`);
   }
-
   return options;
 }
-
-function isDirectory(target) {
-  try {
-    return fs.statSync(target).isDirectory();
-  } catch {
-    return false;
-  }
+function help() {
+  console.log(`
+MedOrbits Security Configuration Checker
+Usage:
+  node scripts/check-security.mjs [options]
+Options:
+  --root <directory>  Project root
+  --strict            Treat warnings as failures
+  --json              Machine-readable JSON report
+  --audit             Run npm audit --omit=dev
+  --help, -h          Show help
+Exit codes:
+  0 = Checks passed
+  1 = Security findings
+  2 = Configuration/runtime error
+`);
 }
-
-function isFile(target) {
-  try {
-    return fs.statSync(target).isFile();
-  } catch {
-    return false;
-  }
+function inside(root, target) {
+  const rel = path.relative(root, target);
+  return rel === '' ||
+    (rel !== '..' && !rel.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(rel));
 }
-
 function relative(root, target) {
   return path.relative(root, target).split(path.sep).join('/') || '.';
 }
-
-function addFinding(report, severity, code, file, line, message) {
-  report.totalFindings += 1;
-
-  if (severity === 'critical' || severity === 'high') {
-    report.highRiskFindings += 1;
+function readText(root, relativePath) {
+  const target = path.resolve(root, relativePath);
+  if (!inside(root, target)) {
+    throw new Error('Path escapes project root.');
   }
-
-  if (severity === 'critical') {
-    report.criticalFindings += 1;
-  }
-
-  if (severity === 'high') {
-    report.highFindings += 1;
-  }
-
-  if (severity === 'medium') {
-    report.mediumFindings += 1;
-  }
-
-  if (severity === 'low') {
-    report.lowFindings += 1;
-  }
-
-  if (severity === 'info') {
-    report.infoFindings += 1;
-  }
-
-  if (report.findings.length < MAX_REPORTED_FINDINGS) {
-    report.findings.push({
-      severity,
-      code,
-      file: file || '.',
-      line: line ?? null,
-      message,
-    });
-  } else {
-    report.omittedFindings += 1;
-  }
-}
-
-function shouldSkipHidden(name, includeHidden) {
-  return !includeHidden && name.startsWith('.') && name !== '.well-known';
-}
-
-function walkFiles(directory, options, report) {
-  const files = [];
-
-  function walk(currentDirectory) {
-    report.directoriesVisited += 1;
-
-    let entries;
-
-    try {
-      entries = fs.readdirSync(currentDirectory, {
-        withFileTypes: true,
-      }).sort((a, b) => a.name.localeCompare(b.name));
-    } catch (error) {
-      addFinding(
-        report,
-        'medium',
-        'DIRECTORY_UNREADABLE',
-        relative(options.root, currentDirectory),
-        null,
-        `Could not inspect directory: ${error.message}`,
-      );
-
-      return;
-    }
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDirectory, entry.name);
-
-      if (entry.isSymbolicLink()) {
-        report.symbolicLinksSkipped += 1;
-        continue;
-      }
-
-      if (shouldSkipHidden(entry.name, options.includeHidden)) {
-        report.pathsSkipped += 1;
-        continue;
-      }
-
-      if (entry.isDirectory()) {
-        if (options.excludedDirectories.has(entry.name)) {
-          report.pathsSkipped += 1;
-          continue;
-        }
-
-        walk(fullPath);
-        continue;
-      }
-
-      if (entry.isFile()) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  walk(options.root);
-  return files;
-}
-
-function isTextFile(filePath) {
-  const extension = path.extname(filePath).toLowerCase();
-
-  if (TEXT_EXTENSIONS.has(extension)) {
-    return true;
-  }
-
-  const basename = path.basename(filePath);
-
-  return (
-    basename === 'Dockerfile' ||
-    basename === 'Makefile' ||
-    basename === '.gitignore' ||
-    basename === '.dockerignore' ||
-    basename === '.npmrc' ||
-    basename === '.nvmrc' ||
-    basename === 'Procfile' ||
-    basename === 'CODEOWNERS' ||
-    basename === 'LICENSE'
-  );
-}
-
-function readTextFile(filePath, options, report) {
   let stat;
-
   try {
-    stat = fs.lstatSync(filePath);
+    stat = fs.lstatSync(target);
   } catch (error) {
-    addFinding(
-      report,
-      'medium',
-      'FILE_STAT_FAILED',
-      relative(options.root, filePath),
-      null,
-      `Could not inspect file: ${error.message}`,
-    );
-
-    return null;
+    if (error.code === 'ENOENT') return null;
+    throw error;
   }
-
-  if (!stat.isFile() || stat.isSymbolicLink()) {
-    return null;
+  if (!stat.isFile() || stat.isSymbolicLink()) return null;
+  if (stat.size > MAX_TEXT_BYTES) {
+    throw new Error('File exceeds inspection limit.');
   }
-
-  if (stat.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-    report.largeFilesSkipped += 1;
-    return null;
-  }
-
-  if (!isTextFile(filePath)) {
-    return null;
-  }
-
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-
-    // Avoid analyzing binary data interpreted as UTF-8.
-    if (content.includes('\u0000')) {
-      return null;
-    }
-
-    report.filesRead += 1;
-
-    return {
-      content,
-      lines: content.split(/\r?\n/),
-      relativePath: relative(options.root, filePath),
-      absolutePath: filePath,
-    };
-  } catch (error) {
-    addFinding(
-      report,
-      'medium',
-      'FILE_READ_FAILED',
-      relative(options.root, filePath),
-      null,
-      `Could not read file: ${error.message}`,
-    );
-
-    return null;
-  }
-}
-
-function isPlaceholderSecret(value) {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/["'`]/g, '');
-
-  const placeholders = [
-    '',
-    'undefined',
-    'null',
-    'changeme',
-    'change-me',
-    'change_me',
-    'your-secret',
-    'your_secret',
-    'your-api-key',
-    'your_api_key',
-    'replace-me',
-    'replace_me',
-    'example',
-    'placeholder',
-    'redacted',
-    'xxx',
-    'xxxx',
-    'test',
-    'dummy',
-    'sample',
-    'your_password',
-    'your-password',
-    'secret_here',
-    'secret-here',
-  ];
-
-  return (
-    placeholders.includes(normalized) ||
-    normalized.includes('replace-with-') ||
-    normalized.includes('insert-your-') ||
-    normalized.includes('put-your-')
+  const fd = fs.openSync(
+    target,
+    fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0),
   );
-}
-
-function redactValue(value) {
-  if (!value) {
-    return '[redacted]';
-  }
-
-  return '[redacted]';
-}
-
-function scanSecretPatterns(document, report) {
-  const { lines, relativePath } = document;
-  const basename = path.basename(relativePath);
-
-  const rules = [
-    {
-      code: 'PRIVATE_KEY_MATERIAL',
-      severity: 'critical',
-      pattern: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/,
-      message: 'Private key material appears in a project file. Remove it and rotate the key if it was exposed.',
-    },
-    {
-      code: 'AWS_ACCESS_KEY_ID',
-      severity: 'high',
-      pattern: /\bAKIA[0-9A-Z]{16}\b/,
-      message: 'A string resembling an AWS access key ID was detected. Verify and rotate if genuine.',
-    },
-    {
-      code: 'GITHUB_TOKEN',
-      severity: 'high',
-      pattern: /\b(?:ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})\b/,
-      message: 'A string resembling a GitHub token was detected. Revoke it if genuine.',
-    },
-    {
-      code: 'SLACK_TOKEN',
-      severity: 'high',
-      pattern: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/,
-      message: 'A string resembling a Slack token was detected. Revoke it if genuine.',
-    },
-    {
-      code: 'STRIPE_SECRET_KEY',
-      severity: 'high',
-      pattern: /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/,
-      message: 'A string resembling a Stripe secret key was detected. Remove and rotate if genuine.',
-    },
-    {
-      code: 'GOOGLE_API_KEY',
-      severity: 'high',
-      pattern: /\bAIza[0-9A-Za-z_-]{30,}\b/,
-      message: 'A string resembling a Google API key was detected. Restrict or rotate if genuine.',
-    },
-    {
-      code: 'GENERIC_PRIVATE_CREDENTIAL',
-      severity: 'high',
-      pattern: /\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|client[_-]?secret)\b\s*[:=]\s*["'`][^"'`\r\n]{12,}["'`]/i,
-      message: 'A possible hardcoded credential assignment was detected. Use environment variables or a secret manager.',
-    },
-  ];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    // Example files often intentionally document environment variables.
-    // Credential-specific patterns still run against these files.
-    const isEnvExample =
-      /\.env\.(?:example|sample|template)$/i.test(basename) ||
-      /\.(?:example|sample)$/i.test(basename);
-
-    for (const rule of rules) {
-      if (!rule.pattern.test(line)) {
-        continue;
-      }
-
-      if (
-        rule.code === 'GENERIC_PRIVATE_CREDENTIAL' &&
-        isEnvExample
-      ) {
-        const assignment = line.match(
-          /[:=]\s*["'`]([^"'`]*)["'`]/,
-        );
-
-        if (assignment && isPlaceholderSecret(assignment[1])) {
-          continue;
-        }
-      }
-
-      addFinding(
-        report,
-        rule.severity,
-        rule.code,
-        relativePath,
-        index + 1,
-        rule.message,
+  try {
+    const opened = fs.fstatSync(fd);
+    if (!opened.isFile() || opened.size > MAX_TEXT_BYTES) {
+      throw new Error('Unsafe or oversized file.');
+    }
+    const buffer = Buffer.alloc(opened.size);
+    let offset = 0;
+    while (offset < buffer.length) {
+      const n = fs.readSync(
+        fd, buffer, offset, buffer.length - offset, offset,
       );
+      if (n === 0) break;
+      offset += n;
     }
-
-    const genericAssignment = line.match(
-      /^\s*(?:export\s+)?([A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|API_KEY|PRIVATE_KEY)[A-Z0-9_]*)\s*=\s*(.*?)\s*$/i,
-    );
-
-    if (genericAssignment) {
-      const variableName = genericAssignment[1];
-      let value = genericAssignment[2].trim();
-
-      if (
-        value.startsWith('"') ||
-        value.startsWith("'") ||
-        value.startsWith('`')
-      ) {
-        value = value.slice(1, -1);
-      }
-
-      if (
-        value &&
-        !value.startsWith('#') &&
-        !value.startsWith('${') &&
-        !value.startsWith('$') &&
-        !isPlaceholderSecret(value)
-      ) {
-        const isEnvExample =
-          /\.env\.(?:example|sample|template)$/i.test(basename);
-
-        if (!isEnvExample) {
-          addFinding(
-            report,
-            'high',
-            'POSSIBLE_HARDCODED_SECRET',
-            relativePath,
-            index + 1,
-            `Variable "${variableName}" appears to contain a literal secret (${redactValue(value)}).`,
-          );
-        }
-      }
-    }
+    return buffer.subarray(0, offset).toString('utf8');
+  } finally {
+    fs.closeSync(fd);
   }
 }
-
-function scanInsecureCodePatterns(document, report) {
-  const { lines, relativePath } = document;
-
-  const rules = [
-    {
-      code: 'TLS_VERIFICATION_DISABLED',
-      severity: 'high',
-      pattern: /rejectUnauthorized\s*:\s*false/,
-      message: 'TLS certificate verification is disabled. Do not use this in production.',
+function reportFactory(root, options) {
+  return {
+    tool: 'MedOrbits Security Configuration Checker',
+    version: 2,
+    timestamp: new Date().toISOString(),
+    root,
+    strict: options.strict,
+    findings: [],
+    omittedFindings: 0,
+    summary: {
+      passed: 0,
+      warnings: 0,
+      errors: 0,
+      skipped: 0,
     },
-    {
-      code: 'NODE_TLS_REJECT_UNAUTHORIZED_DISABLED',
-      severity: 'critical',
-      pattern: /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']?0\b/,
-      message: 'Node.js TLS certificate verification appears disabled.',
-    },
-    {
-      code: 'EVAL_USAGE',
-      severity: 'high',
-      pattern: /\beval\s*\(/,
-      message: 'eval() executes dynamic code and may introduce code-injection risk.',
-    },
-    {
-      code: 'DYNAMIC_FUNCTION_CONSTRUCTOR',
-      severity: 'high',
-      pattern: /\bnew\s+Function\s*\(/,
-      message: 'Dynamic Function construction can execute injected code.',
-    },
-    {
-      code: 'UNSAFE_INNER_HTML',
-      severity: 'medium',
-      pattern: /\.innerHTML\s*=/,
-      message: 'Assignment to innerHTML can introduce XSS if content is untrusted. Prefer textContent or safe DOM APIs.',
-    },
-    {
-      code: 'DOCUMENT_WRITE',
-      severity: 'medium',
-      pattern: /\bdocument\.write\s*\(/,
-      message: 'document.write() can create DOM injection and rendering risks.',
-    },
-    {
-      code: 'UNSAFE_CHILD_PROCESS',
-      severity: 'high',
-      pattern: /\bexec\s*\(\s*(?:`[^`]*\$\{|[^)]*\+\s*[A-Za-z_$])/,
-      message: 'A child-process command may contain dynamically concatenated input. Use execFile/spawn with argument arrays and validation.',
-    },
-    {
-      code: 'SQL_STRING_CONCATENATION',
-      severity: 'medium',
-      pattern: /(?:query|execute)\s*\(\s*`[^`]*\$\{/i,
-      message: 'SQL may be constructed using template interpolation. Use parameterized queries.',
-    },
-    {
-      code: 'WEAK_PASSWORD_HASH',
-      severity: 'medium',
-      pattern: /\b(?:createHash|createHmac)\s*\(\s*['"](?:md5|sha1)['"]/i,
-      message: 'MD5/SHA-1 usage detected in cryptographic code. Do not use these for password storage.',
-    },
-    {
-      code: 'CORS_WILDCARD',
-      severity: 'medium',
-      pattern: /\bcors\s*\(\s*\{\s*origin\s*:\s*['"]\*['"]/i,
-      message: 'CORS wildcard origin detected. Review whether cross-origin access should be restricted.',
-    },
-    {
-      code: 'INSECURE_COOKIE',
-      severity: 'medium',
-      pattern: /\b(?:secure\s*:\s*false|httpOnly\s*:\s*false)\b/i,
-      message: 'A cookie security option is explicitly disabled. Verify whether this is appropriate for the environment.',
-    },
-    {
-      code: 'JWT_NONE_ALGORITHM',
-      severity: 'high',
-      pattern: /\balgorithm\s*:\s*['"]none['"]/i,
-      message: 'JWT algorithm "none" is unsafe for signed authentication tokens.',
-    },
-    {
-      code: 'HTTP_URL_LITERAL',
-      severity: 'low',
-      pattern: /https?:\/\/(?:[^/\s"'`]+)\//i,
-      message: 'A literal HTTP/HTTPS URL was found. Verify that production endpoints use HTTPS.',
-    },
-  ];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    for (const rule of rules) {
-      if (!rule.pattern.test(line)) {
-        continue;
-      }
-
-      // Suppress generic HTTP URL findings for documentation and examples.
-      if (
-        rule.code === 'HTTP_URL_LITERAL' &&
-        /\.(?:md|txt)$/i.test(relativePath)
-      ) {
-        continue;
-      }
-
-      addFinding(
-        report,
-        rule.severity,
-        rule.code,
-        relativePath,
-        index + 1,
-        rule.message,
-      );
-    }
-  }
+  };
 }
-
-function scanSensitiveFiles(files, options, report) {
-  const sensitiveNames = [
-    /^\.env$/i,
-    /^\.env\.(?!example$|sample$|template$)[^/]+$/i,
-    /^id_rsa(?:\.pub)?$/i,
-    /^id_ed25519(?:\.pub)?$/i,
-    /^credentials(?:\.json)?$/i,
-    /^service-account(?:-key)?\.json$/i,
-    /^secrets?\.json$/i,
-    /^private(?:-key)?\.(?:pem|key)$/i,
-  ];
-
-  const publicRoots = [
-    path.join(options.root, 'public'),
-    path.join(options.root, 'dist'),
-    path.join(options.root, 'build'),
-  ].filter(isDirectory);
-
-  for (const filePath of files) {
-    const basename = path.basename(filePath);
-    const fileRelative = relative(options.root, filePath);
-    const sensitiveName = sensitiveNames.some((pattern) =>
-      pattern.test(basename),
-    );
-
-    if (sensitiveName) {
-      addFinding(
-        report,
-        'high',
-        'SENSITIVE_FILE_PRESENT',
-        fileRelative,
-        null,
-        'A file with a sensitive filename was found. Verify that it contains no production credentials and is not committed or publicly deployed.',
-      );
-    }
-
-    for (const publicRoot of publicRoots) {
-      if (!filePath.startsWith(`${publicRoot}${path.sep}`)) {
-        continue;
-      }
-
-      if (
-        sensitiveName ||
-        /\.(?:pem|key|p12|pfx|keystore|jks)$/i.test(basename) ||
-        /(?:^|[._-])(?:secrets?|credentials?)(?:[._-]|$)/i.test(basename)
-      ) {
-        addFinding(
-          report,
-          'critical',
-          'SENSITIVE_FILE_IN_PUBLIC_DIRECTORY',
-          fileRelative,
-          null,
-          'A potentially sensitive file exists in a public deployment directory. Remove it from the public build unless exposure is intentional and verified safe.',
-        );
-      }
-
-      break;
-    }
+function finding(report, level, code, message, file = undefined) {
+  report.summary[level === 'passed' ? 'passed'
+    : level === 'warning' ? 'warnings'
+      : level === 'error' ? 'errors' : 'skipped'] += 1;
+  if (
+    (level === 'warning' || level === 'error') &&
+    report.findings.length >= MAX_FINDINGS
+  ) {
+    report.omittedFindings += 1;
+    return;
   }
+  report.findings.push({
+    level,
+    code,
+    message,
+    ...(file ? { file } : {}),
+  });
 }
-
-function scanEnvironmentConfiguration(files, options, report) {
-  const gitignorePath = path.join(options.root, '.gitignore');
-  let gitignore = '';
-
-  if (isFile(gitignorePath)) {
+function walk(root, callback, report) {
+  const stack = [root];
+  while (stack.length) {
+    const dir = stack.pop();
+    let entries;
     try {
-      gitignore = fs.readFileSync(gitignorePath, 'utf8');
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+      entries.sort((a, b) => a.name.localeCompare(b.name));
     } catch {
-      // The general file scanner will report a read failure if applicable.
+      finding(report, 'warning', 'DIRECTORY_UNREADABLE',
+        'A directory could not be inspected.',
+        relative(root, dir));
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+      const full = path.join(dir, entry.name);
+      const rel = relative(root, full);
+      if (!inside(root, full)) continue;
+      if (entry.isDirectory()) {
+        if (!IGNORED_DIRECTORIES.has(entry.name)) stack.push(full);
+      } else if (entry.isFile()) {
+        callback(full, rel);
+      }
     }
   }
-
-  const normalizedRules = gitignore
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
-
-  const ignoresEnv =
-    normalizedRules.some((rule) =>
-      rule === '.env' ||
-      rule === '.env*' ||
-      rule === '.env.*' ||
-      rule === '**/.env' ||
-      rule === '**/.env.*' ||
-      rule === '.env/',
-    );
-
-  if (!ignoresEnv) {
-    addFinding(
-      report,
-      'medium',
-      'ENV_NOT_IGNORED',
-      '.gitignore',
-      null,
-      'No obvious .env ignore rule was found. Add rules for environment files while keeping safe example templates tracked.',
-    );
+}
+function checkPackage(root, report) {
+  let pkg;
+  try {
+    const raw = readText(root, 'package.json');
+    if (raw === null) throw new Error('Missing package.json.');
+    pkg = JSON.parse(raw);
+  } catch {
+    finding(report, 'error', 'PACKAGE_JSON_INVALID',
+      'package.json is missing, unreadable, or invalid JSON.',
+      'package.json');
+    return;
   }
-
-  const packageJsonPath = path.join(options.root, 'package.json');
-  const lockfiles = [
+  finding(report, 'passed', 'PACKAGE_JSON_VALID',
+    'package.json is valid JSON.', 'package.json');
+  if (!pkg.scripts?.start) {
+    finding(report, 'warning', 'START_SCRIPT_MISSING',
+      'No npm start script is defined.', 'package.json');
+  } else {
+    finding(report, 'passed', 'START_SCRIPT_PRESENT',
+      'An npm start script is defined.', 'package.json');
+  }
+  if (!pkg.scripts?.test) {
+    finding(report, 'warning', 'TEST_SCRIPT_MISSING',
+      'No npm test script is defined.', 'package.json');
+  }
+  if (pkg.engines?.node) {
+    finding(report, 'passed', 'NODE_ENGINE_DECLARED',
+      `Node engine requirement is declared: ${String(pkg.engines.node).slice(0, 100)}.`,
+      'package.json');
+  } else {
+    finding(report, 'warning', 'NODE_ENGINE_UNDECLARED',
+      'Consider declaring a supported Node.js engine range.',
+      'package.json');
+  }
+}
+function checkLockfile(root, report) {
+  const candidates = [
     'package-lock.json',
     'npm-shrinkwrap.json',
     'pnpm-lock.yaml',
     'yarn.lock',
   ];
-
-  if (isFile(packageJsonPath)) {
-    const presentLockfiles = lockfiles.filter((name) =>
-      isFile(path.join(options.root, name)),
-    );
-
-    if (presentLockfiles.length === 0) {
-      addFinding(
-        report,
-        'low',
-        'LOCKFILE_MISSING',
-        'package.json',
-        null,
-        'No common package-manager lockfile was found. A lockfile improves dependency reproducibility.',
-      );
-    }
-  }
-
-  const packageLockPath = path.join(options.root, 'package-lock.json');
-
-  if (isFile(packageLockPath)) {
+  const found = candidates.some((file) => {
     try {
-      const lock = JSON.parse(fs.readFileSync(packageLockPath, 'utf8'));
-
-      if (
-        lock.lockfileVersion !== undefined &&
-        ![1, 2, 3].includes(lock.lockfileVersion)
-      ) {
-        addFinding(
-          report,
-          'low',
-          'UNUSUAL_LOCKFILE_VERSION',
-          'package-lock.json',
-          null,
-          'Unrecognized npm lockfile version. Verify compatibility with the project npm version.',
-        );
-      }
+      const s = fs.lstatSync(path.join(root, file));
+      return s.isFile() && !s.isSymbolicLink();
     } catch {
-      addFinding(
-        report,
-        'high',
-        'INVALID_PACKAGE_LOCK',
-        'package-lock.json',
-        null,
-        'package-lock.json is not valid JSON. Run npm install to regenerate it after reviewing dependency changes.',
-      );
+      return false;
     }
-  }
-
-  if (options.includeHidden) {
-    report.hiddenPathsIncluded = true;
-  }
-
-  // Keep the files argument in the function contract so additional
-  // environment checks can be added without changing the call structure.
-  void files;
+  });
+  finding(report, found ? 'passed' : 'warning',
+    found ? 'LOCKFILE_PRESENT' : 'LOCKFILE_MISSING',
+    found
+      ? 'A dependency lockfile was found.'
+      : 'No recognized dependency lockfile was found.');
 }
-
-function scanExecutablePermissions(files, options, report) {
-  if (process.platform === 'win32') {
+function checkGitIgnore(root, report) {
+  let text;
+  try {
+    text = readText(root, '.gitignore');
+  } catch {
+    text = null;
+  }
+  if (text === null) {
+    finding(report, 'warning', 'GITIGNORE_MISSING',
+      'A root .gitignore file was not found.', '.gitignore');
     return;
   }
-
-  for (const filePath of files) {
-    let stat;
-
-    try {
-      stat = fs.statSync(filePath);
-    } catch {
-      continue;
-    }
-
-    if (!stat.isFile()) {
-      continue;
-    }
-
-    const executableBits = stat.mode & 0o111;
-
-    if (
-      executableBits &&
-      /\.(?:env|json|pem|key|p12|pfx)$/i.test(filePath)
-    ) {
-      addFinding(
-        report,
-        'medium',
-        'SENSITIVE_FILE_EXECUTABLE',
-        relative(options.root, filePath),
-        null,
-        'A sensitive-looking file has executable permission bits. Review and restrict permissions where appropriate.',
-      );
-    }
-  }
-}
-
-function printReport(report, options, elapsedMs) {
-  const failed =
-    report.criticalFindings > 0 ||
-    report.highFindings > 0 ||
-    (options.strict && (report.errors > 0 || report.warnings > 0));
-
-  const result = {
-    tool: 'MedOrbits Static Security Audit',
-    version: 1,
-    root: options.root,
-    strict: options.strict,
-    durationMs: Number(elapsedMs.toFixed(2)),
-    summary: {
-      filesDiscovered: report.filesDiscovered,
-      filesRead: report.filesRead,
-      directoriesVisited: report.directoriesVisited,
-      pathsSkipped: report.pathsSkipped,
-      symbolicLinksSkipped: report.symbolicLinksSkipped,
-      largeFilesSkipped: report.largeFilesSkipped,
-      criticalFindings: report.criticalFindings,
-      highFindings: report.highFindings,
-      mediumFindings: report.mediumFindings,
-      lowFindings: report.lowFindings,
-      infoFindings: report.infoFindings,
-      totalFindings: report.totalFindings,
-      omittedFindings: report.omittedFindings,
+  finding(report, 'passed', 'GITIGNORE_PRESENT',
+    'A root .gitignore file exists.', '.gitignore');
+  const lines = text.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+  const checks = [
+    {
+      code: 'ENV_IGNORE_RULE',
+      regex: /^\.env(?:$|\/|\*|\.)/,
+      label: '.env exclusion rule',
     },
-    findings: report.findings,
-    result: failed ? 'failed' : 'passed',
-    exitCode: failed
-      ? EXIT_CODES.FINDINGS
-      : EXIT_CODES.SUCCESS,
-  };
-
-  if (options.jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
-    return result.exitCode;
+    {
+      code: 'STORAGE_IGNORE_RULE',
+      regex: /^\/?storage\/?$/,
+      label: 'storage exclusion rule',
+    },
+  ];
+  for (const check of checks) {
+    const found = lines.some((line) => check.regex.test(line));
+    finding(report, found ? 'passed' : 'warning',
+      check.code,
+      found
+        ? `${check.label} found. Verify there are no later negation rules that re-include sensitive files.`
+        : `Could not detect a ${check.label} in .gitignore.`,
+      '.gitignore');
   }
-
-  console.log('');
-  console.log('MedOrbits Security Audit');
-  console.log('='.repeat(52));
-  console.log(`Project root:          ${options.root}`);
-  console.log(`Strict mode:           ${options.strict ? 'enabled' : 'disabled'}`);
-  console.log(`Files discovered:      ${report.filesDiscovered}`);
-  console.log(`Text files analyzed:   ${report.filesRead}`);
-  console.log(`Directories visited:   ${report.directoriesVisited}`);
-  console.log(`Paths skipped:         ${report.pathsSkipped}`);
-  console.log(`Symbolic links skipped:${String(report.symbolicLinksSkipped).padStart(7)}`);
-  console.log(`Large files skipped:   ${report.largeFilesSkipped}`);
-  console.log('');
-  console.log('Findings');
-  console.log('-'.repeat(52));
-  console.log(`Critical:              ${report.criticalFindings}`);
-  console.log(`High:                  ${report.highFindings}`);
-  console.log(`Medium:                ${report.mediumFindings}`);
-  console.log(`Low:                   ${report.lowFindings}`);
-  console.log(`Informational:         ${report.infoFindings}`);
-  console.log(`Total:                 ${report.totalFindings}`);
-  console.log(`Duration:              ${elapsedMs.toFixed(2)} ms`);
-
-  if (report.findings.length > 0) {
-    console.log('');
-    console.log('Details');
-    console.log('-'.repeat(52));
-
-    for (const finding of report.findings) {
-      const location = finding.line ? `:${finding.line}` : '';
-
-      console.log(
-        `[${finding.severity.toUpperCase().padEnd(8)}] ${finding.code} -- ${finding.file}${location}`,
-      );
-
-      console.log(`           ${finding.message}`);
-    }
-  } else {
-    console.log('');
-    console.log('No heuristic security findings detected.');
-  }
-
-  if (report.omittedFindings > 0) {
-    console.log('');
-    console.log(
-      `${report.omittedFindings} additional finding(s) omitted.`,
-    );
-  }
-
-  console.log('');
-  console.log('Final result');
-  console.log('-'.repeat(52));
-
-  if (failed) {
-    console.error('FAILED: Review and resolve high-risk findings before release.');
-  } else {
-    console.log('PASSED: No critical or high-risk findings were detected.');
-
-    if (report.totalFindings > 0) {
-      console.log('Review medium and low findings before production deployment.');
-    }
-  }
-
-  console.log('');
-  return result.exitCode;
 }
-
-function main() {
-  const startedAt = performance.now();
-  const options = parseArguments(process.argv.slice(2));
-
-  if (options.help) {
-    printHelp();
-    return EXIT_CODES.SUCCESS;
-  }
-
-  if (options.errors.length > 0) {
-    for (const error of options.errors) {
-      console.error(`ARGUMENT ERROR: ${error}`);
+function checkSensitiveFiles(root, report) {
+  const sensitiveNames = new Set([
+    '.env',
+    '.env.production',
+    '.env.local',
+    '.env.development.local',
+    'id_rsa',
+    'id_ed25519',
+    'service-account.json',
+    'credentials.json',
+  ]);
+  walk(root, (_full, rel) => {
+    const name = path.basename(rel);
+    if (sensitiveNames.has(name)) {
+      finding(report, 'warning', 'SENSITIVE_FILE_REVIEW',
+        'Potentially sensitive file exists in the working tree. Verify Git tracking and permissions.',
+        rel);
     }
-
-    console.error('Run with --help for usage information.');
-    return EXIT_CODES.CONFIGURATION_ERROR;
-  }
-
-  try {
-    options.root = fs.realpathSync(options.root);
-  } catch (error) {
-    console.error(
-      `ROOT ERROR: Cannot resolve "${options.root}": ${error.message}`,
-    );
-
-    return EXIT_CODES.CONFIGURATION_ERROR;
-  }
-
-  if (!isDirectory(options.root)) {
-    console.error(`ROOT ERROR: "${options.root}" is not a directory.`);
-    return EXIT_CODES.CONFIGURATION_ERROR;
-  }
-
-  const report = {
-    filesDiscovered: 0,
-    filesRead: 0,
-    directoriesVisited: 0,
-    pathsSkipped: 0,
-    symbolicLinksSkipped: 0,
-    largeFilesSkipped: 0,
-    criticalFindings: 0,
-    highFindings: 0,
-    mediumFindings: 0,
-    lowFindings: 0,
-    infoFindings: 0,
-    highRiskFindings: 0,
-    totalFindings: 0,
-    omittedFindings: 0,
-    findings: [],
-    hiddenPathsIncluded: false,
-  };
-
-  const files = walkFiles(options.root, options, report);
-  report.filesDiscovered = files.length;
-
-  for (const filePath of files) {
-    const document = readTextFile(filePath, options, report);
-
-    if (!document) {
+    if (name === '.npmrc') {
+      finding(report, 'warning', 'NPMRC_REVIEW',
+        'Review npm configuration for embedded registry credentials.',
+        rel);
+    }
+  }, report);
+}
+function isPlaceholder(value) {
+  return PLACEHOLDERS.some((pattern) => pattern.test(value.trim())) ||
+    /\b(change.?me|replace.?this|your.?secret|sample.?secret)\b/i.test(value);
+}
+function checkSecrets(report) {
+  const production =
+    String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+  for (const name of SECRET_NAMES) {
+    const value = process.env[name];
+    if (typeof value !== 'string' || value.trim() === '') {
+      const required = ['SESSION_SECRET', 'JWT_SECRET'].includes(name);
+      finding(report,
+        required && production ? 'error' : 'warning',
+        required && production
+          ? 'REQUIRED_SECRET_MISSING'
+          : 'SECRET_NOT_CONFIGURED',
+        required && production
+          ? `${name} is missing in production.`
+          : `${name} is not configured in this process environment. Confirm whether your application requires it.`);
       continue;
     }
-
-    scanSecretPatterns(document, report);
-    scanInsecureCodePatterns(document, report);
+    if (isPlaceholder(value)) {
+      finding(report, production ? 'error' : 'warning',
+        'PLACEHOLDER_SECRET',
+        `${name} appears to contain a placeholder. Its value was not printed.`);
+      continue;
+    }
+    if (
+      ['SESSION_SECRET', 'JWT_SECRET', 'ENCRYPTION_KEY'].includes(name) &&
+      value.length < 32
+    ) {
+      finding(report, production ? 'error' : 'warning',
+        'SHORT_SECRET',
+        `${name} is shorter than the recommended 32-character minimum.`);
+      continue;
+    }
+    finding(report, 'passed', 'SECRET_CONFIGURED',
+      `${name} is configured; its value was not displayed.`);
   }
-
-  scanSensitiveFiles(files, options, report);
-  scanEnvironmentConfiguration(files, options, report);
-  scanExecutablePermissions(files, options, report);
-
-  const elapsedMs = performance.now() - startedAt;
-
-  return printReport(
-    report,
-    options,
-    elapsedMs,
-  );
 }
-
+function checkSecurityIndicators(root, report) {
+  const files = [
+    'server.js',
+    'app.js',
+    'index.js',
+    'src/server.js',
+    'src/app.js',
+    'api/server.js',
+    'api/app.js',
+    'api/middleware/security.js',
+    'api/middleware/security.mjs',
+  ];
+  let combined = '';
+  let count = 0;
+  for (const file of files) {
+    try {
+      const text = readText(root, file);
+      if (text !== null) {
+        combined += `\n${text}`;
+        count += 1;
+      }
+    } catch {
+      finding(report, 'warning', 'SECURITY_FILE_UNREADABLE',
+        'A candidate security configuration file could not be inspected.',
+        file);
+    }
+  }
+  if (count === 0) {
+    finding(report, 'warning', 'SECURITY_CONFIG_NOT_FOUND',
+      'No common server or security middleware entry point was found.');
+    return;
+  }
+  const checks = [
+    ['NOSNIFF_HEADER', /X-Content-Type-Options|noSniff\s*:\s*true/i],
+    ['REFERRER_POLICY', /Referrer-Policy|referrerPolicy/i],
+    ['FRAME_PROTECTION', /X-Frame-Options|frameguard|frameAncestors/i],
+    ['CONTENT_SECURITY_POLICY', /Content-Security-Policy|contentSecurityPolicy/i],
+    ['HTTPS_HANDLING', /httpsRedirect|req\.secure|x-forwarded-proto/i],
+    ['HTTPONLY_COOKIE', /httpOnly\s*:\s*true/i],
+    ['SECURE_COOKIE', /secure\s*:\s*true|secure\s*:\s*process\.env/i],
+    ['CORS_CONFIGURATION', /\bcors\s*\(|Access-Control-Allow-Origin/i],
+    ['RATE_LIMITING', /rateLimit|rate-limit|express-rate-limit/i],
+  ];
+  for (const [code, pattern] of checks) {
+    const detected = pattern.test(combined);
+    finding(report, detected ? 'passed' : 'warning',
+      detected ? code : `${code}_NOT_DETECTED`,
+      detected
+        ? `${code.replaceAll('_', ' ')} configuration indicator detected.`
+        : `Could not detect ${code.replaceAll('_', ' ').toLowerCase()} in inspected entry points. Verify manually.`);
+  }
+  finding(report, 'warning', 'STATIC_ANALYSIS_LIMITATION',
+    `Inspected ${count} candidate file(s). Text matching does not prove that controls are correctly configured or mounted.`);
+}
+function runNpmAudit(root, report) {
+  const lockPath = path.join(root, 'package-lock.json');
+  try {
+    const s = fs.lstatSync(lockPath);
+    if (!s.isFile() || s.isSymbolicLink()) throw new Error();
+  } catch {
+    finding(report, 'warning', 'NPM_AUDIT_SKIPPED',
+      'npm audit requires a regular package-lock.json file.');
+    return;
+  }
+  const result = spawnSync(
+    'npm',
+    ['audit', '--omit=dev', '--json'],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: AUDIT_TIMEOUT_MS,
+      maxBuffer: 5 * 1024 * 1024,
+      shell: false,
+      windowsHide: true,
+      env: {
+        ...process.env,
+        npm_config_fund: 'false',
+      },
+    },
+  );
+  if (result.error) {
+    finding(report, 'error', 'NPM_AUDIT_EXECUTION_FAILED',
+      result.error.code === 'ETIMEDOUT'
+        ? 'npm audit timed out.'
+        : 'npm audit could not be executed.');
+    return;
+  }
+  let audit;
+  try {
+    audit = JSON.parse(result.stdout || '{}');
+  } catch {
+    finding(report, 'error', 'NPM_AUDIT_INVALID_OUTPUT',
+      'npm audit did not return valid JSON output.');
+    return;
+  }
+  const v = audit.metadata?.vulnerabilities || {};
+  const counts = {
+    critical: Number(v.critical || 0),
+    high: Number(v.high || 0),
+    moderate: Number(v.moderate || 0),
+    low: Number(v.low || 0),
+    info: Number(v.info || 0),
+  };
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (result.status === 0 && total === 0) {
+    finding(report, 'passed', 'NPM_AUDIT_PASSED',
+      'npm audit found no production dependency vulnerabilities.');
+  } else {
+    finding(report, total > 0 ? 'warning' : 'error',
+      'NPM_AUDIT_FINDINGS',
+      `Production dependency audit summary: ${JSON.stringify(counts)}.`);
+  }
+}
+function main() {
+  let options;
+  try {
+    options = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(`ARGUMENT ERROR: ${error.message}`);
+    return EXIT.CONFIG;
+  }
+  if (options.help) {
+    help();
+    return EXIT.OK;
+  }
+  let root;
+  try {
+    root = fs.realpathSync(options.root);
+    if (!fs.statSync(root).isDirectory()) {
+      throw new Error('Root is not a directory.');
+    }
+  } catch {
+    console.error('CONFIGURATION ERROR: Project root is inaccessible.');
+    return EXIT.CONFIG;
+  }
+  const report = reportFactory(root, options);
+  checkPackage(root, report);
+  checkLockfile(root, report);
+  checkGitIgnore(root, report);
+  checkSensitiveFiles(root, report);
+  checkSecrets(report);
+  checkSecurityIndicators(root, report);
+  if (options.audit) {
+    runNpmAudit(root, report);
+  } else {
+    finding(report, 'skipped', 'NPM_AUDIT_NOT_REQUESTED',
+      'Dependency audit was not run. Use --audit to request npm audit.');
+  }
+  const failed = report.summary.errors > 0 ||
+    (options.strict && report.summary.warnings > 0);
+  report.status = failed ? 'failed' : 'passed';
+  report.exitCode = failed ? EXIT.FINDINGS : EXIT.OK;
+  if (options.json) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    console.log('\nMedOrbits Security Configuration Check');
+    console.log('='.repeat(50));
+    for (const item of report.findings) {
+      console.log(
+        `[${item.level.toUpperCase()}] ${item.code}: ${item.message}` +
+        `${item.file ? ` (${item.file})` : ''}`,
+      );
+    }
+    console.log('\nSummary');
+    console.log(`Passed: ${report.summary.passed}`);
+    console.log(`Warnings: ${report.summary.warnings}`);
+    console.log(`Errors: ${report.summary.errors}`);
+    console.log(`Skipped: ${report.summary.skipped}`);
+    console.log(`Result: ${report.status.toUpperCase()}`);
+  }
+  return report.exitCode;
+}
 try {
   process.exitCode = main();
-} catch (error) {
-  console.error('FATAL ERROR: Unexpected security audit failure.');
-
-  if (error instanceof Error) {
-    console.error(error.stack || error.message);
-  } else {
-    console.error(String(error));
-  }
-
-  process.exitCode = EXIT_CODES.CONFIGURATION_ERROR;
+} catch {
+  console.error('FATAL ERROR: Security checker failed unexpectedly.');
+  process.exitCode = EXIT.CONFIG;
 }

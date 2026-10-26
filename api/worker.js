@@ -2,11 +2,10 @@
 'use strict';
 
 /**
- * MedOrbits -- Production-oriented PostgreSQL Background Worker
- *
+ * MedOrbits PostgreSQL Background Worker
  * File: api/worker.js
  * Runtime: Node.js >= 20
- * Dependencies: pg
+ * Dependency: pg
  *
  * Job types:
  *   email.send
@@ -15,10 +14,10 @@
  *   document.process
  *   webhook.deliver
  *
- * Required environment:
+ * Required:
  *   DATABASE_URL
  *
- * Optional environment:
+ * Optional:
  *   WORKER_NAME
  *   WORKER_CONCURRENCY=3
  *   WORKER_POLL_INTERVAL_MS=2000
@@ -28,41 +27,62 @@
  *   WORKER_STALE_JOB_MS=300000
  *   WORKER_HEARTBEAT_MS=30000
  *   WORKER_SHUTDOWN_TIMEOUT_MS=30000
- *   WORKER_SKIP_SCHEMA_INIT=false
- *   DATABASE_SSL=false
+ *   WORKER_SKIP_SCHEMA_INIT=true|false
+ *   DATABASE_SSL=true|false
  *
- * Important:
- *   Job handlers must be explicitly injected. No fake production
- *   handlers are registered by default.
+ * Register real application handlers through configureJobHandlers().
+ * Never register fake production handlers.
  *
- *   Apply migrations before deployment in managed environments.
- *   External handlers should be idempotent because a crash after
- *   an external side effect can cause the job to run again.
+ * Delivery semantics:
+ *   At-least-once execution. External effects must be idempotent.
+ *
+ * Production:
+ *   Prefer versioned database migrations over runtime DDL.
  */
 
 const os = require('node:os');
 const crypto = require('node:crypto');
 
-let Pool;
+const { Pool } = require('pg');
 
-try {
-  ({ Pool } = require('pg'));
-} catch {
-  console.error(
-    '[worker] Missing dependency: install pg before starting.'
-  );
-}
+const STATUS = Object.freeze({
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+});
+
+const SUPPORTED_TYPES = Object.freeze([
+  'email.send',
+  'notification.create',
+  'application.process',
+  'document.process',
+  'webhook.deliver',
+]);
+
+const SUPPORTED_TYPE_SET = new Set(SUPPORTED_TYPES);
+const PERMANENT_JOB_ERROR = 'PERMANENT_JOB_ERROR';
 
 function readInteger(name, fallback, min, max) {
   const raw = process.env[name];
 
-  if (raw === undefined || raw === '') {
+  if (raw === undefined || raw.trim() === '') {
     return fallback;
+  }
+
+  if (!/^\d+$/.test(raw.trim())) {
+    throw new Error(
+      `${name} must be an integer between ${min} and ${max}.`
+    );
   }
 
   const value = Number(raw);
 
-  if (!Number.isSafeInteger(value) || value < min || value > max) {
+  if (
+    !Number.isSafeInteger(value) ||
+    value < min ||
+    value > max
+  ) {
     throw new Error(
       `${name} must be an integer between ${min} and ${max}.`
     );
@@ -74,19 +94,19 @@ function readInteger(name, fallback, min, max) {
 function readBoolean(name, fallback = false) {
   const raw = process.env[name];
 
-  if (raw === undefined || raw === '') {
+  if (raw === undefined || raw.trim() === '') {
     return fallback;
   }
 
-  if (raw === 'true') return true;
-  if (raw === 'false') return false;
+  if (raw.trim() === 'true') return true;
+  if (raw.trim() === 'false') return false;
 
   throw new Error(`${name} must be true or false.`);
 }
 
 const CONFIG = Object.freeze({
   workerName:
-    process.env.WORKER_NAME ||
+    process.env.WORKER_NAME?.trim() ||
     `${os.hostname()}-${process.pid}`,
 
   concurrency: readInteger(
@@ -130,40 +150,47 @@ const CONFIG = Object.freeze({
   databaseSsl: readBoolean('DATABASE_SSL', false),
 });
 
-if (CONFIG.heartbeatMs >= CONFIG.staleJobMs) {
+if (CONFIG.heartbeatMs * 2 >= CONFIG.staleJobMs) {
   throw new Error(
-    'WORKER_HEARTBEAT_MS must be lower than WORKER_STALE_JOB_MS.'
+    'WORKER_STALE_JOB_MS must be greater than twice WORKER_HEARTBEAT_MS.'
   );
 }
 
-const STATUS = Object.freeze({
-  PENDING: 'pending',
-  PROCESSING: 'processing',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
+if (CONFIG.retryBaseMs > CONFIG.retryMaxMs) {
+  throw new Error(
+    'WORKER_RETRY_BASE_MS cannot exceed WORKER_RETRY_MAX_MS.'
+  );
+}
+
+if (CONFIG.workerName.length > 255) {
+  throw new Error('WORKER_NAME cannot exceed 255 characters.');
+}
+
+const pool = new Pool({
+  connectionString: CONFIG.databaseUrl || undefined,
+  max: CONFIG.concurrency + 3,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  application_name: 'medorbits-background-worker',
+  ...(CONFIG.databaseSsl
+    ? { ssl: { rejectUnauthorized: true } }
+    : {}),
 });
 
-const SUPPORTED_TYPES = new Set([
-  'email.send',
-  'notification.create',
-  'application.process',
-  'document.process',
-  'webhook.deliver',
-]);
-
-const PERMANENT_JOB_ERROR = 'PERMANENT_JOB_ERROR';
-
-let pool = null;
+let started = false;
 let stopping = false;
 let schemaReady = false;
 let shutdownPromise = null;
 let loopPromise = null;
 let pollTimer = null;
 let heartbeatTimer = null;
+let recoveryTimer = null;
 
 const activeTasks = new Set();
 const activeJobs = new Map();
-const abortController = new AbortController();
+const rootAbortController = new AbortController();
+
+let jobHandlers = new Map();
 
 function log(level, event, details = {}) {
   const record = {
@@ -186,16 +213,28 @@ function log(level, event, details = {}) {
   }
 }
 
+/**
+ * Log only sanitized error metadata.
+ * Do not log raw payloads, credentials, SQL parameters or full responses.
+ */
 function safeError(error) {
   return {
     name: String(error?.name || 'Error').slice(0, 100),
-    message: String(
-      error?.message || 'Unknown error'
-    ).slice(0, 1000),
-    code: typeof error?.code === 'string'
-      ? error.code.slice(0, 100)
-      : undefined,
+    code:
+      typeof error?.code === 'string'
+        ? error.code.slice(0, 100)
+        : undefined,
   };
+}
+
+function createPermanentError(message) {
+  const error = new Error(message);
+  error.code = PERMANENT_JOB_ERROR;
+  return error;
+}
+
+function isPermanentError(error) {
+  return error?.code === PERMANENT_JOB_ERROR;
 }
 
 function retryDelay(attempt) {
@@ -210,10 +249,7 @@ function retryDelay(attempt) {
     Math.random() * Math.min(exponential * 0.2, 5000)
   );
 
-  return Math.min(
-    exponential + jitter,
-    CONFIG.retryMaxMs
-  );
+  return Math.min(exponential + jitter, CONFIG.retryMaxMs);
 }
 
 function sleep(ms, signal) {
@@ -223,31 +259,71 @@ function sleep(ms, signal) {
       return;
     }
 
-    const timer = setTimeout(done, ms);
+    let settled = false;
 
-    function done() {
+    const finish = () => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
-      signal?.removeEventListener('abort', done);
+      signal?.removeEventListener('abort', finish);
       resolve();
-    }
+    };
 
-    signal?.addEventListener('abort', done, { once: true });
+    const timer = setTimeout(finish, ms);
+    signal?.addEventListener('abort', finish, { once: true });
   });
 }
 
-function createPermanentError(message) {
-  const error = new Error(message);
-  error.code = PERMANENT_JOB_ERROR;
-  return error;
-}
+/**
+ * Handler injection.
+ *
+ * Expected dependency names:
+ *   sendEmail
+ *   createNotification
+ *   processApplication
+ *   processDocument
+ *   deliverWebhook
+ */
+function configureJobHandlers(dependencies = {}) {
+  if (started || activeJobs.size > 0) {
+    throw new Error(
+      'Configure job handlers before starting the worker.'
+    );
+  }
 
-function isPermanentError(error) {
-  return error?.code === PERMANENT_JOB_ERROR;
+  const definitions = {
+    'email.send': dependencies.sendEmail,
+    'notification.create': dependencies.createNotification,
+    'application.process': dependencies.processApplication,
+    'document.process': dependencies.processDocument,
+    'webhook.deliver': dependencies.deliverWebhook,
+  };
+
+  const nextHandlers = new Map();
+
+  for (const [type, handler] of Object.entries(definitions)) {
+    if (handler === undefined) continue;
+
+    if (typeof handler !== 'function') {
+      throw new TypeError(
+        `Handler for ${type} must be a function.`
+      );
+    }
+
+    nextHandlers.set(type, handler);
+  }
+
+  jobHandlers = nextHandlers;
 }
 
 /**
- * Production migrations should normally create this table and indexes.
- * This initializer is intended for controlled standalone deployments.
+ * Standalone-development schema initializer.
+ *
+ * In production, set WORKER_SKIP_SCHEMA_INIT=true and apply the
+ * versioned migration before starting the worker.
+ *
+ * This initializer creates a fresh schema. It does not attempt to
+ * upgrade arbitrary legacy schemas.
  */
 async function initializeSchema() {
   if (CONFIG.skipSchemaInit) {
@@ -275,14 +351,9 @@ async function initializeSchema() {
       completed_at TIMESTAMPTZ,
 
       CONSTRAINT worker_jobs_status_check
-        CHECK (
-          status IN (
-            'pending',
-            'processing',
-            'completed',
-            'failed'
-          )
-        ),
+        CHECK (status IN (
+          'pending', 'processing', 'completed', 'failed'
+        )),
 
       CONSTRAINT worker_jobs_attempts_check
         CHECK (
@@ -310,29 +381,6 @@ async function initializeSchema() {
     );
   `);
 
-  // Safe additive migration for an existing worker_jobs table.
-  await pool.query(`
-    ALTER TABLE worker_jobs
-    ADD COLUMN IF NOT EXISTS lease_token UUID;
-  `);
-
-  // Legacy processing rows must be recovered before the new lease
-  // constraint can be added to an existing deployment.
-  await pool.query(`
-    UPDATE worker_jobs
-    SET
-      status = CASE
-        WHEN attempts >= max_attempts THEN 'failed'
-        ELSE 'pending'
-      END,
-      locked_at = NULL,
-      locked_by = NULL,
-      lease_token = NULL,
-      updated_at = NOW()
-    WHERE status = 'processing'
-      AND lease_token IS NULL;
-  `);
-
   await pool.query(`
     CREATE INDEX IF NOT EXISTS worker_jobs_pending_idx
     ON worker_jobs (available_at, created_at)
@@ -350,44 +398,44 @@ async function initializeSchema() {
 }
 
 /**
- * Claim one job atomically.
+ * Atomically claim one available job.
  *
- * The lease token fences off an earlier execution if its lease expires
- * and the job is subsequently claimed by another worker.
+ * LIMIT appears before FOR UPDATE SKIP LOCKED in PostgreSQL syntax.
  */
 async function claimJob() {
-  if (stopping || !schemaReady) {
-    return null;
-  }
+  if (stopping || !schemaReady) return null;
 
   const client = await pool.connect();
+  let transactionOpen = false;
 
   try {
     await client.query('BEGIN');
+    transactionOpen = true;
 
-    const result = await client.query(
+    const selected = await client.query(
       `
-        SELECT id, type, payload, attempts, max_attempts
+        SELECT id
         FROM worker_jobs
         WHERE status = $1
           AND available_at <= NOW()
           AND attempts < max_attempts
         ORDER BY available_at ASC, created_at ASC
-        FOR UPDATE SKIP LOCKED
-        LIMIT 1;
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED;
       `,
       [STATUS.PENDING]
     );
 
-    if (result.rowCount === 0) {
+    if (selected.rowCount === 0) {
       await client.query('COMMIT');
+      transactionOpen = false;
       return null;
     }
 
-    const selected = result.rows[0];
+    const id = selected.rows[0].id;
     const leaseToken = crypto.randomUUID();
 
-    const updated = await client.query(
+    const claimed = await client.query(
       `
         UPDATE worker_jobs
         SET
@@ -407,19 +455,24 @@ async function claimJob() {
         STATUS.PROCESSING,
         CONFIG.workerName,
         leaseToken,
-        selected.id,
+        id,
         STATUS.PENDING,
       ]
     );
 
-    if (updated.rowCount !== 1) {
-      throw new Error('Job claim lost inside transaction.');
+    if (claimed.rowCount !== 1) {
+      throw new Error('Atomic job claim did not update one row.');
     }
 
     await client.query('COMMIT');
-    return updated.rows[0];
+    transactionOpen = false;
+
+    return claimed.rows[0];
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (transactionOpen) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
+
     throw error;
   } finally {
     client.release();
@@ -427,58 +480,66 @@ async function claimJob() {
 }
 
 /**
- * Renew leases only for jobs owned by this execution.
+ * Renew active leases.
+ *
+ * A failed renewal aborts the handler's signal. Handlers must cooperate
+ * with AbortSignal where possible. The lease token still fences database
+ * updates if a previous execution continues running.
  */
 async function renewLeases() {
-  if (stopping || activeJobs.size === 0) {
-    return;
-  }
+  if (stopping || activeJobs.size === 0) return;
 
-  for (const job of activeJobs.values()) {
-    if (stopping) return;
+  const jobs = [...activeJobs.values()];
 
-    try {
-      const result = await pool.query(
-        `
-          UPDATE worker_jobs
-          SET locked_at = NOW(), updated_at = NOW()
-          WHERE id = $1
-            AND status = $2
-            AND locked_by = $3
-            AND lease_token = $4;
-        `,
-        [
-          job.id,
-          STATUS.PROCESSING,
-          CONFIG.workerName,
-          job.lease_token,
-        ]
-      );
+  await Promise.allSettled(
+    jobs.map(async (active) => {
+      if (stopping || active.controller.signal.aborted) return;
 
-      if (result.rowCount !== 1) {
-        job.controller.abort(
-          new Error('Job lease was lost.')
+      try {
+        const result = await pool.query(
+          `
+            UPDATE worker_jobs
+            SET locked_at = NOW(), updated_at = NOW()
+            WHERE id = $1
+              AND status = $2
+              AND locked_by = $3
+              AND lease_token = $4;
+          `,
+          [
+            active.job.id,
+            STATUS.PROCESSING,
+            CONFIG.workerName,
+            active.job.lease_token,
+          ]
         );
 
-        log('warn', 'job.lease_lost', {
-          jobId: job.id,
-          jobType: job.type,
+        if (result.rowCount !== 1) {
+          active.controller.abort(
+            new Error('Job lease lost.')
+          );
+
+          log('warn', 'job.lease_lost', {
+            jobId: active.job.id,
+            jobType: active.job.type,
+          });
+        }
+      } catch (error) {
+        // A transient database failure does not prove the lease is lost.
+        // Log it and allow the next heartbeat to retry.
+        log('error', 'job.lease_renewal_failed', {
+          jobId: active.job.id,
+          errorCode: safeError(error).code,
         });
       }
-    } catch (error) {
-      log('error', 'job.lease_renewal_failed', {
-        jobId: job.id,
-        errorCode: safeError(error).code,
-      });
-    }
-  }
+    })
+  );
 }
 
 /**
- * Recover expired jobs.
+ * Recover expired processing jobs.
  *
- * The row lock and conditional updates prevent competing workers from
- * recovering the same job simultaneously.
+ * Uses row locks so multiple worker instances do not recover the
+ * same rows concurrently.
  */
 async function recoverStaleJobs() {
   if (stopping) return;
@@ -491,6 +552,8 @@ async function recoverStaleJobs() {
         WHERE status = $1
           AND locked_at < NOW() -
             ($2 * INTERVAL '1 millisecond')
+        ORDER BY locked_at ASC
+        LIMIT 100
         FOR UPDATE SKIP LOCKED
       )
       UPDATE worker_jobs AS job
@@ -508,10 +571,7 @@ async function recoverStaleJobs() {
         locked_at = NULL,
         locked_by = NULL,
         lease_token = NULL,
-        last_error = COALESCE(
-          job.last_error,
-          'Job lease expired; execution may have been interrupted'
-        ),
+        last_error = 'Worker lease expired; job execution may have been interrupted',
         updated_at = NOW()
       FROM stale
       WHERE job.id = stale.id
@@ -533,21 +593,20 @@ async function recoverStaleJobs() {
 }
 
 /**
- * All state updates are fenced by the lease token.
- * A worker whose lease has been replaced cannot overwrite the new owner.
+ * Persist completion only if this execution still owns the lease.
  */
 async function markCompleted(job, result) {
   const serialized = JSON.stringify(result ?? null);
 
   if (serialized === undefined) {
     throw createPermanentError(
-      'Job handler returned an unsupported result.'
+      'Handler result cannot be serialized as JSON.'
     );
   }
 
   if (Buffer.byteLength(serialized, 'utf8') > 1024 * 1024) {
     throw createPermanentError(
-      'Job result exceeds the 1 MiB storage limit.'
+      'Handler result exceeds the 1 MiB storage limit.'
     );
   }
 
@@ -585,13 +644,26 @@ async function markCompleted(job, result) {
   }
 }
 
+/**
+ * Schedule retry or mark a job permanently failed.
+ *
+ * Raw error messages are intentionally not stored because they may
+ * contain personal information, credentials, or external response data.
+ */
 async function markFailed(job, error) {
   const details = safeError(error);
+
   const exhausted =
     isPermanentError(error) ||
     job.attempts >= job.max_attempts;
 
   const delayMs = exhausted ? 0 : retryDelay(job.attempts);
+
+  const safeStoredError = JSON.stringify({
+    name: details.name,
+    code: details.code,
+    category: exhausted ? 'permanent_or_exhausted' : 'retryable',
+  });
 
   const updated = await pool.query(
     `
@@ -617,7 +689,7 @@ async function markFailed(job, error) {
       exhausted ? STATUS.FAILED : STATUS.PENDING,
       STATUS.PENDING,
       delayMs,
-      `${details.name}: ${details.message}`,
+      safeStoredError,
       job.id,
       STATUS.PROCESSING,
       CONFIG.workerName,
@@ -646,59 +718,15 @@ async function markFailed(job, error) {
 }
 
 /**
- * Explicit service injection. No production handlers are fabricated.
- *
- * Each handler receives:
- *   handler(payload, { jobId, attempt, workerName, signal })
- *
- * Handlers should validate payloads and support idempotent execution.
+ * Execute one claimed job.
  */
-function createJobHandlers(dependencies = {}) {
-  const mapping = {
-    'email.send': dependencies.sendEmail,
-    'notification.create': dependencies.createNotification,
-    'application.process': dependencies.processApplication,
-    'document.process': dependencies.processDocument,
-    'webhook.deliver': dependencies.deliverWebhook,
-  };
-
-  const handlers = new Map();
-
-  for (const [type, handler] of Object.entries(mapping)) {
-    if (handler !== undefined) {
-      if (typeof handler !== 'function') {
-        throw new TypeError(
-          `Handler for ${type} must be a function.`
-        );
-      }
-
-      handlers.set(type, handler);
-    }
-  }
-
-  return handlers;
-}
-
-let jobHandlers = createJobHandlers();
-
-function configureJobHandlers(dependencies) {
-  if (activeJobs.size > 0) {
-    throw new Error(
-      'Cannot replace handlers while jobs are running.'
-    );
-  }
-
-  jobHandlers = createJobHandlers(dependencies);
-}
-
 async function processJob(job) {
   const startedAt = Date.now();
   const controller = new AbortController();
 
-  activeJobs.set(job.lease_token, {
-    ...job,
-    controller,
-  });
+  const active = { job, controller };
+
+  activeJobs.set(job.lease_token, active);
 
   log('info', 'job.started', {
     jobId: job.id,
@@ -707,17 +735,15 @@ async function processJob(job) {
   });
 
   try {
-    if (!SUPPORTED_TYPES.has(job.type)) {
-      throw createPermanentError(
-        `Unsupported job type: ${job.type}`
-      );
+    if (!SUPPORTED_TYPE_SET.has(job.type)) {
+      throw createPermanentError('Unsupported job type.');
     }
 
     const handler = jobHandlers.get(job.type);
 
     if (!handler) {
       throw createPermanentError(
-        `No handler configured for job type: ${job.type}`
+        `No handler configured for ${job.type}.`
       );
     }
 
@@ -740,7 +766,7 @@ async function processJob(job) {
 
     if (controller.signal.aborted) {
       throw new Error(
-        'Job execution cancelled or its lease was lost.'
+        'Job execution was aborted or its lease was lost.'
       );
     }
 
@@ -765,10 +791,11 @@ async function processJob(job) {
   }
 }
 
+/**
+ * Claim and schedule a job without exceeding configured concurrency.
+ */
 async function runOneJob() {
-  if (stopping || !schemaReady) {
-    return false;
-  }
+  if (stopping || !schemaReady) return false;
 
   let job;
 
@@ -782,9 +809,7 @@ async function runOneJob() {
     return false;
   }
 
-  if (!job) {
-    return false;
-  }
+  if (!job) return false;
 
   let task;
 
@@ -827,7 +852,7 @@ async function workerLoop() {
     if (!stopping && !claimedAny) {
       await sleep(
         CONFIG.pollIntervalMs,
-        abortController.signal
+        rootAbortController.signal
       );
     }
   }
@@ -835,80 +860,65 @@ async function workerLoop() {
   log('info', 'worker.loop_stopped');
 }
 
+/**
+ * Start the worker. Call configureJobHandlers() before this function.
+ */
 async function startWorker() {
-  if (!Pool) {
-    throw new Error('The pg package is not installed.');
+  if (started) {
+    throw new Error('Worker has already been started.');
   }
 
   if (!CONFIG.databaseUrl) {
     throw new Error('DATABASE_URL is required.');
   }
 
-  if (loopPromise) {
-    throw new Error('Worker has already been started.');
+  if (stopping) {
+    throw new Error('Worker cannot start after shutdown begins.');
   }
 
-  pool = new Pool({
-    connectionString: CONFIG.databaseUrl,
-    max: CONFIG.concurrency + 3,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    application_name: `medorbits-worker-${CONFIG.workerName}`,
-    ...(CONFIG.databaseSsl
-      ? { ssl: { rejectUnauthorized: true } }
-      : {}),
-  });
+  started = true;
 
-  pool.on('error', (error) => {
-    log('error', 'database.idle_client_error', {
-      errorCode: safeError(error).code,
-    });
-  });
+  try {
+    await pool.query('SELECT 1');
+    await initializeSchema();
+    await recoverStaleJobs();
 
-  await pool.query('SELECT 1');
-  await initializeSchema();
-
-  await recoverStaleJobs();
-
-  heartbeatTimer = setInterval(() => {
-    renewLeases().catch((error) => {
-      log('error', 'leases.renewal_failed', {
-        errorCode: safeError(error).code,
+    heartbeatTimer = setInterval(() => {
+      renewLeases().catch((error) => {
+        log('error', 'leases.renewal_failed', {
+          errorCode: safeError(error).code,
+        });
       });
-    });
-  }, CONFIG.heartbeatMs);
+    }, CONFIG.heartbeatMs);
 
-  pollTimer = setInterval(() => {
-    if (stopping) return;
-
-    recoverStaleJobs().catch((error) => {
-      log('error', 'jobs.recovery_failed', {
-        errorCode: safeError(error).code,
+    recoveryTimer = setInterval(() => {
+      recoverStaleJobs().catch((error) => {
+        log('error', 'jobs.recovery_failed', {
+          errorCode: safeError(error).code,
+        });
       });
-    });
-  }, Math.max(
-    10000,
-    Math.floor(CONFIG.staleJobMs / 2)
-  ));
+    }, Math.max(10000, Math.floor(CONFIG.staleJobMs / 2)));
 
-  heartbeatTimer.unref?.();
-  pollTimer.unref?.();
+    heartbeatTimer.unref?.();
+    recoveryTimer.unref?.();
 
-  loopPromise = workerLoop();
-  await loopPromise;
+    loopPromise = workerLoop();
+    await loopPromise;
+  } catch (error) {
+    started = false;
+    throw error;
+  }
 }
 
 /**
- * Graceful shutdown stops new claims, aborts cooperative handlers,
- * and waits for active work up to the configured deadline.
+ * Graceful shutdown.
  *
- * JavaScript cannot safely force-cancel arbitrary promises. The
- * supervisor should enforce a final process termination deadline.
+ * JavaScript cannot force-stop arbitrary handler promises. Handlers
+ * should observe AbortSignal, and the process supervisor should enforce
+ * a hard termination deadline.
  */
 async function shutdown(signal = 'shutdown') {
-  if (shutdownPromise) {
-    return shutdownPromise;
-  }
+  if (shutdownPromise) return shutdownPromise;
 
   shutdownPromise = (async () => {
     stopping = true;
@@ -918,17 +928,15 @@ async function shutdown(signal = 'shutdown') {
       activeJobs: activeTasks.size,
     });
 
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (recoveryTimer) clearInterval(recoveryTimer);
+    if (pollTimer) clearInterval(pollTimer);
 
-    if (heartbeatTimer) {
-      clearInterval(heartbeatTimer);
-      heartbeatTimer = null;
-    }
+    heartbeatTimer = null;
+    recoveryTimer = null;
+    pollTimer = null;
 
-    abortController.abort();
+    rootAbortController.abort();
 
     for (const active of activeJobs.values()) {
       active.controller.abort(
@@ -952,20 +960,18 @@ async function shutdown(signal = 'shutdown') {
       log('error', 'worker.shutdown_timeout', {
         activeJobs: activeTasks.size,
       });
-    }
 
-    // Do not close the pool underneath handlers still using it.
-    // If the deadline is exceeded, leave final termination to the
-    // process supervisor and report an unsuccessful shutdown.
-    if (activeTasks.size > 0) {
+      // Do not close the pool under handlers still using it.
+      // The supervisor must enforce the final process deadline.
       process.exitCode = 1;
       return;
     }
 
-    if (pool) {
-      await pool.end();
-      pool = null;
+    if (loopPromise) {
+      await loopPromise.catch(() => {});
     }
+
+    await pool.end();
 
     log('info', 'worker.stopped');
   })();
@@ -974,24 +980,23 @@ async function shutdown(signal = 'shutdown') {
 }
 
 function installSignalHandlers() {
-  for (const signal of ['SIGTERM', 'SIGINT']) {
-    process.once(signal, () => {
-      shutdown(signal).catch((error) => {
-        log('error', 'worker.shutdown_failed', {
-          errorCode: safeError(error).code,
-        });
-
-        process.exitCode = 1;
-      });
+  process.once('SIGTERM', () => {
+    shutdown('SIGTERM').catch(() => {
+      process.exitCode = 1;
     });
-  }
+  });
 
-  process.on('unhandledRejection', (reason) => {
+  process.once('SIGINT', () => {
+    shutdown('SIGINT').catch(() => {
+      process.exitCode = 1;
+    });
+  });
+
+  process.on('unhandledRejection', (error) => {
     log('error', 'process.unhandled_rejection', {
-      errorName: reason?.name || 'Error',
+      errorName: error?.name || 'Error',
     });
 
-    // Unhandled rejections can leave worker state uncertain.
     process.exitCode = 1;
 
     shutdown('unhandledRejection').catch(() => {});
@@ -1020,11 +1025,7 @@ if (require.main === module) {
 
     process.exitCode = 1;
 
-    try {
-      await shutdown('startup_failure');
-    } catch {
-      // Startup is already failing; preserve the nonzero exit code.
-    }
+    await shutdown('startup_failure').catch(() => {});
   });
 }
 
@@ -1032,7 +1033,6 @@ module.exports = {
   CONFIG,
   STATUS,
   SUPPORTED_TYPES,
-  createJobHandlers,
   configureJobHandlers,
   initializeSchema,
   claimJob,

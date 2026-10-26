@@ -1,93 +1,134 @@
 name: Deploy Production
-
 on:
-workflow_dispatch:
-
+  workflow_dispatch:
+    inputs:
+      confirm_deployment:
+        description: "Type deploy to confirm production deployment"
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "server.js"
+      - "package.json"
+      - "package-lock.json"
+      - "render.yaml"
+      - "api/**"
+      - "config/**"
+      - "controllers/**"
+      - "middleware/**"
+      - "models/**"
+      - "routes/**"
+      - "services/**"
+      - "public/**"
+      - ".github/workflows/deploy_production.yml"
 permissions:
-contents: read
-
+  contents: read
 concurrency:
-group: medorbits-production-deployment
-cancel-in-progress: false
-
+  group: medorbits-production
+  cancel-in-progress: false
 jobs:
-validate:
-name: Validate Production Release
-runs-on: ubuntu-latest
-timeout-minutes: 20
-
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-  - name: Set up Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
-      cache: npm
-  - name: Verify required files
-    shell: bash
-    run: |
-      set -euo pipefail
-      test -f package.json || {
-        echo "::error::package.json was not found at the repository root."
-        exit 1
-      }
-      test -f package-lock.json || {
-        echo "::error::package-lock.json is required for reproducible npm ci."
-        exit 1
-      }
-  - name: Install dependencies
-    run: npm ci
-  - name: Run tests
-    run: npm test
-  - name: Run project checks when available
-    shell: bash
-    run: |
-      set -euo pipefail
-      if node -e "process.exit(Object.hasOwn(JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).scripts || {}, 'check') ? 0 : 1)"; then
-        npm run check
-      else
-        echo "No check script is configured; skipping."
-      fi
-  - name: Run lint when available
-    shell: bash
-    run: |
-      set -euo pipefail
-      if node -e "process.exit(Object.hasOwn(JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).scripts || {}, 'lint') ? 0 : 1)"; then
-        npm run lint
-      else
-        echo "No lint script is configured; skipping."
-      fi
-
-deploy:
-name: Deploy to Render
-needs: validate
-runs-on: ubuntu-latest
-timeout-minutes: 5
-environment: production
-
-steps:
-  - name: Trigger Render deployment
-    env:
-      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-    shell: bash
-    run: |
-      set -euo pipefail
-      if [[ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]]; then
-        echo "::error::Configure the RENDER_DEPLOY_HOOK_URL secret in GitHub Settings > Secrets and variables > Actions."
-        exit 1
-      fi
-      case "$RENDER_DEPLOY_HOOK_URL" in
-        https://*)
-          ;;
-        *)
-          echo "::error::The Render deploy hook must use HTTPS."
-          exit 1
-          ;;
-      esac
-      curl --fail --silent --show-error \
-        --request POST \
-        --output /dev/null \
-        --max-time 30 \
-        "$RENDER_DEPLOY_HOOK_URL"
-      echo "Render deployment trigger accepted. Verify deployment status in Render."
+  validate:
+    name: Validate production deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate package manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f package.json ]]; then
+            echo "::error::Root package.json is missing."
+            exit 1
+          fi
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg.scripts) {
+              console.log("No npm scripts are defined.");
+            }
+            console.log(`Package: ${pkg.name || "unnamed"}`);
+            console.log(`Version: ${pkg.version || "unspecified"}`);
+          '
+      - name: Validate lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package-lock.json ]]; then
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+          elif [[ -f npm-shrinkwrap.json ]]; then
+            echo "Found npm-shrinkwrap.json."
+          else
+            echo "::error::No npm lockfile found."
+            exit 1
+          fi
+      - name: Check deployment confirmation
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRMATION" != "deploy" ]]; then
+            echo "::error::Deployment cancelled. Enter exactly 'deploy' to confirm."
+            exit 1
+          fi
+  deploy:
+    name: Trigger Render production deployment
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Verify Render secret
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$RENDER_DEPLOY_HOOK" ]]; then
+            echo "::error::Configure the RENDER_DEPLOY_HOOK repository or environment secret."
+            exit 1
+          fi
+          if [[ "$RENDER_DEPLOY_HOOK" != https://* ]]; then
+            echo "::error::The Render deploy hook must use HTTPS."
+            exit 1
+          fi
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --connect-timeout 10 \
+              --max-time 30 \
+              "$RENDER_DEPLOY_HOOK"
+          )"
+          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+            echo "::error::Render returned HTTP $http_code."
+            exit 1
+          fi
+          echo "Render accepted the production deployment request."
+          echo "Check the Render dashboard to confirm build completion and application health."

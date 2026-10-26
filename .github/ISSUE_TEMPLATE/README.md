@@ -1,144 +1,145 @@
 MedOrbits — GitHub Issue Templates
 
-This directory contains standardized GitHub issue templates for reporting bugs, proposing features, and directing suspected security vulnerabilities to the appropriate reporting channel.
+Directory: .github/ISSUE_TEMPLATE/
+Project: MedOrbits
+Release target: 2.0.0
 
-The templates improve issue quality, simplify triage, and help maintain consistent reporting across the MedOrbits project.
+1. Purpose
 
-Available Templates
+This directory contains GitHub issue forms that help contributors report bugs, propose features, and communicate security concerns using consistent, structured information.
 
-1. Bug Report
+The templates are intended to improve issue quality, reduce duplicate reports, protect sensitive information, and help maintainers prioritize work.
+
+2. Directory Structure
+
+The following is the intended structure. Confirm that each file exists before relying on it.
+
+.github/ISSUE_TEMPLATE/
+├── README.md
+├── config.yml
+├── bug_report.yml
+├── feature-request.yml
+└── security-report.yml
+
+GitHub recognizes YAML issue forms and the special config.yml configuration file in this directory.
+
+3. Bug Report
 
 File: bug_report.yml
 
-Use this template to report reproducible problems affecting:
+Use this form to report reproducible software defects, including:
 
-* Website, frontend, and user interface
-* Authentication, registration, and account management
-* Education, admissions, and course information
-* Applications and document handling
-* Careers, jobs, and recruitment
-* Payments and subscriptions
-* Notifications and email delivery
-* Administration dashboard
-* APIs, backend services, and databases
-* Deployment and infrastructure
+* Broken pages and interface behavior.
+* API errors and backend failures.
+* Incorrect or missing information.
+* Form submission and document upload failures.
+* Accessibility, compatibility, and performance issues.
+* Deployment or infrastructure problems.
 
-Include reproduction steps, expected behavior, actual behavior, relevant environment details, and sanitized error logs wherever possible.
+A useful bug report should include the affected area, reproduction steps, expected behavior, actual behavior, and relevant environment details.
 
-Never include passwords, access tokens, private user information, confidential documents, or sensitive production data.
+Remove passwords, authentication tokens, personal records, and production secrets from screenshots and logs before submitting.
 
-2. Feature Request
+4. Feature Request
 
-File: feature_request.yml
+File: feature-request.yml
 
-Use this template to propose new capabilities, improvements, or changes to existing MedOrbits functionality.
+Use this form to suggest new capabilities or improvements to MedOrbits.
 
-Describe:
+Requests should explain:
 
-* The problem or opportunity
-* The intended users and use case
-* The proposed solution
-* Expected behavior and impact
-* Acceptance criteria
-* Relevant security, privacy, accessibility, and compatibility considerations
+* The problem being solved.
+* The users affected.
+* The proposed solution.
+* Example use cases.
+* Acceptance criteria.
+* Relevant dependencies or constraints.
 
-Requests should explain the intended outcome clearly enough for maintainers to assess feasibility, scope, and completion criteria.
+Possible areas include education and admissions, college information, international education, careers, recruitment, search, accessibility, account management, and developer tooling.
 
-3. Security Vulnerability Reporting
+A feature request is a proposal, not a guarantee of implementation or a delivery commitment.
+
+5. Security Report
 
 File: security-report.yml
 
-This template warns reporters about public disclosure and directs them to the project’s documented security reporting process.
+Use the security form only for minimal, non-sensitive descriptions where a public issue is appropriate.
 
-Important: A GitHub Issue Form normally creates a public issue. This template does not make reports private and must not be treated as a secure vulnerability disclosure channel.
+Do not publish confidential vulnerability information in a public issue.
 
-Before reporting a suspected vulnerability:
+Never include:
 
-1. Read the repository’s root SECURITY.md.
-2. Use GitHub’s private vulnerability reporting feature if it is enabled, or another private channel explicitly documented by the project.
-3. If no private channel is documented, contact a maintainer through an appropriate non-public channel to request secure reporting instructions.
-4. Do not publish exploit instructions, proof-of-concept code, credentials, session tokens, exposed secrets, or sensitive technical details in a public issue.
+* Passwords or API keys.
+* Access tokens, session cookies, or authorization headers.
+* Private user records or documents.
+* Sensitive production logs.
+* Exploit code or detailed instructions that enable abuse.
 
-Never include passwords, API keys, payment-card information, identity documents, confidential production data, or another person’s private information.
+Use the private vulnerability-reporting method documented in the repository’s SECURITY.md. Verify that the method is configured and operational before directing researchers to it.
 
-Prioritize confidentiality over completing a public issue form.
+A GitHub issue form does not make an issue private.
 
-Issue Template Configuration
+6. Issue Form Configuration
 
 File: config.yml
 
-The configuration file controls whether blank issues are allowed and may provide links to documentation, bug reports, feature requests, or security reporting resources.
+This file controls the availability of blank issues and provides links to relevant resources.
 
-Keep all configured links accurate and verify that referenced forms and reporting channels exist.
+Recommended configuration:
 
-If blank issues are disabled, users should be directed to the appropriate template or documented contact channel.
+blank_issues_enabled: false
+contact_links:
+  - name: MedOrbits Documentation
+    url: https://github.com/vivekchoubey366-dot/MedOrbits
+    about: Read project documentation before opening an issue.
 
-A security contact link must not imply that private reporting is available unless the repository actually supports that mechanism.
+The complete configuration may also link to contribution guidelines, support documentation, release notes, and the security policy.
 
-Labels
+Keep every link accurate and ensure that the referenced files exist.
 
-Templates may reference the following GitHub issue labels:
+7. Naming and Link Consistency
 
-Label	Purpose
-bug	Reports a defect or unexpected behavior
-enhancement	Proposes a feature or improvement
-triage	Indicates that an issue requires initial review
+GitHub issue-form links must match the actual filenames.
 
-Create these labels in the repository if they do not already exist. Confirm that every label referenced by a template matches a label configured in GitHub.
+For this directory, use one consistent naming convention:
 
-Templates without labels should not receive labels automatically unless that behavior is explicitly configured.
+* bug_report.yml
+* feature-request.yml
+* security-report.yml
 
-Maintainer Responsibilities
+If config.yml contains a direct link to a feature request form, ensure the URL references feature-request.yml, not feature_request.yml.
 
-Maintainers are responsible for keeping templates accurate, useful, and consistent with the repository’s contribution and security policies.
+Do not assume a form is available until it has been committed to the expected branch and verified on GitHub.
 
-* Keep templates aligned with CONTRIBUTING.md and SECURITY.md.
-* Keep questions relevant and reporting straightforward.
-* Review incoming issues and apply appropriate labels.
-* Avoid requesting sensitive personal information or credentials.
-* Direct vulnerability reports to a verified private reporting channel.
-* Handle public security disclosures according to the project’s security response procedure.
-* Update this documentation when filenames, template behavior, labels, or reporting procedures change.
-* Periodically verify compatibility with GitHub Issue Forms and template configuration.
+8. Validation Checklist
 
-Adding or Updating a Template
+Before merging changes to issue templates:
 
-Add a Markdown issue template (.md) or a GitHub Issue Form (.yml) to this directory.
+* [ ]	YAML syntax is valid.
+* [ ]	Each issue form uses supported GitHub field types.
+* [ ]	Required fields are marked correctly.
+* [ ]	Dropdown options are relevant and understandable.
+* [ ]	Labels referenced by templates exist or are intentionally created.
+* [ ]	The config.yml links match actual filenames.
+* [ ]	All documentation URLs are correct.
+* [ ]	No secrets or private information are requested unnecessarily.
+* [ ]	Security guidance points to a verified private reporting channel.
+* [ ]	Templates render correctly in the GitHub issue creation interface.
 
-After adding or updating a template:
+9. Maintenance Guidelines
 
-1. Verify that the filename matches this documentation.
-2. Validate YAML syntax for Issue Forms.
-3. Confirm that referenced labels exist in the repository.
-4. Check required fields, dropdown options, and validation rules.
-5. Open a test issue when appropriate and verify that the template renders correctly.
-6. Confirm that security instructions do not encourage public disclosure of sensitive details.
-7. Update this README whenever a filename, purpose, label, or reporting procedure changes.
+Review these templates when MedOrbits changes its repository structure, contribution workflow, support process, or security policy.
 
-GitHub Configuration
+Keep templates focused. Request only the information needed to triage and resolve an issue. Avoid collecting sensitive personal or educational information in public reports.
 
-Keep issue template files under:
+Maintainers should request additional sensitive evidence only through an approved, access-controlled channel.
 
-.github/ISSUE_TEMPLATE/
+10. Official Documentation
 
-GitHub supports Markdown issue templates and structured YAML Issue Forms. An optional config.yml file in this directory controls blank-issue behavior and can provide links to external resources.
+* GitHub issue form syntax
+* GitHub issue template configuration
+* GitHub security advisories
 
-Ensure that configured links point to valid destinations and that private security reporting is enabled or otherwise documented before directing reporters to it.
+⸻
 
-Related Documentation
-
-* README.md — Repository overview and setup
-* CONTRIBUTING.md — Contribution workflow and standards
-* SECURITY.md — Vulnerability disclosure and security policies
-* CODE_OF_CONDUCT.md — Community participation standards
-* SUPPORT.md — General support and troubleshooting
-
-These files should exist at the repository root for the links and references to be applicable.
-
-Security Reminder
-
-Issue templates improve reporting consistency; they do not protect source code, restrict repository cloning, grant repository permissions, or make public issues private.
-
-Use repository access controls, branch protection or rulesets, and a properly configured private vulnerability reporting process for their respective purposes.
-
-Before publishing changes, ensure every documented filename matches the actual files in .github/ISSUE_TEMPLATE/.
+Maintenance note: This README documents the intended template structure and recommended practices. It does not establish that the templates, labels, links, or security reporting controls have been tested or activated.

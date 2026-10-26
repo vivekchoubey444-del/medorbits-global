@@ -1,66 +1,116 @@
-
 name: Validate JSON
-
 on:
   push:
     branches:
       - main
-      - master
     paths:
       - "**/*.json"
       - ".github/workflows/validate-json.yml"
   pull_request:
+    branches:
+      - main
     paths:
       - "**/*.json"
       - ".github/workflows/validate-json.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: validate-json-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  validate:
+  validate-json:
     name: Validate JSON files
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+        with:
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Validate JSON syntax
         shell: bash
         run: |
           set -euo pipefail
-
+          failed=0
           count=0
-
           while IFS= read -r -d '' file; do
-            echo "Validating: $file"
-            node -e '
+            count=$((count + 1))
+            if node -e '
               const fs = require("node:fs");
               const file = process.argv[1];
-              try {
-                JSON.parse(fs.readFileSync(file, "utf8"));
-              } catch (error) {
-                console.error(`Invalid JSON in ${file}: ${error.message}`);
-                process.exitCode = 1;
-              }
-            ' "$file"
-            count=$((count + 1))
+              JSON.parse(fs.readFileSync(file, "utf8"));
+            ' "$file"; then
+              echo "PASS: $file"
+            else
+              echo "::error file=$file::Invalid JSON syntax."
+              failed=1
+            fi
           done < <(
             find . \
-              -type d \( -name .git -o -name node_modules \) -prune \
-              -o -type f -name '*.json' -print0
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.agent-backup' -prune -o \
+              -type f -name '*.json' -print0
           )
-
           echo "Validated $count JSON file(s)."
+          if [[ "$failed" -ne 0 ]]; then
+            exit 1
+          fi
+      - name: Validate JSON Schema files
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          count=0
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            if node -e '
+              const fs = require("node:fs");
+              const schema = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              if (
+                typeof schema !== "object" ||
+                schema === null ||
+                Array.isArray(schema)
+              ) {
+                throw new Error("JSON Schema must be a JSON object.");
+              }
+              if (
+                schema.$schema !== undefined &&
+                typeof schema.$schema !== "string"
+              ) {
+                throw new Error("$schema must be a string.");
+              }
+            ' "$file"; then
+              echo "PASS: $file"
+            else
+              echo "::error file=$file::Invalid JSON Schema structure."
+              failed=1
+            fi
+          done < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.agent-backup' -prune -o \
+              -type f \( -name '*.schema.json' -o -name '*.schema.jsonc' \) -print0
+          )
+          echo "Checked $count schema file(s)."
+          if [[ "$failed" -ne 0 ]]; then
+            exit 1
+          fi
+      - name: Report validation summary
+        if: always()
+        run: |
+          {
+            echo "## JSON Validation"
+            echo ""
+            echo "- JSON syntax validation was executed."
+            echo "- JSON Schema files received basic structural checks."
+            echo "- Full schema-to-data validation requires a schema validator."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,199 +1,236 @@
 #!/usr/bin/env bash
-
+# ============================================================
+# MedOrbits Font Downloader
+# File: assets/fonts/download-font.sh
+#
+# Purpose:
+#   Download selected open-source web fonts for local hosting.
+#
+# Features:
+#   - Downloads fonts from explicitly configured HTTPS URLs.
+#   - Supports Google Fonts static WOFF2 files.
+#   - Uses temporary files and atomic file replacement.
+#   - Verifies downloaded files are non-empty.
+#   - Supports dry-run mode and font listing.
+#   - Never deletes existing font files.
+#   - Does not modify HTML, CSS, or JavaScript files.
+#
+# Usage:
+#   bash assets/fonts/download-font.sh
+#   bash assets/fonts/download-font.sh --dry-run
+#   bash assets/fonts/download-font.sh --list
+#   bash assets/fonts/download-font.sh --font inter
+#   bash assets/fonts/download-font.sh --force
+#
+# Requirements:
+#   Bash 4+, curl, and optionally sha256sum or shasum.
+#
+# Security:
+#   Use trusted HTTPS font sources.
+#   Review font licenses before redistribution.
+# ============================================================
 set -Eeuo pipefail
-IFS=$’\n\t’
+IFS=$'\n\t'
 umask 077
-
-MedOrbits Local Agent -- Safe Backup Utility
-
-Usage:
-
-bash .agent-backup/agent-backup.sh
-
-bash .agent-backup/agent-backup.sh /path/to/repository
-
-bash .agent-backup/agent-backup.sh /path/to/repository /path/to/backup-storage
-
-SCRIPT_DIR="$(cd – "$(dirname – "${BASH_SOURCE[0]}")" && pwd -P)"
-DEFAULT_ROOT="$(cd – "$SCRIPT_DIR/../.." && pwd -P)"
-
-SOURCE_ROOT="${1:-$DEFAULT_ROOT}"
-SOURCE_ROOT="$(cd – "$SOURCE_ROOT" && pwd -P)"
-
-BACKUP_PARENT="${2:-$SOURCE_ROOT/.agent-backups}"
-mkdir -p – "$BACKUP_PARENT"
-BACKUP_PARENT="$(cd – "$BACKUP_PARENT" && pwd -P)"
-
-TIMESTAMP="$(date -u ‘+%Y%m%dT%H%M%SZ’)"
-BACKUP_DIR="$BACKUP_PARENT/backup-$TIMESTAMP-$$"
-
+readonly SCRIPT_NAME="download-font.sh"
+readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+DRY_RUN=0
+FORCE=0
+LIST_ONLY=0
+SELECTED_FONT=""
+TEMP_DIR=""
 log() {
-printf ‘[agent-backup] %s\n’ "$*"
+    printf '[FONTS] %s\n' "$*"
 }
-
-fail() {
-printf ‘[agent-backup] ERROR: %s\n’ "$*" >&2
-exit 1
+warn() {
+    printf '[WARN] %s\n' "$*" >&2
 }
-
-command -v tar >/dev/null 2>&1 || fail "tar is required."
-command -v find >/dev/null 2>&1 || fail "find is required."
-command -v sha256sum >/dev/null 2>&1 ||
-command -v shasum >/dev/null 2>&1 ||
-fail "sha256sum or shasum is required."
-
-[[ -d "$SOURCE_ROOT" ]] || fail "Source directory does not exist."
-[[ "$SOURCE_ROOT" != "/" ]] || fail "Refusing to back up the filesystem root."
-
-case "$BACKUP_PARENT/" in
-"$SOURCE_ROOT/"*)
-;;
-*)
-log "Backup storage is outside the source repository."
-;;
-esac
-
-[[ ! -e "$BACKUP_DIR" ]] || fail "Backup destination already exists."
-
-Refuse a destination inside a nested Git metadata directory.
-
-case "$BACKUP_PARENT/" in
-"$SOURCE_ROOT/.git/"*|"$SOURCE_ROOT/.git")
-fail "Backup storage must not be inside .git."
-;;
-esac
-
-mkdir -m 700 – "$BACKUP_DIR"
-TEMP_LIST="$BACKUP_DIR/.file-list.tmp"
-MANIFEST="$BACKUP_DIR/MANIFEST.txt"
-ARCHIVE="$BACKUP_DIR/source-files.tar"
-
+die() {
+    printf '[ERROR] %s\n' "$*" >&2
+    exit 1
+}
 cleanup() {
-rm -f – "$TEMP_LIST"
+    if [[ -n "${TEMP_DIR:-}" && -d "$TEMP_DIR" ]]; then
+        rm -rf -- "$TEMP_DIR"
+    fi
 }
 trap cleanup EXIT
-
-log "Source: $SOURCE_ROOT"
-log "Destination: $BACKUP_DIR"
-log "Collecting eligible files…"
-
-Archive regular files only. Do not follow symbolic links.
-
-Exclude secrets, dependency trees, Git metadata, generated output,
-
-the backup destination, and this script’s backup storage.
-
-find "$SOURCE_ROOT" 
-( -type d ( 
--name .git -o 
--name node_modules -o 
--name .next -o 
--name dist -o 
--name build -o 
--name coverage -o 
--name .agent-backups -o 
--name .agent-backup 
-) -prune ) -o 
-( -type f 
-! -name ‘.env’ 
-! -name ‘.env.’ 
-! -name ’.pem’ 
-! -name ‘.key’ 
-! -name ’.p12’ 
-! -name ‘*.pfx’ 
-! -name ‘id_rsa’ 
-! -name ‘id_ed25519’ 
-! -name ‘credentials.json’ 
-! -name ‘secrets.json’ 
-! -name ‘secret’ 
-! -name ‘credential’ 
--print0 ) > "$TEMP_LIST"
-
-Convert absolute paths into source-root-relative paths.
-
-RELATIVE_LIST="$BACKUP_DIR/.relative-list.tmp"
-: > "$RELATIVE_LIST"
-
-while IFS= read -r -d ‘’ file; do
-relative="${file#"$SOURCE_ROOT"/}"
-
-Reject paths that cannot safely be represented in the manifest.
-
-[[ "$relative" != "$file" ]] || continue
-[[ "$relative" != /* ]] || continue
-
-printf ‘%s\0’ "$relative" >> "$RELATIVE_LIST"
-done < "$TEMP_LIST"
-
-FILE_COUNT=0
-while IFS= read -r -d ‘’ _; do
-FILE_COUNT=$((FILE_COUNT + 1))
-done < "$RELATIVE_LIST"
-
-(( FILE_COUNT > 0 )) || {
-rm -f – "$RELATIVE_LIST"
-fail "No eligible files found. No archive was created."
+usage() {
+    cat <<'USAGE'
+MedOrbits Font Downloader
+Usage:
+  download-font.sh [options]
+Options:
+  --dry-run       Show intended actions without downloading files
+  --list          List available font families
+  --font NAME     Download one font family
+  --force         Replace existing files after successful download
+  --help          Show this help
+Available font families:
+  inter
+  roboto
+  poppins
+  playfair-display
+  source-sans-3
+Examples:
+  bash assets/fonts/download-font.sh --list
+  bash assets/fonts/download-font.sh --dry-run
+  bash assets/fonts/download-font.sh --font inter
+  bash assets/fonts/download-font.sh --font poppins --force
+Notes:
+  - Downloads use fixed URLs in this script.
+  - Existing files are skipped unless --force is supplied.
+  - No files are deleted.
+  - The script does not automatically edit CSS @font-face rules.
+USAGE
 }
-
-{
-printf ‘MedOrbits Local Agent Backup\n’
-printf ‘Created UTC: %s\n’ "$TIMESTAMP"
-printf ‘Source root: %s\n’ "$SOURCE_ROOT"
-printf ‘Files included: %s\n’ "$FILE_COUNT"
-printf ‘Archive: source-files.tar\n’
-printf ‘\nSecurity exclusions:\n’
-printf ‘%s\n’ 
-‘.git metadata’ 
-‘node_modules and generated build directories’ 
-‘.env and .env.* files’ 
-‘common private-key and credential filenames’ 
-‘.agent-backups and .agent-backup directories’
-printf ‘\nFile list:\n’
-while IFS= read -r -d ‘’ relative; do
-printf ‘%s\n’ "$relative"
-done < "$RELATIVE_LIST"
-} > "$MANIFEST"
-
-Run tar from the source root, using relative paths.
-
-–no-recursion prevents tar from independently walking listed directories.
-
-Only regular files are listed by find.
-
-(
-cd – "$SOURCE_ROOT"
-tar –null –files-from="$RELATIVE_LIST" 
-–no-recursion 
--cf "$ARCHIVE"
-) || fail "Archive creation failed. Inspect the destination before retrying."
-
-rm -f – "$RELATIVE_LIST"
-
-Generate an archive checksum.
-
-if command -v sha256sum >/dev/null 2>&1; then
-(
-cd – "$BACKUP_DIR"
-sha256sum source-files.tar > SHA256SUMS.txt
+parse_args() {
+    while (($#)); do
+        case "$1" in
+            --dry-run)
+                DRY_RUN=1
+                shift
+                ;;
+            --force)
+                FORCE=1
+                shift
+                ;;
+            --list)
+                LIST_ONLY=1
+                shift
+                ;;
+            --font)
+                (($# >= 2)) || die "--font requires a font family name."
+                SELECTED_FONT="$2"
+                shift 2
+                ;;
+            --help|-h)
+                usage
+                exit 0
+                ;;
+            *)
+                die "Unknown option: $1. Run '$SCRIPT_NAME --help'."
+                ;;
+        esac
+    done
+}
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
+}
+# Format:
+# family|filename|source URL
+#
+# URLs must be HTTPS and must be reviewed before use.
+# These are Google Fonts CSS2 endpoints; their content may vary
+# by browser user-agent, so the downloader validates the response
+# and rejects CSS/HTML when a WOFF2 file is expected.
+FONT_MANIFEST=(
+    "inter|inter-latin-400-normal.woff2|https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTcviYwY.woff2"
+    "roboto|roboto-latin-400-normal.woff2|https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2"
+    "poppins|poppins-latin-400-normal.woff2|https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2"
+    "playfair-display|playfair-display-latin-400-normal.woff2|https://fonts.gstatic.com/s/playfairdisplay/v30/nuFiD-vYSZviVYVL6mWUBcRR.woff2"
+    "source-sans-3|source-sans-3-latin-400-normal.woff2|https://fonts.gstatic.com/s/sourcesans3/v15/nwpBtKy2OAdR1K-IwhWudF-R3w8aZg.woff2"
 )
-else
-(
-cd – "$BACKUP_DIR"
-shasum -a 256 source-files.tar > SHA256SUMS.txt
-)
-fi
-
-Verify that the archive can be listed successfully.
-
-tar -tf "$ARCHIVE" >/dev/null ||
-fail "Archive verification failed. Do not use this backup for recovery."
-
-chmod 600 "$ARCHIVE" "$MANIFEST" "$BACKUP_DIR/SHA256SUMS.txt"
-
-log "Backup archive created and readable."
-log "Files included: $FILE_COUNT"
-log "Manifest: $MANIFEST"
-log "Checksum: $BACKUP_DIR/SHA256SUMS.txt"
-log "Archive: $ARCHIVE"
-log "NOTE: This is a file backup, not a Git history or full repository backup."
-log "NOTE: Review exclusions and verify the checksum before any restoration."
+list_fonts() {
+    printf '%-20s %-42s\n' "FONT FAMILY" "OUTPUT FILE"
+    printf '%-20s %-42s\n' "-----------" "-----------"
+    local entry family filename url
+    for entry in "${FONT_MANIFEST[@]}"; do
+        IFS='|' read -r family filename url <<< "$entry"
+        printf '%-20s %-42s\n' "$family" "$filename"
+    done
+}
+validate_manifest_url() {
+    local url="$1"
+    [[ "$url" == https://fonts.gstatic.com/* ]] ||
+        die "Rejected unapproved font URL: $url"
+}
+download_font() {
+    local family="$1"
+    local filename="$2"
+    local url="$3"
+    validate_manifest_url "$url"
+    local destination="${SCRIPT_DIR}/${filename}"
+    local temp_file="${TEMP_DIR}/${filename}.part"
+    if [[ -e "$destination" && "$FORCE" -eq 0 ]]; then
+        log "Already exists; skipping: $filename"
+        return 0
+    fi
+    if ((DRY_RUN)); then
+        log "Would download: $family -> $destination"
+        return 0
+    fi
+    log "Downloading $family..."
+    if ! curl \
+        --fail \
+        --silent \
+        --show-error \
+        --location \
+        --proto '=https' \
+        --tlsv1.2 \
+        --connect-timeout 15 \
+        --max-time 90 \
+        --retry 2 \
+        --retry-delay 1 \
+        --user-agent "MedOrbits-Font-Downloader/1.0" \
+        --output "$temp_file" \
+        "$url"; then
+        die "Download failed for $family."
+    fi
+    [[ -s "$temp_file" ]] || die "Downloaded file is empty: $family"
+    # WOFF2 files begin with the ASCII signature "wOF2".
+    local signature
+    signature="$(od -An -N4 -tc "$temp_file" | tr -d ' \n')"
+    [[ "$signature" == "wOF2" ]] ||
+        die "Downloaded content is not a WOFF2 font: $family. Check the source URL."
+    if [[ -e "$destination" && "$FORCE" -eq 0 ]]; then
+        die "Destination appeared during download; refusing to overwrite: $filename"
+    fi
+    # The temporary file is in the same directory filesystem as the destination
+    # to allow an atomic move after validation.
+    local staged_file="${SCRIPT_DIR}/.${filename}.tmp.$$"
+    cp -- "$temp_file" "$staged_file"
+    chmod 0644 "$staged_file"
+    if [[ -e "$destination" && "$FORCE" -eq 0 ]]; then
+        rm -f -- "$staged_file"
+        die "Destination exists; refusing to overwrite: $filename"
+    fi
+    mv -f -- "$staged_file" "$destination"
+    log "Saved: $destination"
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum -- "$destination"
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$destination"
+    fi
+}
+main() {
+    parse_args "$@"
+    if ((LIST_ONLY)); then
+        list_fonts
+        return 0
+    fi
+    require_command curl
+    require_command od
+    require_command tr
+    require_command cp
+    require_command mv
+    [[ -d "$SCRIPT_DIR" ]] || die "Font directory does not exist."
+    TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/medorbits-fonts.XXXXXX")"
+    local matched=0
+    local entry family filename url
+    for entry in "${FONT_MANIFEST[@]}"; do
+        IFS='|' read -r family filename url <<< "$entry"
+        if [[ -n "$SELECTED_FONT" && "$family" != "$SELECTED_FONT" ]]; then
+            continue
+        fi
+        matched=1
+        download_font "$family" "$filename" "$url"
+    done
+    ((matched)) || die "Unknown font family: $SELECTED_FONT. Run '$SCRIPT_NAME --list'."
+    if ((DRY_RUN)); then
+        log "Dry run completed; no font files were changed."
+    else
+        log "Font download process completed."
+    fi
+}
+main "$@"

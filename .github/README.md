@@ -1,91 +1,197 @@
-MedOrbits — GitHub Repository Governance
+MedOrbits — GitHub Repository Configuration
 
-Welcome to the GitHub configuration directory for MedOrbits. This directory contains repository governance files, contribution templates, automation workflows, and dependency management configuration.
+File: .github/README.md
+Project: MedOrbits
+Release target: 2.0.0
 
-Directory Structure
+1. Overview
+
+The .github/ directory contains configuration and automation resources used to maintain the MedOrbits repository. These resources support issue management, contribution standards, automated validation, security checks, and code review.
+
+This README describes the intended structure and maintenance practices. The presence of a file does not guarantee that its workflow, policy, or GitHub setting is active.
+
+2. Directory Structure
+
+The following is a reference structure. Verify each file against the actual repository before relying on it.
 
 .github/
-├── ISSUE_TEMPLATE/
-├── workflows/
+├── README.md
 ├── CODEOWNERS
-├── dependabot.yml
-├── PULL_REQUEST_TEMPLATE.md
-└── README.md
+├── ISSUE_TEMPLATE/
+│   ├── README.md
+│   ├── config.yml
+│   ├── bug_report.yml
+│   ├── feature-request.yml
+│   └── security-report.yml
+├── scripts/
+│   ├── validate-commit-message.sh
+│   └── test-validate-commit-message.sh
+└── workflows/
+    └── security_audit.yml
 
-Repository Governance
+Other files, such as pull request templates, Dependabot configuration, and additional CI workflows, may be added when required.
 
-Issue Templates
+3. Issue Templates
 
-The ISSUE_TEMPLATE/ directory provides structured templates for reporting bugs, requesting features, and documenting other project issues.
+Directory: .github/ISSUE_TEMPLATE/
 
-Please include clear reproduction steps, expected behavior, actual behavior, and relevant logs when reporting a defect. Never include passwords, API keys, personal data, or confidential production information.
+Issue forms standardize incoming reports and help maintainers gather useful information.
 
-GitHub Actions Workflows
+Bug reports
 
-The workflows/ directory contains automated repository processes, including:
+File: ISSUE_TEMPLATE/bug_report.yml
 
-* Continuous integration and testing
-* Code and dependency security analysis
-* Secret scanning
-* Configuration and document validation
-* Deployment and release automation
-* Dependency lockfile maintenance
+Use this form to report reproducible defects, including broken pages, API errors, form failures, incorrect behavior, performance problems, and compatibility issues.
 
-Workflow behavior depends on the actual YAML configuration and repository settings. Review permissions, required secrets, and deployment targets before enabling production automation.
+Reports should include reproduction steps, expected and actual behavior, the affected environment, and sanitized evidence.
 
-CODEOWNERS
+Feature requests
 
-The CODEOWNERS file defines ownership and review responsibilities for selected repository paths.
+File: ISSUE_TEMPLATE/feature-request.yml
 
-Keep ownership entries aligned with active GitHub usernames or teams. Configure branch protection separately if code-owner approval must be required before merging.
+Use this form to propose new features or improvements. Requests should describe the problem, intended users, proposed solution, use cases, and acceptance criteria.
 
-Dependabot
+Security reports
 
-The dependabot.yml file configures automated dependency update proposals.
+File: ISSUE_TEMPLATE/security-report.yml
 
-Review dependency changes for compatibility, security impact, lockfile consistency, and successful test results before merging.
+Security reports require responsible disclosure. Public GitHub issues are not confidential.
 
-Pull Request Template
+* Do not publish credentials, access tokens, private user records, or exploit details.
+* Follow the verified private reporting process documented in SECURITY.md.
+* Do not request sensitive reproduction details in public comments.
+* Avoid promising response times unless the security policy defines them.
 
-The PULL_REQUEST_TEMPLATE.md file helps contributors describe changes consistently.
+The security issue form itself does not make a report private.
 
-Pull requests should explain the purpose of the change, identify affected components, document testing, and mention relevant issues or migration requirements.
+Issue configuration
 
-Security Standards
+File: ISSUE_TEMPLATE/config.yml
 
-* Never commit .env files containing real credentials.
-* Store deployment secrets in GitHub Actions secrets or protected environments.
-* Apply least-privilege permissions to workflow tokens.
-* Review dependency and code-scanning alerts.
-* Require appropriate reviews and checks for the primary branch.
-* Avoid exposing personal information or credentials in logs and artifacts.
-* Review database migrations and backup procedures before production changes.
+This file controls whether blank issues are enabled and defines links to project resources.
 
-Contribution Process
+Ensure all linked forms and documents exist. Filenames must match their URLs exactly, including underscores and hyphens.
 
-1. Create a branch for the proposed change.
-2. Make a focused, documented update.
-3. Run applicable validation and tests.
-4. Submit a pull request using the repository template.
-5. Resolve review comments and automated check failures.
-6. Merge only after the required approvals and checks pass.
+4. CODEOWNERS
 
-Deployment and Database Changes
+Recommended file: .github/CODEOWNERS
 
-Application deployments and database migrations must follow the project’s approved release process.
+The repository’s ownership rules designate @vivekchoubey444-del as the default reviewer for repository files.
 
-Before production database changes, validate migrations, create a recoverable backup, review compatibility, and confirm that the application remains functional after deployment.
+Specific ownership rules can be added for sensitive areas, including authentication, APIs, database migrations, deployment configuration, security policies, and GitHub Actions workflows.
 
-Do not assume every MySQL schema change can be rolled back automatically.
+Remember:
 
-Maintenance
+* CODEOWNERS assigns review responsibility; it does not grant repository permissions.
+* The designated account must have appropriate repository access.
+* Code-owner approval must be enabled through branch protection or repository rulesets if it is required before merging.
 
-Update this documentation whenever repository governance, workflow responsibilities, contribution requirements, or security practices change.
+5. GitHub Actions
 
-Project: MedOrbits
-Directory: .github/
-Purpose: Repository automation, governance, and contribution standards
+Directory: .github/workflows/
+
+Workflows can automate tasks such as:
+
+* Running tests and source validation.
+* Validating configuration and JSON files.
+* Auditing dependencies.
+* Scanning for accidentally committed secrets.
+* Running static security analysis.
+* Publishing CI summaries.
+
+Workflow security
+
+Apply the principle of least privilege:
+
+1. Grant only the permissions required by each job.
+2. Avoid exposing secrets to untrusted pull request code.
+3. Review third-party actions and their versions.
+4. Keep dependencies and lockfiles consistent.
+5. Review failed workflow logs before merging.
+6. Avoid printing credentials or sensitive environment values.
+
+A workflow file alone does not prove that checks are passing. Verify execution results in the repository’s Actions tab.
+
+6. Commit Message Validation
+
+Recommended scripts:
+
+* .github/scripts/validate-commit-message.sh
+* .github/scripts/test-validate-commit-message.sh
+
+The validator may enforce Conventional Commit formatting. Its test suite should verify accepted messages, rejected messages, argument handling, subject-length rules, and verbose output where supported.
+
+Example:
+
+feat(admissions): improve course search
+fix(api): handle missing application ID
+docs: update deployment guide
+
+Keep the tests aligned with the validator’s actual behavior. Do not assume a test passes until it has been executed against the current script.
+
+7. Security and Privacy
+
+All repository contributions should follow these principles:
+
+* Never commit real credentials or production secrets.
+* Store sensitive configuration in approved environment variables or a secrets manager.
+* Review authentication, authorization, file uploads, and data-access changes carefully.
+* Keep dependency manifests and lockfiles synchronized.
+* Restrict CI permissions and review third-party dependencies.
+* Remove sensitive data from logs, screenshots, and test fixtures.
+* Use private disclosure channels for confidential vulnerabilities.
+
+Security scanners provide additional safeguards but cannot guarantee that software is secure.
+
+8. Contribution Standards
+
+Contributors should review the repository’s CONTRIBUTING.md and CODE_OF_CONDUCT.md before submitting changes.
+
+Expected practices include:
+
+1. Search for existing issues before opening a new one.
+2. Use the appropriate issue form.
+3. Keep pull requests focused and explain their purpose.
+4. Add or update tests for relevant behavior.
+5. Run applicable validation scripts.
+6. Avoid unrelated file changes and generated artifacts.
+7. Document breaking changes and migration requirements.
+8. Wait for required reviews and CI checks before merging.
+
+Never include passwords, tokens, private documents, or sensitive user records in public issues or pull requests.
+
+9. Validation Checklist
+
+Before merging changes to .github/, verify the following:
+
+* [ ]	YAML files parse successfully.
+* [ ]	Issue forms use supported GitHub field types.
+* [ ]	Referenced templates and documents exist.
+* [ ]	Contact links use the correct repository and branch.
+* [ ]	CODEOWNERS is in a GitHub-recognized location.
+* [ ]	The designated code owner has appropriate access.
+* [ ]	Required code-owner reviews are configured if needed.
+* [ ]	Workflow permissions follow least privilege.
+* [ ]	Commit-message tests match the validator implementation.
+* [ ]	Security policy identifies a working private reporting method.
+* [ ]	No secrets or confidential data have been committed.
+* [ ]	CI checks have been executed and reviewed.
+
+10. Maintenance
+
+Review the .github/ directory whenever the repository structure, default branch, release process, security policy, or contribution workflow changes.
+
+Update stale links, remove obsolete configuration only after checking its dependencies, and verify that documentation accurately describes active controls.
+
+Do not claim a workflow, policy, or security control is operational until its configuration and behavior have been verified.
+
+11. Official References
+
+* GitHub issue forms
+* GitHub CODEOWNERS
+* GitHub Actions
+* GitHub security advisories
 
 ⸻
 
-This document describes the intended purpose of the configuration files. Actual enforcement depends on the repository’s workflow definitions, branch protection settings, and GitHub configuration.
+Maintenance note: This document describes intended configuration and recommended practices. Verify the repository’s actual files, settings, permissions, and workflow results before treating any control as enabled.

@@ -1,15 +1,17 @@
+Create /storage/.gitignore with this complete content. It preserves the runtime directory structure and .gitkeep placeholders while ignoring runtime files by default.
 
-# MedOrbits -- Runtime Storage Security
-# Ignore all runtime files by default.
+MedOrbits -- Runtime Storage Security
 
-*
+Ignore all runtime files by default.
 
-# Preserve Git ignore rules and directory placeholders.
+Preserve Git ignore rules and directory placeholders.
+
 !.gitignore
 !.gitkeep
 !README.md
 
-# Preserve runtime directory structure.
+Preserve runtime directory structure.
+
 !uploads/
 !documents/
 !applications/
@@ -20,7 +22,8 @@
 !quarantine/
 !backups/
 
-# Ignore all runtime contents.
+Ignore all runtime contents.
+
 uploads/*
 documents/*
 applications/*
@@ -31,7 +34,8 @@ exports/*
 quarantine/*
 backups/*
 
-# Preserve directory placeholders.
+Preserve directory placeholders.
+
 !uploads/.gitkeep
 !documents/.gitkeep
 !applications/.gitkeep
@@ -41,3 +45,10 @@ backups/*
 !exports/.gitkeep
 !quarantine/.gitkeep
 !backups/.gitkeep
+
+Security checks
+
+* Save this file at exactly /storage/.gitignore.
+* Ensure each listed directory contains its own .gitkeep if you want Git to preserve that empty directory.
+* Git ignore rules do not remove files already tracked by Git. Check with git ls-files storage/; if sensitive files are tracked, remove them from the index carefully and rotate any exposed secrets.
+* Keep uploaded documents, backups, and quarantined files outside the public web root, with server-side access controls and appropriate file permissions.

@@ -1,16 +1,17 @@
 
 # ============================================================
 # MedOrbits -- Root Git Ignore Policy
-# File: .gitignore
-# Policy version: 3.1.1
+# File: /.gitignore
+# Policy version: 3.1.2
 # Runtime: Node.js >=20
 # ============================================================
 #
 # SECURITY:
-# - Never commit .env or real credentials.
-# - .gitignore does not untrack committed files.
+# - Never commit real environment files or credentials.
+# - .gitignore does not untrack files already committed.
 # - Rotate exposed credentials and assess Git history if secrets leak.
 # - Keep sanitized templates such as .env.example tracked.
+# - Review ignored files before adding security-sensitive exceptions.
 # ============================================================
 
 
@@ -50,6 +51,9 @@ config.local.*
 settings.local.*
 nodemon.local.json
 .envrc.local
+
+# IMPORTANT: Do not add !/.env here.
+# The real root .env must remain ignored.
 
 
 # ------------------------------------------------------------
@@ -126,7 +130,7 @@ certs/private/
 certificates/private/
 
 # Do not globally ignore *.pem, *.crt or *.cer.
-# Inspect files before committing them.
+# Inspect these files before committing them.
 
 
 # ------------------------------------------------------------
@@ -151,7 +155,7 @@ certificates/private/
 .my.cnf
 .mysql_history
 
-# Do not globally ignore SQL migrations, schemas or sanitized fixtures.
+# Preserve SQL migrations, schemas and sanitized fixtures.
 
 
 # ------------------------------------------------------------
@@ -333,6 +337,9 @@ TAGS
 *.code-workspace.local
 workspace.local.json
 
+# Do not use !/.vscode/*.
+# Only explicitly approved, sanitized examples are re-included.
+
 
 # ------------------------------------------------------------
 # 12. PYTHON AND VIRTUAL ENVIRONMENTS
@@ -401,7 +408,8 @@ test-reports/
 /reports/test/
 /reports/coverage/
 
-# Only ignore confidential test fixtures, not sanitized test data.
+# Ignore only confidential test fixtures.
+# Preserve sanitized test data and fixtures.
 /tests/fixtures/private/
 /tests/fixtures/real-user-data/
 /tests/data/private/
@@ -429,14 +437,14 @@ test-reports/
 # 15. GENERATED API CLIENTS AND DOCUMENTATION
 # ------------------------------------------------------------
 
-# Keep these rules only if the directories contain generated output.
+# Keep these rules only if these paths contain generated output.
 /api-client-generated/
 /openapi-generated/
 /swagger-generated/
 /docs-build/
 /documentation-build/
 
-# Do not ignore maintained docs/, official-documents/ or API schemas.
+# Preserve maintained docs/, official-documents/ and API schemas.
 
 
 # ------------------------------------------------------------
@@ -448,6 +456,10 @@ test-reports/
 /user-uploads-local/
 /storage-local/
 /media-local/
+
+# Private storage directories; never serve these as public static assets.
+/storage/uploads/
+/storage/tmp/
 
 *.uploading
 *.part
@@ -482,7 +494,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Local Compose overrides may contain private configuration.
 docker-compose.override.yaml
 docker-compose.override.yml
 
@@ -520,7 +531,7 @@ nodemon-debug.log
 # *.zip, *.7z, *.rar, *.tar, *.tar.gz
 # *.pdf, *.png, *.jpg, *.xlsx
 #
-# They may be maintained assets, public documents or release files.
+# These may be maintained assets, public documents or release files.
 
 
 # ------------------------------------------------------------
@@ -531,7 +542,7 @@ nodemon-debug.log
 .cache/torch/
 .cache/models/
 
-# Enable only if model artifacts should not be tracked:
+# Uncomment only if these artifacts should not be tracked:
 # *.pt
 # *.pth
 # *.onnx
@@ -597,12 +608,12 @@ nodemon-debug.log
 # 25. OFFICE APPLICATION TEMPORARY FILES
 # ------------------------------------------------------------
 
-~$.doc
-~$.docx
-~$.xls
-~$.xlsx
-~$.ppt
-~$.pptx
+~$*.doc
+~$*.docx
+~$*.xls
+~$*.xlsx
+~$*.ppt
+~$*.pptx
 
 
 # ------------------------------------------------------------
@@ -619,7 +630,7 @@ nodemon-debug.log
 # 27. MEDORBITS SOURCE PRESERVATION
 # ------------------------------------------------------------
 
-# Keep maintained source, sanitized examples, and required configuration:
+# Preserve maintained source, sanitized examples and required configuration:
 # - HTML, CSS, JavaScript, TypeScript and Python source
 # - pages/, assets/, public/assets/ and public website files
 # - Official public documents, brochures and approved media
@@ -639,5 +650,3 @@ nodemon-debug.log
 # ============================================================
 # END OF MEDORBITS ROOT .gitignore
 # ============================================================
-!/.env
-

@@ -1,511 +1,234 @@
 MedOrbits Security Policy
 
-Document: SECURITY.md
-Version: 2.0.0
-Status: Public security policy — publication pending operational verification
-Applies to: MedOrbits websites, APIs, administrative interfaces, data systems, and associated services
+Project: MedOrbits
+Release: 2.0.0
+Scope: Education · Admissions · Careers · Recruitment
+Policy status: Draft — maintainer verification required
 
-⸻
+1. Purpose
 
-1. Security Commitment
+MedOrbits takes the security of its website, application services, user accounts, uploaded documents, and associated data seriously.
 
-MedOrbits is committed to protecting the confidentiality, integrity, and availability of its websites, applications, infrastructure, and information entrusted to its services.
+This document explains which versions receive security updates, how to report a suspected vulnerability, what information to include, and how maintainers should handle security reports.
 
-Security is an ongoing responsibility involving secure software development, access control, data protection, vulnerability management, dependency maintenance, monitoring, and incident response.
+This policy must be reviewed and approved by the project maintainers before being presented as an active security commitment.
 
-This policy describes the intended security practices for MedOrbits and provides guidance for reporting potential vulnerabilities.
+2. Supported Versions
 
-Important: The presence of a control or process in this document does not, by itself, establish that it has been implemented, independently verified, or enabled in production. Operational claims must be confirmed before publication.
+Security support must be confirmed by the maintainers before publication.
 
-2. Scope
+Version	Security support
+2.x	Intended release line; support status requires confirmation
+1.x	Support status requires confirmation
+Earlier versions	Support status requires confirmation
 
-This policy applies to MedOrbits-controlled systems, where applicable and authorized, including:
+A version being listed here does not, by itself, guarantee that security patches are available. Maintainers should update this table when a release line enters or leaves security support.
 
-* Public websites and informational pages.
-* Authentication, registration, and account-management functionality.
-* Application and admission-guidance workflows.
-* Administrative dashboards and privileged interfaces.
-* APIs, middleware, controllers, services, and validation layers.
-* Databases, database migrations, and data-access components.
-* File uploads, document storage, and document-access workflows.
-* Notifications and communication services.
-* Payment integrations and transaction-related workflows.
-* Deployment pipelines, configuration, and infrastructure managed by MedOrbits.
-* First-party source code, dependencies, and supporting services.
+3. Reporting a Vulnerability
 
-2.1 Out-of-scope systems
+Please do not disclose suspected security vulnerabilities in public GitHub issues, pull requests, discussions, or social media posts.
 
-Unless explicit written authorization states otherwise, this policy does not authorize testing against:
+Use a private reporting channel approved by the MedOrbits maintainers.
 
-* Third-party websites, APIs, or infrastructure.
-* Government admission, examination, identity, or document portals.
-* Payment-provider systems or banking infrastructure.
-* Hosting providers’ shared infrastructure.
-* Other users’ accounts, private documents, or personal information.
-* Systems unrelated to MedOrbits or outside the authorized testing scope.
+Preferred reporting procedure
 
-A vulnerability involving a third-party service should be reported to the responsible provider. MedOrbits may investigate its own integration where authorized.
+1. Open the repository’s Security tab on GitHub.
+2. Look for Report a vulnerability or the repository’s configured private vulnerability reporting option.
+3. Submit the report privately if that option is available.
+4. Include enough technical information to reproduce and assess the issue safely.
+5. Retain any private report reference provided by the platform.
 
-3. Reporting a Security Vulnerability
+If private vulnerability reporting is unavailable, contact a repository maintainer through a verified channel and ask for an approved private reporting method. Do not send exploit details, credentials, or personal data through an unverified address or public channel.
 
-MedOrbits encourages responsible reports of potential security vulnerabilities that could affect its users, systems, or data.
+Maintainer action required: Enable and test GitHub private vulnerability reporting, or publish a verified alternative contact method before declaring this reporting process operational.
 
-3.1 Reporting channel
+4. What to Include
 
-Before publishing this policy, MedOrbits must designate and verify an appropriate security-reporting channel.
+A useful vulnerability report should include, where applicable:
 
-Preferred options include:
+* Summary: A concise description of the suspected vulnerability.
+* Affected component: The page, endpoint, service, workflow, dependency, or configuration involved.
+* Affected version: The release, branch, or commit where the issue was observed.
+* Impact: The potential effect on confidentiality, integrity, availability, or user privacy.
+* Reproduction steps: Minimal, non-destructive steps that demonstrate the issue.
+* Evidence: Sanitized logs, screenshots, request examples, or proof-of-concept code.
+* Environment: Relevant browser, operating system, runtime, or deployment details.
+* Suggested mitigation: An optional fix or mitigation if one is known.
 
-* A dedicated security email address on an approved MedOrbits domain.
-* A private vulnerability-reporting feature in the official source-code repository.
-* An approved private security-reporting form.
+Do not include real user records, passwords, session cookies, API keys, private keys, access tokens, or other secrets in a report unless a verified secure process specifically requires a safely handled artifact.
 
-Do not publish an unverified email address or reporting URL. Configure the actual reporting channel in the project and make it accessible to the personnel responsible for receiving and handling reports.
+Redact personal information and unrelated data before submitting evidence.
 
-3.2 Information to include
+5. Scope
 
-A useful report should include, where available:
+Potentially relevant security issues may include:
 
-1. A concise vulnerability summary.
-2. The affected URL, endpoint, component, or version.
-3. The potential security impact.
-4. Reproduction steps using a controlled test environment.
-5. A minimal proof of concept that avoids accessing real user data.
-6. Relevant request and response examples with credentials and personal information removed.
-7. Suggested remediation, if known.
-8. The reporter’s preferred method of contact, if they wish to provide it.
+* Authentication and authorization bypasses.
+* Insecure access to another user’s account or records.
+* Exposure of application forms, identity documents, academic records, or other private data.
+* Injection vulnerabilities, including SQL injection and command injection.
+* Cross-site scripting and cross-site request forgery where applicable.
+* Server-side request forgery.
+* Insecure file uploads, downloads, storage, or document permissions.
+* Exposure of credentials, tokens, or sensitive configuration.
+* Vulnerable dependencies that create a demonstrable risk to the project.
+* Security misconfiguration affecting production services.
+* Payment or subscription workflow vulnerabilities.
+* Privilege escalation or unauthorized administrative access.
 
-Please do not include passwords, session cookies, API keys, access tokens, identity documents, or other sensitive information in a report unless a secure, explicitly approved process requires it.
+Reports should explain the actual or reasonably demonstrable security impact. A scanner alert alone may not establish an exploitable vulnerability.
 
-3.3 What not to do
+Generally out of scope
 
-Security testing must not involve:
+Unless a report demonstrates a meaningful security impact, the following are generally not sufficient by themselves:
 
-* Accessing, downloading, or disclosing other users’ private information.
-* Modifying or deleting production data.
-* Disrupting services or conducting denial-of-service attacks.
-* Performing destructive tests against production systems.
-* Using phishing, social engineering, or physical intrusion.
-* Installing persistence mechanisms, malware, or unauthorized backdoors.
-* Escalating access beyond what is necessary to demonstrate the reported issue.
-* Publicly disclosing exploitable details before responsible coordination.
+* Missing security headers without a demonstrated consequence.
+* Generic automated scanner output without reproducible evidence.
+* Self-inflicted issues requiring the reporter to compromise their own account without affecting other users.
+* Vulnerabilities in third-party services that are unrelated to MedOrbits.
+* Unsupported software versions or configurations that are not used by the project.
+* Social engineering, phishing, or physical attacks against people or facilities.
+* Denial-of-service testing that risks disrupting users or production services.
 
-If sensitive information is exposed accidentally, stop testing, preserve only the minimum evidence necessary, and report the issue promptly.
+Maintainers may reassess an out-of-scope report when credible evidence establishes a material impact.
 
-4. Responsible Disclosure
+6. Responsible Research
 
-MedOrbits aims to assess valid security reports, determine their impact, and coordinate remediation responsibly.
+Security researchers are expected to:
 
-The intended process is:
+* Act in good faith and avoid harming users or services.
+* Test only systems they own or are explicitly authorized to assess.
+* Avoid accessing, modifying, downloading, or disclosing other users’ data.
+* Avoid destructive testing, persistence, service disruption, and unnecessary data collection.
+* Stop testing when sensitive information or access outside the authorized scope is encountered.
+* Report findings privately and allow maintainers a reasonable opportunity to investigate.
+* Follow applicable laws and the terms governing the systems tested.
 
-1. Receipt: The designated reporting channel receives the report.
-2. Triage: The report is assessed for validity, scope, severity, and potential impact.
-3. Investigation: The affected component and plausible attack path are examined.
-4. Remediation: Appropriate corrective actions are developed and tested.
-5. Verification: The original vulnerability and relevant regression risks are retested.
-6. Closure: The outcome is documented, subject to privacy and security requirements.
+Do not attempt to prove impact by extracting private documents, exploiting real users, or disrupting production.
 
-Acknowledgment and remediation timelines must be established by the responsible team and published only when operationally supported. This policy does not promise a specific response time.
+This policy does not authorize testing against systems outside the researcher’s existing permission.
 
-Coordinated disclosure should consider user safety, the severity of the issue, remediation status, and applicable legal obligations.
+7. Maintainer Handling Procedure
 
-5. Vulnerability Severity and Prioritization
+Maintainers should follow a controlled process for security reports.
 
-MedOrbits should classify reported vulnerabilities using a consistent risk-assessment process. CVSS may be used as a supporting framework, alongside business impact and the sensitivity of affected information.
+1. Receive: Confirm receipt through the reporting channel, where practical.
+2. Triage: Determine whether the report is in scope and whether the issue is reproducible.
+3. Assess: Evaluate severity, affected versions, exploitability, and potential impact.
+4. Contain: Apply proportionate mitigations where needed, especially for active exploitation or exposed credentials.
+5. Remediate: Develop, test, and review an appropriate fix.
+6. Coordinate: Work with the reporter on disclosure timing where practical.
+7. Release: Publish a fix or mitigation through the applicable release process.
+8. Disclose: Share a security advisory when appropriate, avoiding unnecessary disclosure of exploitable details or personal information.
 
-Severity	Typical examples	Recommended priority
-Critical	Unrestricted compromise of production systems, widespread exposure of highly sensitive records, or severe authentication bypass	Emergency assessment and containment
-High	Privilege escalation, unauthorized access to private applicant documents, or significant account compromise	Expedited remediation
-Medium	Limited unauthorized access, meaningful security-control bypass, or exploitable information exposure	Planned remediation with risk tracking
-Low	Limited-impact weaknesses with constrained exploitability	Remediation through normal maintenance
-Informational	Hardening opportunities without a demonstrated vulnerability	Review and address where appropriate
+Limit access to vulnerability reports and evidence to people who need it for investigation and remediation.
 
-These classifications are guidance, not a substitute for technical investigation. Actual severity depends on exploitability, privileges required, affected users, exposure, and business impact.
+Do not copy sensitive report content into public issues, logs, build artifacts, or commit messages.
 
-6. Authentication and Session Security
+8. Response Times and Disclosure
 
-Authentication components should follow secure implementation practices.
+No acknowledgement deadline, remediation deadline, or service-level agreement is established by this document.
 
-Expected controls include:
+Maintainers should publish response targets only after confirming that the project has the resources and process to meet them.
 
-* Hashing passwords using an established password-hashing algorithm with appropriate parameters.
-* Never storing plaintext passwords or logging passwords.
-* Enforcing appropriate password and account-recovery controls.
-* Using secure session management or appropriately implemented token-based authentication.
-* Setting session cookies with HttpOnly, Secure in HTTPS deployments, and an appropriate SameSite policy.
-* Applying session expiration, revocation, and rotation where required.
-* Protecting authentication endpoints against automated abuse.
-* Avoiding user enumeration through unnecessarily revealing authentication responses.
-* Requiring additional verification for sensitive account or administrative operations where appropriate.
-* Using multi-factor authentication for privileged accounts where supported and required by the risk assessment.
+Coordinated disclosure should consider:
 
-Authentication failures must not disclose credentials, password hashes, private account data, or internal implementation details.
+* The severity and exploitability of the issue.
+* Whether the vulnerability is actively exploited.
+* The availability of a safe mitigation or fix.
+* The time needed to deploy and verify the fix.
+* The risk of exposing users to further harm through premature disclosure.
 
-7. Authorization and Access Control
+Researchers and maintainers should avoid publishing details that unnecessarily enable exploitation while affected users remain at risk.
 
-Access must be granted according to the principle of least privilege.
+9. Secrets and Exposed Credentials
 
-Security-sensitive operations should enforce authorization on the server, independently of what the frontend displays.
+If a credential or secret is exposed:
 
-Expected practices include:
-
-* Checking permissions for every protected API operation.
-* Enforcing ownership or tenant boundaries when users access their own records.
-* Separating public, authenticated, staff, and administrative capabilities.
-* Validating role assignments on the server.
-* Preventing users from granting themselves elevated privileges.
-* Denying access by default when permissions cannot be established.
-* Protecting administrative endpoints from unauthorized access.
-* Rechecking authorization when retrieving, downloading, modifying, or deleting sensitive documents.
-* Avoiding reliance on client-supplied role names, user IDs, or ownership claims.
-
-A hidden button, disabled form field, unlisted URL, or frontend route guard is not a sufficient security boundary.
-
-8. API Security
-
-MedOrbits APIs should be designed and maintained with explicit security boundaries.
-
-8.1 Request validation
-
-* Validate request bodies, query parameters, path parameters, headers, and uploaded files.
-* Use defined schemas for expected request structures.
-* Reject malformed input and unexpected fields where appropriate.
-* Enforce length, range, format, and collection-size limits.
-* Normalize input consistently before validation where necessary.
-* Use parameterized database queries rather than concatenating untrusted values into SQL.
-* Avoid unsafe dynamic code execution and untrusted deserialization.
-
-8.2 Rate limiting and resource protection
-
-Apply suitable request limits to sensitive or resource-intensive endpoints, including:
-
-* Login and registration.
-* Password-reset and account-recovery operations.
-* Search and data-export operations.
-* File uploads and downloads.
-* Administrative operations.
-* Expensive database-backed requests.
-* Public forms that could be abused for spam.
-
-Limits should be appropriate to the endpoint, deployment architecture, and expected legitimate traffic.
-
-8.3 HTTP security
-
-Where applicable, configure:
-
-* HTTPS throughout production traffic.
-* Appropriate security headers.
-* A restrictive Content Security Policy compatible with the application.
-* Explicit Cross-Origin Resource Sharing (CORS) allowlists.
-* Request-size and upload-size limits.
-* Secure redirect and origin-validation behavior.
-* Correct proxy and forwarded-header handling.
-
-CORS is a browser access-control mechanism, not a replacement for authentication or authorization.
-
-8.4 Error handling
-
-Production errors should not expose:
-
-* Stack traces.
-* Filesystem paths.
-* Database connection details.
-* SQL statements.
-* Environment variables.
-* Secret values.
-* Internal service topology.
-* Sensitive user or application records.
-
-Return consistent, appropriately scoped error responses and retain necessary diagnostic information in protected server-side logs.
-
-9. Database Security
-
-Database access should be restricted to authorized application components and administrators.
-
-Expected practices include:
-
-* Using parameterized queries and safe database access patterns.
-* Applying least-privilege database roles.
-* Separating application, migration, and administrative privileges where practical.
-* Restricting database network access.
-* Keeping database credentials outside source control.
-* Encrypting database connections when required by the deployment architecture.
-* Applying schema changes through reviewed migrations.
-* Maintaining appropriate backups and testing restoration procedures.
-* Limiting the exposure of sensitive data in query results and logs.
-* Reviewing database permissions and unused accounts periodically.
-
-Where audit records are required, protect their integrity and access. Database triggers or application-level append-only logic alone should not be represented as tamper-proof against database owners or sufficiently privileged administrators.
-
-10. Applicant Documents and Personal Information
-
-MedOrbits may process application details and supporting documents, depending on the features enabled in a particular deployment. Such information must be handled according to its sensitivity and the applicable privacy and legal requirements.
-
-10.1 File upload controls
-
-Where document uploads are supported:
-
-* Allow only necessary file types.
-* Validate file extensions, declared content types, and file signatures as appropriate.
-* Apply upload-size and file-count limits.
-* Generate server-controlled storage identifiers.
-* Avoid trusting user-supplied filenames or paths.
-* Store sensitive files outside publicly accessible web directories.
-* Use malware scanning or other file inspection controls where appropriate to the risk.
-* Prevent path traversal and unauthorized file replacement.
-* Avoid executing uploaded content.
-* Apply safe download headers and content-disposition handling.
-
-File extensions and browser-supplied MIME types alone are not reliable proof that a file is safe.
-
-10.2 Private document access
-
-* Require server-side authorization for document retrieval.
-* Verify the requesting user’s access rights to the specific document.
-* Avoid predictable public file URLs.
-* Use short-lived, appropriately scoped download links if signed URLs are used.
-* Avoid exposing documents through public caches, search indexing, or unrestricted static directories.
-* Audit sensitive document-access operations where justified.
-* Remove or redact sensitive data from diagnostic logs.
-
-10.3 Data minimization and retention
-
-Collect only information necessary for the stated purpose. Define retention periods, deletion procedures, access permissions, and backup handling in accordance with applicable obligations and documented business requirements.
-
-Do not claim that all information is encrypted, deleted on demand, or retained for a particular period unless the relevant implementation and operational procedures have been verified.
-
-11. Secrets and Configuration Management
-
-Credentials and secrets must be handled securely across development, testing, and production.
-
-Never commit the following to a public repository:
-
-* Database passwords or connection strings containing credentials.
-* API keys and bearer tokens.
-* Session-signing secrets.
-* Private keys and certificates.
-* Cloud-provider credentials.
-* Payment-provider secrets.
-* Administrative tokens.
-* Production environment files containing sensitive values.
-
-Use approved environment-variable or secrets-management mechanisms. Provide safe example files containing placeholders rather than real secrets.
-
-11.1 Secret exposure response
-
-If a secret is exposed:
-
-1. Determine its scope and privileges.
+1. Restrict further exposure where possible.
 2. Revoke or rotate the affected credential.
-3. Check relevant access logs for suspicious activity.
-4. Update dependent services and deployments.
-5. Remove the secret from active code and configuration.
-6. Assess whether repository history or external copies require additional remediation.
-7. Document the incident and preventive actions.
+3. Identify affected services and access permissions.
+4. Review available audit logs for suspicious activity.
+5. Remove the secret from active files and configurations.
+6. Assess whether repository history, build logs, artifacts, or backups also contain it.
+7. Document the incident and required follow-up.
 
-Deleting a secret from the latest commit does not invalidate it and does not necessarily remove it from repository history, caches, or existing clones.
+Deleting a secret from the latest commit does not remove it from Git history or external copies. History rewriting should be coordinated carefully and must not replace credential revocation.
 
-12. Infrastructure and Deployment Security
+Never publish live secrets in a security advisory, issue, or remediation commit.
 
-Production infrastructure should be configured and maintained to minimize attack surface.
+10. Dependencies and Automated Security Checks
 
-Expected practices include:
-
-* Keeping supported runtime versions and dependencies updated.
-* Restricting production administrative access.
-* Using HTTPS and correctly configured TLS certificates.
-* Separating development, test, and production environments.
-* Restricting access to deployment credentials.
-* Reviewing deployment and infrastructure configuration changes.
-* Avoiding production secrets in build logs.
-* Disabling debug modes and development-only endpoints in production.
-* Restricting database and internal-service exposure.
-* Maintaining documented backup and recovery procedures.
-* Reviewing deployment-provider permissions and access controls.
-
-Health and readiness endpoints should reveal only information necessary for their operational purpose. They should not disclose credentials, internal configuration, sensitive database details, or excessive infrastructure information.
-
-13. Payment and Financial Workflows
-
-If payment processing is enabled, MedOrbits should use appropriately vetted payment providers and follow their integration requirements.
-
-Expected safeguards include:
-
-* Using provider-hosted or appropriately secured payment collection flows where practical.
-* Verifying payment callbacks or webhook signatures.
-* Rejecting replayed or invalid events where supported.
-* Using idempotency controls for operations that could otherwise create duplicate transactions.
-* Confirming transaction status on the server.
-* Never trusting a client-side success screen as proof of payment.
-* Avoiding unnecessary storage of payment-card data.
-* Protecting transaction references and financial records.
-* Restricting refunds, settlement adjustments, and administrative overrides to authorized personnel.
-* Maintaining appropriate transaction audit records.
-
-Payment functionality must not be described as compliant with a particular standard unless its scope and compliance status have been verified.
-
-14. Logging, Monitoring, and Auditability
-
-Logging should support security investigation while minimizing the collection of sensitive information.
-
-Potentially useful events include:
-
-* Authentication successes and failures.
-* Authorization failures.
-* Privilege and role changes.
-* Sensitive document access.
-* Administrative actions.
-* Significant account changes.
-* Rate-limit and abuse detections.
-* Unexpected application failures.
-* Security configuration changes.
-* Payment-related events, where applicable.
-
-Logs should be protected against unauthorized access and alteration. Access to logs should be restricted, and retention should be defined according to operational needs and applicable obligations.
-
-Do not log passwords, session tokens, authorization headers, private keys, or full sensitive documents. Redact personal and application information where possible.
-
-Monitoring and alerting capabilities must be tested before they are represented as active operational controls.
-
-15. Security Testing and Quality Assurance
-
-Security should be incorporated into development and release workflows.
+MedOrbits maintainers should review relevant dependency and security findings before releases.
 
 Recommended checks include:
 
-* Unit and integration tests for authentication and authorization.
-* Tests for role separation and record ownership.
-* Request-schema and input-validation tests.
-* File-upload and document-access tests.
-* Rate-limiting and abuse-resistance tests.
-* Dependency vulnerability scanning.
+* Dependency vulnerability auditing.
 * Secret scanning.
-* Static analysis and code review.
-* Regression tests for previously identified vulnerabilities.
-* Deployment configuration checks.
-* Backup-restoration and recovery exercises.
-* Targeted security assessments for high-risk changes.
+* Static analysis where supported.
+* Review of GitHub Actions permissions and third-party actions.
+* Authentication and authorization testing.
+* Input validation and file-upload testing.
+* Review of production environment variables and access controls.
+* Verification that sensitive files are not tracked in Git.
+* Appropriate logging, rate limiting, and error handling.
 
-Tests should run against controlled environments and dedicated test data. They should not cause destructive changes to production systems or expose real applicant information.
+Automated checks provide evidence for review; a passing scan does not prove that the application is secure.
 
-Passing automated tests does not establish that an application is free from vulnerabilities. Testing scope, coverage, and known limitations should be documented accurately.
+Security tooling must not automatically apply breaking dependency upgrades, rewrite Git history, or deploy changes to production without an authorized review process.
 
-16. Dependency and Third-Party Risk Management
+11. Privacy and Sensitive Data
 
-Third-party packages and services may introduce security, availability, and supply-chain risks.
+MedOrbits may handle education, admissions, career, recruitment, account, application, payment, or document-related information, depending on the services actually deployed.
 
-MedOrbits should:
+Security reports should minimize personal data and avoid unnecessary copies of sensitive records.
 
-* Maintain dependency manifests and lockfiles.
-* Review security advisories for important dependencies.
-* Apply supported security updates promptly according to risk.
-* Review significant dependency changes before deployment.
-* Remove unused packages and unnecessary permissions.
-* Assess the provenance and maintenance status of critical dependencies.
-* Review automated update proposals before merging.
-* Avoid applying disruptive major-version upgrades without compatibility testing.
-* Document material third-party dependencies and relevant operational risks.
+Access to private information should be limited to authorized users and systems. Retention, disclosure, correction, and deletion must follow applicable law and the published privacy policy.
 
-Dependency audit output should be reviewed and triaged. Automatically applying forceful dependency upgrades without reviewing breaking changes can introduce production failures.
+If a report indicates a possible personal-data breach, maintainers should follow the relevant incident-response and legal notification requirements.
 
-17. Administrative and Privileged Access
+12. Security Updates
 
-Administrative access can expose a large portion of the application’s functionality and data. It should receive additional protection.
+When a security fix is released, maintainers should communicate the information appropriate to the risk and disclosure stage.
 
-Expected practices include:
+A security advisory may describe:
 
-* Granting privileges only to authorized personnel.
-* Enforcing server-side role checks on every privileged operation.
-* Requiring stronger authentication where supported.
-* Reviewing privileged accounts periodically.
-* Revoking access when it is no longer needed.
-* Recording security-relevant administrative actions.
-* Protecting role-management and credential-reset functions.
-* Restricting access to bulk exports and sensitive records.
-* Avoiding shared administrative credentials.
-* Separating routine user operations from privileged operations.
+* The affected component and versions.
+* The security impact.
+* The fixed version or mitigation.
+* Upgrade or configuration instructions.
+* Relevant workarounds.
+* Acknowledgement of the reporter, where appropriate and authorized.
 
-Administrative interfaces must not rely on obscure URLs or frontend-only restrictions for protection.
+Do not disclose personal information or operational details that would unnecessarily increase risk.
 
-18. Incident Response
+13. Contact and Publication Checklist
 
-A suspected security incident should be handled through a documented process appropriate to its severity.
+Before marking this policy active, maintainers must:
 
-18.1 Response stages
+* [ ]	Enable and test private vulnerability reporting in GitHub, or verify an alternative private channel.
+* [ ]	Confirm the repository and organization ownership of the reporting channel.
+* [ ]	Confirm which releases receive security fixes.
+* [ ]	Establish who is responsible for triage and remediation.
+* [ ]	Define internal severity assessment and incident-escalation procedures.
+* [ ]	Verify the privacy policy and relevant legal requirements.
+* [ ]	Decide whether response targets can be published and reliably met.
+* [ ]	Confirm the process for security advisories and coordinated disclosure.
+* [ ]	Review this policy after significant changes to the application or its hosting environment.
 
-1. Identify: Confirm the alert or report and establish the likely scope.
-2. Contain: Limit ongoing unauthorized access or damage.
-3. Investigate: Determine the affected systems, accounts, records, and time period.
-4. Remediate: Correct the vulnerability, revoke compromised credentials, and restore secure operation.
-5. Recover: Restore affected services and verify critical security controls.
-6. Communicate: Notify appropriate stakeholders and affected individuals when required.
-7. Review: Record findings, contributing factors, and preventive actions.
+Publication record
 
-18.2 Evidence preservation
+* Policy owner: Pending confirmation
+* Last reviewed: Pending verification
+* Private reporting channel: Pending verification
+* Supported release lines: Pending confirmation
+* Response targets: Not established
+* Publication approval: Pending maintainer review
 
-Preserve relevant logs and technical evidence where lawful and appropriate. Restrict access to incident records and avoid unnecessary copying of personal information.
-
-18.3 Notification obligations
-
-Notifications to users, authorities, providers, or other stakeholders must follow applicable legal requirements, contractual obligations, and verified incident-response procedures.
-
-This policy does not establish a particular notification deadline or guarantee that every incident will be publicly disclosed.
-
-19. Legal and Safe-Harbor Considerations
-
-MedOrbits welcomes good-faith security research conducted within an explicitly authorized scope.
-
-This policy is not blanket authorization to test any system, access any information, or violate applicable laws or third-party terms.
-
-Before conducting testing, researchers should ensure that they have appropriate authorization for the affected systems. If an activity may cause harm or exceed the authorized scope, stop and seek clarification through the designated reporting channel.
-
-Any formal safe-harbor commitment must be reviewed and approved by the appropriate legal and operational stakeholders before publication. This document does not independently grant legal immunity or override third-party policies.
-
-20. Policy Maintenance and Governance
-
-The security policy should be reviewed periodically and after material changes to MedOrbits’ architecture, services, threat environment, or legal obligations.
-
-The responsible maintainers should:
-
-* Keep the policy aligned with actual implemented controls.
-* Maintain a verified security-reporting channel.
-* Assign responsibility for vulnerability triage.
-* Review unresolved security findings.
-* Record significant security decisions.
-* Update affected documentation when operational processes change.
-* Remove obsolete statements and unsupported claims.
-* Ensure that public policy changes receive appropriate review.
-
-The repository owner should assign maintainers for this document and establish a review process appropriate to the project’s release cycle.
-
-21. Publication Readiness Checklist
-
-Complete the following checks before treating this policy as fully operational.
-
-* [ ]	Configure and test the official vulnerability-reporting channel.
-* [ ]	Assign personnel responsible for receiving and triaging reports.
-* [ ]	Define internal severity assessment and remediation procedures.
-* [ ]	Verify production authentication and session controls.
-* [ ]	Review server-side authorization across protected routes.
-* [ ]	Verify database privileges, connection security, and backup procedures.
-* [ ]	Test private document storage and access controls.
-* [ ]	Review secret-handling and credential-rotation procedures.
-* [ ]	Confirm production error handling and logging behavior.
-* [ ]	Verify rate limits, request validation, and CORS configuration.
-* [ ]	Review payment security controls if payment functionality is enabled.
-* [ ]	Confirm dependency scanning and security testing workflows.
-* [ ]	Document incident-response ownership and escalation procedures.
-* [ ]	Obtain any required legal review of disclosure and safe-harbor language.
-* [ ]	Ensure that all public claims match the deployed system and approved operational procedures.
-
-22. Policy Disclaimer
-
-This document describes MedOrbits’ security objectives, recommended practices, and intended vulnerability-reporting process. It is not an independent security audit, certification, warranty, or guarantee that vulnerabilities do not exist.
-
-Actual protections depend on the implementation, configuration, deployment environment, operational procedures, and maintenance of the relevant systems.
-
-Nothing in this document overrides applicable law, contractual obligations, or the security requirements of third-party services.
+Do not represent pending details as confirmed capabilities or service commitments.
 
 ⸻
 
-End of SECURITY.md
+MedOrbits — Education · Admissions · Careers · Recruitment
+
+Study · Work · Grow

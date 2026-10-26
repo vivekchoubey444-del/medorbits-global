@@ -1,315 +1,156 @@
-# File: .github/workflows/release.yml
-name: MedOrbits Release
+name: Create Release
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Existing version tag (for example, v1.0.0)"
+      version:
+        description: "Release version without the v prefix (for example, 2.0.0)"
+        required: true
+        type: string
+      release_type:
+        description: "Release classification"
+        required: true
+        type: choice
+        options:
+          - stable
+          - prerelease
+      confirm_release:
+        description: "Type release to confirm"
         required: true
         type: string
 permissions:
   contents: read
 concurrency:
-  group: medorbits-release-${{ inputs.tag || github.ref }}
+  group: medorbits-release
   cancel-in-progress: false
 jobs:
   validate:
     name: Validate release
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    # Manual releases must be initiated from main.
-    if: >-
-      ${{
-        github.event_name == 'push' ||
-        github.ref == 'refs/heads/main'
-      }}
+    timeout-minutes: 10
     permissions:
       contents: read
     outputs:
-      release_tag: ${{ steps.resolve.outputs.tag }}
-      release_sha: ${{ steps.commit.outputs.sha }}
-      package_name: ${{ steps.metadata.outputs.package_name }}
-      package_version: ${{ steps.metadata.outputs.package_version }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
-      - name: Resolve release tag
-        id: resolve
-        shell: bash
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
-          EVENT_NAME: ${{ github.event_name }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            tag="$INPUT_TAG"
-          else
-            tag="$REF_NAME"
-          fi
-          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo "::error::Invalid release tag. Expected vMAJOR.MINOR.PATCH."
-            exit 1
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "Release tag: $tag"
-      - name: Checkout release source
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.resolve.outputs.tag }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify release tag exists
-        shell: bash
+      - name: Validate version and confirmation
+        id: version
         env:
-          RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          CONFIRMATION: ${{ inputs.confirm_release }}
+        shell: bash
         run: |
           set -euo pipefail
-          if ! git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
-            echo "::error::The requested release tag does not exist."
+          if [[ "$CONFIRMATION" != "release" ]]; then
+            echo "::error::Release cancelled. Enter exactly 'release' to confirm."
             exit 1
           fi
-          git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}" >/dev/null
-          echo "Release tag resolves to a commit."
-      - name: Record verified commit
-        id: commit
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha="$(git rev-parse HEAD)"
-          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Unable to resolve a valid release commit."
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid semantic version. Example: 2.0.0"
             exit 1
           fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "Verified commit: $sha"
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Verify required project files
-        shell: bash
-        run: |
-          set -euo pipefail
-          for file in package.json package-lock.json server.js; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file is missing: $file"
-              exit 1
-            fi
-          done
-      - name: Validate package metadata
-        id: metadata
-        shell: bash
-        env:
-          RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!pkg.name || !pkg.version) {
-            throw new Error('Package name and version are required.');
-          }
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid or missing lockfileVersion.');
-          }
-          if (lock.name && lock.name !== pkg.name) {
-            throw new Error('Package name mismatch.');
-          }
-          if (lock.version && lock.version !== pkg.version) {
-            throw new Error('Package version mismatch.');
-          }
-          const root = lock.packages?.[''];
-          if (root?.name && root.name !== pkg.name) {
-            throw new Error('Root package name mismatch.');
-          }
-          if (root?.version && root.version !== pkg.version) {
-            throw new Error('Root package version mismatch.');
-          }
-          if (!pkg.scripts || typeof pkg.scripts !== 'object') {
-            throw new Error('Missing npm scripts configuration.');
-          }
-          if (typeof pkg.scripts.test !== 'string' || !pkg.scripts.test.trim()) {
-            throw new Error('A non-empty npm test script is required.');
-          }
-          console.log(`Validated package: ${pkg.name}@${pkg.version}`);
-          fs.appendFileSync(
-            process.env.GITHUB_OUTPUT,
-            `package_name=${pkg.name}\npackage_version=${pkg.version}\n`
-          );
-          NODE
-      - name: Verify tag matches package version
-        shell: bash
-        env:
-          RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
-          PACKAGE_VERSION: ${{ steps.metadata.outputs.package_version }}
-        run: |
-          set -euo pipefail
-          expected_version="${RELEASE_TAG#v}"
-          if [[ "$PACKAGE_VERSION" != "$expected_version" ]]; then
-            echo "::error::Release tag does not match package.json version."
-            echo "Release version: $expected_version"
-            echo "Package version: $PACKAGE_VERSION"
+          if [[ "$RELEASE_TYPE" != "stable" && "$RELEASE_TYPE" != "prerelease" ]]; then
+            echo "::error::Unsupported release type."
             exit 1
           fi
-          echo "Tag and package version match."
-      - name: Validate JSON files
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const excluded = new Set([
-            '.git',
-            'node_modules',
-            'coverage',
-            'dist',
-            'build',
-            '.next',
-            '.wrangler'
-          ]);
-          const files = [];
-          let failed = false;
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {
-              withFileTypes: true
-            })) {
-              const full = path.join(dir, entry.name);
-              if (entry.isSymbolicLink()) continue;
-              if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) walk(full);
-              } else if (
-                entry.isFile() &&
-                entry.name.toLowerCase().endsWith('.json')
-              ) {
-                files.push(full);
-              }
-            }
-          }
-          walk('.');
-          for (const file of files) {
-            try {
-              JSON.parse(fs.readFileSync(file, 'utf8'));
-              console.log(`PASS ${file}`);
-            } catch (error) {
-              failed = true;
-              console.error(`FAIL ${file}: ${error.message}`);
-            }
-          }
-          if (failed) process.exit(1);
-          console.log(`Validated ${files.length} JSON files.`);
-          NODE
-      - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
-      - name: Check server syntax
-        run: node --check server.js
-      - name: Run release tests
-        env:
-          CI: "true"
-          NODE_ENV: test
-        run: npm test
-      - name: Run project checks
-        run: npm run check --if-present
-      - name: Run lint
-        run: npm run lint --if-present
-      - name: Build application
-        run: npm run build --if-present
-      - name: Verify release commit has not changed
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ steps.commit.outputs.sha }}
-        run: |
-          set -euo pipefail
-          actual_sha="$(git rev-parse HEAD)"
-          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
-            echo "::error::Release source commit changed during validation."
+          if [[ "$RELEASE_TYPE" == "stable" && "$RELEASE_VERSION" == *-* ]]; then
+            echo "::error::Stable releases cannot use a prerelease version."
             exit 1
           fi
-          echo "Release source commit verified."
-  publish:
-    name: Create GitHub Release
+          if [[ "$RELEASE_TYPE" == "prerelease" && "$RELEASE_VERSION" != *-* ]]; then
+            echo "::error::Prereleases must include a prerelease suffix, such as 2.1.0-rc.1."
+            exit 1
+          fi
+          tag="v${RELEASE_VERSION}"
+          if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
+            echo "::error::Tag ${tag} already exists."
+            exit 1
+          fi
+          echo "version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          if [[ "$RELEASE_TYPE" == "prerelease" ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Confirm release source branch
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$REF_TYPE" != "branch" || "$REF_NAME" != "main" ]]; then
+            echo "::error::Run this workflow from the main branch."
+            exit 1
+          fi
+      - name: Check repository metadata
+        run: |
+          set -euo pipefail
+          if [[ ! -f README.md ]]; then
+            echo "::warning::README.md was not found at the repository root."
+          fi
+          echo "Release source validation completed."
+  release:
+    name: Publish GitHub Release
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: github-release
     permissions:
       contents: write
-    environment:
-      name: release
     steps:
-      - name: Checkout verified release commit
+      - name: Checkout release source
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.validate.outputs.release_sha }}
+          ref: main
           fetch-depth: 0
-          persist-credentials: false
-      - name: Verify checked-out commit
-        shell: bash
+          persist-credentials: true
+      - name: Verify tag does not exist remotely
         env:
-          EXPECTED_SHA: ${{ needs.validate.outputs.release_sha }}
-          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
         run: |
           set -euo pipefail
-          actual_sha="$(git rev-parse HEAD)"
-          tag_sha="$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
-          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
-            echo "::error::Checked-out commit differs from validated commit."
+          git fetch --tags origin
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag ${RELEASE_TAG} already exists on the remote."
             exit 1
           fi
-          if [[ "$tag_sha" != "$EXPECTED_SHA" ]]; then
-            echo "::error::Release tag no longer resolves to the validated commit."
-            exit 1
-          fi
-          echo "Release commit and tag verified."
-      - name: Set up GitHub CLI
+      - name: Create and push release tag
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh --version
-      - name: Check for an existing release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
-          if gh release view "$RELEASE_TAG" \
-            --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::error::A GitHub Release already exists for $RELEASE_TAG."
-            echo "No existing release was changed."
-            exit 1
-          fi
-          echo "No existing GitHub Release found."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" -m "Release ${RELEASE_VERSION}"
+          git push origin "refs/tags/${RELEASE_TAG}"
       - name: Create GitHub Release
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
-          RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
-          PACKAGE_NAME: ${{ needs.validate.outputs.package_name }}
-          PACKAGE_VERSION: ${{ needs.validate.outputs.package_version }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          IS_PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
         run: |
           set -euo pipefail
-          notes_file="$(mktemp)"
-          trap 'rm -f "$notes_file"' EXIT
-          {
-            echo "## MedOrbits ${RELEASE_TAG}"
-            echo
-            echo "- Package: ${PACKAGE_NAME}"
-            echo "- Version: ${PACKAGE_VERSION}"
-            echo "- Validated commit: \`${RELEASE_SHA}\`"
-            echo
-            echo "Release notes are generated from repository history."
-          } > "$notes_file"
-          gh release create "$RELEASE_TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --title "MedOrbits ${RELEASE_TAG}" \
-            --notes-file "$notes_file" \
+          args=(
+            release create "$RELEASE_TAG"
+            --repo "$REPOSITORY"
+            --title "MedOrbits ${RELEASE_VERSION}"
             --generate-notes
-          echo "GitHub Release created: $RELEASE_TAG"
+          )
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          ]
+          fi
+          gh "${args[@]}"

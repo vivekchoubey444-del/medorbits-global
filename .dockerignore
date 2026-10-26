@@ -1,0 +1,144 @@
+
+# ==============================================================================
+# MedOrbits -- Docker Build Context Exclusions
+# File: /.dockerignore
+# ==============================================================================
+
+# Git metadata and repository configuration
+.git
+.git/**
+.gitignore
+.gitattributes
+.gitmodules
+
+# GitHub workflows, templates, and internal repository tooling
+.github
+.github/**
+tools/repository-reports
+tools/repository-reports/**
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+!**/.env.template
+
+# Private keys, certificates, and credentials
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*_rsa
+**/*_ed25519
+**/id_rsa
+**/id_ed25519
+**/credentials.json
+**/service-account*.json
+**/secrets.*
+
+# Dependencies
+node_modules
+node_modules/**
+**/node_modules
+**/node_modules/**
+
+# Package manager caches
+.npm
+.pnpm-store
+.yarn/cache
+.yarn/unplugged
+
+# Logs and temporary files
+*.log
+logs
+logs/**
+tmp
+tmp/**
+temp
+temp/**
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea
+.vscode
+.history
+
+# Test output and coverage
+coverage
+coverage/**
+.nyc_output
+.nyc_output/**
+playwright-report
+playwright-report/**
+test-results
+test-results/**
+__screenshots__
+__screenshots__/**
+
+# Local caches
+.cache
+.cache/**
+.parcel-cache
+.parcel-cache/**
+.eslintcache
+.stylelintcache
+.turbo
+.turbo/**
+
+# Build output (retain only if required by the Docker build)
+# dist
+# build
+# .next
+# out
+
+# Local databases and database dumps
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+
+# Backups and archives
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.zip
+*.tar
+*.tar.gz
+
+# Python artifacts
+__pycache__
+__pycache__/**
+*.py[cod]
+.venv
+venv
+.pytest_cache
+.mypy_cache
+
+# Documentation and repository-only files
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+
+# Docker development overrides
+docker-compose.override.yml
+compose.override.yaml
+
+# Keep the Dockerfile and package manifests available.
+# Do not ignore package.json, package-lock.json, pnpm-lock.yaml,
+# yarn.lock, application source, required static assets, or runtime config.

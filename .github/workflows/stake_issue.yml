@@ -1,0 +1,57 @@
+name: Stale Issue Management
+on:
+  schedule:
+    # Daily at 01:30 UTC.
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+concurrency:
+  group: stale-issue-management
+  cancel-in-progress: false
+jobs:
+  stale:
+    name: Mark and close stale issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Manage stale issues and pull requests
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # Issue inactivity settings
+          days-before-issue-stale: 45
+          days-before-issue-close: 14
+          stale-issue-label: stale
+          stale-issue-message: >
+            This issue has been marked stale because it has had no recent activity.
+            Please comment with an update if it is still relevant. It will be closed
+            after 14 additional days of inactivity.
+          close-issue-message: >
+            This issue is being closed because it remained inactive after being
+            marked stale. You can reopen it or create a new issue if the problem
+            persists.
+          # Pull request inactivity settings
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-pr-label: stale
+          stale-pr-message: >
+            This pull request has been marked stale due to inactivity.
+            Please update it if work is continuing.
+          close-pr-message: >
+            This pull request is being closed because it remained inactive after
+            being marked stale. It can be reopened when work resumes.
+          # Labels that exempt issues and pull requests
+          exempt-issue-labels: "pinned,security,keep-open,priority:high"
+          exempt-pr-labels: "pinned,security,keep-open,work-in-progress"
+          # Do not close items with active assignees
+          exempt-all-issue-assignees: true
+          exempt-all-pr-assignees: true
+          # Prevent excessive updates
+          operations-per-run: 100
+          ascending: true
+          # Do not remove labels automatically
+          remove-stale-when-updated: true
+          debug-only: false

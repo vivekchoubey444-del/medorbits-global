@@ -1,10 +1,10 @@
 MedOrbits API — Developer Documentation
 
+File: /api/README.md
 Project: MedOrbits
-Directory: /api
 Runtime: Node.js 20+
 Architecture: REST API, service-oriented backend, PostgreSQL, background jobs
-API specification: api/openapi.yaml
+API specification: /api/openapi.yaml
 Status: Architecture and operational reference
 
 ⸻
@@ -27,11 +27,11 @@ Core objectives
 * Configurable development, staging, and production environments.
 * Automated testing and deployment verification.
 
-Implementation rule: This README describes the intended architecture. The actual application entry point, route definitions, services, migrations, and package.json remain the source of truth for implemented behavior.
+Implementation rule: This document describes the intended architecture. The actual application entry point, route definitions, services, migrations, worker handlers, and root package.json remain the source of truth for implemented behavior.
 
 2. Directory structure
 
-The following is a recommended structure. Preserve existing project files and adapt paths to the actual repository.
+The following structure is recommended. Preserve existing files and adapt paths to the actual repository.
 
 api/
 ├── README.md
@@ -47,18 +47,19 @@ api/
 │   ├── notification.controller.js
 │   ├── document.controller.js
 │   └── admin.controller.js
-├── middleware/
-│   ├── auth.js
+├── middlerware/
+│   ├── authorization.js
 │   ├── error-handler.js
 │   ├── rate-limit.js
-│   ├── request-id.js
 │   └── validation.js
 ├── routes/
-│   ├── auth.routes.js
-│   ├── application.routes.js
-│   ├── notification.routes.js
-│   ├── document.routes.js
-│   └── admin.routes.js
+│   ├── README.md
+│   ├── admissions.js
+│   ├── documents.js
+│   ├── health.js
+│   ├── jobs.js
+│   ├── support.js
+│   └── users.js
 ├── services/
 │   ├── application-service.js
 │   ├── audit-service.js
@@ -77,45 +78,46 @@ api/
 └── migrations/
     └── README.md
 
-Not every listed file is guaranteed to exist. Check the repository before importing modules, registering routes, or creating additional files. Keep directory names and import paths consistent with the actual codebase.
+Not every listed file is guaranteed to exist. Check the repository before importing modules, registering routes, or creating files. The existing project uses the directory name middlerware; retain it unless performing a deliberate, repository-wide migration.
 
 3. Technology stack
 
 Component	Responsibility
 Node.js 20+	JavaScript runtime
-Express	HTTP routing and middleware
+Express.js	HTTP routing and middleware
 PostgreSQL	Relational persistence
 pg	PostgreSQL connection pooling
 OpenAPI 3.1	API contract and documentation
 Background worker	Asynchronous job execution
 Automated tests	Regression, integration, and security verification
 
-Use the root package.json and lockfile as the authoritative sources for dependency versions and scripts.
+Use the root package.json and lockfile as the authoritative sources for dependency versions and available scripts.
 
 4. API base URL
 
-Configure the base URL for each deployment environment.
+Configure the base URL separately for each deployment environment.
 
 Environment	Example
 Local development	http://localhost:3000/api
 Staging	https://staging.example.com/api
 Production	https://api.example.com/api
 
-These hostnames are examples only. Replace them with the actual configured domains before publishing documentation.
+These hostnames are examples. Replace them with actual configured domains before publishing documentation.
 
 Route registration
 
-Routes should be mounted consistently in the Express application. For example:
+Mount routers consistently in the Express application.
 
-app.use(‘/api/auth’, authRoutes);
-app.use(‘/api/applications’, applicationRoutes);
-app.use(‘/api/notifications’, notificationRoutes);
+“use strict”;
+app.use(“/api/auth”, authRoutes);
+app.use(“/api/applications”, applicationRoutes);
+app.use(“/api/notifications”, notificationRoutes);
 
-Register only modules that exist and export valid Express routers. Verify whether the application mounts routes at /api centrally or uses complete prefixes in individual registrations; do not accidentally duplicate the prefix.
+Register only modules that exist and export valid Express routers. Verify whether the application already mounts routes under /api; avoid duplicating the prefix.
 
 5. OpenAPI documentation
 
-The API specification is maintained at api/openapi.yaml.
+The API specification is maintained at /api/openapi.yaml.
 
 It should document:
 
@@ -126,19 +128,19 @@ It should document:
 * Success and error responses.
 * Pagination and filtering behavior.
 * Upload constraints where applicable.
-* Relevant security schemes and server URLs.
+* Security schemes and server URLs.
 
 Before publishing
 
-1. Compare every documented endpoint against the actual Express routes.
-2. Verify HTTP methods, route prefixes, and parameter names.
-3. Match request and response schemas to controller behavior.
+1. Compare documented endpoints against the actual Express routes.
+2. Verify HTTP methods, prefixes, and parameter names.
+3. Match schemas to actual controller and service behavior.
 4. Confirm authentication and authorization requirements.
-5. Replace example server URLs with environment-appropriate values.
+5. Replace example server URLs with configured deployment URLs.
 6. Validate the OpenAPI document using a compatible validator.
 7. Run integration tests against the documented contract.
 
-The OpenAPI specification describes an API contract. It does not automatically register routes or implement controller logic.
+The OpenAPI specification describes the API contract; it does not automatically register routes or implement controller logic.
 
 6. Environment configuration
 
@@ -148,14 +150,14 @@ Variable	Requirement	Purpose
 NODE_ENV	Recommended	Runtime environment
 PORT	Deployment-dependent	HTTP server port
 DATABASE_URL	Required for PostgreSQL access	Database connection string
-SESSION_SECRET	If session-based authentication is used	Signs session identifiers
-JWT_SECRET	If symmetric JWT signing is used	Signs and verifies tokens
-JWT_PUBLIC_KEY	If asymmetric verification is used	Verifies signed tokens
-ADMIN_TOKEN	Only for a deliberately designed token-based integration	Restricted administrative access
-AI_API_KEY	If AI integration is enabled	External AI authentication
-AI_API_URL	If AI integration is enabled	AI provider endpoint
-AI_MODEL	If AI integration is enabled	Configured model identifier
-DATABASE_SSL	If supported by the implementation	Enables worker database TLS configuration
+SESSION_SECRET	Conditional	Signs session identifiers
+JWT_SECRET	Conditional	Signs and verifies symmetric JWTs
+JWT_PUBLIC_KEY	Conditional	Verifies asymmetric JWT signatures
+ADMIN_TOKEN	Only if explicitly implemented	Restricted administrative integration
+AI_API_KEY	Optional	External AI authentication
+AI_API_URL	Optional	AI provider endpoint
+AI_MODEL	Optional	Configured model identifier
+DATABASE_SSL	Implementation-dependent	Database TLS configuration
 WORKER_CONCURRENCY	Optional	Maximum concurrent worker jobs
 WORKER_POLL_INTERVAL_MS	Optional	Worker polling interval
 WORKER_MAX_ATTEMPTS	Optional	Maximum job attempts
@@ -163,9 +165,9 @@ WORKER_RETRY_BASE_MS	Optional	Initial retry backoff
 WORKER_STALE_JOB_MS	Optional	Processing lease timeout
 WORKER_SHUTDOWN_TIMEOUT_MS	Optional	Worker shutdown wait limit
 
-These names are configuration references, not proof that every variable is currently read by the application. Confirm the actual environment parser and worker implementation before relying on them.
+These are configuration references, not proof that every variable is read by the application. Verify the environment parser, authentication implementation, and worker before relying on them.
 
-Use one consistent authentication strategy. Do not assume that a configured secret is active merely because it exists in the environment.
+Use one consistent authentication strategy. Do not enable multiple authentication mechanisms merely because their secrets are configured.
 
 Local environment example
 
@@ -181,9 +183,11 @@ WORKER_RETRY_BASE_MS=1000
 WORKER_STALE_JOB_MS=300000
 WORKER_SHUTDOWN_TIMEOUT_MS=30000
 
-Replace the database placeholders with local development credentials. Do not use production credentials in development or test environments.
+Replace placeholders with local development credentials. Never use production credentials in development or test environments.
 
-7. Database integration
+Validate environment variables at startup. Reject invalid numeric settings rather than silently accepting invalid values or falling back to unsafe defaults.
+
+7. PostgreSQL integration
 
 Connection management
 
@@ -200,34 +204,40 @@ Recommended practices:
 * Monitor query latency, connection exhaustion, and database errors.
 * Use separate databases or isolated schemas for automated integration tests.
 
-Example PostgreSQL pool
+Example connection pool
 
-Adapt this example only if the application does not already have a shared pool.
+Use this example only if the repository does not already have a shared pool.
 
-‘use strict’;
-const { Pool } = require(‘pg’);
+“use strict”;
+const { Pool } = require(“pg”);
 if (!process.env.DATABASE_URL) {
-  throw new Error(‘DATABASE_URL is required’);
+  throw new Error(“DATABASE_URL is required.”);
+}
+const rawMax = process.env.DB_POOL_MAX || “10”;
+const max = Number(rawMax);
+if (!Number.isSafeInteger(max) || max < 1 || max > 100) {
+  throw new Error(“DB_POOL_MAX must be an integer between 1 and 100.”);
 }
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: Number(process.env.DB_POOL_MAX || 10),
+  max,
   connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000
 });
-pool.on(‘error’, (error) => {
-  console.error(‘Unexpected idle PostgreSQL client error’, {
+pool.on(“error”, (error) => {
+  // Do not log connection strings or credentials.
+  console.error(“Unexpected idle PostgreSQL client error”, {
     message: error.message,
-    code: error.code,
+    code: error.code
   });
 });
 module.exports = pool;
 
-The example uses CommonJS. If the application uses ES modules, adapt the exports and imports to match its configured module system. Validate numeric environment variables rather than silently accepting invalid pool settings.
+This example uses CommonJS. Adapt it if the application uses ES modules. Add database TLS configuration according to the provider and actual database configuration.
 
 Database objects
 
-Depending on the actual migrations and services, the application may use tables such as:
+Depending on the implemented features and migrations, the application may use tables such as:
 
 * applications
 * application_status_history
@@ -235,31 +245,33 @@ Depending on the actual migrations and services, the application may use tables 
 * notifications
 * worker_jobs
 
-Verify the required columns, indexes, constraints, foreign keys, and data types against the real schema.
+Verify table names, columns, indexes, constraints, foreign keys, and data types against the real schema.
 
-Do not assume that a service automatically creates all the tables it needs. For example, worker schema initialization may create worker_jobs without creating the application, notification, or audit tables.
+Do not assume a service automatically creates every table it needs. Worker schema initialization may create worker_jobs without creating application, notification, or audit tables.
 
 Transactions and migrations
 
-Use transactions for operations that must succeed or fail together. Where a transaction uses a checked-out client, execute all statements through that client and release it in a finally block.
+Use transactions for operations that must succeed or fail together. When a transaction uses a checked-out client, execute all transactional statements through that client and release it in a finally block.
 
 Migrations should be version-controlled, reviewed, and applied through a repeatable deployment process. Avoid ad hoc production schema changes.
 
 8. Middleware responsibilities
 
-Middleware should execute in a deliberate, documented order. A typical sequence is:
+Middleware must execute in a deliberate, documented order.
+
+A typical sequence is:
 
 1. Request ID generation and structured request logging.
 2. Security headers and CORS policy.
 3. Request-body parsing with size limits.
 4. Rate limiting.
-5. Authentication.
-6. Role-based authorization.
+5. Authentication where required.
+6. Authorization.
 7. Request validation.
 8. Route handlers.
 9. Centralized error handling.
 
-The exact order must reflect the application’s security model. For example, public authentication routes may use different rate limits from authenticated application routes.
+The exact order must reflect the application’s security model. Public authentication endpoints may require different rate limits from authenticated application routes.
 
 Validation requirements
 
@@ -269,7 +281,7 @@ Validation middleware should:
 * Reject malformed identifiers and invalid data types.
 * Enforce field lengths and permitted values.
 * Reject unexpected fields where strict schemas are required.
-* Normalize input only where appropriate.
+* Normalize input only when appropriate.
 * Return consistent validation errors.
 * Avoid logging credentials, tokens, uploaded documents, or unnecessary personal data.
 
@@ -277,7 +289,7 @@ Validation does not replace authorization. A syntactically valid user ID supplie
 
 9. Service-layer responsibilities
 
-Keep business logic in services rather than duplicating it across controllers.
+Keep business logic in services rather than duplicating it across controllers or routes.
 
 Application service
 
@@ -312,11 +324,11 @@ Responsibilities may include:
 * Marking individual notifications read or unread.
 * Supporting authorized bulk operations.
 
-Derive user identity from the authenticated request context, not from an untrusted request body.
+Derive user identity from the authenticated request context, not an untrusted request body.
 
 10. Background worker
 
-Entry point: api/worker.js
+Entry point: /api/worker.js
 
 The worker is intended for asynchronous operations that should not block HTTP responses.
 
@@ -342,7 +354,7 @@ Expected worker behavior
 
 Running the worker
 
-If a worker script is not already defined in the root package.json, add the following entry to the existing scripts object:
+If a worker script does not already exist in the root package.json, merge the following entry into its existing scripts object:
 
 {
   “scripts”: {
@@ -350,7 +362,7 @@ If a worker script is not already defined in the root package.json, add the foll
   }
 }
 
-Merge this entry into the existing file; do not replace the complete package.json with this fragment.
+Do not replace the entire package.json with this fragment.
 
 Run the worker from the repository root:
 
@@ -385,7 +397,7 @@ Security requirements:
 * Apply CSRF protection where required by the authentication design.
 * Rate-limit login, password recovery, and other abuse-prone operations.
 
-Never trust client-supplied role names, user IDs, ownership fields, or application statuses without server-side verification.
+Never trust client-supplied roles, user IDs, ownership fields, or application statuses without server-side verification.
 
 12. File and document handling
 
@@ -410,11 +422,12 @@ Document endpoints are not production-ready until storage, validation, access co
 Use a consistent JSON error format. For example:
 
 {
+  “success”: false,
   “error”: {
     “code”: “VALIDATION_ERROR”,
-    “message”: “The request contains invalid fields.”,
-    “requestId”: “example-request-id”
-  }
+    “message”: “The request contains invalid fields.”
+  },
+  “requestId”: “example-request-id”
 }
 
 The field names and structure must match the actual centralized error handler and OpenAPI schemas.
@@ -515,14 +528,14 @@ From the repository root:
 
 npm install
 
-Configure the required environment variables and database schema. Start the API using the scripts defined in the root package.json.
+Configure the required environment variables and database schema. Start the API using scripts defined in the root package.json.
 
 For example, if these scripts exist:
 
 npm run dev
 npm run worker
 
-Do not assume a dev, start, migrate, or worker script exists until it has been verified.
+Do not assume a development, start, migration, or worker script exists until it has been verified.
 
 Recommended verification sequence
 
@@ -532,8 +545,8 @@ Recommended verification sequence
 4. Apply the project’s migrations.
 5. Run unit tests.
 6. Run integration tests against a dedicated test database.
-7. Validate api/openapi.yaml.
-8. Start the API and worker using their configured scripts.
+7. Validate /api/openapi.yaml.
+8. Start the API and worker using configured scripts.
 9. Test health endpoints and representative authenticated requests.
 
 17. Deployment checklist
@@ -564,7 +577,7 @@ For every endpoint change:
 1. Update the route and controller.
 2. Update validation and authorization.
 3. Update service logic and database migrations if required.
-4. Update api/openapi.yaml.
+4. Update /api/openapi.yaml.
 5. Add or update automated tests.
 6. Verify success and error response schemas.
 7. Review backward compatibility.
@@ -596,7 +609,7 @@ Check that imported middleware functions exist and are exported correctly. Expre
 
 OpenAPI endpoint mismatch
 
-Compare api/openapi.yaml with the actual Express router definitions, controllers, validation schemas, and response behavior. Documentation alone does not register endpoints.
+Compare /api/openapi.yaml with the actual Express router definitions, controllers, validation schemas, and response behavior. Documentation alone does not register endpoints.
 
 Worker repeatedly reprocesses a job
 

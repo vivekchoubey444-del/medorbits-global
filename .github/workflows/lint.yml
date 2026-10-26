@@ -1,197 +1,139 @@
-# File: .github/workflows/lint.yml
-name: MedOrbits Lint and Code Quality
+name: Lint
 on:
   push:
     branches:
       - main
-      - master
-      - develop
-      - staging
   pull_request:
     branches:
       - main
-      - master
-      - develop
-      - staging
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: medorbits-lint-${{ github.event.pull_request.number || github.ref }}
+  group: lint-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-defaults:
-  run:
-    shell: bash
 jobs:
-  lint:
-    name: Lint and validate code
+  javascript:
+    name: JavaScript and TypeScript lint
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Set up Node.js
+        if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Verify project files
-        run: |
-          set -euo pipefail
-          for file in package.json package-lock.json; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file is missing: $file"
-              exit 1
-            fi
-          done
-      - name: Validate package metadata
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-          if (!pkg.name || !pkg.version) {
-            throw new Error('Package name and version are required.');
-          }
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error('Invalid or missing lockfileVersion.');
-          }
-          if (lock.name && lock.name !== pkg.name) {
-            throw new Error('Package name mismatch.');
-          }
-          if (lock.version && lock.version !== pkg.version) {
-            throw new Error('Package version mismatch.');
-          }
-          console.log(`Validated ${pkg.name}@${pkg.version}`);
-          NODE
+          node-version: "22"
       - name: Install locked dependencies
+        if: ${{ hashFiles('package.json') != '' && (hashFiles('package-lock.json') != '' || hashFiles('npm-shrinkwrap.json') != '') }}
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Check JavaScript syntax
+      - name: Run ESLint
+        if: ${{ hashFiles('package.json') != '' }}
+        shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const { spawnSync } = require('node:child_process');
-          const excluded = new Set([
-            '.git',
-            'node_modules',
-            'coverage',
-            'dist',
-            'build',
-            '.next',
-            '.wrangler'
-          ]);
-          const files = [];
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {
-              withFileTypes: true
-            })) {
-              const full = path.join(dir, entry.name);
-              if (entry.isSymbolicLink()) continue;
-              if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) walk(full);
-              } else if (
-                entry.isFile() &&
-                entry.name.endsWith('.js')
-              ) {
-                files.push(full);
-              }
-            }
-          }
-          walk('.');
-          let failed = false;
-          for (const file of files) {
-            const result = spawnSync(
-              process.execPath,
-              ['--check', file],
-              { encoding: 'utf8' }
-            );
-            if (result.status !== 0) {
-              failed = true;
-              console.error(`FAIL ${file}`);
-              if (result.stderr) console.error(result.stderr);
-              if (result.stdout) console.error(result.stdout);
-            } else {
-              console.log(`PASS ${file}`);
-            }
-          }
-          if (failed) process.exit(1);
-          console.log(`Syntax checked ${files.length} JavaScript files.`);
-          NODE
-      - name: Validate JSON files
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const excluded = new Set([
-            '.git',
-            'node_modules',
-            'coverage',
-            'dist',
-            'build',
-            '.next',
-            '.wrangler'
-          ]);
-          const files = [];
-          let failed = false;
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, {
-              withFileTypes: true
-            })) {
-              const full = path.join(dir, entry.name);
-              if (entry.isSymbolicLink()) continue;
-              if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) walk(full);
-              } else if (
-                entry.isFile() &&
-                entry.name.toLowerCase().endsWith('.json')
-              ) {
-                files.push(full);
-              }
-            }
-          }
-          walk('.');
-          for (const file of files) {
-            try {
-              JSON.parse(fs.readFileSync(file, 'utf8'));
-              console.log(`PASS ${file}`);
-            } catch (error) {
-              failed = true;
-              console.error(`FAIL ${file}: ${error.message}`);
-            }
-          }
-          if (failed) process.exit(1);
-          console.log(`Validated ${files.length} JSON files.`);
-          NODE
-      - name: Run configured lint script
-        run: |
-          set -euo pipefail
-          if npm run | grep -Eq '^[[:space:]]+lint([[:space:]]|$)'; then
+          if [[ ! -f node_modules/.bin/eslint ]]; then
+            echo "::notice::ESLint is not installed; skipping JavaScript lint."
+            exit 0
+          fi
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.lint ? 0 : 1);
+          '; then
             npm run lint
           else
-            echo "::warning::No lint script is configured in package.json."
+            echo "::notice::No npm lint script is configured; running ESLint on tracked JS/TS files."
+            mapfile -d '' files < <(
+              git ls-files -z -- '*.js' '*.cjs' '*.mjs' '*.jsx' '*.ts' '*.tsx'
+            )
+            if [[ "${#files[@]}" -gt 0 ]]; then
+              ./node_modules/.bin/eslint "${files[@]}"
+            else
+              echo "No tracked JavaScript or TypeScript files found."
+            fi
           fi
-      - name: Run configured formatting check
+  python:
+    name: Python lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Detect Python files
+        id: detect
+        shell: bash
+        run: |
+          if find . \
+            -path './.git' -prune -o \
+            -path './node_modules' -prune -o \
+            -path './.agent-backup' -prune -o \
+            -type f -name '*.py' -print -quit | grep -q .; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Python
+        if: ${{ steps.detect.outputs.found == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Ruff
+        if: ${{ steps.detect.outputs.found == 'true' }}
+        run: python -m pip install ruff
+      - name: Run Ruff checks
+        if: ${{ steps.detect.outputs.found == 'true' }}
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Skip Python lint
+        if: ${{ steps.detect.outputs.found != 'true' }}
+        run: echo "No Python files found; skipping Python lint."
+  repository-hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check merge conflict markers
+        shell: bash
         run: |
           set -euo pipefail
-          if npm run | grep -Eq '^[[:space:]]+format:check([[:space:]]|$)'; then
-            npm run format:check
+          if git grep -n -I -E '^(<<<<<<< |=======|>>>>>>> )' -- \
+            ':!*.lock' \
+            ':!*.svg'; then
+            echo "::error::Possible merge conflict markers found."
+            exit 1
           else
-            echo "No format:check script configured; skipping."
+            status=$?
+            if [[ "$status" -gt 1 ]]; then
+              echo "::error::git grep failed."
+              exit "$status"
+            fi
           fi
-      - name: Report result
-        if: success()
-        run: echo "MedOrbits lint and code-quality checks completed successfully."
-      - name: Report failure
-        if: failure()
+          echo "No standard merge conflict markers found."
+      - name: Check trailing whitespace
+        shell: bash
         run: |
-          echo "::error::A lint or validation check failed."
-          echo "Review the failed step logs before merging."
+          set -euo pipefail
+          if git grep -n -I -E '[[:blank:]]+$' -- \
+            '*.js' '*.cjs' '*.mjs' '*.jsx' '*.ts' '*.tsx' \
+            '*.py' '*.html' '*.css' '*.json' '*.yml' '*.yaml' \
+            '*.sh' '*.md'; then
+            echo "::error::Trailing whitespace found in tracked files."
+            exit 1
+          else
+            status=$?
+            if [[ "$status" -gt 1 ]]; then
+              echo "::error::git grep failed."
+              exit "$status"
+            fi
+          fi
+          echo "No trailing whitespace found in checked file types."

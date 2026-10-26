@@ -1,6 +1,4 @@
-
 "use strict";
-
 /**
  * MedOrbits -- Documents API Routes
  * File: /api/routes/documents.js
@@ -11,38 +9,70 @@
  * - List and retrieve authorized document metadata.
  * - Initiate secure document uploads.
  * - Confirm completed uploads.
- * - Request temporary download access.
+ * - Generate temporary download access.
  * - Submit documents for verification.
  * - Allow authorized reviewers to verify or reject documents.
- * - Maintain service-level ownership checks and audit logging.
+ * - Request document deletion.
  *
- * IMPORTANT:
- * This module is an integration template. Confirm service exports,
- * middleware exports, storage-provider integration, and permissions
- * against the actual MedOrbits repository before deployment.
+ * Security requirements:
+ * - Private documents must never be served directly by this router.
+ * - Ownership and tenant scope must be enforced by the service.
+ * - Signed URLs and upload tokens must never be logged.
+ * - File size, MIME type, file signature, malware status, and storage
+ *   ownership must be independently verified by the service.
+ * - All state changes must be audited by the service.
+ *
+ * Integration template: confirm service and middleware contracts
+ * before deploying.
  */
-
 const express = require("express");
-
-const router = express.Router();
-
 const documentsService = require("../services/documents-service");
-
 const {
   authenticate,
   authorize
 } = require("../middlerware/authorization");
-
 const {
   validateBody,
   validateParams,
   validateQuery
 } = require("../middlerware/validation");
-
+const router = express.Router();
 const DOCUMENT_ID_PATTERN = "^[A-Za-z0-9_-]{1,100}$";
-
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const DOCUMENT_CATEGORIES = [
+  "identity",
+  "education",
+  "admission",
+  "employment",
+  "professional",
+  "financial",
+  "other"
+];
+const DOCUMENT_STATUSES = [
+  "pending-upload",
+  "uploaded",
+  "pending-review",
+  "verified",
+  "rejected",
+  "expired",
+  "deleted"
+];
 /**
- * Shared response helpers.
+ * Prevent sensitive document responses from being cached.
+ */
+router.use((req, res, next) => {
+  res.set({
+    "Cache-Control": "no-store, private, max-age=0",
+    "Pragma": "no-cache",
+    "X-Content-Type-Options": "nosniff"
+  });
+  next();
+});
+/**
+ * Consistent success response.
  */
 function sendSuccess(
   res,
@@ -56,7 +86,10 @@ function sendSuccess(
     data
   });
 }
-
+/**
+ * Consistent public error response.
+ * Do not expose stack traces, storage keys, or internal errors.
+ */
 function sendError(
   res,
   statusCode,
@@ -71,19 +104,19 @@ function sendError(
     }
   });
 }
-
 /**
- * Forward rejected promises to Express error middleware.
+ * Forward asynchronous errors to centralized Express error handling.
  */
 function asyncHandler(handler) {
   return function wrappedHandler(req, res, next) {
-    Promise.resolve(handler(req, res, next)).catch(next);
+    Promise.resolve()
+      .then(() => handler(req, res, next))
+      .catch(next);
   };
 }
-
 /**
- * Resolve a service method without silently bypassing missing
- * functionality. Missing methods are configuration errors.
+ * Resolve required service methods without silently skipping missing
+ * functionality.
  */
 function requireServiceMethod(methodName) {
   if (
@@ -91,20 +124,55 @@ function requireServiceMethod(methodName) {
     typeof documentsService[methodName] !== "function"
   ) {
     const error = new Error(
-      `Documents service method "${methodName}" is not configured.`
+      `Required documents service method "${methodName}" is not configured.`
     );
-
     error.status = 500;
     error.code = "SERVICE_CONFIGURATION_ERROR";
-
     throw error;
   }
-
   return documentsService[methodName].bind(documentsService);
 }
-
 /**
- * Route parameter validation.
+ * Parse a validated positive integer query parameter.
+ */
+function parsePositiveInteger(value, fallback, maximum) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < 1 ||
+    parsed > maximum
+  ) {
+    const error = new Error("Invalid pagination parameter.");
+    error.status = 400;
+    error.code = "INVALID_PAGINATION";
+    throw error;
+  }
+  return parsed;
+}
+/**
+ * Handle a missing service result.
+ *
+ * Services should return null/undefined only when the requested
+ * resource is not available to the caller. They should throw typed
+ * errors for invalid state transitions and other failures.
+ */
+function requireResult(result, res) {
+  if (result === null || result === undefined) {
+    sendError(
+      res,
+      404,
+      "DOCUMENT_NOT_FOUND",
+      "The requested document was not found."
+    );
+    return false;
+  }
+  return true;
+}
+/**
+ * Route parameter schema.
  */
 const documentIdSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -118,10 +186,9 @@ const documentIdSchema = {
   },
   required: ["documentId"]
 };
-
 /**
- * List filters.
- * Express query parameters normally arrive as strings.
+ * List documents.
+ * Query parameters arrive as strings under normal Express parsing.
  */
 const listDocumentsSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -138,27 +205,11 @@ const listDocumentsSchema = {
     },
     category: {
       type: "string",
-      enum: [
-        "identity",
-        "education",
-        "admission",
-        "employment",
-        "professional",
-        "financial",
-        "other"
-      ]
+      enum: DOCUMENT_CATEGORIES
     },
     status: {
       type: "string",
-      enum: [
-        "pending-upload",
-        "uploaded",
-        "pending-review",
-        "verified",
-        "rejected",
-        "expired",
-        "deleted"
-      ]
+      enum: DOCUMENT_STATUSES
     },
     applicationId: {
       type: "string",
@@ -166,19 +217,17 @@ const listDocumentsSchema = {
     },
     search: {
       type: "string",
+      minLength: 1,
       maxLength: 100
     }
   }
 };
-
 /**
- * Start an upload.
+ * Initiate an upload.
  *
- * The API accepts document metadata only. It does not accept an
- * arbitrary filesystem path, storage key, or client-provided URL.
- *
- * The service should generate a unique storage key and a short-lived
- * signed upload URL for the configured private storage provider.
+ * Never accept arbitrary filesystem paths, storage keys, or client-
+ * supplied upload URLs. The service generates the storage key and
+ * short-lived upload URL.
  */
 const initiateUploadSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -189,7 +238,7 @@ const initiateUploadSchema = {
       type: "string",
       minLength: 1,
       maxLength: 255,
-      pattern: "^[^/\\\\]+$"
+      pattern: "^[^/\\\\\\u0000-\\u001F\\u007F]+$"
     },
     contentType: {
       type: "string",
@@ -199,19 +248,11 @@ const initiateUploadSchema = {
     sizeBytes: {
       type: "integer",
       minimum: 1,
-      maximum: 26214400
+      maximum: MAX_UPLOAD_BYTES
     },
     category: {
       type: "string",
-      enum: [
-        "identity",
-        "education",
-        "admission",
-        "employment",
-        "professional",
-        "financial",
-        "other"
-      ]
+      enum: DOCUMENT_CATEGORIES
     },
     applicationId: {
       type: "string",
@@ -229,10 +270,11 @@ const initiateUploadSchema = {
     "category"
   ]
 };
-
 /**
- * Complete an upload after the storage provider confirms the file
- * was uploaded. The service must verify the actual stored object.
+ * Confirm an upload.
+ *
+ * The upload token must be bound to the authenticated user, document,
+ * expected object key, and expiration by the service.
  */
 const completeUploadSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -247,11 +289,8 @@ const completeUploadSchema = {
   },
   required: ["uploadToken"]
 };
-
 /**
- * Applicant-editable metadata.
- * Ownership, storage location, verification state, and reviewer
- * information cannot be changed through this endpoint.
+ * Applicant-editable metadata only.
  */
 const updateMetadataSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -265,21 +304,16 @@ const updateMetadataSchema = {
     },
     category: {
       type: "string",
-      enum: [
-        "identity",
-        "education",
-        "admission",
-        "employment",
-        "professional",
-        "financial",
-        "other"
-      ]
+      enum: DOCUMENT_CATEGORIES
     }
   }
 };
-
 /**
- * Reviewer decision schema.
+ * Reviewer decision.
+ *
+ * The service must enforce legal state transitions, reviewer scope,
+ * and audit logging. A rejected document should have a meaningful
+ * reason according to the service's business rules.
  */
 const reviewDocumentSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -297,13 +331,10 @@ const reviewDocumentSchema = {
   },
   required: ["decision"]
 };
-
 /**
  * GET /api/documents
  *
  * List documents accessible to the current user.
- *
- * The service must enforce ownership and administrative scope.
  */
 router.get(
   "/",
@@ -311,9 +342,16 @@ router.get(
   authorize("documents:read"),
   validateQuery(listDocumentsSchema),
   asyncHandler(async (req, res) => {
-    const page = Number(req.query.page || 1);
-    const limit = Math.min(Number(req.query.limit || 20), 100);
-
+    const page = parsePositiveInteger(
+      req.query.page,
+      DEFAULT_PAGE,
+      100000
+    );
+    const limit = parsePositiveInteger(
+      req.query.limit,
+      DEFAULT_LIMIT,
+      MAX_LIMIT
+    );
     const result = await requireServiceMethod("listDocuments")({
       user: req.user,
       filters: {
@@ -325,7 +363,6 @@ router.get(
         search: req.query.search
       }
     });
-
     return sendSuccess(
       res,
       result,
@@ -333,21 +370,10 @@ router.get(
     );
   })
 );
-
 /**
  * POST /api/documents/upload-url
  *
- * Initiate a private document upload.
- *
- * Expected service response:
- * {
- *   documentId: "...",
- *   uploadUrl: "https://...",
- *   uploadToken: "...",
- *   expiresAt: "..."
- * }
- *
- * Never log or persist the signed URL in ordinary application logs.
+ * Initialize a private document upload.
  */
 router.post(
   "/upload-url",
@@ -359,7 +385,14 @@ router.post(
       user: req.user,
       payload: req.body
     });
-
+    if (!result) {
+      return sendError(
+        res,
+        500,
+        "UPLOAD_INITIALIZATION_FAILED",
+        "The upload could not be initialized."
+      );
+    }
     return sendSuccess(
       res,
       result,
@@ -368,11 +401,8 @@ router.post(
     );
   })
 );
-
 /**
  * POST /api/documents/:documentId/complete-upload
- *
- * Finalize a previously initiated upload.
  */
 router.post(
   "/:documentId/complete-upload",
@@ -386,16 +416,9 @@ router.post(
       documentId: req.params.documentId,
       uploadToken: req.body.uploadToken
     });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
+    if (!requireResult(result, res)) {
+      return;
     }
-
     return sendSuccess(
       res,
       result,
@@ -403,82 +426,11 @@ router.post(
     );
   })
 );
-
-/**
- * GET /api/documents/:documentId
- *
- * Retrieve document metadata, never the raw private file.
- */
-router.get(
-  "/:documentId",
-  authenticate,
-  authorize("documents:read"),
-  validateParams(documentIdSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("getDocumentById")({
-      user: req.user,
-      documentId: req.params.documentId
-    });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
-    }
-
-    return sendSuccess(
-      res,
-      result,
-      "Document retrieved successfully."
-    );
-  })
-);
-
-/**
- * PATCH /api/documents/:documentId
- *
- * Update permitted metadata.
- */
-router.patch(
-  "/:documentId",
-  authenticate,
-  authorize("documents:update"),
-  validateParams(documentIdSchema),
-  validateBody(updateMetadataSchema),
-  asyncHandler(async (req, res) => {
-    const result = await requireServiceMethod("updateDocumentMetadata")({
-      user: req.user,
-      documentId: req.params.documentId,
-      payload: req.body
-    });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
-    }
-
-    return sendSuccess(
-      res,
-      result,
-      "Document metadata updated successfully."
-    );
-  })
-);
-
 /**
  * POST /api/documents/:documentId/download-url
  *
- * Generate short-lived download access after authorization.
- *
- * The service must verify document ownership or reviewer access
- * before returning a temporary URL.
+ * Generate temporary access only after authorization and ownership
+ * checks in the service.
  */
 router.post(
   "/:documentId/download-url",
@@ -490,18 +442,9 @@ router.post(
       user: req.user,
       documentId: req.params.documentId
     });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
+    if (!requireResult(result, res)) {
+      return;
     }
-
-    res.set("Cache-Control", "no-store");
-
     return sendSuccess(
       res,
       result,
@@ -509,11 +452,8 @@ router.post(
     );
   })
 );
-
 /**
  * POST /api/documents/:documentId/submit-for-review
- *
- * Submit an uploaded document for review.
  */
 router.post(
   "/:documentId/submit-for-review",
@@ -525,16 +465,9 @@ router.post(
       user: req.user,
       documentId: req.params.documentId
     });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
+    if (!requireResult(result, res)) {
+      return;
     }
-
     return sendSuccess(
       res,
       result,
@@ -542,14 +475,10 @@ router.post(
     );
   })
 );
-
 /**
  * POST /api/documents/:documentId/review
  *
- * Restricted verification endpoint.
- *
- * Only authorized reviewers may approve or reject documents.
- * The service must validate state transitions and write audit logs.
+ * Reviewer-only endpoint.
  */
 router.post(
   "/:documentId/review",
@@ -564,16 +493,9 @@ router.post(
       decision: req.body.decision,
       reason: req.body.reason
     });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
+    if (!requireResult(result, res)) {
+      return;
     }
-
     return sendSuccess(
       res,
       result,
@@ -581,14 +503,65 @@ router.post(
     );
   })
 );
-
+/**
+ * GET /api/documents/:documentId
+ *
+ * Return safe metadata only, never the raw private file.
+ */
+router.get(
+  "/:documentId",
+  authenticate,
+  authorize("documents:read"),
+  validateParams(documentIdSchema),
+  asyncHandler(async (req, res) => {
+    const result = await requireServiceMethod("getDocumentById")({
+      user: req.user,
+      documentId: req.params.documentId
+    });
+    if (!requireResult(result, res)) {
+      return;
+    }
+    return sendSuccess(
+      res,
+      result,
+      "Document retrieved successfully."
+    );
+  })
+);
+/**
+ * PATCH /api/documents/:documentId
+ *
+ * Update allowed metadata only.
+ */
+router.patch(
+  "/:documentId",
+  authenticate,
+  authorize("documents:update"),
+  validateParams(documentIdSchema),
+  validateBody(updateMetadataSchema),
+  asyncHandler(async (req, res) => {
+    const result = await requireServiceMethod(
+      "updateDocumentMetadata"
+    )({
+      user: req.user,
+      documentId: req.params.documentId,
+      payload: req.body
+    });
+    if (!requireResult(result, res)) {
+      return;
+    }
+    return sendSuccess(
+      res,
+      result,
+      "Document metadata updated successfully."
+    );
+  })
+);
 /**
  * DELETE /api/documents/:documentId
  *
- * Request document deletion.
- *
- * The service must enforce ownership, legal retention requirements,
- * audit policies, and safe deletion from private storage.
+ * Request deletion. The service decides whether deletion is immediate,
+ * queued, or blocked by legal retention requirements.
  */
 router.delete(
   "/:documentId",
@@ -600,25 +573,17 @@ router.delete(
       user: req.user,
       documentId: req.params.documentId
     });
-
-    if (!result) {
-      return sendError(
-        res,
-        404,
-        "DOCUMENT_NOT_FOUND",
-        "The requested document was not found."
-      );
+    if (!requireResult(result, res)) {
+      return;
     }
-
     return sendSuccess(
       res,
       {
         documentId: req.params.documentId,
-        deleted: true
+        deletion: result
       },
-      "Document deletion processed successfully."
+      "Document deletion request processed successfully."
     );
   })
 );
-
 module.exports = router;

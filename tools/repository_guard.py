@@ -1,549 +1,371 @@
-
 #!/usr/bin/env python3
 """
 MedOrbits Repository Guard
-Python 3.10+ | Standard library only
-
-Default mode:
-- Read-only checks.
-- Detects suspicious test/security bypass patterns in changed files.
-- Checks Git whitespace errors.
-- Checks for missing test scripts and CI workflows.
-- Audits GitHub Actions for unsafe permissions and skipped checks.
-- Writes a JSON report.
-- Never edits, deletes, commits, or pushes source files.
-- Never bypasses tests.
-
+==========================
+Read-only repository safety checks.
+Checks:
+- Git working-tree state and unresolved index conflicts.
+- Merge-conflict markers in tracked text files.
+- Syntax validity of tracked JSON files.
+- Common secret-like filenames already tracked by Git.
+- Optional repository status report in JSON format.
 Exit codes:
-0 = no blocking findings
-1 = blocking findings
-2 = execution/configuration error
+    0: Checks passed.
+    1: One or more safety findings were detected.
+    2: The guard could not complete.
+Examples:
+    python tools/repository_guard.py
+    python tools/repository_guard.py --repo .
+    python tools/repository_guard.py --skip-json
+    python tools/repository_guard.py --report /tmp/medorbits-guard.json
+This tool does not:
+- Resolve conflicts.
+- Delete or edit files.
+- Stage or commit changes.
+- Reset branches or change Git history.
+- Print secret contents.
 """
-
 from __future__ import annotations
-
 import argparse
+import datetime as dt
 import json
-import re
 import subprocess
 import sys
-import time
-
 from pathlib import Path
-
-
-VERSION = "1.0.0"
-
-EXCLUDED_PARTS = {
-    ".git", "node_modules", "vendor", "dist", "build",
-    "coverage", "__pycache__", ".venv", "venv",
-    "duplicate-quarantine", "repository-reports",
+from typing import Any, Sequence
+APP_NAME = "MedOrbits Repository Guard"
+EXCLUDED_DIRS = {
+    ".git",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
 }
-
-SOURCE_EXTENSIONS = {
-    ".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx",
-    ".py", ".json", ".yml", ".yaml", ".sh",
-    ".html", ".htm", ".css", ".toml",
-}
-
-# These are review signals, not proof of malicious behavior.
-# Matches in documentation are reported as warnings where possible.
-BYPASS_PATTERNS = [
-    (
-        "CI_CONTINUE_ON_ERROR",
-        re.compile(r"(?im)^\s*continue-on-error\s*:\s*true\b"),
-        "Workflow step may ignore a failed command.",
-    ),
-    (
-        "SHELL_FAILURE_SUPPRESSION",
-        re.compile(r"(?m)(?:\|\|\s*true\b|;\s*true\s*(?:#.*)?$)"),
-        "Shell command may suppress a failure.",
-    ),
-    (
-        "TEST_SKIP_FLAG",
-        re.compile(
-            r"(?i)(?:pytest\s+[^;\n]*--ignore|"
-            r"jest\s+[^;\n]*--passWithNoTests|"
-            r"vitest\s+[^;\n]*--passWithNoTests)"
-        ),
-        "Test command may skip files or pass without tests.",
-    ),
-    (
-        "DISABLED_TEST",
-        re.compile(
-            r"(?i)(?:\bdescribe\.skip\s*\(|\bit\.skip\s*\(|"
-            r"\btest\.skip\s*\(|\bpytest\.mark\.skip\b|"
-            r"\bskipif\s*\()"
-        ),
-        "Test may be disabled; verify that the skip is intentional.",
-    ),
-    (
-        "TYPECHECK_SUPPRESSION",
-        re.compile(
-            r"(?i)(?:@ts-nocheck|@ts-ignore|"
-            r"eslint-disable(?:-next-line|-line)?|"
-            r"#\s*noqa\b)"
-        ),
-        "Static analysis suppression found; review justification.",
-    ),
-    (
-        "VERIFY_DISABLED",
-        re.compile(
-            r"(?i)(?:NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*0|"
-            r"rejectUnauthorized\s*:\s*false|"
-            r"strict-ssl\s*=\s*false)"
-        ),
-        "TLS verification may be disabled.",
-    ),
-]
-
-SENSITIVE_FILES = {
-    ".env", ".env.production", ".env.local",
-    "id_rsa", "id_ed25519",
-}
-
-TEST_NAME_HINTS = (
-    "test", "spec", "vitest", "jest", "pytest",
+CONFLICT_MARKERS = (
+    "<<<<<<< ",
+    "=======",
+    ">>>>>>> ",
 )
-
-
-def run_git(root: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git", "-C", str(root), *args],
-        capture_output=True,
-        text=True,
+SECRET_NAMES = {
+    ".env",
+    ".env.local",
+    ".env.development",
+    ".env.production",
+    ".npmrc",
+    ".pypirc",
+    "id_rsa",
+    "id_ed25519",
+    "credentials.json",
+    "service-account.json",
+}
+SECRET_SUFFIXES = {
+    ".pem",
+    ".key",
+    ".p12",
+    ".pfx",
+}
+MAX_JSON_BYTES = 10 * 1024 * 1024
+MAX_TEXT_BYTES = 2 * 1024 * 1024
+class GuardError(RuntimeError):
+    """Raised when a safety check cannot run."""
+def git(
+    repo: Path,
+    args: Sequence[str],
+    *,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    """Run Git without a shell."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise GuardError("Git is not installed or unavailable on PATH.") from exc
+    if check and result.returncode != 0:
+        detail = result.stderr.strip() or "Git command failed."
+        raise GuardError(detail)
+    return result
+def find_repo(path: Path | None) -> Path:
+    """Resolve the repository root."""
+    start = (path or Path.cwd()).expanduser().resolve()
+    result = git(start, ["rev-parse", "--show-toplevel"], check=False)
+    if result.returncode != 0:
+        raise GuardError(
+            f"{start} is not inside a Git repository. "
+            "Pass --repo with a valid repository path."
+        )
+    return Path(result.stdout.strip()).resolve()
+def nul_paths(repo: Path, *args: str) -> list[str]:
+    """Read NUL-separated Git paths safely, including paths with spaces."""
+    output = git(repo, list(args)).stdout
+    return [item for item in output.split("\0") if item]
+def tracked_files(repo: Path) -> list[str]:
+    return nul_paths(repo, "ls-files", "-z")
+def unresolved_conflicts(repo: Path) -> list[str]:
+    return nul_paths(
+        repo,
+        "diff",
+        "--name-only",
+        "--diff-filter=U",
+        "-z",
+    )
+def is_excluded(path: Path) -> bool:
+    return any(part in EXCLUDED_DIRS for part in path.parts)
+def is_secret_like(path: Path) -> bool:
+    """Detect common sensitive filename patterns, not secret file contents."""
+    name = path.name.lower()
+    if name in SECRET_NAMES:
+        return True
+    if name.startswith(".env."):
+        return True
+    if path.suffix.lower() in SECRET_SUFFIXES:
+        return True
+    return False
+def inspect_git_state(repo: Path) -> dict[str, Any]:
+    branch_result = git(
+        repo,
+        ["symbolic-ref", "--short", "-q", "HEAD"],
         check=False,
     )
-
-
-def is_git_repo(root: Path) -> bool:
-    result = run_git(root, "rev-parse", "--show-toplevel")
-    return result.returncode == 0
-
-
-def git_changed_files(root: Path) -> list[str]:
-    """
-    Include staged, unstaged, and untracked files.
-    Does not change Git state.
-    """
-    commands = [
-        ["diff", "--name-only", "HEAD"],
-        ["ls-files", "--others", "--exclude-standard"],
-    ]
-
-    found = set()
-
-    for command in commands:
-        result = run_git(root, *command)
-
-        if result.returncode != 0:
-            continue
-
-        found.update(
-            line.strip()
-            for line in result.stdout.splitlines()
-            if line.strip()
-        )
-
-    return sorted(found)
-
-
-def all_source_files(root: Path) -> list[Path]:
-    results = []
-
-    for current, dirs, files in __import__("os").walk(
-        root, followlinks=False
-    ):
-        current_path = Path(current)
-
-        dirs[:] = [
-            name for name in dirs
-            if name not in EXCLUDED_PARTS
-            and not name.startswith(".git")
-        ]
-
-        for filename in files:
-            path = current_path / filename
-
-            if path.is_symlink():
-                continue
-
-            if any(part in EXCLUDED_PARTS for part in path.relative_to(root).parts):
-                continue
-
-            if path.suffix.lower() in SOURCE_EXTENSIONS:
-                results.append(path)
-
-    return sorted(results)
-
-
-def read_text(path: Path) -> str | None:
-    try:
-        if path.stat().st_size > 5_000_000:
-            return None
-
-        return path.read_text(encoding="utf-8-sig")
-    except (OSError, UnicodeDecodeError):
-        return None
-
-
-def add_finding(
-    findings: list[dict],
-    severity: str,
-    code: str,
-    file: str,
-    line: int | None,
-    message: str,
-) -> None:
-    findings.append({
-        "severity": severity,
-        "code": code,
-        "file": file,
-        "line": line,
-        "message": message,
-    })
-
-
-def scan_bypass_patterns(
-    root: Path,
-    files: list[Path],
-    findings: list[dict],
-) -> None:
-    for path in files:
-        text = read_text(path)
-
-        if text is None:
-            continue
-
-        relative = path.relative_to(root).as_posix()
-        is_test_file = any(
-            hint in path.name.lower()
-            for hint in TEST_NAME_HINTS
-        )
-
-        for code, pattern, message in BYPASS_PATTERNS:
-            for match in pattern.finditer(text):
-                line = text.count("\n", 0, match.start()) + 1
-
-                # A disabled test is a warning for manual review,
-                # not an automatic assertion that it is malicious.
-                severity = (
-                    "warning"
-                    if code in {"DISABLED_TEST", "TYPECHECK_SUPPRESSION"}
-                    else "review"
-                )
-
-                # Test skip patterns inside test files are especially
-                # relevant, but remain review signals.
-                if is_test_file and code == "DISABLED_TEST":
-                    severity = "warning"
-
-                add_finding(
-                    findings,
-                    severity,
-                    code,
-                    relative,
-                    line,
-                    message,
-                )
-
-
-def check_sensitive_files(
-    root: Path,
-    findings: list[dict],
-) -> None:
-    result = run_git(root, "ls-files", "--cached", "--others", "--exclude-standard")
-
-    if result.returncode != 0:
-        add_finding(
-            findings,
-            "warning",
-            "GIT_STATUS_UNAVAILABLE",
-            "",
-            None,
-            "Could not enumerate Git-tracked and untracked files.",
-        )
-        return
-
-    for item in result.stdout.splitlines():
-        relative = item.strip()
-        if not relative:
-            continue
-
-        path = Path(relative)
-        name = path.name.lower()
-
-        if name in SENSITIVE_FILES or (
-            name.startswith(".env.") and name not in {".env.example", ".env.sample"}
-        ):
-            add_finding(
-                findings,
-                "review",
-                "POTENTIAL_SECRET_FILE",
-                relative,
-                None,
-                "Potential secret/configuration file. Verify it is not tracked or exposed.",
-            )
-
-
-def check_git_whitespace(
-    root: Path,
-    findings: list[dict],
-) -> None:
-    result = run_git(root, "diff", "--check")
-
-    if result.returncode != 0:
-        add_finding(
-            findings,
-            "error",
-            "GIT_DIFF_CHECK_FAILED",
-            "",
-            None,
-            result.stderr.strip() or "Git diff check failed.",
-        )
-    elif result.stdout.strip():
-        add_finding(
-            findings,
-            "warning",
-            "GIT_WHITESPACE_ISSUES",
-            "",
-            None,
-            result.stdout.strip(),
-        )
-
-
-def check_test_setup(
-    root: Path,
-    findings: list[dict],
-) -> dict:
-    package_path = root / "package.json"
-    package = {}
-
-    if package_path.is_file():
-        try:
-            package = json.loads(package_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            add_finding(
-                findings,
-                "error",
-                "INVALID_PACKAGE_JSON",
-                "package.json",
-                None,
-                "package.json could not be parsed as valid JSON.",
-            )
-
-    scripts = package.get("scripts", {}) if isinstance(package, dict) else {}
-    test_scripts = {
-        name: command
-        for name, command in scripts.items()
-        if "test" in name.lower()
-    }
-
-    if package_path.is_file() and not test_scripts:
-        add_finding(
-            findings,
-            "warning",
-            "NO_NPM_TEST_SCRIPT",
-            "package.json",
-            None,
-            "No package.json script with 'test' in its name was found.",
-        )
-
-    workflows_dir = root / ".github" / "workflows"
-    workflow_files = []
-
-    if workflows_dir.is_dir():
-        workflow_files = sorted(
-            p.relative_to(root).as_posix()
-            for p in workflows_dir.glob("*")
-            if p.is_file() and p.suffix.lower() in {".yml", ".yaml"}
-        )
-
-    if not workflow_files:
-        add_finding(
-            findings,
-            "warning",
-            "NO_GITHUB_ACTIONS_WORKFLOW",
-            ".github/workflows",
-            None,
-            "No GitHub Actions workflow was found. Remote CI is not verified.",
-        )
-
+    head_result = git(repo, ["rev-parse", "--short", "HEAD"], check=False)
+    status_result = git(
+        repo,
+        ["status", "--porcelain=v1", "--untracked-files=all"],
+    )
+    branch = (
+        branch_result.stdout.strip()
+        if branch_result.returncode == 0
+        else "(detached HEAD or unborn branch)"
+    )
+    head = head_result.stdout.strip() if head_result.returncode == 0 else None
+    entries = status_result.stdout.splitlines()
+    conflicts = unresolved_conflicts(repo)
     return {
-        "package_json_found": package_path.is_file(),
-        "test_scripts": test_scripts,
-        "workflow_files": workflow_files,
+        "repository": str(repo),
+        "branch": branch,
+        "head": head,
+        "working_tree_clean": len(entries) == 0,
+        "changed_entry_count": len(entries),
+        "unresolved_conflicts": conflicts,
+        "status_entries": entries,
     }
-
-
-def check_workflow_permissions(
-    root: Path,
-    findings: list[dict],
-) -> None:
-    workflows = root / ".github" / "workflows"
-
-    if not workflows.is_dir():
-        return
-
-    for path in workflows.iterdir():
-        if not path.is_file() or path.suffix.lower() not in {".yml", ".yaml"}:
+def check_conflict_markers(repo: Path) -> list[str]:
+    """Find likely merge markers in reasonably sized tracked UTF-8 text files."""
+    findings: list[str] = []
+    for filename in tracked_files(repo):
+        relative = Path(filename)
+        if is_excluded(relative):
             continue
-
-        text = read_text(path)
-
-        if text is None:
+        source = repo / relative
+        # Do not follow symbolic links or inspect non-regular files.
+        if source.is_symlink() or not source.is_file():
             continue
-
-        relative = path.relative_to(root).as_posix()
-
-        # Broad write permissions should be reviewed. This is a
-        # conservative text check, not a complete YAML parser.
-        if re.search(r"(?im)^\s*permissions\s*:\s*write-all\b", text):
-            add_finding(
-                findings,
-                "warning",
-                "WORKFLOW_WRITE_ALL",
-                relative,
-                None,
-                "Workflow uses write-all permissions. Prefer least privilege.",
+        try:
+            if source.stat().st_size > MAX_TEXT_BYTES:
+                continue
+            with source.open("r", encoding="utf-8", errors="strict") as handle:
+                for number, line in enumerate(handle, start=1):
+                    candidate = line.lstrip()
+                    if any(
+                        candidate.startswith(marker)
+                        for marker in CONFLICT_MARKERS
+                    ):
+                        findings.append(
+                            f"{filename}:{number}: possible conflict marker"
+                        )
+        except (OSError, UnicodeError):
+            # Binary or unreadable files are skipped; they are not modified.
+            continue
+    return findings
+def check_json(repo: Path) -> tuple[int, list[str]]:
+    """Validate syntax for tracked .json files, excluding oversized files."""
+    count = 0
+    findings: list[str] = []
+    for filename in tracked_files(repo):
+        relative = Path(filename)
+        if relative.suffix.lower() != ".json" or is_excluded(relative):
+            continue
+        source = repo / relative
+        if source.is_symlink() or not source.is_file():
+            continue
+        try:
+            if source.stat().st_size > MAX_JSON_BYTES:
+                findings.append(
+                    f"{filename}: exceeds the {MAX_JSON_BYTES}-byte JSON check limit"
+                )
+                continue
+            with source.open("r", encoding="utf-8") as handle:
+                json.load(handle)
+            count += 1
+        except json.JSONDecodeError as exc:
+            findings.append(
+                f"{filename}:{exc.lineno}:{exc.colno}: invalid JSON: {exc.msg}"
             )
-
-        if re.search(r"(?im)^\s*permissions\s*:\s*read-all\b", text):
-            continue
-
-        if not re.search(r"(?im)^\s*permissions\s*:", text):
-            add_finding(
-                findings,
-                "warning",
-                "WORKFLOW_PERMISSIONS_UNSPECIFIED",
-                relative,
-                None,
-                "Workflow does not declare explicit permissions. Review token access.",
+        except (OSError, UnicodeError) as exc:
+            findings.append(f"{filename}: could not read JSON: {exc}")
+    return count, findings
+def check_tracked_secrets(repo: Path) -> list[str]:
+    """
+    Identify tracked files with common secret-like names.
+    Filename checks cannot prove whether a file contains a secret. Review
+    findings carefully and use a dedicated secret scanner for content scanning.
+    """
+    findings: list[str] = []
+    for filename in tracked_files(repo):
+        relative = Path(filename)
+        if is_secret_like(relative):
+            findings.append(
+                f"{filename}: tracked filename resembles a secret/config credential"
             )
-
-
-def main() -> int:
+    return findings
+def build_report(
+    repo: Path,
+    *,
+    skip_json: bool,
+) -> dict[str, Any]:
+    state = inspect_git_state(repo)
+    marker_findings = check_conflict_markers(repo)
+    secret_findings = check_tracked_secrets(repo)
+    if skip_json:
+        json_count = 0
+        json_findings: list[str] = []
+    else:
+        json_count, json_findings = check_json(repo)
+    findings: list[dict[str, str]] = []
+    for path in state["unresolved_conflicts"]:
+        findings.append(
+            {
+                "severity": "error",
+                "check": "git-conflict",
+                "message": f"Unresolved Git index conflict: {path}",
+            }
+        )
+    for message in marker_findings:
+        findings.append(
+            {
+                "severity": "warning",
+                "check": "conflict-marker",
+                "message": message,
+            }
+        )
+    for message in secret_findings:
+        findings.append(
+            {
+                "severity": "warning",
+                "check": "tracked-secret-name",
+                "message": message,
+            }
+        )
+    for message in json_findings:
+        findings.append(
+            {
+                "severity": "error",
+                "check": "json",
+                "message": message,
+            }
+        )
+    return {
+        "tool": APP_NAME,
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        **state,
+        "checks": {
+            "conflict_marker_findings": len(marker_findings),
+            "tracked_secret_like_names": len(secret_findings),
+            "json_files_validated": json_count,
+            "json_check_skipped": skip_json,
+        },
+        "findings": findings,
+        "passed": not any(
+            item["severity"] == "error" for item in findings
+        ),
+    }
+def print_report(report: dict[str, Any]) -> None:
+    print(f"{APP_NAME}")
+    print(f"Repository: {report['repository']}")
+    print(f"Branch: {report['branch']}")
+    print(f"HEAD: {report['head'] or '(no commit yet)'}")
+    print(f"Working tree clean: {report['working_tree_clean']}")
+    print(f"Changed entries: {report['changed_entry_count']}")
+    print(f"Unresolved Git conflicts: {len(report['unresolved_conflicts'])}")
+    print(f"JSON files validated: {report['checks']['json_files_validated']}")
+    print(
+        "Possible conflict markers: "
+        f"{report['checks']['conflict_marker_findings']}"
+    )
+    print(
+        "Tracked secret-like filenames: "
+        f"{report['checks']['tracked_secret_like_names']}"
+    )
+    if report["findings"]:
+        print("\nFindings:")
+        for finding in report["findings"]:
+            print(
+                f"- [{finding['severity'].upper()}] "
+                f"{finding['check']}: {finding['message']}"
+            )
+    else:
+        print("\nNo findings detected by the enabled checks.")
+    print(
+        "\nNote: conflict-marker detection is heuristic. "
+        "Review documentation and test fixtures before changing anything."
+    )
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Audit MedOrbits repository safeguards."
+        description=APP_NAME,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  python tools/repository_guard.py\n"
+            "  python tools/repository_guard.py --repo .\n"
+            "  python tools/repository_guard.py --skip-json\n"
+            "  python tools/repository_guard.py --report /tmp/guard-report.json"
+        ),
     )
-
     parser.add_argument(
-        "--root",
-        default=".",
-        help="Repository root directory.",
+        "--repo",
+        type=Path,
+        help="Repository path; defaults to the current directory.",
     )
-
     parser.add_argument(
-        "--all-files",
+        "--skip-json",
         action="store_true",
-        help="Scan all eligible source files, not only changed files.",
+        help="Skip JSON syntax checks.",
     )
-
     parser.add_argument(
         "--report",
-        default="tools/repository-reports/repository-guard.json",
-        help="Report path relative to repository root.",
+        type=Path,
+        help="Write a new JSON report outside the repository.",
     )
-
-    args = parser.parse_args()
-    root = Path(args.root).expanduser().resolve()
-
-    if not root.is_dir():
-        print(f"ERROR: Not a directory: {root}", file=sys.stderr)
-        return 2
-
-    if not is_git_repo(root):
-        print(
-            "ERROR: This directory is not recognized as a Git repository.",
-            file=sys.stderr,
-        )
-        return 2
-
-    findings: list[dict] = []
-    files = all_source_files(root)
-    changed = git_changed_files(root)
-
-    if args.all_files:
-        selected = files
-    else:
-        selected = [
-            root / item
-            for item in changed
-            if (root / item).is_file()
-            and (root / item).suffix.lower() in SOURCE_EXTENSIONS
-            and not any(
-                part in EXCLUDED_PARTS
-                for part in Path(item).parts
-            )
-        ]
-
-    scan_bypass_patterns(root, selected, findings)
-    check_sensitive_files(root, findings)
-    check_git_whitespace(root, findings)
-    test_setup = check_test_setup(root, findings)
-    check_workflow_permissions(root, findings)
-
-    report = {
-        "tool": "MedOrbits Repository Guard",
-        "version": VERSION,
-        "created_at_epoch": int(time.time()),
-        "repository_root": str(root),
-        "read_only": True,
-        "git_operations": [],
-        "files_in_repository": len(files),
-        "changed_files_detected": len(changed),
-        "files_checked_for_bypass_patterns": len(selected),
-        "test_setup": test_setup,
-        "finding_count": len(findings),
-        "findings": findings,
-        "limitations": [
-            "Static scanning cannot prove code is safe.",
-            "Patterns can produce false positives and false negatives.",
-            "Local scripts can be modified by users with repository access.",
-            "GitHub branch protection and required CI checks must be configured remotely.",
-            "This tool does not execute the project's test suite.",
-        ],
-    }
-
-    report_path = (root / args.report).resolve()
-
+    return parser.parse_args()
+def main() -> int:
+    args = parse_args()
     try:
-        report_path.relative_to(root)
-    except ValueError:
-        print("ERROR: Report path must remain inside the repository.", file=sys.stderr)
+        repo = find_repo(args.repo)
+        report = build_report(repo, skip_json=args.skip_json)
+        print_report(report)
+        if args.report:
+            output = args.report.expanduser().resolve()
+            if output == repo or repo in output.parents:
+                raise GuardError(
+                    "Report must be written outside the repository."
+                )
+            output.parent.mkdir(parents=True, exist_ok=True)
+            # Exclusive creation prevents accidental overwrite of an existing
+            # report. Remove or rename it manually if you need a fresh report.
+            with output.open("x", encoding="utf-8") as handle:
+                json.dump(report, handle, indent=2, ensure_ascii=False)
+                handle.write("\n")
+            print(f"\nJSON report saved: {output}")
+        return 0 if report["passed"] else 1
+    except (GuardError, OSError, ValueError) as exc:
+        print(f"Repository Guard error: {exc}", file=sys.stderr)
         return 2
-
-    try:
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(
-            json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
-    except OSError as exc:
-        print(f"ERROR: Cannot write report: {exc}", file=sys.stderr)
-        return 2
-
-    counts = {}
-
-    for finding in findings:
-        severity = finding["severity"]
-        counts[severity] = counts.get(severity, 0) + 1
-
-    print("MedOrbits Repository Guard", VERSION)
-    print(f"Files checked: {len(selected)}")
-    print(f"Findings: {len(findings)}")
-    print(f"Severity counts: {counts}")
-    print(f"Report: {report_path.relative_to(root).as_posix()}")
-    print("No tests were bypassed or executed by this guard.")
-    print("No source files were edited or deleted.")
-
-    blocking = any(
-        finding["severity"] == "error"
-        for finding in findings
-    )
-
-    return 1 if blocking else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

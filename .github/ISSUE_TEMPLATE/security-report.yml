@@ -1,55 +1,167 @@
-
-name: Security vulnerability report
-description: Instructions for reporting suspected MedOrbits security vulnerabilities safely
+name: Security report
+description: Report a potential security concern affecting MedOrbits.
 title: "[Security]: "
-labels: []
-assignees: []
+labels:
+
+* security
+* triage
+    assignees: []
 
 body:
-  - type: markdown
+
+* type: markdown
     attributes:
-      value: |
-        # Important: This issue is public
+    value: |
+    ## MedOrbits Security Reporting
 
-        **Submitting this form creates a publicly visible GitHub issue. It is not a private vulnerability reporting channel.**
+Thank you for helping protect MedOrbits and its users.
+**Important:** GitHub issue forms are not a confidential reporting channel.
+Do not submit exploitable vulnerability details, working exploit code,
+passwords, API keys, access tokens, private user records, or sensitive
+production data in a public issue.
+Before proceeding, review the repository's `SECURITY.md` and use its
+designated private reporting method whenever available.
+If this form is publicly accessible, provide only a minimal, non-sensitive
+description. The maintainers may need to redirect you to a private channel
+before collecting technical details.
 
-        Do not include exploit instructions, proof-of-concept code, credentials, access tokens, private user data, payment information, exposed secrets, or other confidential technical details.
-
-        Read the repository's root `SECURITY.md` file and follow its private reporting instructions before submitting a report.
-
-        If no private reporting channel is documented, contact a repository maintainer through a non-public channel and request secure reporting instructions before sharing sensitive details.
-
-  - type: checkboxes
-    id: acknowledgment
+* type: checkboxes
+    id: safety
     attributes:
-      label: Required acknowledgment
-      description: Confirm both statements before submitting.
-      options:
-        - label: I understand that this issue will be publicly visible.
-          required: true
-        - label: I will not disclose exploit details, credentials, secrets, or confidential personal information.
-          required: true
-
-  - type: textarea
+    label: Responsible disclosure checklist
+    options:
+    - label: I have not included passwords, credentials, access tokens, or private user data.
+    required: true
+    - label: I will not publicly disclose exploit details before coordinated resolution.
+    required: true
+    - label: I have reviewed the repository security policy or will do so before sharing sensitive details.
+    required: true
+* type: dropdown
+    id: category
+    attributes:
+    label: Security concern category
+    description: Select the closest category without sharing exploit details.
+    options:
+    - Authentication or session management
+    - Authorization or access control
+    - Sensitive data exposure
+    - Injection or input validation
+    - Cross-site scripting (XSS)
+    - Cross-site request forgery (CSRF)
+    - Server-side request forgery (SSRF)
+    - File upload or document handling
+    - API security
+    - Dependency or supply-chain risk
+    - Security configuration or deployment
+    - Cryptography or secrets management
+    - Denial of service or resource exhaustion
+    - Suspected account compromise
+    - Other
+    - Not sure
+    validations:
+    required: true
+* type: dropdown
+    id: exposure
+    attributes:
+    label: Where was the issue observed?
+    options:
+    - Production
+    - Preview or staging
+    - Local development
+    - CI or automated workflow
+    - Dependency or third-party integration
+    - Unknown
+    validations:
+    required: true
+* type: dropdown
+    id: impact
+    attributes:
+    label: Potential impact
+    description: Choose the closest potential impact; this is not a formal severity rating.
+    options:
+    - Potential unauthorized access
+    - Potential exposure of sensitive information
+    - Potential modification or deletion of data
+    - Potential service disruption
+    - Potential privilege escalation
+    - Potential account compromise
+    - Potential supply-chain compromise
+    - Other or uncertain
+    validations:
+    required: true
+* type: textarea
     id: summary
     attributes:
-      label: Non-sensitive summary (optional)
-      description: |
-        Provide a general description only if public disclosure is safe.
-        Leave this field blank if even a general description could expose sensitive information.
-      placeholder: "Example: Suspected authentication security concern."
+    label: High-level summary
+    description: |
+    Describe the concern briefly without including a payload, exploit steps,
+    confidential data, or instructions that would enable abuse.
+    placeholder: A concise, non-sensitive description of the suspected issue.
     validations:
-      required: false
-
-  - type: markdown
+    required: true
+* type: textarea
+    id: affected-component
     attributes:
-      value: |
-        ## Next steps
+    label: Affected component
+    description: |
+    Identify the general component, page, API route, package, or configuration.
+    Do not include private endpoints or secret values.
+    placeholder: e.g. authentication middleware or document upload endpoint
+    validations:
+    required: true
+* type: input
+    id: affected-version
+    attributes:
+    label: Affected version or commit
+    description: Provide the release version or commit hash if known.
+    placeholder: "e.g. 2.0.0 or a commit hash"
+* type: dropdown
+    id: evidence-status
+    attributes:
+    label: Evidence available
+    description: Do not attach exploit payloads or sensitive evidence to this public form.
+    options:
+    - General observations only
+    - Sanitized logs or screenshots
+    - Reproduction available for private disclosure
+    - Not yet confirmed
+    validations:
+    required: true
+* type: textarea
+    id: safe-evidence
+    attributes:
+    label: Sanitized evidence (optional)
+    description: |
+    Include only non-sensitive observations. Remove credentials, cookies,
+    authorization headers, personal information, private records, and
+    production secrets. Do not include exploit code or weaponized payloads.
+    render: text
+* type: checkboxes
+    id: testing
+    attributes:
+    label: Testing and authorization
+    options:
+    - label: Any testing I performed was limited to systems and accounts I am authorized to assess.
+    required: true
+    - label: I did not intentionally access, alter, or retain another person’s private data.
+    required: true
+* type: textarea
+    id: contact-preference
+    attributes:
+    label: Safe follow-up preference (optional)
+    description: |
+    If you need to coordinate privately, indicate that in general terms.
+    Do not publish private contact details here. Use the reporting method
+    documented in SECURITY.md.
+* type: markdown
+    attributes:
+    value: |
+    --
+    Maintainer guidance
 
-        1. Read the root `SECURITY.md` file.
-        2. Use a private reporting channel explicitly documented by the project, if available.
-        3. If no private channel is documented, request secure reporting instructions privately before sharing vulnerability details.
-        4. Do not post additional sensitive details in this public issue.
-
-        Do not assume that a security contact, email address, or private reporting feature exists unless the repository or GitHub settings explicitly provide it.
-        
+- Do not request exploit details or sensitive evidence in public comments.
+- Move technical discussion to the verified private reporting channel.
+- Restrict access to any sensitive evidence and follow the project's
+  coordinated disclosure policy.
+- Do not promise a response time unless the repository security policy
+  explicitly defines one.

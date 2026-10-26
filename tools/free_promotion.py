@@ -1,539 +1,367 @@
+Save as tools/free_promotion.py. This MedOrbits promotion toolkit generates free marketing campaigns, social media captions, SEO suggestions, community outreach plans, and a posting calendar. It does not automatically publish content, send unsolicited messages, or purchase advertising.
 
 #!/usr/bin/env python3
 """
-MedOrbits Free Website Promotion Assistant
-Python 3.10+ | Standard library only
-
+MedOrbits Free Promotion Toolkit
+================================
+Generate organic marketing assets without paid advertising.
 Features:
-- Audits local HTML pages for basic SEO issues.
-- Checks for sitemap.xml and robots.txt.
-- Generates promotional drafts for social platforms.
-- Creates a free-promotion checklist.
-- Creates a suggested sitemap from local HTML pages.
-- Optionally checks the live website with --check-live.
-- Does not publish content, send messages, create accounts, or buy ads.
-- Does not modify existing website pages.
+- Social media captions for Instagram, Facebook, LinkedIn, and YouTube.
+- SEO metadata and keyword suggestions.
+- Community outreach and partnership ideas.
+- A 7-day organic promotion calendar.
+- Referral and content repurposing ideas.
+- JSON export for campaign planning.
+Safety:
+- No paid ads or spending.
+- No automated posting, scraping, or unsolicited messaging.
+- No fabricated testimonials, rankings, statistics, or guarantees.
+- No collection of personal information.
+- Drafts require human review before publication.
+Usage:
+    python tools/free_promotion.py campaign
+    python tools/free_promotion.py captions
+    python tools/free_promotion.py seo
+    python tools/free_promotion.py calendar
+    python tools/free_promotion.py ideas
+    python tools/free_promotion.py all
+    python tools/free_promotion.py all --output reports/free-promotion.json
 """
-
 from __future__ import annotations
-
 import argparse
-import html
 import json
 import re
-import time
-
-from collections import Counter
-from html.parser import HTMLParser
+import sys
+from datetime import date, timedelta
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlparse
-from urllib.request import Request, urlopen
-
-
-DEFAULT_SITE = "https://www.medorbits.in"
-VERSION = "1.0.0"
-
-EXCLUDED_DIRS = {
-    ".git", "node_modules", "vendor", "dist", "build",
-    "coverage", "__pycache__", ".venv", "venv",
-    "repository-reports", "duplicate-quarantine",
-}
-
-HTML_EXTENSIONS = {".html", ".htm"}
-
-MAX_FILE_BYTES = 2_000_000
-MAX_LIVE_PAGES = 30
-USER_AGENT = "MedOrbitsFreePromotionAuditor/1.0"
-
-
-class SEOParser(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.title_parts = []
-        self.title_open = False
-        self.description = ""
-        self.canonical = ""
-        self.robots = ""
-        self.h1_count = 0
-        self.h1_open = False
-        self.h1_parts = []
-        self.h1_texts = []
-        self.links = []
-        self.images_without_alt = 0
-        self.og_title = ""
-        self.og_description = ""
-        self.og_image = ""
-        self.lang = ""
-
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-        tag = tag.lower()
-
-        if tag == "html":
-            self.lang = attrs.get("lang", "")
-
-        if tag == "title":
-            self.title_open = True
-
-        if tag == "h1":
-            self.h1_count += 1
-            self.h1_open = True
-            self.h1_parts = []
-
-        if tag == "img" and not attrs.get("alt", "").strip():
-            self.images_without_alt += 1
-
-        if tag == "a":
-            href = attrs.get("href", "").strip()
-            if href:
-                self.links.append(href)
-
-        if tag == "meta":
-            name = attrs.get("name", "").lower()
-            prop = attrs.get("property", "").lower()
-            content = attrs.get("content", "").strip()
-
-            if name == "description":
-                self.description = content
-            elif name == "robots":
-                self.robots = content
-            elif prop == "og:title":
-                self.og_title = content
-            elif prop == "og:description":
-                self.og_description = content
-            elif prop == "og:image":
-                self.og_image = content
-
-        if tag == "link":
-            if attrs.get("rel", "").lower() == "canonical":
-                self.canonical = attrs.get("href", "").strip()
-
-    def handle_endtag(self, tag):
-        tag = tag.lower()
-
-        if tag == "title":
-            self.title_open = False
-
-        if tag == "h1" and self.h1_open:
-            self.h1_texts.append(" ".join(self.h1_parts).strip())
-            self.h1_open = False
-
-    def handle_data(self, data):
-        if self.title_open:
-            self.title_parts.append(data.strip())
-
-        if self.h1_open:
-            self.h1_parts.append(data.strip())
-
-    @property
-    def title(self):
-        return " ".join(part for part in self.title_parts if part).strip()
-
-
-def relative(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix()
-
-
-def scan_html(root: Path) -> list[Path]:
-    pages = []
-
-    for current, dirs, filenames in __import__("os").walk(
-        root, followlinks=False
-    ):
-        dirs[:] = [
-            name for name in dirs
-            if name not in EXCLUDED_DIRS and not name.startswith(".")
-        ]
-
-        for filename in filenames:
-            path = Path(current) / filename
-
-            if path.is_symlink():
-                continue
-
-            if path.suffix.lower() in HTML_EXTENSIONS:
-                try:
-                    if path.stat().st_size <= MAX_FILE_BYTES:
-                        pages.append(path)
-                except OSError:
-                    pass
-
-    return sorted(pages, key=lambda p: relative(p, root).lower())
-
-
-def read_page(path: Path) -> str | None:
-    try:
-        return path.read_text(encoding="utf-8-sig")
-    except (OSError, UnicodeDecodeError):
-        return None
-
-
-def page_url(site: str, path: Path, root: Path) -> str:
-    rel_path = relative(path, root)
-
-    if rel_path.endswith(("index.html", "index.htm")):
-        directory = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
-        route = f"{directory}/" if directory else "/"
-    else:
-        route = "/" + rel_path
-
-    return site.rstrip("/") + route
-
-
-def audit_page(path: Path, root: Path) -> dict:
-    text = read_page(path)
-
-    result = {
-        "path": relative(path, root),
-        "title": "",
-        "title_length": 0,
-        "meta_description_length": 0,
-        "h1_count": 0,
-        "h1_texts": [],
-        "images_without_alt": 0,
-        "lang": "",
-        "canonical": "",
-        "robots_meta": "",
-        "og_title": "",
-        "og_description": "",
-        "og_image": "",
-        "internal_link_count": 0,
-        "issues": [],
-    }
-
-    if text is None:
-        result["issues"].append("File could not be read as UTF-8.")
-        return result
-
-    parser = SEOParser()
-
-    try:
-        parser.feed(text)
-        parser.close()
-    except Exception as exc:
-        result["issues"].append(f"HTML parsing warning: {exc}")
-        return result
-
-    result.update({
-        "title": parser.title,
-        "title_length": len(parser.title),
-        "meta_description_length": len(parser.description),
-        "h1_count": parser.h1_count,
-        "h1_texts": parser.h1_texts,
-        "images_without_alt": parser.images_without_alt,
-        "lang": parser.lang,
-        "canonical": parser.canonical,
-        "robots_meta": parser.robots,
-        "og_title": parser.og_title,
-        "og_description": parser.og_description,
-        "og_image": parser.og_image,
-        "internal_link_count": len(parser.links),
-    })
-
-    if not parser.title:
-        result["issues"].append("Missing title element.")
-    elif len(parser.title) > 70:
-        result["issues"].append("Title is long; review its clarity in search results.")
-
-    if not parser.description:
-        result["issues"].append("Missing meta description.")
-    elif len(parser.description) < 70:
-        result["issues"].append("Meta description may be too short.")
-    elif len(parser.description) > 170:
-        result["issues"].append("Meta description may be too long.")
-
-    if parser.h1_count == 0:
-        result["issues"].append("No H1 heading found.")
-    elif parser.h1_count > 1:
-        result["issues"].append("Multiple H1 headings; review heading structure.")
-
-    if not parser.lang:
-        result["issues"].append("Missing HTML language attribute.")
-
-    if parser.images_without_alt:
-        result["issues"].append(
-            f"{parser.images_without_alt} images have no descriptive alt text."
-        )
-
-    if not parser.og_title:
-        result["issues"].append("Missing Open Graph title for social sharing.")
-
-    if not parser.og_description:
-        result["issues"].append("Missing Open Graph description.")
-
-    if not parser.og_image:
-        result["issues"].append("Missing Open Graph preview image.")
-
-    return result
-
-
-def make_sitemap(site: str, pages: list[Path], root: Path) -> str:
-    urls = []
-
-    for page in pages:
-        url = page_url(site, page, root)
-        urls.append(
-            "  <url>\n"
-            f"    <loc>{html.escape(url)}</loc>\n"
-            "  </url>"
-        )
-
-    return (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(urls)
-        + "\n</urlset>\n"
-    )
-
-
-def promotion_drafts(site: str) -> dict:
+from typing import Any
+from urllib.parse import urlsplit
+TOOL_NAME = "MedOrbits Free Promotion Toolkit"
+DEFAULT_BRAND = "MedOrbits"
+DEFAULT_WEBSITE = "https://medorbits.in/"
+DEFAULT_OFFER = "Education, admission, and career guidance"
+PLATFORMS = ("Instagram", "Facebook", "LinkedIn", "YouTube")
+def clean_text(value: str, field: str, limit: int = 300) -> str:
+    value = value.strip()
+    if not value:
+        raise ValueError(f"{field} cannot be empty.")
+    if len(value) > limit:
+        raise ValueError(f"{field} cannot exceed {limit} characters.")
+    if "\x00" in value:
+        raise ValueError(f"{field} contains an invalid character.")
+    return value
+def validate_website(value: str) -> str:
+    value = clean_text(value, "Website URL", 2048)
+    parsed = urlsplit(value)
+    if parsed.scheme not in {"https", "http"} or not parsed.hostname:
+        raise ValueError("Website must be a valid HTTP or HTTPS URL.")
+    if parsed.username or parsed.password:
+        raise ValueError("Website URL must not contain embedded credentials.")
+    if any(char.isspace() for char in value):
+        raise ValueError("Website URL cannot contain whitespace.")
+    return value
+def slugify(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")[:70]
+def build_captions(brand: str, offer: str, website: str) -> dict[str, str]:
+    """Generate platform-specific organic social drafts."""
     return {
-        "brand": "MedOrbits",
-        "website": site,
-        "disclaimer": (
-            "Review all facts, links, and claims before publishing. "
-            "Do not promise admission, employment, scholarships, or outcomes."
+        "Instagram": (
+            f"Planning your next education or career step? 🎓\n\n"
+            f"Explore useful information and guidance with {brand}. "
+            f"Research your options, understand eligibility, and check "
+            f"official requirements before making a decision.\n\n"
+            f"Explore more: {website}\n\n"
+            f"#Education #CareerGuidance #Admissions #StudentResources "
+            f"#MedOrbits"
         ),
-        "linkedin": (
-            "Explore MedOrbits for education guidance, admissions resources, "
-            "career information, and recruitment support.\n\n"
-            f"Visit: {site}\n\n"
-            "#Education #CareerGuidance #Admissions #MedOrbits"
+        "Facebook": (
+            f"Looking for reliable information about your next step?\n\n"
+            f"{brand} helps you explore {offer.lower()} resources. "
+            f"Compare available options, review eligibility, and verify "
+            f"important details with official institutions.\n\n"
+            f"Visit: {website}\n\n"
+            f"Save this post or share it with someone who may find it useful."
         ),
-        "instagram": (
-            "Planning your next education or career step? 🎓\n\n"
-            "Explore education resources, admissions guidance, and career "
-            f"information with MedOrbits.\n\n{site}\n\n"
-            "#MedOrbits #Education #Admissions #CareerGuidance"
+        "LinkedIn": (
+            f"Making an informed education or career decision starts with "
+            f"good research.\n\n"
+            f"{brand} shares resources related to {offer.lower()}. "
+            f"Review entry requirements, timelines, and official sources "
+            f"before taking action.\n\n"
+            f"Explore the resources: {website}\n\n"
+            f"#Education #CareerDevelopment #StudentSuccess"
         ),
-        "facebook": (
-            "Discover education, admissions, and career resources with "
-            "MedOrbits. Explore our website and share it with someone who "
-            f"may find these resources useful.\n\n{site}"
+        "YouTube": (
+            f"Explore education and career resources with {brand}.\n\n"
+            f"In this video, we discuss {offer.lower()}. Always confirm "
+            f"eligibility, deadlines, fees, and admission requirements "
+            f"with the relevant official institution.\n\n"
+            f"More resources: {website}\n\n"
+            f"Subscribe for more educational guides and useful updates."
         ),
-        "whatsapp": (
-            "MedOrbits offers education resources, admissions information, "
-            "and career guidance. Explore the website here: "
-            f"{site}\n\nPlease share only with people who may find it useful."
-        ),
-        "short_directory_description": (
-            "MedOrbits provides education resources, admissions information, "
-            "career guidance, and recruitment-related services."
-        ),
-        "long_directory_description": (
-            "MedOrbits is an online resource for education information, "
-            "admissions guidance, career resources, and recruitment-related "
-            "services. Visitors should verify eligibility, deadlines, fees, "
-            "and official admission or employment requirements with the "
-            "relevant institutions and authorities."
-        ),
-        "content_ideas": [
-            "A practical checklist for preparing education application documents.",
-            "How to verify admissions deadlines using official sources.",
-            "Questions to ask before selecting a college or course.",
-            "How to prepare a CV for entry-level opportunities.",
-            "A guide to identifying recruitment scams and fake job offers.",
-        ],
     }
-
-
-def free_promotion_checklist(site: str) -> list[dict]:
+def build_seo(brand: str, offer: str, website: str) -> dict[str, Any]:
+    keywords = [
+        "education guidance",
+        "admission information",
+        "career guidance",
+        "college research",
+        "student resources",
+        "education planning",
+    ]
+    title = f"{brand} | Education and Career Guidance"
+    description = (
+        f"Explore {offer.lower()} resources with {brand}. "
+        "Review eligibility, compare options, and verify details "
+        "with official sources."
+    )
+    return {
+        "website": website,
+        "suggested_title": title[:60],
+        "suggested_meta_description": description[:160],
+        "keyword_ideas": keywords,
+        "on_page_actions": [
+            "Give every important page a unique title and meta description.",
+            "Use clear headings that accurately describe page content.",
+            "Add useful internal links between related guides.",
+            "Compress images and provide descriptive alt text.",
+            "Ensure mobile usability and accessible navigation.",
+            "Keep course fees, deadlines, and eligibility information current.",
+            "Add structured data only when it accurately describes page content.",
+            "Connect the site to Google Search Console and submit a sitemap.",
+        ],
+        "note": "Keyword suggestions are ideas, not rankings or traffic guarantees.",
+    }
+def build_promotion_ideas(brand: str, offer: str, website: str) -> list[dict[str, str]]:
     return [
         {
-            "task": "Verify ownership in Google Search Console",
-            "url": "https://search.google.com/search-console/",
-            "action": "Verify the domain and submit the sitemap.",
-        },
-        {
-            "task": "Submit sitemap to Bing Webmaster Tools",
-            "url": "https://www.bing.com/webmasters/",
-            "action": "Verify ownership and submit the valid sitemap.",
-        },
-        {
-            "task": "Check Google Business Profile eligibility",
-            "url": "https://www.google.com/business/",
+            "channel": "Organic social media",
             "action": (
-                "Create a profile only if the business meets Google's "
-                "eligibility rules. Do not invent a business address."
+                f"Publish useful short videos and carousels about {offer.lower()}. "
+                "Use clear captions and a link to the relevant page."
             ),
+            "frequency": "2–4 useful posts per week",
+            "cost": "Free",
         },
         {
-            "task": "Publish useful educational articles",
-            "url": site,
+            "channel": "YouTube",
             "action": (
-                "Publish original, accurate articles with references to "
-                "official sources and useful internal links."
+                "Create explainers, FAQs, application checklists, and "
+                "step-by-step guides. Add the relevant website link."
             ),
+            "frequency": "1 helpful video per week",
+            "cost": "Free with existing equipment",
         },
         {
-            "task": "Share useful content on social media",
-            "url": site,
+            "channel": "Community participation",
             "action": (
-                "Share relevant articles at a reasonable frequency. "
-                "Avoid repetitive mass posting or unsolicited messages."
+                "Answer relevant questions in student communities where "
+                "promotion is permitted. Disclose your affiliation and "
+                "share links only when useful and allowed."
             ),
+            "frequency": "A few meaningful contributions per week",
+            "cost": "Free",
         },
         {
-            "task": "Use legitimate business directories",
-            "url": site,
+            "channel": "Partnership outreach",
             "action": (
-                "Submit accurate business information only to reputable "
-                "directories that permit your business category."
+                "Approach colleges, educators, student clubs, and career "
+                "communities with a specific collaboration proposal."
             ),
+            "frequency": "Personalized outreach each week",
+            "cost": "Free to contact; partnerships may have costs",
         },
         {
-            "task": "Improve page performance and mobile usability",
-            "url": "https://pagespeed.web.dev/",
-            "action": "Review mobile performance, accessibility, and page speed.",
+            "channel": "Website content",
+            "action": (
+                "Publish accurate guides, checklists, FAQs, and comparison "
+                "pages. Cite official sources and update expired information."
+            ),
+            "frequency": "1–2 substantial resources per week",
+            "cost": "Free if written in-house",
         },
         {
-            "task": "Check indexing and robots rules",
-            "url": site + "/robots.txt",
-            "action": "Confirm important pages are crawlable and not blocked.",
+            "channel": "Customer referrals",
+            "action": (
+                "Invite satisfied users to voluntarily share helpful "
+                "resources. Do not invent reviews or offer undisclosed "
+                "incentives for positive testimonials."
+            ),
+            "frequency": "Include a simple invitation where appropriate",
+            "cost": "Free without incentives",
+        },
+        {
+            "channel": "Google Business Profile",
+            "action": (
+                "If eligible as a real business, keep business details, "
+                "hours, contact information, and updates accurate."
+            ),
+            "frequency": "Review details monthly",
+            "cost": "Free profile; eligibility rules apply",
         },
     ]
-
-
-def check_live_url(url: str) -> dict:
-    request = Request(
-        url,
-        headers={"User-Agent": USER_AGENT},
-        method="GET",
-    )
-
-    try:
-        with urlopen(request, timeout=12) as response:
-            return {
-                "url": url,
-                "status": response.status,
-                "final_url": response.geturl(),
-                "content_type": response.headers.get("Content-Type", ""),
-                "result": "reachable",
-            }
-    except HTTPError as exc:
-        return {
-            "url": url,
-            "status": exc.code,
-            "result": "http-error",
+def build_calendar(brand: str, website: str) -> list[dict[str, str]]:
+    """Build a seven-day plan starting today."""
+    today = date.today()
+    tasks = [
+        (
+            "Educational carousel",
+            "Explain one common admission or career question with verified facts.",
+            "Instagram and Facebook",
+        ),
+        (
+            "Short video",
+            "Answer one frequently asked question in 30–60 seconds.",
+            "Instagram Reels and YouTube Shorts",
+        ),
+        (
+            "Useful guide",
+            "Publish a checklist or explainer with links to official sources.",
+            "Website and LinkedIn",
+        ),
+        (
+            "Community engagement",
+            "Answer relevant questions in communities that permit participation.",
+            "Student communities",
+        ),
+        (
+            "Myth versus fact",
+            "Correct one common misconception and cite an authoritative source.",
+            "Instagram and Facebook",
+        ),
+        (
+            "Partnership outreach",
+            "Contact one relevant educator or organization with a tailored proposal.",
+            "Email or professional network",
+        ),
+        (
+            "Review and improve",
+            "Review available analytics and plan next week's useful content.",
+            "All channels",
+        ),
+    ]
+    return [
+        {
+            "date": (today + timedelta(days=index)).isoformat(),
+            "day": f"Day {index + 1}",
+            "brand": brand,
+            "content": title,
+            "action": action,
+            "channel": channel,
+            "destination": website,
         }
-    except (URLError, TimeoutError, OSError) as exc:
-        return {
-            "url": url,
-            "result": "connection-error",
-            "message": str(exc),
-        }
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Prepare safe, free MedOrbits promotion resources."
-    )
-
-    parser.add_argument(
-        "--root",
-        default=".",
-        help="Local repository root.",
-    )
-
-    parser.add_argument(
-        "--site",
-        default=DEFAULT_SITE,
-        help="Canonical public website URL.",
-    )
-
-    parser.add_argument(
-        "--check-live",
-        action="store_true",
-        help="Make limited GET requests to the site and key public endpoints.",
-    )
-
-    args = parser.parse_args()
-
-    root = Path(args.root).expanduser().resolve()
-    site_parts = urlparse(args.site)
-
-    if not root.is_dir():
-        print(f"ERROR: Repository directory not found: {root}")
-        return 2
-
-    if site_parts.scheme != "https" or not site_parts.netloc:
-        print("ERROR: --site must be a valid HTTPS URL.")
-        return 2
-
-    site = args.site.rstrip("/")
-    pages = scan_html(root)
-
-    report_dir = root / "tools" / "repository-reports"
-    report_dir.mkdir(parents=True, exist_ok=True)
-
-    audits = [audit_page(page, root) for page in pages]
-
-    local_robots = root / "robots.txt"
-    local_sitemap = root / "sitemap.xml"
-
-    report = {
-        "tool": "MedOrbits Free Promotion Assistant",
-        "version": VERSION,
-        "created_at_epoch": int(time.time()),
-        "site": site,
-        "local_html_pages": len(pages),
-        "seo_audit": audits,
-        "local_files": {
-            "robots_txt_exists": local_robots.is_file(),
-            "sitemap_xml_exists": local_sitemap.is_file(),
-        },
-        "promotion_drafts": promotion_drafts(site),
-        "free_promotion_checklist": free_promotion_checklist(site),
-        "live_checks": [],
-        "safety": {
-            "published_automatically": False,
-            "sent_messages": False,
-            "created_accounts": False,
-            "paid_advertising": False,
-            "modified_existing_html": False,
-        },
+        for index, (title, action, channel) in enumerate(tasks)
+    ]
+def build_campaign(brand: str, offer: str, website: str) -> dict[str, Any]:
+    captions = build_captions(brand, offer, website)
+    return {
+        "tool": TOOL_NAME,
+        "schema_version": "1.0",
+        "campaign_name": f"{slugify(brand)}-organic-promotion",
+        "status": "draft",
+        "promotion_type": "organic",
+        "paid_ad_spend": 0,
+        "brand": brand,
+        "offer": offer,
+        "website": website,
+        "captions": captions,
+        "seo": build_seo(brand, offer, website),
+        "promotion_ideas": build_promotion_ideas(brand, offer, website),
+        "calendar": build_calendar(brand, website),
+        "publishing_enabled": False,
+        "safety_review_required": True,
+        "review_checklist": [
+            "Verify facts, fees, deadlines, eligibility, and links.",
+            "Check platform rules and community promotion policies.",
+            "Obtain permission to use third-party images, logos, and music.",
+            "Do not promise guaranteed admission, jobs, visas, or outcomes.",
+            "Do not send unsolicited bulk messages or scrape contact details.",
+            "Review analytics without collecting unnecessary personal data.",
+        ],
     }
-
-    # Generate a proposed sitemap as a separate report.
-    # It is not automatically written to the website root.
-    proposed_sitemap = make_sitemap(site, pages, root)
-
-    (report_dir / "proposed-sitemap.xml").write_text(
-        proposed_sitemap,
-        encoding="utf-8",
+def save_json(data: dict[str, Any], output: Path) -> Path:
+    """Create a new JSON file without overwriting existing work."""
+    output = output.expanduser().resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("x", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
+    return output
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=TOOL_NAME,
     )
-
-    if args.check_live:
-        endpoints = [
-            site + "/",
-            site + "/robots.txt",
-            site + "/sitemap.xml",
-        ]
-
-        for endpoint in endpoints[:MAX_LIVE_PAGES]:
-            report["live_checks"].append(check_live_url(endpoint))
-
-    report_path = report_dir / "free-promotion-report.json"
-
-    report_path.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
+    parser.add_argument("--brand", default=DEFAULT_BRAND)
+    parser.add_argument("--offer", default=DEFAULT_OFFER)
+    parser.add_argument("--website", default=DEFAULT_WEBSITE)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/free-promotion.json"),
+        help="Output JSON path; existing files are never overwritten.",
     )
-
-    print("MedOrbits Free Promotion Assistant")
-    print(f"Website: {site}")
-    print(f"HTML pages audited: {len(pages)}")
-    print(f"SEO pages with findings: {sum(bool(p['issues']) for p in audits)}")
-    print(f"Report: {report_path.relative_to(root).as_posix()}")
-    print(
-        "Sitemap proposal: "
-        "tools/repository-reports/proposed-sitemap.xml"
-    )
-    print("No content was published and no messages were sent.")
-
-    return 0
-
-
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    for command in ("campaign", "captions", "seo", "calendar", "ideas", "all"):
+        subparsers.add_parser(command, help=f"Generate {command} content.")
+    return parser.parse_args()
+def main() -> int:
+    args = parse_args()
+    try:
+        brand = clean_text(args.brand, "Brand", 100)
+        offer = clean_text(args.offer, "Offer", 200)
+        website = validate_website(args.website)
+        campaign = build_campaign(brand, offer, website)
+        if args.command == "campaign":
+            result: Any = {
+                "campaign_name": campaign["campaign_name"],
+                "brand": brand,
+                "offer": offer,
+                "website": website,
+                "promotion_type": "organic",
+                "paid_ad_spend": 0,
+                "publishing_enabled": False,
+                "review_checklist": campaign["review_checklist"],
+            }
+        elif args.command == "captions":
+            result = campaign["captions"]
+        elif args.command == "seo":
+            result = campaign["seo"]
+        elif args.command == "calendar":
+            result = campaign["calendar"]
+        elif args.command == "ideas":
+            result = campaign["promotion_ideas"]
+        elif args.command == "all":
+            result = campaign
+        else:
+            raise ValueError("Unsupported command.")
+        if args.command in {"campaign", "all"}:
+            saved = save_json(result, args.output)
+            print(f"Draft saved to: {saved}")
+        else:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
+    except (OSError, ValueError) as exc:
+        print(f"{TOOL_NAME}: {exc}", file=sys.stderr)
+        return 2
 if __name__ == "__main__":
     raise SystemExit(main())
+
+Run it
+
+Generate a complete organic promotion plan:
+
+python tools/free_promotion.py all
+
+Generate only Instagram, Facebook, LinkedIn, and YouTube caption drafts:
+
+python tools/free_promotion.py captions
+
+Customize it for an MBBS admission campaign:
+
+python tools/free_promotion.py all \
+  --brand MedOrbits \
+  --offer "MBBS admission guidance" \
+  --website https://medorbits.in/ \
+  --output reports/mbbs-organic-promotion.json
+
+Safety: The script creates drafts only. It does not guarantee reach, followers, leads, or search rankings, and it will refuse to overwrite an existing output file.

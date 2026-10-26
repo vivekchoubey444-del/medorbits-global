@@ -1,28 +1,23 @@
-
 #!/usr/bin/env node
-
 'use strict';
-
 /**
  * MedOrbits -- JSON Validation Utility
- * -----------------------------------
- * File: scripts/validate-json.js
+ * File: /scripts/validate-json.js
  * Runtime: Node.js >= 20
  * Dependencies: None
  *
  * Features:
- * - Recursively validates JSON files.
- * - Reports syntax errors with line and column where available.
- * - Detects UTF-8 BOMs and warns without modifying source files.
- * - Supports strict mode, where warnings fail validation.
- * - Supports configurable root directory and excluded directories.
- * - Supports hidden-file inclusion.
- * - Avoids following symbolic links.
- * - Enforces a configurable maximum JSON file size.
- * - Detects files changed during validation where practical.
- * - Handles unreadable files and directory traversal errors.
- * - Produces deterministic, human-readable CI output.
- * - Returns stable exit codes.
+ * - Recursive JSON syntax validation.
+ * - Line and column reporting where available.
+ * - UTF-8 BOM detection without modifying files.
+ * - Strict mode: warnings cause failure.
+ * - Configurable scan root and repeated directory exclusions.
+ * - Optional hidden-file inclusion.
+ * - Symbolic-link avoidance.
+ * - Bounded file reads and configurable maximum size.
+ * - Best-effort detection of files changed during validation.
+ * - Deterministic human-readable or JSON output.
+ * - Stable exit codes for CI/CD.
  *
  * Usage:
  *   node scripts/validate-json.js
@@ -31,6 +26,7 @@
  *   node scripts/validate-json.js --exclude uploads --exclude temp
  *   node scripts/validate-json.js --include-hidden
  *   node scripts/validate-json.js --max-size 20
+ *   node scripts/validate-json.js --max-size 0
  *   node scripts/validate-json.js --json
  *   node scripts/validate-json.js --help
  *
@@ -39,14 +35,12 @@
  *   1 = validation failure
  *   2 = invalid arguments or fatal configuration error
  *
- * This script validates JSON syntax only. It does not validate JSON Schema.
+ * This utility validates JSON syntax only. It does not validate JSON Schema.
  */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { performance } from 'node:perf_hooks';
-
 const DEFAULT_IGNORED_DIRECTORIES = [
   'node_modules',
   '.git',
@@ -60,47 +54,43 @@ const DEFAULT_IGNORED_DIRECTORIES = [
   '.vercel',
   '.netlify',
 ];
-
 const DEFAULT_MAX_FILE_SIZE_MB = 10;
 const MAX_REPORTED_ISSUES = 1000;
-
+const MAX_EXCLUSION_LENGTH = 255;
+const READ_CHUNK_SIZE = 64 * 1024;
 const EXIT_CODES = Object.freeze({
   SUCCESS: 0,
   VALIDATION_FAILURE: 1,
   CONFIGURATION_ERROR: 2,
 });
-
+class ConfigurationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ConfigurationError';
+  }
+}
 function printHelp() {
   console.log(`
 MedOrbits JSON Validation Utility
-
 Usage:
   node scripts/validate-json.js [options]
-
 Options:
   --strict
       Treat warnings as validation failures.
-
   --root <directory>
       Directory to scan. Defaults to the current working directory.
-
   --exclude <name>
       Exclude a directory by name. Can be repeated.
-
   --include-hidden
       Include hidden files and directories, except excluded directories.
-
   --max-size <MB>
-      Maximum JSON file size in megabytes.
-      Defaults to ${DEFAULT_MAX_FILE_SIZE_MB} MB.
-      Use 0 to disable the size limit.
-
+      Maximum JSON file size in MiB.
+      Default: ${DEFAULT_MAX_FILE_SIZE_MB} MiB.
+      Use 0 to disable the configured size limit.
   --json
-      Output the final report as JSON instead of a human-readable report.
-
+      Output the final report as JSON.
   --help, -h
       Display this help message.
-
 Examples:
   node scripts/validate-json.js
   node scripts/validate-json.js --strict
@@ -111,7 +101,6 @@ Examples:
   node scripts/validate-json.js --json
 `);
 }
-
 function parseArguments(args) {
   const options = {
     root: process.cwd(),
@@ -121,71 +110,59 @@ function parseArguments(args) {
     excludedDirectories: new Set(DEFAULT_IGNORED_DIRECTORIES),
     jsonOutput: false,
     help: false,
-    errors: [],
   };
-
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
-
     switch (argument) {
       case '--help':
       case '-h':
         options.help = true;
         break;
-
       case '--strict':
         options.strict = true;
         break;
-
       case '--include-hidden':
         options.includeHidden = true;
         break;
-
       case '--json':
         options.jsonOutput = true;
         break;
-
       case '--root': {
         const value = args[index + 1];
-
         if (!value || value.startsWith('--')) {
-          options.errors.push('--root requires a directory path.');
-          break;
+          throw new ConfigurationError(
+            '--root requires a directory path.',
+          );
         }
-
         options.root = path.resolve(process.cwd(), value);
         index += 1;
         break;
       }
-
       case '--exclude': {
         const value = args[index + 1];
-
         if (!value || value.startsWith('--')) {
-          options.errors.push('--exclude requires a directory name.');
-          break;
+          throw new ConfigurationError(
+            '--exclude requires a directory name.',
+          );
         }
-
         if (
+          value.length > MAX_EXCLUSION_LENGTH ||
           value === '.' ||
           value === '..' ||
           value.includes('/') ||
-          value.includes('\\')
+          value.includes('\\') ||
+          value.includes('\0')
         ) {
-          options.errors.push(
+          throw new ConfigurationError(
             `Invalid exclusion "${value}". Supply a directory name, not a path.`,
           );
-          break;
         }
-
         options.excludedDirectories.add(value);
         index += 1;
         break;
       }
-
       case '--max-size': {
         const value = args[index + 1];
-
         if (
           value === undefined ||
           value.startsWith('--') ||
@@ -193,51 +170,58 @@ function parseArguments(args) {
           !Number.isFinite(Number(value)) ||
           Number(value) < 0
         ) {
-          options.errors.push(
-            '--max-size requires a finite, non-negative number in megabytes.',
+          throw new ConfigurationError(
+            '--max-size requires a finite, non-negative number in MiB.',
           );
-          break;
         }
-
-        options.maxSizeMB = Number(value);
+        const parsed = Number(value);
+        if (parsed > Number.MAX_SAFE_INTEGER / (1024 * 1024)) {
+          throw new ConfigurationError(
+            '--max-size is too large.',
+          );
+        }
+        options.maxSizeMB = parsed;
         index += 1;
         break;
       }
-
       default:
-        options.errors.push(`Unknown option: ${argument}`);
-        break;
+        throw new ConfigurationError(
+          `Unknown option: ${argument}`,
+        );
     }
   }
-
   return options;
 }
-
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) {
     return 'unknown size';
   }
-
   if (bytes < 1024) {
     return `${bytes} B`;
   }
-
   if (bytes < 1024 ** 2) {
-    return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / 1024).toFixed(2)} KiB`;
   }
-
   if (bytes < 1024 ** 3) {
-    return `${(bytes / 1024 ** 2).toFixed(2)} MB`;
+    return `${(bytes / 1024 ** 2).toFixed(2)} MiB`;
   }
-
-  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
 }
-
 function getRelativePath(root, target) {
   const relativePath = path.relative(root, target);
   return relativePath || '.';
 }
-
+function isInsideRoot(root, target) {
+  const relativePath = path.relative(root, target);
+  return (
+    relativePath === '' ||
+    (
+      relativePath !== '..' &&
+      !relativePath.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relativePath)
+    )
+  );
+}
 function createStatistics() {
   return {
     directoriesVisited: 0,
@@ -255,14 +239,12 @@ function createStatistics() {
     bytesRead: 0,
   };
 }
-
 function createReporter() {
   return {
     issues: [],
     omittedIssues: 0,
   };
 }
-
 function addIssue(
   reporter,
   statistics,
@@ -276,7 +258,6 @@ function addIssue(
   } else {
     statistics.warnings += 1;
   }
-
   if (reporter.issues.length < MAX_REPORTED_ISSUES) {
     reporter.issues.push({
       level,
@@ -288,7 +269,6 @@ function addIssue(
     reporter.omittedIssues += 1;
   }
 }
-
 function addError(reporter, statistics, filePath, code, message) {
   addIssue(
     reporter,
@@ -299,7 +279,6 @@ function addError(reporter, statistics, filePath, code, message) {
     message,
   );
 }
-
 function addWarning(reporter, statistics, filePath, code, message) {
   addIssue(
     reporter,
@@ -310,249 +289,280 @@ function addWarning(reporter, statistics, filePath, code, message) {
     message,
   );
 }
-
 function shouldSkipHidden(name, includeHidden) {
-  if (includeHidden) {
-    return false;
-  }
-
-  return name.startsWith('.') && name !== '.well-known';
+  return !includeHidden && name.startsWith('.');
 }
-
 function isJsonFile(fileName) {
   return fileName.toLowerCase().endsWith('.json');
 }
-
-function isInsideRoot(root, target) {
-  const relativePath = path.relative(root, target);
-
-  return (
-    relativePath === '' ||
-    (
-      relativePath !== '..' &&
-      !relativePath.startsWith(`..${path.sep}`) &&
-      !path.isAbsolute(relativePath)
-    )
-  );
+function safeErrorMessage(error) {
+  // Do not expose full absolute paths from low-level filesystem errors.
+  const code =
+    typeof error?.code === 'string'
+      ? ` (${error.code})`
+      : '';
+  const messages = {
+    EACCES: 'Permission denied',
+    EPERM: 'Operation not permitted',
+    ENOENT: 'File or directory no longer exists',
+    ELOOP: 'Symbolic-link loop detected',
+    EMFILE: 'Too many open files',
+    ENFILE: 'System file-descriptor limit reached',
+    EISDIR: 'Expected a file but found a directory',
+    ENOTDIR: 'Expected a directory component',
+    EIO: 'Filesystem I/O error',
+  };
+  if (error?.code && messages[error.code]) {
+    return `${messages[error.code]}${code}`;
+  }
+  return `Filesystem operation failed${code}`;
 }
-
-/**
- * Extract a JSON parser position from Node/V8 error messages.
- *
- * Different Node.js versions produce different error messages.
- * Position-based locations are used when available. Otherwise, the
- * original parser message is retained without inventing a location.
- */
 function getErrorLocation(message, source) {
-  const patterns = [
-    /\bposition\s+(\d+)\b/i,
+  const lineColumnMatch = message.match(
     /\bline\s+(\d+)\s+column\s+(\d+)\b/i,
-  ];
-
-  const lineColumnMatch = message.match(patterns[1]);
-
+  );
   if (lineColumnMatch) {
     return {
       line: Number(lineColumnMatch[1]),
       column: Number(lineColumnMatch[2]),
-      message,
     };
   }
-
-  const positionMatch = message.match(patterns[0]);
-
+  const positionMatch = message.match(
+    /\bposition\s+(\d+)\b/i,
+  );
   if (!positionMatch) {
     return {
       line: null,
       column: null,
-      message,
     };
   }
-
   const position = Number(positionMatch[1]);
-  const safePosition = Math.max(0, Math.min(position, source.length));
+  const safePosition = Math.max(
+    0,
+    Math.min(position, source.length),
+  );
   const precedingText = source.slice(0, safePosition);
   const lines = precedingText.split('\n');
-
   return {
     line: lines.length,
     column: lines[lines.length - 1].length + 1,
-    message,
   };
 }
-
 function formatParseError(error, source) {
-  const detail = getErrorLocation(error.message, source);
-
+  const detail = getErrorLocation(
+    String(error?.message || 'Invalid JSON'),
+    source,
+  );
+  const message = String(
+    error?.message || 'Invalid JSON syntax',
+  )
+    .replace(/\s+/g, ' ')
+    .slice(0, 500);
   if (detail.line !== null) {
-    return `line ${detail.line}, column ${detail.column}: ${detail.message}`;
+    return `line ${detail.line}, column ${detail.column}: ${message}`;
   }
-
-  return detail.message;
+  return message;
 }
-
-function getFileStat(filePath, options, reporter, statistics) {
+/**
+ * Open a regular file without following a final-component symlink
+ * where O_NOFOLLOW is supported.
+ *
+ * This is a best-effort protection. It does not eliminate all races
+ * involving parent-directory replacement on every operating system.
+ */
+function openRegularFile(filePath) {
+  const noFollow = fs.constants.O_NOFOLLOW || 0;
+  const flags = fs.constants.O_RDONLY | noFollow;
+  const descriptor = fs.openSync(filePath, flags);
   try {
-    const stat = fs.lstatSync(filePath);
-
-    // Do not follow symbolic links. A file may have changed since
-    // directory enumeration, so inspect the link itself first.
-    if (stat.isSymbolicLink()) {
-      statistics.symbolicLinksSkipped += 1;
-      return null;
-    }
-
+    const stat = fs.fstatSync(descriptor);
     if (!stat.isFile()) {
-      return null;
+      throw new ConfigurationError(
+        'The selected path is not a regular file.',
+      );
     }
-
-    return stat;
+    return {
+      descriptor,
+      stat,
+    };
   } catch (error) {
-    statistics.filesUnreadable += 1;
-
-    addError(
-      reporter,
-      statistics,
-      getRelativePath(options.root, filePath),
-      'FILE_STAT_FAILED',
-      `Cannot inspect file: ${error.message}`,
-    );
-
-    return null;
+    fs.closeSync(descriptor);
+    throw error;
   }
 }
-
+/**
+ * Read a bounded file using a file descriptor.
+ * This avoids loading an arbitrarily large file into memory.
+ */
+function readBoundedFile(descriptor, initialSize, maxBytes) {
+  const chunks = [];
+  let totalBytes = 0;
+  let position = 0;
+  const buffer = Buffer.allocUnsafe(READ_CHUNK_SIZE);
+  while (true) {
+    const bytesRead = fs.readSync(
+      descriptor,
+      buffer,
+      0,
+      buffer.length,
+      position,
+    );
+    if (bytesRead === 0) {
+      break;
+    }
+    totalBytes += bytesRead;
+    if (maxBytes > 0 && totalBytes > maxBytes) {
+      return {
+        tooLarge: true,
+        bytesRead: totalBytes,
+        source: null,
+      };
+    }
+    chunks.push(Buffer.from(buffer.subarray(0, bytesRead)));
+    position += bytesRead;
+  }
+  return {
+    tooLarge: false,
+    bytesRead: totalBytes,
+    source: Buffer.concat(chunks).toString('utf8'),
+    initialSize,
+  };
+}
 function validateJsonFile(
   filePath,
   options,
   reporter,
   statistics,
 ) {
-  const relativePath = getRelativePath(options.root, filePath);
-  const initialStat = getFileStat(
+  const relativePath = getRelativePath(
+    options.root,
     filePath,
-    options,
-    reporter,
-    statistics,
   );
-
-  if (!initialStat) {
-    return;
-  }
-
   statistics.filesDiscovered += 1;
-
-  const maxBytes = options.maxSizeMB * 1024 * 1024;
-
-  if (maxBytes > 0 && initialStat.size > maxBytes) {
-    statistics.filesTooLarge += 1;
-
+  const maxBytes =
+    options.maxSizeMB === 0
+      ? 0
+      : options.maxSizeMB * 1024 * 1024;
+  let descriptor;
+  let initialStat;
+  try {
+    // lstat avoids deliberately following a final-component symlink.
+    const linkStat = fs.lstatSync(filePath);
+    if (linkStat.isSymbolicLink()) {
+      statistics.symbolicLinksSkipped += 1;
+      return;
+    }
+    if (!linkStat.isFile()) {
+      return;
+    }
+    if (maxBytes > 0 && linkStat.size > maxBytes) {
+      statistics.filesTooLarge += 1;
+      addError(
+        reporter,
+        statistics,
+        relativePath,
+        'FILE_TOO_LARGE',
+        `File exceeds the ${options.maxSizeMB} MiB limit (${formatBytes(linkStat.size)}).`,
+      );
+      return;
+    }
+    const opened = openRegularFile(filePath);
+    descriptor = opened.descriptor;
+    initialStat = opened.stat;
+  } catch (error) {
+    if (error?.code === 'ELOOP') {
+      statistics.symbolicLinksSkipped += 1;
+      return;
+    }
+    statistics.filesUnreadable += 1;
     addError(
       reporter,
       statistics,
       relativePath,
-      'FILE_TOO_LARGE',
-      `File exceeds the ${options.maxSizeMB} MB limit (${formatBytes(initialStat.size)}).`,
+      'FILE_OPEN_FAILED',
+      safeErrorMessage(error),
     );
-
     return;
   }
-
-  let source;
+  let readResult;
   let finalStat;
-
   try {
-    source = fs.readFileSync(filePath, 'utf8');
-
-    // Check the opened path again to catch common file replacement
-    // and mutation cases. This is a best-effort integrity check, not
-    // a guarantee against concurrent filesystem changes.
-    finalStat = fs.lstatSync(filePath);
+    readResult = readBoundedFile(
+      descriptor,
+      initialStat.size,
+      maxBytes,
+    );
+    finalStat = fs.fstatSync(descriptor);
   } catch (error) {
     statistics.filesUnreadable += 1;
-
     addError(
       reporter,
       statistics,
       relativePath,
       'FILE_READ_FAILED',
-      `Cannot read file: ${error.message}`,
+      safeErrorMessage(error),
     );
-
     return;
+  } finally {
+    try {
+      fs.closeSync(descriptor);
+    } catch {
+      // Do not conceal the primary validation result on close failure.
+    }
   }
-
-  if (finalStat.isSymbolicLink() || !finalStat.isFile()) {
-    statistics.filesChangedDuringRead += 1;
-
-    addError(
-      reporter,
-      statistics,
-      relativePath,
-      'FILE_CHANGED_DURING_READ',
-      'The file was replaced or changed into a non-regular file during validation.',
-    );
-
-    return;
-  }
-
-  const bytesRead = Buffer.byteLength(source, 'utf8');
-  statistics.bytesRead += bytesRead;
-
-  if (maxBytes > 0 && bytesRead > maxBytes) {
+  statistics.bytesRead += readResult.bytesRead;
+  if (readResult.tooLarge) {
     statistics.filesTooLarge += 1;
-
     addError(
       reporter,
       statistics,
       relativePath,
       'FILE_GREW_BEYOND_LIMIT',
-      `File content exceeds the ${options.maxSizeMB} MB limit (${formatBytes(bytesRead)}).`,
+      `File content exceeded the ${options.maxSizeMB} MiB limit while reading.`,
     );
-
     return;
   }
-
   if (
+    initialStat.dev !== finalStat.dev ||
+    initialStat.ino !== finalStat.ino ||
     initialStat.size !== finalStat.size ||
-    initialStat.mtimeMs !== finalStat.mtimeMs
+    initialStat.mtimeMs !== finalStat.mtimeMs ||
+    initialStat.ctimeMs !== finalStat.ctimeMs ||
+    readResult.bytesRead !== finalStat.size
   ) {
     statistics.filesChangedDuringRead += 1;
-
     addError(
       reporter,
       statistics,
       relativePath,
       'FILE_CHANGED_DURING_READ',
-      'File size or modification time changed during validation. Retry against a stable file.',
+      'File metadata changed during validation. Retry against a stable file.',
     );
-
     return;
   }
-
   statistics.filesChecked += 1;
-
-  const hasBom = source.charCodeAt(0) === 0xfeff;
-
+  const source = readResult.source;
+  const hasBom =
+    source.length > 0 &&
+    source.charCodeAt(0) === 0xfeff;
   if (hasBom) {
     addWarning(
       reporter,
       statistics,
       relativePath,
       'UTF8_BOM',
-      'UTF-8 BOM detected. Save the file as UTF-8 without a BOM.',
+      'UTF-8 BOM detected. Save as UTF-8 without a BOM.',
     );
   }
-
-  // Strip only for parsing; never modify the source file.
-  const parseSource = hasBom ? source.slice(1) : source;
-
+  // Parse without the BOM, leaving the original file untouched.
+  const parseSource = hasBom
+    ? source.slice(1)
+    : source;
   try {
     JSON.parse(parseSource);
     statistics.filesValid += 1;
   } catch (error) {
     statistics.filesInvalid += 1;
-
     addError(
       reporter,
       statistics,
@@ -562,7 +572,6 @@ function validateJsonFile(
     );
   }
 }
-
 function walk(
   directory,
   options,
@@ -570,55 +579,47 @@ function walk(
   statistics,
 ) {
   statistics.directoriesVisited += 1;
-
   let entries;
-
   try {
     entries = fs.readdirSync(directory, {
       withFileTypes: true,
     });
-
-    // Stable ordering makes CI output easier to compare.
-    entries.sort((a, b) => a.name.localeCompare(b.name));
+    entries.sort((a, b) =>
+      a.name.localeCompare(b.name, 'en'),
+    );
   } catch (error) {
     addError(
       reporter,
       statistics,
       getRelativePath(options.root, directory),
       'DIRECTORY_READ_FAILED',
-      `Cannot read directory: ${error.message}`,
+      safeErrorMessage(error),
     );
-
     return;
   }
-
   for (const entry of entries) {
     const fullPath = path.join(directory, entry.name);
-    const relativePath = getRelativePath(options.root, fullPath);
-
+    const relativePath = getRelativePath(
+      options.root,
+      fullPath,
+    );
     if (shouldSkipHidden(entry.name, options.includeHidden)) {
       if (entry.isDirectory()) {
         statistics.directoriesSkipped += 1;
       }
-
       continue;
     }
-
     if (entry.isSymbolicLink()) {
       statistics.symbolicLinksSkipped += 1;
       continue;
     }
-
     if (entry.isDirectory()) {
       if (options.excludedDirectories.has(entry.name)) {
         statistics.directoriesSkipped += 1;
         continue;
       }
-
-      // Guard against unexpected traversal paths.
       if (!isInsideRoot(options.root, fullPath)) {
         statistics.directoriesSkipped += 1;
-
         addWarning(
           reporter,
           statistics,
@@ -626,24 +627,19 @@ function walk(
           'DIRECTORY_OUTSIDE_ROOT',
           'Directory was skipped because it resolves outside the configured root.',
         );
-
         continue;
       }
-
       walk(
         fullPath,
         options,
         reporter,
         statistics,
       );
-
       continue;
     }
-
     if (!entry.isFile() || !isJsonFile(entry.name)) {
       continue;
     }
-
     if (!isInsideRoot(options.root, fullPath)) {
       addWarning(
         reporter,
@@ -652,10 +648,8 @@ function walk(
         'FILE_OUTSIDE_ROOT',
         'File was skipped because it resolves outside the configured root.',
       );
-
       continue;
     }
-
     validateJsonFile(
       fullPath,
       options,
@@ -664,20 +658,25 @@ function walk(
     );
   }
 }
-
-function buildReport(options, reporter, statistics, elapsedMs) {
+function buildReport(
+  options,
+  reporter,
+  statistics,
+  elapsedMs,
+) {
   const failed =
     statistics.errors > 0 ||
     (options.strict && statistics.warnings > 0);
-
   return {
     tool: 'MedOrbits JSON Validation Utility',
-    version: 2,
+    version: 3,
     root: options.root,
     strict: options.strict,
     includeHidden: options.includeHidden,
     maxSizeMB: options.maxSizeMB,
-    excludedDirectories: [...options.excludedDirectories].sort(),
+    excludedDirectories: [
+      ...options.excludedDirectories,
+    ].sort(),
     durationMs: Number(elapsedMs.toFixed(2)),
     statistics,
     issues: reporter.issues,
@@ -688,26 +687,24 @@ function buildReport(options, reporter, statistics, elapsedMs) {
       : EXIT_CODES.SUCCESS,
   };
 }
-
 function printHumanReport(report) {
   const { statistics } = report;
-
   console.log('');
   console.log('MedOrbits JSON Validation');
-  console.log('='.repeat(48));
+  console.log('='.repeat(52));
   console.log(`Root directory:         ${report.root}`);
   console.log(`Strict mode:            ${report.strict ? 'enabled' : 'disabled'}`);
   console.log(`Hidden paths:           ${report.includeHidden ? 'included' : 'excluded'}`);
-
   console.log(
     `Maximum file size:      ${
-      report.maxSizeMB === 0 ? 'unlimited' : `${report.maxSizeMB} MB`
+      report.maxSizeMB === 0
+        ? 'unlimited'
+        : `${report.maxSizeMB} MiB`
     }`,
   );
-
   console.log('');
   console.log('Validation details');
-  console.log('-'.repeat(48));
+  console.log('-'.repeat(52));
   console.log(`Directories visited:    ${statistics.directoriesVisited}`);
   console.log(`Directories skipped:    ${statistics.directoriesSkipped}`);
   console.log(`JSON files discovered:  ${statistics.filesDiscovered}`);
@@ -722,155 +719,118 @@ function printHumanReport(report) {
   console.log(`Errors:                 ${statistics.errors}`);
   console.log(`Data read:              ${formatBytes(statistics.bytesRead)}`);
   console.log(`Duration:               ${report.durationMs} ms`);
-
-  const warnings = report.issues.filter(
-    (issue) => issue.level === 'warning',
-  );
-
-  const errors = report.issues.filter(
-    (issue) => issue.level === 'error',
-  );
-
-  if (warnings.length > 0) {
+  for (const level of ['warning', 'error']) {
+    const issues = report.issues.filter(
+      (issue) => issue.level === level,
+    );
+    if (issues.length === 0) {
+      continue;
+    }
     console.log('');
-    console.log('Warnings');
-    console.log('-'.repeat(48));
-
-    for (const warning of warnings) {
-      console.warn(
-        `WARN  ${warning.path} [${warning.code}]: ${warning.message}`,
+    console.log(
+      level === 'warning' ? 'Warnings' : 'Errors',
+    );
+    console.log('-'.repeat(52));
+    for (const issue of issues) {
+      const prefix =
+        level === 'warning' ? 'WARN ' : 'ERROR';
+      console.log(
+        `${prefix} ${issue.path} [${issue.code}]: ${issue.message}`,
       );
     }
   }
-
-  if (errors.length > 0) {
-    console.log('');
-    console.log('Errors');
-    console.log('-'.repeat(48));
-
-    for (const error of errors) {
-      console.error(
-        `ERROR ${error.path} [${error.code}]: ${error.message}`,
-      );
-    }
-  }
-
   if (report.omittedIssues > 0) {
     console.log('');
     console.log(
-      `Note: ${report.omittedIssues} additional issue(s) omitted from the report.`,
+      `Note: ${report.omittedIssues} additional issue(s) omitted from output.`,
     );
   }
-
   console.log('');
   console.log('Final result');
-  console.log('-'.repeat(48));
-
+  console.log('-'.repeat(52));
   if (report.result === 'failed') {
     console.error('FAILED: JSON validation did not pass.');
-
     if (report.strict && statistics.warnings > 0) {
-      console.error('Strict mode treats warnings as failures.');
+      console.error(
+        'Strict mode treats warnings as failures.',
+      );
     }
   } else {
-    console.log('PASSED: All checked JSON files are syntactically valid.');
-
+    console.log(
+      'PASSED: All checked JSON files are syntactically valid.',
+    );
     if (statistics.warnings > 0) {
-      console.log('Warnings remain. Use --strict to fail on warnings.');
+      console.log(
+        'Warnings remain. Use --strict to fail on warnings.',
+      );
     }
   }
-
   console.log('');
 }
-
 function main() {
   const startedAt = performance.now();
-  const options = parseArguments(process.argv.slice(2));
-
+  let options;
+  try {
+    options = parseArguments(process.argv.slice(2));
+  } catch (error) {
+    console.error(`ARGUMENT ERROR: ${error.message}`);
+    console.error('Run with --help to see supported options.');
+    return EXIT_CODES.CONFIGURATION_ERROR;
+  }
   if (options.help) {
     printHelp();
     return EXIT_CODES.SUCCESS;
   }
-
-  if (options.errors.length > 0) {
-    for (const error of options.errors) {
-      console.error(`ARGUMENT ERROR: ${error}`);
-    }
-
-    console.error('Run with --help to see supported options.');
-    return EXIT_CODES.CONFIGURATION_ERROR;
-  }
-
   let rootStat;
-
   try {
     rootStat = fs.statSync(options.root);
   } catch (error) {
     console.error(
-      `ROOT ERROR: Cannot access "${options.root}": ${error.message}`,
+      `ROOT ERROR: Cannot access the configured root. ${safeErrorMessage(error)}`,
     );
-
     return EXIT_CODES.CONFIGURATION_ERROR;
   }
-
   if (!rootStat.isDirectory()) {
     console.error(
-      `ROOT ERROR: "${options.root}" is not a directory.`,
+      'ROOT ERROR: The configured root is not a directory.',
     );
-
     return EXIT_CODES.CONFIGURATION_ERROR;
   }
-
-  // Canonicalize the root so reported paths and containment checks
-  // use a stable absolute path.
   try {
     options.root = fs.realpathSync(options.root);
   } catch (error) {
     console.error(
-      `ROOT ERROR: Cannot resolve root directory: ${error.message}`,
+      `ROOT ERROR: Cannot resolve the configured root. ${safeErrorMessage(error)}`,
     );
-
     return EXIT_CODES.CONFIGURATION_ERROR;
   }
-
   const reporter = createReporter();
   const statistics = createStatistics();
-
   walk(
     options.root,
     options,
     reporter,
     statistics,
   );
-
-  const elapsedMs = performance.now() - startedAt;
-
   const report = buildReport(
     options,
     reporter,
     statistics,
-    elapsedMs,
+    performance.now() - startedAt,
   );
-
   if (options.jsonOutput) {
     console.log(JSON.stringify(report, null, 2));
   } else {
     printHumanReport(report);
   }
-
   return report.exitCode;
 }
-
 try {
   process.exitCode = main();
 } catch (error) {
-  console.error('FATAL ERROR: Unexpected validator failure.');
-
-  if (error instanceof Error) {
-    console.error(error.stack || error.message);
-  } else {
-    console.error(String(error));
-  }
-
+  // Keep fatal output concise and avoid dumping arbitrary stacks or paths.
+  console.error(
+    `FATAL ERROR: ${safeErrorMessage(error)}`,
+  );
   process.exitCode = EXIT_CODES.CONFIGURATION_ERROR;
 }

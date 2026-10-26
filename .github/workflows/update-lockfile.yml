@@ -1,126 +1,185 @@
-
-# File: .github/workflows/update-lockfile.yml
-
-name: Update package-lock.json
-
+name: Sync Official Releases
 on:
+  schedule:
+    - cron: "0 6 * * *"
   workflow_dispatch:
-
+    inputs:
+      repositories:
+        description: "Comma-separated owner/repo list; leave blank for defaults"
+        required: false
+        type: string
 permissions:
   contents: read
-
+  issues: write
 concurrency:
-  group: update-lockfile-${{ github.ref }}
+  group: sync-official-releases
   cancel-in-progress: false
-
 jobs:
-  update-lockfile:
-    name: Generate and validate lockfile
-    if: github.ref_type == 'branch' && github.ref_protected == false
+  sync-releases:
+    name: Check upstream releases
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     permissions:
-      contents: write
-
+      contents: read
+      issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
-          persist-credentials: true
-
+          persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Verify package files
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f package.json
-
-      - name: Generate and synchronize lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-
-      - name: Validate lockfile
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-
-          if (lock.lockfileVersion !== 3) {
-            throw new Error('Expected package-lock.json lockfileVersion 3.');
-          }
-
-          const root = lock.packages?.[''];
-
-          if (!root) {
-            throw new Error('package-lock.json is missing its root package entry.');
-          }
-
-          if (pkg.name !== root.name || pkg.version !== root.version) {
-            throw new Error(
-              'package.json and package-lock.json metadata differ.'
-            );
-          }
-
-          const placeholders = Object.entries(lock.packages || {})
-            .filter(([path, entry]) =>
-              path !== '' &&
-              typeof entry.integrity === 'string' &&
-              entry.integrity.includes('PLACEHOLDER')
-            );
-
-          if (placeholders.length > 0) {
-            throw new Error(
-              'Placeholder integrity hashes remain in package-lock.json.'
-            );
-          }
-
-          console.log(`Validated ${pkg.name}@${pkg.version}.`);
-          NODE
-
-      - name: Check for lockfile changes
-        id: diff
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if git diff --quiet -- package-lock.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "package-lock.json is already up to date."
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            git diff --stat -- package-lock.json
-          fi
-
-      - name: Commit lockfile update
-        if: steps.diff.outputs.changed == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -- package-lock.json
-
-          if git diff --cached --quiet; then
-            echo "No staged changes to commit."
-            exit 0
-          fi
-
-          git commit -m "chore: update package-lock.json"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          node-version: "22"
+      - name: Fetch official releases
         env:
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_REPOSITORIES: ${{ inputs.repositories }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("node:fs");
+          const defaults = [
+            "nodejs/node",
+            "npm/cli",
+            "actions/checkout",
+            "actions/stale"
+          ];
+          const input = process.env.INPUT_REPOSITORIES || "";
+          const repositories = input.trim()
+            ? input.split(",").map(value => value.trim()).filter(Boolean)
+            : defaults;
+          const valid = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+          const unique = [...new Set(repositories)];
+          if (unique.length === 0) {
+            throw new Error("At least one upstream repository is required.");
+          }
+          for (const repo of unique) {
+            if (!valid.test(repo)) {
+              throw new Error(`Invalid repository identifier: ${repo}`);
+            }
+          }
+          fs.writeFileSync(
+            "official-repositories.json",
+            JSON.stringify(unique, null, 2)
+          );
+          NODE
+          mkdir -p release-data
+          while IFS= read -r repo; do
+            [[ -z "$repo" ]] && continue
+            safe_name="${repo//\//__}"
+            output="release-data/${safe_name}.json"
+            echo "Checking releases for $repo"
+            if ! gh api \
+              --paginate \
+              --slurp \
+              "repos/${repo}/releases?per_page=5" \
+              > "$output"; then
+              echo "::error::Failed to retrieve releases for ${repo}."
+              exit 1
+            fi
+            if ! node -e '
+              const fs = require("node:fs");
+              const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              if (!Array.isArray(data) || !data.every(Array.isArray)) {
+                throw new Error("Unexpected paginated release response.");
+              }
+            ' "$output"; then
+              echo "::error::Invalid release response for ${repo}."
+              exit 1
+            fi
+          done < <(node -e '
+            for (const repo of require("./official-repositories.json")) {
+              console.log(repo);
+            }
+          ')
+      - name: Build release summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const lines = [
+            "# Official Upstream Release Report",
+            "",
+            `Checked on: ${new Date().toISOString()}`,
+            "",
+            "Recent releases from configured upstream repositories.",
+            ""
+          ];
+          let releaseCount = 0;
+          for (const file of fs.readdirSync("release-data").sort()) {
+            if (!file.endsWith(".json")) continue;
+            const repo = file
+              .replace(/\.json$/, "")
+              .replace("__", "/");
+            const pages = JSON.parse(
+              fs.readFileSync(path.join("release-data", file), "utf8")
+            );
+            const releases = pages.flat();
+            lines.push(`## ${repo}`, "");
+            if (releases.length === 0) {
+              lines.push("No releases were returned.", "");
+              continue;
+            }
+            for (const release of releases) {
+              releaseCount++;
+              const title = String(
+                release.name || release.tag_name || "Untitled release"
+              ).replace(/[\r\n]/g, " ");
+              const tag = String(release.tag_name || "unknown");
+              const published = String(release.published_at || "unknown");
+              const url = String(release.html_url || "");
+              lines.push(
+                `- **${title}**`,
+                `  - Tag: \`${tag}\``,
+                `  - Published: ${published}`,
+                ...(url ? [`  - Link: ${url}`] : []),
+                ""
+              );
+            }
+          }
+          lines.push(`Total releases listed: ${releaseCount}`, "");
+          fs.writeFileSync("release-summary.md", lines.join("\n"));
+          console.log(`Generated report with ${releaseCount} release entries.`);
+          NODE
+      - name: Upload release report
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-release-report-${{ github.run_id }}
+          path: |
+            release-summary.md
+            official-repositories.json
+            release-data/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Create or update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="Official Upstream Release Tracker"
+          body="$(cat release-summary.md)"
+          existing_issue="$(
+            gh issue list \
+              --repo "$REPOSITORY" \
+              --state open \
+              --json number,title \
+              --jq '.[] | select(.title == "Official Upstream Release Tracker") | .number' \
+              | head -n 1
+          )"
+          if [[ -n "$existing_issue" ]]; then
+            gh issue edit "$existing_issue" \
+              --repo "$REPOSITORY" \
+              --body "$body"
+            echo "Updated tracking issue #$existing_issue"
+          else
+            gh issue create \
+              --repo "$REPOSITORY" \
+              --title "$title" \
+              --body "$body"
+          fi

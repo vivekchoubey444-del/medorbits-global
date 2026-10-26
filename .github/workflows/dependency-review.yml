@@ -1,50 +1,51 @@
-name: MedOrbits Dependency Review
+name: Dependency Review
 on:
   pull_request:
     branches:
       - main
-      - develop
     paths:
       - "package.json"
       - "package-lock.json"
+      - "npm-shrinkwrap.json"
       - "**/package.json"
       - "**/package-lock.json"
-      - "npm-shrinkwrap.json"
       - "**/npm-shrinkwrap.json"
-      - "Dockerfile"
-      - "**/Dockerfile"
-      - "docker-compose.yml"
-      - "docker-compose.yaml"
-      - "**/docker-compose.yml"
-      - "**/docker-compose.yaml"
-      - ".github/workflows/**"
-      - ".github/dependabot.yml"
-      - ".github/dependabot.yaml"
+      - "**/requirements*.txt"
+      - "**/pyproject.toml"
+      - "**/poetry.lock"
+      - "**/Pipfile"
+      - "**/Pipfile.lock"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/Gemfile"
+      - "**/Gemfile.lock"
+      - "**/composer.json"
+      - "**/composer.lock"
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: dependency-review-${{ github.event.pull_request.number || github.ref }}
+  group: dependency-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   dependency-review:
     name: Review dependency changes
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
     steps:
-      - name: Review dependency changes
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check dependency changes
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          comment-summary-in-pr: never
-          fail-on-scopes: runtime
+          comment-summary-in-pr: always
+          deny-licenses: GPL-3.0, AGPL-3.0
           warn-only: false
-          deny-licenses: >-
-            GPL-3.0,
-            GPL-3.0-only,
-            GPL-3.0-or-later,
-            AGPL-3.0,
-            AGPL-3.0-only,
-            AGPL-3.0-or-later

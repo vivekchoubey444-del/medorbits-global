@@ -1,97 +1,93 @@
-MedOrbits -- Dependabot Configuration
-
-Purpose: Automate dependency updates for npm, GitHub Actions, and Docker.
-
-Policy:
-
-- Group compatible minor and patch updates.
-
-- Keep major updates separate for focused compatibility review.
-
-- Apply cooldowns to version updates where supported.
-
-- Require CI and appropriate review before merging dependency changes.
-
-- Keep security updates separate from routine version updates.
-
+# MedOrbits -- Dependabot Configuration
+# Purpose: Controlled dependency updates with review required.
+# Safety: No automatic merging or automatic deployment.
 version: 2
-
 updates:
-
-Root Node.js application dependencies
-
-* package-ecosystem: npm
-    directory: "/"
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-    interval: weekly
-    day: monday
-    time: "06:00"
-    timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 10
-    cooldown:
-    default-days: 3
-    groups:
-    npm-development-minor-patch:
-    dependency-type: development
-    update-types:
-    - minor
-    - patch
-    npm-production-minor-patch:
-    dependency-type: production
-    update-types:
-    - minor
-    - patch
-    labels:
-    * dependencies
-    * npm
-        commit-message:
-        prefix: "deps"
-        include: scope
-
-GitHub Actions workflow dependencies
-
-* package-ecosystem: github-actions
-    directory: "/"
-    schedule:
-    interval: weekly
-    day: monday
-    time: "06:30"
-    timezone: "Asia/Kolkata"
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Kolkata
     open-pull-requests-limit: 5
-    cooldown:
-    default-days: 3
-    groups:
-    github-actions-minor-patch:
-    update-types:
-    - minor
-    - patch
     labels:
-    * dependencies
-    * github-actions
-        commit-message:
-        prefix: "ci"
-        include: scope
-
-Docker dependencies, if the repository contains Dockerfiles
-
-* package-ecosystem: docker
-    directory: "/"
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "ci(deps)"
+      include: scope
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+  # npm / Node.js
+  # Keep this entry only if the repository uses npm.
+  - package-ecosystem: npm
+    directory: /
     schedule:
-    interval: weekly
-    day: monday
-    time: "07:00"
-    timezone: "Asia/Kolkata"
+      interval: weekly
+      day: monday
+      time: "09:30"
+      timezone: Asia/Kolkata
     open-pull-requests-limit: 5
-    cooldown:
-    default-days: 3
-    groups:
-    docker-minor-patch:
-    update-types:
-    - minor
-    - patch
+    versioning-strategy: increase
     labels:
-    * dependencies
-    * docker
-        commit-message:
-        prefix: "docker"
-        include: scope
+      - dependencies
+      - javascript
+    commit-message:
+      prefix: "build(deps)"
+      include: scope
+    groups:
+      npm-development-minor-patch:
+        dependency-type: development
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      npm-production-minor-patch:
+        dependency-type: production
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+  # Python / pip
+  # Enable only if the repository manages Python dependencies
+  # through requirements.txt, pyproject.toml, or another supported manifest.
+  # - package-ecosystem: pip
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #     day: monday
+  #     time: "10:00"
+  #     timezone: Asia/Kolkata
+  #   open-pull-requests-limit: 3
+  #   labels:
+  #     - dependencies
+  #     - python
+  #   commit-message:
+  #     prefix: "build(deps)"
+  #     include: scope
+  # Docker
+  # Enable only if the repository contains Dockerfiles or supported
+  # Docker dependency declarations that Dependabot should update.
+  # - package-ecosystem: docker
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #     day: monday
+  #     time: "10:30"
+  #     timezone: Asia/Kolkata
+  #   open-pull-requests-limit: 3
+  #   labels:
+  #     - dependencies
+  #     - docker
+  #   commit-message:
+  #     prefix: "build(deps)"
+  #     include: scope

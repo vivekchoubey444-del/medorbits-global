@@ -1,9 +1,13 @@
-MedOrbits -- EditorConfig
 
-Standardize formatting across editors and development environments.
+# ==============================================================================
+# MedOrbits -- EditorConfig
+# File: /.editorconfig
+# Purpose: Consistent formatting across editors and development environments.
+# ==============================================================================
 
 root = true
 
+# Default rules for all files
 [*]
 charset = utf-8
 end_of_line = lf
@@ -12,34 +16,102 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-[*.{js,mjs,cjs,jsx,ts,tsx,json,yml,yaml,html,css,scss,md,xml,svg}]
+# Markdown documentation: preserve intentional trailing spaces.
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# HTML templates and pages
+[*.{html,htm,xhtml}]
 indent_style = space
 indent_size = 2
 
+# CSS, SCSS, and related stylesheets
+[*.{css,scss,sass,less}]
+indent_style = space
+indent_size = 2
+
+# JavaScript, TypeScript, and module files
+[*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}]
+indent_style = space
+indent_size = 2
+
+# JSON and JSONC configuration
+[*.{json,jsonc}]
+indent_style = space
+indent_size = 2
+
+# YAML configuration, GitHub workflows, and issue forms
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Python scripts and utilities
 [*.py]
 indent_style = space
 indent_size = 4
 
-[*.sh]
+# Shell scripts and command files
+[*.{sh,bash}]
 indent_style = space
-indent_size = 2
-end_of_line = lf
+indent_size = 4
 
+# POSIX makefiles
 [Makefile]
 indent_style = tab
 
-[*.{bat,cmd}]
-end_of_line = crlf
+[makefile]
+indent_style = tab
 
-[*.{png,jpg,jpeg,gif,webp,ico,pdf,zip,woff,woff2,ttf,eot}]
-charset = unset
-end_of_line = unset
-insert_final_newline = unset
-trim_trailing_whitespace = unset
-
-[package-lock.json]
+# Docker files
+[Dockerfile]
+indent_style = space
 indent_size = 2
 
-[*.min.{js,css}]
-trim_trailing_whitespace = unset
-insert_final_newline = unset
+[Containerfile]
+indent_style = space
+indent_size = 2
+
+# TOML configuration
+[*.toml]
+indent_style = space
+indent_size = 2
+
+# INI and configuration files
+[*.ini]
+indent_style = space
+indent_size = 2
+
+# XML and SVG assets
+[*.{xml,svg}]
+indent_style = space
+indent_size = 2
+
+# SQL scripts and migrations
+[*.sql]
+indent_style = space
+indent_size = 4
+
+# Diff and patch files: preserve source formatting
+[*.{diff,patch}]
+trim_trailing_whitespace = false
+
+# Lockfiles: avoid unnecessary formatting changes
+[package-lock.json]
+indent_style = space
+indent_size = 2
+
+[pnpm-lock.yaml]
+indent_style = space
+indent_size = 2
+
+[yarn.lock]
+indent_style = space
+indent_size = 2
+
+# Environment files
+[.env]
+insert_final_newline = true
+
+[.env.*]
+insert_final_newline = true

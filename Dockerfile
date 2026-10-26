@@ -1,50 +1,92 @@
 # ============================================================
-# MEDORBITS -- HARDENED PRODUCTION DOCKERFILE
-# Multi-stage build | Non-root user | Production dependencies
+# MEDORBITS -- DOCKER COMPOSE
+# Production-oriented deployment configuration
+#
+# Usage:
+#   docker compose config
+#   docker compose build
+#   docker compose up -d
+#   docker compose ps
+#   docker compose logs --tail=100 app
+#   docker compose down
+#
+# Safety:
+#   - No automatic image publishing.
+#   - No automatic database migrations.
+#   - No automatic deletion of persistent volumes.
+#   - Secrets should be supplied through environment variables
+#     or your deployment platform's secret manager.
 # ============================================================
-# ------------------------------------------------------------
-# Stage 1: Install production dependencies
-# ------------------------------------------------------------
-FROM node:25-alpine AS dependencies
-WORKDIR /app
-ENV NODE_ENV=production
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund \
-    && npm cache clean --force
-# ------------------------------------------------------------
-# Stage 2: Production runtime
-# ------------------------------------------------------------
-FROM node:25-alpine AS production
-WORKDIR /app
-ENV NODE_ENV=production \
-    HOST=0.0.0.0 \
-    PORT=3000 \
-    API_PREFIX=/api/v1
-# Install only runtime dependencies.
-COPY --from=dependencies --chown=node:node \
-    /app/node_modules ./node_modules
-# Copy the application.
-# Ensure .dockerignore excludes secrets, local dependencies,
-# Git metadata, logs, coverage, and development artifacts.
-COPY --chown=node:node . .
-# Create private runtime directories.
-RUN mkdir -p \
-      /app/storage/private \
-      /app/storage/temporary \
-      /app/storage/logs \
-    && chown -R node:node /app/storage \
-    && chmod -R u=rwX,go= /app/storage \
-    && chmod -R go-w /app
-# Run as the unprivileged Node.js user.
-USER node
-# Application HTTP port.
-EXPOSE 3000
-# Liveness check.
-# Requires GET /health to return HTTP 2xx.
-HEALTHCHECK --interval=30s \
-    --timeout=5s \
-    --start-period=30s \
-    --retries=3 \
-    CMD ["node", "-e", "fetch('http://127.0.0.1:3000/health', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
-# Start the application.
-CMD ["node", "server.js"]
+name: medorbits
+services:
+  app:
+    container_name: medorbits-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: medorbits:local
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      API_PREFIX: /api/v1
+      # Application database configuration.
+      # Set DATABASE_URL for PostgreSQL deployments.
+      # For MySQL deployments, configure DB_* variables only
+      # if the application actually uses a MySQL driver.
+      DATABASE_URL: "${DATABASE_URL:-}"
+      # Optional configuration values.
+      DATABASE_SSL: "${DATABASE_SSL:-false}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      # Configure this in your deployment environment.
+      # Do not place real secrets in this file.
+      SESSION_SECRET: "${SESSION_SECRET:?Set SESSION_SECRET in your environment}"
+    ports:
+      # Bind to localhost by default.
+      # Change APP_BIND_ADDRESS only when external exposure
+      # is intentionally required.
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      - app_private:/app/storage/private
+      - app_temporary:/app/storage/temporary
+      - app_logs:/app/storage/logs
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 200
+    mem_limit: 512m
+    cpus: 1.0
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/health',
+          {signal: AbortSignal.timeout(4000)})
+          .then(r => process.exit(r.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    networks:
+      - medorbits_internal
+volumes:
+  app_private:
+    name: medorbits_private_data
+  app_temporary:
+    name: medorbits_temporary_data
+  app_logs:
+    name: medorbits_application_logs
+networks:
+  medorbits_internal:
+    name: medorbits_internal
+    driver: bridge
