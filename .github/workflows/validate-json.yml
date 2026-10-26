@@ -1,38 +1,144 @@
-- name: Validate package-lock.json
-  shell: bash
-  run: |
-    set -euo pipefail
-    if [[ ! -f package.json ]]; then
-      echo "::error::package.json is missing"
-      exit 1
-    fi
-    if [[ ! -f package-lock.json ]]; then
-      echo "::error::package-lock.json is missing"
-      exit 1
-    fi
-    node --input-type=commonjs -e '
-      const fs = require("node:fs");
-      for (const file of ["package.json", "package-lock.json"]) {
-        let content;
-        try {
-          content = fs.readFileSync(file, "utf8");
-        } catch (error) {
-          console.error(`Cannot read ${file}: ${error.message}`);
-          process.exitCode = 1;
-          continue;
-        }
-        if (!content.trim()) {
-          console.error(`${file} is empty`);
-          process.exitCode = 1;
-          continue;
-        }
-        try {
-          JSON.parse(content);
-          console.log(`Valid JSON: ${file}`);
-        } catch (error) {
-          console.error(`Invalid JSON in ${file}: ${error.message}`);
-          process.exitCode = 1;
-        }
-      }
-    '
-    npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+name: Validate JSON and Package Lock
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: validate-json-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate-json:
+    name: Validate JSON files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Check required package files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in package.json package-lock.json; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+      - name: Validate package.json and package-lock.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=commonjs <<'NODE'
+          const fs = require("node:fs");
+          let failed = false;
+          for (const file of ["package.json", "package-lock.json"]) {
+            let content;
+            try {
+              content = fs.readFileSync(file, "utf8");
+            } catch (error) {
+              console.error(`::error::Cannot read ${file}: ${error.message}`);
+              failed = true;
+              continue;
+            }
+            if (!content.trim()) {
+              console.error(`::error::${file} is empty`);
+              failed = true;
+              continue;
+            }
+            try {
+              const parsed = JSON.parse(content);
+              if (
+                parsed === null ||
+                typeof parsed !== "object" ||
+                Array.isArray(parsed)
+              ) {
+                throw new Error("The JSON root must be an object");
+              }
+              console.log(`Valid JSON: ${file}`);
+            } catch (error) {
+              console.error(`::error::Invalid ${file}: ${error.message}`);
+              failed = true;
+            }
+          }
+          if (failed) {
+            process.exitCode = 1;
+          }
+          NODE
+      - name: Check package-lock metadata consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=commonjs <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          if (!lock.packages || !lock.packages[""]) {
+            console.error(
+              "::error::package-lock.json is missing packages[\"\"] metadata"
+            );
+            process.exit(1);
+          }
+          const root = lock.packages[""];
+          for (const field of ["name", "version"]) {
+            if (pkg[field] !== undefined && root[field] !== pkg[field]) {
+              console.error(
+                `::error::Version metadata mismatch for ${field}: package.json=${pkg[field]}, package-lock.json=${root[field]}`
+              );
+              process.exitCode = 1;
+            }
+          }
+          if (
+            lock.lockfileVersion !== 1 &&
+            lock.lockfileVersion !== 2 &&
+            lock.lockfileVersion !== 3
+          ) {
+            console.error(
+              `::error::Unsupported lockfileVersion: ${lock.lockfileVersion}`
+            );
+            process.exitCode = 1;
+          }
+          if (process.exitCode !== 1) {
+            console.log("Package and lockfile metadata checks passed.");
+          }
+          NODE
+      - name: Validate repository JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f scripts/check-json.mjs ]]; then
+            node scripts/check-json.mjs
+          else
+            echo "::error::scripts/check-json.mjs is missing"
+            exit 1
+          fi
+      - name: Check lockfile consistency without modifying files
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund \
+            --dry-run
+      - name: Confirm validation did not modify tracked files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --exit-code -- package.json package-lock.json; then
+            echo "::error::Validation changed package files. Review the differences."
+            exit 1
+          fi
+          echo "Package files remain unchanged."

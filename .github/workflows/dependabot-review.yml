@@ -1,0 +1,202 @@
+name: Dependabot Review and Safe Validation
+
+on:
+pull_request:
+branches:
+- main
+types:
+- opened
+- synchronize
+- reopened
+- ready_for_review
+workflow_dispatch:
+
+permissions:
+contents: read
+
+concurrency:
+group: dependabot-review-${{ github.event.pull_request.number || github.ref }}
+cancel-in-progress: true
+
+jobs:
+identify:
+name: Identify and verify update source
+runs-on: ubuntu-latest
+outputs:
+is_dependabot: ${{ steps.source.outputs.is_dependabot }}
+steps:
+- name: Verify Dependabot author
+id: source
+env:
+PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+shell: bash
+run: |
+set -euo pipefail
+
+      if [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
+        echo "is_dependabot=true" >> "$GITHUB_OUTPUT"
+        echo "Dependabot pull request identified."
+      elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+        echo "is_dependabot=false" >> "$GITHUB_OUTPUT"
+        echo "Manual validation requested."
+      else
+        echo "is_dependabot=false" >> "$GITHUB_OUTPUT"
+        echo "Not a Dependabot pull request; validation will not run."
+      fi
+
+validate:
+name: Validate dependency changes
+needs: identify
+if: needs.identify.outputs.is_dependabot == ‘true’ || github.event_name == ‘workflow_dispatch’
+runs-on: ubuntu-latest
+timeout-minutes: 20
+
+steps:
+  - name: Check out pull request source
+    uses: actions/checkout@v4
+    with:
+      persist-credentials: false
+  - name: Set up Node.js
+    if: hashFiles('package.json') != ''
+    uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+      cache: npm
+  - name: Set up Python
+    if: hashFiles('requirements.txt', 'pyproject.toml', 'setup.cfg') != ''
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.12'
+  - name: Validate JSON manifests
+    shell: bash
+    run: |
+      set -euo pipefail
+      while IFS= read -r -d '' file; do
+        echo "Validating: $file"
+        node -e '
+          const fs = require("node:fs");
+          const file = process.argv[1];
+          JSON.parse(fs.readFileSync(file, "utf8"));
+        ' "$file"
+      done < <(
+        find . \
+          -type d \( \
+            -name .git -o \
+            -name node_modules -o \
+            -name .venv -o \
+            -name vendor -o \
+            -name dist -o \
+            -name build \
+          \) -prune -o \
+          -type f \( \
+            -name package.json -o \
+            -name package-lock.json \
+          \) -print0
+      )
+  - name: Validate package and lockfile consistency
+    if: hashFiles('package.json') != ''
+    shell: bash
+    run: |
+      set -euo pipefail
+      node --input-type=commonjs <<'NODE'
+      const fs = require('node:fs');
+      const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+      if (!manifest.name || typeof manifest.name !== 'string') {
+        throw new Error('package.json must contain a package name.');
+      }
+      if (!manifest.version || typeof manifest.version !== 'string') {
+        throw new Error('package.json must contain a version.');
+      }
+      if (!fs.existsSync('package-lock.json')) {
+        throw new Error(
+          'package-lock.json is missing. Generate and review it in a separate change.'
+        );
+      }
+      const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+      if (![2, 3].includes(lock.lockfileVersion)) {
+        throw new Error('Expected package-lock.json lockfileVersion 2 or 3.');
+      }
+      if (lock.name && lock.name !== manifest.name) {
+        throw new Error('package.json and package-lock.json names do not match.');
+      }
+      if (lock.version && lock.version !== manifest.version) {
+        throw new Error('package.json and package-lock.json versions do not match.');
+      }
+      if (
+        lock.packages &&
+        lock.packages[''] &&
+        (
+          lock.packages[''].name !== manifest.name ||
+          lock.packages[''].version !== manifest.version
+        )
+      ) {
+        throw new Error('package-lock.json root package metadata does not match package.json.');
+      }
+      console.log('Package manifest and lockfile metadata are consistent.');
+      NODE
+  - name: Install Node dependencies safely
+    if: hashFiles('package.json', 'package-lock.json') != ''
+    run: npm ci --ignore-scripts --no-audit --no-fund
+  - name: Check JavaScript syntax
+    if: hashFiles('server.js') != ''
+    run: node --check server.js
+  - name: Run available npm tests
+    if: hashFiles('package.json', 'package-lock.json') != ''
+    shell: bash
+    run: |
+      set -euo pipefail
+      if node -e '
+        const p = require("./package.json");
+        process.exit(p.scripts && p.scripts.test ? 0 : 1);
+      '; then
+        npm test -- --runInBand
+      else
+        echo "No npm test script is configured; skipping."
+      fi
+  - name: Install Python test dependencies
+    if: hashFiles('requirements.txt') != ''
+    run: python -m pip install --disable-pip-version-check -r requirements.txt
+  - name: Run Python tests
+    if: hashFiles('pytest.ini', 'pyproject.toml', 'setup.cfg') != ''
+    shell: bash
+    run: |
+      set -euo pipefail
+      if python -m pytest --version >/dev/null 2>&1; then
+        python -m pytest
+      else
+        echo "Pytest is not installed; Python tests cannot run."
+        exit 1
+      fi
+  - name: Report changed dependency files
+    if: always() && github.event_name == 'pull_request'
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    shell: bash
+    run: |
+      set -euo pipefail
+      git diff --name-status "$BASE_SHA" "$HEAD_SHA" -- \
+        'package.json' \
+        'package-lock.json' \
+        'requirements.txt' \
+        'pyproject.toml' \
+        'Pipfile' \
+        'Pipfile.lock' \
+        'poetry.lock' \
+        'uv.lock' \
+        'npm-shrinkwrap.json' \
+        'Dockerfile' \
+        '.github/workflows' \
+        '.github/dependabot.yml' \
+        || true
+  - name: Upload diagnostic status
+    if: always()
+    uses: actions/upload-artifact@v4
+    with:
+      name: dependabot-validation-${{ github.run_id }}
+      path: |
+        package.json
+        package-lock.json
+        requirements.txt
+      if-no-files-found: ignore
+      retention-days: 7
