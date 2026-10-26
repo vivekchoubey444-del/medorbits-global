@@ -1,25 +1,30 @@
+MedOrbits — Well-Known Resources
 
-# MedOrbits — Well-Known Resources
+Website: https://medorbits.in/
+Directory: public/.well-known/
+Document type: Technical implementation and deployment specification
+Scope: Resource discovery, application association, security disclosure, identity-provider metadata, and browser integration
+Status: Implementation reference; production readiness must be verified per resource
+Review date: 26 October 2026
 
-**Directory:** `public/.well-known/`  
-**Website:** https://medorbits.in/  
-**Purpose:** Standardized resource discovery, application association, security disclosure, and protocol metadata.
+⸻
 
-—
+1. Purpose and Scope
 
-## 1. Overview
+The .well-known/ directory provides standardized URLs through which compatible clients, browsers, identity providers, mobile applications, and security researchers can discover supported website capabilities.
 
-The `.well-known/` directory contains resources published at standardized URLs so that compatible browsers, security researchers, identity providers, applications, and other clients can discover supported website capabilities.
+For MedOrbits, these resources may support security vulnerability reporting, Apple Universal Links, password-change discovery, OpenID Connect provider metadata, and browser traffic-advice mechanisms.
 
-MedOrbits may use this directory for security disclosure information, Apple application association, password-change discovery, OpenID Connect provider metadata, and browser traffic-advice resources.
+This document defines the directory structure, resource responsibilities, implementation requirements, security controls, validation procedures, and maintenance expectations for these integrations.
 
-**Implementation principle:** A filename alone does not activate a protocol or feature. Each published resource must contain valid, specification-compliant content and be served at the expected URL with the required HTTP behavior.
+Core principle: A resource is not operational merely because its file exists. Each resource must comply with its applicable specification, contain accurate configuration, and return the expected response from its production URL.
 
-This directory describes intended resources. It does not imply that every resource is required, implemented, or production-ready.
+Only resources required by an actual MedOrbits integration should be deployed. Planned, optional, and unimplemented resources must not be represented as production-ready.
 
-## 2. Directory Structure
+2. Directory Structure
 
-```text
+The proposed project structure is:
+
 public/
 └── .well-known/
     ├── README.md
@@ -28,214 +33,322 @@ public/
     ├── openid-configuration
     ├── security.txt
     └── traffic-advice
-```
 
-Only resources required by an actual MedOrbits integration should be deployed. `README.md` is project documentation and is not itself a standardized protocol resource.
+The directory may contain additional resources when a documented integration requires them.
 
-## 3. Resource Responsibilities
+README.md is project documentation rather than a standardized protocol resource. If the hosting platform exposes the public/ directory directly, consider keeping the README under docs/ instead.
 
-### 3.1 `security.txt`
+3. Resource Specifications
 
-**Public URL:** https://medorbits.in/.well-known/security.txt  
-**Standard:** RFC 9116
+3.1 Security Disclosure — security.txt
 
-Provides a standardized way for security researchers to discover MedOrbits’ vulnerability-reporting contact and disclosure policy.
+Public URL: https://medorbits.in/.well-known/security.txt
+Standard: RFC 9116
 
-Common fields include:
+The security.txt resource enables security researchers to locate MedOrbits’ vulnerability-reporting contact and disclosure policy.
 
-- `Contact` — a monitored security reporting address or reporting URL.
-- `Policy` — the URL of the security disclosure policy.
-- `Expires` — the expiration date and time of the published information.
-- `Preferred-Languages` — languages accepted for security reports.
-- `Canonical` — the canonical URL of the security.txt resource.
+Supported fields may include:
 
-Requirements:
+* Contact — a monitored security reporting address or reporting URL.
+* Policy — the public vulnerability-disclosure policy.
+* Expires — the date and time after which the published information expires.
+* Preferred-Languages — languages accepted for reports.
+* Canonical — the canonical URL of the security.txt resource.
 
-- Follow RFC 9116 field syntax and date formatting.
-- Publish a real, monitored reporting contact.
-- Ensure referenced policy URLs are valid and publicly accessible.
-- Set an appropriate expiry date and renew the file before it expires.
-- Avoid publishing unmonitored contact details or unsupported response-time commitments.
+Implementation requirements
 
-The file should be served as plain text over HTTPS at its canonical URL.
+1. Follow RFC 9116 syntax and formatting requirements.
+2. Publish a genuine, monitored reporting contact.
+3. Ensure the referenced security policy is publicly accessible.
+4. Set a valid expiry timestamp and renew the resource before expiration.
+5. Keep contact details and response-time commitments accurate.
+6. Serve the file over HTTPS as plain text.
+7. Avoid publishing credentials, confidential information, or unmonitored contact details.
 
-### 3.2 `apple-app-site-association`
+Reference: https://www.rfc-editor.org/rfc/rfc9116
 
-**Public URL:** https://medorbits.in/.well-known/apple-app-site-association
+3.2 Apple Application Association — apple-app-site-association
 
-Associates an eligible website with an Apple application for Universal Links and supported associated-domain capabilities.
+Public URL: https://medorbits.in/.well-known/apple-app-site-association
 
-When an Apple application integration is required:
+This resource associates an eligible website with an Apple application for Universal Links and supported associated-domain features.
 
-- Provide valid JSON in Apple’s required format.
-- Use the actual Apple Developer Team ID and application Bundle ID.
-- Include only paths the application is designed to handle.
-- Enable the Associated Domains capability in the application.
-- Serve the resource publicly over HTTPS.
-- Return the association document directly, without authentication or an HTML fallback.
-- Verify the deployed response against Apple’s current requirements.
+Deploy it only when MedOrbits has an actual application integration that requires website association.
 
-If MedOrbits has no associated Apple application, this resource is optional and should remain undeployed until needed.
+Implementation requirements
 
-### 3.3 `change-password`
+* Use valid JSON in Apple’s supported association format.
+* Replace placeholders with the actual Apple Developer Team ID and application Bundle ID.
+* Include only website paths that the application is designed to handle.
+* Configure the Associated Domains capability in the application.
+* Serve the file over HTTPS without authentication.
+* Return the association document directly, without an HTML fallback or an unnecessary redirect.
+* Verify the file against Apple’s current requirements and test links on supported devices.
 
-**Public URL:** https://medorbits.in/.well-known/change-password
+The association file does not create an iOS application or enable Universal Links independently.
 
-Provides a conventional discovery location for the website’s password-change interface.
+Reference: https://developer.apple.com/documentation/xcode/supporting-associated-domains
 
-If implemented, this resource should direct users to the actual MedOrbits password-change page using an appropriate redirect or a compatible fallback.
+3.3 Password-Change Discovery — change-password
 
-Security requirements:
+Public URL: https://medorbits.in/.well-known/change-password
 
-- Require authentication before permitting a password change.
-- Validate the user’s current authentication state.
-- Apply appropriate session and CSRF protections.
-- Require current-password verification or additional verification where appropriate.
-- Never expose passwords, reset tokens, or session secrets.
-- Prevent arbitrary user-controlled redirect destinations.
+This resource provides a conventional discovery location for MedOrbits’ password-change interface.
 
-This resource only helps clients discover the password-change interface. It does not implement authentication, password changes, or password recovery.
+The resource should direct compatible clients to the actual password-change page, for example:
 
-### 3.4 `openid-configuration`
+https://medorbits.in/account/change-password.html
 
-**Public URL:** https://medorbits.in/.well-known/openid-configuration
+The deployed resource must use a response method compatible with the relevant convention and client behavior. Where a redirect is used, verify its status code, destination, and handling by the intended clients.
 
-Publishes OpenID Provider metadata when MedOrbits operates an OpenID Connect identity provider.
+Security requirements
 
-Depending on the implemented specification and supported capabilities, the document may describe:
+* Require authentication before permitting a password change.
+* Validate the user’s authenticated session.
+* Apply appropriate CSRF protections.
+* Verify the current password or require additional verification where appropriate.
+* Rate-limit sensitive authentication operations.
+* Never expose passwords, reset tokens, session secrets, or authentication credentials.
+* Prevent user-controlled open redirects.
+* Provide secure recovery procedures for users who cannot authenticate.
 
-- The issuer identifier.
-- Authorization and token endpoints.
-- Supported response types and grant types.
-- Supported scopes and signing algorithms.
-- User-information and public-key discovery endpoints.
-- Other required or supported protocol metadata.
+This resource only helps clients discover the interface. It does not implement password changes, authentication, or account recovery.
 
-Requirements:
+3.4 OpenID Connect Discovery — openid-configuration
 
-- Use the actual issuer identifier.
-- Advertise only implemented and supported capabilities.
-- Ensure advertised endpoints are operational and secured.
-- Publish valid signing-key metadata when required.
-- Validate the document against the applicable OpenID Connect specification.
+Public URL: https://medorbits.in/.well-known/openid-configuration
 
-Do not publish placeholder metadata simply because MedOrbits has a login page. If MedOrbits only consumes an external identity provider, that provider’s discovery document generally belongs to the external provider.
+This resource publishes OpenID Provider metadata if MedOrbits operates an OpenID Connect identity provider.
 
-### 3.5 `traffic-advice`
+Depending on the implemented protocol profile, the document may describe:
 
-**Public URL:** https://medorbits.in/.well-known/traffic-advice
+* The issuer identifier.
+* Authorization and token endpoints.
+* User-information and public-key endpoints.
+* Supported response types and grant types.
+* Supported scopes, claims, and signing algorithms.
+* Token endpoint authentication methods.
+* Other required protocol capabilities.
 
-This resource may be used for browser traffic-advice information when MedOrbits deliberately implements the applicable mechanism.
+Implementation requirements
 
-Before publishing it:
+1. Use the exact issuer identifier configured in the identity provider.
+2. Advertise only endpoints and features that are actually implemented.
+3. Ensure the issuer and endpoint URLs satisfy the applicable OpenID Connect requirements.
+4. Publish valid public signing-key metadata when required.
+5. Keep the discovery document synchronized with server configuration.
+6. Validate issuer, audience, signature, expiry, nonce, and other required token properties in the relevant flows.
+7. Test the complete authorization flow rather than validating the discovery document alone.
 
-- Identify the specific protocol and intended clients.
-- Follow the applicable specification’s schema and permitted values.
-- Validate the resource against that specification.
-- Confirm the required HTTP response behavior.
-- Test compatibility with the intended clients.
+Do not publish placeholder endpoints or claim support for unsupported authentication methods. A login page alone does not make MedOrbits an OpenID Connect Provider. If MedOrbits uses an external identity provider, discovery metadata normally belongs to that provider.
 
-This resource is optional. If no actual integration requires it, omit it rather than publishing unverified example data.
+Reference: https://openid.net/specs/openid-connect-discovery-1_0.html
 
-### 3.6 `README.md`
+3.5 Browser Traffic Advice — traffic-advice
 
-**Project path:** `public/.well-known/README.md`
+Proposed public URL: https://medorbits.in/.well-known/traffic-advice
 
-Documents the directory’s purpose, resource requirements, validation procedures, deployment expectations, and maintenance responsibilities.
-
-This is internal project documentation, not a standardized `.well-known` protocol resource. If the hosting environment exposes the public directory directly, consider keeping the README in a private documentation directory instead.
-
-## 4. Resource Readiness Checklist
-
-Use this checklist to track implementation readiness.
-
-- [ ] `security.txt` contains a real, monitored security contact.
-- [ ] `security.txt` has a valid expiry date and current policy URL.
-- [ ] `apple-app-site-association` is configured only when an Apple application association is required.
-- [ ] `change-password` leads to a secure, functioning password-change interface.
-- [ ] `openid-configuration` describes a real OpenID Connect Provider, if one is operated.
-- [ ] `traffic-advice` follows the applicable specification, if used.
-- [ ] Placeholder resources are replaced with valid content or omitted.
-- [ ] Each deployed resource is accessible at its intended HTTPS URL.
-- [ ] Required response formats and content types are preserved.
-- [ ] Hosting, routing, and CDN rules do not block or rewrite required resources.
-- [ ] Production verification results are documented.
-
-## 5. Security and Deployment Requirements
+This resource may be used when MedOrbits deliberately implements a browser traffic-advice mechanism supported by the intended clients.
 
 Before deployment:
 
-- Serve applicable resources over HTTPS.
-- Never store API keys, credentials, access tokens, private keys, or confidential application data in this directory.
-- Validate JSON resources and protocol-specific text files.
-- Verify HTTP status codes, response bodies, and content types.
-- Ensure reverse proxies, CDNs, and static-file routing preserve required paths and response formats.
-- Avoid authentication requirements for resources that must be publicly discoverable.
-- Restrict redirects to approved destinations.
-- Review content whenever application identifiers, endpoints, security contacts, or supported capabilities change.
+* Identify the precise specification and client behavior being targeted.
+* Confirm the required file format and permitted field values.
+* Verify the required HTTP response status and content type.
+* Validate the resource against the relevant specification.
+* Test the behavior with the intended browsers or clients.
+* Document the operational purpose and ownership of the configuration.
 
-Some protocols require a resource to be served directly rather than redirected. Confirm the applicable requirements for each resource and ensure routing does not substitute the website homepage or an unrelated response.
+Do not assume that a JSON object describing a prefetch proxy is a valid traffic-advice resource. The exact schema and behavior depend on the applicable specification and implementation.
 
-**Security boundary:** Publishing discovery metadata does not replace server-side authentication, authorization, input validation, or protection of confidential resources.
+If no supported integration requires this resource, omit it until there is a verified use case.
 
-## 6. Production Verification Procedure
+3.6 Directory Documentation — README.md
 
-For each resource MedOrbits actually uses:
+Proposed project path: public/.well-known/README.md
 
-1. Confirm that the relevant application or integration exists.
-2. Verify the expected filename and public URL.
-3. Validate the resource against its applicable specification.
-4. Test the local or staging response.
-5. Deploy the resource using the approved deployment process.
-6. Verify the production URL, HTTP status, content type, and response body.
-7. Confirm that the intended client or integration can consume it.
-8. Record the verification result, date, and any maintenance requirements.
+Documents the directory’s intended resources, implementation status, validation process, deployment requirements, and maintenance responsibilities.
 
-Do not mark a resource production-ready merely because its local file exists.
+Recommended contents:
 
-## 7. Related Resources
+* Resource inventory and ownership.
+* Specification references.
+* Required environment-specific configuration.
+* Local and production validation commands.
+* Deployment and rollback procedures.
+* Expiry and review requirements.
+* Known limitations and outstanding integration work.
 
-Keep other website resources in their appropriate locations:
+This README is not itself a standardized .well-known resource. Consider placing it at docs/security/well-known-resources.md if public exposure of implementation documentation is unnecessary.
 
-| Resource | Typical location | Purpose |
-|—|—|—|
-| Robots directives | `public/robots.txt` | Crawl guidance for search engines |
-| XML sitemap | `public/sitemap.xml` | Discovery of eligible public URLs |
-| Web application manifest | `public/manifest.webmanifest` | Web application metadata, when used |
-| Security policy | `SECURITY.md` | Repository security reporting guidance |
-| Security documentation | `docs/security/` | Application security policies and procedures |
+4. Resource Readiness Matrix
 
-These resources serve different purposes. Do not move them into `.well-known/` without a protocol-specific reason.
+Resource	Required when	Critical validation
+security.txt	MedOrbits publishes a vulnerability disclosure contact	RFC 9116 syntax, contact, expiry
+apple-app-site-association	An Apple application requires associated domains	Team ID, Bundle ID, JSON, paths
+change-password	Password-change discovery is supported	Correct destination and secure workflow
+openid-configuration	MedOrbits operates an OpenID Connect Provider	Issuer, endpoints, keys, protocol support
+traffic-advice	A verified browser integration requires it	Applicable schema and client behavior
+README.md	Documentation is maintained alongside the resources	Accurate implementation and maintenance details
 
-## 8. Maintenance Procedure
+The readiness matrix is a planning aid. It does not indicate that any resource has been deployed or verified.
 
-When adding or updating a resource:
+5. HTTP and Hosting Requirements
 
-1. Identify the protocol or client that requires it.
-2. Confirm the expected filename, format, and HTTP behavior.
-3. Use actual configuration values rather than placeholders.
+For each deployed resource:
+
+* Use HTTPS.
+* Confirm the exact public URL.
+* Return the expected HTTP status code.
+* Set the appropriate content type.
+* Avoid unintended authentication requirements.
+* Preserve the response body through the static server, reverse proxy, CDN, and hosting platform.
+* Avoid redirects where the applicable specification or client requires a direct response.
+* Ensure fallback routing does not return the website homepage for missing resource files.
+* Confirm that caching rules do not retain outdated security contacts, expired metadata, or obsolete application identifiers.
+
+Recommended content types include:
+
+Resource	Typical content type
+security.txt	text/plain; charset=utf-8
+apple-app-site-association	application/json
+openid-configuration	application/json
+traffic-advice	Determined by the applicable specification
+change-password	Determined by the implemented redirect or response method
+
+Verify content types against the requirements of the relevant specification and hosting environment.
+
+6. Security Requirements
+
+All resources and their associated services must follow these controls.
+
+6.1 Information Protection
+
+* Never publish API keys, private signing keys, passwords, access tokens, session cookies, or confidential application data.
+* Use public keys only where a protocol explicitly requires them.
+* Avoid exposing internal hostnames, administrative routes, infrastructure details, or sensitive implementation notes unnecessarily.
+
+6.2 Identity and Authentication
+
+* Protect password changes and other account operations with server-side authorization.
+* Validate redirect URIs and token properties according to the relevant identity protocol.
+* Apply appropriate rate limits to authentication and account recovery.
+* Rotate signing keys through a controlled process and maintain valid key-discovery metadata.
+
+6.3 Configuration Integrity
+
+* Use validated configuration values rather than placeholders.
+* Keep production endpoints consistent with the actual backend implementation.
+* Review every newly advertised capability before publication.
+* Remove stale resources when the corresponding integration is retired.
+
+6.4 Responsible Disclosure
+
+* Publish only contact details that MedOrbits monitors.
+* Define an authorized vulnerability-reporting process.
+* Avoid unsupported promises of legal protection or fixed remediation timelines.
+* Handle submitted vulnerability reports and evidence with appropriate confidentiality.
+
+Publishing discovery metadata does not replace server-side authentication, authorization, input validation, or application security controls.
+
+7. Validation and Production Verification
+
+Run the following checks for every resource that is actually deployed.
+
+Step 1 — Local validation
+
+* Verify the file path and filename.
+* Validate JSON syntax where applicable.
+* Check text files for specification-compliant formatting.
+* Confirm that all required values are accurate.
+* Search for placeholders and accidental secrets.
+
+Step 2 — Staging validation
+
+* Confirm the resource is served from the intended URL.
+* Verify response status, content type, and body.
+* Test redirect behavior and routing.
+* Validate protocol-specific requirements.
+* Test with the intended client or integration.
+
+Step 3 — Production verification
+
+Example commands:
+
+curl -sS -D - \
+  https://medorbits.in/.well-known/security.txt
+curl -sS -D - \
+  https://medorbits.in/.well-known/apple-app-site-association
+curl -sS -D - \
+  https://medorbits.in/.well-known/openid-configuration
+curl -sS -D - \
+  https://medorbits.in/.well-known/traffic-advice
+
+These commands inspect HTTP responses; they do not by themselves validate protocol compliance. The traffic-advice URL should be checked only if the resource is intentionally deployed.
+
+For change-password, inspect the response and confirm that the destination is the intended MedOrbits password-change page.
+
+Step 4 — Record the result
+
+For each resource, record:
+
+* Resource name and public URL.
+* Specification or integration supported.
+* Validation date.
+* HTTP response status and content type.
+* Client or protocol test results.
+* Outstanding defects.
+* Responsible maintainer and next review date.
+
+Do not mark a resource production-ready merely because it exists in the repository.
+
+8. Related Website Resources
+
+Keep related resources in their appropriate locations.
+
+Resource	Typical path	Purpose
+Robots directives	public/robots.txt	Search-engine crawling guidance
+XML sitemap	public/sitemap.xml	Discovery of eligible public pages
+Web application manifest	public/manifest.webmanifest	Web application metadata
+Repository security policy	SECURITY.md	Repository vulnerability reporting
+Security documentation	docs/security/	Internal security and deployment procedures
+
+These resources serve different purposes. Do not move them into .well-known/ without a protocol-specific reason.
+
+9. Maintenance and Change Management
+
+Whenever a resource is added or modified:
+
+1. Identify the integration that requires it.
+2. Confirm the correct filename, schema, and HTTP behavior.
+3. Replace placeholders with verified configuration values.
 4. Validate the resource locally.
-5. Verify the resource in staging.
-6. Check the production URL after deployment.
-7. Update this README when the directory changes.
-8. Review expiry dates, reporting contacts, application identifiers, and endpoints periodically.
-9. Remove obsolete resources when their associated integrations are retired.
+5. Test it in staging.
+6. Deploy through the approved release process.
+7. Verify the production URL after deployment.
+8. Update this document and the resource inventory.
+9. Review expiry dates, contact details, endpoints, identifiers, and supported capabilities periodically.
+10. Remove obsolete resources when their integrations are retired.
 
-## 9. Definition of Done
+Changes to identity-provider metadata, application association, and security reporting details should be reviewed before release because incorrect values can break integrations or weaken security.
 
-A resource is ready for production only when:
+10. Definition of Done
 
-- [ ] Its purpose and owning integration are documented.
-- [ ] Its content follows the applicable specification.
-- [ ] All required values are accurate and verified.
-- [ ] No secrets or confidential data are exposed.
-- [ ] The intended URL returns the expected response.
-- [ ] Required headers and redirect behavior are correct.
-- [ ] The intended client or integration has been tested.
-- [ ] Maintenance responsibilities are defined.
+A resource is production-ready only when all applicable conditions are satisfied:
 
-—
+* [ ]	Its purpose and owning integration are documented.
+* [ ]	Its content conforms to the applicable specification.
+* [ ]	All required configuration values are verified.
+* [ ]	No secrets or confidential information are exposed.
+* [ ]	The expected public URL is accessible over HTTPS.
+* [ ]	HTTP status, content type, response body, and redirect behavior are correct.
+* [ ]	The intended client or integration has been tested.
+* [ ]	Production verification has been recorded.
+* [ ]	Maintenance and review responsibilities are assigned.
+* [ ]	Any expiration or renewal requirements are tracked.
 
-**MedOrbits — Study · Work · Grow**
+⸻
 
-*Standardized discovery resources for a secure, accessible, and interoperable web platform.*
+MedOrbits — Study · Work · Grow
+
+Building a secure, accessible, and interoperable digital platform for education, admissions, careers, and professional opportunities.
