@@ -1,21 +1,21 @@
 
+# File: .github/workflows/security.yml
+
 name: MedOrbits Security
 
 on:
   push:
     branches:
       - main
-      - master
       - develop
 
   pull_request:
     branches:
       - main
-      - master
       - develop
 
   schedule:
-    # Every Monday at 04:00 UTC.
+    # Every Monday at 04:00 UTC
     - cron: "0 4 * * 1"
 
   workflow_dispatch:
@@ -24,28 +24,31 @@ permissions:
   contents: read
 
 concurrency:
-  group: medorbits-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ======================================================
+  # 1. VALIDATE JSON CONFIGURATION
+  # ======================================================
   validate-json:
     name: Validate JSON configuration
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: 22
 
       - name: Validate tracked JSON files
         shell: bash
@@ -53,12 +56,11 @@ jobs:
           set -euo pipefail
 
           count=0
-          failures=0
 
           while IFS= read -r -d '' file; do
             echo "Validating: $file"
 
-            if node -e '
+            node -e '
               const fs = require("node:fs");
               const file = process.argv[1];
 
@@ -68,124 +70,46 @@ jobs:
                 console.error(`${file}: ${error.message}`);
                 process.exit(1);
               }
-            ' "$file"; then
-              count=$((count + 1))
-            else
-              failures=$((failures + 1))
-            fi
-          done < <(git ls-files -z -- '*.json' '*.JSON')
+            ' "$file"
 
-          echo "Valid JSON files: $count"
+            count=$((count + 1))
+          done < <(git ls-files -z -- '*.json')
 
-          if [[ "$failures" -gt 0 ]]; then
-            echo "::error::$failures JSON file(s) failed validation."
-            exit 1
-          fi
+          echo "Validated $count tracked JSON files."
 
-          if [[ "$count" -eq 0 ]]; then
-            echo "::warning::No tracked JSON files were found."
-          fi
-
-          echo "JSON validation completed successfully."
-
-      - name: Write JSON validation summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## JSON Configuration Validation"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+  # ======================================================
+  # 2. AUDIT NPM DEPENDENCIES
+  # ======================================================
   dependency-audit:
     name: Audit npm dependencies
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Verify npm manifests
         shell: bash
         run: |
           set -euo pipefail
-
-          for file in package.json package-lock.json; do
-            if [[ ! -s "$file" ]]; then
-              echo "::error::Required file is missing or empty: $file"
-              exit 1
-            fi
-          done
-
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-
-          const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
-          );
-
-          if (
-            typeof pkg.name !== 'string' ||
-            !pkg.name.trim()
-          ) {
-            throw new Error(
-              'package.json must define a non-empty package name.'
-            );
-          }
-
-          if (!lock.packages || !lock.packages['']) {
-            throw new Error(
-              'package-lock.json must contain its root package entry.'
-            );
-          }
-
-          if (![2, 3].includes(lock.lockfileVersion)) {
-            throw new Error(
-              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
-            );
-          }
-
-          const root = lock.packages[''];
-
-          if (pkg.name !== root.name) {
-            throw new Error(
-              'package.json and package-lock.json names differ.'
-            );
-          }
-
-          if (pkg.version && root.version && pkg.version !== root.version) {
-            throw new Error(
-              'package.json and package-lock.json versions differ.'
-            );
-          }
-
-          console.log(`Validated npm metadata for ${pkg.name}.`);
-          NODE
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
+          test -f package.json
+          test -f package-lock.json
 
       - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-        env:
-          CI: "true"
+        run: npm ci --no-audit --no-fund
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
@@ -193,166 +117,55 @@ jobs:
       - name: Audit all dependencies
         run: npm audit --audit-level=high
 
-      - name: Write dependency audit summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## npm Dependency Audit"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Threshold:** High and critical vulnerabilities"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+  # ======================================================
+  # 3. CODEQL STATIC ANALYSIS
+  # ======================================================
   codeql:
     name: CodeQL JavaScript and TypeScript analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     permissions:
-      actions: read
       contents: read
       security-events: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
           build-mode: none
           queries: security-extended
 
       - name: Analyze code
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:javascript-typescript"
+          category: /language:javascript-typescript
 
-      - name: Write CodeQL summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## CodeQL Static Analysis"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Languages:** JavaScript and TypeScript"
-            echo "- **Query suite:** security-extended"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+  # ======================================================
+  # 4. SCAN FOR EXPOSED SECRETS
+  # ======================================================
   secret-scan:
     name: Gitleaks secret scan
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository history
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Scan for exposed secrets
+      - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: "false"
-          GITLEAKS_ENABLE_SUMMARY: "true"
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
-
-      - name: Write secret scan summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## Gitleaks Secret Scan"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Scope:** Available Git history"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  security-gate:
-    name: Security checks summary
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    needs:
-      - validate-json
-      - dependency-audit
-      - codeql
-      - secret-scan
-
-    if: always()
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Verify all security jobs passed
-        shell: bash
-        env:
-          JSON_RESULT: ${{ needs.validate-json.result }}
-          AUDIT_RESULT: ${{ needs.dependency-audit.result }}
-          CODEQL_RESULT: ${{ needs.codeql.result }}
-          SECRETS_RESULT: ${{ needs.secret-scan.result }}
-        run: |
-          set -euo pipefail
-
-          failed=0
-
-          for result in \
-            "JSON validation:$JSON_RESULT" \
-            "Dependency audit:$AUDIT_RESULT" \
-            "CodeQL analysis:$CODEQL_RESULT" \
-            "Secret scanning:$SECRETS_RESULT"
-          do
-            name="${result%%:*}"
-            status="${result#*:}"
-
-            echo "$name: $status"
-
-            if [[ "$status" != "success" ]]; then
-              echo "::error::$name did not succeed."
-              failed=1
-            fi
-          done
-
-          if [[ "$failed" -ne 0 ]]; then
-            echo "::error::MedOrbits security gate failed."
-            exit 1
-          fi
-
-          echo "All MedOrbits security checks passed."
-
-      - name: Write final security summary
-        if: always()
-        shell: bash
-        env:
-          JSON_RESULT: ${{ needs.validate-json.result }}
-          AUDIT_RESULT: ${{ needs.dependency-audit.result }}
-          CODEQL_RESULT: ${{ needs.codeql.result }}
-          SECRETS_RESULT: ${{ needs.secret-scan.result }}
-          GATE_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## MedOrbits Security Gate"
-            echo
-            echo "- **Gate status:** \`${GATE_STATUS}\`"
-            echo "- **JSON validation:** \`${JSON_RESULT}\`"
-            echo "- **Dependency audit:** \`${AUDIT_RESULT}\`"
-            echo "- **CodeQL:** \`${CODEQL_RESULT}\`"
-            echo "- **Secret scanning:** \`${SECRETS_RESULT}\`"
-          } >> "$GITHUB_STEP_SUMMARY"

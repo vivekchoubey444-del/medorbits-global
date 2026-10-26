@@ -1,0 +1,62 @@
+# File: .github/workflows/stale_issue.yml
+name: MedOrbits Stale Issues and Pull Requests
+on:
+  schedule:
+    # Run daily at 02:30 UTC.
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+permissions:
+  issues: write
+  pull-requests: write
+concurrency:
+  group: stale-issues
+  cancel-in-progress: false
+jobs:
+  stale:
+    name: Mark and close inactive items
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Mark stale issues and pull requests
+        uses: actions/stale@v9
+        with:
+          # Inactivity thresholds.
+          days-before-issue-stale: 60
+          days-before-pr-stale: 45
+          # Give contributors time to respond before closure.
+          days-before-issue-close: 14
+          days-before-pr-close: 14
+          # Labels applied by this workflow.
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          exempt-issue-labels: "security,bug,priority:high,pinned,keep-open"
+          exempt-pr-labels: "security,work-in-progress,keep-open"
+          # Messages explain how to keep an item active.
+          stale-issue-message: >-
+            This issue has been inactive for 60 days and has been marked
+            as stale. If this issue is still relevant, please add a comment
+            with an update or the next steps. It may be closed after 14
+            additional days of inactivity.
+          close-issue-message: >-
+            This issue is being closed because it remained inactive after
+            the stale notice. You can request reopening if the issue is
+            still relevant.
+          stale-pr-message: >-
+            This pull request has been inactive for 45 days and has been
+            marked as stale. Please add an update if it is still being
+            worked on. It may be closed after 14 additional days of inactivity.
+          close-pr-message: >-
+            This pull request is being closed because it remained inactive
+            after the stale notice. You can reopen it or create a new pull
+            request when you are ready to continue.
+          # Keep important or active work open.
+          exempt-all-milestones: true
+          exempt-all-assignees: true
+          exempt-draft-pr: true
+          # Avoid processing an excessive number of items in one run.
+          operations-per-run: 100
+          # Use the standard repository token.
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # Do not delete labels when items are closed.
+          remove-stale-when-updated: true
+          delete-branch: false

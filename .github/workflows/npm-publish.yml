@@ -1,366 +1,143 @@
-
-# ============================================================
-# MedOrbits -- Node.js Package Publishing
-# File: .github/workflows/publish-package.yml
-# Runtime: Node.js >=20
-# Registry: https://registry.npmjs.org/
-# Trigger: Published GitHub release
-# ============================================================
-
-name: MedOrbits Node.js Package
-
+name: Node.js Package
 on:
   release:
     types:
       - published
-
 permissions:
   contents: read
-
 concurrency:
-  group: medorbits-npm-publish-${{ github.event.release.tag_name }}
+  group: npm-publish-${{ github.event.release.tag_name }}
   cancel-in-progress: false
-
 jobs:
-  # ----------------------------------------------------------
-  # 1. VALIDATE, INSTALL, TEST AND INSPECT
-  # ----------------------------------------------------------
-  validate:
+  build:
     name: Validate and test package
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org/
-
-      # ------------------------------------------------------
-      # Verify package and release metadata
-      # ------------------------------------------------------
-      - name: Verify release metadata
-        shell: bash
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          set -euo pipefail
-
-          for file in package.json package-lock.json; do
-            if [[ ! -s "$file" ]]; then
-              echo "::error::$file is missing or empty."
-              exit 1
-            fi
-          done
-
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          const tag = process.env.RELEASE_TAG;
-
-          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-            throw new Error("package.json must contain a JSON object.");
-          }
-
-          if (
-            typeof pkg.name !== "string" ||
-            !pkg.name.trim() ||
-            typeof pkg.version !== "string" ||
-            !pkg.version.trim()
-          ) {
-            throw new Error(
-              "package.json must declare non-empty name and version fields."
-            );
-          }
-
-          if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(pkg.version)) {
-            throw new Error(`Invalid semantic version: ${pkg.version}`);
-          }
-
-          if (tag !== `v${pkg.version}` && tag !== pkg.version) {
-            throw new Error(
-              `Release tag "${tag}" does not match package version "${pkg.version}".`
-            );
-          }
-
-          if (pkg.private === true) {
-            throw new Error("Cannot publish a package marked private.");
-          }
-
-          if (
-            !Number.isInteger(lock.lockfileVersion) ||
-            ![2, 3].includes(lock.lockfileVersion)
-          ) {
-            throw new Error("package-lock.json has an unsupported lockfile version.");
-          }
-
-          if (
-            lock.name && lock.name !== pkg.name ||
-            lock.version && lock.version !== pkg.version
-          ) {
-            throw new Error("package-lock.json metadata does not match package.json.");
-          }
-
-          if (
-            !lock.packages ||
-            typeof lock.packages !== "object" ||
-            !lock.packages[""]
-          ) {
-            throw new Error("package-lock.json is missing root package metadata.");
-          }
-
-          const root = lock.packages[""];
-
-          if (
-            (root.name && root.name !== pkg.name) ||
-            (root.version && root.version !== pkg.version)
-          ) {
-            throw new Error("Lockfile root metadata does not match package.json.");
-          }
-
-          console.log(`Package: ${pkg.name}`);
-          console.log(`Version: ${pkg.version}`);
-          console.log(`Release tag: ${tag}`);
-          console.log(`Lockfile version: ${lock.lockfileVersion}`);
-          NODE
-
-      # ------------------------------------------------------
-      # Install exact dependency versions from the lockfile
-      # ------------------------------------------------------
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
-      # ------------------------------------------------------
-      # Run required test script
-      # ------------------------------------------------------
-      - name: Run tests
+      - name: Validate package metadata
         shell: bash
         run: |
           set -euo pipefail
-
-          node --input-type=commonjs <<'NODE'
-          const pkg = require("./package.json");
-
-          if (
-            !pkg.scripts ||
-            typeof pkg.scripts.test !== "string" ||
-            !pkg.scripts.test.trim()
-          ) {
-            console.error(
-              "A non-empty npm test script is required before publishing."
-            );
-            process.exit(1);
+          test -f package.json || {
+            echo "::error::package.json is missing."
+            exit 1
           }
-          NODE
-
-          npm test
-
-      # ------------------------------------------------------
-      # Optional build validation
-      # ------------------------------------------------------
-      - name: Build package
-        if: ${{ hashFiles('package.json') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if node --input-type=commonjs -e \
-            "process.exit(typeof require('./package.json').scripts?.build === 'string' ? 0 : 1)"
-          then
-            npm run build
-          else
-            echo "No build script configured; skipping build."
-          fi
-
-      # ------------------------------------------------------
-      # Inspect package contents
-      # ------------------------------------------------------
-      - name: Validate package contents
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          npm pack --dry-run --json > "${RUNNER_TEMP}/npm-pack-report.json"
-
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-
-          const report = JSON.parse(
-            fs.readFileSync(
-              `${process.env.RUNNER_TEMP}/npm-pack-report.json`,
-              "utf8"
-            )
+          test -f package-lock.json || {
+            echo "::error::package-lock.json is missing."
+            exit 1
+          }
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
           );
-
-          if (!Array.isArray(report) || report.length !== 1) {
-            throw new Error("Unexpected npm pack report.");
+          const lock = JSON.parse(
+            fs.readFileSync('package-lock.json', 'utf8')
+          );
+          if (!pkg.name || !pkg.version) {
+            throw new Error('Package name and version are required.');
           }
-
-          const pack = report[0];
-
-          if (!Array.isArray(pack.files) || pack.files.length === 0) {
-            throw new Error("The npm package contains no files.");
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error('Invalid package-lock.json.');
           }
-
-          console.log(`Package: ${pack.name}@${pack.version}`);
-          console.log(`Files included: ${pack.files.length}`);
-
-          for (const file of pack.files) {
-            console.log(`  ${file.path}`);
+          if (lock.name && lock.name !== pkg.name) {
+            throw new Error('Package name mismatch.');
           }
+          if (
+            lock.version &&
+            lock.version !== pkg.version
+          ) {
+            throw new Error('Package version mismatch.');
+          }
+          if (pkg.private === true) {
+            throw new Error('Private packages must not be published.');
+          }
+          if (
+            !pkg.publishConfig ||
+            pkg.publishConfig.registry !== 'https://registry.npmjs.org/'
+          ) {
+            throw new Error(
+              'Set publishConfig.registry to https://registry.npmjs.org/ before publishing.'
+            );
+          }
+          console.log(`Package: ${pkg.name}@${pkg.version}`);
           NODE
-
-      # ------------------------------------------------------
-      # Save validation summary
-      # ------------------------------------------------------
-      - name: Report validation results
-        if: always()
+      - name: Verify release tag matches package version
         shell: bash
         env:
-          JOB_STATUS: ${{ job.status }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          {
-            echo "## MedOrbits npm Package Validation"
-            echo
-            echo "- **Status:** ${JOB_STATUS}"
-            echo "- **Release tag:** \`${RELEASE_TAG}\`"
-            echo "- **Registry:** https://registry.npmjs.org/"
-            echo
-            echo "Publishing requires this validation job to succeed."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  # ----------------------------------------------------------
-  # 2. PUBLISH TO NPM
-  # ----------------------------------------------------------
-  publish:
-    name: Publish to npm registry
-    needs:
-      - validate
-
-    if: ${{ needs.validate.result == 'success' }}
-
+          set -euo pipefail
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$RELEASE_TAG" != "v$PACKAGE_VERSION" &&
+                "$RELEASE_TAG" != "$PACKAGE_VERSION" ]]; then
+            echo "::error::Release tag does not match package.json version."
+            echo "Release tag: $RELEASE_TAG"
+            echo "Package version: $PACKAGE_VERSION"
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run tests
+        run: npm test
+      - name: Verify package contents
+        run: npm pack --dry-run
+  publish-npm:
+    name: Publish to npm
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     environment:
       name: npm-production
-
     permissions:
       contents: read
-
+      id-token: write
     steps:
-      - name: Checkout verified release tag
+      - name: Checkout release tag
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
-
-      - name: Set up Node.js and npm registry
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
           registry-url: https://registry.npmjs.org/
-          cache: npm
-
-      - name: Verify release metadata
+      - name: Validate npm publishing configuration
         shell: bash
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const tag = process.env.RELEASE_TAG;
-
-          if (
-            typeof pkg.name !== "string" ||
-            typeof pkg.version !== "string"
-          ) {
-            throw new Error("Package name and version are required.");
-          }
-
-          if (tag !== `v${pkg.version}` && tag !== pkg.version) {
-            throw new Error("Release tag and package version do not match.");
-          }
-
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
           if (pkg.private === true) {
-            throw new Error("Private packages cannot be published.");
+            throw new Error('Refusing to publish a private package.');
           }
-
-          console.log(`Preparing ${pkg.name}@${pkg.version}`);
-          NODE
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Verify package contents
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          npm pack --dry-run --json > "${RUNNER_TEMP}/npm-publish-pack-report.json"
-
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-
-          const report = JSON.parse(
-            fs.readFileSync(
-              `${process.env.RUNNER_TEMP}/npm-publish-pack-report.json`,
-              "utf8"
-            )
-          );
-
           if (
-            !Array.isArray(report) ||
-            report.length !== 1 ||
-            !Array.isArray(report[0].files) ||
-            report[0].files.length === 0
+            pkg.publishConfig?.registry !==
+            'https://registry.npmjs.org/'
           ) {
-            throw new Error("Package contents validation failed.");
+            throw new Error(
+              'Package registry is not explicitly configured for npm.'
+            );
           }
-
-          console.log(
-            `Validated ${report[0].name}@${report[0].version} for publication.`
-          );
+          console.log('npm publishing configuration is valid.');
           NODE
-
-      # ------------------------------------------------------
-      # Publish only after all validation succeeds
-      # ------------------------------------------------------
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Publish package
-        shell: bash
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Report publication result
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          {
-            echo "## MedOrbits npm Publication"
-            echo
-            echo "- **Status:** ${JOB_STATUS}"
-            echo "- **Release tag:** \`${RELEASE_TAG}\`"
-            echo "- **Registry:** https://registry.npmjs.org/"
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: npm publish --provenance

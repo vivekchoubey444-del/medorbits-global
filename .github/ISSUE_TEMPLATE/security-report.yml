@@ -1,161 +1,55 @@
 
-name: "🔐 Security Report"
-description: "Report a security concern or suspected vulnerability affecting MedOrbits. Do not disclose exploitable details publicly."
+name: Security vulnerability report
+description: Instructions for reporting suspected MedOrbits security vulnerabilities safely
 title: "[Security]: "
-labels:
-  - security
+labels: []
+assignees: []
 
 body:
   - type: markdown
     attributes:
       value: |
-        ## MedOrbits Security Reporting
+        # Important: This issue is public
 
-        Thank you for helping protect MedOrbits and its users.
+        **Submitting this form creates a publicly visible GitHub issue. It is not a private vulnerability reporting channel.**
 
-        **IMPORTANT: This issue form may be publicly visible. Do not include vulnerability exploitation steps, proof-of-concept payloads, credentials, access tokens, private URLs, personal information, or sensitive user data.**
+        Do not include exploit instructions, proof-of-concept code, credentials, access tokens, private user data, payment information, exposed secrets, or other confidential technical details.
 
-        **For an actual security vulnerability, use the repository's private vulnerability reporting feature whenever available:**
+        Read the repository's root `SECURITY.md` file and follow its private reporting instructions before submitting a report.
 
-        https://github.com/vivekchoubey366-dot/MedOrbits/security/advisories/new
+        If no private reporting channel is documented, contact a repository maintainer through a non-public channel and request secure reporting instructions before sharing sensitive details.
 
-        If private vulnerability reporting is unavailable, contact an authorized repository maintainer privately to request a secure reporting channel.
-
-        Use this form only for non-sensitive security concerns that can safely be discussed publicly. Submitting this form does not guarantee a confidential report or a particular response time.
-
-  - type: dropdown
-    id: report_type
+  - type: checkboxes
+    id: acknowledgment
     attributes:
-      label: Security Concern Type
-      description: Select the closest category without disclosing exploit details.
+      label: Required acknowledgment
+      description: Confirm both statements before submitting.
       options:
-        - Authentication or account security
-        - Authorization or access control
-        - Privacy or potential data exposure
-        - File upload or document access
-        - API security
-        - Dependency or package vulnerability
-        - Security configuration
-        - Suspected phishing or impersonation
-        - Security headers or browser protections
-        - Other security concern
-    validations:
-      required: true
+        - label: I understand that this issue will be publicly visible.
+          required: true
+        - label: I will not disclose exploit details, credentials, secrets, or confidential personal information.
+          required: true
 
   - type: textarea
     id: summary
     attributes:
-      label: High-Level Summary
-      description: Describe the concern without including sensitive technical details or instructions that enable exploitation.
-      placeholder: "Example: A protected resource may not consistently enforce access permissions."
-    validations:
-      required: true
-
-  - type: dropdown
-    id: impact
-    attributes:
-      label: Potential Impact
-      description: Choose the closest potential impact. Maintainers will assess actual severity.
-      options:
-        - Potential unauthorized access
-        - Potential exposure of personal or confidential information
-        - Potential account compromise
-        - Potential modification or deletion of data
-        - Potential service disruption
-        - Potential financial or transaction risk
-        - Security weakness with unclear impact
-        - Not sure
-    validations:
-      required: true
-
-  - type: dropdown
-    id: environment
-    attributes:
-      label: Affected Environment
-      description: Identify the environment without revealing private infrastructure details.
-      options:
-        - Public production website
-        - Public API
-        - Staging or testing environment
-        - Local development
-        - Dependency or build process
-        - Unknown
-    validations:
-      required: true
-
-  - type: textarea
-    id: affected_component
-    attributes:
-      label: Affected Component
-      description: Provide a public page name or general component description. Do not include private endpoints, secrets, or internal infrastructure details.
-      placeholder: "Example: Authentication flow, document access, or public resource API."
+      label: Non-sensitive summary (optional)
+      description: |
+        Provide a general description only if public disclosure is safe.
+        Leave this field blank if even a general description could expose sensitive information.
+      placeholder: "Example: Suspected authentication security concern."
     validations:
       required: false
 
-  - type: textarea
-    id: safe_observation
+  - type: markdown
     attributes:
-      label: Non-Sensitive Observations
-      description: Explain what you observed at a high level. Do not include payloads, exploit steps, private data, or credentials.
-      placeholder: "Describe the behaviour that raised your concern without providing instructions for reproducing an exploit."
-    validations:
-      required: false
+      value: |
+        ## Next steps
 
-  - type: dropdown
-    id: exposure_status
-    attributes:
-      label: Potential Exposure Status
-      description: Select the option that best reflects what you know.
-      options:
-        - Possible issue; exposure not confirmed
-        - Potential exposure observed
-        - Issue appears limited to a test environment
-        - Issue appears resolved
-        - Unknown
-    validations:
-      required: true
+        1. Read the root `SECURITY.md` file.
+        2. Use a private reporting channel explicitly documented by the project, if available.
+        3. If no private channel is documented, request secure reporting instructions privately before sharing vulnerability details.
+        4. Do not post additional sensitive details in this public issue.
 
-  - type: dropdown
-    id: authorisation
-    attributes:
-      label: Testing Authorisation
-      description: Confirm whether any testing was performed and whether you were authorised to perform it.
-      options:
-        - No testing performed; concern based on observation
-        - Testing performed within an explicitly authorised scope
-        - Testing status or authorisation is unclear
-    validations:
-      required: true
-
-  - type: textarea
-    id: mitigation
-    attributes:
-      label: Suggested Mitigation
-      description: Optionally suggest a high-level defensive measure without providing exploit instructions.
-      placeholder: "Example: Enforce server-side ownership checks on every protected document request."
-    validations:
-      required: false
-
-  - type: textarea
-    id: additional_context
-    attributes:
-      label: Additional Non-Sensitive Context
-      description: Provide only information that is safe to publish. Do not attach confidential logs, screenshots of private records, or proof-of-concept files.
-      placeholder: "Add relevant public documentation or a general explanation."
-    validations:
-      required: false
-
-  - type: checkboxes
-    id: confirmations
-    attributes:
-      label: Security Reporting Checklist
-      description: Confirm every statement before submitting.
-      options:
-        - label: I understand that this issue may be publicly visible.
-          required: true
-        - label: I have not included credentials, tokens, private data, or sensitive vulnerability details.
-          required: true
-        - label: I have not performed testing outside an authorized scope.
-          required: true
-        - label: I understand that this form is not a confidential vulnerability reporting channel.
-          required: true
+        Do not assume that a security contact, email address, or private reporting feature exists unless the repository or GitHub settings explicitly provide it.
+        

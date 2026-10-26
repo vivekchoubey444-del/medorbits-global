@@ -1,376 +1,261 @@
+MedOrbits — GitHub Actions Workflows
 
-# MedOrbits — GitHub Actions Workflows
+Automated CI/CD, security scanning, dependency management, testing, configuration validation, and release management for the MedOrbits project.
 
-**Purpose:** Continuous integration and deployment (CI/CD), quality assurance, application security, dependency management, document validation, release management, and deployment automation.
+Overview
 
-**Directory:** `.github/workflows/`
+The .github/workflows/ directory contains GitHub Actions workflows that support repository validation, security monitoring, dependency review, release management, and deployment preparation.
 
-**Project:** MedOrbits
+Each workflow should have a clearly defined purpose, least-privilege permissions, explicit failure behavior, and documented prerequisites. A workflow’s presence does not guarantee that it runs successfully or that an external service is configured correctly.
 
-—
+Workflow Directory
 
-## 1. Overview
+Workflow file	Responsibility
+ci.yml	Continuous integration and repository quality checks
+codeql.yml	CodeQL static security analysis
+dependency-review.yml	Review dependencies introduced by pull requests
+deploy.yml	Production deployment eligibility and preflight checks
+deploy_staging.yml	Staging validation and deployment preflight
+generate-lockfile.yml	Generate and validate a package lockfile for review
+release.yml	Validate version tags and create GitHub Releases
+secret-scan.yml	Scan repository history for exposed secrets
+stale_issue.yml	Manage inactive issues and pull requests
+test-test.yml	Additional repository validation and application tests
 
-The `.github/workflows/` directory contains GitHub Actions workflows for automating repository validation and development operations.
+Other workflow files may exist, including security.yml, lockfile.yml, update-lockfile.yml, sync-official-releases.yml, tests.yml, and validate-config.yml. Verify their presence and implementation before treating them as active workflows. Avoid maintaining multiple workflows that perform the same task without a clear reason.
 
-The objectives are to:
+1. Continuous Integration
 
-- Detect code, configuration, and data errors before merging changes.
-- Run automated tests and report failures.
-- Identify security vulnerabilities and accidentally committed credentials.
-- Maintain dependency and lockfile consistency.
-- Validate document manifests and resource catalogues.
-- Synchronize verified official release information.
-- Support controlled application deployment and release publishing.
+ci.yml
 
-**Operational principle:** A workflow’s filename or intended purpose does not establish that it is correctly configured, has executed successfully, or is safe for production. Verify its source, configuration, permissions, and run history before relying on it.
+The main CI workflow validates the repository and runs configured quality checks on supported branches and pull requests.
 
-## 2. Workflow Inventory
+Expected responsibilities:
 
-The following table describes intended responsibilities. Confirm that each file exists and that its implementation matches the description before treating it as operational.
+* Validate package.json and package-lock.json.
+* Check JSON files for malformed content.
+* Install dependencies using the committed lockfile.
+* Run configured tests, linting, project checks, and builds.
+* Report failures so they can be investigated before merging.
 
-| Workflow | Intended responsibility |
-|—|—|
-| `ci.yml` | Continuous integration and general quality checks |
-| `tests.yml` | Unit and integration tests, coverage, and test artifacts |
-| `codeql.yml` | Static application security analysis |
-| `dependency-review.yml` | Dependency changes introduced through pull requests |
-| `secret-scan.yml` | Detect potentially exposed credentials and secrets |
-| `security.yml` | Consolidated security and dependency checks |
-| `deploy.yml` | Deployment eligibility checks and provider-specific deployment |
-| `release.yml` | Release tag validation and GitHub Release publishing |
-| `lockfile.yml` | Lockfile consistency or dependency management, depending on implementation |
-| `update-lockfile.yml` | Manually initiated lockfile generation, validation, and optional commit |
-| `sync-official-releases.yml` | Synchronize verified official release information |
-| `validate-config.yml` | Project configuration and structured-data validation |
-| `validate-project.yml` | Package metadata, JSON, workflow YAML, lockfile, and JavaScript validation |
-| `validate-documents.yml` | Document manifest and catalogue validation |
+Commands such as npm test —if-present may succeed without executing tests when the script is absent. Required checks should be mandatory once the relevant scripts have been confirmed in package.json.
 
-Remove obsolete entries and update this inventory when workflows are renamed, combined, or deleted. Do not assume that similarly named workflows exist or perform equivalent checks.
+test-test.yml
 
-## 3. Continuous Integration and Testing
+This additional workflow provides a separate repository-validation and application-test pipeline.
 
-### `ci.yml`
+Keep it only if it provides value beyond ci.yml. Duplicate workflows can consume CI minutes and produce confusing status checks. If both are required, document why their coverage or trigger conditions differ.
 
-Provides general continuous integration checks for proposed and committed changes.
+2. Security Scanning
 
-Recommended responsibilities:
+codeql.yml
 
-- Install dependencies reproducibly with `npm ci`.
-- Validate JavaScript syntax.
-- Check JSON files and application datasets.
-- Run configured lint, formatting, and test commands.
-- Execute production builds when the project defines a build process.
-- Fail when a required quality check fails.
+Runs CodeQL analysis for JavaScript and TypeScript, including the configured security-extended query suite.
 
-### `tests.yml`
+Security responsibilities:
 
-Focuses on unit and integration tests and the collection of test reports.
+* Identify potential vulnerabilities through static analysis.
+* Validate repository JSON and package metadata.
+* Run configured tests and checks.
+* Upload analysis results using the permissions required by CodeQL.
 
-Recommended responsibilities:
+A successful CodeQL run does not establish that an application is vulnerability-free. Review findings according to severity, exploitability, and application context.
 
-- Run the project’s CI test command.
-- Set an appropriate test environment.
-- Generate coverage and machine-readable test reports where supported.
-- Upload diagnostic artifacts even when tests fail.
-- Retain artifacts for a limited, documented period.
+secret-scan.yml
 
-**Avoid duplicated work.** If both workflows execute the same checks, decide which workflow owns each responsibility. Keep a dedicated test workflow when its reports and test lifecycle justify the additional runtime; otherwise, consolidate overlapping jobs.
+Uses Gitleaks to detect potential credentials and secrets committed to repository history.
 
-Configure required status checks only after confirming the exact job and check names reported by GitHub Actions.
+If a real credential is exposed:
 
-## 4. Application and Dependency Security
+1. Revoke or rotate it immediately.
+2. Inspect the affected commits and logs.
+3. Remove the exposed value from active configuration.
+4. Review whether history cleanup is necessary and coordinate it carefully.
+5. Store replacement credentials in GitHub Actions secrets, environment secrets, or an appropriate secret manager.
 
-### `codeql.yml`
+Removing a credential from the latest commit does not invalidate a credential that was already exposed.
 
-Runs static application security analysis for supported source languages.
+dependency-review.yml
 
-Recommended controls:
+Reviews dependency changes introduced by pull requests and can block changes based on configured vulnerability-severity and license policies.
 
-- Analyze the languages and code paths used by the application.
-- Run on relevant pull requests, pushes, and scheduled intervals.
-- Grant security-event write access only to jobs that need to publish findings.
-- Review findings according to severity, exploitability, and application context.
+Before relying on this workflow:
 
-A successful analysis does not prove that the application is free of vulnerabilities.
+* Confirm GitHub Dependency Review is available for the repository.
+* Verify that dependency changes are evaluated for the intended package ecosystems.
+* Review the GPL and AGPL restrictions against the project’s licensing policy.
+* Confirm that pull-request permissions and fork handling follow the repository’s security requirements.
 
-### `secret-scan.yml`
+A dependency-review result covers the data and ecosystems that the action can evaluate; it is not a complete software supply-chain audit.
 
-Scans repository history or changes for potential secrets, depending on its implementation.
+3. Dependency and Lockfile Management
 
-Recommended controls:
+generate-lockfile.yml
 
-- Scan the intended commit history.
-- Avoid exposing credentials in logs and artifacts.
-- Handle pull requests from forks appropriately.
-- Revoke or rotate exposed credentials immediately.
-- Review false positives without suppressing genuine secrets.
+Generates a package-lock.json through a manually triggered workflow and validates the result.
 
-Removing a secret from the latest commit does not necessarily remove it from repository history or invalidate the credential.
+The recommended process is to generate the file in an isolated runner, validate it, and provide it as an artifact for review. Changes should be reviewed before being committed to a protected branch.
 
-### `dependency-review.yml`
+Lockfile consistency
 
-Reviews dependency changes introduced through pull requests.
+Use npm ci in CI environments when a valid package-lock.json is committed. It installs from the lockfile and fails if the lockfile is inconsistent with the package manifest.
 
-Recommended controls:
+Do not automatically regenerate or push lockfile changes to main unless a reviewed repository policy explicitly permits that behavior.
 
-- Restrict execution to relevant pull requests where practical.
-- Apply documented severity thresholds.
-- Review newly introduced licenses according to project policy.
-- Account for missing or unavailable dependency metadata.
-- Document how the workflow treats unknown licenses and dependency scopes.
+Lockfile validation does not prove that dependencies are secure, compatible, or free from malicious code.
 
-### `security.yml`
+4. Deployment Workflows
 
-May provide a consolidated security gate for dependency auditing, static analysis, secret scanning, and configuration validation.
+deploy.yml
 
-Before maintaining it alongside dedicated security workflows, review:
+Handles production deployment eligibility and preflight checks.
 
-- Duplicate scans and excessive runtime.
-- Permission differences between jobs.
-- Conflicting severity thresholds.
-- Failure and cancellation behavior.
-- Whether branch protection requires the consolidated result or individual checks.
-
-## 5. Dependency and Lockfile Management
-
-### `lockfile.yml`
-
-Inspect its implementation to determine whether it verifies lockfile consistency, generates a lockfile, or performs another dependency operation.
-
-### `update-lockfile.yml`
-
-Supports manually initiated lockfile generation and validation, with an optional commit-and-push stage if implemented.
-
-Recommended practices:
-
-- Keep `package.json` and `package-lock.json` synchronized.
-- Use `npm ci` to validate reproducible dependency installation.
-- Validate lockfile metadata and dependency installation before accepting changes.
-- Review generated lockfile changes before merging.
-- Avoid force-pushing generated changes.
-- Do not automatically bypass protected branch rules.
-- Ensure a write-enabled job commits only the intended lockfile.
-- Verify that the target branch has not advanced since validation.
-
-Grant `contents: write` only to a dedicated job that needs to commit changes. Prefer a pull request for automated dependency changes when repository policy prohibits direct pushes.
-
-Lockfile synchronization does not establish that every dependency is secure, compatible, or free from supply-chain risks.
-
-## 6. Deployment and Release Management
-
-### `deploy.yml`
-
-Handles deployment-related checks and, if implemented, the actual deployment to the configured provider.
+The preflight implementation validates the selected commit and project configuration. Preflight is not the same as deployment. A provider-specific deployment step must be implemented before this workflow can release an application to production.
 
 Before enabling production deployment:
 
-1. Verify the deployment target and provider API.
-2. Configure required secrets and environment variables.
-3. Create a protected production environment where appropriate.
-4. Confirm that the intended commit is the one being deployed.
-5. Require successful quality and security gates.
-6. Prevent overlapping deployments from interfering with each other.
-7. Implement health checks and a tested recovery or rollback procedure.
-8. Verify how timeouts and unsuccessful provider responses are handled.
+1. Configure the actual hosting provider and deployment credentials.
+2. Protect the GitHub production environment.
+3. Require approval where appropriate.
+4. Verify the exact commit to be deployed.
+5. Run mandatory tests and build checks.
+6. Implement health checks and failure handling.
+7. Document and test the rollback procedure.
 
-Preflight validation is not deployment. Confirm that the workflow makes the provider-specific deployment request and correctly handles failures, timeouts, and deployment status.
+deploy_staging.yml
 
-### `release.yml`
+Provides staging eligibility checks and application validation for the configured staging branches.
 
-Supports release validation and GitHub Release publishing.
+The current preflight design does not contact a hosting provider or deploy the application. A real staging release requires an explicit provider-specific deployment step, staging-specific configuration, and an appropriate staging environment.
 
-Recommended controls:
+Staging and production credentials must remain separate.
 
-- Validate release tags against the project’s versioning policy.
-- Confirm that the tag points to the intended commit.
-- Verify package metadata and required release checks.
-- Grant `contents: write` only to the publishing job.
-- Handle existing releases without silently publishing incorrect or duplicate artifacts.
-- Use protected environments or approvals for sensitive release operations.
-- Document whether releases contain source code only or include built artifacts.
+5. Release Management
 
-Creating a GitHub Release does not automatically publish a package to npm or deploy the website. Configure registry publishing and production deployment separately, with their own credentials and permissions.
+release.yml
 
-## 7. Configuration and Document Validation
+Validates a version tag, checks that the tag matches package.json, runs the configured release checks, and creates a GitHub Release after successful validation.
 
-### `validate-config.yml`
+Expected release safeguards:
 
-Validates project configuration and structured data, depending on implementation.
+* Require semantic version tags in vMAJOR.MINOR.PATCH format.
+* Validate the exact tagged commit.
+* Check package and lockfile metadata.
+* Run tests and configured quality checks.
+* Grant write permission only to the job that creates the release.
+* Refuse to overwrite an existing GitHub Release.
 
-Recommended checks:
+This workflow creates a GitHub Release. It does not automatically publish a package to npm or deploy the application.
 
-- Parse JSON files and reject invalid syntax.
-- Parse workflow YAML using a dedicated YAML parser.
-- Validate required package metadata.
-- Verify package-lock synchronization without silently modifying tracked files.
-- Check JavaScript syntax where applicable.
-- Fail on missing required files and scripts.
+For npm publication, maintain a separate workflow with an explicit registry, publishing permissions, and trusted-publishing or token configuration.
 
-YAML syntax validation alone does not guarantee that a GitHub Actions workflow uses valid event names, action inputs, permissions, or expressions.
+6. Inactive Issue Management
 
-### `validate-project.yml`
+stale_issue.yml
 
-Validates project configuration and common repository assets.
+Identifies inactive issues and pull requests, applies a stale label, and may close items after the configured grace period.
 
-Expected checks, subject to implementation:
+Before enabling automatic closure:
 
-- Verify required package files and metadata.
-- Parse repository JSON files.
-- Run application-data validation scripts where configured.
-- Verify lockfile synchronization.
-- Parse GitHub Actions workflow YAML.
-- Check JavaScript syntax.
-- Detect unexpected modifications caused by validation.
+* Verify that the configured labels exist.
+* Exempt security reports, high-priority work, and other issues that must remain open.
+* Choose inactivity periods that give maintainers and contributors sufficient time to respond.
+* Review the workflow’s permissions and closure behavior.
 
-Keep the workflow aligned with the actual scripts and dependencies declared in `package.json`. Clearly distinguish required checks from optional checks that are skipped when scripts are absent.
+Automatic stale management should not close active security incidents or critical maintenance work.
 
-### `validate-documents.yml`
+7. Additional Workflow Files
 
-Validates MedOrbits document manifests and document catalogue data.
+The following names may be used for additional capabilities, but their behavior must be confirmed from the actual YAML before being treated as implemented:
 
-Recommended checks:
+Workflow file	Intended purpose
+security.yml	Additional security and dependency checks
+lockfile.yml	Lockfile validation or maintenance
+update-lockfile.yml	Dependency-lockfile updates
+sync-official-releases.yml	Synchronization of authoritative release information
+tests.yml	Test execution and test artifacts
+validate-config.yml	Configuration and JSON/YAML validation
+validate-documents.yml	Document manifests and resource catalogues
 
-- Verify that required manifest and catalogue scripts exist.
-- Run strict manifest validation.
-- Confirm that referenced local resources exist.
-- Detect duplicate document identifiers and malformed resource paths.
-- Run the catalogue generator in its documented dry-run mode.
-- Report validation results through the GitHub Actions job summary.
+Avoid creating redundant workflows with overlapping triggers and responsibilities. Prefer a clear workflow structure with one authoritative CI pipeline and narrowly scoped security, release, and deployment workflows.
 
-Keep this workflow aligned with the actual command-line options supported by:
+8. Permissions and Repository Security
 
-- `scripts/validate-document-manifests.mjs`
-- `scripts/build-document-catalogue.mjs`
+Recommended repository settings:
 
-Do not assume that `—strict` or `—dry-run` exists until it has been implemented and tested.
+* Protect main and other important branches.
+* Require pull-request reviews and required CI checks.
+* Use the minimum GITHUB_TOKEN permissions needed for each job.
+* Review third-party actions before upgrading them; pin actions to immutable commit SHAs when required by repository policy.
+* Store secrets in GitHub Actions or environment secrets, never in committed .env files.
+* Protect production and release environments with approval rules where appropriate.
+* Avoid executing untrusted pull-request code in privileged workflows.
+* Prevent concurrent deployments from overwriting each other.
+* Review dependency alerts and secret-scan findings regularly.
 
-## 8. Official Release Synchronization
+A workflow should not receive write permissions merely because another workflow needs them.
 
-### `sync-official-releases.yml`
+9. Required Configuration
 
-Synchronizes official release information into the repository’s designated data file.
+Requirements depend on the actual implementation of each workflow. Review the YAML and project configuration for:
 
-Before enabling scheduled or write-enabled execution:
+* Required repository and environment secrets.
+* Repository variables and provider-specific deployment settings.
+* Node.js and package-manager versions.
+* Required scripts in package.json.
+* Test, lint, build, and validation commands.
+* Branch restrictions and workflow triggers.
+* GitHub environment approvals.
+* External services, API credentials, and registry configuration.
 
-- Identify the authoritative source for release information.
-- Verify source responses and the expected data structure.
-- Validate entries before updating repository data.
-- Handle duplicates, malformed entries, pagination, and source outages.
-- Limit changes to the intended data file.
-- Avoid overwriting concurrent changes.
-- Prefer pull requests when branch protection requires review.
+Do not invent production credentials or commit placeholder secrets that could be mistaken for working configuration.
 
-If a scheduled run fails, it should report the failure clearly rather than silently publishing stale or unverified information.
+10. Database and Migration Safety
 
-## 9. Permissions, Secrets, and Supply-Chain Security
+Database migrations must be treated as a separate, controlled deployment operation unless an explicitly reviewed workflow implements them.
 
-Use least-privilege permissions at workflow and job level.
+Before applying production migrations:
 
-Recommended controls:
-
-- Set explicit workflow permissions.
-- Use `contents: read` by default.
-- Grant `contents: write` only to jobs that must commit or publish.
-- Grant security-event permissions only to jobs that upload security findings.
-- Set `persist-credentials: false` when checkout credentials are not required.
-- Store secrets in GitHub Actions secrets or protected environment secrets.
-- Never commit real `.env` files, API tokens, database passwords, private keys, or session secrets.
-- Review third-party actions before upgrading them.
-- Pin actions to reviewed immutable commit SHAs when required by repository policy.
-- Avoid passing untrusted pull-request content into privileged jobs.
-- Review artifact contents before transferring them into write-enabled jobs.
-
-When a credential is exposed, revoke or rotate it first. Repository history cleanup is a separate remediation step.
-
-## 10. Branch Protection and Environments
-
-For primary branches such as `main`, configure repository rules appropriate to the team’s workflow.
-
-Consider requiring:
-
-- Pull requests before merging.
-- Independent review where appropriate.
-- Required CI and test status checks.
-- Resolution of review conversations.
-- Restrictions on force pushes and branch deletion.
-- Protected deployment environments for production.
-- Approval before sensitive release or deployment operations.
-
-Check that required status-check names correspond to actual workflow job names and that expected checks run for the relevant pull-request event types.
-
-A workflow that refuses to run on protected branches may be intentional. Verify its conditions before assuming that behavior is a defect.
-
-## 11. Database and Migration Safety
-
-Database migration workflows should be reviewed separately from general application CI.
-
-Before a production migration:
-
-1. Validate migration files and migration order.
-2. Back up the database and verify recovery procedures.
+1. Validate the migration files.
+2. Back up the database and verify that recovery is possible.
 3. Review schema changes and application compatibility.
-4. Apply changes through the project’s migration runner.
-5. Check database connectivity and application health.
-6. Confirm the recovery strategy if migration or deployment fails.
+4. Use the project’s actual migration runner.
+5. Run database and application health checks.
+6. Follow a tested recovery procedure if a migration fails.
 
-Do not assume MySQL DDL operations are always transactionally reversible. Design recovery around the actual database engine, migration operations, and application deployment sequence.
+MySQL DDL operations cannot always be rolled back transactionally. Do not assume that reversing an application deployment automatically reverses database changes.
 
-## 12. Required Configuration
+11. Maintenance Checklist
 
-The exact configuration depends on each workflow’s implementation.
+When creating or updating a workflow:
 
-Review for:
+1. Confirm the exact filename and intended responsibility.
+2. Validate YAML syntax and GitHub Actions expressions.
+3. Review permissions, secrets, and untrusted pull-request handling.
+4. Confirm every referenced file, script, action input, and environment exists.
+5. Test the workflow on a non-production branch.
+6. Review generated artifacts and proposed changes before merging.
+7. Update this README when workflow behavior changes.
+8. Remove redundant workflows only after confirming that no required functionality or branch protection depends on them.
 
-- Required GitHub Actions secrets and variables.
-- Node.js and npm versions.
-- Required files, directories, and validation scripts.
-- Test, lint, formatting, and build commands.
-- Deployment provider configuration.
-- Registry credentials, if package publishing is enabled.
-- Branch restrictions and environment approvals.
-- Artifact paths and retention periods.
-- External API availability and error-handling behavior.
+12. Verification and Limitations
 
-Never create placeholder production credentials or commit actual secrets to satisfy a workflow check.
+This README describes the intended responsibilities of the listed workflows. It does not independently prove that each workflow exists, passes, or implements every described feature.
 
-## 13. Maintenance Checklist
+Before relying on a security, testing, release, synchronization, or deployment guarantee, inspect the actual YAML and verify its triggers, steps, permissions, scripts, and external integrations.
 
-When adding or modifying a workflow:
+In particular:
 
-- [ ] Confirm the workflow filename and purpose.
-- [ ] Validate YAML syntax and GitHub Actions configuration.
-- [ ] Review triggers, path filters, and branch conditions.
-- [ ] Apply least-privilege permissions.
-- [ ] Check referenced files, scripts, action versions, and inputs.
-- [ ] Test the workflow on a non-production branch.
-- [ ] Verify behavior on failure and cancellation.
-- [ ] Review generated commits, release artifacts, and uploaded reports.
-- [ ] Confirm that secrets are not exposed in logs.
-- [ ] Update this README when responsibilities change.
-- [ ] Review overlap with existing workflows.
-- [ ] Confirm branch protection and required status checks.
+* A passing preflight does not prove that deployment succeeds.
+* A passing test command does not prove tests ran if the command uses —if-present.
+* A lockfile’s valid JSON does not prove dependency integrity.
+* A successful security scan does not guarantee the absence of vulnerabilities.
+* A workflow that creates a GitHub Release does not necessarily publish a package or deploy an application.
 
-## 14. Verification and Limitations
+⸻
 
-This document describes intended workflow responsibilities. It does not establish that the workflows exist, are valid, or run successfully.
+Project: MedOrbits
 
-Before relying on any security, test, release, synchronization, or deployment guarantee, verify:
+Directory: .github/workflows/
 
-1. The corresponding YAML file exists.
-2. Its syntax and GitHub Actions configuration are valid.
-3. Referenced scripts and package commands are implemented.
-4. Required permissions, secrets, and environments are configured.
-5. The workflow succeeds under its intended trigger conditions.
-6. Failure paths and concurrent execution are handled correctly.
-7. Its behavior matches repository branch and release policies.
-8. The resulting artifacts, commits, and provider operations are correct.
-
-Treat workflow source, repository settings, GitHub Actions run history, and deployment-provider logs as evidence of actual behavior.
-
-—
-
-**Project:** MedOrbits  
-**Directory:** `.github/workflows/`  
-**Purpose:** CI/CD, quality assurance, security, configuration validation, and release automation  
-**Maintenance:** Update this document whenever workflow responsibilities or operational requirements change.
+Document: Workflow directory overview and operational safety guide

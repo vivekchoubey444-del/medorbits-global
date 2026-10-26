@@ -1,53 +1,44 @@
 
-name: MedOrbits Official Release Candidate Sync
+# File: .github/workflows/sync-official-releases.yml
+
+name: Sync Official Release Candidates
 
 on:
   schedule:
-    # Every 6 hours at minute 17 UTC.
+    # Run every 6 hours at minute 17 (UTC).
     - cron: "17 */6 * * *"
 
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: medorbits-official-release-sync-main
+  group: sync-official-releases-main
   cancel-in-progress: false
 
 jobs:
-  discover:
-    name: Discover and validate release candidates
-    if: ${{ github.ref == 'refs/heads/main' }}
+  sync:
+    name: Discover and sync release candidates
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     permissions:
-      contents: read
-
-    outputs:
-      source_sha: ${{ steps.source.outputs.sha }}
-      changed: ${{ steps.changes.outputs.changed }}
+      contents: write
 
     steps:
       - name: Check out main
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Record source commit
-        id: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -63,274 +54,57 @@ jobs:
             fi
           done
 
-      - name: Verify release sync script
+      - name: Verify sync script exists
         shell: bash
         run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
-          );
-
-          if (
-            typeof pkg.scripts?.['releases:sync'] !== 'string' ||
-            !pkg.scripts['releases:sync'].trim()
-          ) {
-            throw new Error(
-              'Missing npm script: releases:sync'
-            );
-          }
-
-          console.log('Release synchronization script found.');
-          NODE
+          node -e "
+            const pkg = require('./package.json');
+            if (!pkg.scripts || !pkg.scripts['releases:sync']) {
+              console.error('Missing npm script: releases:sync');
+              process.exit(1);
+            }
+          "
 
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
-        env:
-          CI: "true"
 
       - name: Discover official release candidates
         run: npm run releases:sync
-        env:
-          CI: "true"
 
-      - name: Validate generated release data
+      - name: Validate generated news JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('assets/data/news.json', 'utf8'))"
+
+      - name: Commit review candidates
         shell: bash
         run: |
           set -euo pipefail
-
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const file = 'assets/data/news.json';
-          let data;
-
-          try {
-            data = JSON.parse(fs.readFileSync(file, 'utf8'));
-          } catch (error) {
-            throw new Error(`Invalid ${file}: ${error.message}`);
-          }
-
-          if (
-            data === null ||
-            typeof data !== 'object'
-          ) {
-            throw new Error(
-              'News data must be a JSON object or array.'
-            );
-          }
-
-          if (!Array.isArray(data) && Object.keys(data).length === 0) {
-            throw new Error(
-              'News data is empty; refusing to publish an empty object.'
-            );
-          }
-
-          console.log('Generated news JSON is syntactically valid.');
-          console.log(
-            `Top-level structure: ${Array.isArray(data) ? 'array' : 'object'}`
-          );
-          NODE
-
-      - name: Check generated changes
-        id: changes
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git diff --check
-
-          # Include tracked modifications and untracked files.
-          git status --porcelain=v1 --untracked-files=all \
-            > /tmp/medorbits-git-status.txt
-
-          unexpected="$(
-            awk '
-              {
-                path = substr($0, 4)
-                if (path != "assets/data/news.json") print path
-              }
-            ' /tmp/medorbits-git-status.txt
-          )"
-
-          if [[ -n "$unexpected" ]]; then
-            echo "::error::The sync script modified unexpected files:"
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
 
           if git diff --quiet -- assets/data/news.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No release candidate changes detected."
-            exit 0
-          fi
-
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "Release candidate data has changed."
-          git diff --stat -- assets/data/news.json
-
-      - name: Upload validated release data
-        if: ${{ steps.changes.outputs.changed == 'true' }}
-        uses: actions/upload-artifact@v6
-        with:
-          name: medorbits-official-release-candidates-${{ github.run_id }}
-          path: assets/data/news.json
-          if-no-files-found: error
-          retention-days: 2
-
-      - name: Write discovery summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-          SOURCE_SHA: ${{ steps.source.outputs.sha }}
-          CHANGED: ${{ steps.changes.outputs.changed }}
-        run: |
-          {
-            echo "## MedOrbits Release Candidate Discovery"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Source commit:** \`${SOURCE_SHA:-unresolved}\`"
-            echo "- **Data changed:** \`${CHANGED:-unknown}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  commit:
-    name: Commit validated release candidates
-    needs:
-      - discover
-
-    if: >-
-      ${{
-        needs.discover.result == 'success' &&
-        needs.discover.outputs.changed == 'true'
-      }}
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v6
-        with:
-          ref: main
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Verify source commit is still current
-        shell: bash
-        env:
-          SOURCE_SHA: ${{ needs.discover.outputs.source_sha }}
-        run: |
-          set -euo pipefail
-
-          git fetch origin main --depth=1
-          CURRENT_SHA="$(git rev-parse origin/main)"
-
-          if [[ "$CURRENT_SHA" != "$SOURCE_SHA" ]]; then
-            echo "::error::main changed during release discovery."
-            echo "Validated commit: $SOURCE_SHA"
-            echo "Current main:     $CURRENT_SHA"
-            echo "No changes will be committed. Run the workflow again."
-            exit 1
-          fi
-
-      - name: Download validated release data
-        uses: actions/download-artifact@v6
-        with:
-          name: medorbits-official-release-candidates-${{ github.run_id }}
-          path: generated
-
-      - name: Validate downloaded release data
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [[ ! -s generated/news.json ]]; then
-            echo "::error::Downloaded release data is missing or empty."
-            exit 1
-          fi
-
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const file = 'generated/news.json';
-          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-
-          if (
-            data === null ||
-            typeof data !== 'object' ||
-            (!Array.isArray(data) && Object.keys(data).length === 0)
-          ) {
-            throw new Error('Downloaded release data has an invalid structure.');
-          }
-
-          console.log('Downloaded release data validated.');
-          NODE
-
-      - name: Install generated news data
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp generated/news.json assets/data/news.json
-
-      - name: Review staged change scope
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git diff --check
-          git add -- assets/data/news.json
-
-          if git diff --cached --quiet; then
-            echo "No changes remain to commit."
-            exit 0
-          fi
-
-          unexpected="$(
-            git diff --cached --name-only |
-            grep -vxF 'assets/data/news.json' || true
-          )"
-
-          if [[ -n "$unexpected" ]]; then
-            echo "::error::Unexpected staged files:"
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
-
-      - name: Commit release candidates
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if git diff --cached --quiet; then
-            echo "No staged changes to commit."
+            echo "No new release candidates."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git add -- assets/data/news.json
+
+          if git diff --cached --quiet; then
+            echo "No staged changes to commit."
+            exit 0
+          fi
+
           git commit -m "chore: sync official release candidates"
 
-          # Never force-push or overwrite concurrent main updates.
-          git push origin HEAD:main
+          # Checkout credentials are disabled, so configure an authenticated
+          # push only if a suitable repository secret is available.
+          if [[ -z "${GH_PUSH_TOKEN:-}" ]]; then
+            echo "::error::GH_PUSH_TOKEN is required to push changes."
+            echo "Create a repository secret with permission to push to main."
+            exit 1
+          fi
 
-      - name: Write commit summary
-        if: always()
-        shell: bash
+          git -c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_PUSH_TOKEN" | base64 -w 0)" \
+            push origin HEAD:main
         env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## MedOrbits Release Candidate Sync"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Target branch:** \`main\`"
-            echo "- **Target file:** \`assets/data/news.json\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}

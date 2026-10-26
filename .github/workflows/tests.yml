@@ -1,17 +1,17 @@
 
+# File: .github/workflows/tests.yml
+
 name: MedOrbits Tests
 
 on:
   push:
     branches:
       - main
-      - master
       - develop
 
   pull_request:
     branches:
       - main
-      - master
       - develop
 
   workflow_dispatch:
@@ -35,19 +35,19 @@ jobs:
     steps:
       # 1. CHECKOUT
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       # 2. SET UP NODE.JS
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
-      # 3. VERIFY REQUIRED PROJECT FILES
+      # 3. VERIFY PROJECT STRUCTURE
       - name: Verify project structure
         shell: bash
         run: |
@@ -62,7 +62,8 @@ jobs:
 
           for directory in scripts tests src; do
             if [[ ! -d "$directory" ]]; then
-              echo "::warning::Directory not found: $directory"
+              echo "::error::Required directory is missing: $directory"
+              exit 1
             fi
           done
 
@@ -75,7 +76,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          node --input-type=commonjs <<'NODE'
+          node <<'NODE'
           const fs = require('node:fs');
 
           const pkg = JSON.parse(
@@ -86,21 +87,13 @@ jobs:
             fs.readFileSync('package-lock.json', 'utf8')
           );
 
-          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
-            throw new Error(
-              'package.json must define a non-empty package name.'
-            );
+          if (!pkg.name) {
+            throw new Error('package.json must define a package name.');
           }
 
           if (!lock.packages || !lock.packages['']) {
             throw new Error(
               'package-lock.json is missing its root package entry.'
-            );
-          }
-
-          if (![2, 3].includes(lock.lockfileVersion)) {
-            throw new Error(
-              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
             );
           }
 
@@ -112,13 +105,15 @@ jobs:
             );
           }
 
-          if (
-            pkg.version &&
-            root.version &&
-            pkg.version !== root.version
-          ) {
+          if (pkg.version && root.version && pkg.version !== root.version) {
             throw new Error(
               'package.json and package-lock.json versions do not match.'
+            );
+          }
+
+          if (lock.lockfileVersion !== 3) {
+            throw new Error(
+              'Expected package-lock.json lockfileVersion 3.'
             );
           }
 
@@ -136,14 +131,14 @@ jobs:
             (name) => typeof pkg.scripts?.[name] !== 'string'
           );
 
-          if (missing.length > 0) {
+          if (missing.length) {
             throw new Error(
               `Missing npm scripts: ${missing.join(', ')}`
             );
           }
 
           console.log(
-            `Validated ${pkg.name}@${pkg.version ?? 'unversioned'}`
+            `Validated package metadata for ${pkg.name}@${pkg.version ?? 'unversioned'}.`
           );
           NODE
 
@@ -169,23 +164,16 @@ jobs:
 
           node --check server.js
 
-          for directory in src scripts tests; do
-            if [[ ! -d "$directory" ]]; then
-              continue
-            fi
-
-            while IFS= read -r -d '' file; do
-              echo "Checking syntax: $file"
-              node --check "$file"
-            done < <(
-              find "$directory" \
-                -type f \
-                \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
-                -not -path '*/node_modules/*' \
-                -not -path '*/coverage/*' \
-                -print0
-            )
-          done
+          while IFS= read -r -d '' file; do
+            echo "Checking syntax: $file"
+            node --check "$file"
+          done < <(
+            find src scripts tests \
+              -type f \
+              \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
+              -not -path '*/node_modules/*' \
+              -print0
+          )
 
       # 9. CHECK FORMATTING
       - name: Check code formatting
@@ -195,23 +183,22 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # 11. RUN UNIT AND INTEGRATION TESTS
+      # 11. RUN TESTS AND COVERAGE
       - name: Run unit and integration tests
         env:
           CI: "true"
           NODE_ENV: test
         run: npm run test:ci
 
-      # 12. UPLOAD COVERAGE AND TEST REPORTS
+      # 12. UPLOAD TEST ARTIFACTS
       - name: Upload test coverage and results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v6
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v7
         with:
-          name: medorbits-test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          name: medorbits-test-results-${{ github.run_id }}
           path: |
             coverage/
             test-results/
             junit.xml
           if-no-files-found: ignore
           retention-days: 14
-          compression-level: 6

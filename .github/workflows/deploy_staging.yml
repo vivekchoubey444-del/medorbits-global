@@ -1,0 +1,168 @@
+# File: .github/workflows/deploy_staging.yml
+name: MedOrbits Staging Deployment
+on:
+  push:
+    branches:
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - develop
+      - staging
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Branch to validate for staging"
+        required: true
+        default: "develop"
+        type: choice
+        options:
+          - develop
+          - staging
+permissions:
+  contents: read
+concurrency:
+  group: medorbits-staging-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  verify:
+    name: Verify staging eligibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deployment_sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - name: Resolve source branch
+        id: source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_BRANCH: ${{ inputs.source_branch }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            branch="$INPUT_BRANCH"
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            echo "::error::Pull requests are validation-only and cannot deploy."
+            exit 1
+          else
+            branch="$REF_NAME"
+          fi
+          case "$branch" in
+            develop|staging)
+              ;;
+            *)
+              echo "::error::Only develop or staging can be used."
+              exit 1
+              ;;
+          esac
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            echo "::error::Pull requests cannot trigger staging deployments."
+            exit 1
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "Selected branch: $branch"
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.source.outputs.branch }}
+          persist-credentials: false
+      - name: Record source commit
+        id: target
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Could not resolve a valid source commit."
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Staging source commit: $sha"
+  preflight:
+    name: Staging preflight
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: staging
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.deployment_sha }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify required files
+        run: |
+          set -euo pipefail
+          for file in package.json package-lock.json server.js; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+      - name: Validate package metadata
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+          const lock = JSON.parse(
+            fs.readFileSync('package-lock.json', 'utf8')
+          );
+          if (!pkg.name || !pkg.version) {
+            throw new Error('Package name and version are required.');
+          }
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error('Invalid package-lock.json.');
+          }
+          if (lock.name && lock.name !== pkg.name) {
+            throw new Error('Package name mismatch.');
+          }
+          if (lock.version && lock.version !== pkg.version) {
+            throw new Error('Package version mismatch.');
+          }
+          console.log(`Validated ${pkg.name}@${pkg.version}`);
+          NODE
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check server syntax
+        run: node --check server.js
+      - name: Run tests
+        env:
+          CI: "true"
+          NODE_ENV: test
+        run: npm test --if-present
+      - name: Run project checks
+        run: npm run check --if-present
+      - name: Run lint
+        run: npm run lint --if-present
+      - name: Build application
+        run: npm run build --if-present
+      - name: Verify source commit
+        env:
+          EXPECTED_SHA: ${{ needs.verify.outputs.deployment_sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Source commit mismatch."
+            exit 1
+          fi
+      - name: Report staging preflight result
+        run: |
+          echo "Staging preflight passed."
+          echo "No hosting provider was contacted."
+          echo "No deployment was performed."

@@ -1,133 +1,97 @@
+MedOrbits -- Dependabot Configuration
 
-# ==============================================================================
-# MedOrbits -- Dependabot Configuration
-#
-# Purpose:
-# Automate dependency updates for npm, GitHub Actions, and Docker.
-#
-# Policy:
-# - Group compatible minor and patch updates.
-# - Keep major updates separate for focused compatibility review.
-# - Apply cooldowns to version updates; security updates are handled separately.
-# - Require CI and appropriate review before merging dependency changes.
-#
-# Documentation:
-# https://docs.github.com/en/code-security/dependabot
-# ==============================================================================
+Purpose: Automate dependency updates for npm, GitHub Actions, and Docker.
+
+Policy:
+
+- Group compatible minor and patch updates.
+
+- Keep major updates separate for focused compatibility review.
+
+- Apply cooldowns to version updates where supported.
+
+- Require CI and appropriate review before merging dependency changes.
+
+- Keep security updates separate from routine version updates.
 
 version: 2
 
 updates:
-  # ---------------------------------------------------------------------------
-  # 1. NPM DEPENDENCIES
-  # ---------------------------------------------------------------------------
-  - package-ecosystem: npm
+
+Root Node.js application dependencies
+
+* package-ecosystem: npm
     directory: "/"
-
     schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: Asia/Kolkata
-
+    interval: weekly
+    day: monday
+    time: "06:00"
+    timezone: "Asia/Kolkata"
     open-pull-requests-limit: 10
-    versioning-strategy: increase
-
-    labels:
-      - dependencies
-      - npm
-      - automated-update
-
-    commit-message:
-      prefix: "deps"
-      prefix-development: "deps-dev"
-      include: scope
-
     cooldown:
-      default-days: 7
-      semver-major-days: 14
-      semver-minor-days: 7
-      semver-patch-days: 3
-
+    default-days: 3
     groups:
-      production-minor-patch:
-        dependency-type: production
-        update-types:
-          - minor
-          - patch
-
-      development-minor-patch:
-        dependency-type: development
-        update-types:
-          - minor
-          - patch
-
-    # Major updates remain separate for focused compatibility testing.
-
-  # ---------------------------------------------------------------------------
-  # 2. GITHUB ACTIONS
-  # ---------------------------------------------------------------------------
-  - package-ecosystem: github-actions
-    directory: "/"
-
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:30"
-      timezone: Asia/Kolkata
-
-    open-pull-requests-limit: 5
-
+    npm-development-minor-patch:
+    dependency-type: development
+    update-types:
+    - minor
+    - patch
+    npm-production-minor-patch:
+    dependency-type: production
+    update-types:
+    - minor
+    - patch
     labels:
-      - dependencies
-      - github-actions
-      - ci
+    * dependencies
+    * npm
+        commit-message:
+        prefix: "deps"
+        include: scope
 
-    commit-message:
-      prefix: "ci"
-      include: scope
+GitHub Actions workflow dependencies
 
+* package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+    interval: weekly
+    day: monday
+    time: "06:30"
+    timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
     cooldown:
-      default-days: 7
-
+    default-days: 3
     groups:
-      github-actions-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - minor
-          - patch
-
-    # Review major action updates separately, including permissions,
-    # input changes, runtime requirements, and breaking changes.
-
-  # ---------------------------------------------------------------------------
-  # 3. DOCKER BASE IMAGES
-  # ---------------------------------------------------------------------------
-  # Keep this entry if a Dockerfile exists at the repository root.
-  # Add separate entries for Dockerfiles maintained in subdirectories.
-  - package-ecosystem: docker
-    directory: "/"
-
-    schedule:
-      interval: weekly
-      day: monday
-      time: "10:00"
-      timezone: Asia/Kolkata
-
-    open-pull-requests-limit: 5
-
+    github-actions-minor-patch:
+    update-types:
+    - minor
+    - patch
     labels:
-      - dependencies
-      - docker
-      - infrastructure
+    * dependencies
+    * github-actions
+        commit-message:
+        prefix: "ci"
+        include: scope
 
-    commit-message:
-      prefix: "docker"
-      include: scope
+Docker dependencies, if the repository contains Dockerfiles
 
+* package-ecosystem: docker
+    directory: "/"
+    schedule:
+    interval: weekly
+    day: monday
+    time: "07:00"
+    timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
     cooldown:
-      default-days: 7
-
-    # Review base-image changes for security, compatibility, provenance,
-    # and deployment impact before merging.
+    default-days: 3
+    groups:
+    docker-minor-patch:
+    update-types:
+    - minor
+    - patch
+    labels:
+    * dependencies
+    * docker
+        commit-message:
+        prefix: "docker"
+        include: scope

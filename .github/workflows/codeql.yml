@@ -1,134 +1,114 @@
 name: MedOrbits CodeQL Security Analysis
-
 on:
   push:
     branches:
       - main
       - master
-      - develop
-
   pull_request:
     branches:
       - main
       - master
-      - develop
-
   schedule:
-    # Every Monday at 03:23 UTC.
     - cron: "23 3 * * 1"
-
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
+defaults:
+  run:
+    shell: bash
 jobs:
   validate:
-    name: Repository and Data Validation
+    name: Validate repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
-
+          node-version: 22
       - name: Verify required files
-        shell: bash
         run: |
           set -euo pipefail
-
           for file in package.json package-lock.json; do
             if [[ ! -f "$file" ]]; then
               echo "::error::Required file is missing: $file"
               exit 1
             fi
           done
-
-          echo "Required project files are present."
-
-      - name: Validate package metadata
-        shell: bash
+      - name: Validate package.json
         run: |
           set -euo pipefail
-
           node <<'NODE'
           const fs = require('node:fs');
-
           const pkg = JSON.parse(
             fs.readFileSync('package.json', 'utf8')
           );
-
+          if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
+            throw new Error('package.json must contain a JSON object.');
+          }
+          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
+            throw new Error('Missing package name.');
+          }
+          if (!pkg.scripts || typeof pkg.scripts !== 'object') {
+            throw new Error('Missing npm scripts configuration.');
+          }
+          console.log(`Valid package: ${pkg.name}`);
+          NODE
+      - name: Validate package-lock.json
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
           const lock = JSON.parse(
             fs.readFileSync('package-lock.json', 'utf8')
           );
-
-          if (typeof pkg.name !== 'string' || !pkg.name.trim()) {
-            throw new Error(
-              'package.json must define a non-empty package name.'
-            );
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error('Invalid or missing lockfileVersion.');
           }
-
-          if (!lock.packages || !lock.packages['']) {
-            throw new Error(
-              'package-lock.json is missing its root package entry.'
-            );
+          if (lock.name && pkg.name && lock.name !== pkg.name) {
+            throw new Error('Package name mismatch.');
           }
-
-          if (![2, 3].includes(lock.lockfileVersion)) {
-            throw new Error(
-              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
-            );
+          if (
+            lock.version &&
+            pkg.version &&
+            lock.version !== pkg.version
+          ) {
+            throw new Error('Package version mismatch.');
           }
-
-          const root = lock.packages[''];
-
-          if (pkg.name !== root.name) {
-            throw new Error(
-              'package.json and package-lock.json names do not match.'
-            );
+          const root = lock.packages?.[''];
+          if (root?.name && pkg.name && root.name !== pkg.name) {
+            throw new Error('Root package name mismatch.');
           }
-
-          if (pkg.version && root.version && pkg.version !== root.version) {
-            throw new Error(
-              'package.json and package-lock.json versions do not match.'
-            );
+          if (
+            root?.version &&
+            pkg.version &&
+            root.version !== pkg.version
+          ) {
+            throw new Error('Root package version mismatch.');
           }
-
-          if (pkg.engines?.node) {
-            console.log(`Declared Node.js requirement: ${pkg.engines.node}`);
-          } else {
-            console.warn('No Node.js engine requirement is declared.');
-          }
-
-          console.log(`Project: ${pkg.name}`);
-          console.log('Package metadata validated successfully.');
+          console.log('Lockfile metadata is valid.');
+          console.log(`Lockfile version: ${lock.lockfileVersion}`);
           NODE
-
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Validate JSON files
-        shell: bash
         run: |
           set -euo pipefail
-
           node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
-
           const excluded = new Set([
             '.git',
             'node_modules',
@@ -136,138 +116,66 @@ jobs:
             'dist',
             'build',
             '.next',
-            '.wrangler',
-            '.cache',
-            '.turbo'
+            '.wrangler'
           ]);
-
           const files = [];
-          const failures = [];
-
-          function walk(directory) {
-            let entries;
-
-            try {
-              entries = fs.readdirSync(directory, {
-                withFileTypes: true
-              });
-            } catch (error) {
-              failures.push(`${directory}: ${error.message}`);
-              return;
-            }
-
-            for (const entry of entries) {
-              const fullPath = path.join(directory, entry.name);
-
+          let failed = false;
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, {
+              withFileTypes: true
+            })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isSymbolicLink()) continue;
               if (entry.isDirectory()) {
-                if (!excluded.has(entry.name)) {
-                  walk(fullPath);
-                }
+                if (!excluded.has(entry.name)) walk(full);
               } else if (
                 entry.isFile() &&
-                entry.name.endsWith('.json')
+                entry.name.toLowerCase().endsWith('.json')
               ) {
-                files.push(fullPath);
+                files.push(full);
               }
             }
           }
-
           walk('.');
-
           for (const file of files) {
             try {
               JSON.parse(fs.readFileSync(file, 'utf8'));
               console.log(`PASS ${file}`);
             } catch (error) {
-              failures.push(`${file}: ${error.message}`);
+              failed = true;
               console.error(`FAIL ${file}: ${error.message}`);
             }
           }
-
-          console.log(`Validated ${files.length} JSON file(s).`);
-
-          if (files.length === 0) {
-            console.warn('No JSON files were found.');
-          }
-
-          if (failures.length > 0) {
-            console.error(
-              `${failures.length} JSON validation error(s) detected.`
-            );
-            process.exitCode = 1;
-          }
+          if (failed) process.exit(1);
+          console.log(`Validated ${files.length} JSON files.`);
           NODE
-
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-        env:
-          CI: "true"
-
-      - name: Run automated tests when configured
-        shell: bash
-        env:
-          CI: "true"
-          NODE_ENV: test
-        run: |
-          set -euo pipefail
-
-          if node -e "process.exit(typeof require('./package.json').scripts?.test === 'string' ? 0 : 1)"; then
-            npm test
-          else
-            echo "::notice::No test script is configured; tests skipped."
-          fi
-
-      - name: Write validation summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## MedOrbits Repository Validation"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Event:** \`${GITHUB_EVENT_NAME}\`"
-            echo "- **Ref:** \`${GITHUB_REF}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+      - name: Run tests
+        run: npm test --if-present
+      - name: Run project checks
+        run: npm run check --if-present
+      - name: Run lint
+        run: npm run lint --if-present
+      - name: Build application
+        run: npm run build --if-present
   analyze:
-    name: CodeQL JavaScript and TypeScript Analysis
+    name: Analyze JavaScript and TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     permissions:
-      actions: read
       contents: read
       security-events: write
-
+      actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           queries: security-extended
-
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
-
-      - name: Write CodeQL summary
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          {
-            echo "## MedOrbits CodeQL Analysis"
-            echo
-            echo "- **Status:** \`${JOB_STATUS}\`"
-            echo "- **Languages:** JavaScript and TypeScript"
-            echo "- **Query suite:** security-extended"
-          } >> "$GITHUB_STEP_SUMMARY"

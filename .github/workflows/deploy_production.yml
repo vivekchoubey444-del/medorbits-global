@@ -1,0 +1,93 @@
+name: Deploy Production
+
+on:
+workflow_dispatch:
+
+permissions:
+contents: read
+
+concurrency:
+group: medorbits-production-deployment
+cancel-in-progress: false
+
+jobs:
+validate:
+name: Validate Production Release
+runs-on: ubuntu-latest
+timeout-minutes: 20
+
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+  - name: Set up Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
+      cache: npm
+  - name: Verify required files
+    shell: bash
+    run: |
+      set -euo pipefail
+      test -f package.json || {
+        echo "::error::package.json was not found at the repository root."
+        exit 1
+      }
+      test -f package-lock.json || {
+        echo "::error::package-lock.json is required for reproducible npm ci."
+        exit 1
+      }
+  - name: Install dependencies
+    run: npm ci
+  - name: Run tests
+    run: npm test
+  - name: Run project checks when available
+    shell: bash
+    run: |
+      set -euo pipefail
+      if node -e "process.exit(Object.hasOwn(JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).scripts || {}, 'check') ? 0 : 1)"; then
+        npm run check
+      else
+        echo "No check script is configured; skipping."
+      fi
+  - name: Run lint when available
+    shell: bash
+    run: |
+      set -euo pipefail
+      if node -e "process.exit(Object.hasOwn(JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).scripts || {}, 'lint') ? 0 : 1)"; then
+        npm run lint
+      else
+        echo "No lint script is configured; skipping."
+      fi
+
+deploy:
+name: Deploy to Render
+needs: validate
+runs-on: ubuntu-latest
+timeout-minutes: 5
+environment: production
+
+steps:
+  - name: Trigger Render deployment
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+    shell: bash
+    run: |
+      set -euo pipefail
+      if [[ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]]; then
+        echo "::error::Configure the RENDER_DEPLOY_HOOK_URL secret in GitHub Settings > Secrets and variables > Actions."
+        exit 1
+      fi
+      case "$RENDER_DEPLOY_HOOK_URL" in
+        https://*)
+          ;;
+        *)
+          echo "::error::The Render deploy hook must use HTTPS."
+          exit 1
+          ;;
+      esac
+      curl --fail --silent --show-error \
+        --request POST \
+        --output /dev/null \
+        --max-time 30 \
+        "$RENDER_DEPLOY_HOOK_URL"
+      echo "Render deployment trigger accepted. Verify deployment status in Render."
