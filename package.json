@@ -1,67 +1,62 @@
-
 {
-  "name": "medorbits",
-  "version": "0.1.0",
-  "private": true,
-  "description": "MedOrbits -- Education, Admissions, Career Guidance, Recruitment, and Application Services",
-  "type": "module",
-  "license": "UNLICENSED",
-  "engines": {
-    "node": ">=20.19.0"
-  },
-  "packageManager": "npm",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+"name": "medorbits",
+"version": "0.1.0",
+"private": true,
+"description": "MedOrbits -- Education, Admissions, Career Guidance, Recruitment, and Application Services",
+"type": "module",
+"license": "UNLICENSED",
+"engines": {
+"node": ">=20.19.0"
+},
+"packageManager": "npm@10.8.2",
+"scripts": {
+"start": "node server.js",
+"dev": "node –watch server.js",
+"prestart": "npm run check:syntax",
 
-    "check": "npm run check:syntax && npm run check:json && npm run check:python",
-    "check:all": "npm run check && npm run check:quality",
-    "check:strict": "npm run check:syntax && npm run check:json:strict && npm run check:python && npm run check:quality",
-    "validate": "npm run check:all",
-    "validate:strict": "npm run check:strict",
+"check": "npm run check:syntax && npm run check:json && npm run check:python",
+"check:all": "npm run check && npm run check:quality",
+"check:strict": "npm run check:syntax && npm run check:json:strict && npm run check:python && npm run check:quality && npm run typecheck:python",
+"validate": "npm run check:all",
+"validate:strict": "npm run check:strict",
+"check:syntax": "node --check server.js && node --check scripts/check-json.mjs",
+"check:syntax:server": "node --check server.js",
+"check:syntax:json": "node --check scripts/check-json.mjs",
+"check:json": "node scripts/check-json.mjs",
+"check:json:strict": "node scripts/check-json.mjs --strict",
+"check:json:api": "node scripts/check-json.mjs --root ./api",
+"check:json:all": "node scripts/check-json.mjs --include-hidden",
+"check:json:large": "node scripts/check-json.mjs --max-size 25",
+"check:python": "python -m pytest",
+"check:python:collect": "python -m pytest --collect-only",
+"check:python:verbose": "python -m pytest -v",
+"test": "python -m pytest",
+"test:python": "python -m pytest",
+"test:verbose": "python -m pytest -v",
+"test:collect": "python -m pytest --collect-only",
+"test:fail-fast": "python -m pytest -x",
+"lint:python": "python -m ruff check .",
+"lint:python:fix": "python -m ruff check --fix .",
+"lint:python:diff": "python -m ruff check --diff .",
+"format:python": "python -m ruff format .",
+"format:python:check": "python -m ruff format --check .",
+"typecheck:python": "python -m mypy .",
+"check:quality": "npm run lint:python && npm run format:python:check",
+"check:python:quality": "npm run check:quality && npm run typecheck:python",
+"check:environment": "node --version && npm --version && python --version",
+"check:dependencies": "npm ls --depth=0",
+"check:dependencies:python": "python -m pip check",
+"check:security:python": "python -m pip_audit",
+"prepare:check": "npm run validate:strict"
 
-    "check:syntax": "node --check server.js && node --check scripts/check-json.mjs",
-    "check:syntax:server": "node --check server.js",
-    "check:syntax:json": "node --check scripts/check-json.mjs",
-
-    "check:json": "node scripts/check-json.mjs",
-    "check:json:strict": "node scripts/check-json.mjs --strict",
-    "check:json:api": "node scripts/check-json.mjs --root ./api",
-    "check:json:all": "node scripts/check-json.mjs --include-hidden",
-    "check:json:large": "node scripts/check-json.mjs --max-size 25",
-
-    "check:python": "python -m pytest",
-    "check:python:collect": "python -m pytest --collect-only",
-    "check:python:verbose": "python -m pytest -v",
-
-    "test": "python -m pytest",
-    "test:python": "python -m pytest",
-    "test:verbose": "python -m pytest -v",
-    "test:collect": "python -m pytest --collect-only",
-    "test:fail-fast": "python -m pytest -x",
-
-    "lint:python": "python -m ruff check .",
-    "lint:python:fix": "python -m ruff check --fix .",
-    "lint:python:diff": "python -m ruff check --diff .",
-    "format:python": "python -m ruff format .",
-    "format:python:check": "python -m ruff format --check .",
-    "typecheck:python": "python -m mypy",
-
-    "check:quality": "npm run lint:python && npm run format:python:check",
-    "check:python:quality": "npm run check:quality && npm run typecheck:python",
-
-    "check:environment": "node --version && npm --version && python --version",
-    "check:dependencies": "npm ls --depth=0",
-
-    "prestart": "npm run check:syntax"
-  },
-  "dependencies": {
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "helmet": "^8.1.0",
-    "pg": "^8.16.3"
-  }
+},
+"dependencies": {
+"compression": "^1.8.1",
+"cors": "^2.8.5",
+"dotenv": "^16.6.1",
+"express": "^5.1.0",
+"express-rate-limit": "^8.1.0",
+"helmet": "^8.1.0",
+"pg": "^8.16.3"
+}
 }
