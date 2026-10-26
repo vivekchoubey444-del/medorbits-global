@@ -1,185 +1,508 @@
+MedOrbits — Production Deployment Guide
 
-# MedOrbits — Production Release Checklist
+Document: infrastructure/deployment/production.md
+Application: MedOrbits
+Domain: https://www.medorbits.in/
+Runtime: Node.js 20+
+Backend: Express.js with ECMAScript modules
+Database: PostgreSQL
+Status: Deployment procedure and operational checklist
 
-**Project:** MedOrbits  
-**Scope:** Production deployments, release validation, service recovery, and post-release verification  
-**Applies to:** Application code, database migrations, configuration changes, background workers, and infrastructure updates
+Important: This document defines the intended production deployment process. It does not confirm that production infrastructure, secrets, database migrations, health checks, or deployment automation have been configured or verified.
 
-## 1. Purpose
+1. Purpose
 
-This checklist standardizes MedOrbits production releases, reduces deployment risk, and verifies critical application workflows before and after deployment.
+This guide establishes a consistent procedure for deploying MedOrbits safely to a production environment.
 
-Every release must follow the approved deployment process, have an identified owner, and include appropriate validation and recovery procedures.
+The deployment process should prioritize:
 
-Do not mark a check complete unless it has been verified. Any skipped or waived requirement must have documented justification and approval from an authorized owner.
+* Application availability.
+* Data integrity.
+* Secure configuration.
+* Reliable database connectivity.
+* Reproducible builds and dependency installation.
+* Controlled releases and rollback.
+* Monitoring and incident response.
+* Protection of user information and uploaded documents.
 
-## 2. Before Deployment
+Production changes must be deliberate, reviewable, and verifiable.
 
-### 2.1 Code and Build Readiness
+2. Production Architecture
 
-- [ ] Release commit reviewed and approved.
-- [ ] CI pipeline completes successfully.
-- [ ] Automated tests, linting, and applicable security checks pass.
-- [ ] Production build completes successfully.
-- [ ] Required dependency and configuration changes are reviewed.
-- [ ] Release notes, known issues, and expected service impact are documented.
-- [ ] The release identifier or commit SHA is recorded.
-- [ ] The deployment artifact corresponds to the approved commit.
+The intended deployment architecture consists of:
 
-### 2.2 Configuration and Security
+1. Client layer — browser-based MedOrbits website.
+2. Web or reverse-proxy layer — HTTPS termination and request forwarding, where configured.
+3. Application layer — Node.js and Express.js server.
+4. Database layer — PostgreSQL.
+5. File-storage layer — approved storage for uploaded documents, where required.
+6. Observability layer — application logs, health checks, metrics, and alerts where implemented.
+7. External integrations — approved email, payment, AI, or other providers where configured.
 
-- [ ] Required environment variables and secrets are present and valid.
-- [ ] Production credentials are configured through the approved secret-management mechanism.
-- [ ] No secrets, private keys, or sensitive configuration values are included in the release artifact or logs.
-- [ ] External provider credentials, callback URLs, and webhook endpoints are verified where applicable.
-- [ ] Authentication, authorization, and access-control behavior are reviewed for affected functionality.
-- [ ] Required database and external-service permissions are available and appropriately restricted.
+Illustrative architecture:
 
-### 2.3 Database and Data Protection
+Users
+  |
+  | HTTPS
+  v
+Domain / Reverse Proxy / Hosting Platform
+  |
+  v
+MedOrbits Express Application
+  |
+  +—— PostgreSQL
+  |
+  +—— Approved Document Storage
+  |
+  +—— Configured External Services
+  |
+  +—— Logs and Monitoring
 
-- [ ] Database backup is current and suitable for the planned change.
-- [ ] The recovery procedure and responsible operator are identified.
-- [ ] Database migrations are reviewed for backward compatibility, locking risk, execution time, and rollback implications.
-- [ ] Migration behavior has been tested in a suitable non-production environment.
-- [ ] Required storage capacity and database resource headroom are available.
-- [ ] Data transformations and backfills have validation and failure-handling procedures.
-- [ ] The team understands whether rollback requires a forward-fix migration or a separate recovery operation.
-- [ ] No production restore is planned as a routine substitute for migration rollback.
+Actual hosting, storage, network boundaries, and external services must be verified against the deployed environment.
 
-### 2.4 Operations Readiness
+3. Deployment Prerequisites
 
-- [ ] Monitoring, logging, health checks, and alert notifications are operational.
-- [ ] Release owner and rollback decision-maker are identified.
-- [ ] Deployment, incident-response, and recovery instructions are accessible.
-- [ ] The previous known-good release reference is available.
-- [ ] Background workers, scheduled jobs, and queue dependencies are understood.
-- [ ] The deployment window and stakeholder notifications are agreed where required.
-- [ ] Success criteria, stop conditions, and escalation routes are documented.
+Before deploying, confirm the following.
 
-## 3. Deployment Procedure
+Application
 
-1. **Confirm approval.** Verify the approved commit, release identifier, deployment window, and responsible owner.
-2. **Deploy the approved release.** Use the documented production hosting workflow.
-3. **Inspect build and startup.** Review build output, application startup, configuration loading, and migration execution.
-4. **Verify release identity.** Confirm that the deployed application is running the expected commit or release identifier.
-5. **Check service health.** Verify the configured health endpoint and relevant dependency checks.
-6. **Run smoke tests.** Validate critical user journeys and required service integrations.
-7. **Verify background processing.** Confirm that workers, scheduled jobs, and queues are operating correctly where implemented.
-8. **Inspect operational signals.** Review error rates, response latency, database health, resource utilization, and queue backlog where applicable.
-9. **Compare against acceptance criteria.** Evaluate observed behavior against established service objectives and release-specific expectations.
-10. **Make the release decision.** Continue, pause, mitigate, or roll back according to the approved release criteria.
+* [ ]	The intended release is identified by a Git commit or immutable artifact.
+* [ ]	The correct repository and deployment branch are selected.
+* [ ]	Node.js 20 or later is supported by the application’s dependencies.
+* [ ]	package.json contains the correct start and build scripts.
+* [ ]	Required application entry points exist.
+* [ ]	Required environment variables are documented.
+* [ ]	No unresolved merge conflicts remain in the release.
+* [ ]	No unintended files or local development artifacts are included.
 
-Pause or halt the rollout if errors, availability issues, data-integrity risks, or user impact exceed agreed limits.
+Database
 
-Do not proceed to the next release stage while a critical failure remains unexplained.
+* [ ]	PostgreSQL is available.
+* [ ]	The production database and application credentials are configured securely.
+* [ ]	Network access is restricted to authorized clients.
+* [ ]	Database schema and migrations have been reviewed.
+* [ ]	A backup and recovery procedure exists.
+* [ ]	Connection limits and timeouts are appropriate for the deployment.
 
-## 4. Critical Workflow Smoke Tests
+Infrastructure
 
-Run tests appropriate to the functionality affected by the release.
+* [ ]	The deployment platform and runtime are confirmed.
+* [ ]	HTTPS is configured for public traffic.
+* [ ]	Domain and DNS configuration are verified.
+* [ ]	Required storage is persistent where necessary.
+* [ ]	Health checks are configured if supported.
+* [ ]	Logging and monitoring are available or their absence is documented.
+* [ ]	Rollback instructions have been reviewed.
 
-| Workflow | Verification |
-|—|—|
-| Application availability | Confirm the service responds and required routes load. |
-| Authentication | Verify login, logout, session handling, and applicable access controls. |
-| Registration | Verify registration and email OTP flows where implemented. |
-| Course discovery | Confirm search, filtering, and course-detail pages behave as expected. |
-| Application submission | Verify required-field validation, submission handling, and resulting application state. |
-| Document access | Confirm authorized users can access permitted documents and unauthorized users cannot. |
-| Payments | Where implemented, verify payment state handling using an approved test or reconciliation procedure. Avoid unintended live charges. |
-| Webhooks | Where implemented, verify signature validation, duplicate-event handling, and processing outcomes. |
-| Background jobs | Confirm critical jobs execute and failures are observable. |
-| Database | Verify connectivity, migration outcomes, and relevant data-integrity checks. |
-| External integrations | Confirm required providers respond and failure handling behaves correctly. |
-| Security controls | Verify critical authorization boundaries and sensitive-data protections affected by the release. |
+Do not proceed with a production release if a critical prerequisite is unresolved.
 
-Record the result of each applicable test. Mark non-applicable tests as `N/A` with a brief explanation rather than silently skipping them.
+4. Environment Configuration
 
-## 5. After Deployment
+Production configuration must be provided through the hosting platform’s secret manager or another approved secure mechanism.
 
-- [ ] Confirm critical user workflows complete successfully.
-- [ ] Confirm background workers and scheduled jobs are healthy.
-- [ ] Verify payment and webhook processing where applicable.
-- [ ] Review application logs for unexpected errors or warnings.
-- [ ] Confirm database connectivity and migration results.
-- [ ] Verify monitoring dashboards and alert notifications.
-- [ ] Review application latency, error rates, and resource utilization.
-- [ ] Confirm that queue backlogs and scheduled jobs are within expected operating ranges where applicable.
-- [ ] Verify access controls and sensitive-data handling for affected features.
-- [ ] Record the release identifier, deployment time, outcome, and responsible owner.
-- [ ] Document incidents, deviations, and follow-up actions.
-- [ ] Keep the previous known-good release reference available.
-- [ ] Notify relevant stakeholders of the release outcome.
+Common configuration categories include:
 
-Continue monitoring for a defined observation period appropriate to the release risk. The observation period and acceptance criteria should be recorded in the release plan.
+Category	Examples
+Runtime	NODE_ENV, PORT, HOST
+Database	DATABASE_URL
+Authentication	SESSION_SECRET, token-signing keys
+CORS	Approved frontend origins
+External services	Provider endpoints and API keys
+File storage	Storage endpoint, bucket, and credentials
+Logging	Log level and output destination
+Health checks	Timeouts and dependency-check settings
 
-## 6. Rollback and Recovery
+The names above are examples; the actual names and requirements must match the application code.
 
-A code rollback may not reverse database changes, sent emails, payment actions, document processing, or other external side effects.
+Security rules
 
-Before initiating a rollback:
+* Never commit a production .env file.
+* Never put secrets in frontend JavaScript or public configuration.
+* Never print secret values in deployment logs.
+* Use separate credentials for development, testing, and production.
+* Use least-privilege database accounts.
+* Rotate exposed credentials immediately.
+* Fail startup when essential production settings are invalid.
+* Avoid insecure development defaults in production.
+* Do not assume that a variable is enforced merely because it appears in documentation.
 
-1. Assess the impact and identify the immediate failure.
-2. Decide whether to roll back, pause the rollout, or apply a targeted mitigation.
-3. Confirm whether database migrations are compatible with the previous release.
-4. Determine whether data restoration, reconciliation, or a forward-fix migration is required.
-5. Coordinate recovery of external side effects with the responsible service or provider.
-6. Confirm that the recovery action is authorized and will not create additional data loss.
-7. Execute the approved rollback or mitigation procedure.
-8. Verify critical workflows, database integrity, and service health after recovery.
-9. Record the decision, actions taken, and final outcome.
+5. Build and Dependency Installation
 
-**Important:** Restoring the previous application version does not necessarily restore the database to its previous state. Database recovery must follow the approved backup and recovery procedure.
+Use the project’s lockfile to install reproducible dependencies.
 
-Do not restore a database backup automatically merely because a deployment failed. Assess subsequent writes, external side effects, and potential data loss before choosing a recovery strategy.
+For an npm project with a committed, valid package-lock.json:
 
-Refer to `infrastructure/deployment/rollback.md` and the applicable database recovery documentation, after verifying that those files exist and match the current implementation.
+npm ci
 
-## 7. Release Record
+If the application requires a build step, execute the documented build script:
 
-Complete this record for every production deployment.
+npm run build
 
-| Field | Record |
-|—|—|
-| Release identifier / commit SHA | |
-| Deployment date and time, including timezone | |
-| Release owner | |
-| Approval reference | |
-| Deployment environment and service | |
-| Database migration version | |
-| Backup reference and verification status | |
-| Deployment outcome | |
-| Smoke-test outcome | |
-| Monitoring observation period and outcome | |
-| Rollback or mitigation required | |
-| Incident reference, if applicable | |
-| Follow-up actions and owners | |
+Only run this command when the corresponding script exists and is required by the application.
 
-Do not include passwords, tokens, private keys, or unnecessary personal data in the release record.
+Run the checks defined by the repository:
 
-## 8. Release Completion Criteria
+npm test
+npm run check
 
-A release is complete when:
+Execute only scripts that have been inspected and approved. A project may not define every command.
 
-- [ ] All required checks have been completed or formally waived by an authorized owner.
-- [ ] The deployed release identity matches the approved release.
-- [ ] Critical workflows pass their applicable smoke tests.
-- [ ] Database migrations and relevant integrity checks have been validated.
-- [ ] Monitoring shows no unacceptable release-related degradation.
-- [ ] Background processing and required integrations are healthy.
-- [ ] Incidents have an assigned owner and documented next steps.
-- [ ] The release record has been updated.
-- [ ] Relevant stakeholders have been notified of the outcome.
+Do not regenerate or replace the lockfile during production deployment. Update dependencies and lockfiles through a separate, reviewed development change.
 
-A release must not be marked successful while a critical failure or unresolved data-integrity risk remains without an explicitly approved incident-management decision.
+6. Application Startup
 
-## 9. Maintenance
+Start the application using the configured production entry point.
 
-Keep this checklist aligned with the actual hosting workflow, CI pipeline, database migration process, monitoring configuration, and recovery procedures used by MedOrbits.
+For a project that defines the standard start script:
 
-Review it after significant incidents, deployment architecture changes, security findings, and changes to critical application workflows.
+npm start
 
-Verify all referenced paths, commands, environment variables, and operational capabilities against the current repository and deployed environment.
+The production server should:
 
-—
+* Bind to the host and port expected by the hosting platform.
+* Handle startup failures explicitly.
+* Validate essential configuration.
+* Establish database connections safely.
+* Avoid exposing debugging endpoints publicly.
+* Handle shutdown signals gracefully.
+* Close database pools and other resources on shutdown.
+* Avoid logging secrets or sensitive request data.
 
-**MedOrbits — Controlled Releases, Reliable Recovery**
+Do not assume that the application uses a particular process manager or hosting platform. Follow the actual deployment configuration.
+
+7. Database Deployment
+
+Database changes require special care because application rollback does not automatically reverse schema changes or restore lost data.
+
+Before a migration
+
+1. Identify the migration and affected tables.
+2. Review the SQL or migration code.
+3. Confirm compatibility with the currently deployed application.
+4. Verify the latest backup and recovery procedure.
+5. Estimate locking and execution impact.
+6. Test the migration against a representative non-production database.
+7. Define the recovery plan.
+
+During deployment
+
+* Use the project’s established migration mechanism.
+* Do not assume that manually executing SQL is safe.
+* Avoid destructive schema changes in the same release as dependent application changes when a staged migration is possible.
+* Use a restricted database account.
+* Apply migrations in a controlled sequence.
+* Record the migration version and result without recording credentials.
+
+After migration
+
+* Confirm migration success.
+* Verify expected tables, indexes, and constraints.
+* Check database connectivity from the application.
+* Run relevant smoke tests.
+* Review application logs for database errors.
+
+Do not run unverified migrations directly against production.
+
+8. Release Procedure
+
+Use the following release sequence.
+
+Phase A — Prepare
+
+1. Confirm the intended commit and release notes.
+2. Review the diff for unintended changes.
+3. Check for unresolved merge conflicts.
+4. Run relevant automated tests.
+5. Validate configuration and dependency changes.
+6. Review security-sensitive changes.
+7. Confirm backup and rollback readiness.
+
+Phase B — Deploy
+
+1. Deploy the approved commit or artifact.
+2. Supply the production environment configuration.
+3. Apply reviewed database migrations when required.
+4. Start or restart the application using the hosting platform’s supported process.
+5. Wait for the service to become ready.
+6. Inspect startup and dependency errors.
+
+Phase C — Verify
+
+1. Request the configured health endpoint.
+2. Test critical public pages.
+3. Verify important API routes.
+4. Check authentication and authorization.
+5. Verify database-backed operations.
+6. Check relevant forms and application workflows.
+7. Review sanitized application logs.
+8. Confirm that monitoring and alerts are operating, where configured.
+
+Phase D — Complete
+
+* Record the deployed commit or artifact identifier.
+* Record the deployment timestamp.
+* Record the migration version, if applicable.
+* Document skipped checks.
+* Monitor for elevated error rates.
+* Keep the rollback procedure available.
+
+A successful deployment command does not, by itself, prove that the application is healthy.
+
+9. Health Checks and Smoke Tests
+
+Where supported, separate application liveness from readiness.
+
+Liveness
+
+Confirms that the application process is responsive.
+
+Readiness
+
+Confirms that the application can accept normal requests and that essential dependencies are available.
+
+Smoke-test checklist
+
+* [ ]	The production domain resolves correctly.
+* [ ]	HTTPS works without certificate errors.
+* [ ]	The homepage loads.
+* [ ]	Static assets load correctly.
+* [ ]	Expected API endpoints respond.
+* [ ]	Invalid requests return appropriate error codes.
+* [ ]	Protected routes enforce authentication.
+* [ ]	User permissions are enforced.
+* [ ]	Database-backed features work.
+* [ ]	Upload workflows are checked if implemented.
+* [ ]	No sensitive information is exposed in errors.
+* [ ]	Logs contain no unexpected startup failures.
+
+Use only health-check endpoints that actually exist. Do not expose database details, credentials, internal stack traces, or private infrastructure information in public health responses.
+
+10. Security Requirements
+
+Production deployments must follow these principles.
+
+Application security
+
+* Validate and normalize user input.
+* Use parameterized database queries.
+* Enforce authentication and authorization on the server.
+* Apply appropriate request-size and rate limits.
+* Configure secure HTTP headers.
+* Use restrictive CORS policies.
+* Protect session cookies with suitable security attributes when cookie sessions are used.
+* Keep production error responses free of stack traces.
+* Avoid unrestricted file paths and arbitrary file access.
+* Validate uploaded files and restrict their storage and access.
+
+Infrastructure security
+
+* Expose only necessary network services.
+* Use HTTPS for public traffic.
+* Restrict database access to authorized networks.
+* Store secrets in an approved secret-management system.
+* Apply operating-system and runtime security updates.
+* Limit administrative access.
+* Review dependencies for known vulnerabilities.
+* Keep backups protected from unauthorized access.
+
+Privacy
+
+* Do not log passwords, tokens, private documents, or full authentication headers.
+* Minimize collection of personal information.
+* Restrict access to uploaded documents.
+* Define retention and deletion policies.
+* Ensure operational reports do not disclose private user data.
+
+11. Uploaded Documents and Persistent Storage
+
+If MedOrbits supports document uploads:
+
+* Do not rely on temporary deployment filesystems for persistent storage.
+* Use an approved persistent storage service or managed volume.
+* Restrict file types, file sizes, and access permissions.
+* Generate safe storage names instead of trusting uploaded filenames.
+* Keep uploaded documents outside public web roots.
+* Verify user authorization before serving documents.
+* Scan uploads when appropriate for the application’s threat model.
+* Back up document storage according to an established retention policy.
+* Test document recovery separately from database recovery.
+
+Do not assume that uploaded documents are backed up merely because the database is backed up.
+
+12. Logging and Monitoring
+
+Monitor the deployed service using the capabilities actually configured.
+
+Useful signals include:
+
+* Application availability.
+* HTTP error rates.
+* Response latency.
+* Database connection failures.
+* Unexpected restarts.
+* Resource utilization.
+* Failed background jobs.
+* External provider failures.
+* Authentication and security events.
+
+Logs should be structured where practical and should exclude credentials, private documents, and sensitive request payloads.
+
+Configure retention, access control, and alert thresholds according to operational needs.
+
+Do not treat the presence of a monitoring/ directory or README as proof that monitoring is active.
+
+13. Backup and Recovery
+
+A production recovery strategy should account for:
+
+* PostgreSQL data.
+* Uploaded documents and other persistent files.
+* Required configuration and secret recovery procedures.
+* Application artifacts and deployment identifiers.
+* Database migration history.
+* Relevant operational records.
+
+Backup requirements
+
+* Automate backups only through a reviewed mechanism.
+* Protect backups using access controls and encryption where appropriate.
+* Keep independent copies according to the recovery policy.
+* Define retention periods.
+* Test restoration in a controlled environment.
+* Document recovery time and recovery point objectives when required.
+
+A Git repository backup is not a database backup. A database backup is not a document-storage backup.
+
+Never assume that a backup is usable until its integrity and restoration process have been verified.
+
+14. Rollback Procedure
+
+Rollback should be based on the deployment platform and database migration strategy.
+
+1. Identify the failing release and its deployment identifier.
+2. Confirm the previous known-good application artifact.
+3. Assess whether the database schema remains compatible with that artifact.
+4. Review recent migrations and persistent data changes.
+5. Roll back the application using the hosting platform’s supported mechanism.
+6. Restore database state only when necessary and under an approved recovery plan.
+7. Verify application health and critical workflows.
+8. Record the incident, impact, and recovery actions.
+
+Do not use git reset —hard, git clean, or broad filesystem restoration as routine production rollback mechanisms.
+
+Do not reverse database migrations blindly. Some schema or data changes are not safely reversible.
+
+15. Incident Response
+
+When a production incident occurs:
+
+1. Confirm the affected service and time window.
+2. Determine the user impact.
+3. Review sanitized logs and monitoring signals.
+4. Check recent deployments and configuration changes.
+5. Verify database and external dependency health.
+6. Preserve relevant evidence.
+7. Choose the smallest safe mitigation.
+8. Roll back or disable the affected feature when appropriate.
+9. Verify recovery.
+10. Document the root cause and follow-up actions.
+
+Do not make unreviewed destructive changes under pressure. Preserve evidence and user data.
+
+16. CI/CD Requirements
+
+A future automated deployment pipeline should:
+
+* Run on approved branches and release triggers.
+* Install dependencies reproducibly.
+* Run linting, tests, and applicable build checks.
+* Validate deployment configuration.
+* Keep credentials in protected CI secrets.
+* Require appropriate review and approvals.
+* Deploy immutable artifacts where supported.
+* Perform post-deployment health checks.
+* Record deployment results.
+* Provide a controlled rollback procedure.
+
+Production deployment must not be triggered by untrusted pull requests or arbitrary user-controlled scripts.
+
+Do not document a CI/CD workflow as operational until it has been implemented and tested.
+
+17. Environment Separation
+
+Keep development, testing, staging, and production separate.
+
+Environment	Purpose
+Development	Local implementation and debugging.
+Testing	Automated tests and controlled verification.
+Staging	Production-like pre-release validation.
+Production	Live user traffic and real data.
+
+Each environment should use its own credentials and appropriate access restrictions.
+
+Never copy production secrets into local development configuration. Do not use real user documents in test environments unless there is a documented, approved, privacy-preserving reason.
+
+18. Deployment Record
+
+Maintain a record for every production release.
+
+Suggested fields:
+
+Field	Value
+Release identifier	Record the actual deployed commit or artifact.
+Deployment timestamp	UTC timestamp.
+Deployment operator	Authorized operator or automation identity.
+Application version	Actual release version.
+Database migration	Actual migration version, if applicable.
+Health verification	Pass, fail, or not run.
+Smoke tests	Pass, fail, or not run.
+Rollback readiness	Verified or unverified.
+Known issues	Actual outstanding issues.
+
+Never fabricate a release identifier or mark a check as successful without evidence.
+
+19. Production Readiness Checklist
+
+Before deployment
+
+* [ ]	Release reviewed.
+* [ ]	Dependencies installed from the lockfile.
+* [ ]	Required tests passed.
+* [ ]	Production configuration validated.
+* [ ]	Secrets secured.
+* [ ]	Database migration reviewed.
+* [ ]	Backup and recovery plan confirmed.
+* [ ]	Rollback procedure understood.
+* [ ]	HTTPS and domain configuration checked.
+
+After deployment
+
+* [ ]	Application starts successfully.
+* [ ]	Health and readiness checks verified.
+* [ ]	Critical API endpoints tested.
+* [ ]	Authentication and authorization checked.
+* [ ]	Database-backed workflows verified.
+* [ ]	Logs reviewed for unexpected errors.
+* [ ]	Monitoring verified where configured.
+* [ ]	Deployment record completed.
+
+20. Known Limitations
+
+This guide is an operational reference, not evidence of a completed production deployment.
+
+The following must be verified against the real environment:
+
+* Hosting provider and deployment configuration.
+* Node.js runtime version.
+* Application start command.
+* Environment variable names and requirements.
+* PostgreSQL connectivity and migration mechanism.
+* Persistent document storage.
+* Health-check endpoints.
+* Logging and monitoring integration.
+* Backup and recovery implementation.
+* CI/CD and rollback automation.
+
+Update this document when deployment architecture or procedures change.
+
+Core principle: Deploy reviewed artifacts, protect production data, verify the live application, and maintain a tested recovery path.

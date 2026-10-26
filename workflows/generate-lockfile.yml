@@ -1,25 +1,100 @@
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-    with:
-      token: ${{ github.token }}
-
-  - name: Set up Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 22
-
-  - name: Generate package-lock.json
-    run: npm install --package-lock-only --ignore-scripts
-
-  - name: Commit lockfile
-    run: |
-      if [ -f package-lock.json ] && ! git diff --quiet -- package-lock.json; then
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add package-lock.json
-        git commit -m "build: generate package lockfile"
-        git push
-      else
-        echo "No package-lock.json changes to commit."
-      fi
+name: Generate Lockfile
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - package-lock.json
+      - npm-shrinkwrap.json
+      - pnpm-lock.yaml
+      - yarn.lock
+      - .npmrc
+      - .nvmrc
+      - .node-version
+permissions:
+  contents: read
+concurrency:
+  group: generate-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  generate-lockfile:
+    name: Generate and Validate Lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Detect package manager
+        id: manager
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f package.json ]; then
+            echo "::error::package.json was not found in the repository root."
+            exit 1
+          fi
+          if [ -f npm-shrinkwrap.json ] || [ -f package-lock.json ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+          elif [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::No supported lockfile found. Commit the intended lockfile first."
+            exit 1
+          fi
+      - name: Generate npm lockfile
+        if: steps.manager.outputs.manager == 'npm'
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Enable Corepack
+        if: steps.manager.outputs.manager != 'npm'
+        run: corepack enable
+      - name: Generate pnpm lockfile
+        if: steps.manager.outputs.manager == 'pnpm'
+        run: |
+          set -euo pipefail
+          pnpm install --lockfile-only --ignore-scripts
+      - name: Generate Yarn lockfile
+        if: steps.manager.outputs.manager == 'yarn'
+        run: |
+          set -euo pipefail
+          yarn install --mode=update-lockfile
+      - name: Validate lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ steps.manager.outputs.manager }}" in
+            npm)
+              test -f package-lock.json || test -f npm-shrinkwrap.json
+              npm install --package-lock-only --ignore-scripts --dry-run
+              ;;
+            pnpm)
+              test -f pnpm-lock.yaml
+              pnpm install --lockfile-only --ignore-scripts --frozen-lockfile
+              ;;
+            yarn)
+              test -f yarn.lock
+              yarn install --immutable
+              ;;
+            *)
+              echo "::error::Unsupported package manager."
+              exit 1
+              ;;
+          esac
+      - name: Upload generated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-lockfile
+          path: |
+            package-lock.json
+            npm-shrinkwrap.json
+            pnpm-lock.yaml
+            yarn.lock
+          if-no-files-found: error
+          retention-days: 7

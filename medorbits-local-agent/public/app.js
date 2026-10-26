@@ -1,493 +1,415 @@
-/* MedOrbits Local Agent -- public/app.js */
 "use strict";
 
 const $ = (id) => document.getElementById(id);
 
-let proposalId = null;
-let activeRequest = 0;
-let isBusy = false;
+const elements = {
+  message: $("message"),
+  status: $("status"),
+  request: $("request"),
+  propose: $("propose"),
+  review: $("review"),
+  summary: $("summary"),
+  changes: $("changes"),
+  tests: $("tests"),
+  confirmation: $("confirmation"),
+  approve: $("approve"),
+  reject: $("reject"),
+  approvalToken: $("approvalToken"),
+};
 
-const REQUIRED_CONFIRMATION = "APPROVE FILE CHANGES";
-const MAX_DIFF_CELLS = 250_000;
+const requiredElements = [
+  "message",
+  "status",
+  "request",
+  "propose",
+  "review",
+  "summary",
+  "changes",
+  "tests",
+  "confirmation",
+  "approve",
+  "reject",
+];
 
-function requiredElement(id) {
-const element = $(id);
-if (!element) {
-throw new Error(Required interface element is missing: #${id});
+for (const id of requiredElements) {
+  if (!elements[id]) {
+    throw new Error(`Required interface element is missing: #${id}`);
+  }
 }
-return element;
-}
 
-function setMessage(text, error = false) {
-const element = $("message");
-if (!element) return;
+const state = {
+  proposal: null,
+  busy: false,
+};
 
-element.textContent = String(text);
-element.style.color = error ? "#ffc3c3" : "#baf0d4";
-element.setAttribute("role", error ? "alert" : "status");
+function setMessage(message, type = "info") {
+  elements.message.textContent = message;
+  elements.message.dataset.type = type;
+  elements.message.setAttribute("role", type === "error" ? "alert" : "status");
 }
 
 function setBusy(busy) {
-isBusy = busy;
+  state.busy = busy;
 
-const propose = $("propose");
-const approve = $("approve");
-const reject = $("reject");
+  elements.propose.disabled = busy;
+  elements.approve.disabled = busy || !state.proposal;
+  elements.reject.disabled = busy || !state.proposal;
 
-if (propose) propose.disabled = busy;
-if (reject) reject.disabled = busy || !proposalId;
-
-if (approve) {
-approve.disabled =
-busy ||
-!proposalId ||
-$("confirmation")?.value !== REQUIRED_CONFIRMATION;
-}
+  elements.propose.setAttribute("aria-busy", String(busy));
 }
 
-function clearReview() {
-proposalId = null;
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+  });
 
-const review = $("review");
-const changes = $("changes");
-const tests = $("tests");
-const summary = $("summary");
-const confirmation = $("confirmation");
+  const contentType = response.headers.get("content-type") || "";
+  let data;
 
-if (changes) changes.replaceChildren();
-if (tests) tests.replaceChildren();
-if (summary) summary.textContent = "";
-if (confirmation) confirmation.value = "";
-if (review) review.hidden = true;
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    data = { error: text || `Request failed with HTTP ${response.status}.` };
+  }
 
-setBusy(isBusy);
+  if (!response.ok) {
+    throw new Error(
+      data.error ||
+      data.message ||
+      `Request failed with HTTP ${response.status}.`
+    );
+  }
+
+  return data;
 }
 
-async function api(url, body) {
-const options = {
-method: body === undefined ? "GET" : "POST",
-headers: {
-Accept: "application/json",
-},
-cache: "no-store",
-credentials: "same-origin",
-};
+function clearProposal() {
+  state.proposal = null;
 
-if (body !== undefined) {
-options.headers["Content-Type"] = "application/json";
-options.body = JSON.stringify(body);
+  elements.review.hidden = true;
+  elements.summary.textContent = "";
+  elements.changes.replaceChildren();
+  elements.tests.textContent = "";
+  elements.confirmation.checked = false;
+
+  elements.approve.disabled = true;
+  elements.reject.disabled = true;
 }
 
-const response = await fetch(url, options);
+function addText(tagName, text, className) {
+  const element = document.createElement(tagName);
+  element.textContent = text == null ? "" : String(text);
 
-let data;
+  if (className) {
+    element.className = className;
+  }
 
-try {
-data = await response.json();
-} catch {
-throw new Error(
-response.ok
-? "The server returned an invalid JSON response."
-: Request failed with HTTP ${response.status}.
-);
+  return element;
 }
 
-if (!response.ok) {
-const serverMessage =
-typeof data?.error === "string" ? data.error : "";
+function renderStatus(data) {
+  const parts = [];
 
-throw new Error(
-  serverMessage || `Request failed with HTTP ${response.status}.`
-);
+  if (data.status) parts.push(`Status: ${data.status}`);
+  if (data.model) parts.push(`Model: ${data.model}`);
+  if (data.provider) parts.push(`Provider: ${data.provider}`);
+  if (data.root) parts.push(`Repository: ${data.root}`);
 
-}
+  if (typeof data.fileWritesEnabled === "boolean") {
+    parts.push(
+      `File writes: ${data.fileWritesEnabled ? "enabled" : "disabled"}`
+    );
+  }
 
-if (!data || typeof data !== "object" || Array.isArray(data)) {
-throw new Error("The server returned an unexpected response.");
-}
+  if (typeof data.allowFileWrites === "boolean") {
+    parts.push(
+      `File writes: ${data.allowFileWrites ? "enabled" : "disabled"}`
+    );
+  }
 
-return data;
-}
-
-function makeElement(tag, text, className) {
-const element = document.createElement(tag);
-
-if (text !== undefined && text !== null) {
-element.textContent = String(text);
-}
-
-if (className) {
-element.className = className;
-}
-
-return element;
-}
-
-/*
-
-* Generate a line-oriented diff using the longest common subsequence.
-* For very large inputs, show complete before/after content instead of
-* allocating an excessively large diff matrix.
-    */
-    function createDiff(before, after) {
-    const oldLines = String(before ?? "").split("\n");
-    const newLines = String(after ?? "").split("\n");
-
-if (
-(oldLines.length + 1) * (newLines.length + 1) >
-MAX_DIFF_CELLS
-) {
-return null;
-}
-
-const rows = oldLines.length + 1;
-const cols = newLines.length + 1;
-const dp = Array.from(
-{ length: rows },
-() => new Uint32Array(cols)
-);
-
-for (let i = oldLines.length - 1; i >= 0; i–) {
-for (let j = newLines.length - 1; j >= 0; j–) {
-dp[i][j] =
-oldLines[i] === newLines[j]
-? dp[i + 1][j + 1] + 1
-: Math.max(dp[i + 1][j], dp[i][j + 1]);
-}
-}
-
-const output = ["-- existing file", "+++ proposed file"];
-let i = 0;
-let j = 0;
-
-while (i < oldLines.length || j < newLines.length) {
-if (
-i < oldLines.length &&
-j < newLines.length &&
-oldLines[i] === newLines[j]
-) {
-output.push(" " + oldLines[i]);
-i++;
-j++;
-} else if (
-j < newLines.length &&
-(i >= oldLines.length || dp[i][j + 1] > dp[i + 1][j])
-) {
-output.push("+" + newLines[j]);
-j++;
-} else {
-output.push("-" + oldLines[i]);
-i++;
-}
-}
-
-return output.join("\n");
-}
-
-function renderChange(change) {
-if (
-!change ||
-typeof change !== "object" ||
-typeof change.path !== "string" ||
-typeof change.content !== "string"
-) {
-throw new Error("The server returned an invalid file-change proposal.");
-}
-
-const article = document.createElement("article");
-article.className = "proposal-change";
-
-const title = makeElement("h3", change.path);
-const reason = makeElement(
-"p",
-typeof change.reason === "string" && change.reason.trim()
-? change.reason
-: "No explanation was provided."
-);
-
-article.append(title, reason);
-
-const diff = createDiff(change.before, change.content);
-
-if (diff !== null) {
-const heading = makeElement("h4", "Proposed diff");
-const pre = makeElement("pre", diff);
-pre.className = "proposal-diff";
-pre.style.whiteSpace = "pre-wrap";
-pre.style.overflowWrap = "anywhere";
-
-article.append(heading, pre);
-
-} else {
-const note = makeElement(
-"p",
-"This file is too large for an inline diff. Review the full content below."
-);
-
-const beforeHeading = makeElement("h4", "Existing content");
-const before = makeElement("pre", change.before ?? "");
-before.style.whiteSpace = "pre-wrap";
-before.style.overflowWrap = "anywhere";
-const afterHeading = makeElement("h4", "Proposed content");
-const after = makeElement("pre", change.content);
-after.style.whiteSpace = "pre-wrap";
-after.style.overflowWrap = "anywhere";
-article.append(note, beforeHeading, before, afterHeading, after);
-
-}
-
-return article;
-}
-
-function renderTests(tests) {
-const list = $("tests");
-if (!list) return;
-
-list.replaceChildren();
-
-if (!Array.isArray(tests)) {
-list.append(makeElement("li", "No validation steps were supplied."));
-return;
-}
-
-for (const test of tests) {
-if (typeof test !== "string") continue;
-list.append(makeElement("li", test));
-}
-
-if (!list.children.length) {
-list.append(makeElement("li", "No validation steps were supplied."));
-}
+  elements.status.textContent = parts.length
+    ? parts.join(" · ")
+    : "Agent connected.";
 }
 
 async function refreshStatus() {
-const element = $("status");
-if (!element) return;
-
-element.textContent = "Checking Ollama connection…";
-
-try {
-const result = await api("/api/status");
-
-if (result.connected) {
-  element.textContent =
-    `Ollama connected · Model: ${result.model || "Unknown model"}` +
-    (result.root ? ` · ${result.root}` : "");
-} else {
-  element.textContent =
-    `Ollama is not reachable at the configured address. ` +
-    `Model: ${result.model || "Unknown model"}`;
+  try {
+    const data = await api("/api/status");
+    renderStatus(data);
+  } catch (error) {
+    elements.status.textContent = `Status unavailable: ${error.message}`;
+  }
 }
 
-} catch (error) {
-element.textContent = Status unavailable: ${error.message};
+function getDiff(change) {
+  if (typeof change.diff === "string") return change.diff;
+  if (typeof change.patch === "string") return change.patch;
+  if (typeof change.content === "string") return change.content;
+
+  const before = change.before ?? change.oldContent ?? "";
+  const after = change.after ?? change.newContent ?? "";
+
+  if (before === after) {
+    return "(No content change supplied.)";
+  }
+
+  return [
+    "--- before",
+    ...String(before).split("\n").map((line) => `- ${line}`),
+    "+++ after",
+    ...String(after).split("\n").map((line) => `+ ${line}`),
+  ].join("\n");
 }
+
+function renderChanges(changes) {
+  elements.changes.replaceChildren();
+
+  if (!Array.isArray(changes) || changes.length === 0) {
+    elements.changes.appendChild(
+      addText("p", "No file changes were supplied.")
+    );
+    return;
+  }
+
+  for (const change of changes) {
+    const card = document.createElement("section");
+    card.className = "change-card";
+
+    const filePath =
+      change.path ||
+      change.file ||
+      change.filename ||
+      "(unspecified file)";
+
+    card.appendChild(addText("h3", filePath, "change-path"));
+
+    if (change.action) {
+      card.appendChild(
+        addText("p", `Action: ${change.action}`, "change-action")
+      );
+    }
+
+    if (change.reason) {
+      card.appendChild(
+        addText("p", change.reason, "change-reason")
+      );
+    }
+
+    const pre = document.createElement("pre");
+    pre.className = "diff";
+    pre.textContent = getDiff(change);
+    card.appendChild(pre);
+
+    elements.changes.appendChild(card);
+  }
 }
 
-async function proposeChanges() {
-if (isBusy) return;
+function renderProposal(data) {
+  const proposal = data.proposal || data;
 
-const request = $("request")?.value.trim() ?? "";
+  state.proposal = proposal;
 
-if (request.length < 4) {
-setMessage("Enter a more detailed request.", true);
-return;
-}
+  elements.summary.textContent =
+    proposal.summary ||
+    proposal.description ||
+    "Review the proposed changes before approving.";
 
-if (request.length > 20_000) {
-setMessage("The request is too long. Shorten it and try again.", true);
-return;
-}
+  renderChanges(
+    proposal.changes ||
+    proposal.files ||
+    []
+  );
 
-const requestId = ++activeRequest;
+  const tests = proposal.tests || proposal.validation || [];
 
-clearReview();
-setBusy(true);
-setMessage("Inspecting files and requesting a proposal from Ollama…");
+  if (Array.isArray(tests)) {
+    elements.tests.textContent = tests.length
+      ? tests.map((test) => {
+          if (typeof test === "string") return `• ${test}`;
+          return `• ${test.name || test.command || JSON.stringify(test)}`;
+        }).join("\n")
+      : "No validation commands supplied.";
+  } else {
+    elements.tests.textContent = String(tests);
+  }
 
-try {
-const result = await api("/api/propose", { request });
+  elements.confirmation.checked = false;
+  elements.review.hidden = false;
 
-if (requestId !== activeRequest) return;
-if (
-  typeof result.id !== "string" ||
-  !result.id.trim() ||
-  !Array.isArray(result.changes) ||
-  result.changes.length === 0
-) {
-  throw new Error(
-    "The server did not return a valid proposal with file changes."
+  elements.approve.disabled = false;
+  elements.reject.disabled = false;
+
+  setMessage(
+    "Proposal created. Review every file change before approving.",
+    "success"
   );
 }
-if (typeof result.summary !== "string") {
-  throw new Error("The proposal is missing its summary.");
-}
-const fragment = document.createDocumentFragment();
-for (const change of result.changes) {
-  fragment.append(renderChange(change));
-}
-const changesElement = requiredElement("changes");
-changesElement.replaceChildren(fragment);
-requiredElement("summary").textContent = result.summary;
-renderTests(result.tests);
-proposalId = result.id;
-requiredElement("confirmation").value = "";
-requiredElement("review").hidden = false;
-setMessage("Review the proposed changes before approving.");
-requiredElement("review").scrollIntoView({
-  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "auto"
-    : "smooth",
-  block: "start",
-});
 
-} catch (error) {
-if (requestId === activeRequest) {
-clearReview();
-setMessage(error.message || "Unable to create a proposal.", true);
-}
-} finally {
-if (requestId === activeRequest) {
-setBusy(false);
-}
-}
-}
+function getProposalId() {
+  const proposal = state.proposal;
 
-function updateApprovalState() {
-const approve = $("approve");
-if (!approve) return;
+  if (!proposal) return null;
 
-approve.disabled =
-isBusy ||
-!proposalId ||
-$("confirmation")?.value !== REQUIRED_CONFIRMATION;
-}
-
-async function approveChanges() {
-if (
-isBusy ||
-!proposalId ||
-$("confirmation")?.value !== REQUIRED_CONFIRMATION
-) {
-return;
-}
-
-const approvedId = proposalId;
-
-const confirmed = window.confirm(
-"Apply the reviewed changes to your repository? " +
-"Only proceed if you have reviewed the proposal."
-);
-
-if (!confirmed) return;
-
-setBusy(true);
-setMessage("Applying the approved proposal…");
-
-try {
-const result = await api("/api/approve", {
-id: approvedId,
-confirm: REQUIRED_CONFIRMATION,
-});
-
-if (!Array.isArray(result.applied)) {
-  throw new Error(
-    "The server response did not confirm which files were applied. " +
-    "Check repository status before retrying."
+  return (
+    proposal.id ||
+    proposal.proposalId ||
+    proposal.proposal_id ||
+    null
   );
 }
-proposalId = null;
-clearReview();
-const applied = result.applied
-  .filter((path) => typeof path === "string")
-  .join(", ");
-setMessage(
-  applied
-    ? `Server reported applied files: ${applied}. Run the relevant checks and review the resulting diff.`
-    : "The server returned no applied file list. Check repository status before proceeding.",
-  !applied
-);
 
-} catch (error) {
-setMessage(
-${error.message} If the request may have reached the server,  +
-"inspect repository status before retrying.",
-true
-);
-} finally {
-setBusy(false);
-updateApprovalState();
-}
+function getApprovalToken() {
+  return elements.approvalToken
+    ? elements.approvalToken.value.trim()
+    : "";
 }
 
-async function rejectChanges() {
-if (isBusy) return;
+async function createProposal() {
+  if (state.busy) return;
 
-const rejectedId = proposalId;
+  const request = elements.request.value.trim();
 
-// Invalidate any pending proposal request.
-activeRequest++;
-clearReview();
+  if (!request) {
+    setMessage("Enter a task or change request first.", "error");
+    elements.request.focus();
+    return;
+  }
 
-if (!rejectedId) {
-setMessage("No active proposal.");
-setBusy(false);
-return;
+  if (request.length > 3000) {
+    setMessage(
+      "Your request is too long. Limit it to 3,000 characters.",
+      "error"
+    );
+    return;
+  }
+
+  clearProposal();
+  setBusy(true);
+  setMessage("Preparing proposal…");
+
+  try {
+    const data = await api("/api/propose", {
+      method: "POST",
+      body: JSON.stringify({ request }),
+    });
+
+    renderProposal(data);
+  } catch (error) {
+    setMessage(`Could not create proposal: ${error.message}`, "error");
+  } finally {
+    setBusy(false);
+  }
 }
 
-setBusy(true);
-setMessage("Rejecting proposal…");
+async function approveProposal() {
+  if (state.busy || !state.proposal) return;
 
-try {
-await api("/api/reject", { id: rejectedId });
-setMessage("Proposal rejected. No changes were applied by this rejection.");
-} catch (error) {
-setMessage(
-Could not confirm rejection: ${error.message}  +
-"Verify the proposal state on the server.",
-true
-);
-} finally {
-setBusy(false);
+  if (!elements.confirmation.checked) {
+    setMessage(
+      "Review the changes and confirm before approving.",
+      "error"
+    );
+    return;
+  }
+
+  const proposalId = getProposalId();
+
+  if (!proposalId) {
+    setMessage(
+      "The proposal ID is missing. Create a new proposal.",
+      "error"
+    );
+    return;
+  }
+
+  const body = { proposalId };
+  const approvalToken = getApprovalToken();
+
+  if (approvalToken) {
+    body.approvalToken = approvalToken;
+  }
+
+  setBusy(true);
+  setMessage("Submitting approval…");
+
+  try {
+    const data = await api("/api/approve", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+    clearProposal();
+
+    setMessage(
+      data.message ||
+      data.status ||
+      "Approval request completed.",
+      "success"
+    );
+
+    await refreshStatus();
+  } catch (error) {
+    setMessage(`Approval failed: ${error.message}`, "error");
+  } finally {
+    setBusy(false);
+  }
 }
+
+async function rejectProposal() {
+  if (state.busy || !state.proposal) return;
+
+  const proposalId = getProposalId();
+
+  if (!proposalId) {
+    setMessage(
+      "The proposal ID is missing. Create a new proposal.",
+      "error"
+    );
+    return;
+  }
+
+  setBusy(true);
+  setMessage("Rejecting proposal…");
+
+  try {
+    const data = await api("/api/reject", {
+      method: "POST",
+      body: JSON.stringify({ proposalId }),
+    });
+
+    clearProposal();
+
+    setMessage(
+      data.message ||
+      data.status ||
+      "Proposal rejected.",
+      "success"
+    );
+  } catch (error) {
+    setMessage(`Rejection failed: ${error.message}`, "error");
+  } finally {
+    setBusy(false);
+  }
 }
 
-function initialize() {
-const requiredIds = [
-"message",
-"status",
-"request",
-"propose",
-"summary",
-"changes",
-"tests",
-"confirmation",
-"approve",
-"reject",
-"review",
-];
+elements.propose.addEventListener("click", createProposal);
+elements.approve.addEventListener("click", approveProposal);
+elements.reject.addEventListener("click", rejectProposal);
 
-const missing = requiredIds.filter((id) => !$(id));
+elements.request.addEventListener("keydown", (event) => {
+  if (
+    (event.metaKey || event.ctrlKey) &&
+    event.key === "Enter"
+  ) {
+    event.preventDefault();
+    createProposal();
+  }
+});
 
-if (missing.length) {
-console.error("MedOrbits Agent UI is missing elements:", missing);
-setMessage(Interface configuration error: missing ${missing.join(", ")}, true);
-return;
-}
-
-$("propose").addEventListener("click", proposeChanges);
-$("confirmation").addEventListener("input", updateApprovalState);
-$("approve").addEventListener("click", approveChanges);
-$("reject").addEventListener("click", rejectChanges);
-
-clearReview();
-setBusy(false);
-
-void refreshStatus();
-}
-
-if (document.readyState === "loading") {
-document.addEventListener("DOMContentLoaded", initialize, { once: true });
-} else {
-initialize();
-}
+refreshStatus();

@@ -1,278 +1,482 @@
+Render Deployment Guide — MedOrbits
 
-# MedOrbits — Render Deployment Guide
+Path: infrastructure/deployment/render.md
+Platform: Render
+Runtime: Node.js 20+
+Backend: Express.js, ECMAScript modules
+Database: PostgreSQL
+Status: Deployment instructions; verify all settings against the actual repository and Render dashboard.
 
-**Project:** MedOrbits  
-**Platform:** Render  
-**Scope:** Service configuration, deployment, environment management, database connectivity, verification, and troubleshooting  
-**Status:** Operational guide — verify all settings against the current repository and Render dashboard before production deployment.
+1. Purpose
 
-## 1. Purpose
+This guide documents the deployment of MedOrbits to Render, including application configuration, dependency installation, database connectivity, health checks, release verification, troubleshooting, and rollback.
 
-This document describes the process for configuring, deploying, and verifying MedOrbits on Render.
+Render supports Node.js web services with configurable build commands, start commands, environment variables, and health-check paths. <Cite refs={[“turn528254search0”,“turn528254search1”]}/>
 
-The objective is to provide a repeatable deployment workflow that protects production secrets, maintains database integrity, verifies critical application functionality, and supports controlled recovery when a deployment fails.
+This guide does not deploy the application or confirm that the required infrastructure already exists.
 
-Render settings, application scripts, environment variables, and health-check endpoints must match the actual implementation. This guide does not establish that any service or integration has already been configured.
+2. Deployment Architecture
 
-## 2. Service Setup
+The intended architecture is:
 
-Configure the Render service to match the repository structure, `package.json`, and supported Node.js runtime.
+Browser
+   |
+   | HTTPS
+   v
+Render Web Service
+   |
+   +-— Express.js API
+   |
+   +-— PostgreSQL database
+   |
+   +-— Persistent document storage, if required
+   |
+   +-— Approved external services
 
-### 2.1 Initial Configuration Checklist
+Keep the application and PostgreSQL in the same Render region when practical to reduce network latency. Use private networking for service-to-service communication where supported.
 
-- [ ] Select the correct GitHub repository and deployment branch.
-- [ ] Confirm the repository root directory and application entry point.
-- [ ] Configure the Node.js version according to `.nvmrc`, `package.json`, and the runtime supported by Render.
-- [ ] Configure the build command using scripts that actually exist in `package.json`.
-- [ ] Configure the start command to launch the intended server entry point.
-- [ ] Configure required environment variables through Render’s environment settings.
-- [ ] Configure the health-check path using an endpoint verified to exist in the application.
-- [ ] Confirm the service type and deployment settings are appropriate for the application.
-- [ ] Review build, deployment, networking, and resource settings before the first production release.
-- [ ] Confirm that the service has access only to the resources and credentials it requires.
+3. Pre-deployment Checklist
 
-### 2.2 Runtime and Commands
+Before creating or updating a Render service, verify:
 
-Inspect the repository before entering commands into Render.
+* [ ]	The correct Git repository is connected.
+* [ ]	The intended deployment branch is selected.
+* [ ]	The application root directory is correct.
+* [ ]	package.json exists in the selected application root.
+* [ ]	package-lock.json is present and consistent with package.json.
+* [ ]	The production start script exists.
+* [ ]	The application listens on the configured port.
+* [ ]	PostgreSQL requirements are documented.
+* [ ]	Required environment variables are known.
+* [ ]	No unresolved merge conflicts remain.
+* [ ]	Tests and relevant syntax checks have been run.
+* [ ]	No credentials or private user documents are committed.
+* [ ]	A recovery plan exists for production data and configuration.
 
-Review:
+Do not deploy a guessed branch, overwrite repository files, or change database schemas merely to make deployment succeed.
 
-- `.nvmrc`
-- `package.json`
-- The package lockfile
-- The server entry point
-- Build scripts and generated assets
-- Database initialization and migration procedures
-- The application’s port-binding behavior
-- The actual health-check implementation
+4. Create the Web Service
 
-The configured Node.js runtime must satisfy the application’s `engines` requirement and be supported by Render.
+In the Render Dashboard:
 
-**Important:** Do not copy a build command, start command, script name, or health-check path into the Render dashboard without confirming that it exists and is appropriate for the current codebase.
+1. Connect the Git provider containing the MedOrbits repository.
+2. Select New → Web Service.
+3. Select the intended repository.
+4. Choose the correct branch.
+5. Select the application root directory if the repository contains multiple projects.
+6. Choose the Node runtime.
+7. Configure the build and start commands.
+8. Configure environment variables and health checks.
+9. Review the service settings before creating it.
 
-For a Node.js web service, the application must bind to the port expected by the hosting environment. Verify that the server uses the appropriate environment-provided port rather than relying exclusively on a hardcoded local development port.
+Render’s official deployment guide documents these settings and the initial deployment workflow. <Cite refs={[“turn528254search0”,“turn528254search1”]}/>
 
-## 3. Environment Variables and Secrets
+Suggested service settings
 
-Configure production secrets through Render’s environment settings or an approved secret-management mechanism. Do not commit them to the repository.
+Setting	Suggested value	Important condition
+Service type	Web Service	Appropriate for a continuously running Express server.
+Runtime	Node	Confirm the app uses Node.js.
+Branch	Your approved release branch	Do not assume the branch is main.
+Root directory	Application directory	Set only if required by the repository layout.
+Build command	npm ci	Requires a valid, committed npm lockfile.
+Start command	npm start	Requires a working start script.
+Health-check path	/api/health	Use only if this endpoint actually exists and returns the expected status.
+Auto-deploy	Based on release policy	Enable only when the selected branch and CI workflow are trusted.
 
-Depending on the integrations enabled, the application may require:
+These are recommendations, not verified settings for your current Render service.
 
-| Configuration category | Examples of purpose |
-|—|—|
-| Runtime | Application environment and port settings expected by the server. |
-| Database | Host, port, database name, username, password, TLS settings, and connection options. |
-| Authentication | Session secrets, signing keys, and authentication-provider configuration. |
-| Email | SMTP or email-provider credentials and sender configuration. |
-| Payments | Provider credentials, webhook secrets, and callback configuration. |
-| AI integrations | Provider credentials, endpoint configuration, and model settings. |
-| External APIs | API keys, service URLs, and integration-specific configuration. |
-| Background processing | Queue connection settings, worker configuration, and scheduled-job options, where implemented. |
-| Storage | Approved file-storage credentials and configuration, where applicable. |
+5. Configure the Node.js Runtime
 
-These categories are illustrative. Confirm the exact variable names and required values against the current application code and integration configuration.
+The application should declare its Node.js requirement in package.json.
 
-### 3.1 Secret-Handling Requirements
+Example:
 
-- Never commit production secrets to Git.
-- Do not print credentials or sensitive environment values in deployment logs.
-- Rotate exposed credentials promptly.
-- Restrict access to production environment settings.
-- Keep development, staging, and production credentials separate.
-- Use least-privilege credentials for databases, storage, and external services.
-- Avoid exposing secrets to build steps that do not require them.
-- Review logs and deployment output for accidental secret disclosure.
-- Document secret rotation and recovery procedures without recording secret values.
+{
+  “engines”: {
+    “node”: “>=20”
+  }
+}
 
-If a required variable is missing, resolve the configuration issue rather than adding an insecure hardcoded fallback.
+Keep the declared engine requirement consistent with the code and dependencies. Verify the actual runtime in the Render build and runtime logs.
 
-## 4. Database Connectivity
+Build command
 
-Before deploying, verify that the production application can connect to its configured database.
+For an application with a valid npm lockfile:
 
-### 4.1 Database Readiness Checklist
+npm ci
 
-- [ ] Confirm the database host, port, database name, username, and connection settings.
-- [ ] Verify network access between Render and the database provider.
-- [ ] Confirm TLS requirements and certificate validation where applicable.
-- [ ] Use a dedicated database account with least-privilege permissions.
-- [ ] Confirm migrations are reviewed and compatible with the application release.
-- [ ] Check connection limits, connection pooling, and expected workload.
-- [ ] Confirm a current backup and documented recovery procedure are available.
-- [ ] Verify that database credentials are stored securely.
-- [ ] Confirm the application uses the intended production database, not staging or development.
-- [ ] Verify database availability and expected query behavior using an approved test.
+If the project requires compilation or asset generation, use its verified build script, for example:
 
-Do not assume that a database is reachable merely because the application builds successfully.
+npm ci && npm run build
 
-### 4.2 Migration Safety
+Do not include npm run build unless that script exists and is required.
 
-Before applying production migrations:
+Start command
 
-1. Review the migration and its compatibility with the deployed application.
-2. Test it against an appropriate non-production database.
-3. Evaluate locking, execution time, temporary storage, and data-transformation risks.
-4. Confirm the recovery strategy for partial completion or failure.
-5. Verify backup availability when the change warrants it.
-6. Monitor the migration and validate the resulting schema and data.
+For a project with a working start script:
 
-Do not assume that all MySQL schema operations are transactional or that restoring a backup will preserve writes made after that backup.
+npm start
 
-## 5. Deployment Procedure
+Otherwise, use the correct application entry point documented by the repository.
 
-Follow the repository’s approved release procedure when deploying production changes.
+Render runs the configured start command to launch the service. An invalid command or a process that exits during startup will prevent the service from becoming healthy. <Cite refs={[“turn528254search2”,“turn528254search4”]}/>
 
-1. **Review the release.** Approve the commit and confirm that the intended branch and release identifier are correct.
-2. **Validate CI.** Confirm that required automated tests, linting, build checks, and security checks have passed.
-3. **Review configuration.** Verify required environment variables, database settings, and external integrations.
-4. **Assess migration risk.** Confirm that database changes and startup behavior have been reviewed and tested.
-5. **Confirm recovery readiness.** Ensure the release owner, rollback decision-maker, and recovery instructions are available.
-6. **Deploy the approved commit.** Push or merge the approved commit into the configured deployment branch, or use the approved Render deployment workflow.
-7. **Monitor the deployment.** Review Render’s deployment status and build logs.
-8. **Inspect startup.** Check for configuration errors, database failures, missing dependencies, and runtime exceptions.
-9. **Verify health.** Confirm that the configured health check succeeds.
-10. **Run smoke tests.** Validate critical application workflows and required integrations.
-11. **Record the result.** Capture the release identifier, deployment time, verification outcome, and responsible owner.
+6. Configure the Listening Port
 
-Avoid making unrelated production changes while diagnosing a failed deployment.
+The Express application must listen on the port supplied by its hosting environment.
 
-## 6. Deployment Verification
+Example:
 
-Complete the applicable checks after every production deployment.
+const port = Number(process.env.PORT || 3000);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error(“Invalid server port configuration”);
+}
+app.listen(port, “0.0.0.0”, () => {
+  console.log(`Server listening on port ${port}`);
+});
 
-### 6.1 Application and Runtime
+Adapt this example to the existing server implementation; do not add a second listener if the application already starts its server elsewhere.
 
-- [ ] Review build and startup logs for errors.
-- [ ] Confirm the service reaches a healthy state.
-- [ ] Verify that the expected release is running.
-- [ ] Confirm that the application listens on the expected port.
-- [ ] Verify the configured health-check endpoint.
-- [ ] Test authentication and session handling.
-- [ ] Test a representative read-only workflow.
-- [ ] Verify that public routes and static assets behave as expected.
+Important: Render web services need to bind to an appropriate network interface so that the platform can route requests to the application. A server bound only to 127.0.0.1 inside its container will generally not be reachable through the service’s public endpoint.
 
-### 6.2 Database and Integrations
+Avoid printing secrets or environment variable values during startup.
 
-- [ ] Verify database connectivity and expected query behavior.
-- [ ] Confirm migration execution and relevant data-integrity checks.
-- [ ] Test critical integrations enabled in the deployment.
-- [ ] Verify payment and webhook behavior where applicable, using safe test or reconciliation procedures.
-- [ ] Verify background workers and scheduled jobs, if configured.
-- [ ] Inspect queue processing and retry behavior, if applicable.
+7. Configure Environment Variables
 
-### 6.3 Operational Health
+Set production environment variables in the Render Dashboard under the service’s environment settings. Do not depend on a local .env file being present in the deployed service. <Cite refs={[“turn528254search1”,“turn528254search4”]}/>
 
-- [ ] Check application error rates, response latency, and resource usage.
-- [ ] Review database connection usage and storage headroom.
-- [ ] Confirm monitoring and alert notifications are operational.
-- [ ] Review logs for unexpected exceptions and sensitive-data exposure.
-- [ ] Keep the release identifier and rollback instructions available.
-- [ ] Record the deployment outcome and any follow-up actions.
+Potential settings include:
 
-If critical workflows fail or service health degrades, pause further rollout and follow `production.md` and `rollback.md`, after verifying that these documents exist and reflect the current deployment workflow.
+Variable	Purpose
+NODE_ENV	Runtime environment; normally production.
+PORT	Port provided by the hosting environment.
+DATABASE_URL	PostgreSQL connection string, if required by the application.
+SESSION_SECRET	Session signing secret, if session authentication is used.
+CORS_ORIGINS	Approved frontend origins, if supported by the application.
+LOG_LEVEL	Logging verbosity, if configurable.
+AI_API_KEY	Secret for an approved AI provider, if used.
+AI_API_URL	AI provider endpoint, if used.
+AI_MODEL	Configured model identifier, if used.
 
-## 7. Troubleshooting
+The actual variable names must match the application code. Do not add variables solely because they appear in this table.
 
-### 7.1 Build Failure
+Security requirements
 
-1. Review the build logs and identify the first actionable error.
-2. Confirm the configured Node.js version is supported and satisfies the project requirements.
-3. Verify that the build command matches an existing package script.
-4. Check dependency installation and lockfile consistency.
-5. Confirm that required build-time configuration is available.
-6. Reproduce the failure locally or in CI where practical.
+* Never commit production credentials.
+* Never paste secret values into source files or documentation.
+* Do not print process.env in logs.
+* Use separate credentials for staging and production.
+* Grant database access using least privilege.
+* Rotate any credential that has been exposed.
+* Fail clearly when essential configuration is missing.
+* Verify that the application reads and validates each required setting.
 
-Do not use an unreviewed dependency upgrade or force an incompatible runtime change as a shortcut.
+8. PostgreSQL Configuration
 
-### 7.2 Application Fails to Start
+If MedOrbits uses Render PostgreSQL:
 
-1. Confirm the start command points to the correct server entry point.
-2. Check startup logs for missing modules, invalid configuration, or runtime errors.
-3. Verify required environment variables are present without exposing their values.
-4. Confirm the server listens on the port expected by the hosting environment.
-5. Check database initialization and connection failures.
-6. Inspect repeated restarts and determine whether the failure is caused by application startup, configuration, or a dependency.
+1. Create or identify the correct PostgreSQL instance.
+2. Select a region compatible with the application service.
+3. Configure database access using the connection method supported by Render.
+4. Use the internal connection address when the application and database can communicate over Render’s private network.
+5. Store the connection string in the service’s environment configuration.
+6. Verify SSL and connection settings against the actual database configuration.
+7. Restrict database access to authorized services and operators.
+8. Confirm backups and recovery procedures.
 
-### 7.3 Health Check Fails
+Use the database provider’s documented connection information rather than guessing a hostname or port.
 
-1. Verify that the configured endpoint exists and returns the expected status.
-2. Check whether the application has completed startup.
-3. Inspect database connectivity and other dependencies required by the endpoint.
-4. Confirm the health-check timeout and failure policy are appropriate.
-5. Review logs for repeated crashes or initialization failures.
-6. Confirm that the health-check route does not require authentication if the platform expects an unauthenticated probe.
+Migration policy
 
-Do not change the health-check path to an arbitrary route merely to make the deployment appear healthy.
+* Review migration scripts before production execution.
+* Test migrations against a non-production database.
+* Back up important data before risky schema changes.
+* Use the migration mechanism already established by the project.
+* Avoid destructive migrations without an explicit recovery plan.
+* Verify schema compatibility with the deployed application.
+* Record migration outcomes.
 
-### 7.4 Database Connection Fails
+Render supports pre-deploy commands for certain service types and plans. These commands run separately from the deployed service instance, so do not rely on a pre-deploy command to modify the running instance’s local filesystem or access its attached persistent disk. <Cite refs={[“turn528254search2”]}/>
 
-1. Verify connection settings and credentials.
-2. Confirm network access, TLS requirements, and database availability.
-3. Check database permissions and connection limits.
-4. Review connection-pool configuration and exhaustion symptoms.
-5. Inspect application logs without exposing credentials or connection secrets.
-6. Confirm that the application is using the intended database environment.
+Do not configure a production migration command until the migration tool, script, database connection, and execution behavior have been verified.
 
-### 7.5 Deployment Succeeds but Application Behavior Fails
+9. Health Checks
 
-1. Verify the deployed release identifier.
-2. Run the critical workflow smoke tests.
-3. Inspect application errors and database behavior.
-4. Check configuration changes and external provider responses.
-5. Determine whether the failure requires a targeted mitigation, a forward fix, or a rollback.
-6. Record the incident and follow the approved recovery procedure.
+Configure a Render health-check path only after confirming that the application implements it.
 
-## 8. Rollback and Recovery
+A health endpoint should:
 
-A successful code rollback does not necessarily reverse database changes or external side effects.
+* Return an appropriate successful HTTP status when healthy.
+* Respond within a bounded period.
+* Avoid exposing secrets or stack traces.
+* Report readiness accurately.
+* Avoid performing expensive repository scans.
+* Handle required dependency failures appropriately.
 
-Before rolling back:
+Example endpoint, only if it fits the existing Express application:
 
-- Assess user impact and identify the failure.
-- Confirm whether the previous application version is compatible with the current database schema.
-- Determine whether a migration has partially completed.
-- Assess whether database restoration would discard legitimate writes.
-- Consider payment operations, sent notifications, and other external side effects.
-- Identify the authorized decision-maker and recovery owner.
+app.get(“/api/health”, (_req, res) => {
+  res.status(200).json({
+    status: “ok”,
+    timestamp: new Date().toISOString()
+  });
+});
 
-After recovery:
+Do not add a duplicate route if an equivalent health endpoint already exists.
 
-- Verify service health and critical user workflows.
-- Check database integrity and application error rates.
-- Confirm that background jobs and integrations are behaving correctly.
-- Record the recovery actions and any remaining risks.
+A simple liveness endpoint does not prove PostgreSQL or every external service is healthy. If dependency health is needed, implement and test a separate readiness check.
 
-Refer to the approved rollback and database recovery procedures. Do not automatically restore a production database backup solely because an application deployment failed.
+Render uses health checks to help determine whether a new instance is ready to receive traffic. <Cite refs={[“turn528254search0”,“turn528254search4”]}/>
 
-## 9. Operational Notes
+10. Persistent Files and Uploaded Documents
 
-- Render features, service settings, and dashboard labels may change.
-- Verify current configuration options against Render’s official documentation before production changes.
-- Keep deployment instructions aligned with the repository’s actual scripts, server entry point, runtime requirements, and health-check implementation.
-- Maintain a tested rollback procedure and a documented database recovery process.
-- Reassess resource requirements as traffic, database usage, and background processing increase.
-- Confirm whether workers, scheduled jobs, persistent storage, and other services require separate deployment configuration.
-- Review application logs and resource usage after significant changes.
+Do not assume that files written to a deployed service’s ordinary filesystem will persist across deployments or instance replacement.
 
-## 10. Related Documentation
+If MedOrbits stores uploaded documents, generated reports, or user files:
 
-The following paths are relative to the repository root. Verify that each file exists before relying on the reference.
+* Select an appropriate persistent storage solution.
+* Review Render persistent-disk requirements and limitations.
+* Use object storage where suitable.
+* Keep private documents outside public web directories.
+* Enforce authentication and authorization for document access.
+* Validate file types and size limits.
+* Avoid logging document contents.
+* Define backup, retention, and deletion procedures.
 
-- `infrastructure/deployment/production.md` — Production release checklist.
-- `infrastructure/deployment/staging.md` — Staging validation procedure.
-- `infrastructure/deployment/rollback.md` — Rollback and recovery procedure.
-- `infrastructure/backup/README.md` — Backup and restore operations, if maintained at that location.
-- `infrastructure/backup/restore-drill.md` — Database recovery verification.
-- `infrastructure/database/README.md` — Database operations, if maintained at that location.
-- `infrastructure/monitoring/health-checks.md` — Health-check design and verification.
-- `infrastructure/monitoring/alerting.md` — Alerting and escalation policy.
+Render documents that attaching a persistent disk affects zero-downtime deployment behavior. Evaluate that trade-off before using disks for production file storage. <Cite refs={[“turn528254search2”,“turn528254search9”]}/>
 
-## 11. Maintenance Policy
+11. Deployment Procedure
 
-Review this guide whenever the deployment branch, Node.js runtime, package scripts, server entry point, environment configuration, database provider, or Render service settings change.
+Phase A — Prepare the release
 
-Document only verified commands, endpoints, and capabilities. Keep the deployment process aligned with the current MedOrbits repository and hosting environment.
+1. Confirm the intended Git commit and branch.
+2. Review the diff and verify that no unrelated changes are included.
+3. Check for unresolved merge conflicts.
+4. Run applicable tests and syntax checks.
+5. Verify the lockfile and npm scripts.
+6. Review production environment requirements.
+7. Confirm database migration safety.
+8. Verify backup and rollback readiness.
 
-—
+Phase B — Deploy
 
-**MedOrbits — Reliable Deployments, Verified Operations**
+1. Push the reviewed release to the configured repository and branch using the normal approved Git workflow.
+2. Allow Render to build the selected commit, or initiate a manual deployment.
+3. Inspect the build logs.
+4. Verify dependency installation.
+5. Verify the start command and startup logs.
+6. Wait for the deployment to become live.
+7. Review health-check results.
+
+Do not stage, commit, push, or deploy unreviewed changes automatically.
+
+Phase C — Verify
+
+* [ ]	The Render service reports a successful deployment.
+* [ ]	The public service URL responds.
+* [ ]	HTTPS works.
+* [ ]	The homepage loads, if served by this service.
+* [ ]	Expected API endpoints return the correct responses.
+* [ ]	PostgreSQL-backed operations work.
+* [ ]	Authentication and authorization behave correctly.
+* [ ]	No secrets are exposed in responses or logs.
+* [ ]	File uploads work if implemented.
+* [ ]	Monitoring and alerts work where configured.
+
+A service marked live does not guarantee that every business workflow is functioning correctly.
+
+12. Custom Domain and HTTPS
+
+If the service uses www.medorbits.in or another custom domain:
+
+1. Add the domain in the Render service settings.
+2. Follow Render’s displayed DNS configuration instructions.
+3. Verify DNS records with the appropriate DNS provider.
+4. Wait for domain verification and TLS certificate provisioning.
+5. Confirm that HTTPS works.
+6. Verify canonical URLs and redirects.
+7. Update the application’s CORS allowlist if necessary.
+8. Confirm that authentication cookies and callback URLs use the intended domain.
+
+Do not guess DNS records or remove existing records without understanding their purpose.
+
+Use Render’s current custom-domain documentation and the instructions shown for the actual service.
+
+13. Logs and Monitoring
+
+Use Render’s service logs and deployment logs to investigate startup failures, application errors, and failed deployments.
+
+Monitor, where supported:
+
+* Deployment status.
+* Application availability.
+* HTTP error rates.
+* Response latency.
+* Database connection errors.
+* Memory and resource usage.
+* Repeated restarts.
+* External provider failures.
+
+Keep logs sanitized. Never expose authentication headers, session secrets, database credentials, or private user documents.
+
+Render provides deployment logs and troubleshooting guidance for diagnosing build and runtime failures. <Cite refs={[“turn528254search1”,“turn528254search4”]}/>
+
+14. Troubleshooting
+
+Build failure
+
+Check:
+
+* Whether the configured root directory is correct.
+* Whether package.json and package-lock.json are present.
+* Whether npm ci succeeds locally with the same lockfile.
+* Whether the required Node.js version is supported.
+* Whether the build command refers to a real npm script.
+* Whether a dependency is missing or incompatible.
+
+Do not regenerate the lockfile in production as a first response.
+
+Application fails to start
+
+Check:
+
+* The configured start command.
+* The application entry point.
+* Missing environment variables.
+* Import or export errors.
+* Syntax errors.
+* Database initialization failures.
+* Port configuration.
+* Startup logs.
+
+Health check fails
+
+Check:
+
+* Whether the configured path exists.
+* Whether the endpoint returns the expected HTTP status.
+* Whether the server binds to the correct interface and port.
+* Whether startup takes longer than expected.
+* Whether required dependencies are unavailable.
+
+Database connection fails
+
+Check:
+
+* The configured database service.
+* The connection string without exposing its value.
+* Private-network compatibility and hostname.
+* SSL requirements.
+* Database credentials and permissions.
+* Connection limits and timeouts.
+* Database availability.
+
+Static assets or uploads disappear
+
+Check whether files were written to ephemeral storage and whether the application requires persistent storage.
+
+Do not assume that redeploying will recover missing files.
+
+15. Rollback
+
+If a deployment causes a production failure:
+
+1. Identify the failing deploy and its commit.
+2. Review the relevant logs and user impact.
+3. Select a known-good deployment.
+4. Verify that the old application version is compatible with the current database schema.
+5. Use Render’s supported rollback workflow where appropriate.
+6. Recheck health, authentication, database operations, and critical endpoints.
+7. Record the incident and corrective action.
+
+Render supports rolling back to a previous deployment. However, a rollback does not automatically reverse database changes or restore the state of persistent disks. <Cite refs={[“turn528254search5”]}/>
+
+Never use database restoration or destructive Git commands as an automatic rollback strategy.
+
+16. CI/CD and Auto-deploy
+
+Automatic deployments can be useful when the repository’s release branch and CI checks are reliable.
+
+Before enabling auto-deploy:
+
+* Verify the connected repository and branch.
+* Ensure only reviewed changes reach the production branch.
+* Run the required tests before release.
+* Keep secrets in protected environment settings.
+* Confirm deployment permissions.
+* Decide whether deployment should occur after every commit or only after checks pass.
+* Test rollback procedures.
+
+For critical releases, consider manual promotion from a verified staging environment.
+
+Do not claim CI/CD is configured until the workflow has been implemented and tested.
+
+17. Production Readiness Checklist
+
+Configuration
+
+* [ ]	Correct repository and branch.
+* [ ]	Correct root directory.
+* [ ]	Valid Node.js runtime.
+* [ ]	Valid build and start commands.
+* [ ]	Required environment variables configured.
+* [ ]	Secrets stored securely.
+* [ ]	Database connectivity verified.
+* [ ]	Health-check path confirmed.
+
+Reliability
+
+* [ ]	Build succeeds.
+* [ ]	Application starts.
+* [ ]	Health check passes.
+* [ ]	Critical routes tested.
+* [ ]	Database-backed features tested.
+* [ ]	File storage verified where applicable.
+* [ ]	Logs reviewed.
+* [ ]	Backup and rollback plans reviewed.
+
+Security
+
+* [ ]	No secrets committed.
+* [ ]	Authentication and authorization verified.
+* [ ]	CORS restricted appropriately.
+* [ ]	Public error responses sanitized.
+* [ ]	Database permissions restricted.
+* [ ]	Uploaded documents protected.
+* [ ]	Monitoring endpoints secured.
+
+18. Deployment Record
+
+Maintain a record for each production release.
+
+Field	Record
+Service name	Actual Render service name
+Repository	Connected repository
+Branch	Actual deployment branch
+Commit	Deployed commit SHA
+Deploy time	UTC timestamp
+Node.js version	Version from deployment logs
+Database migration	Actual migration identifier, if applicable
+Health check	Pass, fail, or not run
+Smoke tests	Pass, fail, or not run
+Rollback readiness	Verified or unverified
+Outstanding issues	Actual unresolved findings
+
+Do not record secrets or claim tests passed without evidence.
+
+19. Official References
+
+* Render Web Services
+* Your First Render Deploy
+* Deploying on Render
+* Troubleshooting Your Deploy
+* Render Rollbacks
+* Render Documentation
+
+20. Maintenance
+
+Update this guide whenever the Render service configuration, Node.js runtime, database architecture, deployment workflow, or recovery procedure changes.
+
+Keep recommendations distinct from verified settings. Record limitations and skipped checks rather than assuming they are successful.
+
+Core principle: Deploy reviewed code, protect production data, verify the live service, and maintain a tested recovery path.

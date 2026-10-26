@@ -1,0 +1,80 @@
+
+# File: .github/workflows/dependency-review.yml
+
+name: MedOrbits Dependency Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "**/npm-shrinkwrap.json"
+      - "Dockerfile"
+      - "**/Dockerfile"
+      - "docker-compose.yml"
+      - "docker-compose.yaml"
+      - "**/docker-compose.yml"
+      - "**/docker-compose.yaml"
+      - ".github/workflows/**"
+      - ".github/dependabot.yml"
+      - ".github/dependabot.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Restrict PR comments and write permissions to same-repository PRs.
+    if: >-
+      ${{
+        github.event.pull_request.head.repo.full_name == github.repository
+      }}
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
+
+          # Avoid comment failures for Dependabot's read-only token.
+          comment-summary-in-pr: ${{ github.actor == 'dependabot[bot]' && 'never' || 'always' }}
+
+          # Block newly introduced dependencies with these licenses.
+          deny-licenses: >-
+            GPL-3.0,
+            GPL-3.0-only,
+            GPL-3.0-or-later,
+            AGPL-3.0,
+            AGPL-3.0-only,
+            AGPL-3.0-or-later
+
+          # Fail if dependency metadata cannot be evaluated reliably.
+          fail-on-scopes: runtime
