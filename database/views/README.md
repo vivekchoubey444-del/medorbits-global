@@ -1,126 +1,121 @@
+MedOrbits Database Views
 
-# MedOrbits Database Views
+Directory: database/views/
+Project: MedOrbits — Education, Admissions, Careers & Recruitment
+Database: PostgreSQL 14+
+Purpose: Reusable, read-oriented SQL views for application reporting, job listings, operational dashboards, and administrative analytics.
 
-**Directory:** `database/views/`  
-**Project:** MedOrbits — Education, Admissions, Careers & Recruitment  
-**Database:** PostgreSQL  
-**Purpose:** Reusable, read-oriented SQL views for application reporting, job listings, operational dashboards, and administrative analytics.
+1. Directory Structure
 
-## 1. Directory Structure
-
-```text
 database/
 └── views/
     ├── README.md
     ├── application-summary.sql
     └── job-summary.sql
-```
 
-Keep this documentation synchronized with the SQL files and actual database migrations in the repository.
+Keep this documentation synchronized with the SQL definitions and actual database migrations.
 
-## 2. Available Views
+2. Available Views
 
-| File | View | Purpose |
-|—|—|—|
-| `application-summary.sql` | `application_summary` | Consolidates application details, applicant information, workflow status, and status-history statistics. |
-| `job-summary.sql` | `job_summary` | Consolidates job listing details, publication status, and aggregated application statistics. |
+File	View	Purpose
+application-summary.sql	medorbits.application_summary	Summarizes applications, applicant details, file counts, and status-history statistics.
+job-summary.sql	medorbits.job_summary	Intended to summarize job listings, publication status, and application statistics after the actual job schema is verified.
 
-These views are intended to simplify read queries. They do not replace service-layer authorization, business rules, or transactional workflows.
+Important: The application summary view previously provided uses the medorbits schema and expects the applications, users, application_files, and application_status_history tables. The job summary view is not yet implemented because the actual jobs table and job-application relationship have not been provided.
 
-## 3. Application Summary View
+3. Application Summary View
 
-**File:** `database/views/application-summary.sql`  
-**View:** `application_summary`
+File: database/views/application-summary.sql
+View: medorbits.application_summary
 
-### Purpose
+Purpose
 
-The application summary view provides a consolidated representation of an application and its associated applicant.
+The application summary view consolidates application information with applicant details and reporting metrics.
 
-Depending on the deployed definition, it may include:
+Depending on the deployed definition, it includes:
 
-- Application identifiers and application number.
-- Applicant identifiers and contact information.
-- Application type, program, institution, and academic year.
-- Current workflow status and timestamps.
-- Application version.
-- Status-history counts and timestamps.
-- A derived workflow-stage label.
+* Application identifiers and application number.
+* Applicant identifiers, name, email, phone, and account status.
+* Application type, program, institution, and academic year.
+* Workflow status and timestamps.
+* Application version.
+* Attached-file counts by scan status.
+* Status-history counts and the most recent history timestamp.
+* A derived workflow-stage label.
 
-### Dependencies
+Dependencies
 
-The current proposed definition expects:
+* medorbits.applications
+* medorbits.users
+* medorbits.application_files
+* medorbits.application_status_history
 
-- `applications`
-- `users`
-- `application_status_history`
+The actual table and column definitions must match the deployed schema and migrations.
 
-The actual table and column definitions must match the project’s migrations.
+Example query
 
-### Example query
-
-```sql
 SELECT
     application_id,
     application_number,
     application_type,
-    application_status,
-    workflow_stage,
-    application_created_at
-FROM application_summary
-ORDER BY application_created_at DESC, application_id DESC
+    status,
+    status_label,
+    created_at
+FROM medorbits.application_summary
+ORDER BY created_at DESC, application_id DESC
 LIMIT 25;
-```
 
-### Applicant-scoped query
+Applicant-scoped query
 
-```sql
 SELECT
     application_id,
     application_public_id,
+    applicant_id,
     application_type,
-    application_status,
-    workflow_stage
-FROM application_summary
+    status,
+    status_label
+FROM medorbits.application_summary
 WHERE applicant_id = $1
-ORDER BY application_created_at DESC, application_id DESC
+ORDER BY created_at DESC, application_id DESC
 LIMIT 25;
-```
 
-The authenticated applicant ID must be obtained from trusted server-side authentication context. Do not accept an arbitrary applicant ID from the request body as authorization.
+Obtain the applicant ID from trusted server-side authentication context. Do not treat an arbitrary applicant ID supplied by a request as proof of ownership.
 
-## 4. Job Summary View
+Privacy: This view includes applicant contact information. Grant access only to appropriately authorized database roles, and avoid returning unnecessary personal information through public APIs.
 
-**File:** `database/views/job-summary.sql`  
-**View:** `job_summary`
+4. Job Summary View
 
-### Purpose
+File: database/views/job-summary.sql
+Intended view: medorbits.job_summary
+
+Purpose
 
 The job summary view is intended to support career listings, employer dashboards, and recruitment reporting.
 
-Depending on the deployed definition, it may include:
+Depending on the actual schema, it may include:
 
-- Job identifiers, title, slug, and description.
-- Employer or company details.
-- Employment type, work mode, and category.
-- Experience requirements.
-- Location and remote-work information.
-- Salary range and currency.
-- Vacancy count and publication dates.
-- Application statistics.
-- A derived listing-availability label.
+* Job identifiers, title, slug, and description.
+* Employer or company details.
+* Employment type, work mode, and category.
+* Experience requirements.
+* Location and remote-work information.
+* Salary range and currency.
+* Vacancy count and publication dates.
+* Application statistics.
+* A derived listing-availability label.
 
-### Dependencies
+Dependencies
 
-The current proposed definition expects:
+The implementation requires confirmation of:
 
-- `jobs`
-- `applications`, with a job foreign key such as `job_id`
+* medorbits.jobs
+* The actual job-application relationship, such as a job_id foreign key.
+* The status and timestamp fields used to count applications and classify listings.
 
-The core schema previously documented does not define the complete `jobs` table. Verify all job fields and application relationships against the actual schema before deploying the view.
+The current core schema does not define a complete jobs table. Do not deploy a job summary view until its columns and relationships are verified.
 
-### Example query
+Example query — after the view is implemented
 
-```sql
 SELECT
     job_public_id,
     job_title,
@@ -133,113 +128,115 @@ SELECT
     salary_max,
     salary_currency,
     application_deadline
-FROM job_summary
+FROM medorbits.job_summary
 WHERE listing_availability = ‘open’
 ORDER BY published_at DESC NULLS LAST, job_id DESC
 LIMIT 25;
-```
 
-### Employer reporting
+The column names above are proposed interface names, not confirmed columns. Update the query to match the actual view definition.
 
-Application counts and recruitment statistics may be confidential. Verify that the requesting user is authorized to view statistics for the relevant employer or job before returning these fields.
+Employer reporting
 
-## 5. Installation and Deployment
+Application counts and recruitment statistics may be confidential. Verify that the authenticated user is authorized to view statistics for the relevant employer or job before returning them.
+
+5. Installation and Deployment
 
 Apply views only after their dependency tables and columns exist.
 
-Recommended deployment sequence:
+Recommended sequence:
 
-1. Apply the reviewed database schema migrations.
-2. Apply required constraints and indexes.
-3. Verify table names, column names, and foreign-key relationships.
-4. Apply the view SQL files.
-5. Test each view with representative data.
-6. Verify database grants and API authorization.
-7. Run integration tests before deploying to production.
+1. Back up the development or staging database.
+2. Apply reviewed schema migrations.
+3. Apply required constraints and indexes.
+4. Verify table names, columns, foreign keys, and status values.
+5. Apply the application summary view.
+6. Apply the job summary view only after its implementation matches the actual jobs schema.
+7. Test both views with representative data.
+8. Verify database grants and API authorization.
+9. Run integration tests before production deployment.
 
-Example commands, executed from the repository root:
+From the repository root, use a development or staging database:
 
-```bash
-psql “$DATABASE_URL” -v ON_ERROR_STOP=1 \
+psql “$DATABASE_URL” \
+  -v ON_ERROR_STOP=1 \
   -f database/views/application-summary.sql
 
-psql “$DATABASE_URL” -v ON_ERROR_STOP=1 \
+Run the job view only after its SQL has been completed and reviewed:
+
+psql “$DATABASE_URL” \
+  -v ON_ERROR_STOP=1 \
   -f database/views/job-summary.sql
-```
 
-Use a dedicated development or staging database first. Confirm the configured database target before running any SQL command.
+Confirm that DATABASE_URL points to the intended database before executing either command. Avoid printing database credentials in logs or sharing them in source control.
 
-## 6. View Design Principles
+6. View Design Principles
 
-### Read-oriented design
+Read-oriented design
 
-Views should simplify reporting and repeated joins. Business operations such as submitting applications, changing status, approving candidates, and publishing jobs belong in the service layer.
+Views simplify reporting and repeated joins. Business operations such as submitting applications, changing status, approving candidates, and publishing jobs belong in the service layer and transactional workflows.
 
-### Authorization
+Authorization
 
-A view does not automatically enforce the application’s user-level authorization rules.
+A view does not automatically enforce user-level authorization.
 
-- Scope applicant queries to the authenticated applicant.
-- Restrict employer statistics to authorized employer accounts.
-- Limit administrative reporting to appropriately privileged users.
-- Apply least-privilege database grants.
-- Avoid exposing internal identifiers or sensitive contact fields through public endpoints.
+* Scope applicant queries to the authenticated applicant.
+* Restrict employer statistics to authorized employer accounts.
+* Limit administrative reporting to appropriately privileged users.
+* Apply least-privilege database grants.
+* Consider row-level security where appropriate, with policies and connection handling tested carefully.
+* Do not expose private applicant data through public career endpoints.
 
-### Data privacy
+Data privacy
 
-Do not expose unnecessary personal information in public views.
+The application summary view may expose applicant email addresses and phone numbers. Use a restricted staff-facing view or an API projection that omits contact fields when they are unnecessary.
 
-The application summary view may include applicant email addresses and phone numbers. Prefer a restricted staff-facing view or an API projection that omits those fields when they are not required.
+Public job listings should expose only information intended for public consumption. Keep internal recruitment notes, confidential employer information, and private applicant data out of public views.
 
-The job summary view may include recruitment statistics. Public career pages should expose only fields intended for public consumption.
+Performance
 
-### Performance
+* Index underlying join and filter columns where query plans justify it.
+* Use EXPLAIN (ANALYZE, BUFFERS) on representative queries in a non-production environment.
+* Measure the cost of aggregating application history and files.
+* Consider materialized views only when stale data is acceptable and refresh behavior is documented.
+* Remember that ordinary PostgreSQL views do not store query results; their underlying queries run when accessed.
 
-- Index the underlying columns used for joins and frequent filters.
-- Review execution plans for expensive queries.
-- Avoid repeatedly aggregating large history or application tables without measuring the cost.
-- Consider materialized views only when stale data is acceptable and refresh behavior is documented.
-- Remember that ordinary PostgreSQL views do not store their query results.
+7. Schema Compatibility
 
-## 7. Schema Compatibility
+Before deployment, verify the following:
 
-The SQL files are dependent on the actual database schema.
+Component	Required verification
+Application view	applications.applicant_id references users.id.
+Application identifiers	View joins use the deployed application key type.
+Application history	History rows reference the correct application key and status columns.
+Application files	File rows reference the correct application key and scan-status values.
+Job view	The jobs table and referenced fields exist.
+Job applications	The application-to-job relationship is defined correctly.
+Status values	Derived labels match the actual workflow states.
+Timestamps	Timestamp types and deadline semantics are consistent.
+Indexes	Supporting indexes exist where query plans justify them.
+Permissions	Database roles have only the access they need.
 
-Before production deployment, verify the following:
+A successful CREATE OR REPLACE VIEW statement does not prove that the view returns semantically correct business data.
 
-| Component | Required verification |
-|—|—|
-| Application view | `applications.applicant_id` references `users.id`. |
-| Application history | History rows reference the correct application key and status columns. |
-| Job view | The `jobs` table and referenced job fields exist. |
-| Job applications | The application-to-job relationship is defined correctly. |
-| Status values | View logic matches the application’s workflow states. |
-| Timestamps | Timestamp types and deadline semantics are consistent. |
-| Indexes | Supporting indexes exist where query plans justify them. |
-| Permissions | API database roles have only the required access. |
+8. Testing Checklist
 
-A successful `CREATE OR REPLACE VIEW` statement does not prove that the view returns semantically correct business data.
+* [ ]	All dependency tables and columns exist.
+* [ ]	Both view definitions execute successfully.
+* [ ]	Empty tables return valid results.
+* [ ]	Applications without history rows are handled correctly.
+* [ ]	File counts match the source records.
+* [ ]	Application history counts match the source records.
+* [ ]	Job application totals match the actual relationship.
+* [ ]	Derived status labels agree with workflow rules.
+* [ ]	Expired and unpublished jobs are classified correctly.
+* [ ]	Applicant ownership is enforced by the API.
+* [ ]	Employer reporting is access-controlled.
+* [ ]	Sensitive contact information is not exposed publicly.
+* [ ]	Query plans use appropriate indexes for common workloads.
+* [ ]	Database grants follow least-privilege principles.
+* [ ]	Integration tests run against the intended schema version.
 
-## 8. Testing Checklist
-
-Before deployment, verify:
-
-- [ ] All dependency tables and columns exist.
-- [ ] Both view definitions execute successfully.
-- [ ] Empty tables return valid results.
-- [ ] Applications without history rows are handled correctly.
-- [ ] Application summary counts match source-table records.
-- [ ] Job application totals match the actual relationship.
-- [ ] Derived status labels agree with workflow rules.
-- [ ] Expired and unpublished jobs are classified correctly.
-- [ ] Applicant ownership is enforced by the API.
-- [ ] Employer reporting is access-controlled.
-- [ ] Sensitive contact information is not exposed publicly.
-- [ ] Query plans use appropriate indexes for common workloads.
-- [ ] Database grants follow least-privilege principles.
-- [ ] Integration tests run against the intended schema version.
-
-## 9. Maintenance
+9. Maintenance
 
 When a source table changes:
 
@@ -253,8 +250,10 @@ When a source table changes:
 
 Keep view definitions in version control. Prefer versioned migrations for production changes rather than manually editing database objects.
 
-## 10. Production Readiness
+10. Production Readiness
 
 These views are reporting and query abstractions, not authorization boundaries by themselves.
 
-Production readiness requires confirming the actual SQL definitions, database migrations, permissions, source-table relationships, query performance, and API access controls. The proposed `job_summary` view especially requires verification against the actual `jobs` schema before deployment.
+Production readiness requires confirming the actual SQL definitions, migrations, permissions, source-table relationships, query performance, and API access controls.
+
+The application_summary view can be tested against the provided core schema. The job_summary view remains pending implementation until the actual jobs schema and job-application relationship are confirmed.

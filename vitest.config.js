@@ -4,33 +4,27 @@
  * File: vitest.config.js
  *
  * Purpose:
- * - Configure Vitest for MedOrbits server-side tests.
- * - Support Node.js API routes, Express services, and middleware.
- * - Support JavaScript, TypeScript, JSX, and TSX test files.
+ * - Configure deterministic Node.js tests for MedOrbits.
+ * - Support JavaScript and TypeScript test files.
  * - Generate V8 coverage reports.
- * - Enforce coverage thresholds when coverage is enabled.
- * - Exclude generated output, dependencies, and test artifacts.
- * - Provide deterministic execution suitable for local development and CI.
+ * - Enforce explicit coverage thresholds.
+ * - Exclude generated files and third-party dependencies.
  *
  * Requirements:
- * - Node.js >= 20
+ * - Node.js >= 20.19.0
  * - Vitest
- * - @vitest/coverage-v8 (matching the installed Vitest version)
+ * - @vitest/coverage-v8 matching the installed Vitest version
  *
  * Commands:
- *   npx vitest run
- *   npx vitest
- *   npx vitest run --coverage
- *   npx vitest run --reporter=verbose
+ *   npm exec vitest -- run
+ *   npm exec vitest
+ *   npm exec vitest -- run --coverage
+ *   npm exec vitest -- run --reporter=verbose
  */
 
 import { defineConfig } from "vitest/config";
 
 const isCI = process.env.CI === "true";
-const isCoverageRun = process.env.VITEST_COVERAGE === "true";
-
-const testTimeout = 15_000;
-const hookTimeout = 15_000;
 
 const excludedDirectories = [
   "**/node_modules/**",
@@ -50,39 +44,30 @@ const excludedDirectories = [
   "**/tmp/**",
   "**/temp/**",
   "**/storage/uploads/**",
+  "**/duplicate-quarantine/**",
+  "**/tools/repository-reports/**"
 ];
 
 const testFileExclusions = [
   ...excludedDirectories,
   "**/*.d.ts",
   "**/*.config.{js,mjs,cjs,ts,mts,cts}",
-  "**/vitest.setup.{js,mjs,ts,mts}",
+  "**/vitest.setup.{js,mjs,cjs,ts,mts,cts}"
 ];
 
 export default defineConfig({
-  /*
-   * Root-level aliases and environment variables should be centralized
-   * in their respective application configuration modules.
-   */
-  resolve: {
-    conditions: ["node"],
-  },
-
   test: {
-    // Server-side API routes, Express services, and database adapters.
+    name: "medorbits",
     environment: "node",
 
-    // Explicitly discover supported test file extensions.
     include: [
-      "**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"
     ],
 
     exclude: testFileExclusions,
-
-    // Prevent accidental test success when discovery finds no tests.
     passWithNoTests: false,
 
-    // Test isolation and mock lifecycle.
+    // Isolation and mock cleanup.
     isolate: true,
     clearMocks: true,
     mockReset: false,
@@ -90,53 +75,35 @@ export default defineConfig({
     unstubEnvs: true,
     unstubGlobals: true,
 
-    // Timing controls.
-    testTimeout,
-    hookTimeout,
+    // Timeouts.
+    testTimeout: 15_000,
+    hookTimeout: 15_000,
     teardownTimeout: 10_000,
 
-    // Worker strategy.
+    // Execution.
     pool: "forks",
     fileParallelism: true,
-
-    // Keep worker count conservative in constrained CI environments.
     maxWorkers: isCI ? 2 : 4,
+    retry: 0,
 
-    // Avoid noisy output and expose failures clearly.
+    // Reproducible test behavior.
+    globals: false,
+    update: false,
+
     reporters: ["default"],
     logHeapUsage: isCI,
 
-    // Tests should use explicit imports from vitest.
-    globals: false,
-
-    // Do not retry flaky tests by default.
-    retry: 0,
-
-    // Prevent snapshots from being silently updated in CI.
-    update: !isCI,
-
-    /*
-     * Optional setup file.
-     *
-     * Create tests/setup.js before enabling this setting.
-     * Use it only for shared test setup, not production initialization.
-     */
+    // Add this only after creating the file:
     // setupFiles: ["./tests/setup.js"],
 
-    /*
-     * Coverage uses the V8 provider.
-     *
-     * Install a compatible provider if needed:
-     * npm install -D @vitest/coverage-v8
-     */
     coverage: {
-      enabled: isCoverageRun,
       provider: "v8",
+      enabled: false,
 
       include: [
         "app/api/**/*.{js,mjs,ts,mts}",
         "src/**/*.{js,mjs,ts,mts}",
-        "api/**/*.{js,mjs,ts,mts}",
+        "api/**/*.{js,mjs,ts,mts}"
       ],
 
       exclude: [
@@ -151,14 +118,14 @@ export default defineConfig({
         "**/migrations/**",
         "**/scripts/**",
         "**/*.config.{js,mjs,cjs,ts,mts,cts}",
-        "**/index.{js,mjs,ts,mts}",
+        "**/index.{js,mjs,ts,mts}"
       ],
 
       reporter: [
         "text",
         "text-summary",
         "html",
-        "lcov",
+        "lcov"
       ],
 
       reportsDirectory: "./coverage",
@@ -166,20 +133,14 @@ export default defineConfig({
       reportOnFailure: true,
       skipFull: false,
 
-      /*
-       * Thresholds apply when coverage collection runs.
-       * Increase these values as measured coverage improves.
-       */
       thresholds: {
         statements: 70,
         branches: 60,
         functions: 70,
         lines: 70,
-
-        // Keep coverage failures visible instead of silently ignoring them.
         perFile: false,
-        autoUpdate: false,
-      },
-    },
-  },
+        autoUpdate: false
+      }
+    }
+  }
 });

@@ -1,173 +1,137 @@
-
 -- ============================================================
 -- MedOrbits Application Summary View
 -- File: database/views/application-summary.sql
--- Database: PostgreSQL
+-- Database: PostgreSQL 14+
 --
 -- Purpose:
---   Provide a reusable summary of applications and their
---   associated applicant and workflow information.
+--   Provide a consolidated application summary for dashboards,
+--   administrative lists, and reporting.
 --
 -- Dependencies:
---   - users
---   - applications
---   - application_status_history
+--   medorbits.users
+--   medorbits.applications
+--   medorbits.application_files
+--   medorbits.application_status_history
 --
 -- Security:
---   - This view includes applicant contact information.
---   - Restrict access using database privileges and API
---     authorization. Do not expose it directly to public clients.
+--   This view intentionally excludes password hashes,
+--   applicant notes, and staff notes.
+--   Restrict access to the view using database permissions.
 -- ============================================================
-
-CREATE OR REPLACE VIEW application_summary AS
+BEGIN;
+CREATE SCHEMA IF NOT EXISTS medorbits;
+SET LOCAL search_path TO medorbits, public;
+CREATE OR REPLACE VIEW medorbits.application_summary AS
 SELECT
     a.id AS application_id,
     a.public_id AS application_public_id,
     a.application_number,
-
     a.applicant_id,
     u.public_id AS applicant_public_id,
     u.full_name AS applicant_name,
     u.email AS applicant_email,
     u.phone AS applicant_phone,
     u.account_status AS applicant_account_status,
-
     a.application_type,
     a.program_code,
     a.institution_id,
     a.academic_year,
-
     a.title,
-    a.status AS application_status,
-
+    a.status,
     a.submitted_at,
     a.reviewed_at,
     a.decided_at,
     a.withdrawn_at,
-
-    a.created_at AS application_created_at,
-    a.updated_at AS application_updated_at,
-    a.version AS application_version,
-
-    COALESCE(history.status_change_count, 0)
+    a.created_at,
+    a.updated_at,
+    a.version,
+    COALESCE(files.file_count, 0)::BIGINT AS file_count,
+    COALESCE(files.pending_scan_count, 0)::BIGINT
+        AS pending_scan_count,
+    COALESCE(files.clean_file_count, 0)::BIGINT
+        AS clean_file_count,
+    COALESCE(files.infected_file_count, 0)::BIGINT
+        AS infected_file_count,
+    COALESCE(history.status_change_count, 0)::BIGINT
         AS status_change_count,
-
-    history.first_status_change_at,
     history.last_status_change_at,
-
-    history.last_recorded_status,
-
     CASE
-        WHEN a.status = 'draft'
-            THEN 'in_progress'
-        WHEN a.status = 'submitted'
-            THEN 'awaiting_review'
-        WHEN a.status = 'under_review'
-            THEN 'in_review'
-        WHEN a.status = 'documents_required'
-            THEN 'action_required'
-        WHEN a.status = 'approved'
-            THEN 'completed_approved'
-        WHEN a.status = 'rejected'
-            THEN 'completed_rejected'
-        WHEN a.status = 'withdrawn'
-            THEN 'closed_withdrawn'
-        ELSE 'unknown'
-    END AS workflow_stage
-
-FROM applications AS a
-
-INNER JOIN users AS u
+        WHEN a.status = 'draft' THEN 'Draft'
+        WHEN a.status = 'submitted' THEN 'Submitted'
+        WHEN a.status = 'under_review' THEN 'Under review'
+        WHEN a.status = 'documents_required' THEN 'Documents required'
+        WHEN a.status = 'approved' THEN 'Approved'
+        WHEN a.status = 'rejected' THEN 'Rejected'
+        WHEN a.status = 'withdrawn' THEN 'Withdrawn'
+        ELSE 'Unknown'
+    END AS status_label
+FROM medorbits.applications AS a
+INNER JOIN medorbits.users AS u
     ON u.id = a.applicant_id
-
+LEFT JOIN LATERAL (
+    SELECT
+        COUNT(*) AS file_count,
+        COUNT(*) FILTER (
+            WHERE f.scan_status = 'pending'
+        ) AS pending_scan_count,
+        COUNT(*) FILTER (
+            WHERE f.scan_status = 'clean'
+        ) AS clean_file_count,
+        COUNT(*) FILTER (
+            WHERE f.scan_status = 'infected'
+        ) AS infected_file_count
+    FROM medorbits.application_files AS f
+    WHERE f.application_id = a.id
+) AS files ON TRUE
 LEFT JOIN LATERAL (
     SELECT
         COUNT(*) AS status_change_count,
-        MIN(h.created_at) AS first_status_change_at,
-        MAX(h.created_at) AS last_status_change_at,
-
-        (
-            ARRAY_AGG(
-                h.new_status
-                ORDER BY h.created_at DESC, h.id DESC
-            )
-        )[1] AS last_recorded_status
-
-    FROM application_status_history AS h
+        MAX(h.created_at) AS last_status_change_at
+    FROM medorbits.application_status_history AS h
     WHERE h.application_id = a.id
 ) AS history ON TRUE;
-
-COMMENT ON VIEW application_summary IS
-    'Application summary with applicant details, workflow status, '
-    'and aggregated status-history information. Restrict access '
-    'because applicant contact information is included.';
-
+COMMENT ON VIEW medorbits.application_summary IS
+    'Application dashboard summary with applicant details, file counts, and status-history metrics.';
+COMMIT;
 -- ============================================================
--- Example queries
+-- EXAMPLE QUERIES
 -- ============================================================
-
--- 1. Recent applications
+-- Recent applications:
+--
+-- SELECT *
+-- FROM medorbits.application_summary
+-- ORDER BY created_at DESC, application_id DESC
+-- LIMIT 25;
+-- Applications awaiting review:
 --
 -- SELECT
---     application_id,
 --     application_number,
 --     applicant_name,
---     application_type,
---     application_status,
---     application_created_at
--- FROM application_summary
--- ORDER BY application_created_at DESC, application_id DESC
--- LIMIT 25;
-
--- 2. Applications belonging to one applicant
---
--- SELECT
---     application_id,
---     application_public_id,
+--     applicant_email,
 --     application_type,
 --     program_code,
---     application_status,
---     workflow_stage
--- FROM application_summary
--- WHERE applicant_id = $1
--- ORDER BY application_created_at DESC, application_id DESC;
-
--- 3. Applications awaiting review
+--     created_at
+-- FROM medorbits.application_summary
+-- WHERE status = 'submitted'
+-- ORDER BY created_at ASC;
+-- Application status counts:
+--
+-- SELECT status, COUNT(*) AS total
+-- FROM medorbits.application_summary
+-- GROUP BY status
+-- ORDER BY total DESC;
+-- Applications requiring document or file review:
 --
 -- SELECT
---     application_id,
 --     application_number,
 --     applicant_name,
---     application_type,
---     academic_year,
---     submitted_at
--- FROM application_summary
--- WHERE application_status IN ('submitted', 'under_review')
--- ORDER BY submitted_at ASC NULLS LAST, application_id ASC;
-
--- 4. Application status distribution
---
--- SELECT
---     application_status,
---     COUNT(*) AS application_count
--- FROM application_summary
--- GROUP BY application_status
--- ORDER BY application_count DESC;
-
--- 5. Applications requiring applicant action
---
--- SELECT
---     application_id,
---     application_number,
---     applicant_id,
---     applicant_name,
---     application_type,
---     application_status,
---     application_updated_at
--- FROM application_summary
--- WHERE workflow_stage = 'action_required'
--- ORDER BY application_updated_at DESC;
-
+--     file_count,
+--     pending_scan_count,
+--     infected_file_count
+-- FROM medorbits.application_summary
+-- WHERE pending_scan_count > 0
+--    OR infected_file_count > 0
+-- ORDER BY created_at DESC;
 -- ============================================================
 -- END OF APPLICATION SUMMARY VIEW
 -- ============================================================

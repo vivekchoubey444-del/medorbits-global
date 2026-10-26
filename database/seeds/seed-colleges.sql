@@ -1,4 +1,3 @@
-
 -- =============================================================================
 -- MedOrbits: Safe Illustrative College and University Seed
 -- File: database/seeds/seed-colleges.sql
@@ -6,34 +5,23 @@
 -- Storage engine: InnoDB
 --
 -- PURPOSE
---   Seed two fictional universities and two fictional colleges for development
---   and automated testing only.
---
--- SAFETY
---   Never use these records as evidence of accreditation, recognition,
---   admission eligibility, available seats, or official institutional status.
---
--- IDEMPOTENCY
---   Re-running this script does not overwrite existing records.
---   Existing seed slugs are validated against their expected identifiers,
---   names, and relationships. Conflicting records cause a rollback.
+--   Seed two fictional universities and two fictional colleges for
+--   development and automated testing only.
 --
 -- PREREQUISITES
 --   Migration: 004_create_colleges_universities.sql
 --   Tables: universities, colleges
---   Engine: InnoDB
---   public_id: CHAR(36) or compatible UUID text representation
---   id: BIGINT UNSIGNED (or a compatible integer type)
---   Unique indexes: universities.slug, colleges.slug
---   Recommended: unique indexes on both public_id columns
+--   Expected unique keys: universities.slug, universities.public_id,
+--                         colleges.slug, colleges.public_id
 --
--- Run only against a development/test database.
+-- SAFETY
+--   All records are inactive and fictional.
+--   Existing records are never overwritten.
+--   Conflicting records cause rollback.
+--   This script never creates real accreditation or admission claims.
 -- =============================================================================
-
 DROP PROCEDURE IF EXISTS seed_medorbits_colleges;
-
 DELIMITER $$
-
 CREATE PROCEDURE seed_medorbits_colleges()
 BEGIN
     DECLARE v_demo_university_id BIGINT UNSIGNED DEFAULT NULL;
@@ -41,19 +29,31 @@ BEGIN
     DECLARE v_demo_college_id BIGINT UNSIGNED DEFAULT NULL;
     DECLARE v_dental_college_id BIGINT UNSIGNED DEFAULT NULL;
     DECLARE v_count INT DEFAULT 0;
-
+    DECLARE v_conflicts INT DEFAULT 0;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         RESIGNAL;
     END;
-
     START TRANSACTION;
-
     -- -------------------------------------------------------------------------
-    -- 1. Insert fictional universities without overwriting existing records.
+    -- 1. Verify required tables and storage engines.
     -- -------------------------------------------------------------------------
-
+    SELECT COUNT(*)
+      INTO v_count
+      FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_type = 'BASE TABLE'
+       AND engine = 'InnoDB'
+       AND table_name IN ('universities', 'colleges');
+    IF v_count <> 2 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT =
+                'Seed failed: universities and colleges must exist and use InnoDB';
+    END IF;
+    -- -------------------------------------------------------------------------
+    -- 2. Insert fictional universities without overwriting existing records.
+    -- -------------------------------------------------------------------------
     INSERT INTO universities (
         public_id,
         name,
@@ -93,50 +93,81 @@ BEGIN
     )
     ON DUPLICATE KEY UPDATE
         id = id;
-
-    -- Aggregate queries return a row even when no matching record exists.
-    SELECT MAX(id)
+    SELECT id
       INTO v_demo_university_id
       FROM universities
-     WHERE slug = 'medorbits-demo-university';
-
-    SELECT MAX(id)
+     WHERE slug = 'medorbits-demo-university'
+     LIMIT 1;
+    SELECT id
       INTO v_health_university_id
       FROM universities
-     WHERE slug = 'medorbits-sample-health-sciences-university';
-
+     WHERE slug = 'medorbits-sample-health-sciences-university'
+     LIMIT 1;
     IF v_demo_university_id IS NULL
        OR v_health_university_id IS NULL THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Seed failed: one or more expected universities are missing';
+                'Seed failed: expected university records were not found';
     END IF;
-
-    -- Validate that the slugs resolve to the expected fictional records.
+    -- Validate complete canonical university definitions.
     SELECT COUNT(*)
-      INTO v_count
+      INTO v_conflicts
       FROM universities
-     WHERE (
-            id = v_demo_university_id
-            AND public_id = 'a7100000-0000-4000-8000-000000000001'
-            AND name = 'MedOrbits Demonstration University'
-           )
-        OR (
-            id = v_health_university_id
-            AND public_id = 'a7100000-0000-4000-8000-000000000002'
-            AND name = 'MedOrbits Sample Health Sciences University'
-           );
-
-    IF v_count <> 2 THEN
+     WHERE
+        (
+            slug = 'medorbits-demo-university'
+            AND NOT (
+                public_id <=> 'a7100000-0000-4000-8000-000000000001'
+                AND name <=> 'MedOrbits Demonstration University'
+                AND university_type <=> 'Demonstration'
+                AND country <=> 'India'
+                AND state <=> 'Uttar Pradesh'
+                AND city <=> 'Noida'
+                AND website IS NULL
+                AND description <=> 'Fictional institution for local development and testing only.'
+                AND is_active <=> FALSE
+            )
+        )
+        OR
+        (
+            slug = 'medorbits-sample-health-sciences-university'
+            AND NOT (
+                public_id <=> 'a7100000-0000-4000-8000-000000000002'
+                AND name <=> 'MedOrbits Sample Health Sciences University'
+                AND university_type <=> 'Demonstration'
+                AND country <=> 'India'
+                AND state <=> 'Assam'
+                AND city <=> 'Guwahati'
+                AND website IS NULL
+                AND description <=> 'Fictional institution for development and automated testing only.'
+                AND is_active <=> FALSE
+            )
+        );
+    IF v_conflicts <> 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Seed conflict: an existing university does not match the expected seed record';
+                'Seed conflict: an existing university differs from the canonical fictional record';
     END IF;
-
+    -- A stable public ID must not be used by a different slug.
+    SELECT COUNT(*)
+      INTO v_conflicts
+      FROM universities
+     WHERE public_id IN (
+         'a7100000-0000-4000-8000-000000000001',
+         'a7100000-0000-4000-8000-000000000002'
+     )
+       AND slug NOT IN (
+         'medorbits-demo-university',
+         'medorbits-sample-health-sciences-university'
+     );
+    IF v_conflicts <> 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT =
+                'Seed conflict: a university public ID is already assigned to another slug';
+    END IF;
     -- -------------------------------------------------------------------------
-    -- 2. Insert fictional colleges without overwriting existing records.
+    -- 3. Insert fictional colleges without overwriting existing records.
     -- -------------------------------------------------------------------------
-
     INSERT INTO colleges (
         public_id,
         university_id,
@@ -185,74 +216,111 @@ BEGIN
     )
     ON DUPLICATE KEY UPDATE
         id = id;
-
-    SELECT MAX(id)
+    SELECT id
       INTO v_demo_college_id
       FROM colleges
-     WHERE slug = 'medorbits-demo-medical-college';
-
-    SELECT MAX(id)
+     WHERE slug = 'medorbits-demo-medical-college'
+     LIMIT 1;
+    SELECT id
       INTO v_dental_college_id
       FROM colleges
-     WHERE slug = 'medorbits-sample-dental-college';
-
+     WHERE slug = 'medorbits-sample-dental-college'
+     LIMIT 1;
     IF v_demo_college_id IS NULL
        OR v_dental_college_id IS NULL THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Seed failed: one or more expected colleges are missing';
+                'Seed failed: expected college records were not found';
     END IF;
-
-    -- Validate IDs, names, stable public IDs, and parent relationships.
+    -- Validate complete canonical college definitions and relationships.
     SELECT COUNT(*)
-      INTO v_count
-      FROM colleges
-     WHERE (
-            id = v_demo_college_id
-            AND public_id = 'a7200000-0000-4000-8000-000000000001'
-            AND name = 'MedOrbits Demonstration Medical College'
-            AND university_id = v_demo_university_id
-           )
-        OR (
-            id = v_dental_college_id
-            AND public_id = 'a7200000-0000-4000-8000-000000000002'
-            AND name = 'MedOrbits Sample Dental College'
-            AND university_id = v_health_university_id
-           );
-
-    IF v_count <> 2 THEN
+      INTO v_conflicts
+      FROM colleges AS c
+     WHERE
+        (
+            c.slug = 'medorbits-demo-medical-college'
+            AND NOT (
+                c.public_id <=> 'a7200000-0000-4000-8000-000000000001'
+                AND c.university_id <=> v_demo_university_id
+                AND c.name <=> 'MedOrbits Demonstration Medical College'
+                AND c.college_type <=> 'Demonstration Medical College'
+                AND c.country <=> 'India'
+                AND c.state <=> 'Uttar Pradesh'
+                AND c.city <=> 'Noida'
+                AND c.address IS NULL
+                AND c.pincode IS NULL
+                AND c.website IS NULL
+                AND c.description <=> 'Fictional college for application and catalogue testing only.'
+                AND c.is_active <=> FALSE
+            )
+        )
+        OR
+        (
+            c.slug = 'medorbits-sample-dental-college'
+            AND NOT (
+                c.public_id <=> 'a7200000-0000-4000-8000-000000000002'
+                AND c.university_id <=> v_health_university_id
+                AND c.name <=> 'MedOrbits Sample Dental College'
+                AND c.college_type <=> 'Demonstration Dental College'
+                AND c.country <=> 'India'
+                AND c.state <=> 'Assam'
+                AND c.city <=> 'Guwahati'
+                AND c.address IS NULL
+                AND c.pincode IS NULL
+                AND c.website IS NULL
+                AND c.description <=> 'Fictional college for development and automated testing only.'
+                AND c.is_active <=> FALSE
+            )
+        );
+    IF v_conflicts <> 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Seed conflict: a college has an unexpected identifier, name, or university relationship';
+                'Seed conflict: an existing college differs from the canonical fictional record';
     END IF;
-
-    -- Ensure both colleges are linked to the intended universities.
+    -- A college public ID must not be assigned to another slug.
+    SELECT COUNT(*)
+      INTO v_conflicts
+      FROM colleges
+     WHERE public_id IN (
+         'a7200000-0000-4000-8000-000000000001',
+         'a7200000-0000-4000-8000-000000000002'
+     )
+       AND slug NOT IN (
+         'medorbits-demo-medical-college',
+         'medorbits-sample-dental-college'
+     );
+    IF v_conflicts <> 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT =
+                'Seed conflict: a college public ID is already assigned to another slug';
+    END IF;
+    -- -------------------------------------------------------------------------
+    -- 4. Verify both college-to-university relationships.
+    -- -------------------------------------------------------------------------
     SELECT COUNT(*)
       INTO v_count
       FROM colleges AS c
       INNER JOIN universities AS u
         ON u.id = c.university_id
-     WHERE (
+     WHERE
+        (
             c.slug = 'medorbits-demo-medical-college'
             AND u.slug = 'medorbits-demo-university'
-           )
-        OR (
+        )
+        OR
+        (
             c.slug = 'medorbits-sample-dental-college'
             AND u.slug = 'medorbits-sample-health-sciences-university'
-           );
-
+        );
     IF v_count <> 2 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
                 'Seed failed: college-to-university relationships are invalid';
     END IF;
-
     COMMIT;
-
     -- -------------------------------------------------------------------------
-    -- 3. Return verification results after a successful commit.
+    -- 5. Return verification results.
     -- -------------------------------------------------------------------------
-
     SELECT
         id,
         public_id,
@@ -269,7 +337,6 @@ BEGIN
         'medorbits-sample-health-sciences-university'
     )
     ORDER BY slug;
-
     SELECT
         c.id,
         c.public_id,
@@ -291,13 +358,9 @@ BEGIN
     )
     ORDER BY c.slug;
 END$$
-
 DELIMITER ;
-
 CALL seed_medorbits_colleges();
-
 DROP PROCEDURE IF EXISTS seed_medorbits_colleges;
-
 -- =============================================================================
 -- END OF SEED
 -- =============================================================================

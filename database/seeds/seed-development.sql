@@ -1,4 +1,3 @@
-
 -- =============================================================================
 -- MedOrbits: Development Seed Orchestrator
 -- File: database/seeds/seed-development.sql
@@ -6,92 +5,67 @@
 -- Engine: InnoDB
 --
 -- PURPOSE
---   Run the baseline development seed scripts in a controlled sequence.
+--   Run baseline development seeds in a controlled sequence.
 --
 -- REQUIRED SEED FILES
 --   database/seeds/seed-roles.sql
 --   database/seeds/seed-colleges.sql
 --
 -- EXECUTION
---   Run from the repository root using the MySQL command-line client.
---
---   First, connect to a development/test database, then execute:
+--   From the repository root, connect to a development/test database and run:
 --
 --     SET @medorbits_allow_development_seed = 1;
 --     SOURCE database/seeds/seed-development.sql;
 --
 -- SAFETY
---   1. Requires explicit session opt-in.
---   2. Requires a database name containing dev, test, or development.
---   3. Does not create users or assign administrator roles to users.
---   4. The individual seed scripts retain their own validation.
+--   Requires explicit session opt-in and a development/test database name.
+--   Does not create user accounts or assign roles to users.
+--   Individual seed scripts must retain their own validation.
 --
 -- IMPORTANT
---   SOURCE is a MySQL command-line client directive, not server-side SQL.
---   Do not execute this file through an application database driver.
+--   SOURCE is a MySQL client command, not SQL understood by database drivers.
+--   Use the MySQL CLI with --abort-source-on-error.
 -- =============================================================================
-
+-- ---------------------------------------------------------------------------
+-- 1. Validate the execution environment before running any seed.
+-- ---------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS assert_medorbits_development_seed_allowed;
 DELIMITER $$
-
-DROP PROCEDURE IF EXISTS assert_medorbits_development_seed_allowed$$
-
 CREATE PROCEDURE assert_medorbits_development_seed_allowed()
 BEGIN
     DECLARE v_database_name VARCHAR(255);
-    DECLARE v_allowed TINYINT DEFAULT 0;
-
     SET v_database_name = DATABASE();
-
     IF v_database_name IS NULL OR v_database_name = '' THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
                 'Development seed blocked: no database is selected';
     END IF;
-
     IF COALESCE(@medorbits_allow_development_seed, 0) <> 1 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Development seed blocked: explicitly set @medorbits_allow_development_seed = 1 in this session';
+                'Development seed blocked: explicit session opt-in is required';
     END IF;
-
-    IF LOWER(v_database_name) REGEXP '(^|[_-])(dev|development|test|testing)([_-]|$)' THEN
-        SET v_allowed = 1;
-    END IF;
-
-    IF v_allowed <> 1 THEN
+    IF LOWER(v_database_name)
+       NOT REGEXP '(^|[_-])(dev|development|test|testing)([_-]|$)' THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT =
-                'Development seed blocked: database name must clearly identify a development or test database';
+                'Development seed blocked: database name must identify development or testing';
     END IF;
 END$$
-
 DELIMITER ;
-
 CALL assert_medorbits_development_seed_allowed();
-
 DROP PROCEDURE IF EXISTS assert_medorbits_development_seed_allowed;
-
 -- ---------------------------------------------------------------------------
--- Seed baseline roles and permissions.
+-- 2. Seed baseline roles and permissions.
 -- ---------------------------------------------------------------------------
-
 SOURCE database/seeds/seed-roles.sql
-
 -- ---------------------------------------------------------------------------
--- Seed fictional universities and colleges.
+-- 3. Seed fictional universities and colleges.
 -- ---------------------------------------------------------------------------
-
 SOURCE database/seeds/seed-colleges.sql
-
 -- ---------------------------------------------------------------------------
--- Final verification.
+-- 4. Verify seeded roles.
 -- ---------------------------------------------------------------------------
-
-SELECT
-    DATABASE() AS database_name,
-    'development_seed_completed' AS seed_status,
-    CURRENT_TIMESTAMP AS completed_at;
-
 SELECT
     name AS role_name,
     display_name,
@@ -100,7 +74,9 @@ SELECT
 FROM roles
 WHERE name IN ('user', 'admin', 'counsellor', 'employer')
 ORDER BY name;
-
+-- ---------------------------------------------------------------------------
+-- 5. Verify fictional universities.
+-- ---------------------------------------------------------------------------
 SELECT
     slug,
     name,
@@ -112,7 +88,9 @@ WHERE slug IN (
     'medorbits-sample-health-sciences-university'
 )
 ORDER BY slug;
-
+-- ---------------------------------------------------------------------------
+-- 6. Verify fictional colleges and their university relationships.
+-- ---------------------------------------------------------------------------
 SELECT
     c.slug AS college_slug,
     c.name AS college_name,
@@ -127,7 +105,13 @@ WHERE c.slug IN (
     'medorbits-sample-dental-college'
 )
 ORDER BY c.slug;
-
+-- ---------------------------------------------------------------------------
+-- 7. Report completion only after all preceding commands have succeeded.
+-- ---------------------------------------------------------------------------
+SELECT
+    DATABASE() AS database_name,
+    'development_seed_completed' AS seed_status,
+    CURRENT_TIMESTAMP AS completed_at;
 -- =============================================================================
 -- END OF DEVELOPMENT SEED ORCHESTRATOR
 -- =============================================================================
