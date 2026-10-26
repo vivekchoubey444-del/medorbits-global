@@ -1,138 +1,121 @@
-MedOrbits Legal Centre
+Legal & Policies — MedOrbits
 
-Directory: /legal/
+Directory: legal/
 Project: MedOrbits
-Purpose: Central index and maintenance guide for legal policies, service disclosures, user rights, and support information.
 
-The Legal Centre brings MedOrbits’ website terms, privacy and data practices, payment information, service disclaimers, and complaint-handling information into one discoverable location. Keep the pages consistent with one another and with the services actually offered by MedOrbits.
+1. Overview
 
-Contents
+The legal/ directory contains public-facing legal, privacy, payment, service, and accessibility information for the MedOrbits website and its education and career services.
 
-The filenames below are based on the files shown in the current /legal/ directory. Update this inventory whenever files are added, removed, or renamed.
+These pages should clearly explain applicable policies, user choices, service limitations, and how users can contact the appropriate team.
+
+Important: This README is an implementation guide, not legal advice or confirmation that any policy has been legally reviewed. Final policy wording must reflect MedOrbits’ actual operations, applicable jurisdictions, vendor relationships, and legal obligations. Obtain qualified legal review before publishing policy commitments.
+
+2. Directory Structure
 
 legal/
 ├── README.md
 ├── index.html
-├── acceptable-use.html
-├── accessibility.html
-├── anti-fraud-policy.html
-├── cancellation-policy.html
-├── contact-details.html
+├── accessibility-statement.html
+├── consent-preferences.html
 ├── cookie-policy.html
-├── data-protection.html
-├── data-retention.html
+├── data-deletion.html
 ├── disclaimer.html
-├── education-services-disclaimer.html
-├── fee-disclosure.html
+├── employer-terms.html
 ├── grievance-redressal.html
-├── independent-application-preparation.html
-├── intellectual-property.html
-├── medical-admissions-disclaimer.html
-├── payment-policy.html
+├── job-service-terms.html
+├── payment-terms.html
 ├── privacy-policy.html
-├── recruitment-services-disclaimer.html
 ├── refund-policy.html
-├── terms.html
-└── third-party-links.html
+└── terms.html
 
-Page directory
+3. Page Responsibilities
 
-|File                                      |Responsibility                                                                                     |
-|——————————————|—————————————————————————————————|
-|`index.html`                              |Landing page for the Legal Centre; links to published legal and policy pages.                      |
-|`terms.html`                              |Terms for accessing and using the website and applicable services.                                 |
-|`acceptable-use.html`                     |Expected and prohibited uses of the website, forms, and services.                                  |
-|`accessibility.html`                      |Accessibility commitment, known limitations, and a way to report barriers.                         |
-|`anti-fraud-policy.html`                  |Fraud prevention, suspicious requests, impersonation, and safe reporting guidance.                 |
-|`privacy-policy.html`                     |Personal-information practices, including collection, use, sharing, and user choices.              |
-|`data-protection.html`                    |Data-protection principles and safeguards used in the handling of information.                     |
-|`data-retention.html`                     |Retention periods or criteria, review, and deletion practices.                                     |
-|`cookie-policy.html`                      |Cookies and similar technologies, including their purposes and available controls where applicable.|
-|`payment-policy.html`                     |Payment steps, transaction confirmation, failed or duplicate payments, and payment safety.         |
-|`fee-disclosure.html`                     |Service fees, included scope, and applicable charges presented before a user commits.              |
-|`refund-policy.html`                      |Refund eligibility, exclusions, request review, and processing conditions.                         |
-|`cancellation-policy.html`                |How to request cancellation and how cancellation affects a service or refund request.              |
-|`grievance-redressal.html`                |Complaint submission, review, response, and escalation process.                                    |
-|`contact-details.html`                    |Verified contact channels for policy questions and service support.                                |
-|`disclaimer.html`                         |General limitations on website information and the nature of the services.                         |
-|`education-services-disclaimer.html`      |Scope and limitations of education-related information and assistance.                             |
-|`medical-admissions-disclaimer.html`      |Limitations relating to medical-admission information, eligibility, counselling, and outcomes.     |
-|`independent-application-preparation.html`|Scope of independent application-preparation assistance and the user’s responsibilities.           |
-|`recruitment-services-disclaimer.html`    |Scope and limitations of recruitment and career-related assistance.                                |
-|`intellectual-property.html`              |Ownership, permitted use, and protection of website content, branding, and materials.              |
-|`third-party-links.html`                  |External links and the limits of MedOrbits’ control over third-party content or services.          |
+File	Purpose
+index.html	Legal information hub linking to all policy and terms pages.
+privacy-policy.html	Explain personal data collection, purposes, applicable lawful bases, sharing, retention, security, user rights, and contact routes.
+terms.html	Define general website terms, permitted use, intellectual-property rules, account responsibilities, limitations, and dispute provisions.
+refund-policy.html	Explain refund eligibility, exclusions, cancellation procedures, timelines, and assessment criteria in line with actual services and payment arrangements.
+disclaimer.html	Clarify the scope and limitations of educational, admission, career, recruitment, and informational content without unsupported guarantees.
+cookie-policy.html	Describe cookies and similar technologies, their purposes, relevant categories, and available management options.
+accessibility-statement.html	State accessibility goals, verified limitations, feedback channels, and procedures for requesting assistance or accommodations.
+data-deletion.html	Explain deletion requests, identity-verification procedures, applicable exceptions, and request handling.
+consent-preferences.html	Explain and provide controls for optional cookies or consent-based processing where applicable, including updating or withdrawing choices.
+job-service-terms.html	Define terms for job seekers using career support, job listings, resume assistance, internships, and related services.
+employer-terms.html	Define employer account rules, job-posting requirements, candidate-data responsibilities, prohibited listings, and account enforcement.
+payment-terms.html	Explain accepted payment methods, billing, subscriptions where applicable, failed payments, cancellations, receipts, applicable taxes, and payment disputes.
+grievance-redressal.html	Publish the approved complaint and escalation process, response expectations, and verified grievance contact details.
 
-How the policies fit together
+4. Navigation and Page Structure
 
-Some pages address related topics, but they should not contradict or silently replace one another.
+* Provide a prominent link to legal/index.html in the website footer.
+* Include consistent legal navigation on every legal page.
+* Display a meaningful page title and an accurate last-updated or effective date where appropriate.
+* Provide the appropriate contact or escalation route.
+* Use semantic HTML, logical headings, accessible links, and a readable content width.
+* Link related policies contextually, such as payment terms from the refund policy and privacy information from data-deletion and consent pages.
+* Keep navigation and page structure consistent with the main MedOrbits design system.
 
-• Privacy and data: privacy-policy.html, data-protection.html, data-retention.html, and cookie-policy.html.
-• Payments and service fees: payment-policy.html, fee-disclosure.html, refund-policy.html, and cancellation-policy.html.
-• Education and admissions: education-services-disclaimer.html, medical-admissions-disclaimer.html, and independent-application-preparation.html.
-• Careers and recruitment: recruitment-services-disclaimer.html.
-• Safe use and content: acceptable-use.html, anti-fraud-policy.html, accessibility.html, and intellectual-property.html.
-• General terms and external information: terms.html, disclaimer.html, and third-party-links.html.
-• Help and escalation: contact-details.html and grievance-redressal.html.
+5. Design Guidelines
 
-Cross-link related pages where it helps users understand a process. Use the actual published URL and filename. Do not link to a policy that has not been created or published.
+* Reuse shared CSS and JavaScript where practical.
+* Follow the MedOrbits premium visual direction, using deep tinted backgrounds, high-contrast text, and restrained metallic accents.
+* Avoid plain white page sections where they conflict with the established design system.
+* Prioritize readability and clear navigation over decorative animation.
+* Ensure responsive layouts work on mobile, tablet, and desktop.
+* Provide visible keyboard focus, descriptive link text, and a logical heading hierarchy.
+* Respect prefers-reduced-motion.
+* Avoid interactive patterns that obstruct access to legal content.
 
-Page implementation standards
+6. Accuracy and Governance
 
-Metadata and navigation
+* Keep policies aligned with actual business practices, data flows, service providers, retention schedules, refund rules, subscription billing, and support processes.
+* Do not invent a registered business address, legal entity name, grievance officer, email address, telephone number, response deadline, certification, or compliance claim.
+* Publish only verified and approved contact details.
+* Use accurate effective and revision dates. Never display a last-updated date that does not reflect a real review.
+* Distinguish general educational information from decisions made by institutions, regulators, employers, immigration authorities, payment providers, and other third parties.
+* Avoid promising admission, employment, visas, scholarships, refunds, or other outcomes unless the commitment is authorized, accurate, and reflected in the applicable service agreement.
+* Make exclusions, limitations, and cancellation rules clear and consistent across related pages.
+* Ensure privacy, cookie, consent, and deletion wording matches the technologies and processes actually used by the website.
 
-• Give each page a unique, accurate <title> and meta description.
-• Use a canonical URL that matches the deployed domain and exact path.
-• Keep the shared MedOrbits header, navigation, footer, typography, and responsive design consistent.
-• Include a breadcrumb to the homepage and Legal Centre where appropriate.
-• Use relative paths only when they resolve correctly from the page’s location; test all navigation and footer links after moving files.
+7. Privacy, Consent, and Data Requests
 
-Accessibility and responsive behaviour
+* Collect only information needed for stated purposes and protect it using appropriate technical and organizational controls.
+* Describe third-party processors and data-sharing practices accurately.
+* Define how identity and authority are verified before fulfilling access, correction, deletion, or other data requests.
+* Explain applicable retention exceptions only when they genuinely apply, such as legally required records or legitimate security, accounting, contractual, or dispute-resolution needs.
+* Ensure consent controls reflect the choices genuinely available to users.
+* Do not claim optional tracking is disabled if it remains active.
+* Establish an operational process for receiving, routing, tracking, responding to, and documenting data requests and grievances.
 
-• Use semantic landmarks and a logical heading hierarchy.
-• Ensure controls are keyboard accessible and have accessible names and states.
-• Keep text/background contrast readable and avoid relying on colour alone to convey meaning.
-• Test navigation, dropdowns, forms, tables, and links on phone, tablet, and desktop layouts.
-• Use descriptive link labels rather than vague phrases such as “click here”.
+8. Recommended Implementation Order
 
-Accuracy and consistency
+1. index.html — Legal policy hub and navigation.
+2. privacy-policy.html, terms.html, and disclaimer.html.
+3. payment-terms.html and refund-policy.html.
+4. cookie-policy.html, consent-preferences.html, and data-deletion.html.
+5. job-service-terms.html and employer-terms.html.
+6. accessibility-statement.html and grievance-redressal.html.
+7. Review all cross-links, dates, contact details, and policy consistency.
 
-• Describe only processes, payment methods, contact channels, and safeguards that MedOrbits actually uses.
-• Avoid unsupported promises about admission, employment, recruitment, counselling, payment, refund, or response outcomes.
-• Make eligibility conditions, exclusions, fees, and user responsibilities clear where relevant.
-• Keep contact details, terminology, and process descriptions consistent across all pages.
-• Add a “last updated” date only when it reflects a genuine review.
-• Have legal or regulatory claims reviewed by a qualified professional when appropriate.
+9. Testing Checklist
 
-Payment, refund, and cancellation guidance
+* [ ]	Every listed page exists and loads successfully.
+* [ ]	All policy, navigation, and footer links point to the correct locations.
+* [ ]	Pages work on mobile, tablet, and desktop.
+* [ ]	Keyboard users can navigate links and controls.
+* [ ]	Document titles, headings, and language metadata are meaningful.
+* [ ]	Effective and last-updated dates are accurate.
+* [ ]	Privacy, cookie, consent, and deletion pages reflect the actual implementation.
+* [ ]	Refund and payment terms match the live checkout and service arrangements.
+* [ ]	Grievance contact details are verified and monitored.
+* [ ]	No placeholder legal contacts, fabricated compliance claims, or unsupported guarantees remain.
+* [ ]	Qualified legal review is completed before publishing policy commitments.
 
-The payment-related pages should clearly distinguish their purposes:
+10. Maintenance
 
-1. fee-disclosure.html explains the fee and what the fee covers.
-2. payment-policy.html explains the payment process and how to handle transaction issues.
-3. refund-policy.html defines refund eligibility and the request process.
-4. cancellation-policy.html explains cancellation requests and their effects.
+Assign an owner to review these pages whenever the business model, services, payment flows, subscription rules, data collection, analytics, third-party providers, or applicable requirements change.
 
-Do not promise that a payment will be refunded automatically unless the actual policy and process support that statement. Mention payment methods, taxes, gateway charges, and processing timelines only when confirmed by the live checkout, invoice, or approved service terms. Encourage users to retain receipts and transaction references. Never ask users to disclose OTPs, PINs, passwords, or full payment-card credentials to support staff.
+Record approved revisions and keep related pages synchronized.
 
-Publishing and maintenance checklist
-
-Before publishing a new page or changing an existing one:
-
-☐ Confirm that the content reflects current MedOrbits services and actual operating procedures.
-☐ Check the filename, page title, meta description, canonical URL, and navigation links.
-☐ Verify links to related policies and confirm that each destination exists.
-☐ Check spelling, grammar, headings, contact details, and terminology.
-☐ Test on mobile, tablet, and desktop screens.
-☐ Test keyboard navigation, visible focus, dropdown states, and screen-reader labels where applicable.
-☐ Check that fee, refund, cancellation, privacy, and retention statements agree across pages.
-☐ Review claims that may require legal, regulatory, or operational approval.
-☐ Update the directory inventory in this README if the file list changes.
-☐ Record the revision date only after the content has actually been reviewed.
-
-Suggested review record
-
-For material policy changes, maintain an internal record of the page, reviewer, review date, summary of changes, and approval status. Do not publish private internal notes or personal data in the public Legal Centre.
-
-Important notice
-
-This README is a documentation and maintenance guide, not legal advice and not a substitute for any published policy. The live policies should accurately describe MedOrbits’ actual practices and applicable requirements. A filename or entry in this README does not, by itself, establish that a policy is legally sufficient or that the described process is implemented.
+Implementation note: This README describes the intended scope of the legal pages. It does not confirm that any specific policy, consent mechanism, deletion workflow, grievance process, or compliance control has been implemented.

@@ -1,0 +1,189 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MedOrbits Payment Fixture",
+  "description": "Validates synthetic MedOrbits payment fixtures for development and automated testing. Does not verify real payment-provider transactions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "payments"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/payment"
+      }
+    }
+  },
+  "$defs": {
+    "payment": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "userId",
+        "applicationId",
+        "subscriptionId",
+        "purpose",
+        "provider",
+        "amount",
+        "currency",
+        "status",
+        "createdAt",
+        "metadata"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^PAY-TEST-[0-9]{4}$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicationId": {
+          "type": ["string", "null"]
+        },
+        "subscriptionId": {
+          "type": ["string", "null"]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "razorpay",
+            "stripe",
+            "fixture"
+          ]
+        },
+        "orderId": {
+          "type": ["string", "null"]
+        },
+        "paymentId": {
+          "type": ["string", "null"]
+        },
+        "amount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "created",
+            "pending",
+            "processing",
+            "succeeded",
+            "failed",
+            "cancelled",
+            "refunded",
+            "partially_refunded"
+          ]
+        },
+        "refundedAmount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failureCode": {
+          "type": ["string", "null"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "paidAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "refundedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "refunded"
+              }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["refundedAmount"],
+            "properties": {
+              "refundedAmount": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "partially_refunded"
+              }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["refundedAmount"],
+            "properties": {
+              "refundedAmount": {
+                "minimum": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source",
+        "testCase"
+      ],
+      "properties": {
+        "source": {
+          "const": "fixture"
+        },
+        "testCase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "synthetic": {
+          "const": true
+        },
+        "verified": {
+          "const": false
+        }
+      }
+    }
+  }
+}

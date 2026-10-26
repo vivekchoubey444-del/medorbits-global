@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071D17">
+  <meta name="description" content="Explore deemed-to-be universities in India, understand UGC recognition, compare programmes, review admission requirements and access university selection resources with MedOrbits.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="MedOrbits">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Deemed Universities in India | Recognition &amp; Admissions | MedOrbits</title>
+
+  <link rel="canonical" href="https://medorbits.in/education/deemed-universities.html">
+  <link rel="icon" href="/assets/images/logo/medorbits-logo.png" type="image/png">
+  <link rel="manifest" href="/manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/universities-directory.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071d17;
+      --bg-2: #0B2921;
+      --panel: #10372B;
+      --panel-2: #174638;
+      --gold: #c9a96e;
+      --gold-light: #e4d0a1;
+      --lav: #d9cce4;
+      --muted: #b7acbf;
+      --line: rgba(201,169,110,.24);
+      --white: #f7f1fa;
+      --radius: 18px;
+      --shadow: 0 22px 65px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%,rgba(27,105,76,.22),transparent 35%),
+        radial-gradient(ellipse at 92% 32%,rgba(201,169,110,.07),transparent 28%),
+        linear-gradient(135deg,#071d17,#0A281F 55%,#10372B);
+      color: var(--white);
+      font: 400 15px/1.7 "DM Sans",sans-serif;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button,input,select { font: inherit; }
+    button,a { -webkit-tap-highlight-color: transparent; }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 4px;
+    }
+
+    .container {
+      width: min(1180px,calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 12px;
+      z-index: 9999;
+      background: var(--gold-light);
+      color: #170e1d;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .skip-link:focus { top: 12px; }
+
+    .announcement {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #04140F;
+      border-bottom: 1px solid rgba(201,169,110,.13);
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .announcement .spark { color: var(--gold); }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7,29,23,.94);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+      transition: box-shadow .25s,background .25s;
+    }
+
+    .header.scrolled {
+      background: rgba(4,20,15,.98);
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+
+    .nav-wrap {
+      min-height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 47px;
+      height: 47px;
+      object-fit: contain;
+    }
+
+    .brand strong {
+      display: block;
+      color: var(--gold-light);
+      font-size: 16px;
+      letter-spacing: .12em;
+      line-height: 1.3;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 19px;
+      font-size: 12px;
+    }
+
+    .nav > a,
+    .nav-trigger {
+      color: #eee6f2;
+      white-space: nowrap;
+    }
+
+    .nav > a:hover,
+    .nav-trigger:hover { color: var(--gold-light); }
+
+    .nav-group { position: relative; }
+
+    .nav-trigger {
+      border: 0;
+      background: none;
+      padding: 12px 0;
+      cursor: pointer;
+    }
+
+    .nav-trigger span {
+      color: var(--gold);
+      margin-left: 5px;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: -14px;
+      width: 260px;
+      display: none;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #10372B;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-group.open .dropdown,
+    .nav-group:hover .dropdown,
+    .nav-group:focus-within .dropdown { display: grid; }
+
+    .dropdown a {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--lav);
+    }
+
+    .dropdown a:hover {
+      background: rgba(201,169,110,.1);
+      color: var(--gold-light);
+    }
+
+    .nav-cta,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid var(--gold);
+      border-radius: 9px;
+      padding: 11px 16px;
+      background: var(--gold);
+      color: #170e1d;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn:hover,
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--gold-light);
+      border-color: rgba(217,204,228,.35);
+    }
+
+    .menu-toggle {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--gold-light);
+      padding: 9px 12px;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: 78px 0 72px;
+      background:
+        linear-gradient(90deg,rgba(7,29,23,.97),rgba(10,40,31,.88) 58%,rgba(10,40,31,.56)),
+        url('/assets/images/hero/hero-home.png') center/cover no-repeat,
+        #071d17;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse at 82% 18%,rgba(201,169,110,.14),transparent 36%),
+        radial-gradient(ellipse at 90% 90%,rgba(18,92,61,.2),transparent 42%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      align-items: center;
+      gap: 48px;
+    }
+
+    .eyebrow,
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow:before {
+      content: "";
+      width: 26px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    h1,h2,h3,p { margin-top: 0; }
+
+    .hero h1 {
+      max-width: 720px;
+      margin: 18px 0;
+      font: 600 clamp(39px,5.3vw,67px)/1.08 "Playfair Display",Georgia,serif;
+      letter-spacing: -.035em;
+    }
+
+    .hero h1 em {
+      color: var(--gold-light);
+      font-style: normal;
+    }
+
+    .hero-copy {
+      max-width: 610px;
+      color: #d0c5d8;
+      font-size: 15px;
+      line-height: 1.85;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 390px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(145deg,#1C5140,#08231B);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-visual img {
+      width: 100%;
+      height: 390px;
+      object-fit: cover;
+    }
+
+    .hero-visual:after {
+      content: "";
+      position: absolute;
+      inset: 40% 0 0;
+      background: linear-gradient(transparent,rgba(7,29,23,.96));
+      pointer-events: none;
+    }
+
+    .visual-caption {
+      position: absolute;
+      z-index: 1;
+      left: 22px;
+      right: 22px;
+      bottom: 19px;
+    }
+
+    .visual-caption strong {
+      display: block;
+      color: var(--gold-light);
+      font: 600 21px "Playfair Display",serif;
+    }
+
+    .visual-caption span {
+      color: #e2d9e7;
+      font-size: 12px;
+    }
+
+    .visual-stamp {
+      position: absolute;
+      z-index: 2;
+      top: 17px;
+      right: 17px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: rgba(7,29,23,.85);
+      color: var(--gold-light);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      border-block: 1px solid var(--line);
+      background: rgba(23,70,56,.38);
+    }
+
+    .pillar {
+      padding: 20px 14px;
+      text-align: center;
+      border-right: 1px solid var(--line);
+    }
+
+    .pillar:last-child { border: 0; }
+
+    .pillar strong {
+      display: block;
+      color: var(--gold-light);
+      font: 600 18px "Playfair Display",serif;
+    }
+
+    .pillar span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .search-band {
+      padding: 23px 0;
+      background: rgba(4,20,15,.75);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .search-form {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr auto;
+      gap: 10px;
+    }
+
+    .field {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(201,169,110,.25);
+      border-radius: 9px;
+      background: #10372B;
+      color: var(--white);
+      padding: 13px 14px;
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,169,110,.1);
+    }
+
+    .field option { background: #10372B; }
+
+    .section {
+      padding: 76px 0;
+      scroll-margin-top: 100px;
+    }
+
+    .section.alt {
+      background:
+        radial-gradient(ellipse at 90% 10%,rgba(18,92,61,.13),transparent 40%),
+        rgba(23,70,56,.18);
+      border-block: 1px solid rgba(217,204,228,.08);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 25px;
+      margin-bottom: 29px;
+    }
+
+    .section-head h2,
+    .about-title {
+      margin: 8px 0 10px;
+      font: 600 clamp(28px,3.3vw,42px)/1.18 "Playfair Display",Georgia,serif;
+      letter-spacing: -.025em;
+    }
+
+    .section-head h2 span,
+    .about-title span { color: var(--gold-light); }
+
+    .section-head p {
+      max-width: 650px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .text-link {
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .text-link:hover { text-decoration: underline; }
+
+    .notice {
+      margin-bottom: 24px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--gold);
+      border-radius: 9px;
+      background: rgba(23,70,56,.38);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .notice strong { color: var(--gold-light); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 17px;
+    }
+
+    .card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: 14px;
+      background: linear-gradient(145deg,#174638,#0B2921);
+      transition: transform .25s,border-color .25s,box-shadow .25s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(201,169,110,.68);
+      box-shadow: 0 18px 42px rgba(0,0,0,.26);
+    }
+
+    .card-media {
+      position: relative;
+      overflow: hidden;
+      background: #174638;
+    }
+
+    .card-media img {
+      width: 100%;
+      height: 185px;
+      object-fit: cover;
+      transition: transform .45s;
+    }
+
+    .card:hover .card-media img { transform: scale(1.04); }
+
+    .tag {
+      position: absolute;
+      top: 11px;
+      left: 11px;
+      padding: 5px 8px;
+      border: 1px solid rgba(201,169,110,.4);
+      border-radius: 5px;
+      background: rgba(7,29,23,.9);
+      color: var(--gold-light);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .card-body { padding: 17px; }
+
+    .card h3 {
+      margin: 0 0 8px;
+      color: #eee2f3;
+      font: 600 20px "Playfair Display",Georgia,serif;
+    }
+
+    .card p {
+      min-height: 58px;
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.75;
+    }
+
+    .card-link {
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .directory-tools {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .result-count {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .university-card[hidden] { display: none; }
+
+    .empty-state {
+      padding: 28px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state[hidden] { display: none; }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      align-items: center;
+      gap: 45px;
+    }
+
+    .about-visual {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: #10372B;
+    }
+
+    .about-visual img {
+      width: 100%;
+      height: 380px;
+      object-fit: cover;
+    }
+
+    .body-copy {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.9;
+    }
+
+    .check-list {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin: 20px 0 25px;
+    }
+
+    .check-list span {
+      color: var(--lav);
+      font-size: 12px;
+    }
+
+    .check-list span:before {
+      content: "✦";
+      color: var(--gold);
+      margin-right: 8px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 15px;
+      counter-reset: step;
+    }
+
+    .step {
+      counter-increment: step;
+      padding: 21px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(23,70,56,.42);
+    }
+
+    .step:before {
+      content: "0" counter(step);
+      display: block;
+      margin-bottom: 13px;
+      color: var(--gold);
+      font: 600 24px "Playfair Display",Georgia,serif;
+    }
+
+    .step h3 {
+      margin: 0 0 8px;
+      color: var(--gold-light);
+      font: 600 18px "Playfair Display",Georgia,serif;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .faq-list { display: grid; gap: 10px; }
+
+    .faq {
+      padding: 17px 19px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(23,70,56,.45);
+    }
+
+    .faq[open] { background: rgba(23,70,56,.7); }
+
+    .faq summary {
+      color: var(--lav);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .faq p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .faq p a {
+      color: var(--gold-light);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .cta {
+      padding: 49px 0;
+      border-block: 1px solid var(--line);
+      background:
+        linear-gradient(100deg,rgba(7,29,23,.97),rgba(23,70,56,.91) 62%,rgba(18,92,61,.6)),
+        url('/assets/images/education/education-global.jpg') center/cover;
+    }
+
+    .cta-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .cta h2 {
+      margin: 8px 0;
+      font: 600 clamp(27px,3vw,38px) "Playfair Display",serif;
+    }
+
+    .cta p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer {
+      padding: 48px 0 0;
+      background: #04140F;
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.45fr repeat(4,minmax(0,1fr));
+      gap: 25px;
+      padding-bottom: 34px;
+    }
+
+    .footer-grid > div { min-width: 0; }
+
+    .footer-brand p {
+      max-width: 270px;
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    .footer h3 {
+      margin: 0 0 13px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid rgba(201,169,110,.2);
+      color: var(--gold-light);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-grid > div:not(:first-child) a {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .footer a:hover { color: var(--gold-light); }
+
+    .disclaimer {
+      padding: 13px 16px;
+      margin: 0 0 15px;
+      border-left: 2px solid var(--gold);
+      border-radius: 0 7px 7px 0;
+      background: rgba(23,70,56,.32);
+      color: #a79caf;
+      font-size: 10px;
+      line-height: 1.8;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 17px 0;
+      border-top: 1px solid rgba(201,169,110,.16);
+      color: #a79caf;
+      font-size: 10px;
+    }
+
+    .intro-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 42%,rgba(27,105,76,.35),transparent 42%),
+        linear-gradient(145deg,#071d17,#0A281F 58%,#04140F);
+      opacity: 1;
+      visibility: visible;
+      transition: opacity .75s ease,visibility .75s ease;
+    }
+
+    .intro-screen:before,
+    .intro-screen:after {
+      content: "";
+      position: absolute;
+      width: min(62vw,420px);
+      aspect-ratio: 1;
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: 50%;
+      animation: intro-orbit 2.6s ease-out both;
+    }
+
+    .intro-screen:after {
+      width: min(48vw,320px);
+      border-color: rgba(201,169,110,.32);
+      animation-delay: .12s;
+    }
+
+    .intro-screen.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .intro-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      animation: intro-rise .9s cubic-bezier(.2,.75,.25,1) both;
+    }
+
+    .intro-logo {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      margin-bottom: 17px;
+      filter: drop-shadow(0 0 22px rgba(201,169,110,.24));
+      animation: intro-logo-in 1.1s cubic-bezier(.2,.75,.25,1) both;
+    }
+
+    .intro-wordmark {
+      color: var(--gold-light);
+      font: 600 clamp(22px,4vw,31px)/1.2 "Playfair Display",Georgia,serif;
+      letter-spacing: .23em;
+      text-indent: .23em;
+    }
+
+    .intro-tagline {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: .24em;
+      text-indent: .24em;
+      text-transform: uppercase;
+      animation: intro-fade-in 1.2s .25s both;
+    }
+
+    .intro-rule {
+      width: 0;
+      height: 1px;
+      margin-top: 22px;
+      background: linear-gradient(90deg,transparent,var(--gold),transparent);
+      animation: intro-rule-in .8s .35s ease-out forwards;
+    }
+
+    @keyframes intro-orbit {
+      from { transform: scale(.72) rotate(-25deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @keyframes intro-rise {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes intro-logo-in {
+      from { transform: scale(.72); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes intro-fade-in {
+      from { opacity: 0; letter-spacing: .42em; }
+      to { opacity: 1; letter-spacing: .24em; }
+    }
+
+    @keyframes intro-rule-in {
+      to { width: 150px; }
+    }
+
+    @media(max-width:1100px) {
+      .menu-toggle { display: inline-flex; }
+
+      .nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
+        padding: 15px 22px 20px;
+        background: #09251C;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav.open { display: flex; }
+
+      .nav > a,
+      .nav-trigger {
+        display: block;
+        width: 100%;
+        padding: 11px 8px;
+        text-align: left;
+      }
+
+      .nav-group { width: 100%; }
+
+      .dropdown {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+        margin-bottom: 5px;
+      }
+
+      .nav-cta { width: 100%; }
+      .hero-grid { gap: 28px; }
+      .footer-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .footer-brand { grid-column: 1/-1; }
+    }
+
+    @media(max-width:760px) {
+      .container { width: calc(100% - 28px); }
+
+      .announcement {
+        font-size: 8px;
+        letter-spacing: .06em;
+        gap: 7px;
+      }
+
+      .nav-wrap { min-height: 70px; }
+      .brand img { width: 41px; height: 41px; }
+      .brand strong { font-size: 14px; }
+      .brand small { font-size: 7px; }
+      .hero { padding: 48px 0; }
+      .hero-grid,.about-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: clamp(38px,10vw,54px); }
+
+      .hero-visual,
+      .hero-visual img {
+        height: 270px;
+        min-height: 270px;
+      }
+
+      .pillars { grid-template-columns: repeat(2,1fr); }
+      .pillar { border-bottom: 1px solid var(--line); }
+      .pillar:nth-child(2) { border-right: 0; }
+      .pillar:nth-child(n+3) { border-bottom: 0; }
+
+      .search-form { grid-template-columns: 1fr; }
+      .section { padding: 52px 0; }
+
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .cards { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+      .card-media img { height: 135px; }
+      .card-body { padding: 12px; }
+      .card h3 { font-size: 16px; }
+      .card p { min-height: 70px; font-size: 10px; }
+      .directory-tools { grid-template-columns: 1fr; }
+      .about-visual img { height: 270px; }
+      .check-list { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+      .cta-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 22px 16px;
+      }
+
+      .footer-brand { grid-column: 1/-1; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media(max-width:390px) {
+      .cards,.footer-grid,.steps { grid-template-columns: 1fr; }
+      .card-media img { height: 190px; }
+      .card p { min-height: 0; }
+      .hero-actions .btn { width: 100%; }
+      .brand small { letter-spacing: .07em; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+
+      *,*:before,*:after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+
+      .intro-screen,
+      .intro-screen:before,
+      .intro-screen:after,
+      .intro-content,
+      .intro-logo,
+      .intro-tagline,
+      .intro-rule {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .intro-rule { width: 150px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="intro-screen" id="introScreen" role="status" aria-label="Loading MedOrbits">
+    <div class="intro-content">
+      <img class="intro-logo" src="/assets/images/logo/medorbits-logo.png" alt="" width="76" height="76">
+      <div class="intro-wordmark">MEDORBITS</div>
+      <div class="intro-tagline">Study · Career · Consultancy</div>
+      <div class="intro-rule" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="announcement">
+    <span>Explore deemed-to-be universities</span>
+    <span class="spark" aria-hidden="true">✦</span>
+    <span>Recognition · Programmes · Admissions</span>
+  </div>
+
+  <header class="header" id="siteHeader">
+    <div class="container nav-wrap">
+      <a class="brand" href="/index.html" aria-label="MedOrbits home">
+        <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="48" height="48">
+        <span>
+          <strong>MEDORBITS</strong>
+          <small>Study · Career · Consultancy</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav">
+        ☰ MENU
+      </button>
+
+      <nav class="nav" id="mainNav" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Education <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/index.html">Education hub</a>
+            <a href="/education/courses.html">Courses</a>
+            <a href="/education/colleges.html">Colleges</a>
+            <a href="/education/universities.html">Universities</a>
+            <a href="/education/government-universities.html">Government universities</a>
+            <a href="/education/private-universities.html">Private universities</a>
+            <a href="/education/deemed-universities.html" aria-current="page">Deemed universities</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Admissions <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/admissions/index.html">Admission guidance</a>
+            <a href="/education/admissions/eligibility.html">Eligibility</a>
+            <a href="/education/admissions/exams.html">Entrance exams</a>
+            <a href="/education/admissions/counselling.html">Counselling</a>
+            <a href="/education/admissions/documents.html">Documents checklist</a>
+            <a href="/education/resources/fees.html">Fees &amp; funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Resources <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/education/resources/">Resource centre</a>
+            <a href="/education/resources/faqs.html">FAQs</a>
+            <a href="/education/resources/hostels.html">Hostels &amp; accommodation</a>
+            <a href="/education/resources/fees.html">Fees &amp; funding</a>
+            <a href="/education/resources/scholarships.html">Scholarships</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-trigger" type="button" aria-expanded="false">
+            Careers <span aria-hidden="true">⌄</span>
+          </button>
+          <div class="dropdown">
+            <a href="/career/index.html">Career hub</a>
+            <a href="/career/jobs.html">Find jobs</a>
+            <a href="/career/internships.html">Internships</a>
+            <a href="/career/resume-support.html">Resume support</a>
+            <a href="/career/recruitment.html">Recruitment services</a>
+          </div>
+        </div>
+
+        <a href="/pages/about.html">About</a>
+        <a href="/pages/contact.html">Contact</a>
+        <a class="nav-cta" href="/pages/apply.html">Get Guidance ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="deemed-universities-home">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">Higher education in India</span>
+          <h1>Explore deemed universities.<br>Understand recognition.<br><em>Choose with care.</em></h1>
+          <p class="hero-copy">
+            Learn what deemed-to-be university status means, how to verify
+            institutional recognition and what to compare before choosing a
+            programme. Use official sources to confirm current recognition,
+            eligibility, fees and admission requirements.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="#university-directory">Explore the Directory ↗</a>
+            <a class="btn btn-outline" href="#recognition">Understand Recognition →</a>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <img
+            src="/assets/images/hero/hero-home.png"
+            alt="Students exploring higher education opportunities"
+            fetchpriority="high"
+            width="900"
+            height="700">
+          <span class="visual-stamp">Research · Verify · Compare</span>
+          <div class="visual-caption">
+            <strong>Start with verified information.</strong>
+            <span>Review institutional status and programme-specific requirements.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pillars" aria-label="Deemed university research topics">
+      <div class="pillar">
+        <strong>Recognition</strong>
+        <span>Check official status</span>
+      </div>
+      <div class="pillar">
+        <strong>Programmes</strong>
+        <span>Review course offerings</span>
+      </div>
+      <div class="pillar">
+        <strong>Admissions</strong>
+        <span>Understand entry criteria</span>
+      </div>
+      <div class="pillar">
+        <strong>Planning</strong>
+        <span>Compare costs and location</span>
+      </div>
+    </section>
+
+    <section class="search-band" aria-label="Search deemed university resources">
+      <div class="container">
+        <form class="search-form" id="universitySearchForm" action="/education/deemed-universities.html" method="get">
+          <input
+            class="field"
+            id="universitySearch"
+            type="search"
+            name="q"
+            placeholder="Search university or subject"
+            aria-label="Search universities or subjects"
+            autocomplete="off">
+
+          <select class="field" id="stateFilter" name="state" aria-label="Filter by state">
+            <option value="">All states</option>
+            <option value="andhra pradesh">Andhra Pradesh</option>
+            <option value="delhi">Delhi</option>
+            <option value="gujarat">Gujarat</option>
+            <option value="haryana">Haryana</option>
+            <option value="karnataka">Karnataka</option>
+            <option value="maharashtra">Maharashtra</option>
+            <option value="tamil nadu">Tamil Nadu</option>
+            <option value="uttar pradesh">Uttar Pradesh</option>
+          </select>
+
+          <select class="field" id="fieldFilter" name="field" aria-label="Filter by study field">
+            <option value="">All study fields</option>
+            <option value="medical">Medical &amp; health sciences</option>
+            <option value="engineering">Engineering &amp; technology</option>
+            <option value="management">Management</option>
+            <option value="arts">Arts &amp; humanities</option>
+            <option value="science">Science &amp; research</option>
+            <option value="law">Law</option>
+            <option value="multidisciplinary">Multidisciplinary</option>
+          </select>
+
+          <button class="btn" type="submit">Search →</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="university-directory">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Deemed-to-be universities</span>
+            <h2>Explore the <span>university landscape</span></h2>
+            <p>
+              Start with the institutions and categories below, then confirm
+              current status and course availability through official
+              university and regulatory sources.
+            </p>
+          </div>
+          <a class="text-link" href="/education/universities.html">All universities →</a>
+        </div>
+
+        <div class="notice">
+          <strong>Important:</strong> Deemed-to-be university status is a
+          formal recognition under applicable Indian law. This page is an
+          educational guide, not a live official register. Institution status,
+          approved programmes and admission rules can change; verify each
+          detail with the UGC and the relevant regulator before applying.
+        </div>
+
+        <div class="directory-tools">
+          <input
+            class="field"
+            id="directorySearch"
+            type="search"
+            placeholder="Filter the example institution list..."
+            aria-label="Filter institutions shown on this page"
+            autocomplete="off">
+          <span class="result-count" id="resultCount" aria-live="polite">Example institutions</span>
+        </div>
+
+        <div class="cards" id="universityCards">
+          <article class="card university-card" data-state="tamil nadu" data-field="medical science research" data-search="aiims-like medical research education saveetha institute of medical and technical sciences chennai tamil nadu health sciences">
+            <div class="card-media">
+              <img src="/assets/images/education/medical-education.jpg" alt="Medical education and research" loading="lazy" width="800" height="500">
+              <span class="tag">Tamil Nadu</span>
+            </div>
+            <div class="card-body">
+              <h3>Saveetha Institute of Medical and Technical Sciences</h3>
+              <p>Research institution-specific information, programme offerings and current admission criteria through official sources.</p>
+              <a class="card-link" href="https://www.saveetha.com/" target="_blank" rel="noopener noreferrer">Official website ↗</a>
+            </div>
+          </article>
+
+          <article class="card university-card" data-state="tamil nadu" data-field="medical science research" data-search="sri ramachandra institute higher education research chennai tamil nadu medical health sciences">
+            <div class="card-media">
+              <img src="/assets/images/education/medical-education.jpg" alt="Healthcare education and research facilities" loading="lazy" width="800" height="500">
+              <span class="tag">Tamil Nadu</span>
+            </div>
+            <div class="card-body">
+              <h3>Sri Ramachandra Institute of Higher Education and Research</h3>
+              <p>Review official details for health sciences, academic programmes and institution-specific admission processes.</p>
+              <a class="card-link" href="https://www.sriramachandra.edu.in/" target="_blank" rel="noopener noreferrer">Official website ↗</a>
+            </div>
+          </article>
+
+          <article class="card university-card" data-state="maharashtra" data-field="medical science research" data-search="deemed medical university datta meghe institute higher education research wardha maharashtra">
+            <div class="card-media">
+              <img src="/assets/images/education/medical-education.jpg" alt="Medical sciences students in an academic setting" loading="lazy" width="800" height="500">
+              <span class="tag">Maharashtra</span>
+            </div>
+            <div class="card-body">
+              <h3>Datta Meghe Institute of Higher Education and Research</h3>
+              <p>Consult official university information to assess available programmes, entry criteria and fees.</p>
+              <a class="card-link" href="https://www.dmiher.edu.in/" target="_blank" rel="noopener noreferrer">Official website ↗</a>
+            </div>
+          </article>
+
+          <article class="card university-card" data-state="karnataka" data-field="medical science research" data-search="jss academy higher education research mysuru karnataka health sciences">
+            <div class="card-media">
+              <img src="/assets/images/education/medical-education.jpg" alt="University-level medical education" loading="lazy" width="800" height="500">
+              <span class="tag">Karnataka</span>
+            </div>
+            <div class="card-body">
+              <h3>JSS Academy of Higher Education and Research</h3>
+              <p>Explore institution-published information about academic programmes and admissions.</p>
+              <a class="card-link" href="https://jssuni.edu.in/" target="_blank" rel="noopener noreferrer">Official website ↗</a>
+            </div>
+          </article>
+
+          <article class="card university-card" data-state="haryana" data-field="medical science research" data-search="manav rachna international institute research multidisciplinary engineering faridabad haryana">
+            <div class="card-media">
+              <img src="/assets/images/education/engineering-education.jpg" alt="Engineering and technology education" loading="lazy" width="800" height="500">
+              <span class="tag">Haryana</span>
+            </div>
+            <div class="card-body">
+              <h3>Manav Rachna International Institute of Research and Studies</h3>
+              <p>Check official programme details, campus information and the applicable admission process.</p>
+              <a class="card-link" href="https://manavrachna.edu.in/" target="_blank" rel="noopener noreferrer">Official website ↗</a>
+            </div>
+          </article>
+
+          <article class="card university-card" data-state="gujarat" data-field="management multidisciplinary" data-search="nirma university deemed university status verify official gujarat management engineering">
+            <div class="card-media">
+              <img src="/assets/images/education/management-education.jpg" alt="Management education and university learning" loading="lazy" width="800" height="500">
+              <span class="tag">Verify status</span>
+            </div>
+            <div class="card-body">
+              <h3>Institutional Status Verification</h3>
+              <p>Do not infer deemed status from an institution's name. Check its current legal category against the official UGC records.</p>
+              <a class="card-link" href="https://www.ugc.gov.in/" target="_blank" rel="noopener noreferrer">Check UGC information ↗</a>
+            </div>
+          </article>
+        </div>
+
+        <p class="empty-state" id="emptyState" hidden>
+          No matching example cards were found. Try a different keyword or
+          filter. This page is not a complete official university register.
+        </p>
+
+        <p class="body-copy" style="margin-top:20px">
+          The examples on this page are starting points for research, not an
+          exhaustive or ranked list. Verify current deemed-to-be university
+          status, campus details and programme-specific recognition directly
+          through the University Grants Commission and other applicable
+          official authorities.
+        </p>
+      </div>
+    </section>
+
+    <section class="section alt" id="recognition">
+      <div class="container about-grid">
+        <div class="about-visual">
+          <img src="/assets/images/hero/hero-home.png" alt="Students researching university recognition and academic programmes" loading="lazy" width="900" height="700">
+        </div>
+
+        <div>
+          <span class="kicker">Understand the designation</span>
+          <h2 class="about-title">What does <span>deemed-to-be university</span> mean?</h2>
+          <p class="body-copy">
+            Under Section 3 of India's University Grants Commission Act, 1956,
+            the Central Government may, on the advice of the UGC, declare an
+            institution of higher education to be a deemed-to-be university.
+            The designation has a specific legal meaning and should be
+            distinguished from other university categories.
+          </p>
+          <p class="body-copy">
+            The designation alone does not establish that every programme,
+            campus or professional qualification meets every regulatory
+            requirement. Check the specific programme and applicable
+            professional regulator where relevant.
+          </p>
+
+          <div class="check-list">
+            <span>Confirm current UGC status</span>
+            <span>Check the exact institution name</span>
+            <span>Verify campus and programme</span>
+            <span>Review professional approvals</span>
+            <span>Read the current prospectus</span>
+            <span>Confirm fees and deadlines</span>
+          </div>
+
+          <div class="hero-actions">
+            <a class="btn" href="https://www.ugc.gov.in/" target="_blank" rel="noopener noreferrer">Visit UGC ↗</a>
+            <a class="btn btn-outline" href="/education/admissions/eligibility.html">Admission Eligibility</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="selection-process">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">A practical checklist</span>
+            <h2>How to evaluate a <span>deemed university</span></h2>
+            <p>Follow these steps before submitting an application or making a payment.</p>
+          </div>
+        </div>
+
+        <div class="steps">
+          <article class="step">
+            <h3>Verify status</h3>
+            <p>Check the institution's current status in the relevant official UGC information.</p>
+          </article>
+          <article class="step">
+            <h3>Review the programme</h3>
+            <p>Confirm the exact course, campus, duration, eligibility and relevant professional approvals.</p>
+          </article>
+          <article class="step">
+            <h3>Compare the costs</h3>
+            <p>Review tuition, deposits, examination charges, accommodation and other expenses.</p>
+          </article>
+          <article class="step">
+            <h3>Apply through official channels</h3>
+            <p>Use the institution's official admissions process and keep application and payment records.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="related-resources">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Continue your research</span>
+            <h2>Related education <span>resources</span></h2>
+            <p>Use the relevant MedOrbits pages to plan your shortlist and prepare for admission.</p>
+          </div>
+        </div>
+
+        <div class="cards">
+          <a class="card" href="/education/universities.html">
+            <div class="card-media">
+              <img src="/assets/images/education/engineering-education.jpg" alt="University education" loading="lazy" width="800" height="500">
+              <span class="tag">Directory</span>
+            </div>
+            <div class="card-body">
+              <h3>All Universities</h3>
+              <p>Explore the wider university directory and compare institution categories.</p>
+              <span class="card-link">Explore universities ↗</span>
+            </div>
+          </a>
+
+          <a class="card" href="/education/private-universities.html">
+            <div class="card-media">
+              <img src="/assets/images/education/management-education.jpg" alt="Higher education students" loading="lazy" width="800" height="500">
+              <span class="tag">Comparison</span>
+            </div>
+            <div class="card-body">
+              <h3>Private Universities</h3>
+              <p>Learn how to research private universities and verify institutional status.</p>
+              <span class="card-link">Explore private universities ↗</span>
+            </div>
+          </a>
+
+          <a class="card" href="/education/admissions/index.html">
+            <div class="card-media">
+              <img src="/assets/images/education/dental-education.jpg" alt="Student admission preparation" loading="lazy" width="800" height="500">
+              <span class="tag">Admissions</span>
+            </div>
+            <div class="card-body">
+              <h3>Admission Guidance</h3>
+              <p>Review eligibility, entrance exams, counselling and document preparation.</p>
+              <span class="card-link">View admission resources ↗</span>
+            </div>
+          </a>
+
+          <a class="card" href="/education/courses.html">
+            <div class="card-media">
+              <img src="/assets/images/education/engineering-education.jpg" alt="Students exploring course options" loading="lazy" width="800" height="500">
+              <span class="tag">Programmes</span>
+            </div>
+            <div class="card-body">
+              <h3>Courses</h3>
+              <p>Explore fields of study and identify programmes to investigate further.</p>
+              <span class="card-link">Browse courses ↗</span>
+            </div>
+          </a>
+
+          <a class="card" href="/education/resources/fees.html">
+            <div class="card-media">
+              <img src="/assets/images/education/management-education.jpg" alt="Student planning education costs" loading="lazy" width="800" height="500">
+              <span class="tag">Planning</span>
+            </div>
+            <div class="card-body">
+              <h3>Fees &amp; Funding</h3>
+              <p>Prepare a budget and understand which costs need confirmation.</p>
+              <span class="card-link">Review fees ↗</span>
+            </div>
+          </a>
+
+          <a class="card" href="/education/resources/faqs.html">
+            <div class="card-media">
+              <img src="/assets/images/hero/hero-home.png" alt="Student reviewing education information" loading="lazy" width="800" height="500">
+              <span class="tag">Help centre</span>
+            </div>
+            <div class="card-body">
+              <h3>Education FAQs</h3>
+              <p>Find answers to common questions about admissions and student resources.</p>
+              <span class="card-link">Read FAQs ↗</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container cta-inner">
+        <div>
+          <span class="kicker">Make an informed decision</span>
+          <h2>Planning your university shortlist?</h2>
+          <p>Start with your intended course, budget and preferred location.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="btn" href="/pages/apply.html">Request Guidance →</a>
+          <a class="btn btn-outline" href="/pages/contact.html">Contact MedOrbits</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faqs">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Frequently asked questions</span>
+            <h2>Deemed university <span>FAQs</span></h2>
+          </div>
+          <a class="text-link" href="/education/resources/faqs.html">All education FAQs →</a>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq">
+            <summary>What is a deemed-to-be university?</summary>
+            <p>
+              It is an institution declared to be a deemed-to-be university
+              under Section 3 of the UGC Act, 1956. Check official UGC
+              information for the current status of a specific institution.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Are deemed-to-be universities the same as private universities?</summary>
+            <p>
+              They are distinct legal categories. Do not infer an institution's
+              category from its ownership or name; verify its current status
+              through official records.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Are all programmes at a deemed university automatically approved?</summary>
+            <p>
+              Do not assume that institutional status alone confirms every
+              programme's professional approval or recognition. Check the
+              specific course, campus and applicable regulator.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>How can I check whether a deemed university is recognized?</summary>
+            <p>
+              Begin with the official
+              <a href="https://www.ugc.gov.in/" target="_blank" rel="noopener noreferrer">University Grants Commission website</a>.
+              Then check any applicable professional regulator and the
+              institution's official programme information.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Where can I find admission requirements?</summary>
+            <p>
+              Review the current prospectus and admissions pages of the
+              institution. You can also explore the MedOrbits
+              <a href="/education/admissions/index.html">admission guidance page</a>
+              for general preparation resources.
+            </p>
+          </details>
+
+          <details class="faq">
+            <summary>Does MedOrbits guarantee admission to a deemed university?</summary>
+            <p>
+              No. Information and guidance can support research and
+              preparation but cannot guarantee admission, recognition,
+              scholarships, employment or any other outcome.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/index.html" aria-label="MedOrbits home">
+            <img src="/assets/images/logo/medorbits-logo.png" alt="MedOrbits logo" width="48" height="48" loading="lazy">
+            <span>
+              <strong>MEDORBITS</strong>
+              <small>Study · Career · Consultancy</small>
+            </span>
+          </a>
+          <p>Explore education pathways, admission resources and career opportunities with MedOrbits.</p>
+        </div>
+
+        <div>
+          <h3>Education</h3>
+          <a href="/education/courses.html">Courses</a>
+          <a href="/education/colleges.html">Colleges</a>
+          <a href="/education/universities.html">Universities</a>
+          <a href="/education/government-universities.html">Government universities</a>
+          <a href="/education/private-universities.html">Private universities</a>
+          <a href="/education/deemed-universities.html" aria-current="page">Deemed universities</a>
+          <a href="/education/study-abroad/index.html">Study Abroad</a>
+        </div>
+
+        <div>
+          <h3>Admissions</h3>
+          <a href="/education/admissions/index.html">Admission guidance</a>
+          <a href="/education/admissions/eligibility.html">Eligibility</a>
+          <a href="/education/admissions/exams.html">Entrance Exams</a>
+          <a href="/education/admissions/counselling.html">Counselling</a>
+          <a href="/education/admissions/documents.html">Documents</a>
+        </div>
+
+        <div>
+          <h3>Student Resources</h3>
+          <a href="/education/resources/">Resource Centre</a>
+          <a href="/education/resources/faqs.html">FAQs</a>
+          <a href="/education/resources/fees.html">Fees &amp; Funding</a>
+          <a href="/education/resources/scholarships.html">Scholarships</a>
+          <a href="/education/resources/hostels.html">Hostels</a>
+        </div>
+
+        <div>
+          <h3>MedOrbits</h3>
+          <a href="/pages/about.html">About Us</a>
+          <a href="/pages/services.html">Services</a>
+          <a href="/pages/contact.html">Contact</a>
+          <a href="/pages/apply.html">Request Guidance</a>
+          <a href="/legal/privacy-policy.html">Privacy Policy</a>
+          <a href="/legal/terms.html">Terms &amp; Conditions</a>
+          <a href="/legal/refund-policy.html">Refund Policy</a>
+          <a href="/legal/disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        This page provides general educational information and is not an
+        official university register or regulatory determination. Institution
+        status, programme recognition, professional approvals, eligibility,
+        fees, deadlines and admission outcomes may change. Verify all
+        important details directly with the University Grants Commission,
+        relevant professional regulators and the institution before applying.
+        MedOrbits does not guarantee admission or any specific outcome.
+      </p>
+
+      <div class="footer-bottom">
+        <span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span>
+        <span>STUDY · WORK · GROW</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const introScreen = document.getElementById("introScreen");
+      const header = document.getElementById("siteHeader");
+      const menuToggle = document.getElementById("menuToggle");
+      const nav = document.getElementById("mainNav");
+      const navGroups = [...document.querySelectorAll(".nav-group")];
+      const currentYear = document.getElementById("currentYear");
+
+      const searchForm = document.getElementById("universitySearchForm");
+      const searchInput = document.getElementById("universitySearch");
+      const stateFilter = document.getElementById("stateFilter");
+      const fieldFilter = document.getElementById("fieldFilter");
+      const directorySearch = document.getElementById("directorySearch");
+      const universityCards = [...document.querySelectorAll(".university-card")];
+      const resultCount = document.getElementById("resultCount");
+      const emptyState = document.getElementById("emptyState");
+
+      if (currentYear) {
+        currentYear.textContent = String(new Date().getFullYear());
+      }
+
+      if (introScreen) {
+        const reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
+
+        const hideIntro = () => introScreen.classList.add("is-hidden");
+
+        window.setTimeout(hideIntro, reducedMotion ? 0 : 1800);
+
+        introScreen.addEventListener("transitionend", event => {
+          if (
+            event.target === introScreen &&
+            introScreen.classList.contains("is-hidden")
+          ) {
+            introScreen.remove();
+          }
+        });
+
+        window.setTimeout(
+          () => introScreen.remove(),
+          reducedMotion ? 100 : 2600
+        );
+      }
+
+      function closeGroups() {
+        navGroups.forEach(group => {
+          group.classList.remove("open");
+          group.querySelector(".nav-trigger")
+            ?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function closeMenu() {
+        nav?.classList.remove("open");
+        menuToggle?.setAttribute("aria-expanded", "false");
+
+        if (menuToggle) {
+          menuToggle.textContent = "☰ MENU";
+        }
+
+        closeGroups();
+      }
+
+      menuToggle?.addEventListener("click", () => {
+        const isOpen = nav?.classList.toggle("open") ?? false;
+
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+        menuToggle.textContent = isOpen ? "× CLOSE" : "☰ MENU";
+
+        if (!isOpen) closeGroups();
+      });
+
+      navGroups.forEach(group => {
+        const trigger = group.querySelector(".nav-trigger");
+
+        trigger?.addEventListener("click", event => {
+          event.stopPropagation();
+
+          const shouldOpen = !group.classList.contains("open");
+          closeGroups();
+
+          if (shouldOpen) {
+            group.classList.add("open");
+            trigger.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      nav?.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("click", event => {
+        if (!(event.target instanceof Element)) return;
+
+        if (!event.target.closest(".nav-group")) {
+          closeGroups();
+        }
+
+        if (
+          nav?.classList.contains("open") &&
+          !event.target.closest("#mainNav") &&
+          !event.target.closest("#menuToggle")
+        ) {
+          closeMenu();
+        }
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeMenu();
+          menuToggle?.focus();
+        }
+      });
+
+      function updateHeader() {
+        header?.classList.toggle("scrolled", window.scrollY > 20);
+      }
+
+      window.addEventListener("scroll", updateHeader, { passive: true });
+      updateHeader();
+
+      window.matchMedia("(min-width: 1101px)").addEventListener?.("change", event => {
+        if (event.matches) closeMenu();
+      });
+
+      function normalize(value) {
+        return String(value || "").trim().toLowerCase();
+      }
+
+      function filterUniversities() {
+        const query = normalize(
+          directorySearch?.value || searchInput?.value || ""
+        );
+        const state = normalize(stateFilter?.value);
+        const field = normalize(fieldFilter?.value);
+        let visible = 0;
+
+        universityCards.forEach(card => {
+          const text = normalize(card.textContent);
+          const searchData = normalize(card.dataset.search);
+          const cardState = normalize(card.dataset.state);
+          const cardFields = normalize(card.dataset.field);
+
+          const matchesQuery = !query ||
+            text.includes(query) ||
+            searchData.includes(query);
+
+          const matchesState = !state || cardState.includes(state);
+          const matchesField = !field || cardFields.includes(field);
+
+          const matches = matchesQuery && matchesState && matchesField;
+          card.hidden = !matches;
+
+          if (matches) visible++;
+        });
+
+        if (resultCount) {
+          resultCount.textContent =
+            `${visible} matching example ${visible === 1 ? "card" : "cards"}`;
+        }
+
+        if (emptyState) {
+          emptyState.hidden = visible !== 0;
+        }
+      }
+
+      [searchInput, directorySearch].filter(Boolean).forEach(input => {
+        input.addEventListener("input", () => {
+          const value = input.value;
+
+          [searchInput, directorySearch].filter(Boolean).forEach(other => {
+            if (other !== input) other.value = value;
+          });
+
+          filterUniversities();
+        });
+      });
+
+      [stateFilter, fieldFilter].filter(Boolean).forEach(select => {
+        select.addEventListener("change", filterUniversities);
+      });
+
+      searchForm?.addEventListener("submit", event => {
+        event.preventDefault();
+
+        if (directorySearch && searchInput) {
+          directorySearch.value = searchInput.value;
+        }
+
+        filterUniversities();
+
+        document.getElementById("university-directory")?.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+          block: "start"
+        });
+      });
+
+      document.querySelectorAll('img[src^="/assets/images/"]').forEach(img => {
+        img.addEventListener("error", function () {
+          if (this.dataset.fallbackUsed === "true") return;
+
+          this.dataset.fallbackUsed = "true";
+          this.src = "/assets/images/placeholders/image-placeholder.svg";
+        });
+      });
+
+      filterUniversities();
+    })();
+  </script>
+
+  <script defer src="/assets/js/constants.js"></script>
+  <script defer src="/assets/js/config.js"></script>
+  <script defer src="/assets/js/utils.js"></script>
+  <script defer src="/assets/js/navigation.js"></script>
+  <script defer src="/assets/js/search.js"></script>
+  <script defer src="/assets/js/animations.js"></script>
+  <script defer src="/assets/js/app.js"></script>
+  <script defer src="/assets/js/public-data.js"></script>
+  <script defer src="/assets/js/site-search-bar.js"></script>
+</body>
+</html>

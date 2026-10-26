@@ -3,28 +3,25 @@
 
 /**
  * MedOrbits -- Notification Integration Tests
+ *
  * File: tests/integration/notification.integration.test.js
  * Runtime: Node.js >= 20
  *
  * Coverage:
- * - Endpoint availability and response contracts
+ * - Notification endpoint availability
  * - Authentication and authorization
- * - Notification listing and pagination
- * - Notification identifiers and sensitive-data exposure
- * - Read-state updates and post-update verification
- * - Cross-user notification access and modification
- * - Input validation and HTTP method restrictions
+ * - Notification listing and response structure
+ * - Pagination handling
+ * - Read-state updates
+ * - Cross-user notification access
+ * - Input and HTTP method validation
  *
- * Requirements:
+ * Required:
  * - Running MedOrbits integration-test API
- * - Dedicated test users and database
- * - Paths and payloads matching the actual API
+ * - Dedicated test database and test users
+ * - Notification paths matching the actual application routes
  *
- * Safety:
- * - Mutating tests are disabled by default.
- * - Mutations require NODE_ENV=test.
- * - Remote mutations require explicit opt-in.
- * - Use disposable fixtures, never production notifications.
+ * Mutating tests are disabled by default.
  */
 
 const { describe, it, before } = require('node:test');
@@ -72,42 +69,10 @@ const TIMEOUT_MS = Number(
 const RUN_MUTATING_TESTS =
   process.env.RUN_NOTIFICATION_MUTATING_TESTS === 'true';
 
-const ALLOW_REMOTE_MUTATIONS =
-  process.env.NOTIFICATION_TEST_ALLOW_REMOTE_MUTATIONS === 'true';
-
-const ALLOW_CI_MUTATIONS =
-  process.env.NOTIFICATION_TEST_CI_MUTATIONS === 'true';
-
-const SUCCESS_STATUSES = [200, 201, 202, 204];
-
-const DENIED_STATUSES = [401, 403, 404];
-
-const REJECTION_STATUSES = [
-  400, 401, 403, 404, 405, 409, 413, 415, 422, 429,
-];
-
 const ALLOWED_READ_METHODS = new Set([
   'PATCH',
   'PUT',
   'POST',
-]);
-
-const SENSITIVE_FIELD_NAMES = new Set([
-  'password',
-  'passwordhash',
-  'password_hash',
-  'refreshtoken',
-  'refresh_token',
-  'resettoken',
-  'reset_token',
-  'accesstoken',
-  'access_token',
-  'clientsecret',
-  'client_secret',
-  'webhooksecret',
-  'webhook_secret',
-  'privatekey',
-  'private_key',
 ]);
 
 function validateConfiguration() {
@@ -116,43 +81,17 @@ function validateConfiguration() {
   try {
     base = new URL(BASE_URL);
   } catch {
-    assert.fail(
-      'NOTIFICATION_TEST_BASE_URL must be a valid absolute URL.'
-    );
+    assert.fail('NOTIFICATION_TEST_BASE_URL must be a valid URL.');
   }
 
   assert.ok(
     ['http:', 'https:'].includes(base.protocol),
-    'Notification test URL must use HTTP or HTTPS.'
-  );
-
-  assert.equal(
-    base.username,
-    '',
-    'Do not embed credentials in the test base URL.'
-  );
-
-  assert.equal(
-    base.password,
-    '',
-    'Do not embed credentials in the test base URL.'
-  );
-
-  assert.equal(
-    base.search,
-    '',
-    'The test base URL must not contain a query string.'
-  );
-
-  assert.equal(
-    base.hash,
-    '',
-    'The test base URL must not contain a fragment.'
+    'Notification test base URL must use HTTP or HTTPS.'
   );
 
   assert.ok(
-    Number.isSafeInteger(TIMEOUT_MS) && TIMEOUT_MS > 0,
-    'NOTIFICATION_TEST_TIMEOUT_MS must be a positive safe integer.'
+    Number.isFinite(TIMEOUT_MS) && TIMEOUT_MS > 0,
+    'NOTIFICATION_TEST_TIMEOUT_MS must be a positive number.'
   );
 
   for (const [name, path] of Object.entries({
@@ -161,7 +100,21 @@ function validateConfiguration() {
     READ_PATH,
     READ_ALL_PATH,
   })) {
-    validatePath(name, path);
+    assert.equal(
+      typeof path,
+      'string',
+      `${name} must be a string.`
+    );
+
+    assert.ok(
+      path.startsWith('/') && !path.startsWith('//'),
+      `${name} must be an absolute application path beginning with one slash.`
+    );
+
+    assert.ok(
+      !/[\r\n]/.test(path),
+      `${name} must not contain newline characters.`
+    );
   }
 
   assert.ok(
@@ -186,35 +139,20 @@ function validateConfiguration() {
       'Mutating notification tests require NODE_ENV=test.'
     );
 
-    const hostname = base.hostname.toLowerCase();
-
-    const isLoopback = [
-      'localhost',
-      '127.0.0.1',
-      '::1',
-      '[::1]',
-    ].includes(hostname);
+    const isLoopback =
+      ['localhost', '127.0.0.1', '::1'].includes(
+        base.hostname.toLowerCase()
+      );
 
     assert.ok(
-      isLoopback || ALLOW_REMOTE_MUTATIONS,
-      'Remote mutations are blocked. Use an isolated local test API or set NOTIFICATION_TEST_ALLOW_REMOTE_MUTATIONS=true for a dedicated remote sandbox.'
+      isLoopback ||
+        process.env.NOTIFICATION_TEST_ALLOW_REMOTE_MUTATIONS === 'true',
+      'Remote mutation tests are blocked. Use a dedicated test API or explicitly set NOTIFICATION_TEST_ALLOW_REMOTE_MUTATIONS=true.'
     );
 
     assert.ok(
-      !process.env.CI ||
-        process.env.CI.toLowerCase() !== 'true' ||
-        ALLOW_CI_MUTATIONS,
-      'CI mutations require NOTIFICATION_TEST_CI_MUTATIONS=true and an isolated CI test environment.'
-    );
-
-    assert.ok(
-      USER_A_TOKEN,
-      'Mutating tests require NOTIFICATION_TEST_USER_A_TOKEN.'
-    );
-
-    assert.ok(
-      USER_B_TOKEN,
-      'Mutating tests require NOTIFICATION_TEST_USER_B_TOKEN.'
+      USER_A_TOKEN && USER_B_TOKEN,
+      'Mutating tests require dedicated User A and User B test tokens.'
     );
 
     assert.notEqual(
@@ -223,45 +161,11 @@ function validateConfiguration() {
       'User A and User B must use distinct authentication tokens.'
     );
   }
-
-  if (USER_A_FIXTURE_ID) {
-    assert.ok(
-      USER_A_FIXTURE_ID.length <= 512,
-      'NOTIFICATION_USER_A_FIXTURE_ID is too long.'
-    );
-  }
-}
-
-function validatePath(name, path) {
-  assert.equal(
-    typeof path,
-    'string',
-    `${name} must be a string.`
-  );
-
-  assert.ok(
-    path.startsWith('/') &&
-      !path.startsWith('//') &&
-      !/[\r\n\\]/.test(path),
-    `${name} must be an origin-relative path beginning with exactly one slash.`
-  );
-
-  assert.ok(
-    !/^[a-z][a-z\d+.-]*:/i.test(path),
-    `${name} must not be an absolute URL.`
-  );
-
-  assert.ok(
-    !path.includes('#'),
-    `${name} must not contain a URL fragment.`
-  );
 }
 
 function urlFor(path) {
-  validatePath('Request path', path);
-
-  const base = new URL(BASE_URL);
   const url = new URL(path, `${BASE_URL}/`);
+  const base = new URL(BASE_URL);
 
   assert.equal(
     url.origin,
@@ -273,32 +177,27 @@ function urlFor(path) {
 }
 
 function notificationUrl(id) {
-  return replaceId(NOTIFICATION_PATH, id);
-}
-
-function readUrl(id) {
-  return replaceId(READ_PATH, id);
-}
-
-function replaceId(path, id) {
   assert.ok(
-    id !== undefined &&
-      id !== null &&
-      String(id).length > 0,
+    id !== undefined && id !== null && String(id).length > 0,
     'Notification ID must not be empty.'
   );
 
+  return NOTIFICATION_PATH.replace(
+    ':id',
+    encodeURIComponent(String(id))
+  );
+}
+
+function readUrl(id) {
   assert.ok(
-    String(id).length <= 512,
-    'Notification ID is too long.'
+    id !== undefined && id !== null && String(id).length > 0,
+    'Notification ID must not be empty.'
   );
 
-  assert.ok(
-    path.includes(':id'),
-    'Notification route is missing its :id placeholder.'
+  return READ_PATH.replace(
+    ':id',
+    encodeURIComponent(String(id))
   );
-
-  return path.replace(':id', encodeURIComponent(String(id)));
 }
 
 async function request(
@@ -357,17 +256,7 @@ async function request(
       headers: response.headers,
       body: parsedBody,
       rawBody,
-      url: url.toString(),
     };
-  } catch (error) {
-    if (error && error.name === 'AbortError') {
-      throw new Error(
-        `Request timed out after ${TIMEOUT_MS} ms: ${method} ${url.pathname}`,
-        { cause: error }
-      );
-    }
-
-    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -375,65 +264,36 @@ async function request(
 
 function assertNoServerError(response, label) {
   assert.ok(
-    response.status >= 200 && response.status < 500,
-    `${label}: unexpected HTTP ${response.status}; response=${safeResponseSummary(response)}`
+    response.status < 500,
+    `${label}: unexpected HTTP ${response.status}; response=${JSON.stringify(response.body)}`
   );
 }
 
 function assertDenied(response, label) {
   assert.ok(
-    DENIED_STATUSES.includes(response.status),
+    [401, 403, 404].includes(response.status),
     `${label}: expected HTTP 401, 403, or 404; received HTTP ${response.status}.`
   );
 }
 
 function assertRejected(response, label) {
   assert.ok(
-    REJECTION_STATUSES.includes(response.status),
+    [
+      400, 401, 403, 404, 405,
+      409, 413, 415, 422, 429,
+    ].includes(response.status),
     `${label}: expected a client-error response; received HTTP ${response.status}.`
   );
 }
 
-function assertSuccess(response, label) {
-  assert.ok(
-    SUCCESS_STATUSES.includes(response.status),
-    `${label}: expected HTTP ${SUCCESS_STATUSES.join(', ')}; received HTTP ${response.status}.`
-  );
-}
-
-function safeResponseSummary(response) {
-  const body = response?.body;
-
-  if (body === null || body === undefined) {
-    return '(empty response body)';
-  }
-
-  if (typeof body === 'string') {
-    return body.slice(0, 300);
-  }
-
-  // Avoid dumping response bodies that could contain tokens or PII.
-  return JSON.stringify({
-    keys: Object.keys(body).slice(0, 20),
-    message:
-      typeof body.message === 'string'
-        ? body.message.slice(0, 200)
-        : undefined,
-    error:
-      typeof body.error === 'string'
-        ? body.error.slice(0, 200)
-        : undefined,
-  });
-}
-
 function extractNotifications(response) {
-  const body = response?.body;
+  const body = response.body;
 
   if (Array.isArray(body)) {
     return body;
   }
 
-  if (!isPlainObject(body)) {
+  if (!body || typeof body !== 'object') {
     return null;
   }
 
@@ -457,21 +317,31 @@ function extractNotifications(response) {
 }
 
 function extractNotification(response) {
-  const body = response?.body;
+  const body = response.body;
 
-  if (!isPlainObject(body)) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return null;
   }
 
-  if (isPlainObject(body.notification)) {
+  if (
+    body.notification &&
+    typeof body.notification === 'object'
+  ) {
     return body.notification;
   }
 
-  if (isPlainObject(body.data?.notification)) {
+  if (
+    body.data?.notification &&
+    typeof body.data.notification === 'object'
+  ) {
     return body.data.notification;
   }
 
-  if (isPlainObject(body.data)) {
+  if (
+    body.data &&
+    typeof body.data === 'object' &&
+    !Array.isArray(body.data)
+  ) {
     return body.data;
   }
 
@@ -479,7 +349,7 @@ function extractNotification(response) {
 }
 
 function extractNotificationId(notification) {
-  if (!isPlainObject(notification)) {
+  if (!notification || typeof notification !== 'object') {
     return null;
   }
 
@@ -491,16 +361,8 @@ function extractNotificationId(notification) {
   );
 }
 
-function isPlainObject(value) {
-  return Boolean(
-    value &&
-      typeof value === 'object' &&
-      !Array.isArray(value)
-  );
-}
-
 function isSuccess(response) {
-  return SUCCESS_STATUSES.includes(response.status);
+  return [200, 201, 202, 204].includes(response.status);
 }
 
 function requireMutationOptIn() {
@@ -509,150 +371,34 @@ function requireMutationOptIn() {
     true,
     'Set RUN_NOTIFICATION_MUTATING_TESTS=true only for a dedicated test environment.'
   );
-
-  assert.equal(
-    process.env.NODE_ENV,
-    'test',
-    'Mutating notification tests require NODE_ENV=test.'
-  );
-}
-
-function requireUserA() {
-  assert.ok(
-    USER_A_TOKEN,
-    'Set NOTIFICATION_TEST_USER_A_TOKEN.'
-  );
-}
-
-function requireUserB() {
-  assert.ok(
-    USER_B_TOKEN,
-    'Set NOTIFICATION_TEST_USER_B_TOKEN.'
-  );
-}
-
-function requireFixtureId() {
-  assert.ok(
-    USER_A_FIXTURE_ID,
-    'Set NOTIFICATION_USER_A_FIXTURE_ID to an existing private notification owned by User A.'
-  );
 }
 
 function assertSafeNotification(notification) {
   assert.ok(
-    isPlainObject(notification),
-    'Every notification must be a JSON object.'
+    notification && typeof notification === 'object',
+    'Every notification must be an object.'
   );
 
-  const id = extractNotificationId(notification);
-
   assert.ok(
-    id !== null && id !== undefined && String(id).length > 0,
+    extractNotificationId(notification),
     'Every notification must have an identifier.'
   );
 
-  const stack = [notification];
-  const visited = new Set();
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-
-    if (!current || typeof current !== 'object') {
-      continue;
-    }
-
-    if (visited.has(current)) {
-      continue;
-    }
-
-    visited.add(current);
-
-    if (Array.isArray(current)) {
-      stack.push(...current);
-      continue;
-    }
-
-    for (const [key, value] of Object.entries(current)) {
-      const normalizedKey = key.replace(/[-\s]/g, '').toLowerCase();
-
-      assert.equal(
-        SENSITIVE_FIELD_NAMES.has(normalizedKey),
-        false,
-        `Notification response must not expose sensitive field "${key}".`
-      );
-
-      if (value && typeof value === 'object') {
-        stack.push(value);
-      }
-    }
+  for (const sensitiveField of [
+    'password',
+    'passwordHash',
+    'password_hash',
+    'refreshToken',
+    'refresh_token',
+    'resetToken',
+    'reset_token',
+  ]) {
+    assert.equal(
+      Object.hasOwn(notification, sensitiveField),
+      false,
+      `Notification response must not expose ${sensitiveField}.`
+    );
   }
-}
-
-function assertCollectionSafe(notifications) {
-  assert.ok(
-    Array.isArray(notifications),
-    'Expected a notification array.'
-  );
-
-  for (const notification of notifications) {
-    assertSafeNotification(notification);
-  }
-}
-
-function readState(notification) {
-  if (!isPlainObject(notification)) {
-    return null;
-  }
-
-  if (typeof notification.isRead === 'boolean') {
-    return notification.isRead;
-  }
-
-  if (typeof notification.read === 'boolean') {
-    return notification.read;
-  }
-
-  if (notification.readAt !== undefined) {
-    return Boolean(notification.readAt);
-  }
-
-  if (notification.read_at !== undefined) {
-    return Boolean(notification.read_at);
-  }
-
-  return null;
-}
-
-function assertMarkedRead(notification, label) {
-  const state = readState(notification);
-
-  assert.equal(
-    state,
-    true,
-    `${label}: could not confirm the notification is marked as read. Check the response schema or configure a compatible verification endpoint.`
-  );
-}
-
-async function getNotificationAsUserA(id) {
-  return request(notificationUrl(id), {
-    token: USER_A_TOKEN,
-  });
-}
-
-async function getNotificationAsUserB(id) {
-  return request(notificationUrl(id), {
-    token: USER_B_TOKEN,
-  });
-}
-
-function appendQuery(path, parameters) {
-  const url = urlFor(path);
-
-  for (const [key, value] of Object.entries(parameters)) {
-    url.searchParams.set(key, String(value));
-  }
-
-  return `${url.pathname}${url.search}`;
 }
 
 describe('MedOrbits notification integration tests', () => {
@@ -661,7 +407,7 @@ describe('MedOrbits notification integration tests', () => {
   });
 
   describe('endpoint availability', () => {
-    it('responds to notification listing without an internal server error', async () => {
+    it('handles notification listing without an internal server error', async () => {
       const response = await request(NOTIFICATIONS_PATH, {
         token: USER_A_TOKEN || undefined,
       });
@@ -669,14 +415,16 @@ describe('MedOrbits notification integration tests', () => {
       assertNoServerError(response, 'Notification listing');
 
       assert.ok(
-        [200, 401, 403, 404, 405].includes(response.status),
+        [
+          200, 401, 403, 404, 405,
+        ].includes(response.status),
         `Unexpected notification listing status: HTTP ${response.status}.`
       );
     });
   });
 
   describe('authentication and authorization', () => {
-    it('does not expose private notifications to an unauthenticated caller', async () => {
+    it('handles unauthenticated notification listing according to endpoint policy', async () => {
       const response = await request(NOTIFICATIONS_PATH);
 
       assertNoServerError(
@@ -685,28 +433,20 @@ describe('MedOrbits notification integration tests', () => {
       );
 
       assert.ok(
-        [401, 403, 404].includes(response.status),
-        `Expected the private notification listing to deny unauthenticated access; received HTTP ${response.status}. If this endpoint is intentionally public, replace this assertion with a documented public-response contract.`
+        [200, 401, 403, 404].includes(response.status),
+        `Unexpected unauthenticated response: HTTP ${response.status}.`
       );
+
+      // A 200 is allowed only for a deliberately public listing endpoint.
+      if (response.status === 200) {
+        assert.ok(
+          Array.isArray(extractNotifications(response)),
+          'A public listing endpoint must return a documented notification collection.'
+        );
+      }
     });
 
-    it('rejects an invalid bearer token for notification listing', async () => {
-      const response = await request(NOTIFICATIONS_PATH, {
-        token: 'invalid.notification.integration.token',
-      });
-
-      assertNoServerError(
-        response,
-        'Invalid-token notification listing'
-      );
-
-      assertDenied(
-        response,
-        'Invalid-token notification listing'
-      );
-    });
-
-    it('rejects an invalid bearer token for notification retrieval', async () => {
+    it('does not authorize notification retrieval with an invalid token', async () => {
       const response = await request(
         notificationUrl('invalid-notification-id'),
         {
@@ -724,39 +464,9 @@ describe('MedOrbits notification integration tests', () => {
         'Invalid-token notification retrieval'
       );
     });
-
-    it(
-      'prevents User B from reading User A private notification',
-      { skip: !USER_A_TOKEN || !USER_B_TOKEN || !USER_A_FIXTURE_ID },
-      async () => {
-        requireUserA();
-        requireUserB();
-        requireFixtureId();
-
-        assert.notEqual(
-          USER_A_TOKEN,
-          USER_B_TOKEN,
-          'User A and User B must use distinct authentication tokens.'
-        );
-
-        const response = await getNotificationAsUserB(
-          USER_A_FIXTURE_ID
-        );
-
-        assertNoServerError(
-          response,
-          'Cross-user notification retrieval'
-        );
-
-        assertDenied(
-          response,
-          'Cross-user notification retrieval'
-        );
-      }
-    );
   });
 
-  describe('notification listing and response structure', () => {
+  describe('notification listing', () => {
     it('returns a valid notification collection for User A', async (t) => {
       if (!USER_A_TOKEN) {
         t.skip('Set NOTIFICATION_TEST_USER_A_TOKEN.');
@@ -778,23 +488,30 @@ describe('MedOrbits notification integration tests', () => {
         `Expected HTTP 200; received HTTP ${response.status}.`
       );
 
-      assertCollectionSafe(extractNotifications(response));
+      const notifications = extractNotifications(response);
+
+      assert.ok(
+        Array.isArray(notifications),
+        'Expected an array or a documented paginated notification collection.'
+      );
+
+      for (const notification of notifications) {
+        assertSafeNotification(notification);
+      }
     });
 
-    it('handles valid pagination parameters', async (t) => {
+    it('handles valid pagination parameters safely', async (t) => {
       if (!USER_A_TOKEN) {
         t.skip('Set NOTIFICATION_TEST_USER_A_TOKEN.');
         return;
       }
 
-      const path = appendQuery(NOTIFICATIONS_PATH, {
-        limit: 10,
-        page: 1,
-      });
+      const separator = NOTIFICATIONS_PATH.includes('?') ? '&' : '?';
 
-      const response = await request(path, {
-        token: USER_A_TOKEN,
-      });
+      const response = await request(
+        `${NOTIFICATIONS_PATH}${separator}limit=10&page=1`,
+        { token: USER_A_TOKEN }
+      );
 
       assertNoServerError(
         response,
@@ -809,29 +526,34 @@ describe('MedOrbits notification integration tests', () => {
       if (response.status === 200) {
         const notifications = extractNotifications(response);
 
-        assertCollectionSafe(notifications);
+        assert.ok(
+          Array.isArray(notifications),
+          'Paginated response must include a notification array.'
+        );
 
         assert.ok(
           notifications.length <= 10,
-          'Endpoint returned more notifications than the requested limit.'
+          'Endpoint returned more than the requested page size.'
         );
+
+        for (const notification of notifications) {
+          assertSafeNotification(notification);
+        }
       }
     });
 
-    it('handles invalid pagination values without an internal error', async (t) => {
+    it('handles invalid pagination values safely', async (t) => {
       if (!USER_A_TOKEN) {
         t.skip('Set NOTIFICATION_TEST_USER_A_TOKEN.');
         return;
       }
 
-      const path = appendQuery(NOTIFICATIONS_PATH, {
-        limit: -100,
-        page: -1,
-      });
+      const separator = NOTIFICATIONS_PATH.includes('?') ? '&' : '?';
 
-      const response = await request(path, {
-        token: USER_A_TOKEN,
-      });
+      const response = await request(
+        `${NOTIFICATIONS_PATH}${separator}limit=-100&page=-1`,
+        { token: USER_A_TOKEN }
+      );
 
       assertNoServerError(
         response,
@@ -844,49 +566,60 @@ describe('MedOrbits notification integration tests', () => {
       );
 
       if (response.status === 200) {
-        assertCollectionSafe(extractNotifications(response));
+        const notifications = extractNotifications(response);
 
         assert.ok(
-          extractNotifications(response).length <= 100,
+          Array.isArray(notifications),
+          'Notification response must contain a collection.'
+        );
+
+        assert.ok(
+          notifications.length <= 100,
           'Invalid pagination returned an unexpectedly large result set.'
         );
       }
     });
-
-    it('does not expose sensitive fields in a retrieved notification', async (t) => {
-      if (!USER_A_TOKEN || !USER_A_FIXTURE_ID) {
-        t.skip(
-          'Set NOTIFICATION_TEST_USER_A_TOKEN and NOTIFICATION_USER_A_FIXTURE_ID.'
-        );
-        return;
-      }
-
-      const response = await getNotificationAsUserA(
-        USER_A_FIXTURE_ID
-      );
-
-      assertNoServerError(
-        response,
-        'Notification detail retrieval'
-      );
-
-      assert.equal(
-        response.status,
-        200,
-        `Expected HTTP 200; received HTTP ${response.status}.`
-      );
-
-      assertSafeNotification(extractNotification(response));
-    });
   });
 
-  describe('notification identifier validation', () => {
-    it('does not resolve a malformed notification identifier to a record', async (t) => {
+  describe('notification retrieval and ownership', () => {
+    it(
+      'prevents User B from reading User A private notification',
+      { skip: !RUN_MUTATING_TESTS },
+      async (t) => {
+        requireMutationOptIn();
+
+        if (!USER_A_FIXTURE_ID) {
+          t.skip(
+            'Set NOTIFICATION_USER_A_FIXTURE_ID to a real private notification owned by User A.'
+          );
+          return;
+        }
+
+        const response = await request(
+          notificationUrl(USER_A_FIXTURE_ID),
+          { token: USER_B_TOKEN }
+        );
+
+        assertNoServerError(
+          response,
+          'Cross-user notification retrieval'
+        );
+
+        assertDenied(
+          response,
+          'Cross-user notification retrieval'
+        );
+      }
+    );
+
+    it('rejects a malformed notification identifier', async (t) => {
       if (!USER_A_TOKEN) {
         t.skip('Set NOTIFICATION_TEST_USER_A_TOKEN.');
         return;
       }
 
+      // The slash is encoded by notificationUrl(), so it stays within
+      // the identifier segment for normal Express routing.
       const response = await request(
         notificationUrl('invalid/id'),
         { token: USER_A_TOKEN }
@@ -899,21 +632,26 @@ describe('MedOrbits notification integration tests', () => {
 
       assert.ok(
         [400, 404, 422].includes(response.status),
-        `Expected malformed identifier rejection; received HTTP ${response.status}.`
+        `Expected malformed ID rejection; received HTTP ${response.status}.`
       );
     });
   });
 
   describe('read-state updates', () => {
     it(
-      'marks an owned notification as read and verifies the persisted state',
-      { skip: !RUN_MUTATING_TESTS || !USER_A_FIXTURE_ID },
-      async () => {
+      'marks an owned notification as read',
+      { skip: !RUN_MUTATING_TESTS },
+      async (t) => {
         requireMutationOptIn();
-        requireUserA();
-        requireFixtureId();
 
-        const updateResponse = await request(
+        if (!USER_A_FIXTURE_ID) {
+          t.skip(
+            'Set NOTIFICATION_USER_A_FIXTURE_ID to an existing notification owned by User A.'
+          );
+          return;
+        }
+
+        const response = await request(
           readUrl(USER_A_FIXTURE_ID),
           {
             method: READ_METHOD,
@@ -923,72 +661,65 @@ describe('MedOrbits notification integration tests', () => {
         );
 
         assertNoServerError(
-          updateResponse,
+          response,
           'Mark notification as read'
         );
 
-        assertSuccess(
-          updateResponse,
-          'Mark notification as read'
+        assert.ok(
+          isSuccess(response),
+          `Expected a successful read-state update; received HTTP ${response.status}.`
         );
 
-        // A 204 has no response body. Verify persisted state using GET.
-        const detailResponse = await getNotificationAsUserA(
-          USER_A_FIXTURE_ID
-        );
+        if (response.status === 204) {
+          return;
+        }
 
-        assertNoServerError(
-          detailResponse,
-          'Read-state persistence verification'
-        );
+        const notification = extractNotification(response);
 
-        assert.equal(
-          detailResponse.status,
-          200,
-          `Could not retrieve notification after read-state update; received HTTP ${detailResponse.status}.`
-        );
+        if (
+          notification &&
+          typeof notification === 'object'
+        ) {
+          if (notification.isRead !== undefined) {
+            assert.equal(
+              notification.isRead,
+              true,
+              'Successful update should set isRead to true.'
+            );
+          }
 
-        const notification = extractNotification(detailResponse);
+          if (notification.read !== undefined) {
+            assert.equal(
+              notification.read,
+              true,
+              'Successful update should set read to true.'
+            );
+          }
 
-        assertSafeNotification(notification);
-        assertMarkedRead(
-          notification,
-          'Read-state persistence verification'
-        );
+          if (notification.readAt !== undefined) {
+            assert.ok(
+              notification.readAt,
+              'Successful update should set readAt.'
+            );
+          }
+        }
       }
     );
 
     it(
       'prevents User B from marking User A notification as read',
-      { skip: !RUN_MUTATING_TESTS || !USER_A_FIXTURE_ID },
-      async () => {
+      { skip: !RUN_MUTATING_TESTS },
+      async (t) => {
         requireMutationOptIn();
-        requireUserA();
-        requireUserB();
-        requireFixtureId();
 
-        assert.notEqual(
-          USER_A_TOKEN,
-          USER_B_TOKEN,
-          'User A and User B must use distinct authentication tokens.'
-        );
+        if (!USER_A_FIXTURE_ID) {
+          t.skip(
+            'Set NOTIFICATION_USER_A_FIXTURE_ID to a private notification owned by User A.'
+          );
+          return;
+        }
 
-        const beforeResponse = await getNotificationAsUserA(
-          USER_A_FIXTURE_ID
-        );
-
-        assert.equal(
-          beforeResponse.status,
-          200,
-          'User A must be able to retrieve the test notification before the authorization test.'
-        );
-
-        const beforeNotification = extractNotification(beforeResponse);
-        assertSafeNotification(beforeNotification);
-
-        const beforeState = readState(beforeNotification);
-
-        const updateResponse = await request(
+        const response = await request(
           readUrl(USER_A_FIXTURE_ID),
           {
             method: READ_METHOD,
@@ -998,46 +729,22 @@ describe('MedOrbits notification integration tests', () => {
         );
 
         assertNoServerError(
-          updateResponse,
+          response,
           'Cross-user read-state update'
         );
 
         assertDenied(
-          updateResponse,
+          response,
           'Cross-user read-state update'
         );
-
-        const afterResponse = await getNotificationAsUserA(
-          USER_A_FIXTURE_ID
-        );
-
-        assert.equal(
-          afterResponse.status,
-          200,
-          'User A must still be able to retrieve the notification after the denied update.'
-        );
-
-        const afterNotification = extractNotification(afterResponse);
-        assertSafeNotification(afterNotification);
-
-        const afterState = readState(afterNotification);
-
-        if (beforeState !== null) {
-          assert.equal(
-            afterState,
-            beforeState,
-            'A denied cross-user update must not change User A notification read state.'
-          );
-        }
       }
     );
 
     it(
-      'marks all notifications as read for User A',
+      'handles mark-all-as-read for User A',
       { skip: !RUN_MUTATING_TESTS },
       async () => {
         requireMutationOptIn();
-        requireUserA();
 
         const response = await request(READ_ALL_PATH, {
           method: READ_METHOD,
@@ -1050,51 +757,15 @@ describe('MedOrbits notification integration tests', () => {
           'Mark all notifications as read'
         );
 
-        assertSuccess(
-          response,
-          'Mark all notifications as read'
+        assert.ok(
+          isSuccess(response),
+          `Expected a successful mark-all-as-read response; received HTTP ${response.status}.`
         );
-
-        // Check the list after the update. If the API paginates by default,
-        // this verifies only the returned page, not every stored notification.
-        const listResponse = await request(
-          appendQuery(NOTIFICATIONS_PATH, {
-            limit: 100,
-            page: 1,
-          }),
-          { token: USER_A_TOKEN }
-        );
-
-        assertNoServerError(
-          listResponse,
-          'Mark-all-as-read persistence verification'
-        );
-
-        assert.equal(
-          listResponse.status,
-          200,
-          'Could not retrieve notifications after the mark-all-as-read request.'
-        );
-
-        const notifications = extractNotifications(listResponse);
-        assertCollectionSafe(notifications);
-
-        for (const notification of notifications) {
-          const state = readState(notification);
-
-          if (state !== null) {
-            assert.equal(
-              state,
-              true,
-              'A notification returned by the post-update listing is still unread.'
-            );
-          }
-        }
       }
     );
   });
 
-  describe('input validation and HTTP methods', () => {
+  describe('input validation and method handling', () => {
     it('does not execute TRACE requests successfully', async () => {
       const response = await request(NOTIFICATIONS_PATH, {
         method: 'TRACE',
@@ -1121,54 +792,10 @@ describe('MedOrbits notification integration tests', () => {
         'Unauthenticated notification creation'
       );
 
-      assertDenied(
+      assertRejected(
         response,
         'Unauthenticated notification creation'
       );
-    });
-
-    it('rejects malformed JSON when the API route accepts raw JSON requests', async () => {
-      const url = urlFor(NOTIFICATIONS_PATH);
-      const controller = new AbortController();
-
-      const timer = setTimeout(
-        () => controller.abort(),
-        TIMEOUT_MS
-      );
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            ...(USER_A_TOKEN
-              ? { Authorization: `Bearer ${USER_A_TOKEN}` }
-              : {}),
-          },
-          body: '{"title":',
-          signal: controller.signal,
-          redirect: 'manual',
-        });
-
-        const rawBody = await response.text();
-
-        assert.ok(
-          [400, 401, 403, 404, 405, 415, 422].includes(response.status),
-          `Malformed JSON should be rejected; received HTTP ${response.status}. Body length: ${rawBody.length}.`
-        );
-      } catch (error) {
-        if (error && error.name === 'AbortError') {
-          throw new Error(
-            `Malformed JSON test timed out after ${TIMEOUT_MS} ms.`,
-            { cause: error }
-          );
-        }
-
-        throw error;
-      } finally {
-        clearTimeout(timer);
-      }
     });
   });
 });

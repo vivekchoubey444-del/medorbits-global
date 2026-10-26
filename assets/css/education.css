@@ -1,0 +1,865 @@
+
+/* ==========================================================================
+   MedOrbits -- Education Homepage Styles
+   File: assets/css/education.css
+   Theme: Luxury Aubergine & Champagne Gold
+   Version: 1.3.1
+
+   Covers: Hero, education pillars, search band, sections, cards,
+   about, benefits, video, CTA and FAQs.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. Hero Section
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 78px 0 72px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(16, 10, 23, 0.97),
+      rgba(26, 16, 36, 0.88) 58%,
+      rgba(26, 16, 36, 0.56)
+    ),
+    url("/assets/images/hero/hero-home.png") center / cover no-repeat,
+    var(--bg, #100a17);
+}
+
+.hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  background:
+    radial-gradient(
+      ellipse at 82% 18%,
+      rgba(201, 169, 110, 0.14),
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at 90% 90%,
+      rgba(84, 30, 50, 0.2),
+      transparent 42%
+    );
+
+  content: "";
+  pointer-events: none;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.hero-grid > * {
+  min-width: 0;
+}
+
+.hero h1 {
+  max-width: 720px;
+  margin: 18px 0;
+
+  color: var(--white, #f7f1fa);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: clamp(39px, 5.3vw, 67px);
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.hero h1 em {
+  color: var(--gold-light, #e4d0a1);
+  font-style: normal;
+}
+
+.hero-copy {
+  max-width: 610px;
+
+  color: #d0c5d8;
+  font-size: 0.94rem;
+  line-height: 1.85;
+
+  overflow-wrap: anywhere;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  margin-top: 26px;
+}
+
+.hero-actions > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+
+/* ==========================================================================
+   2. Hero Visual
+   ========================================================================== */
+
+.hero-visual {
+  position: relative;
+  min-width: 0;
+  min-height: 390px;
+  overflow: hidden;
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 20px;
+
+  background: linear-gradient(145deg, #30203e, #171020);
+  box-shadow: var(--shadow, 0 22px 65px rgba(0, 0, 0, 0.25));
+}
+
+.hero-visual img {
+  display: block;
+  width: 100%;
+  height: 390px;
+  object-fit: cover;
+}
+
+.hero-visual::after {
+  position: absolute;
+  inset: 40% 0 0;
+
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(16, 10, 23, 0.96)
+  );
+
+  content: "";
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   3. Education Pillars
+   ========================================================================== */
+
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  border-block: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  background: rgba(43, 29, 54, 0.38);
+}
+
+.pillar {
+  min-width: 0;
+  padding: 20px 14px;
+
+  border-right: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  text-align: center;
+}
+
+.pillar:last-child {
+  border-right: 0;
+}
+
+.pillar strong {
+  display: block;
+
+  color: var(--gold-light, #e4d0a1);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: 1.125rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
+}
+
+.pillar span {
+  display: block;
+  margin-top: 5px;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.75rem;
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   4. Search Band
+   ========================================================================== */
+
+.search-band {
+  padding: 23px 0;
+
+  border-bottom: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  background: rgba(11, 7, 16, 0.65);
+}
+
+.search-band > .container {
+  min-width: 0;
+}
+
+
+/* ==========================================================================
+   5. General Sections
+   ========================================================================== */
+
+.section {
+  min-width: 0;
+  padding: 76px 0;
+
+  scroll-margin-top: calc(var(--header-height, 82px) + 18px);
+}
+
+.section.alt {
+  border-block: 1px solid rgba(217, 204, 228, 0.08);
+
+  background:
+    radial-gradient(
+      ellipse at 90% 10%,
+      rgba(84, 30, 50, 0.13),
+      transparent 40%
+    ),
+    rgba(43, 29, 54, 0.18);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+
+  min-width: 0;
+  margin-bottom: 29px;
+}
+
+.section-head > * {
+  min-width: 0;
+}
+
+.section-head h2,
+.about-title {
+  margin: 8px 0 10px;
+
+  color: var(--white, #f7f1fa);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: clamp(28px, 3.3vw, 42px);
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.section-head h2 span,
+.about-title span {
+  color: var(--gold-light, #e4d0a1);
+}
+
+.section-head p {
+  max-width: 650px;
+  margin: 0;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.85rem;
+  line-height: 1.75;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   6. Education and Service Cards
+   ========================================================================== */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+
+  min-width: 0;
+}
+
+.cards > * {
+  min-width: 0;
+}
+
+.card {
+  min-width: 0;
+  overflow: hidden;
+
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 14px;
+
+  background: linear-gradient(145deg, #2b1d36, #191023);
+
+  transition:
+    transform var(--transition-base, 240ms ease),
+    border-color var(--transition-base, 240ms ease),
+    box-shadow var(--transition-base, 240ms ease);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+
+  border-color: rgba(201, 169, 110, 0.68);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+}
+
+.card-media {
+  position: relative;
+  overflow: hidden;
+
+  background: var(--panel-2, #2b1d36);
+}
+
+.card-media img {
+  display: block;
+  width: 100%;
+  height: 165px;
+  object-fit: cover;
+
+  transition: transform 450ms ease;
+}
+
+.card:hover .card-media img {
+  transform: scale(1.045);
+}
+
+.card-body {
+  min-width: 0;
+  padding: 16px;
+}
+
+.card h3 {
+  margin: 0 0 9px;
+
+  color: #eee2f3;
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: 1.125rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
+}
+
+.card p {
+  margin: 0 0 14px;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.84rem;
+  line-height: 1.7;
+
+  overflow-wrap: anywhere;
+}
+
+.card .card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  max-width: 100%;
+
+  color: var(--gold-light, #e4d0a1);
+  font-size: 0.82rem;
+  font-weight: var(--weight-bold, 700);
+  text-decoration: none;
+
+  overflow-wrap: anywhere;
+}
+
+.card .card-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.card .card-link:focus-visible {
+  outline: 2px solid var(--gold-light, #e4d0a1);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+
+/* ==========================================================================
+   7. About Section
+   ========================================================================== */
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 45px;
+
+  min-width: 0;
+}
+
+.about-grid > * {
+  min-width: 0;
+}
+
+.about-visual {
+  min-width: 0;
+  overflow: hidden;
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 17px;
+
+  background: var(--panel, #21172b);
+}
+
+.about-visual img {
+  display: block;
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+}
+
+.body-copy {
+  color: var(--muted, #b7acbf);
+  font-size: 0.9rem;
+  line-height: 1.9;
+
+  overflow-wrap: anywhere;
+}
+
+.body-copy p:last-child {
+  margin-bottom: 0;
+}
+
+
+/* ==========================================================================
+   8. Benefits and Check Lists
+   ========================================================================== */
+
+.check-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  margin: 20px 0 25px;
+  padding: 0;
+
+  list-style: none;
+}
+
+.check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  min-width: 0;
+}
+
+.check-list span {
+  min-width: 0;
+
+  color: var(--lav, #d9cce4);
+  font-size: 0.85rem;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+}
+
+.check-list span::before {
+  margin-right: 8px;
+
+  color: var(--gold, #c9a96e);
+  content: "✦";
+}
+
+
+/* ==========================================================================
+   9. Video Section
+   ========================================================================== */
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 17px;
+
+  min-width: 0;
+}
+
+.video-card {
+  min-width: 0;
+  overflow: hidden;
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 13px;
+
+  background: var(--panel, #21172b);
+}
+
+.video-frame {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+
+  background: var(--bg, #100a17);
+}
+
+.video-frame video,
+.video-frame iframe,
+.video-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+  object-fit: cover;
+}
+
+.video-copy {
+  min-width: 0;
+  padding: 15px;
+}
+
+.video-copy small {
+  color: var(--gold-light, #e4d0a1);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold, 700);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.video-copy h3 {
+  margin: 7px 0;
+
+  color: var(--lav, #d9cce4);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: 1.0625rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.45;
+
+  overflow-wrap: anywhere;
+}
+
+.video-copy p {
+  margin: 0;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.84rem;
+  line-height: 1.7;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   10. Call-to-Action Section
+   ========================================================================== */
+
+.cta {
+  padding: 49px 0;
+
+  border-block: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+
+  background:
+    linear-gradient(
+      100deg,
+      rgba(16, 10, 23, 0.97),
+      rgba(43, 29, 54, 0.91) 62%,
+      rgba(84, 30, 50, 0.6)
+    ),
+    url("/assets/images/education/education-global.jpg") center / cover no-repeat,
+    var(--bg, #100a17);
+}
+
+.cta-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+
+  min-width: 0;
+}
+
+.cta-inner > * {
+  min-width: 0;
+}
+
+.cta h2 {
+  margin: 8px 0;
+
+  color: var(--white, #f7f1fa);
+  font-family: var(--font-heading, "Playfair Display", Georgia, serif);
+  font-size: clamp(27px, 3vw, 38px);
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.2;
+
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.cta p {
+  margin: 0;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.85rem;
+  line-height: 1.7;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   11. Frequently Asked Questions
+   ========================================================================== */
+
+.faq-list {
+  display: grid;
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.faq {
+  min-width: 0;
+  padding: 17px 19px;
+
+  border: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  border-radius: 10px;
+
+  background: rgba(43, 29, 54, 0.45);
+
+  transition: border-color var(--transition-base, 240ms ease);
+}
+
+.faq[open] {
+  border-color: var(--gold-border, rgba(201, 169, 110, 0.35));
+}
+
+.faq summary {
+  color: var(--lav, #d9cce4);
+  font-size: 0.9rem;
+  font-weight: var(--weight-semibold, 600);
+  line-height: 1.6;
+
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.faq summary::marker {
+  color: var(--gold, #c9a96e);
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--gold-light, #e4d0a1);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.faq p {
+  margin: 12px 0 0;
+
+  color: var(--muted, #b7acbf);
+  font-size: 0.88rem;
+  line-height: 1.8;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   12. Responsive Layout -- Tablet
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .hero-grid {
+    gap: 30px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-grid {
+    gap: 30px;
+  }
+}
+
+
+/* ==========================================================================
+   13. Responsive Layout -- Mobile
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  .hero {
+    padding: 55px 0 48px;
+  }
+
+  .hero-grid,
+  .about-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 8vw, 52px);
+  }
+
+  .hero-visual {
+    min-height: 280px;
+  }
+
+  .hero-visual img {
+    height: 320px;
+  }
+
+  .pillars {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pillar {
+    border-bottom: 1px solid var(--line, rgba(201, 169, 110, 0.24));
+  }
+
+  .pillar:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .pillar:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .section {
+    padding: 54px 0;
+  }
+
+  .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .video-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-visual img {
+    height: 320px;
+  }
+
+  .cta-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+/* ==========================================================================
+   14. Responsive Layout -- Narrow Phones
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 42px 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(32px, 9vw, 42px);
+    letter-spacing: -0.025em;
+  }
+
+  .hero-copy {
+    font-size: 0.9rem;
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-actions > .btn,
+  .hero-actions > .nav-cta {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-visual,
+  .hero-visual img {
+    height: 260px;
+    min-height: 240px;
+  }
+
+  .pillar {
+    padding: 16px 9px;
+  }
+
+  .pillar strong {
+    font-size: 1rem;
+  }
+
+  .cards,
+  .video-grid,
+  .check-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card-media img {
+    height: 190px;
+  }
+
+  .about-visual img {
+    height: 260px;
+  }
+
+  .faq {
+    padding: 15px;
+  }
+
+  .cta {
+    padding: 38px 0;
+  }
+}
+
+
+/* ==========================================================================
+   15. Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-media img,
+  .faq {
+    transition: none !important;
+  }
+
+  .card:hover,
+  .card:hover .card-media img {
+    transform: none;
+  }
+}
+
+
+/* ==========================================================================
+   16. Forced Colors Accessibility
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .hero-visual,
+  .about-visual,
+  .card,
+  .video-card,
+  .faq {
+    border-color: CanvasText;
+  }
+
+  .card .card-link:focus-visible,
+  .faq summary:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 4px;
+  }
+}

@@ -1,429 +1,356 @@
+MedOrbits Background Images
 
-# MedOrbits Background Assets
+Directory: assets/images/backgrounds/
+Project: MedOrbits
+Category: Background Textures, Gradients, and Decorative Patterns
+Brand Theme: Royal Burgundy and Champagne Gold
+Documentation Version: 1.1.0
 
-**Canonical directory:** `/assets/images/backgrounds/`  
-**Project:** MedOrbits  
-**Document version:** 1.0.0  
-**Last updated:** 2026-10-24  
-**Purpose:** Standards for managing, optimizing, and publishing website background assets.
+⸻
 
-## 1. Purpose
+1. Purpose
 
-The `assets/images/backgrounds/` directory stores approved visual assets used as backgrounds throughout the MedOrbits website and application.
+The assets/images/backgrounds/ directory contains decorative visual assets used to support the MedOrbits website’s premium appearance.
 
-Backgrounds may support page layouts, hero sections, banners, promotional areas, course pages, authentication screens, and other interface components.
+These assets may be used for:
 
-The MedOrbits design system prioritizes a premium, professional appearance, using carefully selected colors, subtle textures, restrained gradients, and readable content.
+* Hero and landing-page backgrounds
+* Section backgrounds and decorative surfaces
+* Education-related visual patterns
+* Premium dark-themed sections
+* Burgundy gradients and textures
+* Champagne gold accents and textures
+* Decorative SVG patterns
+* Approved promotional and campaign layouts
 
-This directory is intended for website-ready assets, not confidential files, temporary downloads, or unapproved artwork.
+Background assets should enhance the website’s visual hierarchy without reducing readability, affecting performance, or changing the established page structure.
 
-## 2. Recommended Directory Structure
+2. Current Directory Structure
 
-```text
-assets/
-└── images/
-    └── backgrounds/
-        ├── README.md
-        ├── hero-background.webp
-        ├── homepage-background.webp
-        ├── about-background.webp
-        ├── courses-background.webp
-        ├── admissions-background.webp
-        ├── contact-background.webp
-        ├── login-background.webp
-        ├── dashboard-background.webp
-        ├── subtle-texture.webp
-        ├── decorative-pattern.svg
-        └── archive/
-```
+The following inventory reflects the supplied directory screenshot.
 
-The filenames above are examples only. Create files only when they exist, are approved, and are required by the project. Preserve existing filenames and paths when active pages depend on them.
+assets/images/backgrounds/
+├── README.md
+├── burgundy-gradient.jpg
+├── champagne-texture.jpg
+├── education-pattern.svg
+└── premium-dark-texture.jpg
 
-## 3. Naming Conventions
+Current asset catalogue
 
-Use lowercase kebab-case and descriptive filenames.
+Filename	Observed size	Intended use
+burgundy-gradient.jpg	10.9 KB	Burgundy-themed backgrounds and gradient surfaces
+champagne-texture.jpg	8.6 KB	Champagne gold accents and subtle textures
+education-pattern.svg	736 bytes	Scalable decorative pattern for education-related sections
+premium-dark-texture.jpg	11.0 KB	Premium dark backgrounds and supporting surfaces
 
-Examples:
+File sizes are approximate and may change when assets are optimized or replaced.
 
-- `hero-background.webp`
-- `homepage-background.webp`
-- `admissions-background.webp`
-- `contact-background.webp`
-- `login-background.webp`
-- `subtle-texture.webp`
-- `decorative-pattern.svg`
+The screenshot confirms the listed filenames and approximate sizes. It does not independently verify their dimensions, visual content, licensing, or current usage in the website.
 
-Guidelines:
+3. Brand Design System
 
-1. Describe the intended page or visual purpose.
-2. Avoid unclear names such as `bg-final2.jpg` or `new-image.png`.
-3. Use consistent file extensions and capitalization.
-4. Do not rename an asset without checking all references.
-5. Do not change a file extension without actually converting the file.
-6. Avoid duplicate copies when one approved asset can serve multiple pages.
+All backgrounds must complement the established MedOrbits brand palette.
 
-## 4. Supported Formats
+Brand colour	Hexadecimal	Intended use
+Royal Burgundy	#6B1838	Primary background and brand surfaces
+Champagne Gold	#C9A66B	Decorative highlights and premium accents
+Warm Cream	#F6EDDD	Supporting backgrounds and soft contrast
 
-### WebP
+Use the existing colour tokens, typography, gradients, overlays, and component styles.
 
-Recommended for photographic backgrounds and complex raster artwork because it can provide good visual quality at a relatively small file size.
+Avoid introducing unrelated colour schemes, excessive contrast effects, or unnecessary decorative elements.
 
-### AVIF
+Design preservation rule: Background assets must not be used as a reason to rebuild existing pages or alter the opening animation, header, footer, navigation, responsive breakpoints, or established visual identity.
 
-Consider AVIF for photographic backgrounds when the supported browser environment and image pipeline allow it.
+4. Asset Usage Guidelines
 
-### JPEG
+burgundy-gradient.jpg
 
-Suitable for photographs that do not require transparency.
+Use for approved burgundy background surfaces, decorative section treatments, and brand-aligned visual transitions.
 
-### PNG
+Ensure that text and controls remain readable against the gradient.
 
-Use PNG when transparency or lossless raster output is necessary. Avoid unnecessarily large PNG files for photographic backgrounds.
+champagne-texture.jpg
 
-### SVG
+Use for restrained gold-toned accents, decorative backgrounds, and premium visual details.
 
-Suitable for scalable decorative patterns, geometric backgrounds, and simple vector artwork.
+Avoid placing busy textures behind small text or important interface controls.
 
-Review SVG source before publication. Check for scripts, event handlers, embedded `foreignObject` content, and unexpected external references.
+education-pattern.svg
 
-### CSS Gradients
+Use as a scalable decorative pattern for suitable education-related sections.
 
-Use CSS gradients instead of image files when the background can be produced efficiently with CSS.
+Verify that the SVG renders correctly at different sizes and does not introduce unnecessary external dependencies.
 
-Example:
+premium-dark-texture.jpg
 
-```css
-.mo-background {
-  background:
-    radial-gradient(
-      circle at 15% 15%,
-      rgba(201, 169, 110, 0.15),
-      transparent 40%
-    ),
-    linear-gradient(
-      135deg,
-      #f1e8e3,
-      #e6dce8,
-      #dce7ef
-    );
-}
-```
+Use for premium dark-themed sections and supporting visual surfaces where the existing design calls for them.
 
-## 5. MedOrbits Visual Design Standards
+Maintain sufficient text contrast and avoid introducing a new theme that conflicts with the established Royal Burgundy and Champagne Gold styling.
 
-Backgrounds should support the website’s content rather than compete with it.
+5. File Naming Conventions
 
-Recommended design directions include:
+Use consistent, descriptive filenames.
 
-- Premium champagne and warm beige.
-- Soft burgundy and muted maroon.
-- Sage and muted green.
-- Lavender and subdued aubergine.
-- Peach and warm grey.
-- Sapphire blue and blue-grey.
-- Deep aubergine with restrained gold accents.
-- Subtle geometric patterns and low-contrast textures.
+* Use lowercase filenames.
+* Separate words with hyphens.
+* Prefer JPG for raster textures and decorative images.
+* Prefer SVG for scalable patterns and simple vector graphics.
+* Keep filenames stable after they are referenced by production code.
+* Avoid unclear suffixes such as final, new, latest, or final-2.
+* Check existing assets before creating duplicates.
+* Update this README when the approved inventory changes.
 
-Avoid excessively bright backgrounds, harsh color combinations, distracting patterns, and unnecessary visual effects.
+Do not rename or delete existing files without checking their references in HTML, CSS, JavaScript, JSON, and other application configuration.
 
-Background colors should remain consistent with the page’s branding, purpose, and accessibility requirements.
+6. Recommended Integration
 
-## 6. Background Image Dimensions
+CSS background
 
-Choose image dimensions according to the component where the background will appear.
+The following example illustrates how a background image can be referenced.
 
-Suggested starting points:
-
-- Hero background: approximately 1920 × 1080 pixels.
-- Wide page banner: approximately 1920 × 600 pixels.
-- Section background: approximately 1600 × 900 pixels.
-- Card background: approximately 800 × 600 pixels.
-- Small texture: use a suitably optimized repeatable pattern.
-
-These are recommendations, not mandatory dimensions. Determine the actual dimensions based on the component’s layout and expected display size.
-
-Do not force all backgrounds into the same aspect ratio.
-
-## 7. Image Composition and Readability
-
-When preparing a background:
-
-1. Keep the primary visual subject away from important text where practical.
-2. Leave sufficient negative space for headings and buttons.
-3. Check cropping on mobile and desktop.
-4. Maintain readable foreground text.
-5. Avoid placing important information inside a background image.
-6. Use CSS overlays when necessary to improve contrast.
-7. Avoid unnecessary visual clutter behind forms and navigation.
-
-Backgrounds should remain decorative. Essential text, labels, instructions, and interface information must remain available as HTML content.
-
-## 8. HTML Usage
-
-Use a background image only when it is appropriate for the component.
-
-Example:
-
-```html
-<section class=“mo-hero”>
-  <div class=“mo-hero__content”>
-    <h1>Explore Your Future with MedOrbits</h1>
-    <p>Discover educational opportunities and admission guidance.</p>
-    <a href=“/courses.html” class=“mo-hero__button”>
-      Explore Courses
-    </a>
-  </div>
-</section>
-```
-
-The text above is illustrative. Replace it with the approved content for the actual page.
-
-## 9. CSS Background Usage
-
-Example using an image asset:
-
-```css
-.mo-hero {
-  position: relative;
-  isolation: isolate;
-  min-height: 28rem;
-  display: flex;
-  align-items: center;
-  padding: clamp(1.5rem, 5vw, 4rem);
-  background-color: #24152d;
+.premium-section {
   background-image:
-    linear-gradient(
-      90deg,
-      rgba(16, 10, 25, 0.88),
-      rgba(16, 10, 25, 0.35)
-    ),
-    url(“/assets/images/backgrounds/hero-background.webp”);
-  background-position: center;
+    url(“/assets/images/backgrounds/burgundy-gradient.jpg”);
   background-repeat: no-repeat;
+  background-position: center;
   background-size: cover;
-  color: #fff4df;
 }
 
-.mo-hero__content {
-  width: min(100%, 44rem);
+Adapt the example to the existing component and stylesheet structure. Do not introduce a new global class or override established layouts unnecessarily.
+
+SVG pattern
+
+.education-section {
+  background-image:
+    url(“/assets/images/backgrounds/education-pattern.svg”);
+  background-repeat: repeat;
+  background-position: center;
 }
 
-.mo-hero__button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.5rem;
-  background: #c9a96e;
-  color: #180f20;
-  text-decoration: none;
-  font-weight: 600;
-}
+Adjust the pattern scale and repetition according to the actual SVG design. Verify that the pattern does not interfere with content readability.
 
-@media (max-width: 640px) {
-  .mo-hero {
-    min-height: 24rem;
-    background-position: center;
-    padding: 1.5rem;
-  }
-}
-```
+These examples assume the referenced files exist and that the site is deployed at the domain root.
 
-The asset path is an example. Confirm that the referenced file exists before using this CSS in production.
+7. Dimensions and Responsive Behaviour
 
-## 10. Responsive Design
+Background dimensions depend on the intended component and the image’s visual composition.
 
-Backgrounds must work across phones, tablets, laptops, and desktop displays.
+Use case	Suggested dimensions	Notes
+Wide hero background	1920 × 1080 px	Suitable for large landscape sections
+Wide banner	1600 × 800 px	Suitable for broad promotional surfaces
+Section texture	1200 × 1200 px	Suitable for reusable square textures
+Small decorative pattern	Vector-based	Prefer SVG when appropriate
 
-Check:
+These are recommendations, not verified dimensions of the current assets.
 
-- Wide and narrow screen layouts.
-- Portrait and landscape orientations.
-- Text placement and readability.
-- Background cropping and focal points.
-- Form and card visibility.
-- Sticky headers and navigation overlays.
-- High-density displays.
-- Browser zoom and text scaling.
+Backgrounds should:
 
-Use `background-size: cover` when the background should fill a component, understanding that cropping may occur.
+* Scale appropriately across desktop and mobile.
+* Avoid horizontal overflow.
+* Preserve important visual details.
+* Avoid distortion or unintended stretching.
+* Keep text and controls readable.
+* Avoid unnecessary layout shifts.
+* Remain visually consistent at different viewport sizes.
 
-Use `background-size: contain` when the complete image must remain visible, understanding that empty space may remain.
+Use CSS gradients instead of raster images when a simple gradient can achieve the same result.
 
-For important focal points, adjust `background-position` or use responsive image alternatives.
+8. Performance and Optimization
 
-## 11. Accessibility and Contrast
-
-Backgrounds must not reduce the usability of foreground content.
-
-- Maintain sufficient text contrast.
-- Use overlays when necessary.
-- Avoid rapidly flashing or distracting background effects.
-- Do not rely on background images to communicate essential information.
-- Respect reduced-motion preferences when backgrounds are animated.
-- Check links, buttons, labels, and form controls against the actual rendered background.
-- Ensure content remains understandable if a background image fails to load.
-
-Provide a suitable fallback background color for every image-based section.
-
-## 12. Performance Optimization
-
-Background assets can increase page load time if they are too large or poorly optimized.
+Background images should remain lightweight and should not delay important content.
 
 Recommended practices:
 
-1. Compress images without unacceptable visual degradation.
-2. Prefer WebP or AVIF for suitable photographic backgrounds.
-3. Use SVG for appropriate lightweight vector patterns.
-4. Avoid loading large images for small components.
-5. Avoid downloading multiple unused background variants.
-6. Reuse approved assets when practical.
-7. Set suitable image dimensions and responsive behavior.
-8. Use a solid or gradient fallback.
-9. Review the network panel for unnecessary downloads.
-10. Test performance on mobile connections.
+* Compress raster images before publishing.
+* Use appropriately sized source files.
+* Prefer JPG for supported raster textures.
+* Use SVG for suitable vector patterns.
+* Remove unnecessary metadata.
+* Avoid unnecessarily large repeating textures.
+* Avoid multiple overlapping backgrounds when one is sufficient.
+* Use responsive or alternative assets only when they provide a meaningful benefit.
+* Verify that CSS references resolve correctly.
 
-Do not lazy-load a critical above-the-fold hero background without evaluating its impact on loading performance. Consider preload or other prioritization only when measurements justify it.
+CSS background images do not provide the same built-in alternative-text mechanism as HTML images. Decorative backgrounds should therefore remain nonessential to understanding the page.
 
-For below-the-fold sections, defer unnecessary image downloads where the implementation supports it.
+Avoid using large background images as a substitute for meaningful HTML content.
 
-## 13. CSS and Asset Security
+9. Accessibility and Readability
 
-- Use trusted assets from the project or authorized sources.
-- Review SVG files before publication.
-- Avoid embedding untrusted active content.
-- Do not place secrets or private information inside asset files or metadata.
-- Avoid unexpected external image dependencies.
-- Verify that URLs point to intended resources.
-- Do not assume that an asset is safe merely because it has an image extension.
+Backgrounds must not reduce the accessibility of the website.
 
-Public image paths should contain only material intended for public delivery.
+* Maintain sufficient contrast between text and backgrounds.
+* Use approved overlays where necessary.
+* Keep headings, descriptions, and calls to action as HTML.
+* Do not rely on background colour alone to communicate meaning.
+* Preserve visible keyboard focus indicators.
+* Avoid flashing or distracting visual effects.
+* Respect the existing reduced-motion behaviour.
+* Preserve the opening animation unless a change is explicitly requested.
 
-## 14. Licensing and Usage Rights
+If a background makes content difficult to read, adjust the image treatment or existing overlay rather than changing the overall brand system.
 
-Publish only backgrounds that MedOrbits owns or is authorized to use.
+10. Fallbacks and Missing Backgrounds
 
-Where appropriate, record:
+When a background image is unavailable:
 
-- Asset source.
-- Creator or provider.
-- License.
-- Attribution requirements.
-- Approval status.
-- Usage restrictions.
-- Date added.
+* Use a verified existing background asset or an approved CSS colour or gradient.
+* Preserve the component’s dimensions.
+* Keep headings and controls visible.
+* Avoid broken or unresolved image references.
+* Follow the established Royal Burgundy and Champagne Gold design system.
+* Do not introduce a pure-white or transparent section that conflicts with the existing design.
 
-Do not assume that an image found online is free to use commercially.
+Verify the fallback path before referencing it in production.
 
-Avoid using copyrighted artwork, institutional branding, or third-party promotional graphics without the required authorization.
+11. Copyright and Licensing
 
-## 15. Caching and Version Control
+Before adding or replacing background assets:
 
-Use stable filenames for unchanged assets.
+* Confirm ownership or permission to use the asset.
+* Verify commercial-use and modification rights.
+* Provide attribution when required.
+* Review third-party textures and patterns for licensing restrictions.
+* Avoid unauthorized logos or branded material.
+* Ensure SVG assets do not contain untrusted scripts or unnecessary external references.
 
-When replacing a deployed background:
+Maintain source and licensing records where appropriate.
 
-1. Confirm the replacement is approved.
-2. Check all HTML and CSS references.
-3. Decide whether the filename should remain stable or be versioned.
-4. Update references when necessary.
-5. Invalidate caches where required.
-6. Verify the production asset.
-7. Confirm that the previous background is no longer unintentionally displayed.
+12. Quality Assurance Checklist
 
-Do not remove an old background until active references have been checked.
+File integrity
 
-## 16. Archive Management
+* [ ]	The background asset exists at the documented path.
+* [ ]	The file opens and renders correctly.
+* [ ]	The extension matches the actual file format.
+* [ ]	Dimensions and compression are appropriate.
+* [ ]	CSS and application references are correct.
 
-Move retired backgrounds to an archive only when there is a clear reason to retain them.
+Visual quality
 
-Before archiving:
+* [ ]	The asset complements the MedOrbits brand palette.
+* [ ]	Backgrounds remain visually balanced.
+* [ ]	Text and controls remain readable.
+* [ ]	Desktop and mobile rendering have been tested.
+* [ ]	Existing page layouts remain unchanged.
+* [ ]	Opening animation, header, and footer remain unchanged.
 
-- Search for active references.
-- Confirm that the replacement is working.
-- Record the retirement reason.
-- Preserve useful licensing and source information.
-- Check whether archived files are included in public deployment.
+Accessibility and performance
 
-An archive directory inside a public assets directory is not private storage.
+* [ ]	Text contrast is sufficient.
+* [ ]	Decorative backgrounds are not essential to understanding content.
+* [ ]	Image files are appropriately optimized.
+* [ ]	No unnecessary external dependencies have been introduced.
+* [ ]	Reduced-motion behaviour is preserved.
+* [ ]	Backgrounds do not cause horizontal overflow.
 
-## 17. Troubleshooting
+Content and compliance
 
-### Background does not appear
+* [ ]	Asset usage rights are confirmed.
+* [ ]	No unauthorized branding is present.
+* [ ]	All referenced background files exist.
+* [ ]	Fallback behaviour has been checked.
 
-Check:
+13. Adding More Background Images in the Future
 
-- The file exists.
-- The path is correct.
-- Filename capitalization matches.
-- CSS is being loaded.
-- The file is accessible from the deployed site.
-- The element has visible dimensions.
-- No later CSS rule overrides the background.
+This directory is designed to support additional background assets as MedOrbits expands its website and services.
 
-### Image is cropped incorrectly
+13.1 Adding a new background
 
-Review `background-size`, `background-position`, the container’s dimensions, and the image’s aspect ratio.
+When adding an image:
 
-### Text is difficult to read
+1. Save it in assets/images/backgrounds/.
+2. Choose a descriptive lowercase filename using hyphens.
+3. Select JPG for suitable raster textures or SVG for scalable vector patterns.
+4. Optimize the file for its intended display size.
+5. Add the filename and intended use to the asset catalogue.
+6. Update the relevant CSS or application references.
+7. Test the background across supported screen sizes.
+8. Check text contrast, performance, and accessibility.
+9. Update this README when the approved inventory changes.
 
-Increase the contrast, adjust the overlay, or select a less busy image. Do not rely on a shadow alone to fix inadequate contrast.
+13.2 Future asset inventory
 
-### Page loads slowly
+Use this table to record additional assets as they are created.
 
-Reduce image dimensions and file size, avoid unnecessary background variants, and check network requests. Do not sacrifice necessary image quality or accessibility.
+Filename	Intended use	Format	Status
+example-background.jpg	Describe the intended background	JPG	Proposed
 
-### Background works locally but fails in production
+Replace the example row with actual assets when they are added. Proposed filenames are not confirmation that files exist.
 
-Check case-sensitive paths, build output, deployment configuration, caching, and the server’s static asset handling.
+13.3 Suggested future assets
 
-## 18. Publishing Checklist
+Depending on future design requirements, possible additions include:
 
-Before deploying a background asset:
+* burgundy-noise-texture.jpg — Subtle burgundy surface texture
+* champagne-gold-pattern.svg — Reusable gold decorative pattern
+* education-grid-pattern.svg — Geometric pattern for educational content
+* soft-cream-texture.jpg — Warm cream background texture
+* abstract-orbit-pattern.svg — Abstract orbital motif aligned with the brand
+* dark-burgundy-gradient.jpg — Deeper burgundy gradient for premium sections
+* subtle-line-pattern.svg — Lightweight decorative line pattern
 
-- [ ] The file exists at the referenced path.
-- [ ] The filename and extension are correct.
-- [ ] The image is approved for its intended use.
-- [ ] Ownership or usage rights have been checked.
-- [ ] The image is appropriately optimized.
-- [ ] Desktop and mobile rendering have been tested.
-- [ ] Cropping and focal positioning are acceptable.
-- [ ] Text and interface contrast are sufficient.
-- [ ] A fallback background color is defined.
-- [ ] The asset does not contain unintended private information.
-- [ ] SVG content has been reviewed where applicable.
-- [ ] HTML and CSS references are valid.
-- [ ] Production loading and caching have been checked.
-- [ ] The README and asset inventory are updated when necessary.
+These are suggestions only. Create them when a real design requirement exists, and check the current directory for duplicates before adding them.
 
-## 19. Maintenance
+13.4 Rules for future additions
 
-The MedOrbits project maintainer or designated asset owner should:
+* Do not overwrite an existing asset unintentionally.
+* Check all references before renaming or deleting files.
+* Avoid creating multiple assets with nearly identical purposes.
+* Keep background imagery decorative where practical.
+* Avoid external dependencies unless explicitly approved.
+* Preserve existing page architecture and styling.
+* Verify all production paths before deployment.
 
-1. Keep background assets organized by purpose.
-2. Preserve existing paths unless a migration is planned.
-3. Remove duplicate assets when safe and appropriate.
-4. Review licensing and security before publication.
-5. Monitor performance on mobile devices.
-6. Retire obsolete assets only after checking references.
-7. Update this README when directory conventions change.
-8. Keep example filenames clearly distinguished from actual assets.
+13.5 Final verification
 
-## 20. Change Log
+* [ ]	The new file exists at the correct path.
+* [ ]	The filename and format are correct.
+* [ ]	The asset matches the intended visual purpose.
+* [ ]	The file is optimized.
+* [ ]	The background scales correctly on mobile and desktop.
+* [ ]	Text contrast remains sufficient.
+* [ ]	Licensing requirements are satisfied.
+* [ ]	Application references have been verified.
+* [ ]	Existing website design and animations remain unchanged.
 
-**Version 1.0.0 — 2026-10-24**
+14. Maintenance and Version Control
 
-- Established background asset-management standards.
-- Defined directory structure and naming conventions.
-- Added format, dimension, composition, and responsive design guidance.
-- Documented accessibility, performance, security, and licensing requirements.
-- Added caching, troubleshooting, publishing, and maintenance procedures.
+When adding, replacing, or removing background assets:
 
-—
+1. Inspect the current directory and application references.
+2. Confirm whether an equivalent asset already exists.
+3. Preserve established filenames unless a migration is required.
+4. Optimize new files.
+5. Update the asset catalogue and documentation.
+6. Test responsive rendering and text contrast.
+7. Verify deployed paths.
+8. Remove obsolete files only after confirming they are no longer referenced.
 
-Maintainer: MedOrbits Project  
-Canonical directory: `/assets/images/backgrounds/`  
-Document: `README.md`
+Routine background maintenance must not alter global page structure, the opening animation, header, footer, typography, responsive breakpoints, or the overall colour theme.
 
-This document defines background asset-management guidance. It does not provide background artwork or certify the ownership, approval, or contents of any specific image.
+15. Related Directories
+
+Potentially related locations include:
+
+* assets/images/ — Shared image library.
+* assets/images/hero/ — Hero and landing-page imagery.
+* assets/images/education/ — Education-related imagery.
+* assets/images/campaigns/ — Campaign and promotional graphics.
+* assets/images/placeholders/ — Fallback images.
+* assets/images/logo/ — Brand logo assets.
+* assets/css/ — Stylesheets, if consistent with the current project structure.
+
+Verify each path before referencing it. These locations describe related asset categories and do not confirm that every directory exists.
+
+16. Final Standard
+
+The assets/images/backgrounds/ directory should contain lightweight, accessible, appropriately licensed, and visually consistent background assets for MedOrbits.
+
+All backgrounds must complement Royal Burgundy #6B1838, Champagne Gold #C9A66B, and Warm Cream #F6EDDD.
+
+Future additions must extend the existing asset library without disrupting the website’s page layout, opening animation, header, footer, responsive behaviour, or established design system.
+
+End of document.

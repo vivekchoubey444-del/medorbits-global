@@ -1,0 +1,490 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/study-abroad-manifest.schema.json",
+  "title": "MedOrbits Study Abroad Guides Manifest",
+  "description": "Strict validation schema for the MedOrbits study-abroad guide package. Structural validation does not prove file existence, authenticity, or runtime publication authorization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "package",
+    "schemaVersion",
+    "manifestVersion",
+    "directory",
+    "purpose",
+    "brand",
+    "access",
+    "defaultFormat",
+    "academicYear",
+    "lastReviewed",
+    "statusDefinitions",
+    "documents",
+    "accuracyPolicy",
+    "verificationPolicy",
+    "contentStandards",
+    "publishingChecklist",
+    "privacy",
+    "maintenance"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "./manifest.schema.json"
+    },
+    "package": {
+      "type": "string",
+      "const": "MedOrbits Study Abroad Guides"
+    },
+    "schemaVersion": {
+      "$ref": "#/$defs/version"
+    },
+    "manifestVersion": {
+      "$ref": "#/$defs/version"
+    },
+    "directory": {
+      "type": "string",
+      "const": "assets/documents/study-abroad/"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 20
+    },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "designDirection"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "MedOrbits"
+        },
+        "designDirection": {
+          "type": "string",
+          "const": "Royal Burgundy and Champagne Gold"
+        }
+      }
+    },
+    "access": {
+      "type": "string",
+      "const": "public"
+    },
+    "defaultFormat": {
+      "type": "string",
+      "const": "application/pdf"
+    },
+    "academicYear": {
+      "$ref": "#/$defs/nullableString"
+    },
+    "lastReviewed": {
+      "$ref": "#/$defs/nullableDate"
+    },
+    "statusDefinitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planned",
+        "draft",
+        "published",
+        "outdated",
+        "archived"
+      ],
+      "properties": {
+        "planned": {
+          "type": "string",
+          "minLength": 10
+        },
+        "draft": {
+          "type": "string",
+          "minLength": 10
+        },
+        "published": {
+          "type": "string",
+          "minLength": 10
+        },
+        "outdated": {
+          "type": "string",
+          "minLength": 10
+        },
+        "archived": {
+          "type": "string",
+          "minLength": 10
+        }
+      }
+    },
+    "documents": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/document"
+      }
+    },
+    "accuracyPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirementsVaryByDestinationAndApplicant",
+        "verifyImmigrationRulesWithOfficialSources",
+        "verifyWorkAndInsuranceRulesWithOfficialSources",
+        "verifyInstitutionalRecognition",
+        "admissionGuarantee",
+        "fundingGuarantee",
+        "visaApprovalGuarantee",
+        "employmentGuarantee",
+        "immigrationOutcomeGuarantee",
+        "providesLegalImmigrationOrFinancialAdvice",
+        "prohibitFalseDocuments",
+        "prohibitUnverifiedAgentPromises"
+      ],
+      "properties": {
+        "requirementsVaryByDestinationAndApplicant": {
+          "type": "boolean",
+          "const": true
+        },
+        "verifyImmigrationRulesWithOfficialSources": {
+          "type": "boolean",
+          "const": true
+        },
+        "verifyWorkAndInsuranceRulesWithOfficialSources": {
+          "type": "boolean",
+          "const": true
+        },
+        "verifyInstitutionalRecognition": {
+          "type": "boolean",
+          "const": true
+        },
+        "prohibitFalseDocuments": {
+          "type": "boolean",
+          "const": true
+        },
+        "prohibitUnverifiedAgentPromises": {
+          "type": "boolean",
+          "const": true
+        },
+        "admissionGuarantee": {
+          "type": "boolean",
+          "const": false
+        },
+        "fundingGuarantee": {
+          "type": "boolean",
+          "const": false
+        },
+        "visaApprovalGuarantee": {
+          "type": "boolean",
+          "const": false
+        },
+        "employmentGuarantee": {
+          "type": "boolean",
+          "const": false
+        },
+        "immigrationOutcomeGuarantee": {
+          "type": "boolean",
+          "const": false
+        },
+        "providesLegalImmigrationOrFinancialAdvice": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "verificationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "officialSourcesRequiredForPublication",
+        "verificationDateRequiredForTimeSensitiveInformation",
+        "destinationCountryRequiredWhenApplicable",
+        "academicYearOrIntakeRequiredWhenApplicable",
+        "recordOfficialSourceLinks",
+        "reviewWhenOfficialRequirementsChange",
+        "unverifiedResourcesMustNotBePublished",
+        "publishedResourcesRequireQualityAssurance"
+      ],
+      "properties": {
+        "officialSourcesRequiredForPublication": {
+          "type": "boolean",
+          "const": true
+        },
+        "verificationDateRequiredForTimeSensitiveInformation": {
+          "type": "boolean",
+          "const": true
+        },
+        "destinationCountryRequiredWhenApplicable": {
+          "type": "boolean",
+          "const": true
+        },
+        "academicYearOrIntakeRequiredWhenApplicable": {
+          "type": "boolean",
+          "const": true
+        },
+        "recordOfficialSourceLinks": {
+          "type": "boolean",
+          "const": true
+        },
+        "reviewWhenOfficialRequirementsChange": {
+          "type": "boolean",
+          "const": true
+        },
+        "unverifiedResourcesMustNotBePublished": {
+          "type": "boolean",
+          "const": true
+        },
+        "publishedResourcesRequireQualityAssurance": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "contentStandards": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "publishingChecklist": {
+      "$ref": "#/$defs/nonEmptyStringList"
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publicResourcesOnly",
+        "prohibitedContent",
+        "privateRecordsStorage"
+      ],
+      "properties": {
+        "publicResourcesOnly": {
+          "type": "boolean",
+          "const": true
+        },
+        "prohibitedContent": {
+          "$ref": "#/$defs/nonEmptyStringList"
+        },
+        "privateRecordsStorage": {
+          "type": "string",
+          "minLength": 20
+        }
+      }
+    },
+    "maintenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maintainedBy",
+        "keepManifestSynchronizedWithDirectory",
+        "reviewWhenGovernmentRulesChange",
+        "reviewWhenInstitutionalRequirementsChange",
+        "reviewTimeSensitiveContentPeriodically",
+        "removeOrMarkOutdatedResources",
+        "publishOnlyAfterQualityAssurance"
+      ],
+      "properties": {
+        "maintainedBy": {
+          "type": "string",
+          "const": "MedOrbits"
+        },
+        "keepManifestSynchronizedWithDirectory": {
+          "type": "boolean",
+          "const": true
+        },
+        "reviewWhenGovernmentRulesChange": {
+          "type": "boolean",
+          "const": true
+        },
+        "reviewWhenInstitutionalRequirementsChange": {
+          "type": "boolean",
+          "const": true
+        },
+        "reviewTimeSensitiveContentPeriodically": {
+          "type": "boolean",
+          "const": true
+        },
+        "removeOrMarkOutdatedResources": {
+          "type": "boolean",
+          "const": true
+        },
+        "publishOnlyAfterQualityAssurance": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nullableDate": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nonEmptyStringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 5
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "filename",
+        "title",
+        "category",
+        "status",
+        "description",
+        "academicYear",
+        "lastReviewed",
+        "lastVerified",
+        "destinationCountries",
+        "officialSources"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.pdf$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "category": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "planned",
+            "draft",
+            "published",
+            "outdated",
+            "archived"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20
+        },
+        "academicYear": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "lastReviewed": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "lastVerified": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "destinationCountries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "officialSources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/officialSource"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "published"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lastReviewed": {
+                "type": "string",
+                "format": "date"
+              },
+              "lastVerified": {
+                "type": "string",
+                "format": "date"
+              },
+              "officialSources": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "officialSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "url",
+        "sourceType"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "government",
+            "immigration-authority",
+            "education-regulator",
+            "institution",
+            "examination-authority",
+            "scholarship-provider",
+            "other-official"
+          ]
+        },
+        "accessedAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
