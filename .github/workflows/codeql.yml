@@ -1,4 +1,19 @@
 
+# ==============================================================================
+# MedOrbits -- CodeQL Security Analysis
+# File: .github/workflows/codeql.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Detect security vulnerabilities in JavaScript, TypeScript, and Python code.
+#
+# Policy:
+#   - Least-privilege GitHub permissions.
+#   - Security analysis on pushes, pull requests, and a weekly schedule.
+#   - No automatic merging, deployment, or source modification.
+#   - Security findings are published to GitHub code scanning.
+# ==============================================================================
+
 name: CodeQL Security Analysis
 
 on:
@@ -20,7 +35,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,14 +55,16 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
+
           - language: python
             build-mode: none
 
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 1
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -60,3 +77,4 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
+          upload: true

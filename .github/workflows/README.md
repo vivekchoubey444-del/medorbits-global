@@ -1,156 +1,290 @@
-GitHub Scripts
 
-This directory contains helper scripts used to validate, maintain, and troubleshoot the MedOrbits repository. Scripts should be safe, documented, repeatable, and suitable for local development or GitHub Actions where applicable.
+# MedOrbits — GitHub Scripts
 
-Directory Structure
+**Directory:** `.github/scripts/`  
+**Documentation version:** 2.0.0
 
+## 1. Purpose
+
+This directory contains helper scripts for validating, testing, maintaining, and troubleshooting the MedOrbits repository.
+
+Scripts should be safe, documented, repeatable, and suitable for local development or GitHub Actions where applicable.
+
+**Documentation policy:** This README describes the intended interfaces and conventions. Verify each script’s actual implementation before relying on optional features or command-line examples.
+
+## 2. Directory Structure
+
+The intended structure is:
+
+```text
 .github/
 └── scripts/
     ├── README.md
     ├── validate-commit-message.sh
     └── test-validate-commit-message.sh
+```
 
-This is the intended structure. Keep this documentation synchronized with the scripts actually present in the repository.
+Keep this documentation synchronized with the scripts actually present in the repository.
 
-Available Scripts
+## 3. Available Scripts
 
-1. Commit Message Validator
+### 3.1 Commit Message Validator
 
-File: validate-commit-message.sh
+**File:** `validate-commit-message.sh`
 
-Validates commit messages against the repository’s configured commit message conventions.
+Validates commit messages against the conventions configured for the repository.
 
 Typical responsibilities include:
 
-* Checking Conventional Commit types and message structure.
-* Rejecting malformed or empty commit subjects.
-* Enforcing the configured subject-length limit.
-* Providing usage information and version details, if implemented.
-* Returning a nonzero exit code when validation fails.
+- Checking Conventional Commit types and subject structure.
+- Rejecting empty or malformed commit subjects.
+- Enforcing the configured subject-length limit.
+- Providing help or version information, if implemented.
+- Returning a nonzero exit status when validation fails.
+
+#### Usage
+
+The following examples assume that the validator accepts a commit message as a positional argument. Confirm the actual interface in the script before using them.
+
+```bash
+bash .github/scripts/validate-commit-message.sh “feat: add admission search”
+```
+
+If the validator accepts a message-file path instead, use the documented file-based interface.
+
+#### Expected behavior
+
+| Condition | Expected result |
+|—|—|
+| Valid commit message | Exit status `0` |
+| Invalid commit message | Nonzero exit status |
+| Invalid command-line arguments | Nonzero exit status, with usage information where supported |
+| Missing required input | Nonzero exit status, with a clear error |
+
+These expectations must be aligned with the actual implementation.
+
+### 3.2 Commit Message Validator Tests
+
+**File:** `test-validate-commit-message.sh`
+
+Tests the commit-message validator’s supported behavior, including valid and invalid messages, boundary conditions, and command-line options.
+
+#### Run the tests
+
+```bash
+bash .github/scripts/test-validate-commit-message.sh
+```
+
+The test suite should verify the following behaviors where applicable:
+
+- Valid Conventional Commit messages pass.
+- Invalid types and malformed subjects fail.
+- Empty messages are rejected.
+- Subject-length limits are enforced at their documented boundaries.
+- Help and version options behave as documented.
+- Supported environment variables work correctly.
+- Verbose output appears only when supported and enabled.
+- Temporary files are cleaned up after execution.
+- The test suite does not modify tracked project files.
+- Test failures produce a nonzero exit status.
+
+Tests must reflect the validator’s actual interface rather than assuming unsupported options or behavior.
+
+## 4. Running Scripts Locally
+
+Run commands from the repository root unless a script explicitly documents another working directory.
+
+### 4.1 Verify that the scripts exist
+
+```bash
+test -f .github/scripts/validate-commit-message.sh
+test -f .github/scripts/test-validate-commit-message.sh
+```
+
+These commands return a nonzero status if a required file is missing.
+
+### 4.2 Check shell syntax
+
+If the scripts use Bash-specific syntax:
+
+```bash
+bash -n .github/scripts/validate-commit-message.sh
+bash -n .github/scripts/test-validate-commit-message.sh
+```
+
+If both scripts are strictly POSIX-compatible, the following checks may also be used:
+
+```bash
+sh -n .github/scripts/validate-commit-message.sh
+sh -n .github/scripts/test-validate-commit-message.sh
+```
+
+**Important:** `sh -n` is not a reliable substitute for `bash -n` when a script uses Bash-specific features such as arrays, `[[ ... ]]`, or `mapfile`.
+
+### 4.3 Run the test suite
+
+```bash
+bash .github/scripts/test-validate-commit-message.sh
+```
+
+Review the output and exit status. Do not treat a test suite that skips all assertions as a successful validation.
+
+## 5. Development Guidelines
+
+When adding or modifying repository scripts:
+
+1. Use clear filenames that describe the script’s purpose.
+2. Document arguments, environment variables, dependencies, and exit codes.
+3. Prefer POSIX-compatible syntax when practical.
+4. Use Bash explicitly when Bash-specific features are required.
+5. Quote variable expansions and safely handle filenames containing spaces.
+6. Enable appropriate error handling and check the status of important commands.
+7. Avoid destructive operations unless explicitly requested and protected by safeguards.
+8. Never print credentials, API keys, access tokens, or private user data.
+9. Avoid downloading or executing untrusted code.
+10. Keep tests independent of production credentials and external services.
+11. Use temporary directories or files with reliable cleanup traps.
+12. Update this README whenever a script’s interface or behavior changes.
+13. Preserve source files and repository state during validation.
+14. Report skipped checks clearly instead of presenting them as completed tests.
+
+## 6. Security and Reliability
+
+Treat script arguments, environment variables, filenames, and external command output as untrusted input.
+
+### Required safeguards
+
+- Do not use `eval` to execute arbitrary input.
+- Avoid exposing secrets in command-line arguments, logs, error messages, or workflow summaries.
+- Use securely created temporary files and directories.
+- Clean up temporary resources on normal exit and common failure paths.
+- Fail clearly when required files, commands, or interpreters are missing.
+- Avoid following untrusted symbolic links when traversing files, where relevant.
+- Do not automatically rewrite commit history, delete project files, or force-push.
+- Do not execute code from untrusted pull requests with privileged credentials.
+- Use the minimum GitHub Actions permissions necessary.
+- Prefer immutable, verified commit-SHA pins for third-party Actions in production workflows.
+
+### Exit-status convention
+
+Unless a script documents a different contract:
+
+| Exit code | Meaning |
+|—|—|
+| `0` | Operation completed successfully |
+| Nonzero | Validation failed, an error occurred, or a required prerequisite was unavailable |
+
+A skipped check must be reported distinctly from a check that actually passed.
+
+## 7. GitHub Actions Integration
+
+Scripts in this directory may be invoked from workflows under `.github/workflows/`.
 
 Example:
 
-sh .github/scripts/validate-commit-message.sh “feat: add admission search”
+```yaml
+- name: Validate commit-message scripts
+  shell: bash
+  run: |
+    set -Eeuo pipefail
 
-The example assumes the validator accepts a commit message as a positional argument. If the script instead accepts a file path, use the interface documented in that script.
+    bash -n .github/scripts/validate-commit-message.sh
+    bash -n .github/scripts/test-validate-commit-message.sh
+    bash .github/scripts/test-validate-commit-message.sh
+```
 
-2. Commit Message Validator Tests
+Before integrating a script into a workflow:
 
-File: test-validate-commit-message.sh
+- Confirm the script exists at the documented path.
+- Use the correct interpreter.
+- Grant only the permissions required by the job.
+- Set reasonable job timeouts.
+- Do not expose secrets to untrusted pull-request code.
+- Preserve useful diagnostic output.
+- Allow genuine failures to fail the workflow.
+- Test the workflow against the actual repository structure.
 
-Tests the commit message validator’s expected behavior, including valid messages, invalid messages, boundary conditions, and supported command-line options.
+## 8. Troubleshooting
 
-Run the test suite with:
+### Permission denied
 
-sh .github/scripts/test-validate-commit-message.sh
+Run the script through its interpreter:
 
-The tests should verify that:
+```bash
+bash .github/scripts/validate-commit-message.sh
+```
 
-* Valid Conventional Commit messages pass.
-* Invalid message types and malformed subjects fail.
-* Subject-length limits are enforced.
-* Help and version options behave as documented.
-* Supported environment variables work correctly.
-* Verbose output is produced only when supported and enabled.
-* Temporary files are removed after execution.
-* The test suite does not modify tracked project files.
+Alternatively, if direct execution is intended:
 
-Keep the test expectations aligned with the validator’s actual interface and behavior.
+```bash
+chmod +x .github/scripts/validate-commit-message.sh
+```
 
-Running Scripts Locally
+The script must have a valid shebang for direct execution.
 
-Run commands from the repository root unless a script explicitly documents otherwise.
-
-Check that the scripts exist:
-
-test -f .github/scripts/validate-commit-message.sh
-test -f .github/scripts/test-validate-commit-message.sh
-
-Check shell syntax:
-
-sh -n .github/scripts/validate-commit-message.sh
-sh -n .github/scripts/test-validate-commit-message.sh
-
-Run the test suite:
-
-sh .github/scripts/test-validate-commit-message.sh
-
-If a script requires Bash-specific syntax, use bash for syntax checks and execution instead of sh.
-
-Development Guidelines
-
-When adding or changing scripts:
-
-1. Use clear names that describe the script’s purpose.
-2. Document required arguments, environment variables, dependencies, and exit codes.
-3. Prefer portable shell syntax when practical.
-4. Quote variable expansions and handle paths containing spaces safely.
-5. Use explicit error handling for commands that can fail.
-6. Avoid destructive operations unless they are explicitly requested and protected by safeguards.
-7. Never print credentials, API keys, tokens, or private user data.
-8. Avoid downloading or executing untrusted code.
-9. Keep tests independent of production credentials and external services.
-10. Update this README whenever a script’s behavior or interface changes.
-
-Security and Reliability
-
-* Treat all user-provided input as untrusted.
-* Do not use eval to process arbitrary input.
-* Avoid exposing secrets through command-line arguments, logs, or workflow output.
-* Use temporary directories and cleanup traps for generated test files.
-* Make scripts fail clearly when required files or tools are missing.
-* Review changes before running scripts that alter repository state.
-* Do not automatically rewrite commit history, delete files, or force-push from validation scripts.
-
-GitHub Actions Integration
-
-Scripts may be invoked from workflows in .github/workflows/.
-
-When integrating a script into a workflow:
-
-* Grant only the permissions required for that job.
-* Pin third-party actions to verified commit SHAs for production use.
-* Set reasonable job timeouts.
-* Do not expose secrets to untrusted pull-request code.
-* Preserve useful error output and make failures visible.
-* Test the workflow against the actual repository structure.
-
-Troubleshooting
-
-Permission denied
-
-Run a shell script through its interpreter:
-
-bash .github/scripts/example.sh
-
-Alternatively, if the script is intended to be executable:
-
-chmod +x .github/scripts/example.sh
-
-Command not found
+### Command not found
 
 Check that the required interpreter and dependencies are installed.
 
-Tests fail
+```bash
+command -v bash
+command -v sh
+```
 
-Run the syntax check first, review the failing assertion, and verify that the test suite matches the current validator interface.
+Check additional dependencies against the script’s documentation.
 
-Script is missing
+### Tests fail
 
-Check the exact path and filename. GitHub paths are case-sensitive in Linux-based runners.
+1. Run the appropriate shell syntax check.
+2. Identify the failing assertion.
+3. Verify the validator’s current interface.
+4. Check whether the expected subject-length limit or commit types changed.
+5. Re-run the tests after making a targeted correction.
 
-Contribution Checklist
+Do not weaken assertions simply to make the suite pass.
 
-Before committing a script change:
+### Script is missing
 
-* [ ]	The script has a clear purpose and documented interface.
-* [ ]	Shell syntax validation passes.
-* [ ]	Relevant tests pass.
-* [ ]	Failure cases return appropriate exit codes.
-* [ ]	No secrets or personal data are exposed.
-* [ ]	No unintended repository modifications occur.
-* [ ]	Related documentation is updated.
+Check the exact path and filename:
 
-⸻
+```bash
+ls -la .github/scripts/
+```
 
-Maintenance note: This README documents the intended conventions for .github/scripts/. Confirm that each referenced script exists before relying on the examples.
+GitHub Actions runners use Linux, where paths and filenames are case-sensitive.
+
+### Script succeeds but performs no meaningful checks
+
+Review whether the test suite executed its assertions and whether the validator’s exit status is propagated. A successful shell exit alone does not prove that validation occurred.
+
+## 9. Contribution Checklist
+
+Before committing changes to `.github/scripts/`:
+
+- [ ] The script has a clear purpose and documented interface.
+- [ ] Required dependencies and environment variables are documented.
+- [ ] Shell syntax validation passes using the correct interpreter.
+- [ ] Relevant tests execute and pass.
+- [ ] Failure cases return appropriate exit codes.
+- [ ] Temporary files are cleaned up.
+- [ ] No credentials or personal data are exposed.
+- [ ] No unintended repository modifications occur.
+- [ ] GitHub Actions integration uses least-privilege permissions.
+- [ ] Related documentation is updated.
+
+## 10. Maintenance
+
+This README documents the intended conventions for `.github/scripts/`.
+
+Before relying on any command or feature documented here, confirm that the corresponding script exists and implements the described behavior.
+
+When introducing a new script:
+
+1. Add the script to `.github/scripts/`.
+2. Document its purpose, interface, prerequisites, and exit codes.
+3. Add or update automated tests.
+4. Integrate it into CI where appropriate.
+5. Update the directory structure and this README.
+
+**Repository policy:** Validation should be repeatable, failures should be visible, and routine checks should not modify tracked source files.
+```

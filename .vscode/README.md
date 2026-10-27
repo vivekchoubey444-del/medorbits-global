@@ -1,278 +1,258 @@
+MedOrbits — VS Code Workspace
 
-# MedOrbits — VS Code Workspace Configuration
+Workspace configuration and developer tooling
 
-**Directory:** `.vscode/`  
-**File:** `README.md`  
-**Release target:** `2.0.0`  
-**Purpose:** Document safe, consistent Visual Studio Code settings and development workflows for the MedOrbits repository.
+Version: 1.0.0
+Project: MedOrbits
+Purpose: Standardize development, testing, documentation, debugging, and repository maintenance.
 
-—
+⸻
 
-## 1. Purpose
+1. Overview
 
-The `.vscode/` directory contains optional workspace configuration for developers working on MedOrbits.
+The .vscode/ directory contains shared Visual Studio Code workspace configuration for the MedOrbits repository.
 
-It may provide shared editor recommendations, debugging examples, task definitions, and formatting guidance.
+It provides:
 
-Workspace configuration must remain compatible with the existing repository structure, Node.js runtime, frontend assets, API modules, and deployment workflow.
+* Consistent formatting and editor settings.
+* Recommended extensions for Python, HTML, CSS, JavaScript, JSON, YAML, and Markdown.
+* Repeatable repository validation and page-generation tasks.
+* Python debugging configurations.
+* Reusable code snippets and documentation templates.
+* A consistent development workflow for contributors.
 
-**Security rule:** Do not commit personal workspace settings, local filesystem paths, credentials, tokens, or environment-specific secrets.
+These configurations are development aids. They do not replace application-level security controls, CI checks, or code review.
 
-## 2. Recommended Directory Structure
+2. Directory Structure
 
-```text
 .vscode/
 ├── README.md
 ├── extensions.json
-├── settings.example.json
-├── launch.example.json
-└── tasks.example.json
-```
+├── settings.json
+├── tasks.json
+├── launch.json
+├── extensions-recommendations.md
+├── markdown.code-snippets
+├── html.code-snippets
+├── javascript.code-snippets
+├── python.code-snippets
+├── css.code-snippets
+├── json.code-snippets
+├── yaml.code-snippets
+└── profiles/
+    ├── frontend.code-profile
+    └── python.code-profile
 
-Create optional files only when they are needed.
+Optional files should be created only when needed. The workspace can function without the profile files.
 
-| File | Purpose |
-|—|—|
-| `README.md` | Documents workspace configuration and safety practices |
-| `extensions.json` | Recommends useful editor extensions |
-| `settings.example.json` | Provides sanitized editor settings |
-| `launch.example.json` | Provides example debugging configurations |
-| `tasks.example.json` | Documents optional development tasks |
+3. Configuration Reference
 
-The example files are templates. Rename or copy them into active VS Code configuration files only after reviewing their contents.
+File	Responsibility
+extensions.json	Recommended and unwanted extension identifiers
+settings.json	Formatting, editor behavior, language tooling, and exclusions
+tasks.json	Repeatable repository commands
+launch.json	Python debugging configurations
+extensions-recommendations.md	Setup instructions and workspace conventions
+markdown.code-snippets	Documentation, API, security, and decision-record templates
+html.code-snippets	Accessible HTML page templates
+javascript.code-snippets	DOM interaction and JSON-fetching templates
+python.code-snippets	Python modules, tests, and issue reporting
+css.code-snippets	Responsive layouts and premium design sections
+json.code-snippets	Schema properties and illustrative API responses
+yaml.code-snippets	GitHub Actions workflow starters
 
-## 3. Supported Development Environment
+4. Prerequisites
 
-The recommended environment includes:
+Install the following tools as required by your project:
 
-- Node.js 20 or later, following the version declared by the project.
-- npm and the repository’s committed package lockfile.
-- JavaScript ES modules where configured by `package.json`.
-- HTML, CSS, JavaScript, and JSON support.
-- Git integration and reviewed repository workflows.
-- Optional Python support for scripts and utilities that use Python.
+* Visual Studio Code.
+* Python 3.10 or later for the repository manager.
+* Node.js if JavaScript syntax validation is required.
+* Git for version control.
+* Pytest and Ruff if Python testing and linting are enabled.
+* Prettier and the appropriate VS Code extensions for supported file formatting.
 
-Use the repository’s actual `package.json`, `.nvmrc`, and CI configuration as the source of truth for runtime versions and commands.
+The repository manager itself uses the Python standard library.
 
-Do not assume that a recommended runtime version is the version currently installed on every developer’s machine.
+Create a Python virtual environment
 
-## 4. Editor Settings
+Linux or macOS:
 
-Recommended settings for a shared workspace:
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install —upgrade pip
 
-- Use UTF-8 encoding.
-- Use consistent line endings and indentation.
-- Trim trailing whitespace on save.
-- Insert a final newline.
-- Associate JSON files with the JSON language service.
-- Enable format-on-save only when the repository has an agreed formatter.
-- Avoid overriding project-specific formatting rules.
-- Keep terminal output and diagnostics readable.
+Windows PowerShell:
 
-Example settings may be maintained in `settings.example.json`. These settings are not active automatically.
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install —upgrade pip
 
-Review all shared settings for compatibility with `.editorconfig`, ESLint, Prettier, and other project-level configuration before adopting them.
+Install only the development dependencies declared by the repository. Do not assume that every recommended extension or optional Python package is already installed.
 
-## 5. Recommended Extensions
+5. Getting Started
 
-Use extensions only when they provide practical value for the current codebase.
+1. Open the repository root in VS Code.
+2. Install the recommended extensions.
+3. Select the correct Python interpreter using Python: Select Interpreter.
+4. Review settings.json for operating-system-specific paths.
+5. Open Terminal → Run Task.
+6. Run the repository inspection task.
+7. Run validation and page discovery before generating files.
 
-Potential categories include:
+Initial verification
 
-- JavaScript and Node.js development.
-- ESLint and Prettier, if configured by the project.
-- HTML and CSS assistance.
-- JSON validation and schema support.
-- Git history and diff inspection.
-- Accessibility checking.
-- Markdown editing and preview.
-- GitHub Actions workflow editing.
+python tools/repository_manager.py inspect
+python tools/repository_manager.py validate
+python tools/repository_manager.py pages —discover
+python tools/repository_manager.py audit-pages
 
-Keep extension recommendations in `extensions.json`.
+Run commands from the repository root unless a different root is explicitly provided.
 
-Avoid recommending extensions that duplicate existing tooling or require unnecessary access to private source code. Verify each extension’s publisher and identifier before recommending installation.
+6. Available Workspace Tasks
 
-Extension recommendations do not install extensions automatically or enforce repository policy.
+The task names depend on the contents of tasks.json.
 
-## 6. Debugging Configuration
+Task	Purpose
+MedOrbits: Inspect repository	Inventory files by extension
+MedOrbits: Validate repository	Check supported source files and local HTML references
+MedOrbits: Discover HTML pages	Inspect existing pages and navigation
+MedOrbits: Preview page generation	Preview missing-page creation
+MedOrbits: Generate missing pages	Create missing pages from the manifest
+MedOrbits: Audit pages	Report page completeness and orphaned pages
+MedOrbits: Preview asset organization	Preview safe organization proposals
+MedOrbits: Python compile check	Check Python compilation
+MedOrbits: Run pytest	Run the configured test suite
+MedOrbits: Run Ruff	Run Python lint checks
 
-Debugging examples may be stored in `launch.example.json`.
+Some tasks require optional tools or directories. Confirm their availability before treating a failed task as an application defect.
 
-Before enabling a launch configuration, verify:
+7. Page Generation and Updates
 
-1. Its entry point exists.
-2. Its working directory is correct.
-3. Its environment variables are safe.
-4. It does not contain production credentials.
-5. It does not bypass authentication or authorization.
-6. Its port does not conflict with another running service.
-7. Its debugger configuration matches the installed Node.js version.
-8. Its module format matches the project’s configuration.
+The repository manager can generate HTML pages from a page manifest and reuse supported shared assets.
 
-Use local environment files for development secrets. Never embed secrets directly in launch configurations.
+Default manifest:
 
-Do not expose the Node.js inspector on a public network. Bind it to localhost unless a properly secured remote-debugging setup is explicitly required.
+tools/site-pages.json
 
-## 7. Development Tasks
+Preview page generation:
 
-Optional task examples may be stored in `tasks.example.json`.
+python tools/repository_manager.py pages
 
-Tasks can support routine operations such as:
+Create the manifest and generate missing pages:
 
-- Running the development server.
-- Running unit tests.
-- Checking JavaScript syntax.
-- Validating JSON files.
-- Running lint checks.
-- Running a production build when supported.
+python tools/repository_manager.py pages —apply
 
-Task commands must match the actual scripts declared in `package.json`. Do not invent commands or assume a test runner is installed.
+Preview replacement of existing pages:
 
-Review tasks before execution, especially commands that delete files, rewrite generated output, modify Git state, or affect databases.
+python tools/repository_manager.py pages —update
 
-Tasks are executable commands. Do not treat a task as safe merely because it is stored in `.vscode/`.
+Apply updates:
 
-## 8. Git Ignore Policy
+python tools/repository_manager.py pages —apply —update
 
-The root `.gitignore` should prevent accidental commits of private workspace configuration.
+Important: Updating an existing page replaces its HTML with generated template content. A backup is created first, but custom content may not be preserved. Review the generated output and your Git changes before using —update.
 
-A recommended policy is:
+Page generation does not automatically retrieve verified live admission data, connect forms to a backend, or supply genuine contact details.
 
-```gitignore
-# Ignore workspace configuration by default.
-.vscode/*
+8. Snippet Usage
 
-# Allow approved shared workspace files.
-!.vscode/README.md
-!.vscode/extensions.json
-!.vscode/settings.example.json
-!.vscode/launch.example.json
-!.vscode/tasks.example.json
-```
+Open a file matching the snippet’s language, then type its prefix in the editor.
 
-This policy allows the README and approved example files to be tracked while keeping other workspace files ignored.
+Prefix	Intended use
+mo-doc	Technical documentation
+mo-readme	Project README
+mo-api-doc	API endpoint documentation
+mo-changelog	Changelog entry
+mo-security	Security advisory
+mo-adr	Architecture decision record
+mo-tasks	Task and acceptance checklist
+mo-html	Accessible HTML page
+mo-module	Python module
+mo-test	Pytest test
+mo-section	Premium CSS section
+mo-grid	Responsive CSS grid
+mo-fetch	Fetch JSON with HTTP error handling
 
-**Important:** These rules do not automatically untrack files that are already committed. Review the current Git index before changing ignore rules. Git ignore rules also do not protect secrets from being committed through force-staging or other explicit Git operations.
+Snippet content is a starting point. Verify paths, API contracts, security requirements, and project-specific values before committing.
 
-## 9. Security Requirements
+9. Formatting and Quality Standards
 
-- Never store API keys, database passwords, tokens, or session secrets in workspace files.
-- Do not embed production environment variables in debugging or task configurations.
-- Avoid machine-specific absolute paths.
-- Do not disable certificate verification to work around connection problems.
-- Do not weaken repository security checks merely to suppress editor warnings.
-- Review extension permissions and publisher identity before installation.
-- Do not execute unfamiliar tasks or scripts without inspecting them.
-- Keep local databases, uploaded documents, and private test fixtures outside tracked workspace configuration.
-- Avoid exposing environment values in terminal output, debugger logs, or diagnostic reports.
-- Keep personal settings and local overrides out of shared examples.
-- Never commit real `.env` files or private credential stores.
+* Use UTF-8 encoding and LF line endings.
+* Preserve meaningful existing project conventions.
+* Format Python with Ruff when configured.
+* Format supported web files with Prettier when installed.
+* Keep HTML semantic and accessible.
+* Use labels for form controls and meaningful alternative text for informative images.
+* Validate JSON and YAML after editing.
+* Keep generated files and build outputs out of source directories where appropriate.
+* Avoid broad automatic rewrites without reviewing the diff.
 
-Workspace configuration is part of the development environment and should receive the same review discipline as application code.
+10. Security and Privacy
 
-## 10. Validation Checklist
+* Never store API keys, passwords, tokens, or production credentials in workspace settings.
+* Do not commit applicant records, identity documents, or confidential business data.
+* Treat external files, downloaded assets, and untrusted repositories as potentially unsafe.
+* Do not enable automatic execution of untrusted workspace tasks.
+* Review task commands before running them.
+* Do not disable workspace trust to bypass security warnings.
+* Apply least-privilege permissions to development and deployment credentials.
+* Review generated code before deployment.
+* Keep production secrets in approved environment or secret-management systems.
 
-Before committing `.vscode/` changes:
+Workspace configuration is not a security boundary. Application code and CI pipelines must enforce their own controls.
 
-- [ ] The README describes the actual workspace conventions.
-- [ ] JSON example files parse successfully.
-- [ ] No credentials or private local paths are present.
-- [ ] Extension recommendations are relevant.
-- [ ] Debug configurations reference valid entry points.
-- [ ] Tasks use scripts that exist in `package.json`.
-- [ ] Root `.gitignore` rules preserve approved example files.
-- [ ] No existing source files or user data were deleted.
-- [ ] Changes have been reviewed using `git diff`.
-- [ ] Configuration is compatible with the project’s module system.
-- [ ] Any referenced environment files are local and excluded from Git.
-- [ ] Applicable validation checks have actually been executed.
+11. Troubleshooting
 
-Do not mark checks as passed until their results have been verified.
+Python interpreter not found
 
-## 11. Safe Git Workflow
+Select the correct interpreter and confirm the virtual environment exists.
 
-Inspect workspace changes before staging:
+Formatting does not run
 
-```bash
-git status —short
-git diff — .vscode/ .gitignore
-```
+Verify the required formatter extension is installed and selected for the current language.
 
-Check whether files are ignored:
+Repository tasks fail
 
-```bash
-git check-ignore -v .vscode/settings.json
-git check-ignore -v .vscode/settings.example.json
-```
+Run the equivalent command directly in the terminal and inspect its exit status and output.
 
-Check whether a file is already tracked:
+HTML references are missing
 
-```bash
-git ls-files —error-unmatch .vscode/settings.json
-```
+Run repository validation and correct the relevant paths. Remember that root-relative URL behavior can differ between local file previews and deployed hosting.
 
-The last command returns a nonzero exit status if the file is not tracked. This is expected for a new or ignored file.
+Page updates replace custom content
 
-After reviewing the changes, stage only the intended files:
+Restore from the generated backup or version control, then update the manifest or generation logic before retrying.
 
-```bash
-git add .vscode/README.md
-git add .vscode/extensions.json
-```
+Tests cannot be discovered
 
-Add example files individually when they exist and have been reviewed:
+Confirm the test directory exists, install the declared development dependencies, and check the configured test paths.
 
-```bash
-git add .vscode/settings.example.json
-git add .vscode/launch.example.json
-git add .vscode/tasks.example.json
-```
+12. Maintenance
 
-Do not run these commands for files that do not exist. Do not use `git add -f` to bypass ignore rules without first understanding why the file is ignored.
+When adding or changing workspace files:
 
-Review the staged changes before committing:
+1. Update this README.
+2. Verify JSON syntax for settings.json, tasks.json, and launch.json.
+3. Confirm recommended extension identifiers are valid.
+4. Check task paths against the current repository structure.
+5. Run relevant validation and tests.
+6. Review the Git diff before committing.
 
-```bash
-git diff —cached —check
-git diff —cached — .vscode/ .gitignore
-git status —short
-```
+Keep shared workspace settings portable across supported operating systems.
 
-If the repository has unresolved merge conflicts or uncommitted recovery work, resolve and review those issues before staging workspace changes. Preserve unrelated modifications and newly created files.
+13. Related Documentation
 
-## 12. Maintenance
+* Repository README
+* Repository Manager
+* Pre-commit Configuration
+* GitHub Workflows
+* Project Documentation
 
-Update this documentation when:
+Links should be updated if the repository structure changes.
 
-- The Node.js version changes.
-- Workspace conventions change.
-- New development tools are adopted.
-- Debugging or task workflows change.
-- The root `.gitignore` policy changes.
-- New security requirements affect local development.
-- Package scripts or test commands change.
-- The repository’s module system or build process changes.
+⸻
 
-Remove obsolete configuration only after checking its dependencies and confirming that it is no longer needed.
-
-Keep the documentation aligned with the actual repository rather than assuming every example file exists.
-
-## 13. Official References
-
-- [Visual Studio Code workspace settings](https://code.visualstudio.com/docs/configure/settings)
-- [VS Code extension recommendations](https://code.visualstudio.com/docs/editor/extension-marketplace#_workspace-recommended-extensions)
-- [VS Code debugging](https://code.visualstudio.com/docs/debugtest/debugging)
-- [VS Code tasks](https://code.visualstudio.com/docs/debugtest/tasks)
-- [VS Code workspace trust](https://code.visualstudio.com/docs/editing/workspaces/workspace-trust)
-- [Git documentation: gitignore](https://git-scm.com/docs/gitignore)
-- [Node.js documentation](https://nodejs.org/docs/latest/api/)
-
-—
-
-## Final Principle
-
-The MedOrbits `.vscode/` directory should improve development consistency without introducing machine-specific configuration, exposing secrets, or changing application behavior unexpectedly.
-
-The repository’s actual source code, `package.json`, lockfile, and CI configuration remain the authoritative references for development and validation.
-
-**Verification notice:** This document describes recommended practices. It does not confirm that every listed file exists, that workspace settings are active, or that any command has been executed successfully.
+Maintainer: MedOrbits
+Document status: Workspace documentation template
+Last updated: 2026-10-27

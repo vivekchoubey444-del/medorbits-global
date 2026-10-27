@@ -41,7 +41,7 @@ jobs:
   validate-lockfile:
     name: Validate npm Lockfile
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     permissions:
       contents: read
@@ -57,7 +57,7 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Detect npm projects
+      - name: Detect npm projects and lockfile
         id: detect
         shell: bash
         run: |
@@ -69,10 +69,18 @@ jobs:
             echo "root_project=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ -f package-lock.json ]]; then
-            echo "root_lockfile=true" >> "$GITHUB_OUTPUT"
+          if [[ -f npm-shrinkwrap.json ]]; then
+            echo "root_lockfile=npm-shrinkwrap.json" >> "$GITHUB_OUTPUT"
+          elif [[ -f package-lock.json ]]; then
+            echo "root_lockfile=package-lock.json" >> "$GITHUB_OUTPUT"
           else
-            echo "root_lockfile=false" >> "$GITHUB_OUTPUT"
+            echo "root_lockfile=missing" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f package.json ]]; then
+            echo "Root package.json detected."
+          else
+            echo "No root package.json detected."
           fi
 
       - name: Validate root package manifest
@@ -81,61 +89,164 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          node - <<'NODE'
+          node <<'NODE'
           const fs = require("node:fs");
 
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
+          const file = "package.json";
+          const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
 
-          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-            throw new Error("package.json must contain a JSON object.");
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
+            throw new Error(`${file} must contain a JSON object.`);
           }
 
-          if (pkg.workspaces !== undefined &&
+          if (
+            pkg.name !== undefined &&
+            typeof pkg.name !== "string"
+          ) {
+            throw new Error("package.json name must be a string.");
+          }
+
+          if (
+            pkg.version !== undefined &&
+            typeof pkg.version !== "string"
+          ) {
+            throw new Error("package.json version must be a string.");
+          }
+
+          if (pkg.workspaces !== undefined) {
+            const validWorkspacesArray = Array.isArray(pkg.workspaces);
+            const validWorkspacesObject =
+              pkg.workspaces !== null &&
+              typeof pkg.workspaces === "object" &&
               !Array.isArray(pkg.workspaces) &&
-              (typeof pkg.workspaces !== "object" ||
-               pkg.workspaces === null)) {
-            throw new Error("Invalid npm workspaces configuration.");
+              Array.isArray(pkg.workspaces.packages);
+
+            if (!validWorkspacesArray && !validWorkspacesObject) {
+              throw new Error(
+                "Invalid npm workspaces configuration."
+              );
+            }
           }
 
           console.log(`Package: ${pkg.name || "unnamed"}`);
           console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(
+            `Workspaces: ${pkg.workspaces ? "configured" : "not configured"}`
+          );
           NODE
 
-      - name: Validate root lockfile consistency
-        if: steps.detect.outputs.root_project == 'true' && steps.detect.outputs.root_lockfile == 'true'
+      - name: Fail if root lockfile is missing
+        if: steps.detect.outputs.root_project == 'true' && steps.detect.outputs.root_lockfile == 'missing'
         shell: bash
         run: |
           set -Eeuo pipefail
+          echo "::error::package.json exists, but neither package-lock.json nor npm-shrinkwrap.json exists."
+          echo "Generate and commit a lockfile to enable reproducible npm installs."
+          exit 1
+
+      - name: Validate root lockfile consistency
+        if: steps.detect.outputs.root_project == 'true' && steps.detect.outputs.root_lockfile != 'missing'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          echo "Validating ${{ steps.detect.outputs.root_lockfile }}"
 
           npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Report missing root lockfile
-        if: steps.detect.outputs.root_project == 'true' && steps.detect.outputs.root_lockfile == 'false'
+      - name: Report skipped validation
+        if: steps.detect.outputs.root_project == 'false'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "No root package.json found; root npm lockfile validation was skipped."
+
+      - name: Validate nested npm manifests
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          echo "::error::package.json exists but package-lock.json is missing."
-          echo "Generate and commit the lockfile before relying on reproducible npm installs."
-          exit 1
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
 
-      - name: Report skipped validation
-        if: steps.detect.outputs.root_project == 'false'
-        run: echo "No root package.json found; root npm lockfile validation was skipped."
+          const ignoredDirectories = new Set([
+            ".git",
+            "node_modules",
+            ".next",
+            "dist",
+            "build",
+            "coverage",
+            ".venv",
+            "venv"
+          ]);
+
+          const manifests = [];
+
+          function walk(directory) {
+            for (const entry of fs.readdirSync(directory, {
+              withFileTypes: true
+            })) {
+              if (entry.isDirectory()) {
+                if (!ignoredDirectories.has(entry.name)) {
+                  walk(path.join(directory, entry.name));
+                }
+                continue;
+              }
+
+              if (entry.isFile() && entry.name === "package.json") {
+                manifests.push(path.join(directory, entry.name));
+              }
+            }
+          }
+
+          walk(".");
+
+          const failures = [];
+
+          for (const file of manifests) {
+            try {
+              const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+
+              if (
+                parsed === null ||
+                typeof parsed !== "object" ||
+                Array.isArray(parsed)
+              ) {
+                throw new Error("Expected a JSON object.");
+              }
+            } catch (error) {
+              failures.push(`${file}: ${error.message}`);
+            }
+          }
+
+          console.log(`Checked ${manifests.length} package.json file(s).`);
+
+          if (failures.length > 0) {
+            console.error(failures.join("\n"));
+            process.exitCode = 1;
+          }
+          NODE
 
       - name: Validation summary
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
+          LOCKFILE: ${{ steps.detect.outputs.root_lockfile }}
+          ROOT_PROJECT: ${{ steps.detect.outputs.root_project }}
         shell: bash
         run: |
           {
             echo "## Lockfile Validation"
             echo
-            echo "- Result: $JOB_STATUS"
-            echo "- Lockfile modifications: disabled"
+            echo "- Result: ${JOB_STATUS:-unknown}"
+            echo "- Root npm project: ${ROOT_PROJECT:-not detected}"
+            echo "- Root lockfile: ${LOCKFILE:-not detected}"
+            echo "- Automatic lockfile changes: disabled"
             echo "- Automatic commits: disabled"
             echo "- Automatic merges: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,4 +1,12 @@
 
+# =============================================================================
+# MedOrbits -- Update Lockfile
+# File: .github/workflows/update-lockfile.yml
+# Purpose: Validate or refresh the root npm package-lock.json.
+# Node.js: 22
+# Security: No automatic commits or pushes.
+# =============================================================================
+
 name: Update Lockfile
 
 on:
@@ -23,7 +31,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: update-lockfile-${{ inputs.target_branch }}
+  group: update-lockfile-${{ github.repository }}-${{ inputs.target_branch }}
   cancel-in-progress: false
 
 jobs:
@@ -43,12 +51,19 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          if [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]] ||
+          if [[ -z "$TARGET_BRANCH" ]] ||
+             [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]] ||
              [[ "$TARGET_BRANCH" == -* ]] ||
              [[ "$TARGET_BRANCH" == *..* ]] ||
              [[ "$TARGET_BRANCH" == */ ]] ||
-             [[ "$TARGET_BRANCH" == *//* ]]; then
+             [[ "$TARGET_BRANCH" == *//* ]] ||
+             [[ "$TARGET_BRANCH" == *\\* ]]; then
             echo "::error::Invalid target branch name."
+            exit 1
+          fi
+
+          if ! git check-ref-format "refs/heads/$TARGET_BRANCH"; then
+            echo "::error::Target is not a valid Git branch name."
             exit 1
           fi
 
@@ -63,8 +78,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Verify npm project
+      - name: Verify npm project and lockfile
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -76,9 +93,47 @@ jobs:
 
           if [[ ! -f package-lock.json ]]; then
             echo "::error::Root package-lock.json was not found."
-            echo "This workflow requires package-lock.json."
             exit 1
           fi
+
+          node -e '
+            const fs = require("node:fs");
+
+            const pkg = JSON.parse(
+              fs.readFileSync("package.json", "utf8")
+            );
+
+            const lock = JSON.parse(
+              fs.readFileSync("package-lock.json", "utf8")
+            );
+
+            if (lock.lockfileVersion === undefined) {
+              throw new Error("package-lock.json has no lockfileVersion.");
+            }
+
+            if (
+              lock.name &&
+              pkg.name &&
+              lock.name !== pkg.name
+            ) {
+              throw new Error(
+                "package.json and package-lock.json names differ."
+              );
+            }
+
+            if (
+              lock.version &&
+              pkg.version &&
+              lock.version !== pkg.version
+            ) {
+              throw new Error(
+                "package.json and package-lock.json versions differ."
+              );
+            }
+
+            console.log("Package manifest and lockfile are valid JSON.");
+            console.log("Lockfile version:", lock.lockfileVersion);
+          '
 
           node --version
           npm --version
@@ -101,10 +156,23 @@ jobs:
 
       - name: Verify refreshed lockfile
         if: inputs.update_mode == 'refresh'
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
-      - name: Upload lockfile artifact
-        if: inputs.update_mode == 'refresh'
+          node -e '
+            JSON.parse(
+              require("node:fs").readFileSync(
+                "package-lock.json",
+                "utf8"
+              )
+            );
+          '
+
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Upload refreshed lockfile
+        if: success() && inputs.update_mode == 'refresh'
         uses: actions/upload-artifact@v4
         with:
           name: npm-lockfile-${{ github.run_number }}
@@ -112,16 +180,31 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Report result
-        if: success()
+      - name: Write workflow summary
+        if: always()
+        shell: bash
         env:
           UPDATE_MODE: ${{ inputs.update_mode }}
           TARGET_BRANCH: ${{ inputs.target_branch }}
-        shell: bash
+          JOB_STATUS: ${{ job.status }}
         run: |
           set -Eeuo pipefail
 
-          echo "Lockfile operation completed successfully."
-          echo "Mode: $UPDATE_MODE"
-          echo "Branch: $TARGET_BRANCH"
-          echo "No repository changes were committed or pushed."
+          {
+            echo "## npm Lockfile Operation"
+            echo
+            echo "- Status: **$JOB_STATUS**"
+            echo "- Mode: \`$UPDATE_MODE\`"
+            echo "- Target branch: \`$TARGET_BRANCH\`"
+            echo "- Lockfile: \`package-lock.json\`"
+            echo
+            if [[ "$UPDATE_MODE" == "refresh" &&
+                  "$JOB_STATUS" == "success" ]]; then
+              echo "The refreshed lockfile is available as a workflow artifact."
+            elif [[ "$UPDATE_MODE" == "validate" &&
+                    "$JOB_STATUS" == "success" ]]; then
+              echo "The existing lockfile passed npm ci validation."
+            fi
+            echo
+            echo "No repository changes were committed or pushed."
+          } >> "$GITHUB_STEP_SUMMARY"

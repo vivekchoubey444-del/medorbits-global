@@ -10,8 +10,9 @@
 # Policy:
 #   - Least-privilege permissions.
 #   - No automatic merging or deployment.
-#   - Optional checks are skipped when their prerequisites are absent.
+#   - Optional checks skip only when prerequisites are absent.
 #   - Executed checks must pass; genuine failures are not suppressed.
+#   - Source files remain unchanged.
 # ==============================================================================
 
 name: MedOrbits CI
@@ -50,91 +51,139 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          check-latest: false
 
-      - name: Validate YAML files when a parser is available
+      - name: Install pinned YAML validator
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check "PyYAML==6.0.3"
+
+      - name: Validate YAML syntax and duplicate keys
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          mapfile -d '' files < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.venv' -prune -o \
-              -type f \( -iname '*.yml' -o -iname '*.yaml' \) \
-              -print0
+          python <<'PY'
+          from pathlib import Path
+          import sys
+          import yaml
+
+          EXCLUDED_DIRS = {
+              ".git", "node_modules", ".venv", "venv", "vendor",
+              "__pycache__", ".next", "dist", "build"
+          }
+
+          class UniqueKeyLoader(yaml.SafeLoader):
+              pass
+
+          def construct_mapping(loader, node, deep=False):
+              mapping = {}
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+
+                  try:
+                      duplicate = key in mapping
+                  except TypeError:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          "found an unhashable mapping key",
+                          key_node.start_mark,
+                      )
+
+                  if duplicate:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          f"duplicate key {key!r}",
+                          key_node.start_mark,
+                      )
+
+                  mapping[key] = loader.construct_object(
+                      value_node, deep=deep
+                  )
+
+              return mapping
+
+          UniqueKeyLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              construct_mapping,
           )
 
-          if ((${#files[@]} == 0)); then
-            echo "No YAML files found; validation skipped."
-            exit 0
-          fi
+          files = sorted(
+              path for path in Path(".").rglob("*")
+              if path.is_file()
+              and path.suffix.lower() in {".yml", ".yaml"}
+              and not any(part in EXCLUDED_DIRS for part in path.parts)
+          )
 
-          if python -c 'import yaml' >/dev/null 2>&1; then
-            python - "${files[@]}" <<'PY'
-          import sys
-          import yaml
-
-          failed = False
-          for filename in sys.argv[1:]:
-              try:
-                  with open(filename, encoding="utf-8") as stream:
-                      list(yaml.safe_load_all(stream))
-                  print(f"VALID: {filename}")
-              except Exception as exc:
-                  failed = True
-                  print(f"INVALID: {filename}: {exc}", file=sys.stderr)
-
-          sys.exit(1 if failed else 0)
-          PY
-          else
-            echo "PyYAML is unavailable; installing it for YAML validation."
-            python -m pip install --disable-pip-version-check PyYAML
-
-            python - "${files[@]}" <<'PY'
-          import sys
-          import yaml
+          if not files:
+              print("No YAML files found; validation skipped.")
+              sys.exit(0)
 
           failed = False
-          for filename in sys.argv[1:]:
+
+          for path in files:
               try:
-                  with open(filename, encoding="utf-8") as stream:
-                      list(yaml.safe_load_all(stream))
-                  print(f"VALID: {filename}")
-              except Exception as exc:
+                  with path.open("r", encoding="utf-8-sig") as stream:
+                      list(yaml.load_all(stream, Loader=UniqueKeyLoader))
+                  print(f"[PASS] {path}")
+              except (OSError, UnicodeError, yaml.YAMLError) as exc:
                   failed = True
-                  print(f"INVALID: {filename}: {exc}", file=sys.stderr)
+                  print(f"[FAIL] {path}: {exc}", file=sys.stderr)
 
-          sys.exit(1 if failed else 0)
+          print(f"YAML files checked: {len(files)}")
+
+          if failed:
+              sys.exit(1)
+
+          print("All discovered YAML files passed validation.")
           PY
-          fi
 
-      - name: Check JSON files when present
+      - name: Validate JSON syntax
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          mapfile -d '' files < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.venv' -prune -o \
-              -type f -name '*.json' -print0
+          python <<'PY'
+          from pathlib import Path
+          import json
+          import sys
+
+          EXCLUDED_DIRS = {
+              ".git", "node_modules", ".venv", "venv", "vendor",
+              "__pycache__", ".next", "dist", "build"
+          }
+
+          files = sorted(
+              path for path in Path(".").rglob("*.json")
+              if path.is_file()
+              and not any(part in EXCLUDED_DIRS for part in path.parts)
           )
 
-          if ((${#files[@]} == 0)); then
-            echo "No JSON files found; validation skipped."
-            exit 0
-          fi
+          if not files:
+              print("No JSON files found; validation skipped.")
+              sys.exit(0)
 
-          for file in "${files[@]}"; do
-            if python -m json.tool "$file" >/dev/null; then
-              echo "VALID: $file"
-            else
-              echo "::error file=$file::Invalid JSON."
-              exit 1
-            fi
-          done
+          failed = False
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as stream:
+                      json.load(stream)
+                  print(f"[PASS] {path}")
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  failed = True
+                  print(f"[FAIL] {path}: {exc}", file=sys.stderr)
+
+          print(f"JSON files checked: {len(files)}")
+
+          if failed:
+              sys.exit(1)
+
+          print("All discovered JSON files passed validation.")
+          PY
 
   javascript-validation:
     name: JavaScript and Node.js validation
@@ -147,33 +196,164 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node.js
-        if: ${{ hashFiles('package.json') != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install locked dependencies
-        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Check JavaScript syntax where applicable
+      - name: Detect root Node.js project
+        id: node-project
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ ! -f package.json ]]; then
-            echo "No root package.json; Node.js validation skipped."
-            exit 0
+          if [[ -f package.json ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No root package.json; root Node.js checks will be skipped."
           fi
 
+      - name: Set up Node.js
+        if: steps.node-project.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+          check-latest: false
+
+      - name: Validate package manifest
+        if: steps.node-project.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
           node --version
           npm --version
+          node --input-type=commonjs -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-          echo "Root package manifest is available."
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+              throw new Error("package.json must contain a JSON object.");
+            }
+
+            if (pkg.scripts !== undefined &&
+                (!pkg.scripts || typeof pkg.scripts !== "object" ||
+                 Array.isArray(pkg.scripts))) {
+              throw new Error("package.json scripts must be an object.");
+            }
+
+            console.log("Root package.json is valid.");
+          '
+
+      - name: Check lockfile prerequisites
+        if: steps.node-project.outputs.present == 'true'
+        id: lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f npm-shrinkwrap.json ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "Using npm-shrinkwrap.json as the authoritative lockfile."
+          elif [[ -f package-lock.json ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "Using package-lock.json."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No npm lockfile found. Dependency installation and npm scripts will be skipped."
+          fi
+
+      - name: Validate npm lockfile consistency
+        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+
+      - name: Install locked dependencies
+        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check JavaScript syntax
+        if: steps.node-project.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node <<'JS'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const { spawnSync } = require("node:child_process");
+
+          const excluded = new Set([
+            ".git", "node_modules", ".venv", "venv", "vendor",
+            "__pycache__", ".next", "dist", "build", "coverage"
+          ]);
+
+          const extensions = new Set([".js", ".mjs", ".cjs"]);
+          const files = [];
+
+          function walk(directory) {
+            let entries;
+
+            try {
+              entries = fs.readdirSync(directory, { withFileTypes: true });
+            } catch (error) {
+              throw new Error(`Cannot read ${directory}: ${error.message}`);
+            }
+
+            for (const entry of entries) {
+              if (entry.isSymbolicLink()) continue;
+              if (entry.isDirectory() && excluded.has(entry.name)) continue;
+
+              const fullPath = path.join(directory, entry.name);
+
+              if (entry.isDirectory()) {
+                walk(fullPath);
+              } else if (
+                entry.isFile() &&
+                extensions.has(path.extname(entry.name).toLowerCase())
+              ) {
+                files.push(fullPath);
+              }
+            }
+          }
+
+          walk(".");
+
+          if (files.length === 0) {
+            console.log("No JavaScript source files found; syntax check skipped.");
+            process.exit(0);
+          }
+
+          let failed = false;
+
+          for (const file of files.sort()) {
+            const result = spawnSync(
+              process.execPath,
+              ["--check", file],
+              { encoding: "utf8" }
+            );
+
+            if (result.error || result.status !== 0) {
+              failed = true;
+              console.error(`[FAIL] ${file}`);
+
+              if (result.stderr) {
+                console.error(result.stderr.trim());
+              } else if (result.error) {
+                console.error(result.error.message);
+              }
+            } else {
+              console.log(`[PASS] ${file}`);
+            }
+          }
+
+          console.log(`JavaScript files checked: ${files.length}`);
+          if (failed) process.exit(1);
+          JS
 
       - name: Run configured lint script
-        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
+        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -185,28 +365,32 @@ jobs:
           fi
 
       - name: Run configured tests
-        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
+        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
 
           if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
-            npm test --if-present
+            npm test
           else
             echo "No npm test script configured; test check skipped."
           fi
 
       - name: Report dependency manifest status
+        if: always()
         shell: bash
+        env:
+          PROJECT_PRESENT: ${{ steps.node-project.outputs.present }}
+          LOCKFILE_PRESENT: ${{ steps.lockfile.outputs.present }}
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package.json && -f package-lock.json ]]; then
-            echo "npm manifest and lockfile found."
-          elif [[ -f package.json ]]; then
-            echo "::warning::package.json exists without package-lock.json; dependency installation was skipped."
+          if [[ "$PROJECT_PRESENT" == "true" && "$LOCKFILE_PRESENT" == "true" ]]; then
+            echo "Root npm project and lockfile detected."
+          elif [[ "$PROJECT_PRESENT" == "true" ]]; then
+            echo "Root npm project detected; lockfile-dependent checks were skipped."
           else
-            echo "No root npm project; dependency checks were skipped."
+            echo "No root npm project; Node.js project checks were skipped."
           fi
 
   shell-validation:
@@ -220,32 +404,51 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate Bash scripts
+      - name: Validate shell script syntax
         shell: bash
         run: |
           set -Eeuo pipefail
 
           mapfile -d '' files < <(
             find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.venv' -prune -o \
-              -type f -name '*.sh' -print0
+              \( \
+                -type d \
+                \( \
+                  -name .git \
+                  -o -name node_modules \
+                  -o -name .venv \
+                  -o -name venv \
+                  -o -name vendor \
+                  -o -name __pycache__ \
+                  -o -name dist \
+                  -o -name build \
+                \) \
+                -prune \
+              \) \
+              -o \
+              \( -type f -name '*.sh' -print0 \)
           )
 
           if ((${#files[@]} == 0)); then
             echo "No shell scripts found; validation skipped."
-            exit 0
-          fi
+          else
+            failed=0
 
-          for file in "${files[@]}"; do
-            if bash -n "$file"; then
-              echo "VALID: $file"
-            else
-              echo "::error file=$file::Bash syntax validation failed."
+            for file in "${files[@]}"; do
+              if bash -n "$file"; then
+                printf '[PASS] %s\n' "$file"
+              else
+                printf '::error file=%s::Shell syntax validation failed.\n' "$file"
+                failed=1
+              fi
+            done
+
+            if ((failed != 0)); then
               exit 1
             fi
-          done
+
+            printf 'Validated %s shell script(s).\n' "${#files[@]}"
+          fi
 
       - name: Test commit-message validator when available
         shell: bash
@@ -291,7 +494,7 @@ jobs:
           if [[ "$REPOSITORY_RESULT" != "success" ||
                 "$JAVASCRIPT_RESULT" != "success" ||
                 "$SHELL_RESULT" != "success" ]]; then
-            echo "::error::One or more CI jobs failed or were cancelled."
+            echo "::error::One or more CI jobs failed, were skipped, or were cancelled."
             exit 1
           fi
 

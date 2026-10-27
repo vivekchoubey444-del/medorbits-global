@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, for example 2.0.0"
+        description: "Release version, for example 2.0.0 or 2.1.0-rc.1"
         required: true
         type: string
       prerelease:
@@ -14,7 +14,7 @@ on:
         default: false
         type: boolean
       target_branch:
-        description: "Branch or commit to release from"
+        description: "Branch or commit SHA to release from"
         required: true
         default: main
         type: string
@@ -36,76 +36,148 @@ jobs:
       contents: read
 
     outputs:
-      tag: ${{ steps.version.outputs.tag }}
+      tag: ${{ steps.release.outputs.tag }}
+      sha: ${{ steps.release.outputs.sha }}
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
 
     steps:
-      - name: Check out target branch
+      - name: Check out target ref
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.target_branch }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Validate version and target branch
-        id: version
-        shell: bash
+      - name: Validate release inputs and capture commit
+        id: release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          TARGET_BRANCH: ${{ inputs.target_branch }}
+          TARGET_REF: ${{ inputs.target_branch }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Use a valid semantic version such as 2.0.0 or 2.1.0-rc.1."
+          if [[ -z "$TARGET_REF" || "$TARGET_REF" == -* ]]; then
+            echo "::error::Target ref must be a non-empty branch name or commit SHA."
             exit 1
           fi
 
-          if [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]] ||
-             [[ "$TARGET_BRANCH" == -* ]] ||
-             [[ "$TARGET_BRANCH" == *..* ]] ||
-             [[ "$TARGET_BRANCH" == */ ]] ||
-             [[ "$TARGET_BRANCH" == *//* ]]; then
-            echo "::error::Invalid target branch or ref."
+          if [[ ! "$PRERELEASE" =~ ^(true|false)$ ]]; then
+            echo "::error::Invalid prerelease value."
             exit 1
           fi
 
-          tag="v$RELEASE_VERSION"
+          node <<'NODE'
+          const fs = require("node:fs");
 
-          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "::error::Tag $tag already exists."
+          const version = process.env.RELEASE_VERSION;
+
+          // Semantic Versioning 2.0.0:
+          // - no leading zeroes in major, minor, or patch
+          // - no leading zeroes in numeric prerelease identifiers
+          // - optional prerelease and build metadata
+          const semver =
+            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+
+          if (typeof version !== "string" || !semver.test(version)) {
+            throw new Error(
+              "Invalid semantic version. Examples: 2.0.0, 2.1.0-rc.1"
+            );
+          }
+
+          const prerelease = process.env.PRERELEASE === "true";
+          const hasPrereleaseIdentifier = version.includes("-");
+
+          if (hasPrereleaseIdentifier && !prerelease) {
+            throw new Error(
+              "A version containing a prerelease identifier must be marked as a prerelease."
+            );
+          }
+
+          if (prerelease && !hasPrereleaseIdentifier) {
+            console.warn(
+              "Warning: prerelease is enabled for a stable-looking version."
+            );
+          }
+
+          const output = process.env.GITHUB_OUTPUT;
+
+          fs.appendFileSync(
+            output,
+            `version=${version}\n` +
+            `tag=v${version}\n` +
+            `prerelease=${prerelease}\n`
+          );
+          NODE
+
+          sha="$(git rev-parse --verify 'HEAD^{commit}')"
+
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Could not resolve target to a full commit SHA."
             exit 1
           fi
 
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "Validated release tag: $tag"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          echo "Validated release version: $RELEASE_VERSION"
+          echo "Resolved commit: $sha"
+
+      - name: Check for existing local release tag
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "::error::Tag $RELEASE_TAG already exists in the checked-out repository."
+            exit 1
+          fi
 
       - name: Validate package manifest when present
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         shell: bash
         run: |
           set -Eeuo pipefail
 
           if [[ ! -f package.json ]]; then
-            echo "No root package.json found; skipping package validation."
+            echo "No root package.json found; package validation skipped."
             exit 0
           fi
 
-          node - <<'NODE'
+          node <<'NODE'
           const fs = require("node:fs");
 
           const pkg = JSON.parse(
             fs.readFileSync("package.json", "utf8")
           );
 
-          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
             throw new Error("package.json must contain a JSON object.");
           }
 
+          if (
+            pkg.version !== undefined &&
+            pkg.version !== process.env.RELEASE_VERSION
+          ) {
+            throw new Error(
+              `Release version ${process.env.RELEASE_VERSION} does not match package.json version ${pkg.version}.`
+            );
+          }
+
           console.log(`Package: ${pkg.name || "unnamed"}`);
-          console.log(`Manifest version: ${pkg.version || "unspecified"}`);
+          console.log(`Version: ${pkg.version || "not declared"}`);
           NODE
 
   publish:
-    name: Publish GitHub Release
+    name: Create and Publish GitHub Release
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -114,60 +186,160 @@ jobs:
       contents: write
 
     steps:
-      - name: Check out target branch
+      - name: Check out validated commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.target_branch }}
+          ref: ${{ needs.validate.outputs.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify tag remains unused
+      - name: Set up GitHub CLI
         env:
-          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh --version
+
+      - name: Verify checked-out commit
+        env:
+          EXPECTED_SHA: ${{ needs.validate.outputs.sha }}
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          git fetch --tags --force
+          actual_sha="$(git rev-parse --verify 'HEAD^{commit}')"
 
-          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
-            echo "::error::Tag $RELEASE_TAG already exists."
+          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Publish checkout does not match the validated commit."
             exit 1
           fi
 
-      - name: Generate release notes
+          echo "Publishing validated commit $actual_sha"
+
+      - name: Check remote tag and release availability
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          TARGET_BRANCH: ${{ inputs.target_branch }}
+          REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          gh release create "$RELEASE_TAG" \
-            --target "$TARGET_BRANCH" \
-            --generate-notes \
+          set +e
+          remote_tags="$(
+            git ls-remote --tags origin \
+              "refs/tags/$RELEASE_TAG" \
+              "refs/tags/$RELEASE_TAG^{}" 2>&1
+          )"
+          tag_status=$?
+          set -e
+
+          if [[ $tag_status -eq 0 ]]; then
+            if [[ -n "$remote_tags" ]]; then
+              echo "::error::Remote tag $RELEASE_TAG already exists."
+              exit 1
+            fi
+          elif [[ $tag_status -eq 2 ]]; then
+            :
+          else
+            echo "::error::Unable to verify remote tag availability."
+            echo "$remote_tags"
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_TAG" \
+            --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::A GitHub release for $RELEASE_TAG already exists."
+            exit 1
+          fi
+
+          echo "No existing release was found for $RELEASE_TAG."
+
+      - name: Create draft release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          args=(
+            "$RELEASE_TAG"
+            --repo "$REPOSITORY"
+            --target "$RELEASE_SHA"
+            --generate-notes
             --draft
+          )
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+
+          gh release create "${args[@]}"
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          PRERELEASE: ${{ inputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ "$PRERELEASE" == "true" ]]; then
-            gh release edit "$RELEASE_TAG" --prerelease
-          fi
+          gh release edit "$RELEASE_TAG" \
+            --repo "$REPOSITORY" \
+            --draft=false
 
-          gh release edit "$RELEASE_TAG" --draft=false
+      - name: Verify published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          EXPECTED_SHA: ${{ needs.validate.outputs.sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          release_json="$(
+            gh release view "$RELEASE_TAG" \
+              --repo "$REPOSITORY" \
+              --json tagName,isDraft,isPrerelease,targetCommitish
+          )"
+
+          RELEASE_JSON="$release_json" node <<'NODE'
+          const release = JSON.parse(process.env.RELEASE_JSON);
+
+          if (release.isDraft) {
+            throw new Error("Release is still a draft.");
+          }
+
+          if (release.tagName !== process.env.RELEASE_TAG) {
+            throw new Error("Published release tag does not match.");
+          }
+
+          if (
+            release.targetCommitish &&
+            release.targetCommitish !== process.env.EXPECTED_SHA
+          ) {
+            console.warn(
+              "GitHub returned a target label rather than the full commit SHA; verify the tag target independently if required."
+            );
+          }
+
+          console.log(`Published release: ${release.tagName}`);
+          console.log(`Prerelease: ${release.isPrerelease}`);
+          NODE
 
       - name: Release summary
+        if: success()
         env:
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          PRERELEASE: ${{ inputs.prerelease }}
+          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
@@ -176,6 +348,9 @@ jobs:
             echo
             echo "- Repository: $REPOSITORY"
             echo "- Tag: $RELEASE_TAG"
+            echo "- Commit: $RELEASE_SHA"
             echo "- Prerelease: $PRERELEASE"
             echo "- Release: https://github.com/$REPOSITORY/releases/tag/$RELEASE_TAG"
+            echo "- Automatic source edits: disabled"
+            echo "- Automatic commits: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

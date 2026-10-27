@@ -1,0 +1,391 @@
+
+name: OpenAPI Lint
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "openapi.yaml"
+      - "openapi.yml"
+      - "openapi.json"
+      - "openapi/**"
+      - "api/openapi.yaml"
+      - "api/openapi.yml"
+      - "api/openapi.json"
+      - "api/openapi/**"
+      - "api/**/*.yaml"
+      - "api/**/*.yml"
+      - "api/**/*.json"
+      - ".spectral.yaml"
+      - ".spectral.yml"
+      - ".spectral.json"
+      - ".spectral.*.yaml"
+      - ".spectral.*.yml"
+      - ".spectral.*.json"
+      - ".github/workflows/openapi-lint.yml"
+      - "package.json"
+      - "package-lock.json"
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "openapi.yaml"
+      - "openapi.yml"
+      - "openapi.json"
+      - "openapi/**"
+      - "api/openapi.yaml"
+      - "api/openapi.yml"
+      - "api/openapi.json"
+      - "api/openapi/**"
+      - "api/**/*.yaml"
+      - "api/**/*.yml"
+      - "api/**/*.json"
+      - ".spectral.yaml"
+      - ".spectral.yml"
+      - ".spectral.json"
+      - ".spectral.*.yaml"
+      - ".spectral.*.yml"
+      - ".spectral.*.json"
+      - ".github/workflows/openapi-lint.yml"
+      - "package.json"
+      - "package-lock.json"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapi-lint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover OpenAPI Specifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      found: ${{ steps.scan.outputs.found }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Discover specification files
+        id: scan
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".venv",
+              "venv",
+          }
+
+          extensions = {".yaml", ".yml", ".json"}
+          candidates = []
+
+          for path in Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+
+              if any(part in excluded for part in path.parts):
+                  continue
+
+              suffix = path.suffix.lower()
+              if suffix not in extensions:
+                  continue
+
+              name = path.name.lower()
+              normalized = path.as_posix().lower()
+
+              if (
+                  "openapi" in name
+                  or "swagger" in name
+                  or normalized.startswith("api/")
+                  and (
+                      "openapi" in normalized
+                      or "swagger" in normalized
+                  )
+              ):
+                  candidates.append(path)
+
+          candidates = sorted(set(candidates))
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"found={'true' if candidates else 'false'}\n")
+
+          with open(os.environ["RUNNER_TEMP"] + "/openapi-files.txt", "w", encoding="utf-8") as out:
+              for path in candidates:
+                  out.write(path.as_posix() + "\n")
+
+          print(f"Discovered {len(candidates)} OpenAPI/Swagger candidate file(s).")
+          for path in candidates:
+              print(f" - {path}")
+          PY
+
+      - name: Upload specification file list
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-file-list
+          path: ${{ runner.temp }}/openapi-files.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  lint:
+    name: Validate and Lint OpenAPI
+    needs: discover
+    if: needs.discover.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install OpenAPI validators
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python -m pip install --disable-pip-version-check \
+            "openapi-spec-validator>=0.7,<0.9" \
+            "PyYAML>=6,<7"
+
+          npm install --global --ignore-scripts \
+            "@stoplight/spectral-cli@6"
+
+      - name: Validate specification documents
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          import yaml
+          from openapi_spec_validator import validate
+
+          excluded = {
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".venv",
+              "venv",
+          }
+
+          candidates = []
+
+          for path in Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+
+              if any(part in excluded for part in path.parts):
+                  continue
+
+              if path.suffix.lower() not in {".yaml", ".yml", ".json"}:
+                  continue
+
+              name = path.name.lower()
+              normalized = path.as_posix().lower()
+
+              if (
+                  "openapi" in name
+                  or "swagger" in name
+                  or (
+                      normalized.startswith("api/")
+                      and (
+                          "openapi" in normalized
+                          or "swagger" in normalized
+                      )
+                  )
+              ):
+                  candidates.append(path)
+
+          candidates = sorted(set(candidates))
+
+          if not candidates:
+              print("No OpenAPI candidate documents found.")
+              sys.exit(1)
+
+          failures = []
+
+          for path in candidates:
+              print(f"\nValidating: {path}")
+
+              try:
+                  content = path.read_text(encoding="utf-8")
+
+                  if path.suffix.lower() == ".json":
+                      document = json.loads(content)
+                  else:
+                      document = yaml.safe_load(content)
+
+                  if not isinstance(document, dict):
+                      raise ValueError(
+                          "Specification root must be a JSON/YAML object."
+                      )
+
+                  version = document.get("openapi")
+
+                  if version is None:
+                      if not str(document.get("swagger", "")).startswith("2.0"):
+                          raise ValueError(
+                              "Document does not declare a supported "
+                              "OpenAPI version or Swagger 2.0."
+                          )
+                  elif not str(version).startswith(("3.0.", "3.1.", "3.2.")):
+                      raise ValueError(
+                          f"Unsupported OpenAPI version: {version}"
+                      )
+
+                  validate(document)
+                  print("PASS: OpenAPI structural validation")
+
+                  result = subprocess.run(
+                      [
+                          "spectral",
+                          "lint",
+                          "--fail-severity",
+                          "error",
+                          str(path),
+                      ],
+                      text=True,
+                      capture_output=True,
+                      check=False,
+                  )
+
+                  if result.stdout:
+                      print(result.stdout, end="")
+
+                  if result.stderr:
+                      print(result.stderr, file=sys.stderr, end="")
+
+                  if result.returncode != 0:
+                      raise ValueError(
+                          f"Spectral lint failed with exit code "
+                          f"{result.returncode}."
+                      )
+
+                  print("PASS: Spectral lint")
+
+              except Exception as exc:
+                  failures.append(f"{path}: {exc}")
+                  print(f"FAIL: {path}: {exc}", file=sys.stderr)
+
+          if failures:
+              print("\nOpenAPI validation failures:", file=sys.stderr)
+              for failure in failures:
+                  print(f" - {failure}", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"\nAll {len(candidates)} specification(s) passed.")
+          PY
+
+      - name: Validate repository JSON API schemas
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".venv",
+              "venv",
+          }
+
+          files = []
+
+          for path in Path("api").rglob("*.json") if Path("api").exists() else []:
+              if path.is_file() and not any(part in excluded for part in path.parts):
+                  files.append(path)
+
+          failures = []
+
+          for path in sorted(files):
+              try:
+                  json.loads(path.read_text(encoding="utf-8"))
+              except Exception as exc:
+                  failures.append(f"{path}: {exc}")
+
+          print(f"Checked {len(files)} JSON file(s) under api/.")
+
+          if failures:
+              print("\nInvalid JSON files:", file=sys.stderr)
+              for failure in failures:
+                  print(f" - {failure}", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Upload lint diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-lint-diagnostics
+          path: |
+            openapi.yaml
+            openapi.yml
+            openapi.json
+            api/
+          if-no-files-found: ignore
+          retention-days: 3
+
+  no-specifications:
+    name: Report Missing Specifications
+    needs: discover
+    if: needs.discover.outputs.found == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report missing OpenAPI documents
+        shell: bash
+        run: |
+          echo "::error::No OpenAPI/Swagger specification was discovered."
+          echo "Add an OpenAPI specification before relying on this lint workflow."
+          exit 1

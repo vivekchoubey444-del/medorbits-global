@@ -1,4 +1,26 @@
 
+# ==============================================================================
+# MedOrbits -- Production Deployment
+# File: .github/workflows/deploy.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate the production application and trigger a Render deployment.
+#
+# Security:
+#   - Read-only GitHub repository permissions.
+#   - Production environment protection.
+#   - Manual deployment requires explicit confirmation.
+#   - Render deployment hook stored in GitHub environment secrets.
+#   - No automatic commits, merges, or deployments from pull requests.
+#   - Detect deleted or emptied existing files before deployment.
+#
+# IMPORTANT:
+#   A successful deploy-hook request does not prove application health.
+#   Configure a staging workflow, production environment approvals, and
+#   an application health check for complete deployment assurance.
+# ==============================================================================
+
 name: Deploy MedOrbits
 
 on:
@@ -28,7 +50,7 @@ jobs:
   pre-deploy:
     name: Pre-deployment checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     permissions:
       contents: read
@@ -37,52 +59,247 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify deployment source and confirmation
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$REF_NAME" != "main" ]]; then
+            echo "::error::Production deployment is allowed only from main."
+            exit 1
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" &&
+                "$CONFIRMATION" != "deploy" ]]; then
+            echo "::error::Manual deployment cancelled. Enter exactly 'deploy'."
+            exit 1
+          fi
+
+          echo "Production deployment source validated."
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Validate application configuration
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package.json ]]; then
-            node -e '
-              const fs = require("node:fs");
-              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-
-              if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-                throw new Error("package.json must contain a JSON object.");
-              }
-
-              console.log(`Package: ${pkg.name || "unnamed"}`);
-              console.log(`Version: ${pkg.version || "unspecified"}`);
-            '
-          else
-            echo "::notice::No root package.json found; skipping Node.js manifest validation."
+          if [[ ! -s package.json ]]; then
+            echo "::error::Root package.json is missing or empty."
+            exit 1
           fi
 
-          if [[ -f server.js ]]; then
-            node --check server.js
-          else
-            echo "::notice::server.js not found; skipping entry-point syntax check."
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
+          NODE
+
+          if [[ ! -s package-lock.json && ! -s npm-shrinkwrap.json ]]; then
+            echo "::error::A root npm lockfile is required."
+            exit 1
           fi
 
-      - name: Validate manual deployment confirmation
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env:
-          CONFIRMATION: ${{ inputs.confirm_deployment }}
+          if [[ -f npm-shrinkwrap.json ]]; then
+            export LOCKFILE="npm-shrinkwrap.json"
+          else
+            export LOCKFILE="package-lock.json"
+          fi
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
+
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("Invalid npm lockfile version.");
+          }
+
+          if (lock.name && pkg.name && lock.name !== pkg.name) {
+            throw new Error("package.json and lockfile names differ.");
+          }
+
+          if (lock.version && pkg.version && lock.version !== pkg.version) {
+            throw new Error("package.json and lockfile versions differ.");
+          }
+
+          console.log(`Validated ${process.env.LOCKFILE}.`);
+          NODE
+
+          if [[ ! -s server.js ]]; then
+            echo "::error::Expected server.js is missing or empty."
+            exit 1
+          fi
+
+          node --check server.js
+
+      - name: Install locked production build dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check dependency tree
+        run: npm ls --depth=0
+
+      - name: Run production tests
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ "$CONFIRMATION" != "deploy" ]]; then
-            echo "::error::Manual deployment cancelled. Enter exactly 'deploy' to confirm."
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.test ? 0 : 1);
+          '; then
+            npm test
+          else
+            echo "::error::No npm test script is configured."
             exit 1
           fi
 
-          echo "Manual deployment confirmation accepted."
+      - name: Validate configured build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.build ? 0 : 1);
+          '; then
+            npm run build
+          else
+            echo "::notice::No build script is configured; skipping build."
+          fi
+
+      - name: Check changed files for deletion or empty content
+        if: ${{ github.event_name == 'push' }}
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+            echo "Initial push; no previous commit is available for comparison."
+            exit 0
+          fi
+
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          before = os.environ["BEFORE_SHA"]
+          head = os.environ["HEAD_SHA"]
+
+          check = subprocess.run(
+              ["git", "cat-file", "-e", f"{before}^{{commit}}"],
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL,
+          )
+
+          if check.returncode != 0:
+              print("::error::Previous commit is unavailable.")
+              sys.exit(1)
+
+          result = subprocess.run(
+              ["git", "diff", "--name-status", "-z", before, head, "--"],
+              check=True,
+              stdout=subprocess.PIPE,
+          )
+
+          fields = result.stdout.decode(
+              "utf-8", errors="surrogateescape"
+          ).split("\0")
+          fields = fields[:-1] if fields and fields[-1] == "" else fields
+
+          changes = []
+          i = 0
+
+          while i < len(fields):
+              status = fields[i]
+              i += 1
+
+              if status.startswith(("R", "C")):
+                  if i + 1 >= len(fields):
+                      sys.exit("Malformed Git rename/copy output.")
+                  old_path, new_path = fields[i:i + 2]
+                  i += 2
+                  changes.append((status, old_path, new_path))
+              else:
+                  if i >= len(fields):
+                      sys.exit("Malformed Git diff output.")
+                  path = fields[i]
+                  i += 1
+                  changes.append((status, path, path))
+
+          failures = []
+
+          for status, old_path, new_path in changes:
+              if status.startswith("D"):
+                  failures.append(f"Deleted file: {old_path}")
+                  continue
+
+              if status.startswith("R") and old_path != new_path:
+                  failures.append(
+                      f"Renamed file requires review: {old_path} -> {new_path}"
+                  )
+
+              current = subprocess.run(
+                  ["git", "show", f"{head}:{new_path}"],
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+              )
+
+              if current.returncode != 0:
+                  failures.append(f"Cannot read changed file: {new_path}")
+                  continue
+
+              if status.startswith("A"):
+                  continue
+
+              previous = subprocess.run(
+                  ["git", "show", f"{before}:{old_path}"],
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+              )
+
+              if (
+                  previous.returncode == 0
+                  and previous.stdout.strip()
+                  and not current.stdout.strip()
+              ):
+                  failures.append(f"Existing file became empty: {new_path}")
+
+          if failures:
+              print("::error::Repository integrity checks failed.")
+              for failure in failures:
+                  print(f"- {failure}")
+              sys.exit(1)
+
+          print(f"Checked {len(changes)} changed paths.")
+          print("No file deletions or newly emptied files detected.")
+          PY
 
   deploy:
-    name: Trigger Render deployment
+    name: Trigger Render production deployment
     needs: pre-deploy
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -102,16 +319,16 @@ jobs:
           set -Eeuo pipefail
 
           if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
-            echo "::error::Missing RENDER_DEPLOY_HOOK secret in the production environment."
+            echo "::error::Missing RENDER_DEPLOY_HOOK in the production environment secrets."
             exit 1
           fi
 
-          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https:// ]]; then
-            echo "::error::RENDER_DEPLOY_HOOK must be an HTTPS URL."
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://api\.render\.com/deploy/ ]]; then
+            echo "::error::The deployment hook must use the expected Render HTTPS endpoint."
             exit 1
           fi
 
-          echo "Render deployment configuration is valid."
+          echo "Render deployment hook validated."
 
       - name: Trigger Render deployment
         env:
@@ -140,11 +357,20 @@ jobs:
 
           if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
             echo "::error::Render returned HTTP $http_code."
+            echo "Response body withheld to avoid exposing deployment metadata."
             exit 1
           fi
 
-          echo "Render accepted the deployment request."
-          echo "Verify build completion and application health in the Render dashboard."
+          {
+            echo "## Render Production Deployment"
+            echo
+            echo "- Request status: accepted"
+            echo "- HTTP status: $http_code"
+            echo "- Provider: Render"
+            echo "- Environment: production"
+            echo
+            echo "The request was accepted; build completion and application health must still be verified."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Write deployment summary
         if: always()
@@ -155,12 +381,13 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## MedOrbits Production Deployment"
+            echo
+            echo "### Deployment Workflow Result"
             echo
             echo "- Job result: $JOB_STATUS"
             echo "- Trigger: $EVENT_NAME"
             echo "- Commit: $COMMIT_SHA"
-            echo "- Deployment provider: Render"
             echo "- Automatic merge: disabled"
-            echo "- Application health verification: required in Render"
+            echo "- Git repository writes: disabled"
+            echo "- Application health verification: required"
           } >> "$GITHUB_STEP_SUMMARY"

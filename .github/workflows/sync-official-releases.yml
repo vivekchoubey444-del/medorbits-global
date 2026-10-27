@@ -1,4 +1,11 @@
 
+# =============================================================================
+# MedOrbits -- Sync Official Releases
+# File: .github/workflows/sync-official-releases.yml
+# Purpose: Retrieve official GitHub release metadata and archive it as an artifact.
+# Security: Read-only; does not modify repository files or push commits.
+# =============================================================================
+
 name: Sync Official Releases
 
 on:
@@ -35,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Select upstream repository
+      - name: Select and validate upstream repository
         id: upstream
         shell: bash
         env:
@@ -55,7 +62,16 @@ jobs:
             exit 1
           fi
 
-          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          owner="${repository%%/*}"
+          repo="${repository#*/}"
+
+          if [[ "$owner" == "." || "$owner" == ".." ||
+                "$repo" == "." || "$repo" == ".." ]]; then
+            echo "::error::Invalid repository owner or name."
+            exit 1
+          fi
+
+          printf 'repository=%s\n' "$repository" >> "$GITHUB_OUTPUT"
 
       - name: Fetch latest official release
         env:
@@ -66,32 +82,45 @@ jobs:
           set -Eeuo pipefail
 
           output="$RUNNER_TEMP/official-release.json"
+          response="$RUNNER_TEMP/github-release-response.json"
 
           if ! gh api \
+            --method GET \
             "repos/$UPSTREAM_REPOSITORY/releases/latest" \
-            --jq '{
-              repository: .html_url,
-              tag: .tag_name,
-              name: .name,
-              published_at: .published_at,
-              draft: .draft,
-              prerelease: .prerelease,
-              release_url: .html_url,
-              target_commitish: .target_commitish
-            }' > "$output"; then
+            > "$response"; then
             echo "::error::Could not retrieve the latest published release."
+            echo "::error::Check repository visibility, API access, rate limits, and release availability."
             exit 1
           fi
 
           if ! jq -e '
-            (.tag | type == "string" and length > 0) and
-            (.release_url | type == "string" and startswith("https://"))
-          ' "$output" >/dev/null; then
-            echo "::error::The release response is missing required metadata."
+            type == "object" and
+            (.tag_name | type == "string" and length > 0) and
+            (.html_url | type == "string" and startswith("https://")) and
+            (.draft | type == "boolean") and
+            (.prerelease | type == "boolean")
+          ' "$response" >/dev/null; then
+            echo "::error::The GitHub API response is missing required release metadata."
             exit 1
           fi
 
-          echo "Latest release metadata:"
+          jq '{
+            repository: .html_url,
+            tag: .tag_name,
+            name: .name,
+            published_at: .published_at,
+            draft: .draft,
+            prerelease: .prerelease,
+            release_url: .html_url,
+            target_commitish: .target_commitish
+          }' "$response" > "$output"
+
+          jq -e '
+            (.tag | type == "string" and length > 0) and
+            (.release_url | type == "string" and startswith("https://"))
+          ' "$output" >/dev/null
+
+          echo "Latest official release:"
           jq '{
             repository,
             tag,
@@ -123,8 +152,9 @@ jobs:
             echo "- Latest tag: $(jq -r '.tag' "$file")"
             echo "- Release name: $(jq -r '.name // "Unnamed release"' "$file")"
             echo "- Published: $(jq -r '.published_at // "Unknown"' "$file")"
+            echo "- Prerelease: $(jq -r '.prerelease' "$file")"
             echo "- Release URL: $(jq -r '.release_url' "$file")"
             echo
-            echo "Release metadata was saved as an artifact."
+            echo "Release metadata was saved as a workflow artifact."
             echo "No repository files were changed."
           } >> "$GITHUB_STEP_SUMMARY"

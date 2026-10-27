@@ -1,4 +1,24 @@
 
+# ==============================================================================
+# MedOrbits -- Dependency Review
+# File: .github/workflows/dependency-review.yml
+# Release target: 2.1.0
+#
+# Purpose:
+#   Review dependency changes for known vulnerabilities and prohibited licenses.
+#
+# Security policy:
+#   - Read-only repository contents.
+#   - No checkout credentials persisted.
+#   - No automatic merging, committing, or deployment.
+#   - High-severity runtime dependency findings fail the check.
+#   - License policy is enforced where dependency metadata is available.
+#   - Manual runs explain that no pull-request comparison was performed.
+#
+# IMPORTANT:
+#   Require this check in branch protection or a ruleset for main.
+# ==============================================================================
+
 name: Dependency Review
 
 on:
@@ -42,6 +62,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: dependency-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -58,11 +79,6 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
       - name: Record review context
         shell: bash
         env:
@@ -72,12 +88,12 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
           {
-            echo "## Dependency Review"
+            echo "## MedOrbits Dependency Review"
             echo
-            echo "- Event: \`$EVENT_NAME\`"
+            echo "- Event: \`${EVENT_NAME}\`"
             echo "- Pull request: \`${PR_NUMBER:-not applicable}\`"
             echo "- Author: \`${PR_AUTHOR:-not applicable}\`"
             echo "- Base branch: \`${BASE_REF:-not applicable}\`"
@@ -85,20 +101,27 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Validate dependency review prerequisites
+      - name: Validate pull request context
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
           if [[ "$BASE_REF" != "main" ]]; then
-            echo "::error::This workflow only reviews pull requests targeting main."
+            echo "::error::Dependency review only supports pull requests targeting main."
             exit 1
           fi
 
-          echo "Pull request targets main."
+          if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+            echo "::error::Pull request base or head SHA is missing."
+            exit 1
+          fi
+
+          echo "Pull request context validated."
 
       - name: Review dependency vulnerabilities and licenses
         if: ${{ github.event_name == 'pull_request' }}
@@ -108,7 +131,11 @@ jobs:
           fail-on-scopes: runtime
           comment-summary-in-pr: always
           warn-only: false
-          deny-licenses: GPL-3.0-only, GPL-3.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later
+          deny-licenses: >-
+            GPL-3.0-only,
+            GPL-3.0-or-later,
+            AGPL-3.0-only,
+            AGPL-3.0-or-later
           show-patched-versions: true
           retry-on-snapshot-warnings: true
           retry-on-snapshot-warnings-timeout: 60
@@ -117,14 +144,14 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
           {
             echo "## Manual execution"
             echo
-            echo "This run does not have a pull-request dependency comparison."
-            echo "The dependency review action was intentionally skipped."
-            echo "Open or update a pull request targeting main to run the comparison."
+            echo "No pull-request dependency comparison was performed."
+            echo "The dependency review action requires a pull_request event."
+            echo "Open or update a pull request targeting main to review dependency changes."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Record final review status
@@ -134,14 +161,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
           {
             echo
             echo "### Workflow result"
             echo
-            echo "- Status: \`$JOB_STATUS\`"
-            echo "- Trigger: \`$EVENT_NAME\`"
+            echo "- Status: \`${JOB_STATUS}\`"
+            echo "- Trigger: \`${EVENT_NAME}\`"
             echo
-            echo "A passing dependency review is not a substitute for application tests, code review, or a complete license audit."
+            echo "A passing dependency review does not replace application tests, code review, or a complete license audit."
           } >> "$GITHUB_STEP_SUMMARY"

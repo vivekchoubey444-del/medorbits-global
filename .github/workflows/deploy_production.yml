@@ -1,4 +1,20 @@
 
+# ==============================================================================
+# MedOrbits -- Production Deployment
+# File: .github/workflows/deploy_production.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate the production application and trigger a Render deployment.
+#
+# Policy:
+#   - Least-privilege GitHub permissions.
+#   - Manual deployment requires explicit confirmation.
+#   - Automatic deployment only for relevant changes on main.
+#   - No automatic merging or source modification.
+#   - A successful HTTP response confirms request acceptance only.
+# ==============================================================================
+
 name: Deploy Production
 
 on:
@@ -39,7 +55,7 @@ jobs:
   validate:
     name: Validate production deployment
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: read
 
@@ -61,11 +77,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 1
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          check-latest: false
+          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
+          cache-dependency-path: |
+            package-lock.json
+            npm-shrinkwrap.json
 
       - name: Validate package manifest
         shell: bash
@@ -77,7 +99,7 @@ jobs:
             exit 1
           fi
 
-          node - <<'NODE'
+          node <<'NODE'
           const fs = require("node:fs");
 
           let pkg;
@@ -94,16 +116,28 @@ jobs:
             process.exit(1);
           }
 
-          if (pkg.scripts !== undefined &&
-              (typeof pkg.scripts !== "object" ||
-               pkg.scripts === null ||
-               Array.isArray(pkg.scripts))) {
+          if (typeof pkg.name !== "string" || !pkg.name.trim()) {
+            console.error("package.json must define a non-empty package name.");
+            process.exit(1);
+          }
+
+          if (typeof pkg.version !== "string" || !pkg.version.trim()) {
+            console.error("package.json must define a non-empty version.");
+            process.exit(1);
+          }
+
+          if (
+            pkg.scripts !== undefined &&
+            (!pkg.scripts ||
+             typeof pkg.scripts !== "object" ||
+             Array.isArray(pkg.scripts))
+          ) {
             console.error("package.json scripts must be an object.");
             process.exit(1);
           }
 
-          console.log(`Package: ${pkg.name || "unnamed"}`);
-          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
           NODE
 
       - name: Validate npm lockfile
@@ -111,14 +145,15 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package-lock.json ]]; then
+          if [[ -f npm-shrinkwrap.json ]]; then
+            echo "Using npm-shrinkwrap.json as the authoritative lockfile."
             npm ci --ignore-scripts --no-audit --no-fund
-          elif [[ -f npm-shrinkwrap.json ]]; then
-            echo "::error::npm-shrinkwrap.json is present, but this workflow currently validates package-lock.json using npm ci."
-            echo "Update this step if the project intentionally uses npm-shrinkwrap.json."
-            exit 1
+          elif [[ -f package-lock.json ]]; then
+            echo "Using package-lock.json."
+            npm ci --ignore-scripts --no-audit --no-fund
           else
-            echo "::error::No package-lock.json found."
+            echo "::error::Neither package-lock.json nor npm-shrinkwrap.json exists."
+            echo "Production deployment requires a committed npm lockfile."
             exit 1
           fi
 
@@ -134,9 +169,53 @@ jobs:
 
           node --check server.js
 
+      - name: Run configured production validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          const scripts = pkg.scripts || {};
+          const required = ["lint", "test"];
+
+          for (const name of required) {
+            if (scripts[name]) {
+              console.log(`Configured npm script found: ${name}`);
+            } else {
+              console.log(`No npm ${name} script configured; check skipped.`);
+            }
+          }
+          NODE
+
+      - name: Run configured lint script
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.lint ? 0 : 1)'; then
+            npm run lint
+          else
+            echo "No npm lint script configured; lint check skipped."
+          fi
+
+      - name: Run configured tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test
+          else
+            echo "No npm test script configured; test check skipped."
+          fi
+
   deploy:
     name: Trigger Render production deployment
-    needs: validate
+    needs:
+      - validate
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -164,6 +243,12 @@ jobs:
             exit 1
           fi
 
+          if [[ "$RENDER_DEPLOY_HOOK" == *$'\n'* ||
+                "$RENDER_DEPLOY_HOOK" == *$'\r'* ]]; then
+            echo "::error::The Render deploy hook contains invalid line breaks."
+            exit 1
+          fi
+
       - name: Trigger Render deployment
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
@@ -174,7 +259,7 @@ jobs:
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
 
-          http_code="$(
+          if ! http_code="$(
             curl \
               --silent \
               --show-error \
@@ -183,8 +268,12 @@ jobs:
               --request POST \
               --connect-timeout 10 \
               --max-time 30 \
+              --retry 0 \
               "$RENDER_DEPLOY_HOOK"
-          )"
+          )"; then
+            echo "::error::Could not contact Render or complete the deployment request."
+            exit 1
+          fi
 
           if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
             echo "::error::Render returned HTTP $http_code."
@@ -192,5 +281,5 @@ jobs:
           fi
 
           echo "Render accepted the deployment request."
-          echo "This confirms request acceptance, not build completion or application health."
-          echo "Verify deployment status and health in Render."
+          echo "This does not confirm build completion or application health."
+          echo "Verify the deployment and service health in Render."

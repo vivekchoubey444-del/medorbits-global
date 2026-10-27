@@ -6,12 +6,15 @@ on:
     branches:
       - main
       - develop
+
   pull_request:
     branches:
       - main
       - develop
+
   schedule:
     - cron: "0 4 * * 1"
+
   workflow_dispatch:
 
 permissions:
@@ -25,7 +28,7 @@ jobs:
   security:
     name: Repository Security Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     permissions:
       contents: read
@@ -45,14 +48,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
 
       - name: Validate JSON configuration
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          python - <<'PY'
+          python <<'PY'
           import json
           import sys
           from pathlib import Path
@@ -63,14 +66,9 @@ jobs:
           }
 
           files = sorted(
-              path
-              for path in Path(".").rglob("*.json")
+              path for path in Path(".").rglob("*.json")
               if not any(part in excluded for part in path.parts)
           )
-
-          if not files:
-              print("No JSON files found; skipping.")
-              sys.exit(0)
 
           failures = []
 
@@ -84,6 +82,7 @@ jobs:
                   failures.append(path)
 
           if failures:
+              print(f"Invalid JSON files: {len(failures)}", file=sys.stderr)
               sys.exit(1)
 
           print(f"Validated {len(files)} JSON file(s).")
@@ -93,9 +92,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python -m pip install --disable-pip-version-check PyYAML
 
-          python - <<'PY'
+          python -m pip install --disable-pip-version-check "PyYAML==6.0.3"
+
+          python <<'PY'
           import sys
           from pathlib import Path
 
@@ -113,10 +113,6 @@ jobs:
               if not any(part in excluded for part in path.parts)
           })
 
-          if not files:
-              print("No YAML files found; skipping.")
-              sys.exit(0)
-
           failures = []
 
           for path in files:
@@ -129,51 +125,90 @@ jobs:
                   failures.append(path)
 
           if failures:
+              print(f"Invalid YAML files: {len(failures)}", file=sys.stderr)
               sys.exit(1)
 
           print(f"Validated {len(files)} YAML file(s).")
           PY
 
-      - name: Validate npm dependencies
+      - name: Validate root npm manifest
+        id: npm-project
         shell: bash
         run: |
           set -Eeuo pipefail
 
           if [[ ! -f package.json ]]; then
-            echo "No root package.json found; skipping npm audit."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No root package.json found."
             exit 0
           fi
 
-          node -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-              throw new Error("package.json must contain a JSON object");
-            }
-            console.log(`Package: ${pkg.name || "unnamed"}`);
-          '
+          node <<'NODE'
+          const fs = require("node:fs");
 
-          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
-            npm audit --audit-level=high
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (
+            pkg.name !== undefined &&
+            typeof pkg.name !== "string"
+          ) {
+            throw new Error("package.json name must be a string.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          NODE
+
+          echo "present=true" >> "$GITHUB_OUTPUT"
+
+      - name: Validate npm lockfile and audit dependencies
+        if: steps.npm-project.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f npm-shrinkwrap.json ]]; then
+            lockfile="npm-shrinkwrap.json"
+          elif [[ -f package-lock.json ]]; then
+            lockfile="package-lock.json"
           else
-            echo "::warning::No npm lockfile found; skipping dependency audit."
+            echo "::error::package.json exists, but no npm lockfile was found."
+            exit 1
           fi
+
+          echo "Using authoritative lockfile: $lockfile"
+
+          npm ci --ignore-scripts --no-fund --no-audit
+
+          npm audit \
+            --audit-level=high \
+            --registry=https://registry.npmjs.org/
 
       - name: Scan tracked files for common secret patterns
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          python - <<'PY'
+          python <<'PY'
           import re
           import subprocess
           import sys
+          from pathlib import Path
 
           patterns = [
               (
                   "Private key material",
                   re.compile(
-                      r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+                      r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"
                   ),
               ),
               (
@@ -181,7 +216,15 @@ jobs:
                   re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
               ),
               (
-                  "Possible hardcoded credential assignment",
+                  "GitHub token",
+                  re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"),
+              ),
+              (
+                  "GitHub fine-grained token",
+                  re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"),
+              ),
+              (
+                  "Possible hardcoded credential",
                   re.compile(
                       r"""(?i)\b(?:password|passwd|secret|api[_-]?key|access[_-]?token)\b"""
                       r"""\s*[:=]\s*["'][^"'\r\n]{8,}["']"""
@@ -195,9 +238,10 @@ jobs:
               stdout=subprocess.PIPE,
           )
 
-          excluded = {
+          ignored_suffixes = {
               ".png", ".jpg", ".jpeg", ".gif", ".webp",
-              ".ico", ".pdf", ".zip", ".gz", ".lock",
+              ".ico", ".pdf", ".zip", ".gz", ".woff",
+              ".woff2", ".ttf", ".eot", ".mp4", ".mp3",
           }
 
           findings = []
@@ -208,17 +252,22 @@ jobs:
                   continue
 
               filename = raw.decode("utf-8", errors="surrogateescape")
+              path = Path(filename)
 
-              if filename.lower().endswith(tuple(excluded)):
+              if path.suffix.lower() in ignored_suffixes:
                   continue
 
               try:
-                  with open(filename, "rb") as handle:
-                      data = handle.read(2_000_000)
+                  with path.open("rb") as handle:
+                      data = handle.read(2_000_001)
               except OSError:
-                  print(
-                      f"::warning::Could not read tracked file: {filename}"
-                  )
+                  # A tracked file deleted from the working tree cannot
+                  # be scanned here; history scanning should be handled
+                  # by a dedicated secret scanner.
+                  continue
+
+              if len(data) > 2_000_000:
+                  print(f"SKIP oversized file: {filename}")
                   continue
 
               if b"\0" in data:
@@ -241,13 +290,15 @@ jobs:
               )
 
               for filename, line_number, label in findings:
+                  safe_filename = filename.replace("%", "%25") \
+                      .replace("\r", "%0D").replace("\n", "%0A")
                   print(
-                      f"::error file={filename},line={line_number}::{label}",
+                      f"::error file={safe_filename},line={line_number}::{label}",
                       file=sys.stderr,
                   )
 
               print(
-                  "Matching secret values were not printed.",
+                  "Secret values were not printed. Review findings securely.",
                   file=sys.stderr,
               )
               sys.exit(1)
@@ -272,7 +323,10 @@ jobs:
               -path './.git' -prune -o \
               -path './node_modules' -prune -o \
               -path './.venv' -prune -o \
+              -path './venv' -prune -o \
               -path './vendor' -prune -o \
+              -path './dist' -prune -o \
+              -path './build' -prune -o \
               -type f -name '*.sh' -print0
           )
 

@@ -1,4 +1,21 @@
 
+# ==============================================================================
+# MedOrbits -- Deploy Staging
+# File: .github/workflows/deploy_staging.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate the application and trigger a Render staging deployment.
+#
+# Security:
+#   - Read-only GitHub repository permissions.
+#   - No automatic commits or pushes.
+#   - Manual deployments require explicit confirmation.
+#   - Render deploy hook is stored as an environment secret.
+#   - Deployment runs only from the staging branch or a confirmed manual run.
+#   - Existing source files must not be deleted or emptied by the proposed change.
+# ==============================================================================
+
 name: Deploy Staging
 
 on:
@@ -39,79 +56,275 @@ jobs:
   validate:
     name: Validate staging build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
     permissions:
       contents: read
 
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify deployment source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" != "staging" ]]; then
+            echo "::error::Push deployments are allowed only from staging."
+            exit 1
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$CONFIRMATION" != "deploy" ]]; then
+              echo "::error::Enter exactly 'deploy' to confirm deployment."
+              exit 1
+            fi
+
+            if [[ "$REF_NAME" != "staging" ]]; then
+              echo "::error::Manual deployments must be run from the staging branch."
+              exit 1
+            fi
+          fi
+
+          echo "Deployment source verified."
 
       - name: Validate package.json
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
-          if [[ ! -f package.json ]]; then
-            echo "::error::Root package.json is missing."
+          test -s package.json || {
+            echo "::error::Root package.json is missing or empty."
             exit 1
-          fi
+          }
 
-          node -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            console.log(`Package: ${pkg.name || "unnamed"}`);
-            console.log(`Version: ${pkg.version || "unspecified"}`);
-            console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
-          '
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-      - name: Validate npm lockfile
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (pkg.engines?.node) {
+            const requirement = pkg.engines.node;
+            console.log(`Declared Node.js requirement: ${requirement}`);
+          } else {
+            console.log("Warning: package.json does not declare engines.node.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          NODE
+
+      - name: Validate lockfile and manifest consistency
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
-          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
-            echo "::error::No npm lockfile found."
+          if [[ -f npm-shrinkwrap.json ]]; then
+            LOCKFILE="npm-shrinkwrap.json"
+          elif [[ -f package-lock.json ]]; then
+            LOCKFILE="package-lock.json"
+          else
+            echo "::error::package-lock.json or npm-shrinkwrap.json is required."
             exit 1
           fi
 
-          node -e '
-            const fs = require("node:fs");
-            const file = fs.existsSync("npm-shrinkwrap.json")
-              ? "npm-shrinkwrap.json"
-              : "package-lock.json";
-            const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+          export LOCKFILE
 
-            if (!lock || typeof lock !== "object") {
-              throw new Error("Lockfile root must be a JSON object.");
-            }
+          node - <<'NODE'
+          const fs = require("node:fs");
 
-            console.log(`Valid JSON lockfile: ${file}`);
-          '
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const file = process.env.LOCKFILE;
+          const lock = JSON.parse(fs.readFileSync(file, "utf8"));
 
-      - name: Check manual deployment confirmation
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+          if (!lock || typeof lock !== "object" || Array.isArray(lock)) {
+            throw new Error("Lockfile root must be a JSON object.");
+          }
+
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("Lockfile version is missing or invalid.");
+          }
+
+          if (
+            lock.name && pkg.name &&
+            lock.name !== pkg.name
+          ) {
+            throw new Error("Package name does not match the lockfile.");
+          }
+
+          if (
+            lock.version && pkg.version &&
+            lock.version !== pkg.version
+          ) {
+            throw new Error("Package version does not match the lockfile.");
+          }
+
+          console.log(`Validated ${file}; lockfileVersion=${lock.lockfileVersion}.`);
+          NODE
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check dependency tree
+        run: npm ls --depth=0
+
+      - name: Run configured tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.test ? 0 : 1);
+          '; then
+            npm test
+          else
+            echo "::error::No npm test script is configured."
+            echo "Add a real test script before deploying staging."
+            exit 1
+          fi
+
+      - name: Validate server JavaScript syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f server.js ]]; then
+            node --check server.js
+          else
+            echo "::error::server.js is missing."
+            exit 1
+          fi
+
+      - name: Check changed tracked files for deletion or empty content
+        if: ${{ github.event_name == 'push' }}
         env:
-          CONFIRMATION: ${{ inputs.confirm_deployment }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
-          if [[ "$CONFIRMATION" != "deploy" ]]; then
-            echo "::error::Deployment cancelled. Enter exactly 'deploy' to confirm."
-            exit 1
+          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+            echo "Initial branch push detected; skipping previous-revision comparison."
+            exit 0
           fi
 
-      - name: Check server JavaScript syntax
-        if: ${{ hashFiles('server.js') != '' }}
-        run: node --check server.js
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          before = os.environ["BEFORE_SHA"]
+          head = os.environ["HEAD_SHA"]
+
+          check = subprocess.run(
+              ["git", "cat-file", "-e", f"{before}^{{commit}}"],
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL,
+          )
+
+          if check.returncode != 0:
+              print("::error::Previous revision is unavailable.")
+              sys.exit(1)
+
+          result = subprocess.run(
+              ["git", "diff", "--name-status", "-z", before, head, "--"],
+              check=True,
+              stdout=subprocess.PIPE,
+          )
+
+          fields = result.stdout.decode(
+              "utf-8", errors="surrogateescape"
+          ).split("\0")
+          fields = fields[:-1] if fields and fields[-1] == "" else fields
+
+          changes = []
+          index = 0
+
+          while index < len(fields):
+              status = fields[index]
+              index += 1
+
+              if status.startswith(("R", "C")):
+                  if index + 1 >= len(fields):
+                      sys.exit("Malformed Git rename/copy output.")
+                  old_path, new_path = fields[index:index + 2]
+                  index += 2
+                  changes.append((status, old_path, new_path))
+              else:
+                  if index >= len(fields):
+                      sys.exit("Malformed Git diff output.")
+                  path = fields[index]
+                  index += 1
+                  changes.append((status, path, path))
+
+          failures = []
+
+          for status, old_path, new_path in changes:
+              if status.startswith("D"):
+                  failures.append(f"Deleted tracked file: {old_path}")
+                  continue
+
+              if status.startswith("R") and old_path != new_path:
+                  failures.append(
+                      f"Renamed tracked file: {old_path} -> {new_path}"
+                  )
+
+              current = subprocess.run(
+                  ["git", "show", f"{head}:{new_path}"],
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+              )
+
+              if current.returncode != 0:
+                  failures.append(
+                      f"Changed file cannot be read from new revision: {new_path}"
+                  )
+                  continue
+
+              if status.startswith("A"):
+                  continue
+
+              previous = subprocess.run(
+                  ["git", "show", f"{before}:{old_path}"],
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+              )
+
+              if previous.returncode == 0 and previous.stdout.strip():
+                  if not current.stdout.strip():
+                      failures.append(
+                          f"Previously non-empty file became empty: {new_path}"
+                      )
+
+          if failures:
+              print("::error::Destructive file changes detected.")
+              for failure in failures:
+                  print(f"- {failure}")
+              sys.exit(1)
+
+          print(f"Checked {len(changes)} changed paths.")
+          print("No deletions or newly emptied existing files detected.")
+          PY
 
   deploy:
     name: Trigger Render staging deployment
@@ -125,22 +338,29 @@ jobs:
       contents: read
 
     steps:
-      - name: Trigger Render staging deployment
+      - name: Validate Render deploy hook
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
           if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
             echo "::error::Configure RENDER_STAGING_DEPLOY_HOOK in the staging environment secrets."
             exit 1
           fi
 
-          if [[ "$RENDER_DEPLOY_HOOK" != https://* ]]; then
-            echo "::error::The Render staging deploy hook must use HTTPS."
+          if [[ "$RENDER_DEPLOY_HOOK" != https://api.render.com/deploy/* ]]; then
+            echo "::error::The Render deploy hook must use the expected HTTPS Render endpoint."
             exit 1
           fi
+
+      - name: Trigger Render staging deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
@@ -154,14 +374,25 @@ jobs:
               --request POST \
               --connect-timeout 10 \
               --max-time 30 \
+              --retry 2 \
+              --retry-delay 2 \
+              --retry-connrefused \
               "$RENDER_DEPLOY_HOOK"
           )"
 
           if [[ ! "$http_code" =~ ^[0-9]{3}$ ]] ||
              [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
             echo "::error::Render returned HTTP $http_code."
+            echo "Response body is withheld to avoid leaking sensitive data."
             exit 1
           fi
 
-          echo "Render accepted the staging deployment request."
-          echo "Check the Render dashboard to confirm build completion and application health."
+          {
+            echo "## Staging Deployment"
+            echo
+            echo "- Render accepted the deployment request."
+            echo "- HTTP status: $http_code"
+            echo "- Environment: staging"
+            echo
+            echo "Acceptance does not confirm that the build completed or the application is healthy."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,4 +1,19 @@
 
+# ==============================================================================
+# MedOrbits -- Repository Lint and Static Validation
+# File: .github/workflows/lint.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Lint source code and validate repository configuration files.
+#
+# Security:
+#   - Read-only repository access.
+#   - No automatic fixes, commits, merges, or deployments.
+#   - Lockfile-based dependency installation when available.
+#   - Excludes generated and dependency directories from repository scans.
+# ==============================================================================
+
 name: Lint
 
 on:
@@ -6,10 +21,12 @@ on:
     branches:
       - main
       - develop
+
   pull_request:
     branches:
       - main
       - develop
+
   workflow_dispatch:
 
 permissions:
@@ -38,43 +55,62 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
 
-      - name: Detect lint configuration
+      - name: Detect project configuration
         id: detect
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package.json ]]; then
-            echo "node_project=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "node_project=false" >> "$GITHUB_OUTPUT"
-          fi
+          [[ -f package.json ]] && echo "node_project=true" >> "$GITHUB_OUTPUT" \
+            || echo "node_project=false" >> "$GITHUB_OUTPUT"
 
-          if [[ -f package-lock.json ]]; then
-            echo "npm_lock=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "npm_lock=false" >> "$GITHUB_OUTPUT"
-          fi
+          [[ -f package-lock.json ]] && echo "npm_lock=true" >> "$GITHUB_OUTPUT" \
+            || echo "npm_lock=false" >> "$GITHUB_OUTPUT"
 
-          if [[ -f .eslintrc.json ||
+          [[ -f pyproject.toml || -f setup.cfg || -f tox.ini ]] \
+            && echo "python_config=true" >> "$GITHUB_OUTPUT" \
+            || echo "python_config=false" >> "$GITHUB_OUTPUT"
+
+          if [[ -f eslint.config.js ||
+                -f eslint.config.mjs ||
+                -f eslint.config.cjs ||
+                -f eslint.config.ts ||
+                -f .eslintrc.json ||
                 -f .eslintrc.yml ||
                 -f .eslintrc.yaml ||
                 -f .eslintrc.js ||
-                -f .eslintrc.cjs ||
-                -f eslint.config.js ||
-                -f eslint.config.mjs ||
-                -f eslint.config.cjs ||
-                -f eslint.config.ts ]]; then
+                -f .eslintrc.cjs ]]; then
             echo "eslint_config=true" >> "$GITHUB_OUTPUT"
           else
             echo "eslint_config=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Verify npm project
+        if: steps.detect.outputs.node_project == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
+          NODE
 
       - name: Install npm dependencies
         if: steps.detect.outputs.node_project == 'true'
@@ -82,11 +118,11 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package-lock.json ]]; then
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
             npm ci --ignore-scripts --no-audit --no-fund
           else
-            echo "::notice::No package-lock.json found; installing dependencies without a lockfile."
-            npm install --ignore-scripts --no-audit --no-fund
+            echo "::error::A reproducible npm lockfile is required for CI linting."
+            exit 1
           fi
 
       - name: Run project lint script
@@ -98,7 +134,9 @@ jobs:
           if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
             npm run lint
           else
-            echo "::notice::No npm lint script is configured; skipping."
+            echo "::error::No npm lint script is configured."
+            echo "Add a lint script or explicitly remove this requirement."
+            exit 1
           fi
 
       - name: Run ESLint when configured
@@ -107,12 +145,57 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          if npm exec --no -- eslint --version >/dev/null 2>&1; then
-            npm exec --no -- eslint .
-          else
-            echo "::error::ESLint configuration exists, but ESLint is not available in the installed dependencies."
+          if ! npm exec --no -- eslint --version >/dev/null 2>&1; then
+            echo "::error::ESLint configuration exists but ESLint is unavailable."
             exit 1
           fi
+
+          npm exec --no -- eslint .
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+          }
+          extensions = {".js", ".cjs", ".mjs"}
+
+          files = sorted(
+              path for path in pathlib.Path(".").rglob("*")
+              if path.is_file()
+              and path.suffix.lower() in extensions
+              and not any(part in excluded for part in path.parts)
+          )
+
+          failures = []
+
+          for path in files:
+              result = subprocess.run(
+                  ["node", "--check", str(path)],
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+              )
+
+              if result.returncode:
+                  failures.append(f"{path}\n{result.stderr}")
+              else:
+                  print(f"PASS {path}")
+
+          if failures:
+              print("\n".join(failures), file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Checked {len(files)} JavaScript file(s).")
+          PY
 
       - name: Validate JSON syntax
         shell: bash
@@ -121,8 +204,8 @@ jobs:
 
           python - <<'PY'
           import json
+          import pathlib
           import sys
-          from pathlib import Path
 
           excluded = {
               ".git", "node_modules", ".venv", "venv",
@@ -130,27 +213,22 @@ jobs:
           }
 
           files = sorted(
-              path
-              for path in Path(".").rglob("*.json")
+              path for path in pathlib.Path(".").rglob("*.json")
               if not any(part in excluded for part in path.parts)
           )
 
-          if not files:
-              print("No JSON files found; skipping.")
-              sys.exit(0)
-
-          errors = []
+          failures = []
 
           for path in files:
               try:
-                  with path.open("r", encoding="utf-8-sig") as handle:
+                  with path.open(encoding="utf-8-sig") as handle:
                       json.load(handle)
                   print(f"PASS {path}")
               except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-                  print(f"FAIL {path}: {exc}", file=sys.stderr)
-                  errors.append(path)
+                  failures.append(f"{path}: {exc}")
 
-          if errors:
+          if failures:
+              print("\n".join(failures), file=sys.stderr)
               sys.exit(1)
 
           print(f"Validated {len(files)} JSON file(s).")
@@ -160,13 +238,11 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-
           python -m pip install --disable-pip-version-check PyYAML
 
           python - <<'PY'
+          import pathlib
           import sys
-          from pathlib import Path
-
           import yaml
 
           excluded = {
@@ -177,26 +253,22 @@ jobs:
           files = sorted({
               path
               for pattern in ("*.yaml", "*.yml")
-              for path in Path(".").rglob(pattern)
+              for path in pathlib.Path(".").rglob(pattern)
               if not any(part in excluded for part in path.parts)
           })
 
-          if not files:
-              print("No YAML files found; skipping.")
-              sys.exit(0)
-
-          errors = []
+          failures = []
 
           for path in files:
               try:
-                  with path.open("r", encoding="utf-8-sig") as handle:
+                  with path.open(encoding="utf-8-sig") as handle:
                       list(yaml.safe_load_all(handle))
                   print(f"PASS {path}")
               except (OSError, UnicodeError, yaml.YAMLError) as exc:
-                  print(f"FAIL {path}: {exc}", file=sys.stderr)
-                  errors.append(path)
+                  failures.append(f"{path}: {exc}")
 
-          if errors:
+          if failures:
+              print("\n".join(failures), file=sys.stderr)
               sys.exit(1)
 
           print(f"Validated {len(files)} YAML file(s).")
@@ -210,31 +282,112 @@ jobs:
           count=0
 
           while IFS= read -r -d '' file; do
-            bash -n "$file"
-            echo "PASS $file"
-            count=$((count + 1))
+            if bash -n "$file"; then
+              echo "PASS $file"
+              count=$((count + 1))
+            fi
           done < <(
             find . \
               -path './.git' -prune -o \
               -path './node_modules' -prune -o \
               -path './.venv' -prune -o \
+              -path './venv' -prune -o \
               -path './vendor' -prune -o \
+              -path './dist' -prune -o \
+              -path './build' -prune -o \
               -type f -name '*.sh' -print0
           )
 
           echo "Validated $count shell script(s)."
 
-      - name: Lint summary
+      - name: Check Python syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import pathlib
+          import py_compile
+          import sys
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+              "__pycache__",
+          }
+
+          files = sorted(
+              path for path in pathlib.Path(".").rglob("*.py")
+              if not any(part in excluded for part in path.parts)
+          )
+
+          failures = []
+
+          for path in files:
+              try:
+                  py_compile.compile(str(path), doraise=True)
+                  print(f"PASS {path}")
+              except py_compile.PyCompileError as exc:
+                  failures.append(f"{path}: {exc}")
+
+          if failures:
+              print("\n".join(failures), file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Compiled {len(files)} Python file(s).")
+          PY
+
+      - name: Detect empty source and configuration files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import pathlib
+          import sys
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+              "__pycache__",
+          }
+
+          extensions = {
+              ".html", ".htm", ".css", ".scss",
+              ".js", ".cjs", ".mjs", ".ts", ".tsx",
+              ".jsx", ".py", ".json", ".yaml", ".yml",
+              ".sh", ".sql", ".xml", ".toml",
+          }
+
+          empty_files = sorted(
+              path for path in pathlib.Path(".").rglob("*")
+              if path.is_file()
+              and path.suffix.lower() in extensions
+              and path.stat().st_size == 0
+              and not any(part in excluded for part in path.parts)
+          )
+
+          if empty_files:
+              print("::error::Empty source/configuration files detected.")
+              for path in empty_files:
+                  print(f"- {path}")
+              sys.exit(1)
+
+          print("No empty source or configuration files found.")
+          PY
+
+      - name: Write lint summary
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
         shell: bash
         run: |
           {
-            echo "## Lint Results"
+            echo "## MedOrbits Lint Results"
             echo
             echo "- Result: $JOB_STATUS"
             echo "- Automatic fixes: disabled"
             echo "- Repository write access: disabled"
             echo "- Automatic merge: disabled"
+            echo "- Deployment: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

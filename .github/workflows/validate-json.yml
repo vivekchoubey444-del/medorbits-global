@@ -12,6 +12,8 @@
 #   - No automatic merging or deployment.
 #   - Skip gracefully when no JSON files are present.
 #   - Fail when a JSON file is malformed.
+#   - Handle filenames safely, including spaces and special characters.
+#   - Do not modify, format, or rewrite source files.
 # ==============================================================================
 
 name: Validate JSON
@@ -24,6 +26,7 @@ on:
     paths:
       - "**/*.json"
       - ".github/workflows/validate-json.yml"
+
   pull_request:
     branches:
       - main
@@ -31,6 +34,7 @@ on:
     paths:
       - "**/*.json"
       - ".github/workflows/validate-json.yml"
+
   workflow_dispatch:
 
 permissions:
@@ -51,11 +55,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          check-latest: false
 
       - name: Discover JSON files
         id: discover
@@ -63,48 +69,79 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          mapfile -d '' files < <(
+          files_file="${RUNNER_TEMP}/medorbits-json-files.txt"
+          : > "$files_file"
+
+          while IFS= read -r -d '' file; do
+            printf '%s\0' "$file" >> "$files_file"
+          done < <(
             find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.venv' -prune -o \
-              -path './vendor' -prune -o \
-              -type f -name '*.json' -print0
+              \( \
+                -type d \
+                \( \
+                  -name .git \
+                  -o -name node_modules \
+                  -o -name .venv \
+                  -o -name venv \
+                  -o -name vendor \
+                  -o -name __pycache__ \
+                  -o -name .next \
+                  -o -name dist \
+                  -o -name build \
+                \) \
+                -prune \
+              \) \
+              -o \
+              \( -type f -name '*.json' -print0 \)
           )
 
-          printf 'count=%s\n' "${#files[@]}" >> "$GITHUB_OUTPUT"
+          count=0
 
-          if ((${#files[@]} == 0)); then
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+          done < "$files_file"
+
+          printf 'count=%s\n' "$count" >> "$GITHUB_OUTPUT"
+
+          if ((count == 0)); then
             echo "No JSON files found. Validation will be skipped."
           else
-            printf 'Discovered %s JSON file(s).\n' "${#files[@]}"
+            printf 'Discovered %s JSON file(s).\n' "$count"
           fi
 
       - name: Validate JSON syntax
         if: steps.discover.outputs.count != '0'
         shell: bash
+        env:
+          JSON_FILE_LIST: ${{ runner.temp }}/medorbits-json-files.txt
         run: |
           set -Eeuo pipefail
 
-          mapfile -d '' files < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.venv' -prune -o \
-              -path './vendor' -prune -o \
-              -type f -name '*.json' -print0
-          )
+          if [[ ! -f "$JSON_FILE_LIST" ]]; then
+            echo "::error::JSON discovery output is missing."
+            exit 1
+          fi
 
           failed=0
+          validated=0
 
-          for file in "${files[@]}"; do
+          while IFS= read -r -d '' file; do
+            if [[ ! -f "$file" ]]; then
+              printf '::error::Discovered JSON file is missing: %s\n' "$file"
+              failed=1
+              continue
+            fi
+
             if python -m json.tool "$file" >/dev/null 2>&1; then
               printf '[PASS] %s\n' "$file"
+              validated=$((validated + 1))
             else
-              printf '::error file=%s::Invalid JSON syntax.\n' "$file"
+              printf '::error file=%s::Invalid JSON syntax or unreadable JSON file.\n' "$file"
               failed=1
             fi
-          done
+          done < "$JSON_FILE_LIST"
+
+          printf 'Successfully validated: %s\n' "$validated"
 
           if ((failed != 0)); then
             echo "::error::One or more JSON files failed validation."
@@ -124,3 +161,7 @@ jobs:
 
           printf 'Validation status: %s\n' "${VALIDATION_STATUS:-unknown}"
           printf 'JSON files discovered: %s\n' "${JSON_COUNT:-unknown}"
+
+          if [[ "${JSON_COUNT:-unknown}" == "0" ]]; then
+            echo "Result: Skipped because no JSON files were discovered."
+          fi

@@ -10,13 +10,18 @@ on:
       - edited
 
   workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to classify; leave empty for a configuration check"
+        required: false
+        type: string
 
 permissions:
   issues: write
   contents: read
 
 concurrency:
-  group: stakeholder-issue-${{ github.event.issue.number || github.ref }}
+  group: stakeholder-issue-${{ github.event.issue.number || inputs.issue_number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,6 +30,10 @@ jobs:
     if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
+    permissions:
+      issues: write
+      contents: read
 
     steps:
       - name: Classify issue
@@ -38,11 +47,15 @@ jobs:
               return;
             }
 
-            const title = (issue.title || "").toLowerCase();
-            const body = (issue.body || "").toLowerCase();
-            const text = `${title}\n${body}`;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = issue.number;
 
-            const labels = new Set(
+            const title = issue.title || "";
+            const body = issue.body || "";
+            const text = `${title}\n${body}`.toLowerCase();
+
+            const currentLabels = new Set(
               (issue.labels || []).map(label =>
                 typeof label === "string" ? label : label.name
               )
@@ -50,68 +63,274 @@ jobs:
 
             const addLabels = new Set(["stakeholder-review"]);
 
-            if (
-              /\b(security|vulnerability|credential leak|data breach)\b/.test(text)
-            ) {
-              addLabels.add("security");
-              addLabels.add("priority-high");
-            } else if (
-              /\b(crash|production outage|critical failure|data loss)\b/.test(text)
-            ) {
-              addLabels.add("priority-high");
-            } else if (
-              /\b(bug|error|broken|not working|regression)\b/.test(text)
-            ) {
-              addLabels.add("bug");
-            } else if (
-              /\b(feature request|enhancement|new feature|improvement)\b/.test(text)
-            ) {
-              addLabels.add("enhancement");
-            } else if (
-              /\b(documentation|readme|typo|docs)\b/.test(text)
-            ) {
-              addLabels.add("documentation");
-            }
+            const rules = [
+              {
+                label: "security",
+                pattern: /\b(security vulnerability|vulnerability|credential leak|data breach|exposed secret|unauthorized access)\b/,
+              },
+              {
+                label: "priority-high",
+                pattern: /\b(security vulnerability|vulnerability|credential leak|data breach|exposed secret|unauthorized access|production outage|critical failure|data loss)\b/,
+              },
+              {
+                label: "bug",
+                pattern: /\b(bug|error|broken|not working|regression|malfunction)\b/,
+              },
+              {
+                label: "enhancement",
+                pattern: /\b(feature request|enhancement|new feature|improvement)\b/,
+              },
+              {
+                label: "documentation",
+                pattern: /\b(documentation|readme|typo|docs)\b/,
+              },
+              {
+                label: "education",
+                pattern: /\b(admission|college|university|student|education|mbbs|neet|bds|bams)\b/,
+              },
+              {
+                label: "accessibility",
+                pattern: /\b(accessibility|screen reader|keyboard navigation|wcag|aria)\b/,
+              },
+            ];
 
-            if (
-              /\b(admission|college|university|student|education)\b/.test(text)
-            ) {
-              addLabels.add("education");
-            }
-
-            if (
-              /\b(accessibility|screen reader|keyboard navigation)\b/.test(text)
-            ) {
-              addLabels.add("accessibility");
+            for (const rule of rules) {
+              if (rule.pattern.test(text)) {
+                addLabels.add(rule.label);
+              }
             }
 
             const missingLabels = [...addLabels].filter(
-              label => !labels.has(label)
+              label => !currentLabels.has(label)
             );
 
             if (missingLabels.length === 0) {
-              core.info("No additional labels required.");
+              core.info("No additional classification labels required.");
+              return;
+            }
+
+            // Do not create labels automatically. Missing repository labels
+            // should be configured by a maintainer to avoid unexpected
+            // changes to the repository's label taxonomy.
+            const existingLabels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              { owner, repo, per_page: 100 }
+            );
+
+            const existingNames = new Set(
+              existingLabels.map(label => label.name)
+            );
+
+            const labelsToAdd = missingLabels.filter(
+              label => existingNames.has(label)
+            );
+
+            const missingDefinitions = missingLabels.filter(
+              label => !existingNames.has(label)
+            );
+
+            if (missingDefinitions.length > 0) {
+              core.warning(
+                `Configure these repository labels to enable classification: ${missingDefinitions.join(", ")}`
+              );
+            }
+
+            if (labelsToAdd.length === 0) {
+              core.info("No configured classification labels need to be added.");
               return;
             }
 
             await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: missingLabels
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: labelsToAdd
             });
 
             core.info(
-              `Added ${missingLabels.length} classification label(s).`
+              `Added ${labelsToAdd.length} classification label(s) to issue #${issueNumber}.`
             );
 
   manual-check:
-    name: Manual Workflow Check
+    name: Manual Issue Classification
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     permissions:
+      issues: write
       contents: read
 
     steps:
-      - name: Confirm workflow availability
-        run: echo "Stakeholder issue management workflow is available."
+      - name: Validate manual input
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "Configuration check requested; no issue will be modified."
+            exit 0
+          fi
+
+          if [[ ! "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::Issue number must be a positive integer."
+            exit 1
+          fi
+
+      - name: Classify selected issue
+        if: inputs.issue_number != ''
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        with:
+          script: |
+            const rawNumber = process.env.ISSUE_NUMBER;
+
+            if (!/^[1-9]\d*$/.test(rawNumber || "")) {
+              throw new Error("Invalid issue number.");
+            }
+
+            const issueNumber = Number(rawNumber);
+
+            if (!Number.isSafeInteger(issueNumber)) {
+              throw new Error("Issue number is outside the safe integer range.");
+            }
+
+            const { owner, repo } = context.repo;
+
+            let issue;
+
+            try {
+              const response = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: issueNumber
+              });
+
+              issue = response.data;
+            } catch (error) {
+              if (error.status === 404) {
+                throw new Error(
+                  `Issue #${issueNumber} was not found or is inaccessible.`
+                );
+              }
+              throw error;
+            }
+
+            if (issue.pull_request) {
+              throw new Error(
+                `#${issueNumber} is a pull request, not a regular issue.`
+              );
+            }
+
+            const text =
+              `${issue.title || ""}\n${issue.body || ""}`.toLowerCase();
+
+            const currentLabels = new Set(
+              (issue.labels || []).map(label =>
+                typeof label === "string" ? label : label.name
+              )
+            );
+
+            const desired = new Set(["stakeholder-review"]);
+
+            const rules = [
+              [
+                "security",
+                /\b(security vulnerability|vulnerability|credential leak|data breach|exposed secret|unauthorized access)\b/
+              ],
+              [
+                "priority-high",
+                /\b(security vulnerability|vulnerability|credential leak|data breach|exposed secret|unauthorized access|production outage|critical failure|data loss)\b/
+              ],
+              [
+                "bug",
+                /\b(bug|error|broken|not working|regression|malfunction)\b/
+              ],
+              [
+                "enhancement",
+                /\b(feature request|enhancement|new feature|improvement)\b/
+              ],
+              [
+                "documentation",
+                /\b(documentation|readme|typo|docs)\b/
+              ],
+              [
+                "education",
+                /\b(admission|college|university|student|education|mbbs|neet|bds|bams)\b/
+              ],
+              [
+                "accessibility",
+                /\b(accessibility|screen reader|keyboard navigation|wcag|aria)\b/
+              ]
+            ];
+
+            for (const [label, pattern] of rules) {
+              if (pattern.test(text)) {
+                desired.add(label);
+              }
+            }
+
+            const missing = [...desired].filter(
+              label => !currentLabels.has(label)
+            );
+
+            if (missing.length === 0) {
+              core.info(`Issue #${issueNumber} is already classified.`);
+              return;
+            }
+
+            const repositoryLabels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              { owner, repo, per_page: 100 }
+            );
+
+            const available = new Set(
+              repositoryLabels.map(label => label.name)
+            );
+
+            const toAdd = missing.filter(label => available.has(label));
+            const undefinedLabels = missing.filter(
+              label => !available.has(label)
+            );
+
+            if (undefinedLabels.length > 0) {
+              core.warning(
+                `Repository labels not configured: ${undefinedLabels.join(", ")}`
+              );
+            }
+
+            if (toAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: toAdd
+              });
+            }
+
+            core.info(
+              `Classification complete for issue #${issueNumber}. Added ${toAdd.length} label(s).`
+            );
+
+      - name: Manual run summary
+        if: always()
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## Stakeholder Issue Management"
+            echo
+            echo "- Result: $JOB_STATUS"
+            if [[ -n "$ISSUE_NUMBER" ]]; then
+              echo "- Issue: #$ISSUE_NUMBER"
+            else
+              echo "- Mode: Configuration check"
+            fi
+            echo "- Automatic issue closure: disabled"
+            echo "- Automatic issue editing: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"
