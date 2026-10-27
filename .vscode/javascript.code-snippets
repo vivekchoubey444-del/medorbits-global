@@ -1,0 +1,31 @@
+{
+  "MedOrbits safe DOM query": {
+    "prefix": "mo-query",
+    "body": [
+      "const ${1:element} = document.querySelector(\"${2:.selector}\");",
+      "",
+      "if (${1:element}) {",
+      "  ${0:// Implement the interaction}",
+      "}"
+    ],
+    "description": "Null-safe DOM query"
+  },
+  "MedOrbits fetch JSON": {
+    "prefix": "mo-fetch",
+    "body": [
+      "async function ${1:loadData}() {",
+      "  const response = await fetch(\"${2:../data/example.json}\", {",
+      "    headers: { Accept: \"application/json\" }",
+      "  });",
+      "",
+      "  if (!response.ok) {",
+      "    throw new Error(`Request failed: ${response.status}`);",
+      "  }",
+      "",
+      "  return response.json();",
+      "}",
+      "$0"
+    ],
+    "description": "Fetch JSON with HTTP error handling"
+  }
+}

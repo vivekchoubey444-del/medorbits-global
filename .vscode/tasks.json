@@ -1,0 +1,120 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MedOrbits: Inspect repository",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "inspect"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Validate repository",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "validate",
+        "--json-report",
+        "reports/repository-report.json"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Discover HTML pages",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "pages",
+        "--discover"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Preview page generation",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "pages"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Generate missing pages",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "pages",
+        "--apply"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Audit pages",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "audit-pages"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Preview asset organization",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "tools/repository_manager.py",
+        "organize"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Python compile check",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-m",
+        "compileall",
+        "-q",
+        "tools",
+        "python"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Run pytest",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Run Ruff",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-m",
+        "ruff",
+        "check",
+        "tools",
+        "python"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
