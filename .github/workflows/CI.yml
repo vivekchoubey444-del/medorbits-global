@@ -1,0 +1,298 @@
+
+# ==============================================================================
+# MedOrbits -- Continuous Integration
+# File: .github/workflows/CI.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Run available repository validation, tests, and security checks.
+#
+# Policy:
+#   - Least-privilege permissions.
+#   - No automatic merging or deployment.
+#   - Optional checks are skipped when their prerequisites are absent.
+#   - Executed checks must pass; genuine failures are not suppressed.
+# ==============================================================================
+
+name: MedOrbits CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-validation:
+    name: Repository and configuration validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate YAML files when a parser is available
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -type f \( -iname '*.yml' -o -iname '*.yaml' \) \
+              -print0
+          )
+
+          if ((${#files[@]} == 0)); then
+            echo "No YAML files found; validation skipped."
+            exit 0
+          fi
+
+          if python -c 'import yaml' >/dev/null 2>&1; then
+            python - "${files[@]}" <<'PY'
+          import sys
+          import yaml
+
+          failed = False
+          for filename in sys.argv[1:]:
+              try:
+                  with open(filename, encoding="utf-8") as stream:
+                      list(yaml.safe_load_all(stream))
+                  print(f"VALID: {filename}")
+              except Exception as exc:
+                  failed = True
+                  print(f"INVALID: {filename}: {exc}", file=sys.stderr)
+
+          sys.exit(1 if failed else 0)
+          PY
+          else
+            echo "PyYAML is unavailable; installing it for YAML validation."
+            python -m pip install --disable-pip-version-check PyYAML
+
+            python - "${files[@]}" <<'PY'
+          import sys
+          import yaml
+
+          failed = False
+          for filename in sys.argv[1:]:
+              try:
+                  with open(filename, encoding="utf-8") as stream:
+                      list(yaml.safe_load_all(stream))
+                  print(f"VALID: {filename}")
+              except Exception as exc:
+                  failed = True
+                  print(f"INVALID: {filename}: {exc}", file=sys.stderr)
+
+          sys.exit(1 if failed else 0)
+          PY
+          fi
+
+      - name: Check JSON files when present
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -type f -name '*.json' -print0
+          )
+
+          if ((${#files[@]} == 0)); then
+            echo "No JSON files found; validation skipped."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            if python -m json.tool "$file" >/dev/null; then
+              echo "VALID: $file"
+            else
+              echo "::error file=$file::Invalid JSON."
+              exit 1
+            fi
+          done
+
+  javascript-validation:
+    name: JavaScript and Node.js validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install locked dependencies
+        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check JavaScript syntax where applicable
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json; Node.js validation skipped."
+            exit 0
+          fi
+
+          node --version
+          npm --version
+
+          echo "Root package manifest is available."
+
+      - name: Run configured lint script
+        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.lint ? 0 : 1)'; then
+            npm run lint
+          else
+            echo "No npm lint script configured; lint check skipped."
+          fi
+
+      - name: Run configured tests
+        if: ${{ hashFiles('package.json') != '' && hashFiles('package-lock.json') != '' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test --if-present
+          else
+            echo "No npm test script configured; test check skipped."
+          fi
+
+      - name: Report dependency manifest status
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f package.json && -f package-lock.json ]]; then
+            echo "npm manifest and lockfile found."
+          elif [[ -f package.json ]]; then
+            echo "::warning::package.json exists without package-lock.json; dependency installation was skipped."
+          else
+            echo "No root npm project; dependency checks were skipped."
+          fi
+
+  shell-validation:
+    name: Shell script validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate Bash scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -type f -name '*.sh' -print0
+          )
+
+          if ((${#files[@]} == 0)); then
+            echo "No shell scripts found; validation skipped."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            if bash -n "$file"; then
+              echo "VALID: $file"
+            else
+              echo "::error file=$file::Bash syntax validation failed."
+              exit 1
+            fi
+          done
+
+      - name: Test commit-message validator when available
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          validator=".github/scripts/validate-commit-message.sh"
+          tests=".github/scripts/test-validate-commit-message.sh"
+
+          if [[ -f "$validator" && -f "$tests" ]]; then
+            bash -n "$validator"
+            bash -n "$tests"
+            bash "$tests"
+          else
+            echo "Commit-message validator and test suite are not both present; check skipped."
+          fi
+
+  ci-summary:
+    name: CI summary
+    runs-on: ubuntu-latest
+    needs:
+      - repository-validation
+      - javascript-validation
+      - shell-validation
+    if: always()
+    timeout-minutes: 2
+    permissions: {}
+
+    steps:
+      - name: Evaluate validation results
+        env:
+          REPOSITORY_RESULT: ${{ needs.repository-validation.result }}
+          JAVASCRIPT_RESULT: ${{ needs.javascript-validation.result }}
+          SHELL_RESULT: ${{ needs.shell-validation.result }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          printf 'Repository validation: %s\n' "$REPOSITORY_RESULT"
+          printf 'JavaScript validation: %s\n' "$JAVASCRIPT_RESULT"
+          printf 'Shell validation: %s\n' "$SHELL_RESULT"
+
+          if [[ "$REPOSITORY_RESULT" != "success" ||
+                "$JAVASCRIPT_RESULT" != "success" ||
+                "$SHELL_RESULT" != "success" ]]; then
+            echo "::error::One or more CI jobs failed or were cancelled."
+            exit 1
+          fi
+
+          echo "All configured CI jobs completed successfully."

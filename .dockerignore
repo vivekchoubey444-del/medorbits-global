@@ -2,34 +2,56 @@
 # ==============================================================================
 # MedOrbits -- Docker Build Context Exclusions
 # File: /.dockerignore
+# Release: 2.1.0
+#
+# Purpose:
+#   Reduce Docker build context size and prevent accidental inclusion
+#   of local secrets, development artifacts, and repository metadata.
+#
+# Security:
+#   This file does not replace secret management, .gitignore, or image scanning.
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
 # Git metadata and repository configuration
+# ------------------------------------------------------------------------------
+
 .git
 .git/**
 .gitignore
 .gitattributes
 .gitmodules
 
-# GitHub workflows, templates, and internal repository tooling
+# ------------------------------------------------------------------------------
+# GitHub workflows and internal repository tooling
+# ------------------------------------------------------------------------------
+
 .github
 .github/**
 tools/repository-reports
 tools/repository-reports/**
 
+# ------------------------------------------------------------------------------
 # Environment files and secrets
+# Keep explicitly approved environment templates only.
+# ------------------------------------------------------------------------------
+
 .env
 .env.*
 !.env.example
 !.env.sample
 !.env.template
+
 **/.env
 **/.env.*
 !**/.env.example
 !**/.env.sample
 !**/.env.template
 
-# Private keys, certificates, and credentials
+# ------------------------------------------------------------------------------
+# Private keys, certificates, credentials, and secret material
+# ------------------------------------------------------------------------------
+
 **/*.pem
 **/*.key
 **/*.p12
@@ -41,20 +63,32 @@ tools/repository-reports/**
 **/credentials.json
 **/service-account*.json
 **/secrets.*
+**/*secret*
+**/*credential*
 
+# ------------------------------------------------------------------------------
 # Dependencies
+# Install production dependencies inside the Docker build.
+# ------------------------------------------------------------------------------
+
 node_modules
 node_modules/**
 **/node_modules
 **/node_modules/**
 
+# ------------------------------------------------------------------------------
 # Package manager caches
+# ------------------------------------------------------------------------------
+
 .npm
 .pnpm-store
 .yarn/cache
 .yarn/unplugged
 
+# ------------------------------------------------------------------------------
 # Logs and temporary files
+# ------------------------------------------------------------------------------
+
 *.log
 logs
 logs/**
@@ -68,7 +102,10 @@ temp/**
 *.swo
 *~
 
+# ------------------------------------------------------------------------------
 # Operating system and editor files
+# ------------------------------------------------------------------------------
+
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -76,7 +113,10 @@ desktop.ini
 .vscode
 .history
 
+# ------------------------------------------------------------------------------
 # Test output and coverage
+# ------------------------------------------------------------------------------
+
 coverage
 coverage/**
 .nyc_output
@@ -88,7 +128,10 @@ test-results/**
 __screenshots__
 __screenshots__/**
 
+# ------------------------------------------------------------------------------
 # Local caches
+# ------------------------------------------------------------------------------
+
 .cache
 .cache/**
 .parcel-cache
@@ -98,30 +141,41 @@ __screenshots__/**
 .turbo
 .turbo/**
 
-# Build output (retain only if required by the Docker build)
+# ------------------------------------------------------------------------------
+# Build output
+# Uncomment only when these directories are not required by the Docker build.
+# ------------------------------------------------------------------------------
+
 # dist
 # build
 # .next
 # out
 
+# ------------------------------------------------------------------------------
 # Local databases and database dumps
+# ------------------------------------------------------------------------------
+
 *.sqlite
 *.sqlite3
 *.db
 *.dump
 *.sql.gz
 
-# Backups and archives
+# ------------------------------------------------------------------------------
+# Backups and editor recovery files
+# ------------------------------------------------------------------------------
+
 *.bak
 *.backup
 *.old
 *.orig
 *.rej
-*.zip
-*.tar
-*.tar.gz
+*~
 
+# ------------------------------------------------------------------------------
 # Python artifacts
+# ------------------------------------------------------------------------------
+
 __pycache__
 __pycache__/**
 *.py[cod]
@@ -130,15 +184,31 @@ venv
 .pytest_cache
 .mypy_cache
 
+# ------------------------------------------------------------------------------
 # Documentation and repository-only files
+# Remove these only if the application does not need them at build time.
+# ------------------------------------------------------------------------------
+
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
 
+# ------------------------------------------------------------------------------
 # Docker development overrides
+# ------------------------------------------------------------------------------
+
 docker-compose.override.yml
 compose.override.yaml
 
-# Keep the Dockerfile and package manifests available.
-# Do not ignore package.json, package-lock.json, pnpm-lock.yaml,
-# yarn.lock, application source, required static assets, or runtime config.
+# ------------------------------------------------------------------------------
+# Keep required application inputs available.
+#
+# Do not ignore:
+#   - Dockerfile and required build scripts
+#   - package.json and package-lock.json
+#   - pnpm-lock.yaml or yarn.lock when used by the project
+#   - application source and required public assets
+#   - required runtime configuration templates
+#
+# Docker ignore rules are evaluated in order; review exceptions carefully.
+# ==============================================================================

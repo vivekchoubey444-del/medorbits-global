@@ -1,239 +1,179 @@
-MedOrbits — Husky Git Hooks
 
-Project: MedOrbits
-Release: 2.0.0
-Directory: .husky/
+# Husky Git Hooks
 
-1. Purpose
+This directory contains Git hooks managed by [Husky](https://typicode.github.io/husky/). These hooks run local quality checks at selected Git lifecycle events to help maintain code quality, repository consistency, and security.
 
-MedOrbits uses Husky Git hooks to run selected validation checks during Git operations.
+## Purpose
 
-The hooks help maintain consistent commit messages, detect common syntax errors, run configured tests, and reduce the risk of pushing broken code.
+Husky automates repository checks before selected Git operations. Depending on the configured hooks, it can run:
 
-Hooks are local development safeguards. They do not replace GitHub Actions, code review, dependency auditing, or production security testing.
+- Code linting and formatting checks.
+- Unit tests and targeted validation.
+- Commit-message validation.
+- Secret and sensitive-file checks.
+- Dependency and configuration validation.
 
-2. Directory Structure
+Hooks should remain fast, predictable, and safe. Expensive checks belong in CI when they are not suitable for local execution.
 
+## Directory Structure
+
+```text
 .husky/
 ├── README.md
-├── commit-msg
 ├── pre-commit
+├── commit-msg
 └── pre-push
+```
 
-Hook	Purpose
-commit-msg	Validates the commit subject against the configured Conventional Commits format.
-pre-commit	Checks staged JSON and JavaScript files and runs configured quality scripts.
-pre-push	Runs repository checks and configured tests before pushing.
-README.md	Documents hook setup, behavior, and troubleshooting.
+Only create hook files that are actually configured and required by the project.
 
-The listed hook files must exist in the repository for the corresponding behavior to be available.
+| Hook | Purpose |
+|—|—|
+| `pre-commit` | Checks staged changes before creating a commit. |
+| `commit-msg` | Validates the proposed commit message. |
+| `pre-push` | Runs selected checks before pushing commits. |
 
-3. Requirements
+## Requirements
 
-Before enabling these hooks, verify that the development environment has:
+- Git installed and repository initialized.
+- Node.js version compatible with the project.
+- npm installed.
+- Husky installed as a project development dependency.
+- Dependencies installed using the repository’s lockfile.
 
-* Git.
-* Node.js compatible with the project’s engines requirement.
-* npm, if the project uses npm scripts.
-* Husky installed at a version compatible with the repository configuration.
-* The project’s dependencies installed when a hook requires them.
-* Bash where repository scripts such as VERIFY.sh, TEST.sh, or SCHEMA-CHECK.sh are invoked.
+Install project dependencies with:
 
-Some hooks use POSIX shell syntax; others call Bash scripts. Ensure the required shell is available on each supported development platform.
+```bash
+npm ci
+```
 
-4. Husky Setup
+If Husky is not already installed, add it as a development dependency:
 
-For Husky v9, the root package.json commonly includes the following lifecycle script:
+```bash
+npm install —save-dev husky
+```
 
+## Configure Husky
+
+For a project using a compatible Husky version, configure the installation script in the root `package.json`:
+
+```json
 {
   “scripts”: {
     “prepare”: “husky”
   }
 }
+```
 
-Merge this entry into the existing scripts object. Do not replace existing scripts or create duplicate JSON keys.
+Preserve all existing scripts and merge the `prepare` entry rather than replacing the entire `scripts` object.
 
-Install project dependencies using the approved development setup, then confirm that Husky initializes correctly.
+Initialize Husky with:
 
-Verify the installed Husky version before applying version-specific setup instructions. Older Husky releases use different configuration conventions.
+```bash
+npx husky init
+```
 
-5. Commit Message Convention
+Review any files created or modified by this command before committing them.
 
-The commit-msg hook validates the first non-comment, non-empty line of the commit message.
+> **Version compatibility:** Husky configuration differs between major versions. Check the installed version and follow its corresponding documentation before copying hook examples from older projects.
 
-Expected format:
+## Hook Guidelines
 
-type(scope): short description
+### `pre-commit`
 
-Common types include:
+Use this hook for quick checks on staged changes, such as linting, formatting verification, and staged-file validation.
 
-* feat — new functionality.
-* fix — bug fix.
-* docs — documentation changes.
-* style — formatting-only changes.
-* refactor — code restructuring.
-* perf — performance improvement.
-* test — tests.
-* build — build system or dependencies.
-* ci — continuous integration.
-* chore — maintenance.
-* revert — reverting a previous change.
+Recommended practices:
 
-Examples:
+- Prefer staged-file-aware tools when available.
+- Avoid modifying unrelated files.
+- Do not print secret values or sensitive environment variables.
+- Return a nonzero exit code when a required check fails.
 
-feat(admissions): add course search
-fix(api): handle missing application
-docs: update support guide
-test: add schema validation tests
-chore(deps): update dependencies
+### `commit-msg`
 
-The exact rules are determined by the committed commit-msg hook. Update this documentation if those rules change.
+Use this hook to validate commit-message conventions if the project defines them.
 
-6. Pre-Commit Checks
+For example, a project may adopt Conventional Commits:
 
-The pre-commit hook may perform the following checks:
+```text
+feat: add career guidance page
+fix: handle missing dependency metadata
+docs: update API documentation
+test: add controller validation tests
+```
 
-1. Parse staged JSON files.
-2. Check staged JavaScript syntax.
-3. Run the configured lint script when available.
-4. Run the configured check script when available.
+Configure the validator separately; Husky does not enforce a commit-message format automatically.
 
-The hook should not install dependencies, stage additional files, create commits, or push changes.
+### `pre-push`
 
-Review the actual hook before relying on it as a mandatory quality gate. In particular, confirm how it handles missing dependencies and validation failures.
+Use this hook for selected tests or checks that are appropriate before pushing. Keep the execution time reasonable and leave comprehensive security scans and full integration tests to CI where appropriate.
 
-Recommended additional checks
+## Example Hook
 
-Where appropriate, consider integrating:
+A basic `pre-commit` hook for a project with a configured npm lint script:
 
-* Unit tests.
-* JSON Schema validation.
-* Formatting checks.
-* Secret scanning.
-* TypeScript validation.
-* Targeted tests for changed application components.
+```sh
+#!/usr/bin/env sh
 
-Avoid making every commit unnecessarily slow. Expensive checks can run in CI or before release.
+set -eu
 
-7. Pre-Push Checks
+if node -e ‘
+  const pkg = require(“./package.json”);
+  process.exit(pkg.scripts && pkg.scripts.lint ? 0 : 1);
+‘; then
+  npm run lint
+else
+  echo “No lint script configured; skipping local lint.”
+fi
+```
 
-The pre-push hook may check:
+This example only checks for the existence of a lint script. Replace it with the checks that match the actual MedOrbits project configuration.
 
-* The repository has a valid HEAD.
-* The Git index contains no unresolved merge conflicts.
-* Tracked JSON files have valid syntax.
-* Tracked JavaScript files pass syntax checks.
-* The configured npm test script passes.
-* Available project verification scripts pass.
+Ensure hook files have executable permissions where required:
 
-A pre-push hook can run against a large portion of the repository and may take longer than the pre-commit hook.
+```bash
+chmod +x .husky/pre-commit
+```
 
-Review its actual behavior before relying on it. Missing dependencies or runtime tools should be handled deliberately rather than silently allowing an unverified release.
+## Troubleshooting
 
-8. Repository Safety
+### Hooks do not run
 
-Husky hooks should preserve developer work and avoid destructive automation.
+1. Confirm Husky is installed.
+2. Run `npm ci` to install dependencies.
+3. Verify the `prepare` script and Husky configuration for the installed major version.
+4. Inspect the repository’s Git hook configuration:
 
-They should not automatically:
+   ```bash
+   git config —get core.hooksPath
+   ```
 
-* Run git reset —hard.
-* Run git clean.
-* Delete project files.
-* Rewrite repository history.
-* Resolve merge conflicts without review.
-* Install or upgrade dependencies unexpectedly.
-* Commit or push additional changes.
-* Deploy to production without an authorized release workflow.
+5. Confirm the expected hook file exists and is executable where required.
 
-Before resolving conflicts, inspect git status, preserve modified and untracked files, and create a backup outside the repository.
+### A hook fails
 
-9. Troubleshooting
+Run the underlying lint, test, or validation command directly to inspect the error. Fix the underlying issue rather than bypassing a required quality check.
 
-Hooks do not run
+### Working in CI
 
-Check that:
+CI should run the authoritative test and security checks independently. Local Git hooks improve feedback but can be bypassed by users or skipped in certain environments.
 
-* Husky is installed and configured for the current version.
-* The Git hooks path is configured correctly.
-* The hook files are present in .husky/.
-* The files are executable where Unix permissions are supported.
-* The repository’s setup command has been run successfully.
+## Security and Maintenance
 
-Inspect the configured hooks path with:
+- Never place tokens, passwords, API keys, or private credentials in hook files.
+- Do not execute downloaded scripts without reviewing their source.
+- Do not use hooks to silently rewrite unrelated repository files.
+- Keep hooks under version control and review changes to them.
+- Avoid destructive Git commands in automated hooks.
+- Treat local checks as an additional safeguard, not a replacement for branch protection and CI.
 
-git config —get core.hooksPath
+## Further Reading
 
-A hook fails
+- [Husky documentation](https://typicode.github.io/husky/)
+- [Git hooks documentation](https://git-scm.com/docs/githooks)
+- [npm documentation](https://docs.npmjs.com/)
 
-1. Read the complete error output.
-2. Identify the failing command.
-3. Run that command manually.
-4. Fix the underlying issue.
-5. Rerun the relevant check.
-6. Review the staged diff before committing or pushing again.
+—
 
-Do not bypass a failing hook merely to complete a release.
-
-Missing dependencies
-
-Install dependencies only through the project’s approved workflow. Do not let a hook automatically upgrade packages or rewrite the lockfile.
-
-Line endings or executable permissions
-
-Ensure shell scripts use compatible line endings and that executable permissions are preserved in Git where applicable.
-
-10. Testing Hooks Safely
-
-Before adopting changes to hooks across the team:
-
-1. Test on a temporary branch.
-2. Use a deliberately invalid commit message to confirm rejection.
-3. Introduce an invalid JSON file in a controlled test to confirm detection.
-4. Confirm that a valid commit passes.
-5. Confirm that failed checks do not alter source files.
-6. Verify the behavior in each supported development environment.
-
-Do not use live production credentials or real user data during testing.
-
-11. Local Hooks and CI
-
-Local hooks can be bypassed or may not run in every environment. GitHub Actions and other CI checks should independently validate important release requirements.
-
-The release pipeline should verify, as applicable:
-
-* Tests and syntax checks.
-* Dependency and lockfile consistency.
-* Security scanning.
-* Required environment configuration.
-* Build success.
-* Release tag and package version consistency.
-
-A successful local hook does not certify that a release is secure or production-ready.
-
-12. Maintainer Checklist
-
-Before publishing the MedOrbits 2.0.0 release:
-
-* [ ]	Confirm the installed Husky version.
-* [ ]	Verify the root prepare script.
-* [ ]	Confirm all documented hook files exist.
-* [ ]	Test rejection of invalid commit messages.
-* [ ]	Test failure handling for invalid JSON and JavaScript.
-* [ ]	Verify configured npm scripts exist and behave as expected.
-* [ ]	Confirm hooks do not modify or delete user work unexpectedly.
-* [ ]	Verify required checks also run in CI.
-* [ ]	Update this README when hook behavior changes.
-
-13. Scope and Limitations
-
-Husky hooks are local safeguards, not a complete security boundary. They cannot guarantee that every contributor runs the hooks or that every defect is detected.
-
-Security incidents must follow the private reporting procedure in SECURITY.md. Ordinary development issues should use the documented support or issue-reporting process.
-
-Status: Documentation prepared. Verify the actual hook implementations and Husky configuration before treating these checks as enforced release requirements.
-
-⸻
-
-MedOrbits — Education · Admissions · Careers · Recruitment
-
-Study · Work · Grow
+**Maintenance note:** Keep this document synchronized with the actual hook files, installed Husky version, and scripts defined in the root `package.json`.

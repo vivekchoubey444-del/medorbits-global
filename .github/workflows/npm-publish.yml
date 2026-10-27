@@ -1,115 +1,248 @@
+
 name: Publish to npm
+
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Expected package version to publish (for example, 2.0.0)"
-        required: true
-        type: string
       confirm_publish:
-        description: "Type publish to confirm npm publication"
+        description: "Type publish to authorize npm publication"
         required: true
         type: string
+      access:
+        description: "npm package access level"
+        required: true
+        type: choice
+        default: public
+        options:
+          - public
+          - restricted
+      tag:
+        description: "npm distribution tag"
+        required: true
+        type: choice
+        default: latest
+        options:
+          - latest
+          - next
+          - beta
+
 permissions:
   contents: read
+
 concurrency:
   group: npm-publish
   cancel-in-progress: false
+
 jobs:
   validate:
-    name: Validate package
+    name: Validate npm Package
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+
     permissions:
       contents: read
+
+    outputs:
+      package_name: ${{ steps.package.outputs.name }}
+      package_version: ${{ steps.package.outputs.version }}
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-      - name: Verify release confirmation and package metadata
+      - name: Verify publication confirmation
         env:
-          EXPECTED_VERSION: ${{ inputs.version }}
           CONFIRMATION: ${{ inputs.confirm_publish }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           if [[ "$CONFIRMATION" != "publish" ]]; then
-            echo "::error::Publication cancelled. Enter exactly 'publish' to confirm."
+            echo "::error::Publication cancelled. Enter exactly 'publish' to continue."
             exit 1
           fi
-          if [[ ! "$EXPECTED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Enter a valid semantic version."
-            exit 1
-          fi
-          if [[ ! -f package.json || ! -f package-lock.json ]]; then
-            echo "::error::Both package.json and package-lock.json are required."
-            exit 1
-          fi
-          node <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          const expected = process.env.EXPECTED_VERSION;
-          if (!pkg.name) throw new Error("package.json must define a package name.");
-          if (pkg.private === true) throw new Error("Private packages cannot be published.");
-          if (pkg.version !== expected) {
-            throw new Error(`Expected version ${expected}, found ${pkg.version}.`);
-          }
-          if (lock.version !== pkg.version) {
-            throw new Error("package-lock.json version does not match package.json.");
-          }
-          console.log(`Package: ${pkg.name}`);
-          console.log(`Version: ${pkg.version}`);
-          NODE
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run package tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
-            npm test
-          else
-            echo "::error::No test script is configured. Add and run package tests before publishing."
-            exit 1
-          fi
-      - name: Validate publish package contents
-        run: npm pack --dry-run
-  publish:
-    name: Publish package to npm
-    needs: validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: npm-production
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Checkout repository
+
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
-      - name: Verify package version
-        env:
-          EXPECTED_VERSION: ${{ inputs.version }}
+
+      - name: Validate package manifest and lockfile
+        id: package
+        shell: bash
         run: |
-          set -euo pipefail
-          node -e '
-            const pkg = require("./package.json");
-            if (pkg.version !== process.env.EXPECTED_VERSION) {
-              throw new Error("Package version changed after validation.");
-            }
-          '
-      - name: Publish using npm trusted publishing
-        run: npm publish --provenance
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "::error::Root package.json was not found."
+            exit 1
+          fi
+
+          if [[ ! -f package-lock.json ]]; then
+            echo "::error::Root package-lock.json was not found."
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (typeof pkg.name !== "string" || !pkg.name.trim()) {
+            throw new Error("package.json must declare a package name.");
+          }
+
+          if (typeof pkg.version !== "string" ||
+              !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/.test(pkg.version)) {
+            throw new Error("package.json must declare a valid semantic version.");
+          }
+
+          if (pkg.private === true) {
+            throw new Error("Private packages cannot be published to npm.");
+          }
+
+          if (pkg.workspaces) {
+            throw new Error(
+              "This workflow handles a single root package. Review workspace publishing separately."
+            );
+          }
+
+          if (pkg.publishConfig?.registry &&
+              pkg.publishConfig.registry !== "https://registry.npmjs.org/") {
+            throw new Error(
+              "publishConfig.registry must point to the public npm registry."
+            );
+          }
+
+          fs.writeFileSync(
+            process.env.GITHUB_OUTPUT,
+            `name=${pkg.name}\nversion=${pkg.version}\n`,
+            { flag: "a" }
+          );
+
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
+          NODE
+
+      - name: Validate dependency installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify package contents
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          npm pack --dry-run --ignore-scripts
+
+      - name: Check npm version availability
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version \
+            --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
+            echo "::error::Version $PACKAGE_VERSION is already published."
+            exit 1
+          fi
+
+          echo "Package version is not currently listed in npm registry."
+
+  publish:
+    name: Publish Package
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: npm-production
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Verify package version before publication
+        env:
+          EXPECTED_NAME: ${{ needs.validate.outputs.package_name }}
+          EXPECTED_VERSION: ${{ needs.validate.outputs.package_version }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          actual_name="$(node -p "require('./package.json').name")"
+          actual_version="$(node -p "require('./package.json').version")"
+
+          if [[ "$actual_name" != "$EXPECTED_NAME" ||
+                "$actual_version" != "$EXPECTED_VERSION" ]]; then
+            echo "::error::Package metadata differs from validation results."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PACKAGE_ACCESS: ${{ inputs.access }}
+          DISTRIBUTION_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::Configure NPM_TOKEN in the npm-production environment secrets."
+            exit 1
+          fi
+
+          if [[ "$PACKAGE_ACCESS" == "restricted" ]]; then
+            access_args=(--access restricted)
+          else
+            access_args=(--access public)
+          fi
+
+          npm publish \
+            --ignore-scripts \
+            "${access_args[@]}" \
+            --tag "$DISTRIBUTION_TAG" \
+            --registry=https://registry.npmjs.org/
+
+      - name: Publication summary
+        if: success()
+        env:
+          PACKAGE_NAME: ${{ needs.validate.outputs.package_name }}
+          PACKAGE_VERSION: ${{ needs.validate.outputs.package_version }}
+          DISTRIBUTION_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          {
+            echo "## npm Publication"
+            echo
+            echo "- Package: $PACKAGE_NAME"
+            echo "- Version: $PACKAGE_VERSION"
+            echo "- Distribution tag: $DISTRIBUTION_TAG"
+            echo "- Registry: https://registry.npmjs.org/"
+            echo "- Automatic version changes: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"

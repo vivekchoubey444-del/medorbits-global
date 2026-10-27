@@ -1,199 +1,236 @@
-name: Bug report
-description: Report a reproducible bug or unexpected behavior in MedOrbits.
+
+name: "🐛 Bug Report"
+description: "Report a reproducible bug or unexpected behavior in MedOrbits."
 title: "[Bug]: "
 labels:
-
-* bug
-* triage
-    assignees: []
+  - bug
+  - triage
+assignees: []
 
 body:
-
-* type: markdown
+  - type: markdown
     attributes:
-    value: |
-    Thank you for helping improve MedOrbits.
+      value: |
+        # 🐛 MedOrbits Bug Report
 
-Before submitting, please check existing issues for duplicates.
-Report one problem per issue and remove any personal, confidential,
-medical, financial, or authentication information from screenshots
-and logs.
+        Thank you for helping improve MedOrbits.
 
-* type: checkboxes
+        Before submitting, check existing issues for duplicates.
+        Report one problem per issue. Remove personal, confidential,
+        medical, financial, and authentication information from all
+        screenshots, logs, and attachments.
+
+        **🔐 Security notice:** Do not disclose exploitable vulnerabilities,
+        exposed credentials, or private user data in a public issue.
+        Follow the repository's `SECURITY.md` for the designated private
+        reporting process.
+
+  - type: checkboxes
     id: checks
     attributes:
-    label: Pre-submission checklist
-    description: Confirm these items before submitting your report.
-    options:
-    - label: I searched existing issues for a similar report.
-    required: true
-    - label: I can describe the steps needed to reproduce the problem.
-    required: true
-    - label: I removed passwords, tokens, personal data, and other secrets from the evidence.
-    required: true
-* type: dropdown
+      label: "✅ Pre-submission Checklist"
+      description: Confirm these items before submitting your report.
+      options:
+        - label: "I searched existing issues for a similar report."
+          required: true
+        - label: "I can describe the steps needed to reproduce the problem."
+          required: true
+        - label: "I removed passwords, tokens, personal data, and other secrets from the evidence."
+          required: true
+
+  - type: dropdown
     id: area
     attributes:
-    label: Affected area
-    description: Select the part of MedOrbits where the problem occurs.
-    options:
-    - Website or user interface
-    - Education and admissions
-    - College or university information
-    - Careers, jobs, or recruitment
-    - Account, login, or authentication
-    - Forms or document uploads
-    - Search or filtering
-    - API or backend
-    - Database or data integrity
-    - Payments or subscriptions
-    - Accessibility or localization
-    - Performance or availability
-    - Deployment or infrastructure
-    - Security concern (do not disclose vulnerabilities publicly)
-    - Other
+      label: "🧭 Affected Area"
+      description: Select the part of MedOrbits where the problem occurs.
+      options:
+        - Website or user interface
+        - Education and admissions
+        - College or university information
+        - Careers, jobs, or recruitment
+        - Account, login, or authentication
+        - Forms or document uploads
+        - Search or filtering
+        - API or backend
+        - Database or data integrity
+        - Payments or subscriptions
+        - Accessibility or localization
+        - Performance or availability
+        - Deployment or infrastructure
+        - Security concern (do not disclose vulnerabilities publicly)
+        - Other
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: severity
     attributes:
-    label: Impact
-    description: Choose the level that best describes the user impact.
-    options:
-    - Critical -- widespread outage or major data-integrity impact
-    - High -- major feature unavailable with no practical workaround
-    - Medium -- feature impaired but a workaround exists
-    - Low -- minor issue or cosmetic defect
-    - Not sure
+      label: "🚦 Impact and Severity"
+      description: Choose the level that best describes the user impact.
+      options:
+        - Critical -- widespread outage or major data-integrity impact
+        - High -- major feature unavailable with no practical workaround
+        - Medium -- feature impaired but a workaround exists
+        - Low -- minor issue or cosmetic defect
+        - Not sure
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: summary
     attributes:
-    label: Bug summary
-    description: Describe what is broken and who or what is affected.
-    placeholder: A clear and concise description of the problem.
+      label: "📝 Bug Summary"
+      description: Describe what is broken and who or what is affected.
+      placeholder: "Provide a clear, concise description of the problem."
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: reproduction
     attributes:
-    label: Steps to reproduce
-    description: List the exact steps that trigger the problem.
-    placeholder: |
-    Open the affected page.
-    Select the relevant option.
-    Submit the form.
-    Observe the unexpected result.
+      label: "🔁 Steps to Reproduce"
+      description: List the exact steps that trigger the problem.
+      placeholder: |
+        1. Open the affected page.
+        2. Select the relevant option.
+        3. Submit the form.
+        4. Observe the unexpected result.
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: expected
     attributes:
-    label: Expected behavior
-    description: Explain what you expected to happen.
-    placeholder: Describe the correct behavior.
+      label: "🎯 Expected Behavior"
+      description: Explain what you expected to happen.
+      placeholder: "Describe the correct behavior."
     validations:
-    required: true
-* type: textarea
+      required: true
+
+  - type: textarea
     id: actual
     attributes:
-    label: Actual behavior
-    description: Explain what happened instead, including any visible error.
-    placeholder: Describe the observed behavior or error message.
+      label: "⚠️ Actual Behavior"
+      description: Explain what happened instead, including any visible error.
+      placeholder: "Describe the observed behavior or error message."
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: reproducibility
     attributes:
-    label: Reproducibility
-    options:
-    - Every time
-    - Frequently
-    - Occasionally
-    - Happened once
-    - Unable to determine
+      label: "🔄 Reproducibility"
+      description: How consistently does the problem occur?
+      options:
+        - Every time
+        - Frequently
+        - Occasionally
+        - Happened once
+        - Unable to determine
     validations:
-    required: true
-* type: input
+      required: true
+
+  - type: input
     id: page-url
     attributes:
-    label: Affected page or endpoint
-    description: Provide a public URL or API route if applicable. Do not include private query parameters or access tokens.
-    placeholder: "https://example.com/affected-page"
-* type: input
+      label: "🔗 Affected Page or Endpoint"
+      description: "Provide a public URL or API route if applicable. Do not include private query parameters, session identifiers, or access tokens."
+      placeholder: "https://medorbits.in/affected-page"
+
+  - type: input
     id: app-version
     attributes:
-    label: MedOrbits version or commit
-    description: Provide the release version or Git commit hash if known.
-    placeholder: "2.0.0 or a commit hash"
-* type: dropdown
+      label: "🏷️ MedOrbits Version or Commit"
+      description: Provide the release version or Git commit hash if known.
+      placeholder: "Release version or commit SHA"
+
+  - type: dropdown
     id: environment
     attributes:
-    label: Environment
-    options:
-    - Production
-    - Preview or staging
-    - Local development
-    - CI or automated tests
-    - Other or unknown
+      label: "🌐 Environment"
+      options:
+        - Production
+        - Preview or staging
+        - Local development
+        - CI or automated tests
+        - Other or unknown
     validations:
-    required: true
-* type: dropdown
+      required: true
+
+  - type: dropdown
     id: device
     attributes:
-    label: Device type
-    options:
-    - Desktop or laptop
-    - Mobile phone
-    - Tablet
-    - Server or CI runner
-    - Other
-    - Unknown
+      label: "📱 Device Type"
+      options:
+        - Desktop or laptop
+        - Mobile phone
+        - Tablet
+        - Server or CI runner
+        - Other
+        - Unknown
     validations:
-    required: true
-* type: input
+      required: true
+
+  - type: input
     id: operating-system
     attributes:
-    label: Operating system
-    placeholder: "e.g. iOS, Android, Windows, macOS, Linux"
-* type: input
+      label: "💻 Operating System"
+      placeholder: "e.g. iOS, Android, Windows, macOS, Linux"
+
+  - type: input
     id: browser-runtime
     attributes:
-    label: Browser or runtime
-    description: Include version when known.
-    placeholder: "e.g. Safari, Chrome, Node.js"
-* type: textarea
+      label: "🧩 Browser or Runtime"
+      description: Include the version when known.
+      placeholder: "e.g. Safari, Chrome, Node.js"
+
+  - type: textarea
     id: logs
     attributes:
-    label: Relevant error messages or logs
-    description: |
-    Paste only the relevant, redacted error output.
-    Never include passwords, cookies, API keys, authorization headers,
-    private user records, or production secrets.
-    render: text
-* type: textarea
+      label: "📋 Relevant Error Messages or Logs"
+      description: |
+        Paste only the relevant, redacted error output.
+
+        Never include passwords, cookies, session identifiers, API keys,
+        authorization headers, private user records, or production secrets.
+      render: text
+
+  - type: textarea
     id: evidence
     attributes:
-    label: Screenshots or additional evidence
-    description: |
-    Attach screenshots or describe other evidence.
-    Redact personal information and confidential data before uploading.
-* type: textarea
+      label: "🖼️ Screenshots or Additional Evidence"
+      description: |
+        Attach screenshots or describe other relevant evidence.
+
+        Redact personal information, confidential records, account details,
+        and secrets before uploading.
+
+  - type: textarea
     id: workaround
     attributes:
-    label: Workaround
-    description: Explain any temporary workaround, or state that none is known.
-    placeholder: Optional
-* type: textarea
+      label: "🩹 Workaround"
+      description: Explain any temporary workaround, or state that none is known.
+      placeholder: "Optional -- describe a temporary workaround."
+
+  - type: textarea
     id: additional-context
     attributes:
-    label: Additional context
-    description: Include relevant details that do not fit elsewhere.
-    placeholder: Optional
-* type: markdown
+      label: "📚 Additional Context"
+      description: Include relevant details that do not fit elsewhere.
+      placeholder: "Optional -- include relevant technical context."
+
+  - type: markdown
     attributes:
-    value: |
-    Security notice: Do not report exploitable vulnerabilities, exposed credentials,
-    or private user data in a public issue. Follow the repository’s SECURITY.md
-    for the designated private reporting process.
+      value: |
+        ---
+
+        ### 🔐 Security and Privacy Reminder
+
+        Do not report exploitable vulnerabilities, exposed credentials,
+        or private user data in a public issue.
+
+        Follow the repository's `SECURITY.md` for the designated private
+        reporting process. If no verified private reporting channel exists,
+        do not publish sensitive details while waiting for clarification.
+
+        **Thank you for helping keep MedOrbits reliable, secure, and accessible.**

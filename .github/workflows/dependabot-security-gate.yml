@@ -1,0 +1,175 @@
+
+# ==============================================================================
+# MedOrbits -- Dependabot Security Gate
+# File: .github/workflows/dependabot-security-gate.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate Dependabot pull requests before they can be considered for merging.
+#
+# Security policy:
+#   - Only Dependabot-authored pull requests are accepted by this gate.
+#   - No automatic merging.
+#   - No deployment.
+#   - Read-only repository permissions.
+#   - Do not expose repository secrets to pull-request code.
+#
+# IMPORTANT:
+#   Configure branch protection or rulesets to require this workflow's checks.
+#   This workflow does not prevent direct pushes or grant repository permissions.
+# ==============================================================================
+
+name: Dependabot Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependabot-security-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authorize:
+    name: Authorize pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Verify pull request author
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "::error::This workflow is intended for pull_request events."
+            exit 1
+          fi
+
+          if [[ "$PR_AUTHOR" != "dependabot[bot]" ]]; then
+            echo "::error::Only pull requests authored by dependabot[bot] are accepted."
+            exit 1
+          fi
+
+          echo "Authorized Dependabot pull request."
+
+  validate:
+    name: Validate dependency update
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify npm manifests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "::error::package.json is required for this npm validation job."
+            exit 1
+          fi
+
+          if [[ ! -f package-lock.json ]]; then
+            echo "::error::package-lock.json is required for npm ci."
+            exit 1
+          fi
+
+          node --version
+          npm --version
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check package manifest consistency
+        run: npm ls --depth=0
+
+      - name: Run dependency vulnerability audit
+        run: npm audit --audit-level=high
+
+      - name: Run repository tests when configured
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const p = require("./package.json");
+            process.exit(p.scripts && p.scripts.test ? 0 : 1);
+          '; then
+            npm test -- --runInBand
+          else
+            echo "::error::No npm test script is configured; required tests cannot be verified."
+            exit 1
+          fi
+
+      - name: Validate commit-message scripts when present
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          validator=".github/scripts/validate-commit-message.sh"
+          tests=".github/scripts/test-validate-commit-message.sh"
+
+          if [[ -f "$validator" && -f "$tests" ]]; then
+            bash -n "$validator"
+            bash -n "$tests"
+            bash "$tests"
+          else
+            echo "::error::Expected commit-message validator and test suite were not both found."
+            exit 1
+          fi
+
+  security-summary:
+    name: Security gate summary
+    needs:
+      - authorize
+      - validate
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+
+    steps:
+      - name: Evaluate required jobs
+        env:
+          AUTHORIZE_RESULT: ${{ needs.authorize.result }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$AUTHORIZE_RESULT" != "success" ||
+                "$VALIDATE_RESULT" != "success" ]]; then
+            echo "::error::Dependabot security gate failed."
+            echo "Authorization: $AUTHORIZE_RESULT"
+            echo "Validation: $VALIDATE_RESULT"
+            exit 1
+          fi
+
+          echo "Dependabot security gate passed."

@@ -1,156 +1,181 @@
-name: Create Release
+
+name: Release
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version without the v prefix (for example, 2.0.0)"
+        description: "Release version, for example 2.0.0"
         required: true
         type: string
-      release_type:
-        description: "Release classification"
+      prerelease:
+        description: "Mark this release as a prerelease"
         required: true
-        type: choice
-        options:
-          - stable
-          - prerelease
-      confirm_release:
-        description: "Type release to confirm"
+        default: false
+        type: boolean
+      target_branch:
+        description: "Branch or commit to release from"
         required: true
+        default: main
         type: string
+
 permissions:
   contents: read
+
 concurrency:
-  group: medorbits-release
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
+
 jobs:
   validate:
-    name: Validate release
+    name: Validate Release
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     permissions:
       contents: read
+
     outputs:
       tag: ${{ steps.version.outputs.tag }}
-      version: ${{ steps.version.outputs.version }}
-      prerelease: ${{ steps.version.outputs.prerelease }}
+
     steps:
-      - name: Checkout repository
+      - name: Check out target branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate version and confirmation
+
+      - name: Validate version and target branch
         id: version
+        shell: bash
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          RELEASE_TYPE: ${{ inputs.release_type }}
-          CONFIRMATION: ${{ inputs.confirm_release }}
-        shell: bash
+          TARGET_BRANCH: ${{ inputs.target_branch }}
         run: |
-          set -euo pipefail
-          if [[ "$CONFIRMATION" != "release" ]]; then
-            echo "::error::Release cancelled. Enter exactly 'release' to confirm."
-            exit 1
-          fi
+          set -Eeuo pipefail
+
           if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Invalid semantic version. Example: 2.0.0"
+            echo "::error::Use a valid semantic version such as 2.0.0 or 2.1.0-rc.1."
             exit 1
           fi
-          if [[ "$RELEASE_TYPE" != "stable" && "$RELEASE_TYPE" != "prerelease" ]]; then
-            echo "::error::Unsupported release type."
+
+          if [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]] ||
+             [[ "$TARGET_BRANCH" == -* ]] ||
+             [[ "$TARGET_BRANCH" == *..* ]] ||
+             [[ "$TARGET_BRANCH" == */ ]] ||
+             [[ "$TARGET_BRANCH" == *//* ]]; then
+            echo "::error::Invalid target branch or ref."
             exit 1
           fi
-          if [[ "$RELEASE_TYPE" == "stable" && "$RELEASE_VERSION" == *-* ]]; then
-            echo "::error::Stable releases cannot use a prerelease version."
+
+          tag="v$RELEASE_VERSION"
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::Tag $tag already exists."
             exit 1
           fi
-          if [[ "$RELEASE_TYPE" == "prerelease" && "$RELEASE_VERSION" != *-* ]]; then
-            echo "::error::Prereleases must include a prerelease suffix, such as 2.1.0-rc.1."
-            exit 1
-          fi
-          tag="v${RELEASE_VERSION}"
-          if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
-            echo "::error::Tag ${tag} already exists."
-            exit 1
-          fi
-          echo "version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          if [[ "$RELEASE_TYPE" == "prerelease" ]]; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Confirm release source branch
-        env:
-          REF_NAME: ${{ github.ref_name }}
-          REF_TYPE: ${{ github.ref_type }}
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Validated release tag: $tag"
+
+      - name: Validate package manifest when present
         shell: bash
         run: |
-          set -euo pipefail
-          if [[ "$REF_TYPE" != "branch" || "$REF_NAME" != "main" ]]; then
-            echo "::error::Run this workflow from the main branch."
-            exit 1
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json found; skipping package validation."
+            exit 0
           fi
-      - name: Check repository metadata
-        run: |
-          set -euo pipefail
-          if [[ ! -f README.md ]]; then
-            echo "::warning::README.md was not found at the repository root."
-          fi
-          echo "Release source validation completed."
-  release:
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Manifest version: ${pkg.version || "unspecified"}`);
+          NODE
+
+  publish:
     name: Publish GitHub Release
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: github-release
+
     permissions:
       contents: write
+
     steps:
-      - name: Checkout release source
+      - name: Check out target branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
-          persist-credentials: true
-      - name: Verify tag does not exist remotely
+          persist-credentials: false
+
+      - name: Verify tag remains unused
         env:
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        shell: bash
         run: |
-          set -euo pipefail
-          git fetch --tags origin
-          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
-            echo "::error::Tag ${RELEASE_TAG} already exists on the remote."
+          set -Eeuo pipefail
+
+          git fetch --tags --force
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "::error::Tag $RELEASE_TAG already exists."
             exit 1
           fi
-      - name: Create and push release tag
-        env:
-          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$RELEASE_TAG" -m "Release ${RELEASE_VERSION}"
-          git push origin "refs/tags/${RELEASE_TAG}"
-      - name: Create GitHub Release
+
+      - name: Generate release notes
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
-          IS_PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          gh release create "$RELEASE_TAG" \
+            --target "$TARGET_BRANCH" \
+            --generate-notes \
+            --draft
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            gh release edit "$RELEASE_TAG" --prerelease
+          fi
+
+          gh release edit "$RELEASE_TAG" --draft=false
+
+      - name: Release summary
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          set -euo pipefail
-          args=(
-            release create "$RELEASE_TAG"
-            --repo "$REPOSITORY"
-            --title "MedOrbits ${RELEASE_VERSION}"
-            --generate-notes
-          )
-          if [[ "$IS_PRERELEASE" == "true" ]]; then
-            args+=(--prerelease)
-          ]
-          fi
-          gh "${args[@]}"
+          {
+            echo "## Release Published"
+            echo
+            echo "- Repository: $REPOSITORY"
+            echo "- Tag: $RELEASE_TAG"
+            echo "- Prerelease: $PRERELEASE"
+            echo "- Release: https://github.com/$REPOSITORY/releases/tag/$RELEASE_TAG"
+          } >> "$GITHUB_STEP_SUMMARY"

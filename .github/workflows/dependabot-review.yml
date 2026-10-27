@@ -1,202 +1,169 @@
-name: Dependabot Review and Safe Validation
+
+name: Dependabot Review
 
 on:
-pull_request:
-branches:
-- main
-types:
-- opened
-- synchronize
-- reopened
-- ready_for_review
-workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "Open Dependabot pull request number to review"
+        required: true
+        type: number
 
 permissions:
-contents: read
+  contents: read
+  pull-requests: read
 
 concurrency:
-group: dependabot-review-${{ github.event.pull_request.number || github.ref }}
-cancel-in-progress: true
+  group: dependabot-review-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-identify:
-name: Identify and verify update source
-runs-on: ubuntu-latest
-outputs:
-is_dependabot: ${{ steps.source.outputs.is_dependabot }}
-steps:
-- name: Verify Dependabot author
-id: source
-env:
-PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-shell: bash
-run: |
-set -euo pipefail
+  review:
+    name: Review Dependabot Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-      if [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
-        echo "is_dependabot=true" >> "$GITHUB_OUTPUT"
-        echo "Dependabot pull request identified."
-      elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-        echo "is_dependabot=false" >> "$GITHUB_OUTPUT"
-        echo "Manual validation requested."
-      else
-        echo "is_dependabot=false" >> "$GITHUB_OUTPUT"
-        echo "Not a Dependabot pull request; validation will not run."
-      fi
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
 
-validate:
-name: Validate dependency changes
-needs: identify
-if: needs.identify.outputs.is_dependabot == ‘true’ || github.event_name == ‘workflow_dispatch’
-runs-on: ubuntu-latest
-timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-steps:
-  - name: Check out pull request source
-    uses: actions/checkout@v4
-    with:
-      persist-credentials: false
-  - name: Set up Node.js
-    if: hashFiles('package.json') != ''
-    uses: actions/setup-node@v4
-    with:
-      node-version: '22'
-      cache: npm
-  - name: Set up Python
-    if: hashFiles('requirements.txt', 'pyproject.toml', 'setup.cfg') != ''
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.12'
-  - name: Validate JSON manifests
-    shell: bash
-    run: |
-      set -euo pipefail
-      while IFS= read -r -d '' file; do
-        echo "Validating: $file"
-        node -e '
-          const fs = require("node:fs");
-          const file = process.argv[1];
-          JSON.parse(fs.readFileSync(file, "utf8"));
-        ' "$file"
-      done < <(
-        find . \
-          -type d \( \
-            -name .git -o \
-            -name node_modules -o \
-            -name .venv -o \
-            -name vendor -o \
-            -name dist -o \
-            -name build \
-          \) -prune -o \
-          -type f \( \
-            -name package.json -o \
-            -name package-lock.json \
-          \) -print0
-      )
-  - name: Validate package and lockfile consistency
-    if: hashFiles('package.json') != ''
-    shell: bash
-    run: |
-      set -euo pipefail
-      node --input-type=commonjs <<'NODE'
-      const fs = require('node:fs');
-      const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-      if (!manifest.name || typeof manifest.name !== 'string') {
-        throw new Error('package.json must contain a package name.');
-      }
-      if (!manifest.version || typeof manifest.version !== 'string') {
-        throw new Error('package.json must contain a version.');
-      }
-      if (!fs.existsSync('package-lock.json')) {
-        throw new Error(
-          'package-lock.json is missing. Generate and review it in a separate change.'
-        );
-      }
-      const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-      if (![2, 3].includes(lock.lockfileVersion)) {
-        throw new Error('Expected package-lock.json lockfileVersion 2 or 3.');
-      }
-      if (lock.name && lock.name !== manifest.name) {
-        throw new Error('package.json and package-lock.json names do not match.');
-      }
-      if (lock.version && lock.version !== manifest.version) {
-        throw new Error('package.json and package-lock.json versions do not match.');
-      }
-      if (
-        lock.packages &&
-        lock.packages[''] &&
-        (
-          lock.packages[''].name !== manifest.name ||
-          lock.packages[''].version !== manifest.version
-        )
-      ) {
-        throw new Error('package-lock.json root package metadata does not match package.json.');
-      }
-      console.log('Package manifest and lockfile metadata are consistent.');
-      NODE
-  - name: Install Node dependencies safely
-    if: hashFiles('package.json', 'package-lock.json') != ''
-    run: npm ci --ignore-scripts --no-audit --no-fund
-  - name: Check JavaScript syntax
-    if: hashFiles('server.js') != ''
-    run: node --check server.js
-  - name: Run available npm tests
-    if: hashFiles('package.json', 'package-lock.json') != ''
-    shell: bash
-    run: |
-      set -euo pipefail
-      if node -e '
-        const p = require("./package.json");
-        process.exit(p.scripts && p.scripts.test ? 0 : 1);
-      '; then
-        npm test -- --runInBand
-      else
-        echo "No npm test script is configured; skipping."
-      fi
-  - name: Install Python test dependencies
-    if: hashFiles('requirements.txt') != ''
-    run: python -m pip install --disable-pip-version-check -r requirements.txt
-  - name: Run Python tests
-    if: hashFiles('pytest.ini', 'pyproject.toml', 'setup.cfg') != ''
-    shell: bash
-    run: |
-      set -euo pipefail
-      if python -m pytest --version >/dev/null 2>&1; then
-        python -m pytest
-      else
-        echo "Pytest is not installed; Python tests cannot run."
-        exit 1
-      fi
-  - name: Report changed dependency files
-    if: always() && github.event_name == 'pull_request'
-    env:
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-    shell: bash
-    run: |
-      set -euo pipefail
-      git diff --name-status "$BASE_SHA" "$HEAD_SHA" -- \
-        'package.json' \
-        'package-lock.json' \
-        'requirements.txt' \
-        'pyproject.toml' \
-        'Pipfile' \
-        'Pipfile.lock' \
-        'poetry.lock' \
-        'uv.lock' \
-        'npm-shrinkwrap.json' \
-        'Dockerfile' \
-        '.github/workflows' \
-        '.github/dependabot.yml' \
-        || true
-  - name: Upload diagnostic status
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: dependabot-validation-${{ github.run_id }}
-      path: |
-        package.json
-        package-lock.json
-        requirements.txt
-      if-no-files-found: ignore
-      retention-days: 7
+      - name: Validate pull request number
+        id: context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
+          EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
+              echo "::error::Pull request is not authored by Dependabot."
+              exit 1
+            fi
+
+            number="$EVENT_PR_NUMBER"
+          else
+            number="$INPUT_PR_NUMBER"
+
+            if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::Enter a valid pull request number."
+              exit 1
+            fi
+          fi
+
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect pull request metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          gh api \
+            "repos/$REPOSITORY/pulls/$PR_NUMBER" \
+            > "$RUNNER_TEMP/pull-request.json"
+
+          author="$(jq -r '.user.login // ""' "$RUNNER_TEMP/pull-request.json")"
+          state="$(jq -r '.state // ""' "$RUNNER_TEMP/pull-request.json")"
+          base="$(jq -r '.base.ref // ""' "$RUNNER_TEMP/pull-request.json")"
+          merged="$(jq -r '.merged // false' "$RUNNER_TEMP/pull-request.json")"
+          draft="$(jq -r '.draft // false' "$RUNNER_TEMP/pull-request.json")"
+
+          echo "Pull request: #$PR_NUMBER"
+          echo "Author: $author"
+          echo "State: $state"
+          echo "Base branch: $base"
+          echo "Draft: $draft"
+
+          if [[ "$author" != "dependabot[bot]" ]]; then
+            echo "::error::The pull request is not authored by Dependabot."
+            exit 1
+          fi
+
+          if [[ "$state" != "open" || "$merged" == "true" ]]; then
+            echo "::error::The pull request is not open."
+            exit 1
+          fi
+
+          if [[ "$base" != "main" && "$base" != "develop" ]]; then
+            echo "::error::Unexpected target branch: $base"
+            exit 1
+          fi
+
+      - name: Inspect changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          gh api --paginate \
+            "repos/$REPOSITORY/pulls/$PR_NUMBER/files" \
+            --jq '.[] | [.filename, .status, (.additions|tostring), (.deletions|tostring)] | @tsv' \
+            > "$RUNNER_TEMP/changed-files.tsv"
+
+          if [[ ! -s "$RUNNER_TEMP/changed-files.tsv" ]]; then
+            echo "::warning::No changed files were returned."
+            exit 0
+          fi
+
+          echo "Changed files:"
+          cat "$RUNNER_TEMP/changed-files.tsv"
+
+          while IFS=$'\t' read -r filename status additions deletions; do
+            case "$filename" in
+              package.json|package-lock.json|npm-shrinkwrap.json|\
+              yarn.lock|pnpm-lock.yaml|requirements.txt|\
+              poetry.lock|Pipfile.lock|Cargo.toml|Cargo.lock|\
+              go.mod|go.sum|Gemfile|Gemfile.lock|composer.json|\
+              composer.lock)
+                echo "::notice::Dependency file: $filename ($status)"
+                ;;
+              *)
+                echo "::notice::Other changed file: $filename ($status)"
+                ;;
+            esac
+          done < "$RUNNER_TEMP/changed-files.tsv"
+
+      - name: Publish review summary
+        if: always()
+        env:
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+          JOB_RESULT: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## Dependabot Review"
+            echo
+            echo "- Pull request: #$PR_NUMBER"
+            echo "- Result: $JOB_RESULT"
+            echo "- Automated approval: No"
+            echo "- Automatic merge: No"
+            echo "- Repository modifications: No"
+          } >> "$GITHUB_STEP_SUMMARY"

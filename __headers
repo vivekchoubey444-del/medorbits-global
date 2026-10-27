@@ -3,6 +3,14 @@
 # MedOrbits -- HTTP Headers and Security Policy
 # File: /__headers
 # Format: Netlify-compatible headers configuration
+# Release: 2.1.0
+#
+# Purpose:
+#   Apply baseline security headers, route-specific cache controls,
+#   and crawler directives for static content.
+#
+# Deployment:
+#   Ensure this file is deployed at the published site root.
 # ==============================================================================
 
 /*
@@ -10,9 +18,9 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Strict-Transport-Security: max-age=31536000
   Cross-Origin-Opener-Policy: same-origin
   X-Permitted-Cross-Domain-Policies: none
+  X-XSS-Protection: 0
 
 # ------------------------------------------------------------------------------
 # Root route
@@ -21,40 +29,30 @@
 /
   Cache-Control: no-cache
   X-Robots-Tag: index, follow
-  X-Content-Type-Options: nosniff
 
 # ------------------------------------------------------------------------------
 # Static assets
+# Use shorter caching unless filenames are content-fingerprinted.
 # ------------------------------------------------------------------------------
 
 /assets/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
   X-Content-Type-Options: nosniff
 
-# CSS assets
 /assets/css/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-  X-Content-Type-Options: nosniff
 
-# JavaScript assets
 /assets/js/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-  X-Content-Type-Options: nosniff
 
-# Image assets
 /assets/images/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-  X-Content-Type-Options: nosniff
 
-# Font assets
 /assets/fonts/*
   Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
-  X-Content-Type-Options: nosniff
 
-# Icons and favicons
 /assets/icons/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-  X-Content-Type-Options: nosniff
 
 # ------------------------------------------------------------------------------
 # HTML pages
@@ -65,13 +63,33 @@
   X-Content-Type-Options: nosniff
   X-Robots-Tag: index, follow
 
+/**/*.html
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: index, follow
+
 # ------------------------------------------------------------------------------
 # JSON data
+# These rules are for public static JSON, not private application data.
 # ------------------------------------------------------------------------------
 
 /*.json
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
+
+/**/*.json
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+
+# ------------------------------------------------------------------------------
+# API endpoints
+# ------------------------------------------------------------------------------
+
+/api/*
+  Cache-Control: no-store
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
 
 # ------------------------------------------------------------------------------
 # Sitemap and crawler directives
@@ -93,10 +111,6 @@
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex, nofollow
-
-# ------------------------------------------------------------------------------
-# Offline page
-# ------------------------------------------------------------------------------
 
 /offline.html
   Cache-Control: no-cache

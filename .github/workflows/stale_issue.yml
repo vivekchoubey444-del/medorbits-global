@@ -1,57 +1,79 @@
-name: Stale Issue and Pull Request Management
+
+name: Stale Issues and Pull Requests
+
 on:
   schedule:
-    # Run daily at 01:30 UTC.
-    - cron: "30 1 * * *"
+    - cron: "30 2 * * *"
+
   workflow_dispatch:
+
 permissions:
   issues: write
   pull-requests: write
   contents: read
+
 concurrency:
-  group: stale-issue-management
+  group: stale-issues
   cancel-in-progress: false
+
 jobs:
   stale:
-    name: Manage inactive issues and pull requests
+    name: Mark and Close Inactive Items
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
-      - name: Mark and close stale items
+      - name: Manage stale issues and pull requests
         uses: actions/stale@v9
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          # Issues
-          days-before-issue-stale: 45
+
+          # Inactivity thresholds.
+          days-before-issue-stale: 60
+          days-before-pr-stale: 45
           days-before-issue-close: 14
-          stale-issue-label: stale
-          stale-issue-message: >
-            This issue has been marked stale because it has had no recent activity.
-            If it is still relevant, please add an update or comment. It may be
-            closed after 14 additional days of inactivity.
-          close-issue-message: >
-            This issue is being closed due to continued inactivity. If the problem
-            persists, please reopen it or create a new issue with current details.
-          # Pull requests
-          days-before-pr-stale: 30
           days-before-pr-close: 14
+
+          # Labels.
+          stale-issue-label: stale
           stale-pr-label: stale
-          stale-pr-message: >
-            This pull request has been marked stale because it has had no recent
-            activity. Please update it if work is continuing.
-          close-pr-message: >
-            This pull request is being closed due to continued inactivity. It can
-            be reopened when the work resumes.
-          # Exempt important work
-          exempt-issue-labels: "security,keep-open,pinned,priority:high"
-          exempt-pr-labels: "security,keep-open,pinned,work-in-progress"
-          # Exempt items with assignees
-          exempt-all-issue-assignees: true
-          exempt-all-pr-assignees: true
-          # Operational limits
+          close-issue-label: stale-closed
+          close-pr-label: stale-closed
+
+          # Messages shown on stale items.
+          stale-issue-message: >-
+            This issue has been marked stale because it has had no recent
+            activity. Please comment with an update if it is still relevant.
+            It may be closed after 14 additional days of inactivity.
+          stale-pr-message: >-
+            This pull request has been marked stale because it has had no
+            recent activity. Please update it if it is still being worked on.
+            It may be closed after 14 additional days of inactivity.
+
+          close-issue-message: >-
+            Closing this issue because it remained inactive after the stale
+            notice. You can request reopening if the issue is still relevant.
+          close-pr-message: >-
+            Closing this pull request because it remained inactive after the
+            stale notice. Reopen or submit an update if appropriate.
+
+          # Labels that prevent automatic staling.
+          exempt-issue-labels: >-
+            pinned,security,bug-critical,keep-open,under-review
+          exempt-pr-labels: >-
+            pinned,security,keep-open,under-review,work-in-progress
+
+          # Avoid closing pinned items.
+          exempt-all-milestones: true
+          exempt-all-assignees: true
+          exempt-draft-pr: true
+
+          # Limit work per run.
           operations-per-run: 100
-          ascending: true
+
+          # Do not automatically delete labels or branches.
           remove-stale-when-updated: true
-          # Do not close locked conversations
-          exempt-issue-milestones: true
-          exempt-pr-milestones: true
+          delete-branch: false
+
+          # Avoid closing issues and PRs with recent activity.
+          debug-only: false

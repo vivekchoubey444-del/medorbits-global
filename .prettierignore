@@ -1,74 +1,153 @@
-Dependencies
+Create /.prettierignore for MedOrbits. This excludes generated files, dependencies, build outputs, private runtime data, and large datasets from automatic formatting while preserving maintained source code and public assets.
 
+# =============================================================================
+# MedOrbits -- Prettier Ignore Policy
+# File: /.prettierignore
+# Policy version: 1.0.0
+# =============================================================================
+# Dependencies and package-manager artifacts
 node_modules/
-**/node_modules/
-
-Build outputs
-
+vendor/
+.pnp/
+.pnp.*
+.npm/
+.pnpm-store/
+.yarn/
+bower_components/
+# Build output and generated bundles
 dist/
 build/
+out/
 coverage/
 .nyc_output/
 .next/
 .nuxt/
 .output/
-
-Generated files
-
-generated/
-**/generated/
+.svelte-kit/
+.angular/
+.turbo/
+.cache/
+.parcel-cache/
+.vite/
+.esbuild/
+storybook-static/
+# Minified and bundled assets
 *.min.js
 *.min.css
+*.bundle.js
+*.chunk.js
 *.map
-
-Package manager lockfiles
-
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-bun.lock
-bun.lockb
-
-Logs and temporary files
-
+# Generated documentation and API clients
+docs/generated/
+generated/
+api/generated/
+openapi.generated.*
+swagger.generated.*
+# Logs and temporary runtime files
 logs/
 *.log
-tmp/
-temp/
-
-Environment files and secrets
-
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+# Environment files and secrets
 .env
 .env.*
 !.env.example
-!.env.*.example
-
-Git and local tooling
-
-.git/
-.husky/
-tools/medorbits-local-agent/
-
-Test reports
-
+!.env.test.example
+secrets/
+private/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+# Local databases and runtime state
+*.sqlite
+*.sqlite3
+*.db
+data/private/
+storage/private/
+uploads/
+tmp/
+temp/
+# Test artifacts and reports
 test-results/
 playwright-report/
-coverage-final.json
-
-Generated documentation
-
-docs/generated/
-
-Binary assets
-
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.webp
-*.ico
-*.pdf
+blob-report/
+junit.xml
+report.xml
+reports/generated/
+# Python environments and generated artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+htmlcov/
+# Machine-learning outputs
+artifacts/
+checkpoints/
+models/
+*.onnx
+*.pt
+*.pth
+*.safetensors
+# Operating system and editor state
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+# Preserve selected shared VS Code configuration from the broad ignore above
+!.vscode/
+.vscode/*
+!.vscode/README.md
+!.vscode/extensions.json
+!.vscode/settings.example.json
+!.vscode/launch.example.json
+!.vscode/tasks.example.json
+# Git metadata
+.git/
+.git-*
+# Large archives and binary exports
 *.zip
-*.woff
-*.woff2
-*.ttf
+*.7z
+*.rar
+*.tar
+*.gz
+*.tgz
+*.bak
+*.backup
+# Generated frontend assets -- preserve maintained public assets
+public/build/
+public/dist/
+public/assets/generated/
+# Generated data exports
+exports/generated/
+data/exports/
+*.generated.json
+# Do not format lockfiles or dependency snapshots
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+pnpm-lock.yaml
+# Preserve maintained source, configuration, documentation, and public assets.
+# Add a path here only when it is genuinely generated or should not be formatted.
+# =============================================================================
+
+Validate
+
+npx prettier --check .
+git status --short
+git diff --check
+git diff -- .prettierignore
+
+Important: .prettierignore controls formatting, not Git tracking or secret protection. The .vscode/ exceptions preserve the example files listed above, but adjust them if your repository uses a different set of shared configuration files. Avoid ignoring entire source directories such as api/, assets/, or education/, because they contain maintained MedOrbits code and content.

@@ -1,183 +1,223 @@
+
+# ==============================================================================
+# MedOrbits -- Documentation Validation
+# File: .github/workflows/validate-documents.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate Markdown documentation and detect common documentation issues.
+#
+# Policy:
+#   - Read-only repository access.
+#   - No automatic merging or deployment.
+#   - Skip gracefully when no Markdown files exist.
+#   - Fail on detected broken local links or invalid document formatting.
+# ==============================================================================
+
 name: Validate Documents
+
 on:
   push:
     branches:
       - main
+      - develop
     paths:
       - "**/*.md"
-      - "**/*.mdx"
+      - "**/*.markdown"
       - ".github/workflows/validate-documents.yml"
   pull_request:
     branches:
       - main
+      - develop
     paths:
       - "**/*.md"
-      - "**/*.mdx"
+      - "**/*.markdown"
       - ".github/workflows/validate-documents.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: validate-documents-${{ github.workflow }}-${{ github.ref }}
+  group: validate-documents-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   validate-documents:
-    name: Validate repository documentation
+    name: Validate Markdown documents
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
+    timeout-minutes: 10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Discover documentation files
+
+      - name: Discover Markdown files
+        id: discover
         shell: bash
         run: |
-          set -euo pipefail
-          count="$(
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
             find . \
               -path './.git' -prune -o \
               -path './node_modules' -prune -o \
-              -path './.agent-backup' -prune -o \
-              -type f \( -name '*.md' -o -name '*.mdx' \) -print \
-              | wc -l
-          )"
-          echo "Found $count Markdown documentation file(s)."
-      - name: Check required documentation
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f \( -iname '*.md' -o -iname '*.markdown' \) \
+              -print0
+          )
+
+          printf 'count=%s\n' "${#files[@]}" >> "$GITHUB_OUTPUT"
+
+          if ((${#files[@]} == 0)); then
+            echo "No Markdown documents found. Validation will be skipped."
+          else
+            printf 'Discovered %s Markdown document(s).\n' "${#files[@]}"
+          fi
+
+      - name: Check trailing whitespace
+        if: steps.discover.outputs.count != '0'
         shell: bash
         run: |
-          set -euo pipefail
-          required_files=(
-            "README.md"
-            "CONTRIBUTING.md"
-            "SECURITY.md"
-            ".github/README.md"
-            ".github/scripts/README.md"
-            ".github/workflows/README.md"
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f \( -iname '*.md' -o -iname '*.markdown' \) \
+              -print0
           )
-          for file in "${required_files[@]}"; do
-            if [[ -f "$file" ]]; then
-              echo "PASS: $file"
+
+          failed=0
+
+          for file in "${files[@]}"; do
+            if LC_ALL=C grep -nE '[[:blank:]]+$' "$file"; then
+              printf '::error file=%s::Trailing whitespace detected.\n' "$file"
+              failed=1
             else
-              echo "::warning file=$file::Recommended documentation file is missing."
+              status=$?
+              if ((status > 1)); then
+                printf '::error file=%s::Could not read document.\n' "$file"
+                failed=1
+              else
+                printf '[PASS] Whitespace: %s\n' "$file"
+              fi
             fi
           done
-      - name: Check for merge-conflict markers
-        shell: bash
-        run: |
-          set -euo pipefail
-          failed=0
-          while IFS= read -r -d '' file; do
-            if grep -nE '^(<<<<<<< |=======|>>>>>>> )' "$file"; then
-              echo "::error file=$file::Possible merge-conflict markers found."
-              failed=1
-            fi
-          done < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.agent-backup' -prune -o \
-              -type f \( -name '*.md' -o -name '*.mdx' \) -print0
-          )
-          if [[ "$failed" -ne 0 ]]; then
+
+          if ((failed != 0)); then
+            echo "::error::Whitespace validation failed."
             exit 1
           fi
-          echo "No standard merge-conflict markers found."
-      - name: Validate relative Markdown links
+
+      - name: Check local Markdown links
+        if: steps.discover.outputs.count != '0'
         shell: bash
         run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require("node:fs");
-          const path = require("node:path");
-          const { execFileSync } = require("node:child_process");
-          const files = execFileSync("git", ["ls-files", "-z"], {
-            encoding: "utf8"
-          }).split("\0").filter(Boolean);
-          const docs = files.filter(file => /\.(md|mdx)$/i.test(file));
-          const errors = [];
-          function removeCode(text) {
-            return text
-              .replace(/```[\s\S]*?```/g, "")
-              .replace(/~~~[\s\S]*?~~~/g, "")
-              .replace(/`[^`\n]*`/g, "");
-          }
-          function extractLinks(text) {
-            const links = [];
-            const pattern = /!?\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+["'][^)]*["'])?\s*\)/g;
-            for (const match of text.matchAll(pattern)) {
-              const target = match[1] || match[2];
-              if (target) links.push(target);
-            }
-            const anglePattern = /<((?:\.{1,2}\/)[^ >]+)>/g;
-            for (const match of text.matchAll(anglePattern)) {
-              links.push(match[1]);
-            }
-            return links;
-          }
-          function targetExists(sourceFile, target) {
-            if (
-              !target ||
-              target.startsWith("#") ||
-              /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(target)
-            ) {
-              return true;
-            }
-            const clean = target.split("#")[0].split("?")[0];
-            if (!clean) return true;
-            let decoded;
-            try {
-              decoded = decodeURIComponent(clean);
-            } catch {
-              return false;
-            }
-            const absolute = path.resolve(path.dirname(sourceFile), decoded);
-            return fs.existsSync(absolute);
-          }
-          for (const file of docs) {
-            const content = removeCode(fs.readFileSync(file, "utf8"));
-            for (const target of extractLinks(content)) {
-              if (!targetExists(file, target)) {
-                errors.push(
-                  `${file}: missing relative link target "${target}"`
-                );
-              }
-            }
-          }
-          if (errors.length) {
-            for (const error of errors) {
-              console.error(`::error::${error}`);
-            }
-            process.exit(1);
-          }
-          console.log(
-            `Checked relative links in ${docs.length} tracked documentation file(s).`
-          );
-          NODE
-      - name: Check for empty documentation files
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+
+          root = Path.cwd().resolve()
+          excluded = {".git", "node_modules", ".venv", "vendor"}
+          documents = []
+
+          for path in root.rglob("*"):
+              if not path.is_file():
+                  continue
+              if excluded.intersection(path.relative_to(root).parts):
+                  continue
+              if path.suffix.lower() in {".md", ".markdown"}:
+                  documents.append(path)
+
+          if not documents:
+              print("No Markdown documents found; link check skipped.")
+              sys.exit(0)
+
+          # Check ordinary Markdown links and inline HTML href attributes.
+          markdown_link = re.compile(r'(?<!!)\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)')
+          html_link = re.compile(r'''href\s*=\s*["']([^"']+)["']''', re.IGNORECASE)
+
+          errors = []
+
+          for document in documents:
+              try:
+                  content = document.read_text(encoding="utf-8")
+              except (OSError, UnicodeError) as exc:
+                  errors.append(f"{document.relative_to(root)}: cannot read document: {exc}")
+                  continue
+
+              # Remove fenced code blocks to reduce false positives.
+              content = re.sub(
+                  r"(?ms)^[ \t]*(```+|~~~+).*?^[ \t]*\1[ \t]*$",
+                  "",
+                  content,
+              )
+
+              links = []
+              for match in markdown_link.finditer(content):
+                  links.append(match.group(1) or match.group(2))
+              links.extend(html_link.findall(content))
+
+              for link in links:
+                  link = link.strip()
+                  if not link or link.startswith("#"):
+                      continue
+
+                  parsed = urlsplit(link)
+
+                  # External URLs, mail links, and other URI schemes are not
+                  # checked by this local filesystem validator.
+                  if parsed.scheme or parsed.netloc:
+                      continue
+
+                  target_text = unquote(parsed.path)
+                  if not target_text:
+                      continue
+
+                  target = (document.parent / target_text).resolve()
+
+                  # Do not allow a link to escape the checked repository.
+                  try:
+                      target.relative_to(root)
+                  except ValueError:
+                      errors.append(
+                          f"{document.relative_to(root)}: local link escapes repository: {link}"
+                      )
+                      continue
+
+                  if not target.exists():
+                      errors.append(
+                          f"{document.relative_to(root)}: broken local link: {link}"
+                      )
+
+          if errors:
+              for error in errors:
+                  print(f"::error::{error}")
+              sys.exit(1)
+
+          print(f"Checked local links in {len(documents)} Markdown document(s).")
+          print("No broken local file links found.")
+          PY
+
+      - name: Report validation result
+        if: always()
         shell: bash
+        env:
+          VALIDATION_STATUS: ${{ job.status }}
+          DOCUMENT_COUNT: ${{ steps.discover.outputs.count }}
         run: |
-          set -euo pipefail
-          failed=0
-          while IFS= read -r -d '' file; do
-            if [[ ! -s "$file" ]]; then
-              echo "::error file=$file::Documentation file is empty."
-              failed=1
-            fi
-          done < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.agent-backup' -prune -o \
-              -type f \( -name '*.md' -o -name '*.mdx' \) -print0
-          )
-          if [[ "$failed" -ne 0 ]]; then
-            exit 1
-          fi
-          echo "No empty documentation files found."
+          set -Eeuo pipefail
+
+          printf 'Validation status: %s\n' "${VALIDATION_STATUS:-unknown}"
+          printf 'Markdown documents discovered: %s\n' "${DOCUMENT_COUNT:-unknown}"

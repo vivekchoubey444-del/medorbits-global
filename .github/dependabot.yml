@@ -1,9 +1,25 @@
+
+# ==============================================================================
 # MedOrbits -- Dependabot Configuration
-# Purpose: Controlled dependency updates with review required.
-# Safety: No automatic merging or automatic deployment.
+# File: .github/dependabot.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Schedule controlled dependency updates for review.
+#
+# Policy:
+#   - No automatic merging configured here.
+#   - No automatic deployment configured here.
+#   - Dependency updates must pass the repository's required checks.
+#   - Review dependency changes before merging.
+# ==============================================================================
+
 version: 2
+
 updates:
+  # ---------------------------------------------------------------------------
   # GitHub Actions
+  # ---------------------------------------------------------------------------
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -16,7 +32,7 @@ updates:
       - dependencies
       - github-actions
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "ci"
       include: scope
     groups:
       github-actions-minor-patch:
@@ -25,8 +41,11 @@ updates:
         update-types:
           - minor
           - patch
+
+  # ---------------------------------------------------------------------------
   # npm / Node.js
   # Keep this entry only if the repository uses npm.
+  # ---------------------------------------------------------------------------
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -40,7 +59,7 @@ updates:
       - dependencies
       - javascript
     commit-message:
-      prefix: "build(deps)"
+      prefix: "build"
       include: scope
     groups:
       npm-development-minor-patch:
@@ -57,9 +76,11 @@ updates:
         update-types:
           - minor
           - patch
+
+  # ---------------------------------------------------------------------------
   # Python / pip
-  # Enable only if the repository manages Python dependencies
-  # through requirements.txt, pyproject.toml, or another supported manifest.
+  # Uncomment only if the repository manages Python dependencies.
+  # ---------------------------------------------------------------------------
   # - package-ecosystem: pip
   #   directory: /
   #   schedule:
@@ -72,11 +93,14 @@ updates:
   #     - dependencies
   #     - python
   #   commit-message:
-  #     prefix: "build(deps)"
+  #     prefix: "build"
   #     include: scope
+
+  # ---------------------------------------------------------------------------
   # Docker
-  # Enable only if the repository contains Dockerfiles or supported
-  # Docker dependency declarations that Dependabot should update.
+  # Uncomment only if the repository has Docker dependencies to update.
+  # Add additional entries with the appropriate directory when required.
+  # ---------------------------------------------------------------------------
   # - package-ecosystem: docker
   #   directory: /
   #   schedule:
@@ -89,5 +113,5 @@ updates:
   #     - dependencies
   #     - docker
   #   commit-message:
-  #     prefix: "build(deps)"
+  #     prefix: "build"
   #     include: scope

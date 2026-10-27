@@ -1,11 +1,14 @@
+
 name: Deploy Production
+
 on:
   workflow_dispatch:
     inputs:
       confirm_deployment:
-        description: "Type deploy to confirm production deployment"
+        description: "Type deploy to authorize production deployment"
         required: true
         type: string
+
   push:
     branches:
       - main
@@ -13,6 +16,7 @@ on:
       - "server.js"
       - "package.json"
       - "package-lock.json"
+      - "npm-shrinkwrap.json"
       - "render.yaml"
       - "api/**"
       - "config/**"
@@ -23,11 +27,14 @@ on:
       - "services/**"
       - "public/**"
       - ".github/workflows/deploy_production.yml"
+
 permissions:
   contents: read
+
 concurrency:
   group: medorbits-production
   cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate production deployment
@@ -35,86 +42,138 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Validate package manifest
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f package.json ]]; then
-            echo "::error::Root package.json is missing."
-            exit 1
-          fi
-          node -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            if (!pkg.scripts) {
-              console.log("No npm scripts are defined.");
-            }
-            console.log(`Package: ${pkg.name || "unnamed"}`);
-            console.log(`Version: ${pkg.version || "unspecified"}`);
-          '
-      - name: Validate lockfile
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f package-lock.json ]]; then
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
-          elif [[ -f npm-shrinkwrap.json ]]; then
-            echo "Found npm-shrinkwrap.json."
-          else
-            echo "::error::No npm lockfile found."
-            exit 1
-          fi
-      - name: Check deployment confirmation
+      - name: Check manual deployment confirmation
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           CONFIRMATION: ${{ inputs.confirm_deployment }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           if [[ "$CONFIRMATION" != "deploy" ]]; then
-            echo "::error::Deployment cancelled. Enter exactly 'deploy' to confirm."
+            echo "::error::Deployment cancelled. Enter exactly 'deploy' to continue."
             exit 1
           fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate package manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "::error::Root package.json is missing."
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          let pkg;
+
+          try {
+            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          } catch (error) {
+            console.error(`Invalid package.json: ${error.message}`);
+            process.exit(1);
+          }
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            console.error("package.json must contain a JSON object.");
+            process.exit(1);
+          }
+
+          if (pkg.scripts !== undefined &&
+              (typeof pkg.scripts !== "object" ||
+               pkg.scripts === null ||
+               Array.isArray(pkg.scripts))) {
+            console.error("package.json scripts must be an object.");
+            process.exit(1);
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          NODE
+
+      - name: Validate npm lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f package-lock.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          elif [[ -f npm-shrinkwrap.json ]]; then
+            echo "::error::npm-shrinkwrap.json is present, but this workflow currently validates package-lock.json using npm ci."
+            echo "Update this step if the project intentionally uses npm-shrinkwrap.json."
+            exit 1
+          else
+            echo "::error::No package-lock.json found."
+            exit 1
+          fi
+
+      - name: Check application entry point
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f server.js ]]; then
+            echo "::error::server.js is missing. Update this check if the production entry point differs."
+            exit 1
+          fi
+
+          node --check server.js
+
   deploy:
     name: Trigger Render production deployment
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: production
+
+    environment:
+      name: production
+
     permissions:
       contents: read
+
     steps:
-      - name: Verify Render secret
+      - name: Validate Render deploy hook
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           if [[ -z "$RENDER_DEPLOY_HOOK" ]]; then
-            echo "::error::Configure the RENDER_DEPLOY_HOOK repository or environment secret."
+            echo "::error::Configure RENDER_DEPLOY_HOOK in the production environment secrets."
             exit 1
           fi
-          if [[ "$RENDER_DEPLOY_HOOK" != https://* ]]; then
+
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https:// ]]; then
             echo "::error::The Render deploy hook must use HTTPS."
             exit 1
           fi
+
       - name: Trigger Render deployment
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
+
           http_code="$(
             curl \
               --silent \
@@ -126,9 +185,12 @@ jobs:
               --max-time 30 \
               "$RENDER_DEPLOY_HOOK"
           )"
-          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+
+          if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
             echo "::error::Render returned HTTP $http_code."
             exit 1
           fi
-          echo "Render accepted the production deployment request."
-          echo "Check the Render dashboard to confirm build completion and application health."
+
+          echo "Render accepted the deployment request."
+          echo "This confirms request acceptance, not build completion or application health."
+          echo "Verify deployment status and health in Render."

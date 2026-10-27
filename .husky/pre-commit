@@ -1,84 +1,186 @@
+
 #!/usr/bin/env sh
 # ============================================================
 # MedOrbits -- Pre-Commit Quality Gate
 # File: .husky/pre-commit
-# Release: 2.0.0
+# Release: 2.1.0
 #
 # Runs available checks before committing.
-# Does not install dependencies, stage files, or create commits.
+#
+# Safety:
+#   - Does not install dependencies.
+#   - Does not stage or modify files.
+#   - Does not create commits or push.
+#   - Validates staged file contents.
 # ============================================================
+
 set -eu
+
+log() {
+  printf '%s\n' "[MedOrbits] $*"
+}
+
+error() {
+  printf '%s\n' "[MedOrbits] ERROR: $*" >&2
+}
+
+warning() {
+  printf '%s\n' "[MedOrbits] WARNING: $*" >&2
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-  echo "[MedOrbits] ERROR: Not inside a Git repository." >&2
+  error "Not inside a Git repository."
   exit 1
 }
+
 cd "$ROOT"
-echo "[MedOrbits] Starting pre-commit checks..."
+
+log "Starting pre-commit checks..."
+
 # ------------------------------------------------------------
-# 1. Validate staged JSON files
+# 1. Require Git and inspect staged files
 # ------------------------------------------------------------
-if command -v node >/dev/null 2>&1; then
-  STAGED_JSON="$(git diff --cached --name-only --diff-filter=ACMR -- '*.json' || true)"
-  if [ -n "$STAGED_JSON" ]; then
-    printf '%s\n' "$STAGED_JSON" |
-      while IFS= read -r file; do
-        [ -f "$file" ] || continue
-        if ! node -e \
-          'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
-          "$file" >/dev/null 2>&1; then
-          echo "[MedOrbits] ERROR: Invalid JSON: $file" >&2
-          exit 1
-        fi
-      done
-    echo "[MedOrbits] JSON validation passed."
+
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+  # Permit the initial commit, where HEAD does not yet exist.
+  if ! git diff --cached --quiet --; then
+    log "Initial commit detected; validating staged changes."
   else
-    echo "[MedOrbits] No staged JSON files to validate."
+    error "No valid HEAD and no staged changes."
+    exit 1
+  fi
+fi
+
+# ------------------------------------------------------------
+# 2. Validate staged JSON files
+#    Read from the Git index, not the working tree.
+# ------------------------------------------------------------
+
+if command -v node >/dev/null 2>&1; then
+  JSON_LIST="$(mktemp)"
+  JSON_FILE="$(mktemp)"
+
+  trap 'rm -f "$JSON_LIST" "$JSON_FILE"' 0
+  trap 'exit 1' HUP INT TERM
+
+  if ! git diff --cached --name-only --diff-filter=ACMR \
+    -- '*.json' '*.schema.json' '*.shema.json' > "$JSON_LIST"; then
+    error "Unable to enumerate staged JSON files."
+    exit 1
+  fi
+
+  JSON_COUNT=0
+
+  while IFS= read -r file || [ -n "$file" ]; do
+    [ -n "$file" ] || continue
+
+    JSON_COUNT=$((JSON_COUNT + 1))
+
+    if ! git show ":$file" > "$JSON_FILE"; then
+      error "Unable to read staged JSON: $file"
+      exit 1
+    fi
+
+    if ! node -e '
+      const fs = require("node:fs");
+      JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    ' "$JSON_FILE" >/dev/null 2>&1; then
+      error "Invalid staged JSON: $file"
+      exit 1
+    fi
+  done < "$JSON_LIST"
+
+  if [ "$JSON_COUNT" -gt 0 ]; then
+    log "JSON validation passed ($JSON_COUNT staged files)."
+  else
+    log "No staged JSON files to validate."
   fi
 else
-  echo "[MedOrbits] WARNING: Node.js unavailable; JSON validation skipped." >&2
+  warning "Node.js unavailable; JSON validation skipped."
 fi
+
 # ------------------------------------------------------------
-# 2. Check staged JavaScript syntax
+# 3. Check staged JavaScript syntax
+#    Validate exact staged contents.
 # ------------------------------------------------------------
+
 if command -v node >/dev/null 2>&1; then
-  STAGED_JS="$(git diff --cached --name-only --diff-filter=ACMR -- '*.js' '*.mjs' '*.cjs' || true)"
-  if [ -n "$STAGED_JS" ]; then
-    printf '%s\n' "$STAGED_JS" |
-      while IFS= read -r file; do
-        [ -f "$file" ] || continue
-        if ! node --check "$file"; then
-          echo "[MedOrbits] ERROR: JavaScript syntax check failed: $file" >&2
-          exit 1
-        fi
-      done
-    echo "[MedOrbits] JavaScript syntax validation passed."
+  JS_LIST="$(mktemp)"
+  JS_DIR="$(mktemp -d)"
+
+  trap 'rm -f "${JSON_LIST:-}" "${JSON_FILE:-}" "${JS_LIST:-}"; rm -rf "${JS_DIR:-}"' 0
+
+  if ! git diff --cached --name-only --diff-filter=ACMR \
+    -- '*.js' '*.mjs' '*.cjs' > "$JS_LIST"; then
+    error "Unable to enumerate staged JavaScript files."
+    exit 1
+  fi
+
+  JS_COUNT=0
+
+  while IFS= read -r file || [ -n "$file" ]; do
+    [ -n "$file" ] || continue
+
+    JS_COUNT=$((JS_COUNT + 1))
+
+    # Preserve the extension so Node can infer the module format.
+    case "$file" in
+      *.mjs) extension="mjs" ;;
+      *.cjs) extension="cjs" ;;
+      *)     extension="js" ;;
+    esac
+
+    staged_file="$JS_DIR/staged.$extension"
+
+    if ! git show ":$file" > "$staged_file"; then
+      error "Unable to read staged JavaScript: $file"
+      exit 1
+    fi
+
+    if ! node --check "$staged_file"; then
+      error "JavaScript syntax check failed: $file"
+      exit 1
+    fi
+  done < "$JS_LIST"
+
+  if [ "$JS_COUNT" -gt 0 ]; then
+    log "JavaScript syntax validation passed ($JS_COUNT staged files)."
   else
-    echo "[MedOrbits] No staged JavaScript files to validate."
+    log "No staged JavaScript files to validate."
   fi
 else
-  echo "[MedOrbits] WARNING: Node.js unavailable; JavaScript validation skipped." >&2
+  warning "Node.js unavailable; JavaScript syntax validation skipped."
 fi
+
 # ------------------------------------------------------------
-# 3. Run configured npm quality scripts
+# 4. Run configured npm quality scripts
 # ------------------------------------------------------------
+
 if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
   if [ ! -d node_modules ]; then
-    echo "[MedOrbits] WARNING: node_modules is missing; npm checks skipped." >&2
+    warning "node_modules is missing; npm checks skipped."
   else
     for script in lint check; do
       if node -e '
-        const p = require("./package.json");
+        const fs = require("node:fs");
+        const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
         process.exit(p.scripts && p.scripts[process.argv[1]] ? 0 : 1);
       ' "$script" >/dev/null 2>&1; then
-        echo "[MedOrbits] Running npm run $script..."
+        log "Running npm run $script..."
         npm run "$script"
+        log "npm run $script passed."
       else
-        echo "[MedOrbits] No '$script' script configured; skipping."
+        log "No '$script' script configured; skipping."
       fi
     done
   fi
 else
-  echo "[MedOrbits] WARNING: npm or package.json unavailable; npm checks skipped." >&2
+  warning "npm or package.json unavailable; npm checks skipped."
 fi
-echo "[MedOrbits] Pre-commit checks passed."
+
+# ------------------------------------------------------------
+# 5. Complete
+# ------------------------------------------------------------
+
+log "All enabled pre-commit checks passed."
 exit 0

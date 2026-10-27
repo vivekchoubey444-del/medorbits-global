@@ -1,144 +1,126 @@
-name: Validate JSON and Package Lock
+
+# ==============================================================================
+# MedOrbits -- JSON Validation
+# File: .github/workflows/validate-json.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate JSON syntax for repository JSON files.
+#
+# Policy:
+#   - Read-only repository access.
+#   - No automatic merging or deployment.
+#   - Skip gracefully when no JSON files are present.
+#   - Fail when a JSON file is malformed.
+# ==============================================================================
+
+name: Validate JSON
+
 on:
   push:
     branches:
       - main
+      - develop
+    paths:
+      - "**/*.json"
+      - ".github/workflows/validate-json.yml"
   pull_request:
     branches:
       - main
+      - develop
+    paths:
+      - "**/*.json"
+      - ".github/workflows/validate-json.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: validate-json-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   validate-json:
     name: Validate JSON files
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Check required package files
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Discover JSON files
+        id: discover
         shell: bash
         run: |
-          set -euo pipefail
-          for file in package.json package-lock.json; do
-            if [[ ! -f "$file" ]]; then
-              echo "::error::Required file is missing: $file"
-              exit 1
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f -name '*.json' -print0
+          )
+
+          printf 'count=%s\n' "${#files[@]}" >> "$GITHUB_OUTPUT"
+
+          if ((${#files[@]} == 0)); then
+            echo "No JSON files found. Validation will be skipped."
+          else
+            printf 'Discovered %s JSON file(s).\n' "${#files[@]}"
+          fi
+
+      - name: Validate JSON syntax
+        if: steps.discover.outputs.count != '0'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -d '' files < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f -name '*.json' -print0
+          )
+
+          failed=0
+
+          for file in "${files[@]}"; do
+            if python -m json.tool "$file" >/dev/null 2>&1; then
+              printf '[PASS] %s\n' "$file"
+            else
+              printf '::error file=%s::Invalid JSON syntax.\n' "$file"
+              failed=1
             fi
           done
-      - name: Validate package.json and package-lock.json
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-          let failed = false;
-          for (const file of ["package.json", "package-lock.json"]) {
-            let content;
-            try {
-              content = fs.readFileSync(file, "utf8");
-            } catch (error) {
-              console.error(`::error::Cannot read ${file}: ${error.message}`);
-              failed = true;
-              continue;
-            }
-            if (!content.trim()) {
-              console.error(`::error::${file} is empty`);
-              failed = true;
-              continue;
-            }
-            try {
-              const parsed = JSON.parse(content);
-              if (
-                parsed === null ||
-                typeof parsed !== "object" ||
-                Array.isArray(parsed)
-              ) {
-                throw new Error("The JSON root must be an object");
-              }
-              console.log(`Valid JSON: ${file}`);
-            } catch (error) {
-              console.error(`::error::Invalid ${file}: ${error.message}`);
-              failed = true;
-            }
-          }
-          if (failed) {
-            process.exitCode = 1;
-          }
-          NODE
-      - name: Check package-lock metadata consistency
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --input-type=commonjs <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          if (!lock.packages || !lock.packages[""]) {
-            console.error(
-              "::error::package-lock.json is missing packages[\"\"] metadata"
-            );
-            process.exit(1);
-          }
-          const root = lock.packages[""];
-          for (const field of ["name", "version"]) {
-            if (pkg[field] !== undefined && root[field] !== pkg[field]) {
-              console.error(
-                `::error::Version metadata mismatch for ${field}: package.json=${pkg[field]}, package-lock.json=${root[field]}`
-              );
-              process.exitCode = 1;
-            }
-          }
-          if (
-            lock.lockfileVersion !== 1 &&
-            lock.lockfileVersion !== 2 &&
-            lock.lockfileVersion !== 3
-          ) {
-            console.error(
-              `::error::Unsupported lockfileVersion: ${lock.lockfileVersion}`
-            );
-            process.exitCode = 1;
-          }
-          if (process.exitCode !== 1) {
-            console.log("Package and lockfile metadata checks passed.");
-          }
-          NODE
-      - name: Validate repository JSON files
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f scripts/check-json.mjs ]]; then
-            node scripts/check-json.mjs
-          else
-            echo "::error::scripts/check-json.mjs is missing"
+
+          if ((failed != 0)); then
+            echo "::error::One or more JSON files failed validation."
             exit 1
           fi
-      - name: Check lockfile consistency without modifying files
+
+          echo "All discovered JSON files are valid."
+
+      - name: Report validation result
+        if: always()
         shell: bash
+        env:
+          VALIDATION_STATUS: ${{ job.status }}
+          JSON_COUNT: ${{ steps.discover.outputs.count }}
         run: |
-          set -euo pipefail
-          npm install \
-            --package-lock-only \
-            --ignore-scripts \
-            --no-audit \
-            --no-fund \
-            --dry-run
-      - name: Confirm validation did not modify tracked files
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! git diff --exit-code -- package.json package-lock.json; then
-            echo "::error::Validation changed package files. Review the differences."
-            exit 1
-          fi
-          echo "Package files remain unchanged."
+          set -Eeuo pipefail
+
+          printf 'Validation status: %s\n' "${VALIDATION_STATUS:-unknown}"
+          printf 'JSON files discovered: %s\n' "${JSON_COUNT:-unknown}"

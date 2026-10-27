@@ -1,4 +1,6 @@
+
 name: Deploy MedOrbits
+
 on:
   push:
     branches:
@@ -7,68 +9,121 @@ on:
       - "**.md"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
+
   workflow_dispatch:
     inputs:
       confirm_deployment:
         description: "Type deploy to confirm production deployment"
         required: true
         type: string
+
 permissions:
   contents: read
+
 concurrency:
   group: medorbits-production-deploy
   cancel-in-progress: false
+
 jobs:
   pre-deploy:
     name: Pre-deployment checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     permissions:
       contents: read
+
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Verify deployment configuration
+
+      - name: Validate application configuration
         shell: bash
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-          EVENT_NAME: ${{ github.event_name }}
-          CONFIRMATION: ${{ inputs.confirm_deployment }}
         run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$CONFIRMATION" != "deploy" ]]; then
+          set -Eeuo pipefail
+
+          if [[ -f package.json ]]; then
+            node -e '
+              const fs = require("node:fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+              if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+                throw new Error("package.json must contain a JSON object.");
+              }
+
+              console.log(`Package: ${pkg.name || "unnamed"}`);
+              console.log(`Version: ${pkg.version || "unspecified"}`);
+            '
+          else
+            echo "::notice::No root package.json found; skipping Node.js manifest validation."
+          fi
+
+          if [[ -f server.js ]]; then
+            node --check server.js
+          else
+            echo "::notice::server.js not found; skipping entry-point syntax check."
+          fi
+
+      - name: Validate manual deployment confirmation
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$CONFIRMATION" != "deploy" ]]; then
             echo "::error::Manual deployment cancelled. Enter exactly 'deploy' to confirm."
             exit 1
           fi
-          if [[ -z "$RENDER_DEPLOY_HOOK" ]]; then
-            echo "::error::Missing RENDER_DEPLOY_HOOK repository secret."
-            exit 1
-          fi
-          if [[ "$RENDER_DEPLOY_HOOK" != https://* ]]; then
-            echo "::error::RENDER_DEPLOY_HOOK must be an HTTPS URL."
-            exit 1
-          fi
-          echo "Deployment configuration checks passed."
+
+          echo "Manual deployment confirmation accepted."
+
   deploy:
     name: Trigger Render deployment
     needs: pre-deploy
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: production
+
+    environment:
+      name: production
+
     permissions:
       contents: read
+
     steps:
-      - name: Trigger Render deploy hook
-        shell: bash
+      - name: Validate Render deployment hook
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
+          if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
+            echo "::error::Missing RENDER_DEPLOY_HOOK secret in the production environment."
+            exit 1
+          fi
+
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https:// ]]; then
+            echo "::error::RENDER_DEPLOY_HOOK must be an HTTPS URL."
+            exit 1
+          fi
+
+          echo "Render deployment configuration is valid."
+
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
-          http_code="$(
+
+          if ! http_code="$(
             curl \
               --silent \
               --show-error \
@@ -78,10 +133,34 @@ jobs:
               --connect-timeout 10 \
               --max-time 30 \
               "$RENDER_DEPLOY_HOOK"
-          )"
-          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
-            echo "::error::Render deploy hook returned HTTP $http_code."
+          )"; then
+            echo "::error::Unable to contact the Render deployment endpoint."
             exit 1
           fi
+
+          if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::error::Render returned HTTP $http_code."
+            exit 1
+          fi
+
           echo "Render accepted the deployment request."
-          echo "Check the Render dashboard for build and deployment status."
+          echo "Verify build completion and application health in the Render dashboard."
+
+      - name: Write deployment summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          {
+            echo "## MedOrbits Production Deployment"
+            echo
+            echo "- Job result: $JOB_STATUS"
+            echo "- Trigger: $EVENT_NAME"
+            echo "- Commit: $COMMIT_SHA"
+            echo "- Deployment provider: Render"
+            echo "- Automatic merge: disabled"
+            echo "- Application health verification: required in Render"
+          } >> "$GITHUB_STEP_SUMMARY"

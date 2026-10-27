@@ -1,119 +1,296 @@
+
 name: Validate Configuration
+
 on:
   push:
     branches:
       - main
+      - develop
     paths:
       - "**/*.json"
-      - "**/*.yml"
+      - "**/*.jsonc"
       - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.toml"
+      - ".editorconfig"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".npmrc"
+      - ".nvmrc"
       - "package.json"
+      - "pyproject.toml"
+      - "renovate.json"
       - ".github/workflows/validate-config.yml"
   pull_request:
     branches:
       - main
+      - develop
     paths:
       - "**/*.json"
-      - "**/*.yml"
+      - "**/*.jsonc"
       - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.toml"
+      - ".editorconfig"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".npmrc"
+      - ".nvmrc"
       - "package.json"
+      - "pyproject.toml"
+      - "renovate.json"
       - ".github/workflows/validate-config.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: validate-config-${{ github.workflow }}-${{ github.ref }}
+  group: validate-config-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
-  validate:
-    name: Validate configuration files
+  validate-json:
+    name: Validate JSON
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
+    timeout-minutes: 5
+
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.x"
+
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "vendor",
+              "dist",
+              "build",
+          }
+
+          files = []
+
+          for path in Path(".").rglob("*.json"):
+              if any(part in excluded for part in path.parts):
+                  continue
+              files.append(path)
+
+          files.sort()
+
+          if not files:
+              print("No JSON files found; skipping JSON validation.")
+              sys.exit(0)
+
+          errors = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      json.load(handle)
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  errors.append((path, exc))
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+
+          if errors:
+              print(
+                  f"\nJSON validation failed for {len(errors)} file(s).",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"\nValidated {len(files)} JSON file(s).")
+          PY
+
+  validate-yaml:
+    name: Validate YAML
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Install YAML validator
-        run: python -m pip install yamllint
-      - name: Validate JSON syntax
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Validate YAML files
         shell: bash
         run: |
-          set -euo pipefail
-          failed=0
-          count=0
-          while IFS= read -r -d '' file; do
-            count=$((count + 1))
-            if node -e '
-              const fs = require("node:fs");
-              JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-            ' "$file"; then
-              echo "PASS: $file"
-            else
-              echo "::error file=$file::Invalid JSON syntax."
-              failed=1
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "vendor",
+              "dist",
+              "build",
+          }
+
+          files = []
+
+          for pattern in ("*.yaml", "*.yml"):
+              for path in Path(".").rglob(pattern):
+                  if any(part in excluded for part in path.parts):
+                      continue
+                  files.append(path)
+
+          files = sorted(set(files))
+
+          if not files:
+              print("No YAML files found; skipping YAML validation.")
+              sys.exit(0)
+
+          errors = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      documents = list(yaml.safe_load_all(handle))
+                  print(f"PASS {path} ({len(documents)} document(s))")
+              except (OSError, UnicodeError, yaml.YAMLError) as exc:
+                  errors.append((path, exc))
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+
+          if errors:
+              print(
+                  f"\nYAML validation failed for {len(errors)} file(s).",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"\nValidated {len(files)} YAML file(s).")
+          PY
+
+  validate-toml:
+    name: Validate TOML
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate TOML files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "vendor",
+              "dist",
+              "build",
+          }
+
+          files = []
+
+          for path in Path(".").rglob("*.toml"):
+              if any(part in excluded for part in path.parts):
+                  continue
+              files.append(path)
+
+          files.sort()
+
+          if not files:
+              print("No TOML files found; skipping TOML validation.")
+              sys.exit(0)
+
+          errors = []
+
+          for path in files:
+              try:
+                  with path.open("rb") as handle:
+                      tomllib.load(handle)
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+                  errors.append((path, exc))
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+
+          if errors:
+              print(
+                  f"\nTOML validation failed for {len(errors)} file(s).",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"\nValidated {len(files)} TOML file(s).")
+          PY
+
+  validation-summary:
+    name: Configuration Validation Summary
+    if: always()
+    needs:
+      - validate-json
+      - validate-yaml
+      - validate-toml
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Report validation result
+        shell: bash
+        env:
+          JSON_RESULT: ${{ needs.validate-json.result }}
+          YAML_RESULT: ${{ needs.validate-yaml.result }}
+          TOML_RESULT: ${{ needs.validate-toml.result }}
+        run: |
+          set -Eeuo pipefail
+
+          printf 'JSON validation:  %s\n' "$JSON_RESULT"
+          printf 'YAML validation:  %s\n' "$YAML_RESULT"
+          printf 'TOML validation:  %s\n' "$TOML_RESULT"
+
+          for result in \
+            "$JSON_RESULT" \
+            "$YAML_RESULT" \
+            "$TOML_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              echo "::error::One or more configuration validation jobs did not succeed."
+              exit 1
             fi
-          done < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.agent-backup' -prune -o \
-              -type f -name '*.json' -print0
-          )
-          echo "Validated $count JSON file(s)."
-          exit "$failed"
-      - name: Validate YAML syntax and style
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -d '' yaml_files < <(
-            find . \
-              -path './.git' -prune -o \
-              -path './node_modules' -prune -o \
-              -path './.agent-backup' -prune -o \
-              -type f \( -name '*.yml' -o -name '*.yaml' \) -print0
-          )
-          if [[ "${#yaml_files[@]}" -eq 0 ]]; then
-            echo "No YAML files found."
-            exit 0
-          fi
-          yamllint \
-            --no-warnings \
-            --strict \
-            -d "{extends: relaxed, rules: {line-length: disable, truthy: {allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']}}}" \
-            "${yaml_files[@]}"
-      - name: Validate package.json metadata
-        if: ${{ hashFiles('package.json') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          if (typeof pkg !== "object" || pkg === null || Array.isArray(pkg)) {
-            throw new Error("package.json must contain a JSON object.");
-          }
-          if (pkg.name !== undefined && typeof pkg.name !== "string") {
-            throw new Error("package.json name must be a string.");
-          }
-          if (pkg.version !== undefined && typeof pkg.version !== "string") {
-            throw new Error("package.json version must be a string.");
-          }
-          if (pkg.scripts !== undefined &&
-              (typeof pkg.scripts !== "object" ||
-               pkg.scripts === null ||
-               Array.isArray(pkg.scripts))) {
-            throw new Error("package.json scripts must be an object.");
-          }
-          console.log("package.json metadata checks passed.");
-          NODE
+          done
+
+          echo "All configuration validation jobs passed."

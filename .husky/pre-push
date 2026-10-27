@@ -1,111 +1,187 @@
+
 #!/usr/bin/env sh
 # ============================================================
 # MedOrbits -- Pre-Push Safety Gate
 # File: .husky/pre-push
-# Release: 2.0.0
+# Release: 2.1.0
 #
-# Runs read-only checks before a Git push.
-# Does not install dependencies, modify files, commit, or push.
+# Purpose:
+#   Validate repository state, tracked JSON, JavaScript syntax,
+#   configured tests, and optional project verification scripts.
+#
+# Safety:
+#   - Does not install dependencies.
+#   - Does not modify source files.
+#   - Does not commit or push.
+#   - Blocks a push when a required check fails.
 # ============================================================
+
 set -eu
+
+log() {
+  printf '%s\n' "[MedOrbits] $*"
+}
+
+error() {
+  printf '%s\n' "[MedOrbits] ERROR: $*" >&2
+}
+
+warning() {
+  printf '%s\n' "[MedOrbits] WARNING: $*" >&2
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-  echo "[MedOrbits] ERROR: Not inside a Git repository." >&2
+  error "Not inside a Git repository."
   exit 1
 }
+
 cd "$ROOT"
-echo "[MedOrbits] Running pre-push checks..."
+
+log "Running pre-push checks..."
+
 # ------------------------------------------------------------
 # 1. Require a valid repository HEAD
 # ------------------------------------------------------------
+
 if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
-  echo "[MedOrbits] ERROR: No valid HEAD commit exists." >&2
+  error "No valid HEAD commit exists."
   exit 1
 fi
-echo "[MedOrbits] Repository HEAD is valid."
+
+log "Repository HEAD is valid."
+
 # ------------------------------------------------------------
-# 2. Block pushes while the Git index has unresolved conflicts
+# 2. Block unresolved index conflicts
 # ------------------------------------------------------------
-if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
-  echo "[MedOrbits] ERROR: Unresolved merge conflicts exist." >&2
-  git diff --name-only --diff-filter=U >&2 || true
+
+if ! git diff --name-only --diff-filter=U > /dev/null 2>&1; then
+  error "Unable to inspect the Git index."
   exit 1
 fi
-echo "[MedOrbits] No unresolved index conflicts."
+
+UNRESOLVED="$(git diff --name-only --diff-filter=U)" || {
+  error "Unable to inspect unresolved conflicts."
+  exit 1
+}
+
+if [ -n "$UNRESOLVED" ]; then
+  error "Unresolved merge conflicts exist:"
+  printf '%s\n' "$UNRESOLVED" >&2
+  exit 1
+fi
+
+log "No unresolved index conflicts."
+
 # ------------------------------------------------------------
 # 3. Validate tracked JSON files
 # ------------------------------------------------------------
+
 if command -v node >/dev/null 2>&1; then
-  JSON_FILES="$(git ls-files '*.json' '*.schema.json' '*.shema.json')"
-  if [ -n "$JSON_FILES" ]; then
-    printf '%s\n' "$JSON_FILES" |
-      while IFS= read -r file; do
-        [ -f "$file" ] || continue
-        if ! node -e \
-          'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
-          "$file" >/dev/null 2>&1; then
-          echo "[MedOrbits] ERROR: Invalid JSON: $file" >&2
-          exit 1
-        fi
-      done
-    echo "[MedOrbits] JSON validation passed."
+  JSON_COUNT=0
+
+  # Git paths are newline-delimited here. Repository filenames
+  # should not contain newline characters for this check to work
+  # reliably; see the note below.
+  while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    [ -f "$file" ] || continue
+
+    JSON_COUNT=$((JSON_COUNT + 1))
+
+    if ! node -e '
+      const fs = require("node:fs");
+      JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    ' "$file" >/dev/null 2>&1; then
+      error "Invalid JSON: $file"
+      exit 1
+    fi
+  done <<EOF
+$(git ls-files -- '*.json' '*.schema.json' '*.shema.json')
+EOF
+
+  if [ "$JSON_COUNT" -gt 0 ]; then
+    log "JSON validation passed ($JSON_COUNT files)."
   else
-    echo "[MedOrbits] No tracked JSON files found."
+    log "No tracked JSON files found."
   fi
 else
-  echo "[MedOrbits] WARNING: Node.js unavailable; JSON validation skipped." >&2
+  warning "Node.js unavailable; JSON validation skipped."
 fi
+
 # ------------------------------------------------------------
 # 4. Check tracked JavaScript syntax
 # ------------------------------------------------------------
+
 if command -v node >/dev/null 2>&1; then
-  JS_FILES="$(git ls-files '*.js' '*.mjs' '*.cjs')"
-  if [ -n "$JS_FILES" ]; then
-    printf '%s\n' "$JS_FILES" |
-      while IFS= read -r file; do
-        [ -f "$file" ] || continue
-        if ! node --check "$file"; then
-          echo "[MedOrbits] ERROR: JavaScript syntax check failed: $file" >&2
-          exit 1
-        fi
-      done
-    echo "[MedOrbits] JavaScript syntax validation passed."
+  JS_COUNT=0
+
+  while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    [ -f "$file" ] || continue
+
+    JS_COUNT=$((JS_COUNT + 1))
+
+    if ! node --check "$file"; then
+      error "JavaScript syntax check failed: $file"
+      exit 1
+    fi
+  done <<EOF
+$(git ls-files -- '*.js' '*.mjs' '*.cjs')
+EOF
+
+  if [ "$JS_COUNT" -gt 0 ]; then
+    log "JavaScript syntax validation passed ($JS_COUNT files)."
   else
-    echo "[MedOrbits] No tracked JavaScript files found."
+    log "No tracked JavaScript files found."
   fi
 else
-  echo "[MedOrbits] WARNING: Node.js unavailable; JavaScript validation skipped." >&2
+  warning "Node.js unavailable; JavaScript syntax validation skipped."
 fi
+
 # ------------------------------------------------------------
 # 5. Run configured tests, when available
 # ------------------------------------------------------------
+
 if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
   if [ ! -d node_modules ]; then
-    echo "[MedOrbits] WARNING: node_modules is missing; npm tests skipped." >&2
+    warning "node_modules is missing; npm tests skipped."
   elif node -e '
-    const p = require("./package.json");
+    const fs = require("node:fs");
+    const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
     process.exit(p.scripts && p.scripts.test ? 0 : 1);
   ' >/dev/null 2>&1; then
-    echo "[MedOrbits] Running npm test..."
+    log "Running npm test..."
     npm test
+    log "npm test passed."
   else
-    echo "[MedOrbits] No npm test script configured; skipping."
+    log "No npm test script configured; skipping."
   fi
 else
-  echo "[MedOrbits] WARNING: npm or package.json unavailable; tests skipped." >&2
+  warning "npm or package.json unavailable; tests skipped."
 fi
+
 # ------------------------------------------------------------
-# 6. Optional project verification scripts
+# 6. Run optional project verification scripts
 # ------------------------------------------------------------
+
 for script in VERIFY.sh TEST.sh; do
   if [ -f "$script" ]; then
-    echo "[MedOrbits] Running $script..."
+    log "Running $script..."
+
     if ! bash "$script"; then
-      echo "[MedOrbits] ERROR: $script failed." >&2
+      error "$script failed."
       exit 1
     fi
+
+    log "$script passed."
   else
-    echo "[MedOrbits] $script not found; skipping."
+    log "$script not found; skipping."
   fi
 done
-echo "[MedOrbits] Pre-push checks passed."
+
+# ------------------------------------------------------------
+# 7. Complete
+# ------------------------------------------------------------
+
+log "All enabled pre-push checks passed."
 exit 0

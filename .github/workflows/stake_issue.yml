@@ -1,57 +1,117 @@
-name: Stale Issue Management
+
+name: Stakeholder Issue Management
+
 on:
-  schedule:
-    # Daily at 01:30 UTC.
-    - cron: "30 1 * * *"
+  issues:
+    types:
+      - opened
+      - reopened
+      - labeled
+      - edited
+
   workflow_dispatch:
+
 permissions:
   issues: write
-  pull-requests: write
   contents: read
+
 concurrency:
-  group: stale-issue-management
-  cancel-in-progress: false
+  group: stakeholder-issue-${{ github.event.issue.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  stale:
-    name: Mark and close stale issues
+  manage-issue:
+    name: Classify Stakeholder Issue
+    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+
     steps:
-      - name: Manage stale issues and pull requests
-        uses: actions/stale@v9
+      - name: Classify issue
+        uses: actions/github-script@v7
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          # Issue inactivity settings
-          days-before-issue-stale: 45
-          days-before-issue-close: 14
-          stale-issue-label: stale
-          stale-issue-message: >
-            This issue has been marked stale because it has had no recent activity.
-            Please comment with an update if it is still relevant. It will be closed
-            after 14 additional days of inactivity.
-          close-issue-message: >
-            This issue is being closed because it remained inactive after being
-            marked stale. You can reopen it or create a new issue if the problem
-            persists.
-          # Pull request inactivity settings
-          days-before-pr-stale: 30
-          days-before-pr-close: 14
-          stale-pr-label: stale
-          stale-pr-message: >
-            This pull request has been marked stale due to inactivity.
-            Please update it if work is continuing.
-          close-pr-message: >
-            This pull request is being closed because it remained inactive after
-            being marked stale. It can be reopened when work resumes.
-          # Labels that exempt issues and pull requests
-          exempt-issue-labels: "pinned,security,keep-open,priority:high"
-          exempt-pr-labels: "pinned,security,keep-open,work-in-progress"
-          # Do not close items with active assignees
-          exempt-all-issue-assignees: true
-          exempt-all-pr-assignees: true
-          # Prevent excessive updates
-          operations-per-run: 100
-          ascending: true
-          # Do not remove labels automatically
-          remove-stale-when-updated: true
-          debug-only: false
+          script: |
+            const issue = context.payload.issue;
+
+            if (!issue || issue.pull_request) {
+              core.info("Event does not represent a regular issue.");
+              return;
+            }
+
+            const title = (issue.title || "").toLowerCase();
+            const body = (issue.body || "").toLowerCase();
+            const text = `${title}\n${body}`;
+
+            const labels = new Set(
+              (issue.labels || []).map(label =>
+                typeof label === "string" ? label : label.name
+              )
+            );
+
+            const addLabels = new Set(["stakeholder-review"]);
+
+            if (
+              /\b(security|vulnerability|credential leak|data breach)\b/.test(text)
+            ) {
+              addLabels.add("security");
+              addLabels.add("priority-high");
+            } else if (
+              /\b(crash|production outage|critical failure|data loss)\b/.test(text)
+            ) {
+              addLabels.add("priority-high");
+            } else if (
+              /\b(bug|error|broken|not working|regression)\b/.test(text)
+            ) {
+              addLabels.add("bug");
+            } else if (
+              /\b(feature request|enhancement|new feature|improvement)\b/.test(text)
+            ) {
+              addLabels.add("enhancement");
+            } else if (
+              /\b(documentation|readme|typo|docs)\b/.test(text)
+            ) {
+              addLabels.add("documentation");
+            }
+
+            if (
+              /\b(admission|college|university|student|education)\b/.test(text)
+            ) {
+              addLabels.add("education");
+            }
+
+            if (
+              /\b(accessibility|screen reader|keyboard navigation)\b/.test(text)
+            ) {
+              addLabels.add("accessibility");
+            }
+
+            const missingLabels = [...addLabels].filter(
+              label => !labels.has(label)
+            );
+
+            if (missingLabels.length === 0) {
+              core.info("No additional labels required.");
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: missingLabels
+            });
+
+            core.info(
+              `Added ${missingLabels.length} classification label(s).`
+            );
+
+  manual-check:
+    name: Manual Workflow Check
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Confirm workflow availability
+        run: echo "Stakeholder issue management workflow is available."

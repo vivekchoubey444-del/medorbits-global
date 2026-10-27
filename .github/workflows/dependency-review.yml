@@ -1,161 +1,147 @@
+
 name: Dependency Review
 
 on:
-pull_request:
-branches:
-- main
-types:
-- opened
-- synchronize
-- reopened
-- ready_for_review
-paths:
-- "package.json"
-- "package-lock.json"
-- "npm-shrinkwrap.json"
-- "/package.json"
-- "/package-lock.json"
-- "/npm-shrinkwrap.json"
-- "requirements.txt"
-- "requirements-*.txt"
-- "/requirements.txt"
-- "/requirements-*.txt"
-- "/requirements*.txt"
-- "pyproject.toml"
-- "/pyproject.toml"
-- "poetry.lock"
-- "/poetry.lock"
-- "Pipfile"
-- "/Pipfile"
-- "Pipfile.lock"
-- "/Pipfile.lock"
-- "uv.lock"
-- "/uv.lock"
-- "setup.py"
-- "/setup.py"
-- "setup.cfg"
-- "/setup.cfg"
-- "go.mod"
-- "/go.mod"
-- "go.sum"
-- "/go.sum"
-- "Cargo.toml"
-- "/Cargo.toml"
-- "Cargo.lock"
-- "/Cargo.lock"
-- "Gemfile"
-- "/Gemfile"
-- "Gemfile.lock"
-- "/Gemfile.lock"
-- "composer.json"
-- "/composer.json"
-- "composer.lock"
-- "/composer.lock"
-- "Dockerfile"
-- "/Dockerfile"
-- "Dockerfile."
-- "**/Dockerfile."
-- ".github/dependabot.yml"
-- ".github/dependabot.yaml"
-- "/.github/dependabot.yml"
-- "/.github/dependabot.yaml"
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "requirements.txt"
+      - "requirements-*.txt"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "uv.lock"
+      - "setup.py"
+      - "setup.cfg"
+      - "go.mod"
+      - "go.sum"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "composer.json"
+      - "composer.lock"
+      - "Dockerfile"
+      - "**/Dockerfile"
+      - ".github/dependabot.yml"
+      - ".github/dependabot.yaml"
+      - ".github/workflows/dependency-review.yml"
 
-workflow_dispatch:
-
-permissions:
-contents: read
-
-concurrency:
-group: dependency-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-cancel-in-progress: true
-
-jobs:
-dependency-review:
-name: Review dependency changes
-runs-on: ubuntu-latest
-timeout-minutes: 15
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: write
-steps:
-  - name: Check out repository
-    uses: actions/checkout@v4
-    with:
-      persist-credentials: false
-  - name: Record review context
-    shell: bash
-    env:
-      EVENT_NAME: ${{ github.event_name }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-      BASE_REF: ${{ github.event.pull_request.base.ref }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-    run: |
-      set -euo pipefail
-      {
-        echo "## Dependency Review"
-        echo
-        echo "- Event: \`$EVENT_NAME\`"
-        echo "- Pull request: \`${PR_NUMBER:-not applicable}\`"
-        echo "- Author: \`${PR_AUTHOR:-not applicable}\`"
-        echo "- Base branch: \`${BASE_REF:-not applicable}\`"
-        echo "- Proposed revision: \`${HEAD_SHA:-not applicable}\`"
-        echo
-      } >> "$GITHUB_STEP_SUMMARY"
-  - name: Validate dependency review prerequisites
-    if: ${{ github.event_name == 'pull_request' }}
-    shell: bash
-    run: |
-      set -euo pipefail
-      if [[ "${{ github.event.pull_request.base.ref }}" != "main" ]]; then
-        echo "::error::This workflow only reviews pull requests targeting main."
-        exit 1
-      fi
-      echo "Pull request targets main."
-  - name: Review dependency vulnerabilities and licenses
-    if: ${{ github.event_name == 'pull_request' }}
-    uses: actions/dependency-review-action@v4
-    with:
-      fail-on-severity: high
-      fail-on-scopes: runtime
-      comment-summary-in-pr: always
-      warn-only: false
-      # Licensing policy: reject newly introduced dependencies
-      # with these licenses. Review this policy against the
-      # project's actual legal and distribution requirements.
-      deny-licenses: GPL-3.0-only, GPL-3.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later
-      # Include patched-version information in vulnerability reports.
-      show-patched-versions: true
-      # Retry transient dependency snapshot warnings.
-      retry-on-snapshot-warnings: true
-      retry-on-snapshot-warnings-timeout: 60
-  - name: Explain manual run behavior
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    shell: bash
-    run: |
-      set -euo pipefail
-      {
-        echo "## Manual execution"
-        echo
-        echo "This run does not have a pull-request dependency comparison."
-        echo "The dependency review action was intentionally skipped."
-        echo "Open or update a pull request targeting main to run the comparison."
-      } >> "$GITHUB_STEP_SUMMARY"
-  - name: Record final review status
-    if: always()
-    shell: bash
-    env:
-      JOB_STATUS: ${{ job.status }}
-      EVENT_NAME: ${{ github.event_name }}
-    run: |
-      set -euo pipefail
-      {
-        echo
-        echo "### Workflow result"
-        echo
-        echo "- Status: \`$JOB_STATUS\`"
-        echo "- Trigger: \`$EVENT_NAME\`"
-        echo
-        echo "A passing dependency review is not a substitute for application tests, code review, or a complete license audit."
-      } >> "$GITHUB_STEP_SUMMARY"
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Record review context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Dependency Review"
+            echo
+            echo "- Event: \`$EVENT_NAME\`"
+            echo "- Pull request: \`${PR_NUMBER:-not applicable}\`"
+            echo "- Author: \`${PR_AUTHOR:-not applicable}\`"
+            echo "- Base branch: \`${BASE_REF:-not applicable}\`"
+            echo "- Proposed revision: \`${HEAD_SHA:-not applicable}\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate dependency review prerequisites
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$BASE_REF" != "main" ]]; then
+            echo "::error::This workflow only reviews pull requests targeting main."
+            exit 1
+          fi
+
+          echo "Pull request targets main."
+
+      - name: Review dependency vulnerabilities and licenses
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime
+          comment-summary-in-pr: always
+          warn-only: false
+          deny-licenses: GPL-3.0-only, GPL-3.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later
+          show-patched-versions: true
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 60
+
+      - name: Explain manual run behavior
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Manual execution"
+            echo
+            echo "This run does not have a pull-request dependency comparison."
+            echo "The dependency review action was intentionally skipped."
+            echo "Open or update a pull request targeting main to run the comparison."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record final review status
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo
+            echo "### Workflow result"
+            echo
+            echo "- Status: \`$JOB_STATUS\`"
+            echo "- Trigger: \`$EVENT_NAME\`"
+            echo
+            echo "A passing dependency review is not a substitute for application tests, code review, or a complete license audit."
+          } >> "$GITHUB_STEP_SUMMARY"

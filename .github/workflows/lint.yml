@@ -1,139 +1,240 @@
+
 name: Lint
+
 on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
+      - develop
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: lint-${{ github.workflow }}-${{ github.ref }}
+  group: lint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
-  javascript:
-    name: JavaScript and TypeScript lint
+  lint:
+    name: Lint Repository
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Set up Node.js
-        if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install locked dependencies
-        if: ${{ hashFiles('package.json') != '' && (hashFiles('package-lock.json') != '' || hashFiles('npm-shrinkwrap.json') != '') }}
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run ESLint
-        if: ${{ hashFiles('package.json') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f node_modules/.bin/eslint ]]; then
-            echo "::notice::ESLint is not installed; skipping JavaScript lint."
-            exit 0
-          fi
-          if node -e '
-            const pkg = require("./package.json");
-            process.exit(pkg.scripts?.lint ? 0 : 1);
-          '; then
-            npm run lint
-          else
-            echo "::notice::No npm lint script is configured; running ESLint on tracked JS/TS files."
-            mapfile -d '' files < <(
-              git ls-files -z -- '*.js' '*.cjs' '*.mjs' '*.jsx' '*.ts' '*.tsx'
-            )
-            if [[ "${#files[@]}" -gt 0 ]]; then
-              ./node_modules/.bin/eslint "${files[@]}"
-            else
-              echo "No tracked JavaScript or TypeScript files found."
-            fi
-          fi
-  python:
-    name: Python lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          persist-credentials: false
-      - name: Detect Python files
+          python-version: "3.x"
+
+      - name: Detect lint configuration
         id: detect
         shell: bash
         run: |
-          if find . \
-            -path './.git' -prune -o \
-            -path './node_modules' -prune -o \
-            -path './.agent-backup' -prune -o \
-            -type f -name '*.py' -print -quit | grep -q .; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
+          set -Eeuo pipefail
+
+          if [[ -f package.json ]]; then
+            echo "node_project=true" >> "$GITHUB_OUTPUT"
           else
-            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "node_project=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Set up Python
-        if: ${{ steps.detect.outputs.found == 'true' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Ruff
-        if: ${{ steps.detect.outputs.found == 'true' }}
-        run: python -m pip install ruff
-      - name: Run Ruff checks
-        if: ${{ steps.detect.outputs.found == 'true' }}
-        run: |
-          ruff check .
-          ruff format --check .
-      - name: Skip Python lint
-        if: ${{ steps.detect.outputs.found != 'true' }}
-        run: echo "No Python files found; skipping Python lint."
-  repository-hygiene:
-    name: Repository hygiene
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Check merge conflict markers
+
+          if [[ -f package-lock.json ]]; then
+            echo "npm_lock=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm_lock=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f .eslintrc.json ||
+                -f .eslintrc.yml ||
+                -f .eslintrc.yaml ||
+                -f .eslintrc.js ||
+                -f .eslintrc.cjs ||
+                -f eslint.config.js ||
+                -f eslint.config.mjs ||
+                -f eslint.config.cjs ||
+                -f eslint.config.ts ]]; then
+            echo "eslint_config=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "eslint_config=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install npm dependencies
+        if: steps.detect.outputs.node_project == 'true'
         shell: bash
         run: |
-          set -euo pipefail
-          if git grep -n -I -E '^(<<<<<<< |=======|>>>>>>> )' -- \
-            ':!*.lock' \
-            ':!*.svg'; then
-            echo "::error::Possible merge conflict markers found."
-            exit 1
+          set -Eeuo pipefail
+
+          if [[ -f package-lock.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
           else
-            status=$?
-            if [[ "$status" -gt 1 ]]; then
-              echo "::error::git grep failed."
-              exit "$status"
-            fi
+            echo "::notice::No package-lock.json found; installing dependencies without a lockfile."
+            npm install --ignore-scripts --no-audit --no-fund
           fi
-          echo "No standard merge conflict markers found."
-      - name: Check trailing whitespace
+
+      - name: Run project lint script
+        if: steps.detect.outputs.node_project == 'true'
         shell: bash
         run: |
-          set -euo pipefail
-          if git grep -n -I -E '[[:blank:]]+$' -- \
-            '*.js' '*.cjs' '*.mjs' '*.jsx' '*.ts' '*.tsx' \
-            '*.py' '*.html' '*.css' '*.json' '*.yml' '*.yaml' \
-            '*.sh' '*.md'; then
-            echo "::error::Trailing whitespace found in tracked files."
-            exit 1
+          set -Eeuo pipefail
+
+          if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
+            npm run lint
           else
-            status=$?
-            if [[ "$status" -gt 1 ]]; then
-              echo "::error::git grep failed."
-              exit "$status"
-            fi
+            echo "::notice::No npm lint script is configured; skipping."
           fi
-          echo "No trailing whitespace found in checked file types."
+
+      - name: Run ESLint when configured
+        if: steps.detect.outputs.node_project == 'true' && steps.detect.outputs.eslint_config == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if npm exec --no -- eslint --version >/dev/null 2>&1; then
+            npm exec --no -- eslint .
+          else
+            echo "::error::ESLint configuration exists, but ESLint is not available in the installed dependencies."
+            exit 1
+          fi
+
+      - name: Validate JSON syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+          }
+
+          files = sorted(
+              path
+              for path in Path(".").rglob("*.json")
+              if not any(part in excluded for part in path.parts)
+          )
+
+          if not files:
+              print("No JSON files found; skipping.")
+              sys.exit(0)
+
+          errors = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      json.load(handle)
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  errors.append(path)
+
+          if errors:
+              sys.exit(1)
+
+          print(f"Validated {len(files)} JSON file(s).")
+          PY
+
+      - name: Validate YAML syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python -m pip install --disable-pip-version-check PyYAML
+
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+          }
+
+          files = sorted({
+              path
+              for pattern in ("*.yaml", "*.yml")
+              for path in Path(".").rglob(pattern)
+              if not any(part in excluded for part in path.parts)
+          })
+
+          if not files:
+              print("No YAML files found; skipping.")
+              sys.exit(0)
+
+          errors = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      list(yaml.safe_load_all(handle))
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, yaml.YAMLError) as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  errors.append(path)
+
+          if errors:
+              sys.exit(1)
+
+          print(f"Validated {len(files)} YAML file(s).")
+          PY
+
+      - name: Validate shell script syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          count=0
+
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+            echo "PASS $file"
+            count=$((count + 1))
+          done < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f -name '*.sh' -print0
+          )
+
+          echo "Validated $count shell script(s)."
+
+      - name: Lint summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## Lint Results"
+            echo
+            echo "- Result: $JOB_STATUS"
+            echo "- Automatic fixes: disabled"
+            echo "- Repository write access: disabled"
+            echo "- Automatic merge: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"

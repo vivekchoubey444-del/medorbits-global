@@ -1,6 +1,18 @@
+
 name: Generate and Validate Lockfile
+
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Choose whether to validate or generate the lockfile"
+        required: true
+        type: choice
+        default: validate
+        options:
+          - validate
+          - generate
+
   pull_request:
     branches:
       - main
@@ -8,93 +20,206 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/generate-lockfile.yml"
+
 permissions:
   contents: read
+
 concurrency:
   group: generate-lockfile-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   generate-lockfile:
-    name: Generate and validate npm lockfile
+    name: Generate and Validate npm Lockfile
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     permissions:
       contents: read
+
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Determine operation
+        id: mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            mode="${INPUT_MODE:-validate}"
+          else
+            mode="validate"
+          fi
+
+          if [[ "$mode" != "validate" && "$mode" != "generate" ]]; then
+            echo "::error::Unsupported lockfile operation."
+            exit 1
+          fi
+
+          echo "value=$mode" >> "$GITHUB_OUTPUT"
+          echo "Selected operation: $mode"
+
       - name: Verify package manifest
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           if [[ ! -f package.json ]]; then
             echo "::error::Root package.json was not found."
             exit 1
           fi
-          node -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            console.log(`Package: ${pkg.name || "unnamed"}`);
-            console.log(`Version: ${pkg.version || "unspecified"}`);
-          '
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          let pkg;
+
+          try {
+            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          } catch (error) {
+            console.error(`Invalid package.json: ${error.message}`);
+            process.exit(1);
+          }
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          NODE
+
       - name: Generate lockfile
+        if: steps.mode.outputs.value == 'generate'
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
           npm install \
             --package-lock-only \
             --ignore-scripts \
             --no-audit \
             --no-fund
-          if [[ ! -f package-lock.json ]]; then
-            echo "::error::npm did not generate package-lock.json."
+
+          if [[ ! -s package-lock.json ]]; then
+            echo "::error::npm did not generate a non-empty package-lock.json."
             exit 1
           fi
-      - name: Validate lockfile JSON and manifest metadata
+
+      - name: Verify lockfile exists
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
+          if [[ ! -s package-lock.json ]]; then
+            echo "::error::package-lock.json is missing or empty."
+            exit 1
+          fi
+
+      - name: Validate lockfile JSON and metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
           node <<'NODE'
           const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          const lock = JSON.parse(
+            fs.readFileSync("package-lock.json", "utf8")
+          );
+
+          if (!lock || typeof lock !== "object" || Array.isArray(lock)) {
+            throw new Error("Lockfile must contain a JSON object.");
+          }
+
           if (![2, 3].includes(lock.lockfileVersion)) {
             throw new Error(
               `Unsupported lockfile version: ${lock.lockfileVersion}`
             );
           }
+
           if (!lock.packages || !lock.packages[""]) {
             throw new Error("Lockfile is missing root package metadata.");
           }
+
           const root = lock.packages[""];
+
           if (root.name && pkg.name && root.name !== pkg.name) {
-            throw new Error("Lockfile package name does not match package.json.");
+            throw new Error(
+              "Lockfile package name does not match package.json."
+            );
           }
+
           if (root.version && pkg.version && root.version !== pkg.version) {
-            throw new Error("Lockfile package version does not match package.json.");
+            throw new Error(
+              "Lockfile package version does not match package.json."
+            );
           }
-          console.log(`Lockfile JSON is valid (version ${lock.lockfileVersion}).`);
+
+          console.log(
+            `Lockfile JSON is valid (version ${lock.lockfileVersion}).`
+          );
           console.log("Root package metadata is present.");
           NODE
-      - name: Validate dependency tree
+
+      - name: Validate dependency installation
         shell: bash
         run: |
-          set -euo pipefail
-          npm ci \
-            --ignore-scripts \
-            --no-audit \
-            --no-fund \
-            --dry-run
-      - name: Upload generated lockfile
+          set -Eeuo pipefail
+
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check generated changes
+        if: steps.mode.outputs.value == 'generate'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if git diff --quiet -- package-lock.json; then
+            echo "The generated lockfile matches the checked-out version."
+          else
+            echo "Generated lockfile differences:"
+            git --no-pager diff --stat -- package-lock.json
+          fi
+
+      - name: Upload lockfile artifact
+        if: steps.mode.outputs.value == 'generate'
         uses: actions/upload-artifact@v4
         with:
           name: generated-package-lock-${{ github.run_id }}
           path: package-lock.json
           if-no-files-found: error
           retention-days: 14
+
+      - name: Write workflow summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          MODE: ${{ steps.mode.outputs.value }}
+        shell: bash
+        run: |
+          {
+            echo "## Generate and Validate Lockfile"
+            echo
+            echo "- Result: $JOB_STATUS"
+            echo "- Operation: ${MODE:-not selected}"
+            echo "- Automatic commits: disabled"
+            echo "- Automatic pushes: disabled"
+            echo "- Automatic merges: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"

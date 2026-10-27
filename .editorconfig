@@ -2,12 +2,19 @@
 # ==============================================================================
 # MedOrbits -- EditorConfig
 # File: /.editorconfig
-# Purpose: Consistent formatting across editors and development environments.
+# Release: 2.1.0
+#
+# Purpose:
+#   Consistent formatting across editors and development environments.
+#   Formatting preferences only; this file does not run a formatter.
 # ==============================================================================
 
 root = true
 
-# Default rules for all files
+# ------------------------------------------------------------------------------
+# Default rules
+# ------------------------------------------------------------------------------
+
 [*]
 charset = utf-8
 end_of_line = lf
@@ -16,87 +23,131 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# Markdown documentation: preserve intentional trailing spaces.
+# ------------------------------------------------------------------------------
+# Markdown documentation
+# Preserve intentional Markdown hard line breaks.
+# ------------------------------------------------------------------------------
+
 [*.md]
 trim_trailing_whitespace = false
 max_line_length = off
 
+# ------------------------------------------------------------------------------
 # HTML templates and pages
+# ------------------------------------------------------------------------------
+
 [*.{html,htm,xhtml}]
 indent_style = space
 indent_size = 2
 
-# CSS, SCSS, and related stylesheets
+# ------------------------------------------------------------------------------
+# CSS and stylesheet languages
+# ------------------------------------------------------------------------------
+
 [*.{css,scss,sass,less}]
 indent_style = space
 indent_size = 2
 
-# JavaScript, TypeScript, and module files
+# ------------------------------------------------------------------------------
+# JavaScript and TypeScript
+# ------------------------------------------------------------------------------
+
 [*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}]
 indent_style = space
 indent_size = 2
 
+# ------------------------------------------------------------------------------
 # JSON and JSONC configuration
+# ------------------------------------------------------------------------------
+
 [*.{json,jsonc}]
 indent_style = space
 indent_size = 2
 
-# YAML configuration, GitHub workflows, and issue forms
+# ------------------------------------------------------------------------------
+# YAML, workflows, and configuration
+# ------------------------------------------------------------------------------
+
 [*.{yml,yaml}]
 indent_style = space
 indent_size = 2
 
-# Python scripts and utilities
+# ------------------------------------------------------------------------------
+# Python
+# ------------------------------------------------------------------------------
+
 [*.py]
 indent_style = space
 indent_size = 4
 
-# Shell scripts and command files
+# ------------------------------------------------------------------------------
+# Shell scripts
+# ------------------------------------------------------------------------------
+
 [*.{sh,bash}]
 indent_style = space
 indent_size = 4
 
-# POSIX makefiles
-[Makefile]
+# ------------------------------------------------------------------------------
+# Makefiles require literal tabs for recipe lines.
+# ------------------------------------------------------------------------------
+
+[{Makefile,makefile,GNUmakefile}]
 indent_style = tab
 
-[makefile]
-indent_style = tab
+# ------------------------------------------------------------------------------
+# Docker build files
+# ------------------------------------------------------------------------------
 
-# Docker files
-[Dockerfile]
+[{Dockerfile,Containerfile}]
 indent_style = space
 indent_size = 2
 
-[Containerfile]
-indent_style = space
-indent_size = 2
+# ------------------------------------------------------------------------------
+# TOML, INI, and related configuration
+# ------------------------------------------------------------------------------
 
-# TOML configuration
 [*.toml]
 indent_style = space
 indent_size = 2
 
-# INI and configuration files
 [*.ini]
 indent_style = space
 indent_size = 2
 
+[*.conf]
+indent_style = space
+indent_size = 2
+
+# ------------------------------------------------------------------------------
 # XML and SVG assets
+# ------------------------------------------------------------------------------
+
 [*.{xml,svg}]
 indent_style = space
 indent_size = 2
 
+# ------------------------------------------------------------------------------
 # SQL scripts and migrations
+# ------------------------------------------------------------------------------
+
 [*.sql]
 indent_style = space
 indent_size = 4
 
-# Diff and patch files: preserve source formatting
+# ------------------------------------------------------------------------------
+# Diff and patch files
+# Preserve original whitespace in patches.
+# ------------------------------------------------------------------------------
+
 [*.{diff,patch}]
 trim_trailing_whitespace = false
 
-# Lockfiles: avoid unnecessary formatting changes
+# ------------------------------------------------------------------------------
+# Lockfiles
+# Avoid unnecessary formatting changes.
+# ------------------------------------------------------------------------------
+
 [package-lock.json]
 indent_style = space
 indent_size = 2
@@ -109,7 +160,11 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
+# ------------------------------------------------------------------------------
 # Environment files
+# Formatting rules only; never place actual secrets in this file.
+# ------------------------------------------------------------------------------
+
 [.env]
 insert_final_newline = true
 

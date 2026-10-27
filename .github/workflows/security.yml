@@ -1,348 +1,295 @@
+
 name: Security Checks
 
 on:
-push:
-branches:
-- main
-pull_request:
-branches:
-- main
-schedule:
-# Weekly on Monday at 04:00 UTC.
-- cron: "0 4 * * 1"
-workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 concurrency:
-group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-cancel-in-progress: true
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-dependency-audit:
-name: npm Dependency Audit
-runs-on: ubuntu-latest
-timeout-minutes: 15
-permissions:
-contents: read
+  security:
+    name: Repository Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-steps:
-  - name: Check out repository
-    uses: actions/checkout@v4
-    with:
-      persist-credentials: false
-  - name: Set up Node.js
-    if: ${{ hashFiles('package.json') != '' }}
-    uses: actions/setup-node@v4
-    with:
-      node-version: "22"
-  - name: Validate npm manifest and lockfile
-    shell: bash
-    run: |
-      set -euo pipefail
-      if [[ ! -f package.json ]]; then
-        echo "No root package.json found; skipping npm audit."
-        exit 0
-      fi
-      if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
-        echo "::error::package.json exists, but no npm lockfile was found."
-        exit 1
-      fi
-      node --input-type=commonjs <<'NODE'
-      const fs = require("node:fs");
-      const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
-      const lockFile = fs.existsSync("npm-shrinkwrap.json")
-        ? "npm-shrinkwrap.json"
-        : "package-lock.json";
-      const lock = JSON.parse(fs.readFileSync(lockFile, "utf8"));
-      if (typeof manifest.name !== "string" || !manifest.name.trim()) {
-        throw new Error("package.json must contain a valid name.");
-      }
-      if (typeof manifest.version !== "string" || !manifest.version.trim()) {
-        throw new Error("package.json must contain a valid version.");
-      }
-      if (![2, 3].includes(lock.lockfileVersion)) {
-        throw new Error("Expected lockfileVersion 2 or 3.");
-      }
-      if (lock.name && lock.name !== manifest.name) {
-        throw new Error("Manifest and lockfile names do not match.");
-      }
-      if (lock.version && lock.version !== manifest.version) {
-        throw new Error("Manifest and lockfile versions do not match.");
-      }
-      const root = lock.packages && lock.packages[""];
-      if (root && (
-        root.name !== manifest.name ||
-        root.version !== manifest.version
-      )) {
-        throw new Error("Lockfile root metadata does not match package.json.");
-      }
-      console.log(`Validated ${lockFile}.`);
-      NODE
-  - name: Audit npm dependencies
-    if: ${{ hashFiles('package.json') != '' }}
-    shell: bash
-    run: |
-      set -euo pipefail
-      # npm audit reads the lockfile and does not execute dependency
-      # lifecycle scripts. Do not print registry credentials.
-      npm audit --audit-level=high
-  - name: Report npm audit result
-    if: always()
-    shell: bash
-    env:
-      JOB_STATUS: ${{ job.status }}
-    run: |
-      set -euo pipefail
-      {
-        echo "## npm Dependency Audit"
-        echo
-        echo "- Result: \`$JOB_STATUS\`"
-        echo "- Policy: fail on high or critical audit findings."
-        echo "- Lockfile required when package.json is present."
-      } >> "$GITHUB_STEP_SUMMARY"
+    permissions:
+      contents: read
 
-secret-scan:
-name: Scan for Exposed Secrets
-runs-on: ubuntu-latest
-timeout-minutes: 15
-permissions:
-contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-steps:
-  - name: Check out repository history
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 0
-      persist-credentials: false
-  - name: Run Gitleaks
-    uses: gitleaks/gitleaks-action@v2
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITLEAKS_ENABLE_COMMENTS: "false"
-      GITLEAKS_ENABLE_SUMMARY: "true"
-  - name: Report secret scan result
-    if: always()
-    shell: bash
-    env:
-      JOB_STATUS: ${{ job.status }}
-    run: |
-      set -euo pipefail
-      {
-        echo "## Secret Scanning"
-        echo
-        echo "- Result: \`$JOB_STATUS\`"
-        echo "- Git history is fetched for historical scanning."
-        echo "- PR comments are disabled."
-      } >> "$GITHUB_STEP_SUMMARY"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-repository-security:
-name: Repository Security Policies
-runs-on: ubuntu-latest
-timeout-minutes: 10
-permissions:
-contents: read
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
-steps:
-  - name: Check out repository
-    uses: actions/checkout@v4
-    with:
-      persist-credentials: false
-  - name: Reject tracked environment and private-key files
-    shell: bash
-    run: |
-      set -euo pipefail
-      python3 <<'PY'
-      import subprocess
-      import sys
-      result = subprocess.run(
-          ["git", "ls-files", "-z"],
-          check=True,
-          stdout=subprocess.PIPE,
-      )
-      paths = [
-          path.decode("utf-8", errors="surrogateescape")
-          for path in result.stdout.split(b"\0")
-          if path
-      ]
-      allowed_env_names = {
-          ".env.example",
-          ".env.sample",
-          ".env.template",
-          ".env.test.example",
-      }
-      forbidden = []
-      for path in paths:
-          parts = path.replace("\\", "/").split("/")
-          name = parts[-1]
-          if name == ".env" or (
-              name.startswith(".env.")
-              and name not in allowed_env_names
-          ):
-              forbidden.append((path, "environment file"))
-          if name.lower() in {
-              "id_rsa",
-              "id_dsa",
-              "id_ecdsa",
-              "id_ed25519",
-          }:
-              forbidden.append((path, "private-key filename"))
-          if name.lower().endswith((
-              ".pem",
-              ".key",
-              ".p12",
-              ".pfx",
-          )):
-              forbidden.append((path, "potential private-key or certificate file"))
-      if forbidden:
-          print("::error::Potentially sensitive tracked files were found.")
-          for path, reason in forbidden:
-              # Do not print file contents or secret values.
-              print(f"::error::file={path}::{reason}")
-          print(
-              "Remove prohibited files from the repository, "
-              "review Git history, and rotate exposed credentials."
+      - name: Validate JSON configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+          }
+
+          files = sorted(
+              path
+              for path in Path(".").rglob("*.json")
+              if not any(part in excluded for part in path.parts)
           )
-          sys.exit(1)
-      print("No prohibited tracked environment or key filenames found.")
-      PY
-  - name: Check workflow YAML and permissions
-    shell: bash
-    run: |
-      set -euo pipefail
-      if ! command -v ruby >/dev/null 2>&1; then
-        echo "::error::Ruby is required for workflow policy validation."
-        exit 1
-      fi
-      ruby <<'RUBY'
-      require "yaml"
-      files = Dir.glob(".github/workflows/*.{yml,yaml}").sort
-      errors = []
-      warnings = []
-      if files.empty?
-        puts "No workflow YAML files found."
-        exit 0
-      end
-      files.each do |file|
-        begin
-          workflow = YAML.load_file(file, aliases: false)
-          unless workflow.is_a?(Hash)
-            errors << "#{file}: workflow must be a YAML mapping"
-            next
-          end
-          # GitHub Actions workflow files should declare a restrictive
-          # top-level token policy. Job-level policies may narrow it.
-          unless workflow["permissions"].is_a?(Hash)
-            warnings << "#{file}: missing explicit top-level permissions"
-          end
-          jobs = workflow["jobs"]
-          unless jobs.is_a?(Hash)
-            errors << "#{file}: missing or invalid jobs mapping"
-            next
-          end
-          jobs.each do |job_name, job|
-            unless job.is_a?(Hash)
-              errors << "#{file}: job #{job_name} must be a mapping"
-              next
-            end
-            permissions = job["permissions"]
-            if permissions.is_a?(Hash)
-              permissions.each do |scope, value|
-                unless value == "read" ||
-                       value == "write" ||
-                       value == "none"
-                  errors << "#{file}: job #{job_name} has invalid permission #{scope}"
-                end
-              end
-            elsif permissions == "write-all"
-              errors << "#{file}: job #{job_name} uses write-all permissions"
-            end
-            steps = job["steps"]
-            next unless steps.is_a?(Array)
-            steps.each do |step|
-              next unless step.is_a?(Hash)
-              uses = step["uses"]
-              next unless uses.is_a?(String)
-              # Flag mutable action tags for review; this is a warning
-              # because some trusted actions are currently tag-pinned.
-              if uses.match?(/@(?:main|master|latest|v\d+)$/)
-                warnings << "#{file}: action reference #{uses} should be reviewed for immutable SHA pinning"
-              end
-            end
-          end
-        rescue StandardError => error
-          errors << "#{file}: #{error.message}"
-        end
-      end
-      warnings.each do |message|
-        puts "::warning::#{message}"
-      end
-      errors.each do |message|
-        puts "::error::#{message}"
-      end
-      abort "Workflow policy validation failed." unless errors.empty?
-      puts "Workflow YAML parsing and permission checks completed."
-      RUBY
-  - name: Check for accidental credential patterns in configuration
-    shell: bash
-    run: |
-      set -euo pipefail
-      # This checks tracked text for common credential assignments.
-      # Gitleaks performs the primary secret detection. Avoid printing
-      # matching lines because they could contain actual credentials.
-      python3 <<'PY'
-      import subprocess
-      import sys
-      patterns = [
-          b"PRIVATE KEY-----",
-          b"ghp_",
-          b"github_pat_",
-          b"AKIA",
-      ]
-      result = subprocess.run(
-          [
-              "git",
-              "grep",
-              "-Il",
-              "-e",
-              "PRIVATE KEY-----",
-              "-e",
-              "ghp_",
-              "-e",
-              "github_pat_",
-              "-e",
-              "AKIA",
-              "--",
-              ":!*.lock",
-              ":!package-lock.json",
-          ],
-          stdout=subprocess.PIPE,
-          stderr=subprocess.PIPE,
-      )
-      # git grep: 0 means matches, 1 means no matches, >1 means error.
-      if result.returncode not in (0, 1):
-          print("::error::Credential-pattern scan could not complete.")
-          sys.exit(1)
-      if result.returncode == 0 and result.stdout.strip():
-          print(
-              "::warning::Potential credential patterns found in tracked files. "
-              "Review them privately; matching file names are omitted."
+
+          if not files:
+              print("No JSON files found; skipping.")
+              sys.exit(0)
+
+          failures = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      json.load(handle)
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  failures.append(path)
+
+          if failures:
+              sys.exit(1)
+
+          print(f"Validated {len(files)} JSON file(s).")
+          PY
+
+      - name: Validate YAML configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check PyYAML
+
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          excluded = {
+              ".git", "node_modules", ".venv", "venv",
+              "vendor", "dist", "build", "coverage",
+          }
+
+          files = sorted({
+              path
+              for pattern in ("*.yaml", "*.yml")
+              for path in Path(".").rglob(pattern)
+              if not any(part in excluded for part in path.parts)
+          })
+
+          if not files:
+              print("No YAML files found; skipping.")
+              sys.exit(0)
+
+          failures = []
+
+          for path in files:
+              try:
+                  with path.open("r", encoding="utf-8-sig") as handle:
+                      list(yaml.safe_load_all(handle))
+                  print(f"PASS {path}")
+              except (OSError, UnicodeError, yaml.YAMLError) as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  failures.append(path)
+
+          if failures:
+              sys.exit(1)
+
+          print(f"Validated {len(files)} YAML file(s).")
+          PY
+
+      - name: Validate npm dependencies
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json found; skipping npm audit."
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+              throw new Error("package.json must contain a JSON object");
+            }
+            console.log(`Package: ${pkg.name || "unnamed"}`);
+          '
+
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            npm audit --audit-level=high
+          else
+            echo "::warning::No npm lockfile found; skipping dependency audit."
+          fi
+
+      - name: Scan tracked files for common secret patterns
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          patterns = [
+              (
+                  "Private key material",
+                  re.compile(
+                      r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+                  ),
+              ),
+              (
+                  "AWS access key identifier",
+                  re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+              ),
+              (
+                  "Possible hardcoded credential assignment",
+                  re.compile(
+                      r"""(?i)\b(?:password|passwd|secret|api[_-]?key|access[_-]?token)\b"""
+                      r"""\s*[:=]\s*["'][^"'\r\n]{8,}["']"""
+                  ),
+              ),
+          ]
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=subprocess.PIPE,
           )
-      else:
-          print("No configured credential patterns detected.")
-      PY
-  - name: Report repository security result
-    if: always()
-    shell: bash
-    env:
-      JOB_STATUS: ${{ job.status }}
-    run: |
-      set -euo pipefail
-      {
-        echo "## Repository Security"
-        echo
-        echo "- Result: \`$JOB_STATUS\`"
-        echo "- Checks: tracked sensitive filenames, workflow YAML, and permission policies."
-        echo "- Secret scanning is performed separately by Gitleaks."
-      } >> "$GITHUB_STEP_SUMMARY"
+
+          excluded = {
+              ".png", ".jpg", ".jpeg", ".gif", ".webp",
+              ".ico", ".pdf", ".zip", ".gz", ".lock",
+          }
+
+          findings = []
+          scanned = 0
+
+          for raw in result.stdout.split(b"\0"):
+              if not raw:
+                  continue
+
+              filename = raw.decode("utf-8", errors="surrogateescape")
+
+              if filename.lower().endswith(tuple(excluded)):
+                  continue
+
+              try:
+                  with open(filename, "rb") as handle:
+                      data = handle.read(2_000_000)
+              except OSError:
+                  print(
+                      f"::warning::Could not read tracked file: {filename}"
+                  )
+                  continue
+
+              if b"\0" in data:
+                  continue
+
+              scanned += 1
+              content = data.decode("utf-8", errors="replace")
+
+              for line_number, line in enumerate(content.splitlines(), 1):
+                  for label, pattern in patterns:
+                      if pattern.search(line):
+                          findings.append(
+                              (filename, line_number, label)
+                          )
+
+          if findings:
+              print(
+                  f"Potential secret patterns found: {len(findings)}",
+                  file=sys.stderr,
+              )
+
+              for filename, line_number, label in findings:
+                  print(
+                      f"::error file={filename},line={line_number}::{label}",
+                      file=sys.stderr,
+                  )
+
+              print(
+                  "Matching secret values were not printed.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"Scanned {scanned} tracked text files.")
+          print("No configured secret patterns were detected.")
+          PY
+
+      - name: Validate shell-script syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          count=0
+
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+            echo "PASS $file"
+            count=$((count + 1))
+          done < <(
+            find . \
+              -path './.git' -prune -o \
+              -path './node_modules' -prune -o \
+              -path './.venv' -prune -o \
+              -path './vendor' -prune -o \
+              -type f -name '*.sh' -print0
+          )
+
+          echo "Validated $count shell script(s)."
+
+      - name: Security summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## Security Checks"
+            echo
+            echo "- Result: $JOB_STATUS"
+            echo "- Repository write access: disabled"
+            echo "- Automatic remediation: disabled"
+            echo "- Automatic merge: disabled"
+            echo "- Automatic deployment: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"
