@@ -67,7 +67,7 @@ Bash 4+, Git, tar, gzip, and standard Unix utilities.
 ============================================================
 
 set -Eeuo pipefail
-IFS=$’\n\t’
+IFS=$'\n\t'
 umask 077
 
 readonly SCRIPT_NAME="${0##*/}"
@@ -77,7 +77,7 @@ MODE="–status"
 REPO_ROOT=""
 BACKUP_DIR=""
 BACKUP_ARCHIVE=""
-TIMESTAMP="$(date ‘+%Y%m%d-%H%M%S’)"
+TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
 BACKUP_CREATED=0
 TEMP_PATHS=()
 
@@ -88,15 +88,15 @@ Logging and error handling
 ----------------------------------------
 
 log() {
-printf ‘[INFO] %s\n’ "$*"
+printf '[INFO] %s\n' "$*"
 }
 
 warn() {
-printf ‘[WARN] %s\n’ "$*" >&2
+printf '[WARN] %s\n' "$*" >&2
 }
 
 die() {
-printf ‘[ERROR] %s\n’ "$*" >&2
+printf '[ERROR] %s\n' "$*" >&2
 exit 1
 }
 
@@ -126,7 +126,7 @@ exit "$exit_code"
 }
 
 trap cleanup EXIT
-trap ‘on_error "$LINENO"’ ERR
+trap 'on_error "$LINENO"' ERR
 
 ----------------------------------------
 
@@ -135,7 +135,7 @@ Usage
 ----------------------------------------
 
 usage() {
-cat <<‘USAGE’
+cat <<'USAGE'
 MedOrbits -- Conservative Git Recovery and Rollback Helper
 
 Usage:
@@ -211,7 +211,7 @@ ensure_worktree_available() {
 if [[ ! -d "$REPO_ROOT/.git" && ! -f "$REPO_ROOT/.git" ]]; then
 # Git worktrees can have a .git file, so validate through Git.
 git -C "$REPO_ROOT" rev-parse –git-dir >/dev/null 2>&1 ||
-die "Cannot identify this repository’s Git metadata."
+die "Cannot identify this repository's Git metadata."
 fi
 
 git -C "$REPO_ROOT" rev-parse --is-inside-work-tree 2>/dev/null |
@@ -240,7 +240,7 @@ fi
 
 current_head() {
 git -C "$REPO_ROOT" rev-parse –short HEAD 2>/dev/null ||
-printf ‘%s\n’ ‘(unavailable)’
+printf '%s\n' '(unavailable)'
 }
 
 has_unmerged_paths() {
@@ -285,9 +285,9 @@ Restore preview
 ----------------------------------------
 
 preview_restore() {
-printf ‘%s\n’ 
-‘-- Preview: tracked working-tree changes --’ 
-‘Review the following paths before using restore mode.’
+printf '%s\n' 
+'-- Preview: tracked working-tree changes --' 
+'Review the following paths before using restore mode.'
 
 printf '\n--- Unstaged tracked changes ---\n'
 git -C "$REPO_ROOT" diff --name-status
@@ -317,8 +317,9 @@ Important:
 * Untracked files are not intentionally removed, but may obstruct
     restoration of tracked paths. Inspect conflicts and backups first.
 * Branches, commits, and remote history are not reset or rewritten.
-    PLAN
-    }
+PLAN
+}
+
 
 ----------------------------------------
 

@@ -1,514 +1,145 @@
 #!/usr/bin/env bash
-
-============================================================
-
-MedOrbits Database Safety Utility
-
-File: /DATABASE.sh
-
-Purpose:
-
-Inspect database configuration, connectivity and migration
-
-readiness without automatically changing database contents.
-
-Usage:
-
-bash DATABASE.sh help
-
-bash DATABASE.sh check
-
-bash DATABASE.sh status
-
-bash DATABASE.sh config
-
-bash DATABASE.sh migrations
-
-bash DATABASE.sh backup-check
-
-bash DATABASE.sh connect
-
-Supported clients:
-
-PostgreSQL: psql
-
-MySQL:      mysql
-
-Safety:
-
-- Never drops databases, tables or records.
-
-- Never runs automatic migrations.
-
-- Never prints database passwords or connection URLs.
-
-- Never installs database drivers or CLI utilities.
-
-- Never runs Git reset or clean.
-
-- Connectivity checks are read-only.
-
-Configuration:
-
-DATABASE_CLIENT=postgres
-
-DATABASE_URL=…
-
-Or for MySQL:
-
-DATABASE_CLIENT=mysql
-
-DB_HOST=…
-
-DB_PORT=3306
-
-DB_NAME=…
-
-DB_USER=…
-
-DB_PASSWORD=…
-
-Select the configuration matching the actual backend driver.
-
-============================================================
-
+# ============================================================
+# MedOrbits Database Safety Utility
+# File: DATABASE.sh
+#
+# Read-only database configuration and connectivity checks.
+# Does not run migrations, write records, install packages, or
+# display secret values. Reads configuration from the environment.
+# ============================================================
 set -Eeuo pipefail
-IFS=$’\n\t’
-umask 077
+IFS=$'\n\t'
 
-readonly SCRIPT_NAME="MedOrbits Database Safety Utility"
-readonly SCRIPT_DIR="$(
-cd – "$(dirname – "${BASH_SOURCE[0]}")" && pwd -P
-)"
-readonly ROOT_DIR="$SCRIPT_DIR"
-
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 COMMAND="${1:-help}"
 
-log() {
-printf ‘[INFO] %s\n’ "$*"
-}
+log()  { printf '[INFO] %s\n' "$*"; }
+warn() { printf '[WARN] %s\n' "$*" >&2; }
+fail() { printf '[FAIL] %s\n' "$*" >&2; exit 1; }
 
-warn() {
-printf ‘[WARN] %s\n’ "$*" >&2
-}
-
-error() {
-printf ‘[ERROR] %s\n’ "$*" >&2
-}
-
-die() {
-error "$*"
-exit 1
-}
-
-section() {
-printf ‘\n%s\n’ ‘============================================================’
-printf ‘%s\n’ "$*"
-printf ‘%s\n\n’ ‘============================================================’
-}
-
-has_command() {
-command -v "$1" >/dev/null 2>&1
-}
-
-show_help() {
-cat <<‘HELP’
+usage() {
+  cat <<'HELP'
 MedOrbits Database Safety Utility
 
-Usage:
-bash DATABASE.sh 
+Usage: bash DATABASE.sh [COMMAND]
 
 Commands:
-help           Show this help message.
-check          Check database configuration and available tools.
-config         Display sanitized database configuration status.
-status         Run configuration checks and report readiness.
-migrations     Inspect common migration directories.
-backup-check   Check whether documented backup locations exist.
-connect        Run a read-only database connectivity check.
+  help          Show this help message
+  check         Check configuration and database client availability
+  config        Show sanitized configuration status
+  status        Run non-connecting configuration checks
+  migrations    List likely migration directories (read-only)
+  backup-check  Check whether common database backup tools exist
+  connect       Attempt a read-only SELECT 1 connection test
 
-Environment:
-DATABASE_CLIENT=postgres|postgresql|mysql
-DATABASE_URL=…                  PostgreSQL connection URL
-DB_HOST=…                       MySQL host
-DB_PORT=3306                      MySQL port
-DB_NAME=…                       MySQL database name
-DB_USER=…                       MySQL user
-DB_PASSWORD=…                   MySQL password
-DATABASE_SSL=true|false           PostgreSQL SSL setting
-
-The script loads a root .env file if present. It does not overwrite
-existing shell environment variables and does not print secret values.
-
-No database migrations, destructive SQL, or package installations
-are performed.
+Configuration is read from the current shell environment. This script
+never prints database passwords or complete connection URLs and never
+runs migrations or destructive SQL.
 HELP
 }
 
-load_env_file() {
-local env_file="$ROOT_DIR/.env"
+has_command() { command -v "$1" >/dev/null 2>&1; }
 
-if [[ ! -f "$env_file" ]]; then
-log "Root .env not found; using the current shell environment."
-return 0
-fi
-
-if [[ ! -r "$env_file" ]]; then
-warn "Root .env exists but is not readable."
-return 0
-fi
-
-Parse only simple KEY=value entries. Do not execute .env as shell code.
-
-local line key value
-
-while IFS= read -r line || [[ -n "$line" ]]; do
-line="${line%$’\r’}"
-
-[[ "$line" =~ ^[[:space:]]*# ]] && continue
-[[ "$line" =~ ^[[:space:]]*$ ]] && continue
-if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-  key="${BASH_REMATCH[1]}"
-  value="${BASH_REMATCH[2]}"
-  # Do not replace environment values already supplied by the shell.
-  if [[ -v "$key" ]]; then
-    continue
-  fi
-  # Remove surrounding whitespace.
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  # Remove matching surrounding quotes. This is intentionally not
-  # a complete dotenv parser; complex values should be exported
-  # through the shell or loaded by the application's dotenv library.
-  if [[ ${#value} -ge 2 ]]; then
-    if [[ "${value:0:1}" == '"' && "${value: -1}" == '"' ]]; then
-      value="${value:1:${#value}-2}"
-    elif [[ "${value:0:1}" == "'" && "${value: -1}" == "'" ]]; then
-      value="${value:1:${#value}-2}"
-    fi
-  fi
-  export "$key=$value"
-fi
-
-done < "$env_file"
-
-log "Read simple environment entries from root .env where not already set."
+selected_client() {
+  printf '%s' "${DATABASE_CLIENT:-postgres}" | tr '[:upper:]' '[:lower:]'
 }
 
-detect_client() {
-if [[ -n "${DATABASE_CLIENT:-}" ]]; then
-case "${DATABASE_CLIENT,,}" in
-postgres|postgresql|pg)
-printf ‘postgres’
-;;
-mysql|mariadb)
-printf ‘mysql’
-;;
-*)
-die "Unsupported DATABASE_CLIENT. Use postgres or mysql."
-;;
-esac
-return
-fi
+config_status() {
+  local client url_present host_present name_present user_present
+  client="$(selected_client)"
+  [[ -n "${DATABASE_URL:-}" ]] && url_present=yes || url_present=no
+  [[ -n "${DB_HOST:-}" ]] && host_present=yes || host_present=no
+  [[ -n "${DB_NAME:-}" ]] && name_present=yes || name_present=no
+  [[ -n "${DB_USER:-}" ]] && user_present=yes || user_present=no
 
-if [[ -n "${DATABASE_URL:-}" ]]; then
-case "${DATABASE_URL%%:*}" in
-postgres|postgresql)
-printf ‘postgres’
-return
-;;
-mysql|mariadb)
-printf ‘mysql’
-return
-;;
-esac
-fi
-
-if [[ -n "${DB_HOST:-}" || -n "${DB_NAME:-}" || -n "${DB_USER:-}" ]]; then
-printf ‘mysql’
-return
-fi
-
-printf ‘unknown’
+  printf 'Repository: %s\n' "$SCRIPT_DIR"
+  printf 'Client: %s\n' "$client"
+  printf 'DATABASE_URL present: %s\n' "$url_present"
+  printf 'DB_HOST present: %s\n' "$host_present"
+  printf 'DB_NAME present: %s\n' "$name_present"
+  printf 'DB_USER present: %s\n' "$user_present"
+  printf 'DB_PASSWORD present: %s\n' "$([[ -n "${DB_PASSWORD:-}" ]] && printf yes || printf no)"
 }
 
-check_database_config() {
-section "Database configuration"
+check_config() {
+  local client
+  client="$(selected_client)"
+  case "$client" in
+    postgres|postgresql|pg)
+      if has_command psql; then log "PostgreSQL client available: $(psql --version | head -n 1)";
+      else warn "psql is not installed; connection testing is unavailable."; fi
+      ;;
+    mysql|mariadb)
+      if has_command mysql; then log "MySQL client available: $(mysql --version | head -n 1)";
+      else warn "mysql client is not installed; connection testing is unavailable."; fi
+      ;;
+    *) fail "Unsupported DATABASE_CLIENT value: $client" ;;
+  esac
 
-local client
-client="$(detect_client)"
-
-log "Detected database client: $client"
-
-case "$client" in
-postgres)
-if [[ -n "${DATABASE_URL:-}" ]]; then
-log "DATABASE_URL: configured (value hidden)"
-else
-warn "DATABASE_URL is not configured."
-fi
-
-  if [[ -n "${DATABASE_SSL:-}" ]]; then
-    log "DATABASE_SSL: configured (value hidden)"
+  if [[ -z "${DATABASE_URL:-}" && ( -z "${DB_HOST:-}" || -z "${DB_NAME:-}" || -z "${DB_USER:-}" ) ]]; then
+    warn "Set DATABASE_URL or DB_HOST, DB_NAME and DB_USER in the environment."
   else
-    log "DATABASE_SSL: not explicitly set"
+    log "Required connection fields appear to be configured."
   fi
-  if has_command psql; then
-    log "PostgreSQL CLI: available"
-  else
-    warn "psql is unavailable."
-  fi
-  ;;
-mysql)
-  [[ -n "${DB_HOST:-}" ]] \
-    && log "DB_HOST: configured" \
-    || warn "DB_HOST is not configured."
-  [[ -n "${DB_NAME:-}" ]] \
-    && log "DB_NAME: configured (value hidden)" \
-    || warn "DB_NAME is not configured."
-  [[ -n "${DB_USER:-}" ]] \
-    && log "DB_USER: configured (value hidden)" \
-    || warn "DB_USER is not configured."
-  [[ -n "${DB_PASSWORD:-}" ]] \
-    && log "DB_PASSWORD: configured (value hidden)" \
-    || warn "DB_PASSWORD is not configured."
-  log "DB_PORT: ${DB_PORT:-3306}"
-  if has_command mysql; then
-    log "MySQL CLI: available"
-  else
-    warn "mysql CLI is unavailable."
-  fi
-  ;;
-unknown)
-  warn "Database client could not be determined."
-  warn "Set DATABASE_CLIENT explicitly to postgres or mysql."
-  ;;
-
-esac
-}
-
-check_backend_driver() {
-section "Backend database driver"
-
-local package_file="$ROOT_DIR/package.json"
-
-if [[ ! -f "$package_file" ]]; then
-warn "package.json not found; cannot inspect Node.js dependencies."
-return 0
-fi
-
-if ! has_command node; then
-warn "Node.js is unavailable; cannot inspect package dependencies."
-return 0
-fi
-
-node - "$package_file" <<‘NODE’
-const fs = require("node:fs");
-
-const packageFile = process.argv[2];
-
-try {
-const pkg = JSON.parse(fs.readFileSync(packageFile, "utf8"));
-const dependencies = {
-…(pkg.dependencies || {}),
-…(pkg.devDependencies || {})
-};
-
-const hasPg = Boolean(dependencies.pg);
-const hasMysql = Boolean(dependencies.mysql);
-const hasMysql2 = Boolean(dependencies.mysql2);
-const hasPrisma = Boolean(dependencies["@prisma/client"]);
-const hasSequelize = Boolean(dependencies.sequelize);
-const hasKnex = Boolean(dependencies.knex);
-
-console.log(pg dependency: ${hasPg ? "present" : "not declared"});
-console.log(mysql dependency: ${hasMysql ? "present" : "not declared"});
-console.log(mysql2 dependency: ${hasMysql2 ? "present" : "not declared"});
-console.log(Prisma dependency: ${hasPrisma ? "present" : "not declared"});
-console.log(Sequelize dependency: ${hasSequelize ? "present" : "not declared"});
-console.log(Knex dependency: ${hasKnex ? "present" : "not declared"});
-
-if (hasPg && (hasMysql || hasMysql2)) {
-console.log(
-"NOTICE: Both PostgreSQL and MySQL drivers are declared. " +
-"Inspect actual database initialization code."
-);
-}
-} catch (error) {
-console.error(Cannot inspect package.json: ${error.message});
-process.exitCode = 1;
-}
-NODE
 }
 
 inspect_migrations() {
-section "Migration file inspection"
-
-local found=0
-local directory
-
-for directory in 
-"$ROOT_DIR/migrations" 
-"$ROOT_DIR/db/migrations" 
-"$ROOT_DIR/database/migrations" 
-"$ROOT_DIR/prisma/migrations"
-do
-if [[ -d "$directory" ]]; then
-found=1
-log "Found migration directory: ${directory#"$ROOT_DIR"/}"
-
-  find "$directory" -maxdepth 3 -type f \
-    \( -name '*.sql' -o -name '*.js' -o -name '*.cjs' \
-       -o -name '*.mjs' -o -name '*.ts' \) \
-    -print
-fi
-
-done
-
-if ((found == 0)); then
-warn "No common migration directory found."
-warn "This does not prove that the project has no migrations."
-fi
-
-log "Migration inspection is read-only; no migration was executed."
+  local found=0 directory
+  for directory in \
+    "$SCRIPT_DIR/migrations" \
+    "$SCRIPT_DIR/db/migrations" \
+    "$SCRIPT_DIR/database/migrations" \
+    "$SCRIPT_DIR/prisma/migrations"; do
+    if [[ -d "$directory" ]]; then
+      found=1
+      log "Migration directory found: ${directory#"$SCRIPT_DIR"/}"
+      find "$directory" -maxdepth 3 -type f -print 2>/dev/null | head -n 50
+    fi
+  done
+  (( found )) || log "No conventional migration directory found."
 }
 
-inspect_backup_locations() {
-section "Backup location inspection"
-
-local found=0
-local directory
-
-for directory in 
-"$ROOT_DIR/backups" 
-"$ROOT_DIR/backup" 
-"$ROOT_DIR/.backups"
-do
-if [[ -d "$directory" ]]; then
-found=1
-log "Backup directory exists: ${directory#"$ROOT_DIR"/}"
-fi
-done
-
-if ((found == 0)); then
-warn "No conventional repository backup directory found."
-fi
-
-warn "Directory presence does not verify backup integrity or recoverability."
-log "No backup was created, modified or deleted."
+backup_check() {
+  local found=0 tool
+  for tool in pg_dump mysqldump; do
+    if has_command "$tool"; then log "Available: $tool"; found=1; fi
+  done
+  (( found )) || warn "Neither pg_dump nor mysqldump is available."
 }
 
-check_postgres_connection() {
-require_command psql
-
-[[ -n "${DATABASE_URL:-}" ]] ||
-die "DATABASE_URL is required for PostgreSQL connectivity checks."
-
-log "Running a read-only PostgreSQL connectivity query."
-
-Avoid echoing credentials. psql receives the URL through the environment.
-
-PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-5}" 
-psql "$DATABASE_URL" 
--X 
--w 
--v ON_ERROR_STOP=1 
--t 
--A 
--c ‘SELECT current_database(), current_user, current_setting(’'‘server_version’'’);’
+connect_read_only() {
+  local client
+  client="$(selected_client)"
+  case "$client" in
+    postgres|postgresql|pg)
+      has_command psql || fail "psql is required for this connection test."
+      if [[ -n "${DATABASE_URL:-}" ]]; then
+        psql -X -w "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT 1;' >/dev/null
+      else
+        [[ -n "${DB_HOST:-}" && -n "${DB_NAME:-}" && -n "${DB_USER:-}" ]] || fail "Set DATABASE_URL or DB_HOST, DB_NAME and DB_USER."
+        PGPASSWORD="${DB_PASSWORD:-}" psql -X -w -h "$DB_HOST" -p "${DB_PORT:-5432}" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c 'SELECT 1;' >/dev/null
+      fi
+      ;;
+    mysql|mariadb)
+      has_command mysql || fail "mysql client is required for this connection test."
+      if [[ -n "${DATABASE_URL:-}" ]]; then
+        warn "MySQL URL parsing is intentionally not implemented; use DB_HOST/DB_NAME/DB_USER instead."
+        fail "Set DB_HOST, DB_NAME and DB_USER for MySQL connection testing."
+      fi
+      [[ -n "${DB_HOST:-}" && -n "${DB_NAME:-}" && -n "${DB_USER:-}" ]] || fail "Set DB_HOST, DB_NAME and DB_USER."
+      MYSQL_PWD="${DB_PASSWORD:-}" mysql --connect-timeout=5 -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" "$DB_NAME" -Nse 'SELECT 1;' >/dev/null
+      ;;
+  esac
+  log "Read-only SELECT 1 connection test succeeded."
 }
-
-check_mysql_connection() {
-require_command mysql
-
-[[ -n "${DB_HOST:-}" ]] || die "DB_HOST is required."
-[[ -n "${DB_NAME:-}" ]] || die "DB_NAME is required."
-[[ -n "${DB_USER:-}" ]] || die "DB_USER is required."
-
-local port="${DB_PORT:-3306}"
-
-[[ "$port" =~ ^[0-9]+$ ]] ||
-die "DB_PORT must be a numeric port."
-
-((port >= 1 && port <= 65535)) ||
-die "DB_PORT must be between 1 and 65535."
-
-log "Running a read-only MySQL connectivity query."
-
-MYSQL_PWD avoids placing the password directly in command-line arguments.
-
-The environment variable is scoped to this process only.
-
-MYSQL_PWD="${DB_PASSWORD:-}" 
-mysql 
-–connect-timeout=5 
-–protocol=tcp 
-–host="$DB_HOST" 
-–port="$port" 
-–user="$DB_USER" 
-–database="$DB_NAME" 
-–batch 
-–skip-column-names 
-–execute=‘SELECT DATABASE(), CURRENT_USER(), VERSION();’
-}
-
-check_connection() {
-section "Read-only database connectivity"
-
-local client
-client="$(detect_client)"
-
-case "$client" in
-postgres)
-check_postgres_connection
-;;
-mysql)
-check_mysql_connection
-;;
-*)
-die "Database client is unknown. Configure DATABASE_CLIENT first."
-;;
-esac
-
-log "Connectivity query completed."
-}
-
-main() {
-section "$SCRIPT_NAME"
-log "Repository: $ROOT_DIR"
-
-load_env_file
 
 case "$COMMAND" in
-help|-h|–help)
-show_help
-;;
-config)
-check_database_config
-;;
-check)
-check_database_config
-check_backend_driver
-;;
-status)
-check_database_config
-check_backend_driver
-inspect_migrations
-;;
-migrations)
-inspect_migrations
-;;
-backup-check)
-inspect_backup_locations
-;;
-connect)
-check_connection
-;;
-*)
-show_help >&2
-die "Unknown command: $COMMAND"
-;;
+  help|-h|--help) usage ;;
+  check) config_status; check_config ;;
+  config) config_status ;;
+  status) config_status; check_config ;;
+  migrations) inspect_migrations ;;
+  backup-check) backup_check ;;
+  connect) connect_read_only ;;
+  *) fail "Unknown command: $COMMAND. Run 'bash DATABASE.sh help'." ;;
 esac
-}
-
-main "$@"

@@ -450,9 +450,8 @@ list_backups() {
     local file
     while IFS= read -r -d '' file; do
         found=1
-        printf '%s\t%s bytes\n' \
-            "$(basename -- "$file")" \
-            "$(wc -c < "$file" | tr -d ' ')'
+        size_bytes=$(wc -c < "$file")
+        printf '%s\t%s bytes\n' "$(basename -- "$file")" "$size_bytes"
     done < <(find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*-backup-*.tar.gz' -print0 | sort -z)
     ((found)) || log "No backup archives found."
 }
