@@ -1,62 +1,33 @@
-
 #!/usr/bin/env python3
 """
 MedOrbits Repository-Wide Page Design Synchronizer
 ==================================================
 
-File:
-    tools/sync_pages_from_reference.py
+Synchronizes CSS/JS references from HTML pages in a reference directory to
+eligible nested HTML pages elsewhere in a repository.
 
-Reference source:
-    /pages/**/*.html
+Safety model
+------------
+- Dry-run by default.
+- Root-level HTML, reference pages, templates, symlinks, dependencies, and
+  generated directories are excluded.
+- Existing assets are never overwritten.
+- Existing stylesheet/script references are preserved unless --replace-assets
+  is explicitly supplied.
+- Apply mode writes a JSON audit report, including dry-run mode.
+- HTML writes are atomic; optional backups are collision-safe.
+- No external code is downloaded or executed.
 
-Targets:
-    All eligible nested HTML pages across the repository, excluding:
-      - HTML files directly in the repository root.
-      - HTML files inside /pages (the reference pages).
-      - Template files and template directories.
-      - Dependencies, generated output, backups, and Git internals.
+Python 3.10+
+Dependency: beautifulsoup4 >= 4.12.3
 
-Features:
-    - Uses CSS and JavaScript references found in /pages HTML files.
-    - Supports local and external CSS/JS references.
-    - Resolves local assets relative to their actual reference page.
-    - Rewrites local asset URLs relative to each destination page.
-    - Creates missing destination HTML head/body containers if needed.
-    - Optionally replaces existing linked stylesheet and script references.
-    - Optionally creates missing CSS/JS scaffold assets.
-    - Preserves page-specific content, forms, metadata, and inline code.
-    - Dry-run by default.
-    - Optional backups and JSON audit reports.
-    - Refuses to overwrite files outside the repository.
-    - Does not download or execute external code.
-
-Requirements:
-    Python 3.10+
-    beautifulsoup4 >= 4.12.3
-
-Usage:
-    python -m pip install "beautifulsoup4>=4.12.3"
-
-    # Preview only
-    python tools/sync_pages_from_reference.py --root .
-
-    # Apply shared asset references
-    python tools/sync_pages_from_reference.py --root . --apply --backup
-
-    # Replace existing linked CSS/JS references on target pages
-    python tools/sync_pages_from_reference.py --root . --apply --backup --replace-assets
-
-    # Create missing CSS/JS scaffold assets
-    python tools/sync_pages_from_reference.py --root . --apply --create-scaffold
-
-    # Custom reference directory
-    python tools/sync_pages_from_reference.py --root . --reference pages
-
-Safety:
-    Dry-run is the default. Review the report before applying changes.
-    Existing CSS/JS asset contents are never overwritten by this script.
-    --replace-assets replaces HTML references, not the actual asset files.
+Examples
+--------
+python tools/sync_pages_from_reference.py --root .
+python tools/sync_pages_from_reference.py --root . --report reports/sync.json
+python tools/sync_pages_from_reference.py --root . --apply --backup
+python tools/sync_pages_from_reference.py --root . --apply --backup --replace-assets
+python tools/sync_pages_from_reference.py --root . --apply --create-scaffold
 """
 
 from __future__ import annotations
@@ -68,7 +39,7 @@ import os
 import re
 import shutil
 import sys
-
+import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -86,149 +57,71 @@ except ImportError:
     raise SystemExit(2)
 
 
-VERSION = "2.0.0"
+VERSION = "3.0.0"
 
 EXCLUDED_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "node_modules",
-    "vendor",
-    "__pycache__",
-    ".next",
-    ".nuxt",
-    "dist",
-    "build",
-    "coverage",
-    "playwright-report",
-    "test-results",
-    ".medorbits-backups",
+    ".git", ".hg", ".svn", ".venv", "venv", "node_modules", "vendor",
+    "__pycache__", ".next", ".nuxt", "dist", "build", "coverage",
+    "playwright-report", "test-results", ".medorbits-backups",
+    ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
 }
-
 TEMPLATE_DIRS = {
-    "template",
-    "templates",
-    "_template",
-    "_templates",
-    "html-templates",
-    "page-templates",
+    "template", "templates", "_template", "_templates",
+    "html-templates", "page-templates",
 }
-
 TEMPLATE_FILES = {
-    "template.html",
-    "template.htm",
-    "base.html",
-    "base.htm",
-    "layout.html",
-    "layout.htm",
-    "master.html",
-    "master.htm",
+    "template.html", "template.htm", "base.html", "base.htm",
+    "layout.html", "layout.htm", "master.html", "master.htm",
 }
-
+HTML_SUFFIXES = {".html", ".htm"}
 CSS_SUFFIXES = {".css"}
 JS_SUFFIXES = {".js", ".mjs"}
-HTML_SUFFIXES = {".html", ".htm"}
-
 DEFAULT_REPORT = Path("reports/page-reference-sync-report.json")
 DEFAULT_SCAFFOLD_CSS = Path("assets/css/reference-sync.css")
 DEFAULT_SCAFFOLD_JS = Path("assets/js/reference-sync.js")
 
-
-SCAFFOLD_CSS = r"""
-/*
- * MedOrbits Reference Synchronization Layer
- * Generated scaffold; customize only after reviewing the reference design.
- *
- * This file intentionally contains conservative defaults. The reference
- * pages' actual stylesheets remain the primary design source.
+SCAFFOLD_CSS = r"""/*
+ * MedOrbits reference synchronization scaffold.
+ * This is an optional helper layer, not a replacement for the reference CSS.
  */
-
-:root {
-  --mo-reference-transition: 240ms ease;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-img,
-picture,
-video,
-canvas,
-svg {
-  max-width: 100%;
-}
-
-img {
-  height: auto;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-a,
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
+:root { --mo-reference-transition: 240ms ease; }
+html { scroll-behavior: smooth; }
+img, picture, video, canvas, svg { max-width: 100%; }
+img { height: auto; }
+button, input, select, textarea { font: inherit; }
+a, button { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: .01ms !important;
     scroll-behavior: auto !important;
   }
 }
-""".strip() + "\n"
+"""
 
-
-SCAFFOLD_JS = r"""
-/*
- * MedOrbits Reference Synchronization Layer
- * Generated scaffold; does not replace page-specific JavaScript.
+SCAFFOLD_JS = r"""/*
+ * MedOrbits reference synchronization scaffold.
+ * Does not replace page-specific JavaScript.
  */
 (() => {
   "use strict";
-
-  if (document.documentElement.dataset.moReferenceSync === "true") {
-    return;
-  }
-
+  if (document.documentElement.dataset.moReferenceSync === "true") return;
   document.documentElement.dataset.moReferenceSync = "true";
 
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  );
-
-  document.documentElement.classList.toggle(
-    "mo-reduced-motion",
-    reducedMotion.matches
-  );
-
-  const updateMotionPreference = (event) => {
-    document.documentElement.classList.toggle(
-      "mo-reduced-motion",
-      event.matches
-    );
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const update = (event) => {
+    document.documentElement.classList.toggle("mo-reduced-motion", event.matches);
   };
-
-  if (typeof reducedMotion.addEventListener === "function") {
-    reducedMotion.addEventListener("change", updateMotionPreference);
+  update(motion);
+  if (typeof motion.addEventListener === "function") {
+    motion.addEventListener("change", update);
+  } else if (typeof motion.addListener === "function") {
+    motion.addListener(update);
   }
 })();
-""".strip() + "\n"
+"""
 
 
 @dataclass
@@ -244,6 +137,7 @@ class AssetReference:
     script_type: str | None = None
     defer: bool = False
     async_attr: bool = False
+    referrerpolicy: str | None = None
 
 
 @dataclass
@@ -256,9 +150,10 @@ class PageResult:
     before_sha256: str | None = None
     after_sha256: str | None = None
     reason: str | None = None
+    warnings: list[str] | None = None
 
 
-def digest(data: bytes) -> str:
+def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
@@ -266,194 +161,163 @@ def is_within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
         return True
-    except (ValueError, OSError):
+    except (ValueError, OSError, RuntimeError):
         return False
 
 
 def is_template_file(path: Path) -> bool:
-    name = path.name.lower()
-    stem = path.stem.lower()
-
-    if name in TEMPLATE_FILES:
-        return True
-
-    if stem in {"template", "base", "layout", "master"}:
-        return True
-
-    if stem.endswith((".template", ".tmpl", ".layout")):
-        return True
-
-    return False
+    name, stem = path.name.lower(), path.stem.lower()
+    return (
+        name in TEMPLATE_FILES
+        or stem in {"template", "base", "layout", "master"}
+        or stem.endswith((".template", ".tmpl", ".layout"))
+    )
 
 
 def excluded_directory(path: Path) -> bool:
     name = path.name.lower()
-
     return name in EXCLUDED_DIRS or name in TEMPLATE_DIRS
 
 
-def discover_html(root: Path, reference_dir: Path) -> list[Path]:
-    result: list[Path] = []
+def is_excluded_relative(relative: Path) -> bool:
+    return any(part.lower() in EXCLUDED_DIRS | TEMPLATE_DIRS for part in relative.parts)
+
+
+def discover_html(root: Path, reference_dir: Path, report_path: Path) -> list[Path]:
+    targets: list[Path] = []
+    ref_resolved = reference_dir.resolve()
+    report_resolved = report_path.resolve()
 
     for current, dirs, filenames in os.walk(root, followlinks=False):
         current_path = Path(current)
-
-        filtered: list[str] = []
-
+        filtered = []
         for dirname in dirs:
             child = current_path / dirname
-
             if child.is_symlink() or excluded_directory(child):
                 continue
-
-            # Never process the reference pages as targets.
-            if child.resolve() == reference_dir.resolve():
+            try:
+                resolved = child.resolve()
+            except OSError:
                 continue
-
-            if not is_within(child, root):
+            if resolved == ref_resolved or not is_within(resolved, root):
                 continue
-
             filtered.append(dirname)
-
         dirs[:] = filtered
 
         for filename in filenames:
             path = current_path / filename
-
             if path.is_symlink() or not path.is_file():
                 continue
-
-            if path.suffix.lower() not in HTML_SUFFIXES:
+            if path.suffix.lower() not in HTML_SUFFIXES or is_template_file(path):
                 continue
-
-            if is_template_file(path):
-                continue
-
             if not is_within(path, root):
                 continue
-
-            if path.resolve() == reference_dir.resolve():
-                continue
-
             try:
                 relative = path.relative_to(root)
             except ValueError:
                 continue
-
-            # Root-level HTML pages are intentionally excluded.
-            if len(relative.parts) == 1:
+            if len(relative.parts) == 1 or is_excluded_relative(relative):
                 continue
-
-            # Never modify pages within the reference directory.
+            if path.resolve() == report_resolved:
+                continue
             if is_within(path, reference_dir):
                 continue
+            targets.append(path)
 
-            if any(part.lower() in TEMPLATE_DIRS for part in relative.parts):
-                continue
+    return sorted(set(targets), key=lambda p: p.relative_to(root).as_posix().casefold())
 
-            result.append(path)
 
-    return sorted(set(result))
+def local_candidate(raw_path: str, reference_page: Path, root: Path) -> Path | None:
+    # Root-relative URLs are interpreted as repository-root-relative, by policy.
+    candidate = root / raw_path.lstrip("/") if raw_path.startswith("/") else reference_page.parent / raw_path
+    try:
+        resolved = candidate.resolve()
+    except (OSError, RuntimeError):
+        return None
+    if not is_within(resolved, root):
+        return None
+    return resolved
 
 
 def resolve_reference_asset(
-    href: str,
-    reference_page: Path,
-    root: Path,
-    kind: str,
+    href: str, reference_page: Path, root: Path, kind: str
 ) -> AssetReference | None:
-    """
-    Resolve an HTML asset URL to a repository-local asset when possible.
-
-    External URLs, data URLs, and fragment-only URLs are not copied or
-    fetched. Root-relative URLs are interpreted relative to repository root.
-    """
-    parsed = urlsplit(href.strip())
-
-    if not href.strip():
+    href = href.strip()
+    if not href:
         return None
 
-    if parsed.scheme.lower() in {"data", "blob", "javascript", "mailto"}:
+    parsed = urlsplit(href)
+    scheme = parsed.scheme.lower()
+
+    if scheme in {"data", "blob", "javascript", "mailto", "tel"}:
         return None
 
-    if parsed.scheme.lower() in {"http", "https"} or parsed.netloc:
+    if scheme in {"http", "https"} or parsed.netloc:
         return AssetReference(
-            kind=kind,
-            source_url=href.strip(),
-            reference_page=str(reference_page.relative_to(root)),
+            kind=kind, source_url=href,
+            reference_page=reference_page.relative_to(root).as_posix(),
             external=True,
         )
 
-    if parsed.scheme:
+    if scheme:
         return None
 
     raw_path = unquote(parsed.path)
-
     if not raw_path:
         return None
 
-    if raw_path.startswith("/"):
-        candidate = root / raw_path.lstrip("/")
-    else:
-        candidate = reference_page.parent / raw_path
-
-    candidate = candidate.resolve()
-
-    if not is_within(candidate, root):
+    candidate = local_candidate(raw_path, reference_page, root)
+    if candidate is None:
         return None
 
-    expected_suffixes = CSS_SUFFIXES if kind == "css" else JS_SUFFIXES
-
-    if candidate.suffix.lower() not in expected_suffixes:
+    suffixes = CSS_SUFFIXES if kind == "css" else JS_SUFFIXES
+    if candidate.suffix.lower() not in suffixes:
         return None
 
-    # A missing asset is still recorded as a reference, but flagged by the
-    # validation stage. We never download or fabricate the original asset.
     return AssetReference(
         kind=kind,
-        source_url=href.strip(),
-        reference_page=str(reference_page.relative_to(root)),
-        local_path=str(candidate.relative_to(root)),
+        source_url=href,
+        reference_page=reference_page.relative_to(root).as_posix(),
+        local_path=candidate.relative_to(root).as_posix(),
         external=False,
     )
 
 
 def read_reference_pages(
-    root: Path,
-    reference_dir: Path,
+    root: Path, reference_dir: Path
 ) -> tuple[list[AssetReference], list[dict[str, str]]]:
-    references: list[AssetReference] = []
+    if not reference_dir.is_dir():
+        raise FileNotFoundError(f"Reference directory does not exist: {reference_dir}")
+
+    pages = []
+    for path in reference_dir.rglob("*"):
+        if path.is_symlink() or not path.is_file():
+            continue
+        if path.suffix.lower() not in HTML_SUFFIXES or is_template_file(path):
+            continue
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if is_excluded_relative(relative):
+            continue
+        pages.append(path)
+
+    pages.sort(key=lambda p: p.relative_to(root).as_posix().casefold())
+    if not pages:
+        raise RuntimeError(f"No eligible HTML reference pages found in {reference_dir}")
+
+    refs: list[AssetReference] = []
     diagnostics: list[dict[str, str]] = []
 
-    if not reference_dir.is_dir():
-        raise FileNotFoundError(
-            f"Reference directory does not exist: {reference_dir}"
-        )
-
-    reference_pages = sorted(
-        path
-        for path in reference_dir.rglob("*")
-        if path.is_file()
-        and path.suffix.lower() in HTML_SUFFIXES
-        and not path.is_symlink()
-        and not is_template_file(path)
-        and not any(excluded_directory(part_path)
-                    for part_path in path.parents
-                    if part_path != root and part_path != reference_dir)
-    )
-
-    if not reference_pages:
-        raise RuntimeError(
-            f"No eligible HTML reference pages found in {reference_dir}"
-        )
-
-    for page in reference_pages:
+    for page in pages:
         try:
             raw = page.read_text(encoding="utf-8-sig")
         except (OSError, UnicodeError) as exc:
             diagnostics.append({
-                "page": str(page.relative_to(root)),
-                "error": f"Could not read reference page: {exc}",
+                "page": page.relative_to(root).as_posix(),
+                "severity": "error",
+                "message": f"Could not read reference HTML: {exc}",
             })
             continue
 
@@ -463,170 +327,108 @@ def read_reference_pages(
             rel = link.get("rel", [])
             if isinstance(rel, str):
                 rel = rel.split()
-
-            if "stylesheet" not in [str(item).lower() for item in rel]:
+            if "stylesheet" not in [str(x).lower() for x in rel]:
                 continue
-
-            ref = resolve_reference_asset(
-                str(link.get("href", "")), page, root, "css"
-            )
-
-            if ref is None:
-                continue
-
-            ref.integrity = link.get("integrity")
-            ref.crossorigin = link.get("crossorigin")
-            ref.media = link.get("media")
-            references.append(ref)
+            ref = resolve_reference_asset(str(link.get("href", "")), page, root, "css")
+            if ref:
+                ref.integrity = link.get("integrity")
+                ref.crossorigin = link.get("crossorigin")
+                ref.media = link.get("media")
+                ref.referrerpolicy = link.get("referrerpolicy")
+                refs.append(ref)
 
         for script in soup.find_all("script", src=True):
             script_type = str(script.get("type", "")).strip().lower()
-
-            # Import maps and non-JavaScript data scripts are not asset files.
             if script_type in {
-                "importmap",
-                "application/json",
-                "application/ld+json",
-                "text/template",
-                "text/x-template",
+                "importmap", "application/json", "application/ld+json",
+                "text/template", "text/x-template",
             }:
                 continue
+            ref = resolve_reference_asset(str(script.get("src", "")), page, root, "js")
+            if ref:
+                ref.integrity = script.get("integrity")
+                ref.crossorigin = script.get("crossorigin")
+                ref.script_type = script.get("type")
+                ref.defer = script.has_attr("defer")
+                ref.async_attr = script.has_attr("async")
+                ref.referrerpolicy = script.get("referrerpolicy")
+                refs.append(ref)
 
-            ref = resolve_reference_asset(
-                str(script.get("src", "")), page, root, "js"
-            )
-
-            if ref is None:
-                continue
-
-            ref.integrity = script.get("integrity")
-            ref.crossorigin = script.get("crossorigin")
-            ref.script_type = script.get("type")
-            ref.defer = script.has_attr("defer")
-            ref.async_attr = script.has_attr("async")
-            references.append(ref)
-
-    # Deduplicate by kind and resolved target. Keep the first reference's
-    # ordering because stylesheet and script order can affect functionality.
+    # Preserve first-seen ordering, but deduplicate equivalent local asset paths.
     unique: list[AssetReference] = []
     seen: set[tuple[str, str]] = set()
+    for ref in refs:
+        identity = (ref.kind, ref.local_path or ref.source_url)
+        if identity not in seen:
+            seen.add(identity)
+            unique.append(ref)
 
-    for reference in references:
-        identity = (
-            reference.kind,
-            reference.local_path or reference.source_url,
-        )
-
-        if identity in seen:
-            continue
-
-        seen.add(identity)
-        unique.append(reference)
+    if not unique:
+        diagnostics.append({
+            "page": reference_dir.relative_to(root).as_posix(),
+            "severity": "warning",
+            "message": "No eligible CSS or JavaScript references were found.",
+        })
 
     return unique, diagnostics
 
 
 def ensure_html_structure(soup: BeautifulSoup) -> tuple[Tag, Tag]:
     html = soup.find("html")
-
     if html is None:
         html = soup.new_tag("html")
-        old_contents = list(soup.contents)
-
-        for child in old_contents:
+        for child in list(soup.contents):
             html.append(child.extract())
-
         soup.append(html)
 
-    head = soup.find("head")
-
+    head = html.find("head", recursive=False)
     if head is None:
         head = soup.new_tag("head")
         html.insert(0, head)
 
-    body = soup.find("body")
-
+    body = html.find("body", recursive=False)
     if body is None:
         body = soup.new_tag("body")
-
         for child in list(html.contents):
-            if child is head:
-                continue
-            body.append(child.extract())
-
+            if child is not head:
+                body.append(child.extract())
         html.append(body)
 
     return head, body
 
 
-def local_url_for_target(
-    reference: AssetReference,
-    target_page: Path,
-    root: Path,
-) -> str:
-    if reference.external:
-        return reference.source_url
-
-    if not reference.local_path:
-        return reference.source_url
-
-    asset_path = root / reference.local_path
-
-    relative = os.path.relpath(
-        asset_path,
-        start=target_page.parent,
-    ).replace(os.sep, "/")
-
-    parsed = urlsplit(reference.source_url)
-
-    return urlunsplit((
-        "",
-        "",
-        relative,
-        parsed.query,
-        parsed.fragment,
-    ))
+def local_url_for_target(ref: AssetReference, target: Path, root: Path) -> str:
+    if ref.external or not ref.local_path:
+        return ref.source_url
+    asset = root / ref.local_path
+    rel = os.path.relpath(asset, start=target.parent).replace(os.sep, "/")
+    if not rel.startswith(".") and not rel.startswith("/"):
+        rel = "./" + rel
+    parsed = urlsplit(ref.source_url)
+    return urlunsplit(("", "", rel, parsed.query, parsed.fragment))
 
 
-def same_asset_url(
-    actual_url: str,
-    expected_url: str,
-    target_page: Path,
-    root: Path,
-) -> bool:
+def same_asset_url(actual_url: str, expected_url: str, target: Path, root: Path) -> bool:
     if actual_url == expected_url:
         return True
-
-    actual = urlsplit(actual_url)
-    expected = urlsplit(expected_url)
-
+    actual, expected = urlsplit(actual_url), urlsplit(expected_url)
     if actual.scheme or actual.netloc or expected.scheme or expected.netloc:
         return actual_url == expected_url
-
     if not actual.path or not expected.path:
         return False
-
-    actual_path = (target_page.parent / unquote(actual.path)).resolve()
-    expected_path = (target_page.parent / unquote(expected.path)).resolve()
-
+    try:
+        a = (target.parent / unquote(actual.path)).resolve()
+        e = (target.parent / unquote(expected.path)).resolve()
+    except (OSError, RuntimeError):
+        return False
     return (
-        is_within(actual_path, root)
-        and is_within(expected_path, root)
-        and actual_path == expected_path
-        and actual.query == expected.query
-        and actual.fragment == expected.fragment
+        is_within(a, root) and is_within(e, root) and a == e
+        and actual.query == expected.query and actual.fragment == expected.fragment
     )
-
-
-def is_reference_managed_tag(tag: Tag) -> bool:
-    marker = tag.get("data-mo-reference-sync")
-
-    return marker == "managed"
 
 
 def remove_managed_tags(soup: BeautifulSoup, kind: str) -> int:
     removed = 0
-
     for tag in list(soup.find_all(attrs={"data-mo-reference-sync": "managed"})):
         if kind == "css" and tag.name == "link":
             tag.extract()
@@ -634,243 +436,148 @@ def remove_managed_tags(soup: BeautifulSoup, kind: str) -> int:
         elif kind == "js" and tag.name == "script":
             tag.extract()
             removed += 1
-
     return removed
-
-
-def existing_css_link(
-    soup: BeautifulSoup,
-    url: str,
-    target_page: Path,
-    root: Path,
-) -> bool:
-    for link in soup.find_all("link", href=True):
-        rel = link.get("rel", [])
-        if isinstance(rel, str):
-            rel = rel.split()
-
-        if "stylesheet" not in [str(item).lower() for item in rel]:
-            continue
-
-        if same_asset_url(str(link.get("href", "")), url, target_page, root):
-            return True
-
-    return False
-
-
-def existing_script(
-    soup: BeautifulSoup,
-    url: str,
-    target_page: Path,
-    root: Path,
-) -> bool:
-    for script in soup.find_all("script", src=True):
-        if same_asset_url(str(script.get("src", "")), url, target_page, root):
-            return True
-
-    return False
 
 
 def inject_references(
     soup: BeautifulSoup,
-    target_page: Path,
+    target: Path,
     root: Path,
-    references: list[AssetReference],
+    refs: list[AssetReference],
     replace_assets: bool,
 ) -> tuple[int, int]:
     head, body = ensure_html_structure(soup)
-
     removed = 0
 
     if replace_assets:
         removed += remove_managed_tags(soup, "css")
         removed += remove_managed_tags(soup, "js")
-
-        # Remove existing linked CSS and external JS references only.
-        # Inline scripts, inline styles, JSON-LD, and import maps are retained.
+        # Explicit destructive mode: remove linked CSS and external executable JS,
+        # while retaining inline scripts, JSON-LD, import maps and data scripts.
         for link in list(soup.find_all("link", href=True)):
             rel = link.get("rel", [])
             if isinstance(rel, str):
                 rel = rel.split()
-
-            if "stylesheet" in [str(item).lower() for item in rel]:
+            if "stylesheet" in [str(x).lower() for x in rel]:
                 link.extract()
                 removed += 1
-
         for script in list(soup.find_all("script", src=True)):
-            script_type = str(script.get("type", "")).strip().lower()
-
-            if script_type in {
-                "importmap",
-                "application/json",
-                "application/ld+json",
-                "text/template",
-                "text/x-template",
+            stype = str(script.get("type", "")).strip().lower()
+            if stype in {
+                "importmap", "application/json", "application/ld+json",
+                "text/template", "text/x-template",
             }:
                 continue
-
             script.extract()
             removed += 1
 
     added = 0
-    scripts_to_add: list[Tag] = []
+    pending_scripts: list[Tag] = []
 
-    for reference in references:
-        url = local_url_for_target(reference, target_page, root)
-
-        if reference.kind == "css":
-            if existing_css_link(soup, url, target_page, root):
+    for ref in refs:
+        url = local_url_for_target(ref, target, root)
+        if ref.kind == "css":
+            if any(
+                "stylesheet" in [
+                    str(x).lower() for x in (
+                        link.get("rel", []) if not isinstance(link.get("rel", []), str)
+                        else link.get("rel", "").split()
+                    )
+                ] and same_asset_url(str(link.get("href", "")), url, target, root)
+                for link in soup.find_all("link", href=True)
+            ):
                 continue
 
-            tag = soup.new_tag("link")
-            tag["rel"] = ["stylesheet"]
-            tag["href"] = url
+            tag = soup.new_tag("link", rel="stylesheet", href=url)
             tag["data-mo-reference-sync"] = "managed"
-
-            if reference.integrity:
-                tag["integrity"] = reference.integrity
-            if reference.crossorigin:
-                tag["crossorigin"] = reference.crossorigin
-            if reference.media:
-                tag["media"] = reference.media
-
+            for attr in ("integrity", "crossorigin", "media", "referrerpolicy"):
+                value = getattr(ref, attr)
+                if value:
+                    tag[attr] = value
             head.append(tag)
             added += 1
 
-        elif reference.kind == "js":
-            if existing_script(soup, url, target_page, root):
+        elif ref.kind == "js":
+            if any(
+                same_asset_url(str(script.get("src", "")), url, target, root)
+                for script in soup.find_all("script", src=True)
+            ):
                 continue
 
-            tag = soup.new_tag("script")
-            tag["src"] = url
+            tag = soup.new_tag("script", src=url)
             tag["data-mo-reference-sync"] = "managed"
-
-            # Preserve module semantics and defer behavior when available.
-            if reference.script_type:
-                tag["type"] = reference.script_type
-            elif not reference.external:
-                # Keep classic script behavior by default.
-                pass
-
-            if reference.integrity:
-                tag["integrity"] = reference.integrity
-            if reference.crossorigin:
-                tag["crossorigin"] = reference.crossorigin
-
-            # async can reorder scripts; defer is safer for ordered assets.
-            if reference.defer:
+            if ref.script_type:
+                tag["type"] = ref.script_type
+            for attr in ("integrity", "crossorigin", "referrerpolicy"):
+                value = getattr(ref, attr)
+                if value:
+                    tag[attr] = value
+            if ref.defer:
                 tag["defer"] = True
-            elif reference.async_attr:
+            elif ref.async_attr:
                 tag["async"] = True
-            elif not reference.external:
+            elif not ref.external:
                 tag["defer"] = True
+            pending_scripts.append(tag)
 
-            scripts_to_add.append(tag)
-
-    # Scripts are inserted in the original reference order at the end of body.
-    for script in scripts_to_add:
+    for script in pending_scripts:
         body.append(script)
         added += 1
 
     return added, removed
 
 
-def create_scaffold_assets(root: Path, apply: bool) -> list[dict[str, str]]:
-    assets = {
-        root / DEFAULT_SCAFFOLD_CSS: SCAFFOLD_CSS,
-        root / DEFAULT_SCAFFOLD_JS: SCAFFOLD_JS,
-    }
-
-    outcomes: list[dict[str, str]] = []
-
-    for path, content in assets.items():
-        relative = str(path.relative_to(root))
-
-        if path.exists():
-            outcomes.append({
-                "path": relative,
-                "status": "existing",
-                "reason": "Existing asset was preserved; no overwrite performed.",
-            })
+def validate_local_assets(refs: list[AssetReference], root: Path) -> tuple[list[str], list[str]]:
+    missing: set[str] = set()
+    unsafe: set[str] = set()
+    for ref in refs:
+        if ref.external or not ref.local_path:
             continue
-
-        if not apply:
-            outcomes.append({
-                "path": relative,
-                "status": "planned",
-                "reason": "Would create missing scaffold asset.",
-            })
-            continue
-
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        temporary = path.with_name(path.name + ".mo-tmp")
-
-        try:
-            with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-                stream.write(content)
-                stream.flush()
-                os.fsync(stream.fileno())
-
-            os.replace(temporary, path)
-        finally:
-            if temporary.exists():
-                temporary.unlink()
-
-        outcomes.append({
-            "path": relative,
-            "status": "created",
-            "reason": "Missing scaffold asset created.",
-        })
-
-    return outcomes
+        candidate = root / ref.local_path
+        if not is_within(candidate, root):
+            unsafe.add(ref.local_path)
+        elif not candidate.is_file():
+            missing.add(ref.local_path)
+    return sorted(missing), sorted(unsafe)
 
 
 def backup_file(path: Path, root: Path, backup_root: Path) -> Path:
     relative = path.relative_to(root)
     destination = backup_root / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
-
     if destination.exists():
-        raise FileExistsError(
-            f"Backup already exists; refusing to overwrite it: {destination}"
-        )
-
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        destination = destination.with_name(destination.name + f".{stamp}.bak")
+        if destination.exists():
+            raise FileExistsError(f"Backup collision: {destination}")
     shutil.copy2(path, destination)
     return destination
 
 
-def write_atomic(path: Path, text: str, original_mode: int | None = None) -> None:
+def write_atomic(path: Path, data: bytes, mode: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".mo-tmp")
-
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temp = Path(temp_name)
     try:
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            stream.write(text)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-
-        if original_mode is not None:
-            os.chmod(temporary, original_mode)
-
-        os.replace(temporary, path)
-
+        if mode is not None:
+            os.chmod(temp, mode)
+        os.replace(temp, path)
     finally:
-        if temporary.exists():
-            temporary.unlink()
+        try:
+            temp.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def sync_page(
-    path: Path,
-    root: Path,
-    references: list[AssetReference],
-    apply: bool,
-    backup: bool,
-    backup_root: Path,
-    replace_assets: bool,
+    path: Path, root: Path, refs: list[AssetReference], apply: bool,
+    backup: bool, backup_root: Path, replace_assets: bool,
 ) -> PageResult:
-    result = PageResult(path=str(path.relative_to(root)), status="skipped")
-
+    result = PageResult(path=path.relative_to(root).as_posix(), status="skipped", warnings=[])
     try:
         original_bytes = path.read_bytes()
         original = original_bytes.decode("utf-8-sig")
@@ -879,193 +586,157 @@ def sync_page(
         result.reason = f"Could not read UTF-8 HTML: {exc}"
         return result
 
-    result.before_sha256 = digest(original_bytes)
-
+    result.before_sha256 = sha256(original_bytes)
     try:
         soup = BeautifulSoup(original, "html.parser")
-        added, removed = inject_references(
-            soup=soup,
-            target_page=path,
-            root=root,
-            references=references,
-            replace_assets=replace_assets,
-        )
+        added, removed = inject_references(soup, path, root, refs, replace_assets)
         updated = str(soup)
+        updated_bytes = updated.encode("utf-8")
     except Exception as exc:
         result.status = "failed"
-        result.reason = f"Could not synchronize HTML: {exc}"
+        result.reason = f"Could not prepare HTML: {type(exc).__name__}: {exc}"
         return result
 
     result.references_added = added
     result.references_removed = removed
-    updated_bytes = updated.encode("utf-8")
+    result.after_sha256 = sha256(updated_bytes)
 
     if updated_bytes == original_bytes:
         result.status = "unchanged"
-        result.after_sha256 = result.before_sha256
-        result.reason = "Page already matches the requested references."
+        result.reason = "No changes required."
         return result
-
-    result.after_sha256 = digest(updated_bytes)
 
     if not apply:
         result.status = "dry-run"
-        result.reason = "Changes proposed; no files were written."
+        result.reason = "Changes planned; no page file was written."
         return result
 
     try:
-        backup_path = None
-
-        if backup:
-            backup_path = backup_file(path, root, backup_root)
-            result.backup = str(backup_path.relative_to(root))
-
-        original_mode = path.stat().st_mode
-        write_atomic(path, updated, original_mode)
+        # Detect concurrent edits before replacing the file.
+        if sha256(path.read_bytes()) != result.before_sha256:
+            raise RuntimeError("File changed during synchronization; refusing to overwrite.")
+        backup_path = backup_file(path, root, backup_root) if backup else None
+        mode = path.stat().st_mode
+        write_atomic(path, updated_bytes, mode)
         result.status = "updated"
-        result.reason = "HTML asset references synchronized."
-
-    except OSError as exc:
+        result.reason = "HTML references synchronized."
+        if backup_path:
+            result.backup = backup_path.relative_to(root).as_posix()
+    except Exception as exc:
         result.status = "failed"
-        result.reason = f"Could not save updated HTML: {exc}"
-
+        result.reason = f"Could not save page: {type(exc).__name__}: {exc}"
     return result
+
+
+def create_scaffold_assets(root: Path, apply: bool) -> list[dict[str, str]]:
+    outcomes = []
+    for relative, content in (
+        (DEFAULT_SCAFFOLD_CSS, SCAFFOLD_CSS),
+        (DEFAULT_SCAFFOLD_JS, SCAFFOLD_JS),
+    ):
+        path = root / relative
+        if path.exists():
+            outcomes.append({
+                "path": relative.as_posix(), "status": "existing",
+                "reason": "Existing file preserved; no overwrite performed.",
+            })
+        elif not apply:
+            outcomes.append({
+                "path": relative.as_posix(), "status": "planned",
+                "reason": "Would create optional scaffold file.",
+            })
+        else:
+            try:
+                write_atomic(path, content.encode("utf-8"))
+                outcomes.append({
+                    "path": relative.as_posix(), "status": "created",
+                    "reason": "Optional scaffold file created.",
+                })
+            except OSError as exc:
+                outcomes.append({
+                    "path": relative.as_posix(), "status": "failed",
+                    "reason": str(exc),
+                })
+    return outcomes
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Synchronize nested MedOrbits HTML pages with CSS and JS references "
-            "found in the /pages reference directory."
-        )
+        description="Synchronize nested HTML asset references from /pages reference HTML."
     )
-
-    parser.add_argument(
-        "--root",
-        type=Path,
-        default=Path("."),
-        help="Repository root (default: current directory).",
-    )
-
-    parser.add_argument(
-        "--reference",
-        type=Path,
-        default=Path("pages"),
-        help="Reference HTML directory, relative to root by default.",
-    )
-
-    parser.add_argument(
-        "--apply",
-        action="store_true",
-        help="Apply changes. Default mode is dry-run.",
-    )
-
-    parser.add_argument(
-        "--backup",
-        action="store_true",
-        help="Back up each modified target HTML page.",
-    )
-
-    parser.add_argument(
-        "--replace-assets",
-        action="store_true",
-        help=(
-            "Replace linked CSS and external JS references on target pages "
-            "with references found in /pages. Inline code is preserved."
-        ),
-    )
-
-    parser.add_argument(
-        "--create-scaffold",
-        action="store_true",
-        help="Create missing shared CSS/JS scaffold assets without overwriting existing files.",
-    )
-
-    parser.add_argument(
-        "--report",
-        type=Path,
-        default=DEFAULT_REPORT,
-        help="Audit report path relative to root by default.",
-    )
-
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s {VERSION}",
-    )
-
+    parser.add_argument("--root", type=Path, default=Path("."), help="Repository root.")
+    parser.add_argument("--reference", type=Path, default=Path("pages"),
+                        help="Reference directory, relative to root unless absolute.")
+    parser.add_argument("--apply", action="store_true", help="Write changes; default is dry-run.")
+    parser.add_argument("--backup", action="store_true", help="Back up changed HTML before writing.")
+    parser.add_argument("--replace-assets", action="store_true",
+                        help="Remove existing linked stylesheets and executable external scripts before adding reference assets.")
+    parser.add_argument("--create-scaffold", action="store_true",
+                        help="Create optional CSS/JS scaffold files if missing.")
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT,
+                        help="Audit report path, relative to root unless absolute.")
+    parser.add_argument("--strict-missing-assets", action="store_true",
+                        help="Return a non-zero exit code if reference assets are missing.")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-
     try:
         root = args.root.resolve(strict=True)
     except OSError as exc:
         print(f"ERROR: Invalid repository root: {exc}", file=sys.stderr)
         return 2
-
     if not root.is_dir():
         print("ERROR: --root must be a directory.", file=sys.stderr)
         return 2
 
-    reference_dir = args.reference
-
-    if not reference_dir.is_absolute():
-        reference_dir = root / reference_dir
-
-    reference_dir = reference_dir.resolve()
-
-    if not is_within(reference_dir, root):
-        print(
-            "ERROR: The reference directory must be inside the repository.",
-            file=sys.stderr,
-        )
+    reference_dir = args.reference if args.reference.is_absolute() else root / args.reference
+    try:
+        reference_dir = reference_dir.resolve(strict=True)
+    except OSError as exc:
+        print(f"ERROR: Invalid reference directory: {exc}", file=sys.stderr)
+        return 2
+    if not reference_dir.is_dir() or not is_within(reference_dir, root):
+        print("ERROR: Reference directory must be an existing directory inside the repository.", file=sys.stderr)
         return 2
 
-    report_path = args.report
-
-    if not report_path.is_absolute():
-        report_path = root / report_path
-
+    report_path = args.report if args.report.is_absolute() else root / args.report
     report_path = report_path.resolve()
-
     if not is_within(report_path, root):
-        print(
-            "ERROR: The report path must be inside the repository.",
-            file=sys.stderr,
-        )
+        print("ERROR: Report path must be inside the repository.", file=sys.stderr)
+        return 2
+    if report_path == reference_dir or is_within(report_path, reference_dir):
+        print("ERROR: Report path cannot be inside the reference directory.", file=sys.stderr)
         return 2
 
     try:
-        references, diagnostics = read_reference_pages(root, reference_dir)
+        refs, diagnostics = read_reference_pages(root, reference_dir)
     except (OSError, RuntimeError) as exc:
         print(f"ERROR: Could not load reference pages: {exc}", file=sys.stderr)
         return 2
 
-    # Validate local references before modifying any target pages.
-    missing_assets: list[str] = []
+    missing_assets, unsafe_assets = validate_local_assets(refs, root)
+    if unsafe_assets:
+        print("ERROR: Unsafe asset paths found; refusing to continue:", file=sys.stderr)
+        for item in unsafe_assets:
+            print(f"  - {item}", file=sys.stderr)
+        return 2
 
-    for reference in references:
-        if reference.local_path:
-            asset = root / reference.local_path
-            if not asset.is_file():
-                missing_assets.append(reference.local_path)
-
-    pages = discover_html(root, reference_dir)
-
+    pages = discover_html(root, reference_dir, report_path)
     print(f"MedOrbits Page Reference Synchronizer {VERSION}")
     print(f"Repository: {root}")
     print(f"Reference directory: {reference_dir}")
     print(f"Mode: {'APPLY' if args.apply else 'DRY RUN'}")
-    print(f"Reference assets discovered: {len(references)}")
+    print(f"Reference assets discovered: {len(refs)}")
     print(f"Eligible target pages: {len(pages)}")
     print(f"Missing local reference assets: {len(missing_assets)}")
+    if args.replace_assets:
+        print("WARNING: --replace-assets is enabled; existing linked CSS/JS references may be removed.")
+    for item in missing_assets:
+        print(f"WARNING: Missing local asset: {item}")
     print()
-
-    for missing in sorted(set(missing_assets)):
-        print(f"WARNING: Referenced local asset is missing: {missing}")
 
     results: list[PageResult] = []
     failures = 0
@@ -1073,100 +744,73 @@ def main() -> int:
 
     for index, page in enumerate(pages, start=1):
         result = sync_page(
-            path=page,
-            root=root,
-            references=references,
-            apply=args.apply,
-            backup=args.backup,
-            backup_root=backup_root,
-            replace_assets=args.replace_assets,
+            page, root, refs, args.apply, args.backup, backup_root, args.replace_assets
         )
-
         results.append(result)
-
         if result.status == "failed":
             failures += 1
-
-        print(
-            f"[{index}/{len(pages)}] {result.status.upper():9} {result.path}"
-        )
-
+        print(f"[{index}/{len(pages)}] {result.status.upper():9} {result.path}")
         if result.references_added or result.references_removed:
-            print(
-                f"    Added: {result.references_added}; "
-                f"removed: {result.references_removed}"
-            )
-
+            print(f"    Added: {result.references_added}; removed: {result.references_removed}")
         if result.reason:
             print(f"    {result.reason}")
 
-    scaffold_results: list[dict[str, str]] = []
-
-    if args.create_scaffold:
-        try:
-            scaffold_results = create_scaffold_assets(root, args.apply)
-            for item in scaffold_results:
-                print(
-                    f"[{item['status'].upper()}] {item['path']}: "
-                    f"{item['reason']}"
-                )
-        except OSError as exc:
+    scaffold_results = create_scaffold_assets(root, args.apply) if args.create_scaffold else []
+    for item in scaffold_results:
+        print(f"[{item['status'].upper()}] {item['path']}: {item['reason']}")
+        if item["status"] == "failed":
             failures += 1
-            print(f"ERROR: Could not create scaffold assets: {exc}", file=sys.stderr)
 
+    summary = {
+        "target_pages": len(pages),
+        "updated": sum(x.status == "updated" for x in results),
+        "dry_run": sum(x.status == "dry-run" for x in results),
+        "unchanged": sum(x.status == "unchanged" for x in results),
+        "skipped": sum(x.status == "skipped" for x in results),
+        "failed": sum(x.status == "failed" for x in results),
+    }
     report: dict[str, Any] = {
         "tool": "MedOrbits Page Reference Synchronizer",
         "version": VERSION,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "repository_root": str(root),
-        "reference_directory": str(reference_dir.relative_to(root)),
+        "reference_directory": reference_dir.relative_to(root).as_posix(),
         "mode": "apply" if args.apply else "dry-run",
         "replace_assets": args.replace_assets,
+        "backup_enabled": args.backup,
         "root_level_html_excluded": True,
         "reference_pages_modified": False,
-        "reference_assets": [asdict(ref) for ref in references],
-        "missing_local_assets": sorted(set(missing_assets)),
+        "reference_assets": [asdict(x) for x in refs],
+        "missing_local_assets": missing_assets,
         "diagnostics": diagnostics,
         "scaffold_assets": scaffold_results,
-        "summary": {
-            "target_pages": len(pages),
-            "updated": sum(item.status == "updated" for item in results),
-            "dry_run": sum(item.status == "dry-run" for item in results),
-            "unchanged": sum(item.status == "unchanged" for item in results),
-            "skipped": sum(item.status == "skipped" for item in results),
-            "failed": failures,
-        },
-        "pages": [asdict(item) for item in results],
+        "summary": summary,
+        "pages": [asdict(x) for x in results],
     }
 
     try:
+        report_bytes = (json.dumps(report, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
         if args.apply:
-            write_atomic(
-                report_path,
-                json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-            )
+            write_atomic(report_path, report_bytes)
             print(f"\nAudit report: {report_path}")
         else:
-            print("\nDry run completed. No target HTML or asset files were written.")
-            print("Run again with --apply to make the changes.")
-
+            print("\nDry run completed. Target HTML and scaffold files were not written.")
+            print(f"Planned audit report: {report_path}")
+            print("Use --apply to write changes and persist the report.")
     except OSError as exc:
         failures += 1
         print(f"ERROR: Could not write audit report: {exc}", file=sys.stderr)
 
     print("\nSummary")
     print("-------")
-
-    for key, value in report["summary"].items():
+    for key, value in summary.items():
         print(f"{key.replace('_', ' ').title():16}: {value}")
 
-    if missing_assets:
-        print(
-            "\nWARNING: One or more reference assets are missing. "
-            "Resolve these before relying on the synchronized design."
-        )
-
-    return 1 if failures else 0
+    if failures:
+        return 1
+    if missing_assets and args.strict_missing_assets:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

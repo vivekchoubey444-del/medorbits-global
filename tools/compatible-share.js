@@ -1,37 +1,36 @@
 
-/*
- * MedOrbits Python Tool Compatibility Bridge
+/*!
+ * MedOrbits Compatible Share & API Bridge
  * File: /tools/comatible-share.js
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Connects browser pages to approved MedOrbits Python-tool API endpoints.
+ * Purpose:
+ *   Provide a safe browser-side bridge to configured MedOrbits API endpoints,
+ *   plus clipboard and native-share fallbacks.
  *
- * IMPORTANT:
- * Browsers cannot directly execute local .py files. A trusted backend must
- * expose the API routes configured below and enforce authentication,
- * authorization, CSRF protection, input validation, rate limits, and audit logs.
+ * Security:
+ *   - No eval() or dynamic code execution.
+ *   - Same-origin requests by default.
+ *   - Cross-origin requests require HTTPS and omit credentials.
+ *   - Endpoint allowlist; callers cannot provide arbitrary endpoint URLs.
+ *   - Request and response size limits.
+ *   - AbortController timeout.
+ *   - JSON-only API responses.
+ *   - Optional CSRF token from a meta tag or explicit configuration.
+ *   - UI helpers use textContent instead of HTML injection.
  *
- * This client deliberately does NOT provide arbitrary command execution,
- * arbitrary Python evaluation, or direct filesystem access.
- *
- * Example:
- *   <script src="/tools/comatible-share.js" defer></script>
- *
- * API:
- *   MedOrbitsPythonTools.status()
- *   MedOrbitsPythonTools.inspect(options)
- *   MedOrbitsPythonTools.validate(options)
- *   MedOrbitsPythonTools.organizePreview(options)
- *   MedOrbitsPythonTools.request(name, payload)
- *   MedOrbitsPythonTools.copyText(text)
- *   MedOrbitsPythonTools.sharePage()
+ * Important:
+ *   This file does not execute Python in the browser. A server-side API must
+ *   expose the configured endpoints and independently enforce authentication,
+ *   authorization, validation, CSRF protection, rate limits and path safety.
  */
 (function (global) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.0";
   const DEFAULT_TIMEOUT_MS = 20000;
-  const DEFAULT_MAX_RESPONSE_CHARS = 2000000;
+  const DEFAULT_MAX_REQUEST_BYTES = 1024 * 1024;
+  const DEFAULT_MAX_RESPONSE_CHARS = 2 * 1024 * 1024;
 
   const DEFAULT_ENDPOINTS = Object.freeze({
     status: "/status",
@@ -40,587 +39,842 @@
     organizePreview: "/organize/preview"
   });
 
-  let config = {
+  const SAFE_ENDPOINT_NAME = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+  const SAFE_HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+
+  class MedOrbitsToolsError extends Error {
+    constructor(message, code, details) {
+      super(message);
+      this.name = "MedOrbitsToolsError";
+      this.code = code || "TOOLS_ERROR";
+      if (details !== undefined) {
+        this.details = details;
+      }
+    }
+  }
+
+  let configuration = {
     baseUrl: "/api/tools",
     endpoints: Object.assign({}, DEFAULT_ENDPOINTS),
     timeoutMs: DEFAULT_TIMEOUT_MS,
+    maxRequestBytes: DEFAULT_MAX_REQUEST_BYTES,
     maxResponseChars: DEFAULT_MAX_RESPONSE_CHARS,
     credentials: "same-origin",
-    csrfToken: null,
-    headers: {}
+    csrfMetaName: "csrf-token",
+    csrfHeaderName: "X-CSRF-Token",
+    headers: {},
+    fetchImpl: null,
+    onError: null
   };
 
   function isPlainObject(value) {
-    if (value === null || typeof value !== "object") return false;
-    const proto = Object.getPrototypeOf(value);
-    return proto === Object.prototype || proto === null;
+    if (value === null || typeof value !== "object") {
+      return false;
+    }
+
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  }
+
+  function assert(condition, message, code) {
+    if (!condition) {
+      throw new MedOrbitsToolsError(message, code);
+    }
   }
 
   function normalizeBaseUrl(value) {
-    if (typeof value !== "string" || !value.trim()) {
-      throw new TypeError("baseUrl must be a non-empty string.");
-    }
+    assert(
+      typeof value === "string" && value.trim().length > 0,
+      "baseUrl must be a non-empty string.",
+      "INVALID_BASE_URL"
+    );
 
-    const trimmed = value.trim();
-    if (trimmed.startsWith("/")) return trimmed.replace(/\/+$/, "");
+    const raw = value.trim();
 
-    let parsed;
-    try {
-      parsed = new URL(trimmed, global.location && global.location.href);
-    } catch (_error) {
-      throw new TypeError("baseUrl is not a valid URL.");
-    }
-
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      throw new TypeError("Only HTTP and HTTPS API URLs are supported.");
-    }
-
-    if (
-      global.location &&
-      parsed.origin !== global.location.origin &&
-      parsed.protocol !== "https:"
-    ) {
-      throw new TypeError("Cross-origin API connections must use HTTPS.");
-    }
-
-    return parsed.href.replace(/\/+$/, "");
-  }
-
-  function normalizeEndpoint(value) {
-    if (typeof value !== "string" || !value.trim()) {
-      throw new TypeError("Endpoint paths must be non-empty strings.");
-    }
-
-    const trimmed = value.trim();
-
-    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) || trimmed.startsWith("//")) {
-      throw new TypeError(
-        "Endpoint values must be relative API paths, not full URLs."
+    if (raw.startsWith("//")) {
+      throw new MedOrbitsToolsError(
+        "Protocol-relative base URLs are not allowed.",
+        "INVALID_BASE_URL"
       );
     }
 
-    if (trimmed.split("/").includes("..")) {
-      throw new TypeError("Endpoint paths cannot contain traversal segments.");
+    let parsed;
+
+    try {
+      parsed = new URL(raw, global.location.href);
+    } catch {
+      throw new MedOrbitsToolsError(
+        "baseUrl is not a valid URL.",
+        "INVALID_BASE_URL"
+      );
     }
 
-    return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+    const sameOrigin = parsed.origin === global.location.origin;
+
+    assert(
+      sameOrigin || parsed.protocol === "https:",
+      "Cross-origin API URLs must use HTTPS.",
+      "INSECURE_CROSS_ORIGIN"
+    );
+
+    assert(
+      parsed.protocol === "https:" || parsed.origin === global.location.origin,
+      "Only HTTPS or same-origin API URLs are allowed.",
+      "INVALID_PROTOCOL"
+    );
+
+    assert(
+      !parsed.username && !parsed.password,
+      "Credentials embedded in URLs are not allowed.",
+      "URL_CREDENTIALS_FORBIDDEN"
+    );
+
+    assert(
+      !parsed.hash,
+      "URL fragments are not allowed in API base URLs.",
+      "URL_FRAGMENT_FORBIDDEN"
+    );
+
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+
+    return {
+      url: parsed,
+      sameOrigin: sameOrigin
+    };
   }
 
-  function configure(options) {
-    if (!isPlainObject(options)) {
-      throw new TypeError("configure() expects an options object.");
-    }
+  function normalizeEndpointPath(value) {
+    assert(
+      typeof value === "string" && value.trim().length > 0,
+      "Endpoint paths must be non-empty strings.",
+      "INVALID_ENDPOINT"
+    );
 
-    const next = Object.assign({}, config);
+    const path = value.trim();
 
-    if (Object.prototype.hasOwnProperty.call(options, "baseUrl")) {
-      next.baseUrl = normalizeBaseUrl(options.baseUrl);
-    }
+    assert(
+      !path.startsWith("//") &&
+        !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(path),
+      "Endpoint entries must be relative paths, not absolute URLs.",
+      "INVALID_ENDPOINT"
+    );
 
-    if (Object.prototype.hasOwnProperty.call(options, "endpoints")) {
-      if (!isPlainObject(options.endpoints)) {
-        throw new TypeError("endpoints must be an object.");
+    assert(
+      !path.includes("\\") &&
+        !path.includes("?") &&
+        !path.includes("#"),
+      "Endpoint paths cannot contain backslashes, query strings or fragments.",
+      "INVALID_ENDPOINT"
+    );
+
+    const segments = path.split("/").filter(Boolean);
+
+    assert(
+      segments.length > 0 &&
+        segments.every(function (segment) {
+          return segment !== "." &&
+            segment !== ".." &&
+            /^[A-Za-z0-9._~-]+$/.test(segment);
+        }),
+      "Endpoint path contains an invalid segment.",
+      "INVALID_ENDPOINT"
+    );
+
+    return "/" + segments.join("/");
+  }
+
+  function mergeHeaders(baseHeaders, extraHeaders) {
+    const output = Object.create(null);
+
+    function add(source) {
+      if (!source) {
+        return;
       }
 
-      next.endpoints = Object.assign({}, config.endpoints);
+      assert(
+        isPlainObject(source),
+        "Headers must be provided as a plain object.",
+        "INVALID_HEADERS"
+      );
 
-      Object.keys(options.endpoints).forEach((key) => {
-        next.endpoints[key] = normalizeEndpoint(options.endpoints[key]);
+      Object.keys(source).forEach(function (key) {
+        assert(
+          SAFE_HEADER_NAME.test(key),
+          "Invalid HTTP header name.",
+          "INVALID_HEADERS"
+        );
+
+        const value = source[key];
+
+        assert(
+          typeof value === "string" &&
+            !/[\r\n]/.test(value),
+          "Header values must be strings without line breaks.",
+          "INVALID_HEADERS"
+        );
+
+        output[key.toLowerCase()] = {
+          name: key,
+          value: value
+        };
       });
     }
 
-    if (options.timeoutMs !== undefined) {
-      const value = Number(options.timeoutMs);
+    add(baseHeaders);
+    add(extraHeaders);
 
-      if (!Number.isFinite(value) || value < 1000 || value > 120000) {
-        throw new RangeError("timeoutMs must be between 1000 and 120000.");
-      }
+    return output;
+  }
 
-      next.timeoutMs = value;
+  function getCsrfToken() {
+    if (typeof document === "undefined") {
+      return "";
     }
 
-    if (options.maxResponseChars !== undefined) {
-      const value = Number(options.maxResponseChars);
+    const meta = document.querySelector(
+      'meta[name="' + configuration.csrfMetaName + '"]'
+    );
 
-      if (
-        !Number.isInteger(value) ||
-        value < 1024 ||
-        value > 20000000
-      ) {
-        throw new RangeError(
-          "maxResponseChars must be between 1024 and 20000000."
+    return meta ? (meta.getAttribute("content") || "").trim() : "";
+  }
+
+  function safeJsonStringify(value) {
+    let serialized;
+
+    try {
+      serialized = JSON.stringify(value);
+    } catch (error) {
+      throw new MedOrbitsToolsError(
+        "Request data could not be serialized as JSON.",
+        "SERIALIZATION_FAILED",
+        { message: error.message }
+      );
+    }
+
+    assert(
+      typeof serialized === "string",
+      "Request data must be JSON-serializable.",
+      "SERIALIZATION_FAILED"
+    );
+
+    return serialized;
+  }
+
+  function byteLength(value) {
+    if (typeof TextEncoder !== "undefined") {
+      return new TextEncoder().encode(value).length;
+    }
+
+    return unescape(encodeURIComponent(value)).length;
+  }
+
+  function getFetch() {
+    const fetchFunction = configuration.fetchImpl || global.fetch;
+
+    assert(
+      typeof fetchFunction === "function",
+      "Fetch is unavailable in this environment.",
+      "FETCH_UNAVAILABLE"
+    );
+
+    return fetchFunction;
+  }
+
+  function buildEndpointUrl(endpointName) {
+    assert(
+      typeof endpointName === "string" &&
+        SAFE_ENDPOINT_NAME.test(endpointName),
+      "Invalid endpoint name.",
+      "INVALID_ENDPOINT_NAME"
+    );
+
+    const endpointPath = configuration.endpoints[endpointName];
+
+    assert(
+      typeof endpointPath === "string",
+      "Endpoint is not configured: " + endpointName,
+      "ENDPOINT_NOT_CONFIGURED"
+    );
+
+    const base = normalizeBaseUrl(configuration.baseUrl);
+    const path = normalizeEndpointPath(endpointPath);
+
+    const prefix = base.url.pathname.replace(/\/+$/, "");
+    const fullPath = (prefix || "") + path;
+
+    const result = new URL(base.url.origin);
+    result.pathname = fullPath.startsWith("/")
+      ? fullPath
+      : "/" + fullPath;
+
+    assert(
+      result.origin === global.location.origin ||
+        result.protocol === "https:",
+      "Insecure API destination rejected.",
+      "INSECURE_DESTINATION"
+    );
+
+    return {
+      url: result,
+      sameOrigin: result.origin === global.location.origin
+    };
+  }
+
+  function reportError(error, endpointName) {
+    if (typeof configuration.onError === "function") {
+      try {
+        configuration.onError(error, {
+          endpoint: endpointName,
+          version: VERSION
+        });
+      } catch {
+        // Error callbacks must not replace the original API error.
+      }
+    }
+  }
+
+  async function request(endpointName, payload, options) {
+    const opts = options || {};
+
+    assert(
+      payload === undefined || isPlainObject(payload) || Array.isArray(payload),
+      "Payload must be a plain object, array or undefined.",
+      "INVALID_PAYLOAD"
+    );
+
+    const destination = buildEndpointUrl(endpointName);
+    const fetchFunction = getFetch();
+    const controller = typeof AbortController !== "undefined"
+      ? new AbortController()
+      : null;
+
+    const timeoutMs = Number.isFinite(opts.timeoutMs)
+      ? Math.min(Math.max(opts.timeoutMs, 1000), 120000)
+      : configuration.timeoutMs;
+
+    const headersMap = mergeHeaders(
+      configuration.headers,
+      opts.headers
+    );
+
+    if (!headersMap.accept) {
+      headersMap.accept = {
+        name: "Accept",
+        value: "application/json"
+      };
+    }
+
+    let body;
+
+    if (payload !== undefined) {
+      body = safeJsonStringify(payload);
+
+      assert(
+        byteLength(body) <= configuration.maxRequestBytes,
+        "Request payload exceeds the configured size limit.",
+        "REQUEST_TOO_LARGE"
+      );
+
+      if (!headersMap["content-type"]) {
+        headersMap["content-type"] = {
+          name: "Content-Type",
+          value: "application/json"
+        };
+      }
+    }
+
+    const csrfToken = getCsrfToken();
+
+    if (csrfToken && !headersMap[configuration.csrfHeaderName.toLowerCase()]) {
+      headersMap[configuration.csrfHeaderName.toLowerCase()] = {
+        name: configuration.csrfHeaderName,
+        value: csrfToken
+      };
+    }
+
+    const headers = {};
+
+    Object.keys(headersMap).forEach(function (key) {
+      headers[headersMap[key].name] = headersMap[key].value;
+    });
+
+    const credentials = destination.sameOrigin
+      ? configuration.credentials
+      : "omit";
+
+    const fetchOptions = {
+      method: "POST",
+      headers: headers,
+      credentials: credentials,
+      redirect: "error",
+      cache: "no-store"
+    };
+
+    if (body !== undefined) {
+      fetchOptions.body = body;
+    }
+
+    if (controller) {
+      fetchOptions.signal = controller.signal;
+    }
+
+    let timeoutId;
+
+    try {
+      const timeoutPromise = new Promise(function (_, reject) {
+        timeoutId = setTimeout(function () {
+          if (controller) {
+            controller.abort();
+          }
+
+          reject(
+            new MedOrbitsToolsError(
+              "API request timed out.",
+              "REQUEST_TIMEOUT"
+            )
+          );
+        }, timeoutMs);
+      });
+
+      const response = await Promise.race([
+        fetchFunction(destination.url.href, fetchOptions),
+        timeoutPromise
+      ]);
+
+      clearTimeout(timeoutId);
+
+      assert(
+        response && typeof response.status === "number",
+        "Invalid response returned by the fetch implementation.",
+        "INVALID_RESPONSE"
+      );
+
+      const contentType = (
+        response.headers &&
+        response.headers.get("content-type")
+      ) || "";
+
+      const responseText = await response.text();
+
+      assert(
+        responseText.length <= configuration.maxResponseChars,
+        "API response exceeds the configured size limit.",
+        "RESPONSE_TOO_LARGE"
+      );
+
+      let responseData = null;
+
+      if (responseText.length > 0) {
+        assert(
+          /application\/(?:[\w.+-]*\+)?json\b/i.test(contentType),
+          "API returned a non-JSON response.",
+          "UNEXPECTED_CONTENT_TYPE"
+        );
+
+        try {
+          responseData = JSON.parse(responseText);
+        } catch {
+          throw new MedOrbitsToolsError(
+            "API returned malformed JSON.",
+            "INVALID_JSON_RESPONSE"
+          );
+        }
+      }
+
+      if (!response.ok) {
+        const message =
+          responseData &&
+          typeof responseData.message === "string"
+            ? responseData.message
+            : "API request failed with HTTP " + response.status + ".";
+
+        throw new MedOrbitsToolsError(
+          message,
+          "HTTP_ERROR",
+          {
+            status: response.status,
+            response: responseData
+          }
         );
       }
 
-      next.maxResponseChars = value;
+      return responseData;
+    } catch (error) {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+
+      let normalizedError = error;
+
+      if (
+        error &&
+        (error.name === "AbortError" || error.name === "TimeoutError")
+      ) {
+        normalizedError = new MedOrbitsToolsError(
+          "API request was cancelled or timed out.",
+          "REQUEST_ABORTED"
+        );
+      } else if (!(error instanceof MedOrbitsToolsError)) {
+        normalizedError = new MedOrbitsToolsError(
+          error && error.message
+            ? error.message
+            : "Network request failed.",
+          "NETWORK_ERROR"
+        );
+      }
+
+      reportError(normalizedError, endpointName);
+      throw normalizedError;
+    }
+  }
+
+  function configure(options) {
+    assert(
+      isPlainObject(options),
+      "Configuration must be a plain object.",
+      "INVALID_CONFIGURATION"
+    );
+
+    const next = Object.assign({}, configuration);
+
+    if (options.baseUrl !== undefined) {
+      next.baseUrl = options.baseUrl;
+    }
+
+    if (options.endpoints !== undefined) {
+      assert(
+        isPlainObject(options.endpoints),
+        "endpoints must be a plain object.",
+        "INVALID_CONFIGURATION"
+      );
+
+      const endpoints = Object.assign({}, next.endpoints);
+
+      Object.keys(options.endpoints).forEach(function (name) {
+        assert(
+          SAFE_ENDPOINT_NAME.test(name),
+          "Invalid endpoint name: " + name,
+          "INVALID_ENDPOINT_NAME"
+        );
+
+        endpoints[name] = normalizeEndpointPath(options.endpoints[name]);
+      });
+
+      next.endpoints = endpoints;
+    }
+
+    if (options.timeoutMs !== undefined) {
+      assert(
+        Number.isFinite(options.timeoutMs) &&
+          options.timeoutMs >= 1000 &&
+          options.timeoutMs <= 120000,
+        "timeoutMs must be between 1000 and 120000.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.timeoutMs = options.timeoutMs;
+    }
+
+    if (options.maxRequestBytes !== undefined) {
+      assert(
+        Number.isInteger(options.maxRequestBytes) &&
+          options.maxRequestBytes > 0 &&
+          options.maxRequestBytes <= 10 * 1024 * 1024,
+        "maxRequestBytes must be between 1 byte and 10 MB.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.maxRequestBytes = options.maxRequestBytes;
+    }
+
+    if (options.maxResponseChars !== undefined) {
+      assert(
+        Number.isInteger(options.maxResponseChars) &&
+          options.maxResponseChars > 0 &&
+          options.maxResponseChars <= 10 * 1024 * 1024,
+        "maxResponseChars must be between 1 character and 10 MB.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.maxResponseChars = options.maxResponseChars;
     }
 
     if (options.credentials !== undefined) {
-      if (!["omit", "same-origin", "include"].includes(options.credentials)) {
-        throw new TypeError("Invalid credentials mode.");
-      }
+      assert(
+        options.credentials === "same-origin" ||
+          options.credentials === "include" ||
+          options.credentials === "omit",
+        "Unsupported credentials setting.",
+        "INVALID_CONFIGURATION"
+      );
 
       next.credentials = options.credentials;
     }
 
-    if (options.csrfToken !== undefined) {
-      if (
-        options.csrfToken !== null &&
-        typeof options.csrfToken !== "string"
-      ) {
-        throw new TypeError("csrfToken must be a string or null.");
-      }
+    if (options.csrfMetaName !== undefined) {
+      assert(
+        typeof options.csrfMetaName === "string" &&
+          /^[A-Za-z0-9_-]{1,80}$/.test(options.csrfMetaName),
+        "Invalid CSRF meta tag name.",
+        "INVALID_CONFIGURATION"
+      );
 
-      next.csrfToken = options.csrfToken;
+      next.csrfMetaName = options.csrfMetaName;
+    }
+
+    if (options.csrfHeaderName !== undefined) {
+      assert(
+        typeof options.csrfHeaderName === "string" &&
+          SAFE_HEADER_NAME.test(options.csrfHeaderName),
+        "Invalid CSRF header name.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.csrfHeaderName = options.csrfHeaderName;
     }
 
     if (options.headers !== undefined) {
-      if (!isPlainObject(options.headers)) {
-        throw new TypeError("headers must be a plain object.");
-      }
-
-      const safeHeaders = {};
-
-      Object.keys(options.headers).forEach((key) => {
-        const value = String(options.headers[key]);
-
-        if (/[\r\n]/.test(key) || /[\r\n]/.test(value)) {
-          throw new TypeError("Headers cannot contain line breaks.");
-        }
-
-        safeHeaders[key] = value;
-      });
-
-      next.headers = Object.assign({}, config.headers, safeHeaders);
+      mergeHeaders(options.headers);
+      next.headers = Object.assign({}, options.headers);
     }
 
-    config = next;
+    if (options.fetchImpl !== undefined) {
+      assert(
+        typeof options.fetchImpl === "function",
+        "fetchImpl must be a function.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.fetchImpl = options.fetchImpl;
+    }
+
+    if (options.onError !== undefined) {
+      assert(
+        options.onError === null ||
+          typeof options.onError === "function",
+        "onError must be a function or null.",
+        "INVALID_CONFIGURATION"
+      );
+
+      next.onError = options.onError;
+    }
+
+    normalizeBaseUrl(next.baseUrl);
+    configuration = next;
+
     return getConfig();
   }
 
   function getConfig() {
     return Object.freeze({
       version: VERSION,
-      baseUrl: config.baseUrl,
-      endpoints: Object.assign({}, config.endpoints),
-      timeoutMs: config.timeoutMs,
-      maxResponseChars: config.maxResponseChars,
-      credentials: config.credentials
+      baseUrl: configuration.baseUrl,
+      endpoints: Object.assign({}, configuration.endpoints),
+      timeoutMs: configuration.timeoutMs,
+      maxRequestBytes: configuration.maxRequestBytes,
+      maxResponseChars: configuration.maxResponseChars,
+      credentials: configuration.credentials
     });
   }
 
-  function getCsrfTokenFromMeta() {
-    if (!global.document) return null;
+  function call(endpointName, payload, options) {
+    return request(endpointName, payload, options);
+  }
 
-    const element = global.document.querySelector(
-      'meta[name="csrf-token"]'
+  function status(payload, options) {
+    return request("status", payload || {}, options);
+  }
+
+  function inspect(payload, options) {
+    return request("inspect", payload || {}, options);
+  }
+
+  function validate(payload, options) {
+    return request("validate", payload || {}, options);
+  }
+
+  function organizePreview(payload, options) {
+    return request("organizePreview", payload || {}, options);
+  }
+
+  async function copyText(value) {
+    assert(
+      typeof value === "string",
+      "copyText requires a string.",
+      "INVALID_COPY_VALUE"
     );
-
-    return element && element.content ? element.content : null;
-  }
-
-  function makeUrl(endpoint) {
-    const safeEndpoint = normalizeEndpoint(endpoint);
-    const base = config.baseUrl.replace(/\/+$/, "");
-    return base + safeEndpoint;
-  }
-
-  async function request(endpointName, payload) {
-    if (typeof endpointName !== "string" || !endpointName.trim()) {
-      throw new TypeError("endpointName must be a string.");
-    }
-
-    const endpoint = config.endpoints[endpointName];
-
-    if (!endpoint) {
-      throw new Error(
-        "Unknown or unconfigured Python-tool endpoint: " + endpointName
-      );
-    }
-
-    if (payload !== undefined && !isPlainObject(payload)) {
-      throw new TypeError("Request payload must be a plain object.");
-    }
-
-    if (
-      typeof global.fetch !== "function" ||
-      typeof global.AbortController !== "function"
-    ) {
-      throw new Error(
-        "This browser does not support the required Fetch API."
-      );
-    }
-
-    const controller = new global.AbortController();
-
-    const timeoutId = global.setTimeout(
-      () => controller.abort(),
-      config.timeoutMs
-    );
-
-    const headers = Object.assign(
-      { Accept: "application/json" },
-      config.headers
-    );
-
-    const init = {
-      method: payload === undefined ? "GET" : "POST",
-      credentials: config.credentials,
-      headers,
-      signal: controller.signal,
-      redirect: "error",
-      cache: "no-store"
-    };
-
-    if (payload !== undefined) {
-      headers["Content-Type"] = "application/json";
-      init.body = JSON.stringify(payload);
-
-      const csrf = config.csrfToken || getCsrfTokenFromMeta();
-
-      if (csrf) {
-        headers["X-CSRF-Token"] = csrf;
-      }
-    }
-
-    let response;
-
-    try {
-      response = await global.fetch(makeUrl(endpoint), init);
-    } catch (error) {
-      if (error && error.name === "AbortError") {
-        throw new Error("Python-tool request timed out.");
-      }
-
-      throw new Error(
-        "Could not connect to the Python-tool API. Check the backend and network."
-      );
-    } finally {
-      global.clearTimeout(timeoutId);
-    }
-
-    const contentType = response.headers.get("content-type") || "";
-    const rawText = await response.text();
-
-    if (rawText.length > config.maxResponseChars) {
-      throw new Error(
-        "The API response exceeded the configured size limit."
-      );
-    }
-
-    let data = null;
-
-    if (rawText) {
-      if (!contentType.toLowerCase().includes("application/json")) {
-        throw new Error("The API returned a non-JSON response.");
-      }
-
-      try {
-        data = JSON.parse(rawText);
-      } catch (_error) {
-        throw new Error("The API returned malformed JSON.");
-      }
-    }
-
-    if (!response.ok) {
-      const message =
-        data && typeof data.message === "string"
-          ? data.message
-          : "Python-tool API request failed with HTTP " +
-            response.status +
-            ".";
-
-      const error = new Error(message);
-      error.status = response.status;
-      error.code =
-        data && typeof data.code === "string"
-          ? data.code
-          : "API_ERROR";
-
-      throw error;
-    }
-
-    return data;
-  }
-
-  function validateOptions(options) {
-    if (options === undefined) return {};
-
-    if (!isPlainObject(options)) {
-      throw new TypeError("Options must be a plain object.");
-    }
-
-    const result = {};
-
-    if (options.path !== undefined) {
-      if (typeof options.path !== "string" || !options.path.trim()) {
-        throw new TypeError("path must be a non-empty relative path.");
-      }
-
-      if (
-        options.path.startsWith("/") ||
-        options.path.includes("\\") ||
-        options.path
-          .split("/")
-          .some((part) => part === ".." || part === ".")
-      ) {
-        throw new TypeError(
-          "path must be a safe repository-relative path."
-        );
-      }
-
-      result.path = options.path;
-    }
-
-    if (options.includeHidden !== undefined) {
-      result.includeHidden = Boolean(options.includeHidden);
-    }
-
-    return result;
-  }
-
-  function status() {
-    return request("status");
-  }
-
-  function inspect(options) {
-    return request("inspect", validateOptions(options));
-  }
-
-  function validate(options) {
-    return request("validate", validateOptions(options));
-  }
-
-  function organizePreview(options) {
-    return request("organizePreview", validateOptions(options));
-  }
-
-  async function copyText(text) {
-    if (typeof text !== "string" || !text.trim()) {
-      throw new TypeError("Text to copy must be a non-empty string.");
-    }
 
     if (
       global.navigator &&
       global.navigator.clipboard &&
-      typeof global.navigator.clipboard.writeText === "function"
+      typeof global.navigator.clipboard.writeText === "function" &&
+      global.isSecureContext
     ) {
-      await global.navigator.clipboard.writeText(text);
-
-      return {
-        ok: true,
-        method: "clipboard-api"
-      };
+      try {
+        await global.navigator.clipboard.writeText(value);
+        return { copied: true, method: "clipboard" };
+      } catch {
+        // Continue to the compatibility fallback.
+      }
     }
 
-    const doc = global.document;
-
-    if (!doc || !doc.body) {
-      throw new Error("Clipboard is unavailable.");
+    if (typeof document === "undefined") {
+      throw new MedOrbitsToolsError(
+        "Clipboard is unavailable in this environment.",
+        "CLIPBOARD_UNAVAILABLE"
+      );
     }
 
-    const textarea = doc.createElement("textarea");
-    textarea.value = text;
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
     textarea.setAttribute("readonly", "");
     textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
     textarea.style.left = "-9999px";
 
-    doc.body.appendChild(textarea);
+    document.body.appendChild(textarea);
     textarea.select();
 
-    let ok = false;
+    let copied = false;
 
     try {
-      ok =
-        typeof doc.execCommand === "function" &&
-        doc.execCommand("copy");
+      copied = document.execCommand("copy");
     } finally {
       textarea.remove();
     }
 
-    if (!ok) {
-      throw new Error("Copy was blocked. Copy the text manually.");
+    if (!copied) {
+      throw new MedOrbitsToolsError(
+        "Unable to copy text. Please copy it manually.",
+        "COPY_FAILED"
+      );
     }
 
-    return {
-      ok: true,
-      method: "execCommand-fallback"
-    };
+    return { copied: true, method: "execCommand" };
   }
 
-  async function sharePage() {
-    if (!global.location || !global.document) {
-      throw new Error("Page information is unavailable.");
-    }
-
-    const description = global.document.querySelector(
-      'meta[name="description"]'
+  async function share(data) {
+    assert(
+      isPlainObject(data),
+      "share requires an object.",
+      "INVALID_SHARE_DATA"
     );
 
-    const data = {
-      title: global.document.title || "MedOrbits",
-      text: description ? description.content : "",
-      url: global.location.href
-    };
+    const shareData = {};
+
+    ["title", "text", "url"].forEach(function (key) {
+      if (data[key] !== undefined) {
+        assert(
+          typeof data[key] === "string",
+          key + " must be a string.",
+          "INVALID_SHARE_DATA"
+        );
+
+        shareData[key] = data[key];
+      }
+    });
+
+    if (shareData.url) {
+      let parsed;
+
+      try {
+        parsed = new URL(shareData.url, global.location.href);
+      } catch {
+        throw new MedOrbitsToolsError(
+          "Share URL is invalid.",
+          "INVALID_SHARE_URL"
+        );
+      }
+
+      assert(
+        parsed.protocol === "https:" ||
+          parsed.origin === global.location.origin,
+        "Share URLs must use HTTPS or the current origin.",
+        "INVALID_SHARE_URL"
+      );
+
+      shareData.url = parsed.href;
+    }
 
     if (
       global.navigator &&
       typeof global.navigator.share === "function"
     ) {
       try {
-        await global.navigator.share(data);
-
-        return {
-          ok: true,
-          method: "web-share"
-        };
+        await global.navigator.share(shareData);
+        return { shared: true, method: "native" };
       } catch (error) {
         if (error && error.name === "AbortError") {
-          return {
-            ok: false,
-            cancelled: true,
-            method: "web-share"
-          };
+          return { shared: false, cancelled: true, method: "native" };
         }
       }
     }
 
-    const copied = await copyText(data.url);
+    const fallbackText = [
+      shareData.title,
+      shareData.text,
+      shareData.url
+    ].filter(Boolean).join("\n");
+
+    await copyText(fallbackText);
 
     return {
-      ok: true,
-      method: "copy-fallback",
-      message: "Native sharing is unavailable; the page link was copied.",
-      fallback: copied.method
+      shared: false,
+      copied: true,
+      method: "clipboard-fallback"
     };
   }
 
-  function bindUi(root) {
-    const scope = root || global.document;
+  function bindText(selector, value) {
+    assert(
+      typeof selector === "string" && selector.length > 0,
+      "A selector is required.",
+      "INVALID_SELECTOR"
+    );
 
-    if (!scope || typeof scope.querySelectorAll !== "function") {
-      return;
-    }
+    assert(
+      typeof document !== "undefined",
+      "DOM is unavailable.",
+      "DOM_UNAVAILABLE"
+    );
 
-    scope.querySelectorAll("[data-python-tool]").forEach((button) => {
-      if (button.dataset.medOrbitsPythonBound === "true") return;
+    const element = document.querySelector(selector);
 
-      button.dataset.medOrbitsPythonBound = "true";
+    assert(
+      element,
+      "No element matches selector: " + selector,
+      "ELEMENT_NOT_FOUND"
+    );
 
-      button.addEventListener("click", async () => {
-        const operation = button.dataset.pythonTool;
-        const originalText = button.textContent;
-
-        button.disabled = true;
-        button.setAttribute("aria-busy", "true");
-
-        try {
-          let result;
-
-          if (operation === "status") {
-            result = await status();
-          } else if (operation === "inspect") {
-            result = await inspect({});
-          } else if (operation === "validate") {
-            result = await validate({});
-          } else if (operation === "organize-preview") {
-            result = await organizePreview({});
-          } else {
-            throw new Error("Unsupported UI operation.");
-          }
-
-          const outputSelector = button.dataset.output;
-          const output = outputSelector
-            ? scope.querySelector(outputSelector)
-            : null;
-
-          if (output) {
-            // textContent prevents response content from being interpreted as HTML.
-            output.textContent = JSON.stringify(result, null, 2);
-          }
-
-          button.dataset.result = "success";
-        } catch (error) {
-          const outputSelector = button.dataset.output;
-          const output = outputSelector
-            ? scope.querySelector(outputSelector)
-            : null;
-
-          if (output) {
-            output.textContent = error.message || "Request failed.";
-          }
-
-          button.dataset.result = "error";
-        } finally {
-          button.disabled = false;
-          button.removeAttribute("aria-busy");
-
-          if (button.dataset.restoreLabel === "true") {
-            button.textContent = originalText;
-          }
-        }
-      });
-    });
-
-    scope.querySelectorAll("[data-share-page]").forEach((button) => {
-      if (button.dataset.medOrbitsShareBound === "true") return;
-
-      button.dataset.medOrbitsShareBound = "true";
-
-      button.addEventListener("click", async () => {
-        const originalText = button.textContent;
-
-        try {
-          const result = await sharePage();
-
-          if (result.cancelled) return;
-
-          button.textContent = result.message || "Shared";
-        } catch (_error) {
-          button.textContent = "Sharing unavailable";
-        }
-
-        global.setTimeout(() => {
-          if (button.isConnected) {
-            button.textContent = originalText;
-          }
-        }, 1800);
-      });
-    });
+    element.textContent = value == null ? "" : String(value);
+    return element;
   }
 
-  const api = Object.freeze({
+  function bindJson(selector, value) {
+    return bindText(selector, JSON.stringify(value, null, 2));
+  }
+
+  const api = {
     version: VERSION,
-    configure,
-    getConfig,
-    request,
-    status,
-    inspect,
-    validate,
-    organizePreview,
-    copyText,
-    sharePage,
-    bindUi
+    configure: configure,
+    getConfig: getConfig,
+    call: call,
+    status: status,
+    inspect: inspect,
+    validate: validate,
+    organizePreview: organizePreview,
+    copyText: copyText,
+    share: share,
+    bindText: bindText,
+    bindJson: bindJson,
+    MedOrbitsToolsError: MedOrbitsToolsError
+  };
+
+  Object.defineProperty(global, "MedOrbitsPythonTools", {
+    value: Object.freeze(api),
+    configurable: false,
+    enumerable: false,
+    writable: false
   });
-
-  if (!global.MedOrbitsPythonTools) {
-    Object.defineProperty(global, "MedOrbitsPythonTools", {
-      value: api,
-      configurable: false,
-      enumerable: false,
-      writable: false
-    });
-  }
-
-  if (global.document) {
-    if (global.document.readyState === "loading") {
-      global.document.addEventListener(
-        "DOMContentLoaded",
-        () => bindUi(),
-        { once: true }
-      );
-    } else {
-      bindUi();
-    }
-  }
 })(typeof window !== "undefined" ? window : globalThis);
