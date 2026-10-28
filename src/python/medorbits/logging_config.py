@@ -1,17 +1,19 @@
 
 """MedOrbits logging configuration.
 
-Provides consistent application logging with:
-- Environment-driven log levels and formats.
-- Human-readable console logs for local development.
-- Structured JSON logs for production and log aggregation.
-- Context variables for request and correlation IDs.
-- Redaction of common credentials and personal data.
-- Safe, idempotent logger configuration.
-- Standard-library-only implementation.
+File: src/python/medorbits/logging_config.py
 
-This module configures logging only. It does not initialize application
-services, write logs to files, or transmit logs to external providers.
+Provides:
+    - Environment-driven log levels and formats.
+    - Human-readable console logs for development.
+    - Structured JSON logs for production.
+    - Request and correlation IDs using context variables.
+    - Redaction of common credentials and personal information.
+    - Safe, idempotent logger configuration.
+    - Standard-library-only implementation.
+
+This module does not initialize application services, load .env files,
+write directly to files, or transmit logs to external providers.
 """
 
 from __future__ import annotations
@@ -59,8 +61,7 @@ _correlation_id_context: ContextVar[str | None] = ContextVar(
     default=None,
 )
 
-# Keys are normalized by removing punctuation and converting to lowercase.
-_SENSITIVE_KEY_NAMES = {
+_SENSITIVE_KEY_NAMES = frozenset({
     "authorization",
     "accesstoken",
     "apikey",
@@ -87,10 +88,9 @@ _SENSITIVE_KEY_NAMES = {
     "smtp_password",
     "token",
     "webhooksecret",
-}
+})
 
 _SECRET_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    # Authorization headers and bearer tokens.
     (
         re.compile(
             r"(?i)\b(authorization\s*[:=]\s*)"
@@ -100,14 +100,13 @@ _SECRET_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"(?i)\b(password|passwd|pwd|secret|api[_-]?key|"
-            r"access[_-]?token|refresh[_-]?token|client[_-]?secret|"
-            r"database[_-]?url|private[_-]?key)"
-            r"(\s*[:=]\s*)(['\"]?)[^\s,;'\"]+\3"
+            r"""(?i)\b(password|passwd|pwd|secret|api[_-]?key|"""
+            r"""access[_-]?token|refresh[_-]?token|client[_-]?secret|"""
+            r"""database[_-]?url|private[_-]?key|smtp[_-]?password)"""
+            r"""(\s*[:=]\s*)(['"]?)[^\s,;'" ]+\3"""
         ),
         r"\1\2[REDACTED]",
     ),
-    # URL credentials, such as postgres://user:password@host/db.
     (
         re.compile(
             r"(?i)\b((?:postgres(?:ql)?|mysql|mariadb|redis|"
@@ -116,14 +115,12 @@ _SECRET_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
         ),
         r"\1[REDACTED]\3",
     ),
-    # Email addresses.
     (
         re.compile(
             r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
         ),
         "[EMAIL_REDACTED]",
     ),
-    # Likely payment card numbers. This is a heuristic, not PCI validation.
     (
         re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)"),
         "[CARD_NUMBER_REDACTED]",
@@ -135,17 +132,13 @@ _STANDARD_RECORD_KEYS = frozenset(
 )
 
 
-# ---------------------------------------------------------------------------
-# Redaction and serialization
-# ---------------------------------------------------------------------------
-
 def _normalize_key(key: Any) -> str:
-    """Normalize a structured field name for sensitive-key matching."""
+    """Normalize a field name for sensitive-key matching."""
     return re.sub(r"[^a-z0-9]", "", str(key).lower())
 
 
 def _is_sensitive_key(key: Any) -> bool:
-    """Return whether a field name indicates potentially sensitive data."""
+    """Identify common credential and sensitive-data field names."""
     normalized = _normalize_key(key)
 
     if normalized in _SENSITIVE_KEY_NAMES:
@@ -167,7 +160,7 @@ def _is_sensitive_key(key: Any) -> bool:
 
 
 def _redact_text(value: str) -> str:
-    """Redact common credentials, email addresses, and card-like numbers."""
+    """Redact common secrets and personal data from a bounded string."""
     result = value[:_MAX_TEXT_LENGTH]
 
     for pattern, replacement in _SECRET_PATTERNS:
@@ -182,7 +175,7 @@ def _safe_value(
     key: Any = None,
     depth: int = 0,
 ) -> Any:
-    """Return a bounded JSON-safe representation of a value."""
+    """Convert values to bounded, redacted JSON-safe representations."""
     if key is not None and _is_sensitive_key(key):
         return "[REDACTED]"
 
@@ -193,7 +186,7 @@ def _safe_value(
         return value
 
     if isinstance(value, float):
-        return value if math.isfinite(value) else str(value)
+        return value if math.isfinite(value) else "[NON_FINITE_NUMBER]"
 
     if isinstance(value, str):
         return _redact_text(value)
@@ -206,17 +199,21 @@ def _safe_value(
     if isinstance(value, Mapping):
         safe_mapping: dict[str, Any] = {}
 
-        for index, (item_key, item_value) in enumerate(value.items()):
-            if index >= _MAX_COLLECTION_ITEMS:
-                safe_mapping["_truncated"] = True
-                break
+        try:
+            iterator = iter(value.items())
+            for index, (item_key, item_value) in enumerate(iterator):
+                if index >= _MAX_COLLECTION_ITEMS:
+                    safe_mapping["_truncated"] = True
+                    break
 
-            safe_key = str(item_key)[:256]
-            safe_mapping[safe_key] = _safe_value(
-                item_value,
-                key=item_key,
-                depth=depth + 1,
-            )
+                safe_key = str(item_key)[:256]
+                safe_mapping[safe_key] = _safe_value(
+                    item_value,
+                    key=item_key,
+                    depth=depth + 1,
+                )
+        except Exception:
+            return "[MAPPING_UNAVAILABLE]"
 
         return safe_mapping
 
@@ -232,22 +229,23 @@ def _safe_value(
         return safe_items
 
     if isinstance(value, (set, frozenset)):
-        # Sets have no stable ordering; do not promise deterministic order.
-        items = list(value)[:_MAX_COLLECTION_ITEMS]
-        safe_items = [_safe_value(item, depth=depth + 1) for item in items]
+        # Avoid promising deterministic ordering for unordered collections.
+        safe_items = [
+            _safe_value(item, depth=depth + 1)
+            for item in list(value)[:_MAX_COLLECTION_ITEMS]
+        ]
 
         if len(value) > _MAX_COLLECTION_ITEMS:
             safe_items.append("[ITEMS_TRUNCATED]")
 
         return safe_items
 
-    # Do not call arbitrary repr() methods: they may expose secrets or execute
-    # application-defined code.
+    # Do not call arbitrary repr() methods on application-defined objects.
     return f"[UNSERIALIZABLE:{type(value).__name__}]"
 
 
 def _safe_exception(record: logging.LogRecord) -> dict[str, str] | None:
-    """Render a bounded, redacted exception payload."""
+    """Build a bounded exception payload with redacted text."""
     if record.exc_info:
         exc_type, exc_value, exc_tb = record.exc_info
 
@@ -257,11 +255,11 @@ def _safe_exception(record: logging.LogRecord) -> dict[str, str] | None:
             message = "[EXCEPTION_MESSAGE_UNAVAILABLE]"
 
         try:
-            rendered_traceback = "".join(
+            rendered = "".join(
                 traceback.format_exception(exc_type, exc_value, exc_tb)
             )
         except Exception:
-            rendered_traceback = "[TRACEBACK_UNAVAILABLE]"
+            rendered = "[TRACEBACK_UNAVAILABLE]"
 
         return {
             "type": (
@@ -270,7 +268,7 @@ def _safe_exception(record: logging.LogRecord) -> dict[str, str] | None:
                 else "Exception"
             ),
             "message": _redact_text(message)[:4_000],
-            "traceback": _redact_text(rendered_traceback)[:12_000],
+            "traceback": _redact_text(rendered)[:12_000],
         }
 
     if record.exc_text:
@@ -283,12 +281,8 @@ def _safe_exception(record: logging.LogRecord) -> dict[str, str] | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Filters
-# ---------------------------------------------------------------------------
-
 class CorrelationIdFilter(logging.Filter):
-    """Attach request and correlation IDs to each processed log record."""
+    """Attach request and correlation IDs to log records."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         request_id = request_id_context.get()
@@ -309,7 +303,7 @@ class CorrelationIdFilter(logging.Filter):
 
 
 class RedactingFilter(logging.Filter):
-    """Redact the rendered message and structured application fields."""
+    """Redact messages and structured fields before handler formatting."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         try:
@@ -317,8 +311,8 @@ class RedactingFilter(logging.Filter):
         except Exception:
             message = "[LOG_MESSAGE_FORMATTING_FAILED]"
 
-        # Render interpolation now so the original arguments cannot later
-        # reintroduce an unredacted secret through a formatter.
+        # Render and redact now so interpolation arguments cannot be rendered
+        # again by a later formatter.
         record.msg = _redact_text(message)
         record.args = ()
 
@@ -334,12 +328,8 @@ class RedactingFilter(logging.Filter):
         return True
 
 
-# ---------------------------------------------------------------------------
-# Formatters
-# ---------------------------------------------------------------------------
-
 class JsonFormatter(logging.Formatter):
-    """Format a log record as one JSON object per line."""
+    """Serialize each log record as one JSON object per line."""
 
     def format(self, record: logging.LogRecord) -> str:
         timestamp = datetime.fromtimestamp(
@@ -374,17 +364,12 @@ class JsonFormatter(logging.Formatter):
                 continue
 
             safe_key = str(key)[:256]
-
-            if _is_sensitive_key(key):
-                payload[safe_key] = "[REDACTED]"
-            else:
-                payload[safe_key] = _safe_value(value, key=key)
+            payload[safe_key] = _safe_value(value, key=key)
 
         exception = _safe_exception(record)
         if exception is not None:
             payload["exception"] = exception
 
-        # Defensive final sanitization also covers standard metadata fields.
         payload = {
             key: _safe_value(value, key=key)
             for key, value in payload.items()
@@ -399,7 +384,7 @@ class JsonFormatter(logging.Formatter):
 
 
 class ConsoleFormatter(logging.Formatter):
-    """Readable development formatter with request and correlation context."""
+    """Readable development formatter with request context."""
 
     def __init__(self) -> None:
         super().__init__(
@@ -422,15 +407,12 @@ class ConsoleFormatter(logging.Formatter):
                 exception_text = "[TRACEBACK_UNAVAILABLE]"
 
             rendered += "\n" + _redact_text(exception_text)
+
         elif record.exc_text:
             rendered += "\n" + _redact_text(record.exc_text)
 
         return _redact_text(rendered)
 
-
-# ---------------------------------------------------------------------------
-# Logger adapter and context helpers
-# ---------------------------------------------------------------------------
 
 class MedOrbitsLoggerAdapter(logging.LoggerAdapter):
     """Merge adapter context with per-call structured fields."""
@@ -453,7 +435,7 @@ class MedOrbitsLoggerAdapter(logging.LoggerAdapter):
 
 
 def _normalize_context_id(value: str | None) -> str | None:
-    """Normalize and bound a request or correlation ID."""
+    """Validate and bound a request or correlation ID."""
     if value is None:
         return None
 
@@ -465,7 +447,6 @@ def _normalize_context_id(value: str | None) -> str | None:
     if not normalized:
         return None
 
-    # Prevent control characters and multiline log injection.
     if any(ord(char) < 32 or ord(char) == 127 for char in normalized):
         raise ValueError("Context IDs must not contain control characters.")
 
@@ -473,11 +454,7 @@ def _normalize_context_id(value: str | None) -> str | None:
 
 
 def set_request_id(request_id: str | None) -> None:
-    """Set the request ID in the current execution context.
-
-    For temporary values, prefer ``log_context`` so the previous value is
-    restored automatically.
-    """
+    """Set the request ID in the current execution context."""
     request_id_context.set(_normalize_context_id(request_id))
 
 
@@ -487,7 +464,7 @@ def log_context(
     request_id: str | None = None,
     correlation_id: str | None = None,
 ) -> Iterator[None]:
-    """Temporarily set request/correlation IDs and restore prior values."""
+    """Temporarily set context IDs and restore previous values."""
     request_token = None
     correlation_token = None
 
@@ -511,12 +488,8 @@ def log_context(
             _correlation_id_context.reset(correlation_token)
 
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
 def _resolve_level(level: str | int | None) -> int:
-    """Resolve a logging level from an integer, name, or environment."""
+    """Resolve an explicit or environment-defined logging level."""
     if isinstance(level, bool):
         raise ValueError("Boolean values are not valid logging levels.")
 
@@ -525,22 +498,24 @@ def _resolve_level(level: str | int | None) -> int:
             raise ValueError("Log level must be non-negative.")
         return level
 
-    value = (
-        level
-        if level is not None
-        else os.getenv("LOG_LEVEL", _DEFAULT_LOG_LEVEL)
+    value = level if level is not None else os.getenv(
+        "LOG_LEVEL",
+        _DEFAULT_LOG_LEVEL,
     )
     normalized = str(value).strip().upper()
 
     if normalized.isdigit():
-        return int(normalized)
+        numeric_level = int(normalized)
+        if numeric_level < 0:
+            raise ValueError("Log level must be non-negative.")
+        return numeric_level
 
     resolved = logging.getLevelName(normalized)
 
     if not isinstance(resolved, int):
         raise ValueError(
-            f"Invalid LOG_LEVEL {value!r}. Use DEBUG, INFO, WARNING, "
-            "ERROR, CRITICAL, or a numeric logging level."
+            "Invalid LOG_LEVEL. Use DEBUG, INFO, WARNING, ERROR, "
+            "CRITICAL, or a numeric logging level."
         )
 
     return resolved
@@ -550,7 +525,7 @@ def _resolve_json_mode(
     json_logs: bool | None,
     environment: str,
 ) -> bool:
-    """Resolve structured logging mode from explicit settings or environment."""
+    """Resolve JSON logging mode from explicit settings or environment."""
     if json_logs is not None:
         if not isinstance(json_logs, bool):
             raise TypeError("json_logs must be True, False, or None.")
@@ -558,13 +533,13 @@ def _resolve_json_mode(
 
     explicit = os.getenv("LOG_FORMAT", "").strip().lower()
 
+    if explicit in {"json", "structured"}:
+        return True
+
+    if explicit in {"text", "console", "plain"}:
+        return False
+
     if explicit:
-        if explicit in {"json", "structured"}:
-            return True
-
-        if explicit in {"text", "console", "plain"}:
-            return False
-
         raise ValueError(
             "LOG_FORMAT must be json, structured, text, console, or plain."
         )
@@ -576,7 +551,7 @@ def _attach_filter_once(
     handler: logging.Handler,
     filter_type: type[logging.Filter],
 ) -> None:
-    """Attach one instance of a filter type to a handler."""
+    """Attach a filter only if that filter type is not already present."""
     if not any(isinstance(item, filter_type) for item in handler.filters):
         handler.addFilter(filter_type())
 
@@ -587,19 +562,14 @@ def configure_logging(
     json_logs: bool | None = None,
     force: bool = False,
 ) -> logging.Logger:
-    """Configure root logging for MedOrbits.
+    """Configure root logging.
 
     Args:
-        level: Explicit logging level. Defaults to LOG_LEVEL or INFO.
-        json_logs: Explicitly select JSON or console formatting.
+        level: Logging level, defaulting to LOG_LEVEL or INFO.
+        json_logs: Explicitly select JSON or console output.
         force: Replace existing root handlers when True.
 
-    Returns:
-        The configured root logger.
-
-    Notes:
-        Call during application startup, not per request. Use force=True only
-        when this application intentionally owns global logging configuration.
+    Call during application startup, not per request.
     """
     environment = os.getenv(
         "APP_ENV",
@@ -618,12 +588,11 @@ def configure_logging(
             try:
                 handler.close()
             except Exception:
-                # Cleanup must not prevent startup configuration.
                 pass
 
     if root_logger.handlers and not force:
-        # Preserve host-owned handlers and formatters. Attach safety/context
-        # filters so application records are enriched and redacted.
+        # Preserve host-owned formatters and handlers. The safety filters
+        # enrich records and redact values before existing formatters run.
         for handler in root_logger.handlers:
             handler.setLevel(resolved_level)
             _attach_filter_once(handler, CorrelationIdFilter)
@@ -635,10 +604,11 @@ def configure_logging(
     handler.setLevel(resolved_level)
     handler.addFilter(CorrelationIdFilter())
     handler.addFilter(RedactingFilter())
-    handler.setFormatter(JsonFormatter() if use_json else ConsoleFormatter())
+    handler.setFormatter(
+        JsonFormatter() if use_json else ConsoleFormatter()
+    )
     root_logger.addHandler(handler)
 
-    # Reduce noise from common infrastructure libraries without muting errors.
     for logger_name in ("urllib3", "httpx", "httpcore", "asyncio"):
         logging.getLogger(logger_name).setLevel(
             max(resolved_level, logging.WARNING)
@@ -664,8 +634,9 @@ def get_logger(
     if not isinstance(context, Mapping):
         raise TypeError("Logger context must be a mapping or None.")
 
-    # Preserve the original values so the handler can redact them according
-    # to field names and nested structure immediately before output.
+    if len(context) > _MAX_COLLECTION_ITEMS:
+        raise ValueError("Logger context contains too many fields.")
+
     safe_context = {
         str(key)[:256]: value
         for key, value in context.items()

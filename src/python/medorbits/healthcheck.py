@@ -1,4 +1,3 @@
-
 """MedOrbits health checks.
 
 File: src/python/medorbits/healthcheck.py
@@ -304,12 +303,9 @@ class HealthChecker:
             if outcome is False:
                 return HealthStatus.UNHEALTHY, "probe_failed"
 
-            # None, integers, strings, and other truthy/falsy values are not
-            # accepted as a successful health result.
             return HealthStatus.UNHEALTHY, "invalid_probe_result"
 
         except Exception as exc:
-            # Do not log exception text; it can contain secrets or endpoints.
             logger.warning(
                 "Health probe raised an exception: name=%s error_type=%s",
                 probe.name,
@@ -336,10 +332,12 @@ class HealthChecker:
             probes = tuple(self._probes.values())
 
         results: dict[str, ProbeResult] = {}
-        futures: dict[Future[tuple[HealthStatus, str | None]], _RegisteredProbe] = {}
+        futures: dict[
+            Future[tuple[HealthStatus, str | None]],
+            _RegisteredProbe,
+        ] = {}
 
         try:
-            # Submit all probes promptly so independent checks run concurrently.
             for probe in probes:
                 if time.monotonic() >= deadline:
                     results[probe.name] = _result_for_unrun_probe(
@@ -349,7 +347,10 @@ class HealthChecker:
                     continue
 
                 try:
-                    future = self._executor.submit(self._execute_probe, probe)
+                    future = self._executor.submit(
+                        self._execute_probe,
+                        probe,
+                    )
                 except RuntimeError:
                     results[probe.name] = _result_for_unrun_probe(
                         probe,
@@ -386,7 +387,6 @@ class HealthChecker:
                     )
 
                 except Exception as exc:
-                    # Protect the caller even from unexpected executor errors.
                     logger.warning(
                         "Health probe execution failed: name=%s error_type=%s",
                         probe.name,
@@ -403,17 +403,14 @@ class HealthChecker:
                     reason=reason,
                 )
 
-            # Preserve registration order in the public report.
             report_probes = tuple(
                 results[probe.name]
                 for probe in probes
                 if probe.name in results
             )
 
-            report_status = _aggregate_status(report_probes)
-
             return HealthReport(
-                status=report_status,
+                status=_aggregate_status(report_probes),
                 checked_at_unix=checked_at,
                 duration_ms=(time.monotonic() - started) * 1000,
                 probes=report_probes,

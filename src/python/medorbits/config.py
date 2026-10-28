@@ -1,15 +1,14 @@
 
-"""
-MedOrbits -- Python Configuration
+"""MedOrbits -- Python Configuration.
 
 File: src/python/medorbits/config.py
 
 Purpose:
     Centralize and validate configuration for MedOrbits Python services.
 
-Security principles:
+Security:
     - Never load .env files implicitly.
-    - Never log or expose secret values in representations.
+    - Never expose secret values in representations or validation errors.
     - Reject unsafe production defaults.
     - Validate configuration before initializing external services.
     - Keep configuration loading deterministic and testable.
@@ -17,10 +16,12 @@ Security principles:
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
+from pathlib import PurePath, PureWindowsPath
 from typing import Final
 from urllib.parse import urlsplit
 
@@ -42,7 +43,6 @@ DEFAULT_UPLOAD_MIME_TYPES: Final[tuple[str, ...]] = (
 DEFAULT_MAX_UPLOAD_SIZE_MB: Final[int] = 25
 DEFAULT_MAX_UPLOAD_FILES: Final[int] = 10
 DEFAULT_MAX_TOTAL_UPLOAD_SIZE_MB: Final[int] = 100
-
 DEFAULT_LOG_LEVEL: Final[str] = "INFO"
 
 SUPPORTED_LOG_LEVELS: Final[frozenset[str]] = frozenset(
@@ -61,7 +61,13 @@ MIME_TYPE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
 )
 
-CURRENCY_CODE_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Z]{3}$")
+CURRENCY_CODE_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^[A-Z]{3}$"
+)
+
+CONTROL_CHARACTERS_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]"
+)
 
 
 class ConfigurationError(ValueError):
@@ -75,7 +81,7 @@ def _get_string(
     required: bool = False,
     allow_empty: bool = False,
 ) -> str:
-    """Read and normalize a string environment variable."""
+    """Read and normalize an environment variable without exposing its value."""
     raw_value = os.environ.get(name)
 
     if raw_value is None:
@@ -87,10 +93,7 @@ def _get_string(
 
     value = raw_value.strip()
 
-    if "\x00" in value or any(
-        ord(character) < 32 and character not in "\t"
-        for character in value
-    ):
+    if CONTROL_CHARACTERS_PATTERN.search(value):
         raise ConfigurationError(
             f"Environment variable {name} contains invalid characters."
         )
@@ -192,15 +195,17 @@ def _validate_url(
     allowed_schemes: frozenset[str],
     require_host: bool = True,
 ) -> str:
-    """Validate a service URL without disclosing its value."""
-    if not value or value != value.strip():
+    """Validate a URL without disclosing its value."""
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or CONTROL_CHARACTERS_PATTERN.search(value)
+        or any(character.isspace() for character in value)
+        or "\\" in value
+    ):
         raise ConfigurationError(
             f"Environment variable {name} is not a valid URL."
-        )
-
-    if any(ord(character) < 32 or ord(character) == 127 for character in value):
-        raise ConfigurationError(
-            f"Environment variable {name} contains control characters."
         )
 
     try:
@@ -211,7 +216,9 @@ def _validate_url(
             f"Environment variable {name} is not a valid URL."
         ) from exc
 
-    if parsed.scheme.lower() not in allowed_schemes:
+    scheme = parsed.scheme.lower()
+
+    if scheme not in allowed_schemes:
         raise ConfigurationError(
             f"Environment variable {name} uses an unsupported URL scheme."
         )
@@ -236,17 +243,53 @@ def _validate_url(
             f"Environment variable {name} must not contain a URL fragment."
         )
 
+    if require_host and parsed.hostname:
+        hostname = parsed.hostname
+
+        # Reject malformed DNS labels while permitting IPv4 and IPv6 literals.
+        try:
+            ipaddress.ip_address(hostname)
+        except ValueError:
+            if (
+                len(hostname) > 253
+                or hostname.endswith(".")
+                or any(
+                    not label
+                    or len(label) > 63
+                    or label.startswith("-")
+                    or label.endswith("-")
+                    or not re.fullmatch(
+                        r"[A-Za-z0-9-]+",
+                        label,
+                    )
+                    for label in hostname.split(".")
+                )
+            ):
+                raise ConfigurationError(
+                    f"Environment variable {name} contains an invalid hostname."
+                )
+
     return value
 
 
-def _validate_origins(origins: tuple[str, ...]) -> tuple[str, ...]:
+def _validate_origins(
+    origins: tuple[str, ...],
+) -> tuple[str, ...]:
     """Validate trusted browser origins."""
     validated: list[str] = []
 
     for origin in origins:
-        if origin == "*":
+        if (
+            not isinstance(origin, str)
+            or not origin
+            or origin == "*"
+            or origin != origin.strip()
+            or CONTROL_CHARACTERS_PATTERN.search(origin)
+            or any(character.isspace() for character in origin)
+            or "\\" in origin
+        ):
             raise ConfigurationError(
-                "Wildcard CORS origins are not permitted."
+                "CORS_ALLOWED_ORIGINS contains an invalid origin."
             )
 
         try:
@@ -273,10 +316,7 @@ def _validate_origins(origins: tuple[str, ...]) -> tuple[str, ...]:
             or parsed.path not in {"", "/"}
             or parsed.query
             or parsed.fragment
-            or any(
-                ord(character) < 32 or ord(character) == 127
-                for character in origin
-            )
+            or parsed.netloc.endswith(":")
         ):
             raise ConfigurationError(
                 "CORS_ALLOWED_ORIGINS entries must be valid origins only."
@@ -287,9 +327,18 @@ def _validate_origins(origins: tuple[str, ...]) -> tuple[str, ...]:
                 "CORS_ALLOWED_ORIGINS contains an invalid port."
             )
 
-        validated.append(origin.rstrip("/"))
+        _validate_url(
+            "CORS_ALLOWED_ORIGINS",
+            origin,
+            allowed_schemes=frozenset({"http", "https"}),
+        )
 
-    return tuple(dict.fromkeys(validated))
+        normalized = origin.rstrip("/")
+
+        if normalized not in validated:
+            validated.append(normalized)
+
+    return tuple(validated)
 
 
 def _validate_mime_types(
@@ -306,16 +355,15 @@ def _validate_mime_types(
                 "UPLOAD_ALLOWED_MIME_TYPES contains an invalid MIME type."
             )
 
-        normalized.append(value)
+        if value not in normalized:
+            normalized.append(value)
 
-    result = tuple(dict.fromkeys(normalized))
-
-    if not result:
+    if not normalized:
         raise ConfigurationError(
             "At least one upload MIME type must be configured."
         )
 
-    return result
+    return tuple(normalized)
 
 
 def _validate_api_prefix(value: str) -> str:
@@ -327,10 +375,8 @@ def _validate_api_prefix(value: str) -> str:
         or "#" in value
         or "\\" in value
         or "%" in value
-        or any(
-            ord(character) < 32 or ord(character) == 127
-            for character in value
-        )
+        or CONTROL_CHARACTERS_PATTERN.search(value)
+        or any(character.isspace() for character in value)
         or any(segment in {".", ".."} for segment in value.split("/"))
         or "//" in value
     ):
@@ -340,13 +386,28 @@ def _validate_api_prefix(value: str) -> str:
 
 
 def _validate_storage_path(name: str, value: str) -> str:
-    """Reject empty paths and control characters."""
-    if not value or any(
-        ord(character) < 32 or ord(character) == 127
-        for character in value
+    """Validate a configured storage path without resolving or creating it."""
+    if (
+        not value
+        or value != value.strip()
+        or CONTROL_CHARACTERS_PATTERN.search(value)
+        or any(character.isspace() for character in value)
     ):
         raise ConfigurationError(
             f"Environment variable {name} is invalid."
+        )
+
+    # Reject Windows drive-relative and device paths even when running on Unix.
+    windows_path = PureWindowsPath(value)
+    if windows_path.drive.startswith("\\\\") or windows_path.is_absolute():
+        raise ConfigurationError(
+            f"Environment variable {name} must be a relative or platform-native path."
+        )
+
+    path = PurePath(value)
+    if any(part == ".." for part in path.parts):
+        raise ConfigurationError(
+            f"Environment variable {name} must not contain parent traversal."
         )
 
     return value
@@ -434,11 +495,14 @@ class Settings:
         if (
             not host
             or any(character.isspace() for character in host)
-            or any(ord(character) < 32 for character in host)
+            or CONTROL_CHARACTERS_PATTERN.search(host)
             or "/" in host
             or "\\" in host
+            or "://" in host
         ):
-            raise ConfigurationError("HOST contains an invalid hostname or address.")
+            raise ConfigurationError(
+                "HOST contains an invalid hostname or address."
+            )
 
         api_prefix = _validate_api_prefix(
             _get_string("API_PREFIX", "/api/v1")
@@ -454,7 +518,10 @@ class Settings:
         cors_origins = _validate_origins(
             _get_csv("CORS_ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS)
         )
-        cors_allow_credentials = _get_bool("CORS_ALLOW_CREDENTIALS", False)
+        cors_allow_credentials = _get_bool(
+            "CORS_ALLOW_CREDENTIALS",
+            False,
+        )
 
         if cors_allow_credentials and not cors_origins:
             raise ConfigurationError(
@@ -467,7 +534,10 @@ class Settings:
                     "Production requires at least one trusted CORS origin."
                 )
 
-            if any(not origin.lower().startswith("https://") for origin in cors_origins):
+            if any(
+                not origin.lower().startswith("https://")
+                for origin in cors_origins
+            ):
                 raise ConfigurationError(
                     "Production CORS origins must use HTTPS."
                 )
@@ -497,13 +567,22 @@ class Settings:
             )
 
         database_connect_timeout_seconds = _get_int(
-            "DB_CONNECT_TIMEOUT_SECONDS", 10, minimum=1, maximum=120
+            "DB_CONNECT_TIMEOUT_SECONDS",
+            10,
+            minimum=1,
+            maximum=120,
         )
         database_pool_min_size = _get_int(
-            "DB_POOL_MIN_SIZE", 1, minimum=0, maximum=100
+            "DB_POOL_MIN_SIZE",
+            1,
+            minimum=0,
+            maximum=100,
         )
         database_pool_max_size = _get_int(
-            "DB_POOL_MAX_SIZE", 10, minimum=1, maximum=500
+            "DB_POOL_MAX_SIZE",
+            10,
+            minimum=1,
+            maximum=500,
         )
 
         if database_pool_min_size > database_pool_max_size:
@@ -528,7 +607,12 @@ class Settings:
 
         email_enabled = _get_bool("EMAIL_ENABLED", False)
         smtp_host = _get_string("SMTP_HOST")
-        smtp_port = _get_int("SMTP_PORT", 587, minimum=1, maximum=65535)
+        smtp_port = _get_int(
+            "SMTP_PORT",
+            587,
+            minimum=1,
+            maximum=65535,
+        )
         smtp_username = _get_string("SMTP_USER", allow_empty=True)
         smtp_password = _get_string("SMTP_PASSWORD", allow_empty=True)
         email_from_address = _get_string("EMAIL_FROM_ADDRESS")
@@ -570,7 +654,9 @@ class Settings:
         storage_driver = _get_string("STORAGE_DRIVER", "local").lower()
 
         if storage_driver not in {"local", "s3"}:
-            raise ConfigurationError("STORAGE_DRIVER must be local or s3.")
+            raise ConfigurationError(
+                "STORAGE_DRIVER must be local or s3."
+            )
 
         storage_local_path = _validate_storage_path(
             "STORAGE_LOCAL_PATH",
@@ -685,8 +771,7 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """
-    Return cached, validated application settings.
+    """Return cached, validated application settings.
 
     Set environment variables before the first call. Tests that modify the
     environment should call get_settings.cache_clear() before retrieving

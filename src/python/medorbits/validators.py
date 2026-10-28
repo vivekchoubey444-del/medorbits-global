@@ -7,15 +7,15 @@ File: src/python/medorbits/validators.py
 Reusable validation primitives for education, admissions, applications,
 recruitment, document uploads, and career services.
 
-Security principles:
-- Validate types before operating on user-controlled values.
-- Reject malformed input instead of silently coercing it.
-- Normalize only where explicitly intended.
-- Never log submitted personal data or credential values.
-- Keep validation independent of web frameworks and database drivers.
+Security:
+    - Validate types before operating on untrusted values.
+    - Reject malformed input rather than silently coercing it.
+    - Bound input sizes, collection sizes, and numeric ranges.
+    - Never include submitted values in validation errors.
+    - Keep validation independent of web frameworks and database drivers.
 
-This module does not replace database constraints, authorization, malware
-scanning, password hashing, or business-rule checks.
+This module does not replace database constraints, authorization,
+malware scanning, password hashing, or business-rule checks.
 """
 
 from __future__ import annotations
@@ -66,9 +66,16 @@ __all__ = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Exceptions and result models
-# ---------------------------------------------------------------------------
+MAX_MAPPING_FIELDS = 200
+MAX_COLLECTION_ITEMS = 100
+MAX_IDENTIFIER_LENGTH = 128
+MAX_URL_LENGTH = 2048
+MAX_EMAIL_LENGTH = 254
+MAX_TEXT_LENGTH = 20_000
+MAX_INTEGER_DIGITS = 100
+MAX_NUMERIC_LENGTH = 128
+MAX_VALIDATION_DEPTH = 32
+
 
 class ValidationError(ValueError):
     """Raised when input fails validation."""
@@ -80,12 +87,26 @@ class ValidationError(ValueError):
         field_name: str | None = None,
         code: str = "invalid_input",
     ) -> None:
+        if not isinstance(message, str):
+            message = "Input validation failed."
+
+        if field_name is not None and (
+            not isinstance(field_name, str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", field_name)
+        ):
+            field_name = None
+
+        if not isinstance(code, str) or not re.fullmatch(
+            r"[a-z][a-z0-9_]{0,63}", code
+        ):
+            code = "invalid_input"
+
         super().__init__(message)
         self.field_name = field_name
         self.code = code
 
     def to_dict(self) -> dict[str, str]:
-        """Return an API-friendly error without submitted values."""
+        """Return a sanitized, API-friendly error."""
         result = {
             "code": self.code,
             "message": str(self),
@@ -167,16 +188,18 @@ class PasswordPolicy:
         if (
             isinstance(self.min_length, bool)
             or not isinstance(self.min_length, int)
-            or self.min_length < 1
+            or not 1 <= self.min_length <= 4096
         ):
-            raise ValueError("min_length must be a positive integer.")
+            raise ValueError("min_length must be between 1 and 4096.")
 
         if (
             isinstance(self.max_length, bool)
             or not isinstance(self.max_length, int)
-            or self.max_length < self.min_length
+            or not self.min_length <= self.max_length <= 4096
         ):
-            raise ValueError("max_length must be an integer >= min_length.")
+            raise ValueError(
+                "max_length must be >= min_length and at most 4096."
+            )
 
         for name in (
             "require_lowercase",
@@ -197,24 +220,19 @@ class Pagination:
     offset: int
 
 
-# ---------------------------------------------------------------------------
-# Constants and patterns
-# ---------------------------------------------------------------------------
-
 _EMAIL_LOCAL_PATTERN = re.compile(
     r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$"
 )
 _DOMAIN_LABEL_PATTERN = re.compile(
     r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$"
 )
-_IDENTIFIER_PATTERN = re.compile(
-    r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-)
+_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _PHONE_ALLOWED_PATTERN = re.compile(r"^[+0-9().\-\s]+$")
 _MIME_PATTERN = re.compile(
     r"^[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*/"
     r"[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*$"
 )
+_CONTROL_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 _COMMON_PASSWORDS = frozenset({
     "123456789012",
@@ -228,136 +246,46 @@ _COMMON_PASSWORDS = frozenset({
 })
 
 _APPLICATION_ALLOWED_FIELDS = frozenset({
-    "application_id",
-    "full_name",
-    "email",
-    "phone",
-    "course",
-    "course_type",
-    "qualification",
-    "date_of_birth",
-    "address",
-    "city",
-    "state",
-    "country",
-    "postal_code",
-    "institution",
-    "exam_name",
-    "exam_score",
-    "exam_rank",
-    "graduation_year",
-    "message",
-    "consent",
+    "application_id", "full_name", "email", "phone", "course",
+    "course_type", "qualification", "date_of_birth", "address",
+    "city", "state", "country", "postal_code", "institution",
+    "exam_name", "exam_score", "exam_rank", "graduation_year",
+    "message", "consent",
 })
 
 _APPLICATION_REQUIRED_FIELDS = frozenset({
-    "full_name",
-    "email",
-    "course",
+    "full_name", "email", "course",
 })
 
 _JOB_ALLOWED_FIELDS = frozenset({
-    "job_id",
-    "title",
-    "description",
-    "employment_type",
-    "location",
-    "department",
-    "experience_min_years",
-    "experience_max_years",
-    "salary_min",
-    "salary_max",
-    "currency",
-    "skills",
-    "qualifications",
-    "application_deadline",
-    "is_remote",
-    "status",
+    "job_id", "title", "description", "employment_type", "location",
+    "department", "experience_min_years", "experience_max_years",
+    "salary_min", "salary_max", "currency", "skills", "qualifications",
+    "application_deadline", "is_remote", "status",
 })
 
 _JOB_REQUIRED_FIELDS = frozenset({
-    "title",
-    "description",
-    "employment_type",
-    "location",
+    "title", "description", "employment_type", "location",
 })
 
 
-# ---------------------------------------------------------------------------
-# Normalization and text
-# ---------------------------------------------------------------------------
-
-def normalize_whitespace(value: str) -> str:
-    """Collapse consecutive whitespace and trim surrounding whitespace."""
-    if not isinstance(value, str):
-        raise ValidationError(
-            "Value must be a string.",
-            code="invalid_type",
-        )
-    return " ".join(value.split())
-
-
-def sanitize_plain_text(
-    value: str,
-    *,
-    max_length: int = 5_000,
-    allow_newlines: bool = False,
-    strip: bool = True,
-) -> str:
-    """
-    Validate plain text and reject control/formatting characters.
-
-    This is not an HTML sanitizer. Escape untrusted content at the output
-    boundary and use parameterized queries for database operations.
-    """
-    text = validate_text(
-        value,
-        field_name="text",
-        min_length=0,
-        max_length=max_length,
-        strip=strip,
-        allow_empty=True,
-        allow_newlines=allow_newlines,
+def _field_error(
+    message: str,
+    field_name: str,
+    code: str,
+) -> ValidationError:
+    return ValidationError(
+        message,
+        field_name=field_name,
+        code=code,
     )
 
-    result: list[str] = []
 
-    for char in text:
-        category = unicodedata.category(char)
-
-        if category == "Cc":
-            if allow_newlines and char in "\n\r\t":
-                result.append(char)
-                continue
-
-            raise ValidationError(
-                "Text contains unsupported control characters.",
-                field_name="text",
-                code="control_character",
-            )
-
-        if category == "Cf":
-            raise ValidationError(
-                "Text contains unsupported formatting characters.",
-                field_name="text",
-                code="formatting_character",
-            )
-
-        result.append(char)
-
-    cleaned = "".join(result)
-
-    if not allow_newlines:
-        cleaned = normalize_whitespace(cleaned)
-
-    if len(cleaned) > max_length:
-        raise ValidationError(
-            f"Text must be at most {max_length} characters.",
-            field_name="text",
-            code="max_length",
-        )
-
-    return cleaned
+def normalize_whitespace(value: str) -> str:
+    """Collapse whitespace and trim surrounding whitespace."""
+    if not isinstance(value, str):
+        raise ValidationError("Value must be a string.", code="invalid_type")
+    return " ".join(value.split())
 
 
 def validate_text(
@@ -372,64 +300,93 @@ def validate_text(
 ) -> str:
     """Validate text type, length, and control characters."""
     if not isinstance(value, str):
-        raise ValidationError(
-            "Value must be a string.",
-            field_name=field_name,
-            code="invalid_type",
-        )
+        raise _field_error("Value must be a string.", field_name, "invalid_type")
 
     if (
         isinstance(min_length, bool)
         or not isinstance(min_length, int)
-        or min_length < 0
         or isinstance(max_length, bool)
         or not isinstance(max_length, int)
+        or min_length < 0
         or max_length < min_length
+        or max_length > MAX_TEXT_LENGTH
     ):
         raise ValueError("Invalid text length limits.")
 
     text = value.strip() if strip else value
 
-    if not allow_newlines and any(char in text for char in "\r\n\t"):
-        raise ValidationError(
-            "Newlines and tabs are not allowed.",
-            field_name=field_name,
-            code="invalid_whitespace",
+    if len(text) > max_length:
+        raise _field_error(
+            f"Value must contain at most {max_length} characters.",
+            field_name,
+            "max_length",
         )
 
-    if not allow_empty and not text:
-        raise ValidationError(
-            "This field is required.",
-            field_name=field_name,
-            code="required",
+    if not allow_newlines and any(char in text for char in "\r\n\t"):
+        raise _field_error(
+            "Newlines and tabs are not allowed.",
+            field_name,
+            "invalid_whitespace",
         )
+
+    if not text and not allow_empty:
+        raise _field_error("This field is required.", field_name, "required")
 
     if len(text) < min_length and not (allow_empty and not text):
-        raise ValidationError(
+        raise _field_error(
             f"Value must contain at least {min_length} characters.",
-            field_name=field_name,
-            code="min_length",
+            field_name,
+            "min_length",
         )
 
-    if len(text) > max_length:
-        raise ValidationError(
-            f"Value must contain at most {max_length} characters.",
-            field_name=field_name,
-            code="max_length",
-        )
-
-    if any(
-        unicodedata.category(char) == "Cc"
-        and char not in "\n\r\t"
-        for char in text
-    ):
-        raise ValidationError(
-            "Value contains unsupported control characters.",
-            field_name=field_name,
-            code="control_character",
-        )
+    for char in text:
+        category = unicodedata.category(char)
+        if category == "Cc" and char not in "\n\r\t":
+            raise _field_error(
+                "Value contains unsupported control characters.",
+                field_name,
+                "control_character",
+            )
+        if category == "Cf":
+            raise _field_error(
+                "Value contains unsupported formatting characters.",
+                field_name,
+                "formatting_character",
+            )
 
     return text
+
+
+def sanitize_plain_text(
+    value: str,
+    *,
+    max_length: int = 5_000,
+    allow_newlines: bool = False,
+    strip: bool = True,
+) -> str:
+    """Normalize plain text; this is not an HTML sanitizer."""
+    text = validate_text(
+        value,
+        field_name="text",
+        min_length=0,
+        max_length=max_length,
+        strip=strip,
+        allow_empty=True,
+        allow_newlines=allow_newlines,
+    )
+
+    if allow_newlines:
+        # Preserve line breaks but reject tabs and other control characters.
+        for char in text:
+            if unicodedata.category(char) == "Cc" and char not in "\r\n":
+                raise _field_error(
+                    "Text contains unsupported control characters.",
+                    "text",
+                    "control_character",
+                )
+        return text
+
+    return normalize_whitespace(text)
 
 
 def validate_name(
@@ -438,7 +395,7 @@ def validate_name(
     field_name: str = "name",
     max_length: int = 150,
 ) -> str:
-    """Validate a person's name without restricting legitimate scripts."""
+    """Validate a person's name while supporting international scripts."""
     name = validate_text(
         value,
         field_name=field_name,
@@ -448,70 +405,45 @@ def validate_name(
     )
 
     if not any(char.isalpha() for char in name):
-        raise ValidationError(
+        raise _field_error(
             "Name must contain at least one letter.",
-            field_name=field_name,
-            code="invalid_name",
-        )
-
-    if any(unicodedata.category(char) == "Cf" for char in name):
-        raise ValidationError(
-            "Name contains unsupported formatting characters.",
-            field_name=field_name,
-            code="invalid_name",
+            field_name,
+            "invalid_name",
         )
 
     return name
 
 
-# ---------------------------------------------------------------------------
-# Email and phone
-# ---------------------------------------------------------------------------
-
 def validate_email(
     value: Any,
     *,
     allow_internationalized: bool = False,
-    max_length: int = 254,
+    max_length: int = MAX_EMAIL_LENGTH,
 ) -> EmailValidation:
-    """Validate basic email syntax; this does not verify mailbox existence."""
+    """Validate email syntax without claiming mailbox existence."""
     if not isinstance(value, str):
-        raise ValidationError(
-            "Email must be a string.",
-            field_name="email",
-            code="invalid_type",
-        )
+        raise _field_error("Email must be a string.", "email", "invalid_type")
 
     if (
         isinstance(max_length, bool)
         or not isinstance(max_length, int)
-        or max_length < 3
+        or not 3 <= max_length <= MAX_EMAIL_LENGTH
     ):
-        raise ValueError("max_length must be an integer of at least 3.")
+        raise ValueError("max_length must be between 3 and 254.")
 
     email = value.strip()
 
-    if not email or len(email) > max_length:
-        raise ValidationError(
-            "Email is required and must be within the allowed length.",
-            field_name="email",
-            code="invalid_email",
+    if (
+        not email
+        or len(email) > max_length
+        or len(email.encode("utf-8")) > max_length
+        or any(
+            char.isspace() or unicodedata.category(char).startswith("C")
+            for char in email
         )
-
-    if any(char.isspace() or unicodedata.category(char).startswith("C")
-           for char in email):
-        raise ValidationError(
-            "Email must not contain whitespace or control characters.",
-            field_name="email",
-            code="invalid_email",
-        )
-
-    if email.count("@") != 1:
-        raise ValidationError(
-            "Enter a valid email address.",
-            field_name="email",
-            code="invalid_email",
-        )
+        or email.count("@") != 1
+    ):
+        raise _field_error("Enter a valid email address.", "email", "invalid_email")
 
     local, domain = email.rsplit("@", 1)
 
@@ -523,75 +455,47 @@ def validate_email(
         or local.endswith(".")
         or ".." in local
     ):
-        raise ValidationError(
-            "Enter a valid email address.",
-            field_name="email",
-            code="invalid_email",
-        )
+        raise _field_error("Enter a valid email address.", "email", "invalid_email")
 
-    if not allow_internationalized:
-        if not _EMAIL_LOCAL_PATTERN.fullmatch(local):
-            raise ValidationError(
-                "Email contains unsupported characters.",
-                field_name="email",
-                code="invalid_email",
-            )
-    elif any(
-        unicodedata.category(char).startswith("C")
-        for char in local
-    ):
-        raise ValidationError(
+    if not allow_internationalized and not _EMAIL_LOCAL_PATTERN.fullmatch(local):
+        raise _field_error(
             "Email contains unsupported characters.",
-            field_name="email",
-            code="invalid_email",
+            "email",
+            "invalid_email",
         )
 
     try:
         ascii_domain = domain.encode("idna").decode("ascii").lower()
     except UnicodeError as exc:
-        raise ValidationError(
+        raise _field_error(
             "Email domain is invalid.",
-            field_name="email",
-            code="invalid_email",
+            "email",
+            "invalid_email",
         ) from exc
 
     if len(ascii_domain) > 253 or "." not in ascii_domain:
-        raise ValidationError(
-            "Email domain is invalid.",
-            field_name="email",
-            code="invalid_email",
-        )
+        raise _field_error("Email domain is invalid.", "email", "invalid_email")
 
     labels = ascii_domain.split(".")
-
     if any(
         not label
         or len(label) > 63
         or not _DOMAIN_LABEL_PATTERN.fullmatch(label)
         for label in labels
     ):
-        raise ValidationError(
-            "Email domain is invalid.",
-            field_name="email",
-            code="invalid_email",
-        )
+        raise _field_error("Email domain is invalid.", "email", "invalid_email")
 
-    if len(email.encode("utf-8")) > max_length:
-        raise ValidationError(
-            "Email exceeds the maximum encoded length.",
-            field_name="email",
-            code="max_length",
-        )
-
+    # Preserve local-part casing. Case-insensitive account matching is a
+    # separate application policy and should be applied consistently.
     return EmailValidation(
-        normalized=f"{local.lower()}@{ascii_domain}",
+        normalized=f"{local}@{ascii_domain}",
         local_part=local,
         domain=ascii_domain,
     )
 
 
 def normalize_email(value: str) -> str:
-    """Normalize an email for application-level comparisons."""
+    """Normalize the domain while preserving the local part."""
     return validate_email(value).normalized
 
 
@@ -602,12 +506,12 @@ def validate_phone(
     max_digits: int = 15,
     require_plus: bool = False,
 ) -> PhoneValidation:
-    """Validate basic phone syntax, not a country's numbering plan."""
+    """Validate basic phone syntax, not a country-specific numbering plan."""
     if not isinstance(value, str):
-        raise ValidationError(
+        raise _field_error(
             "Phone number must be a string.",
-            field_name="phone",
-            code="invalid_type",
+            "phone",
+            "invalid_type",
         )
 
     if (
@@ -623,34 +527,34 @@ def validate_phone(
 
     phone = value.strip()
 
-    if not phone or not _PHONE_ALLOWED_PATTERN.fullmatch(phone):
-        raise ValidationError(
+    if not phone or len(phone) > 64 or not _PHONE_ALLOWED_PATTERN.fullmatch(phone):
+        raise _field_error(
             "Phone number contains unsupported characters.",
-            field_name="phone",
-            code="invalid_phone",
+            "phone",
+            "invalid_phone",
         )
 
     if phone.count("+") > 1 or ("+" in phone and not phone.startswith("+")):
-        raise ValidationError(
+        raise _field_error(
             "The plus sign may appear only at the beginning.",
-            field_name="phone",
-            code="invalid_phone",
+            "phone",
+            "invalid_phone",
         )
 
     digits = "".join(char for char in phone if char.isdigit())
 
     if not min_digits <= len(digits) <= max_digits:
-        raise ValidationError(
+        raise _field_error(
             f"Phone number must contain {min_digits}–{max_digits} digits.",
-            field_name="phone",
-            code="invalid_phone_length",
+            "phone",
+            "invalid_phone_length",
         )
 
     if require_plus and not phone.startswith("+"):
-        raise ValidationError(
+        raise _field_error(
             "Include the international dialing prefix.",
-            field_name="phone",
-            code="country_code_required",
+            "phone",
+            "country_code_required",
         )
 
     return PhoneValidation(
@@ -659,76 +563,59 @@ def validate_phone(
     )
 
 
-# ---------------------------------------------------------------------------
-# Passwords and identifiers
-# ---------------------------------------------------------------------------
-
 def validate_password(
     value: Any,
     *,
     policy: PasswordPolicy | None = None,
 ) -> str:
-    """Validate a password without trimming, changing, or returning secrets in errors."""
+    """Validate a password without modifying it or exposing its value."""
     if not isinstance(value, str):
-        raise ValidationError(
+        raise _field_error(
             "Password must be a string.",
-            field_name="password",
-            code="invalid_type",
+            "password",
+            "invalid_type",
         )
 
     rules = policy or PasswordPolicy()
 
     if not rules.min_length <= len(value) <= rules.max_length:
-        raise ValidationError(
-            f"Password must be {rules.min_length}–{rules.max_length} "
-            "characters long.",
-            field_name="password",
-            code="invalid_password_length",
+        raise _field_error(
+            f"Password must be {rules.min_length}–{rules.max_length} characters long.",
+            "password",
+            "invalid_password_length",
         )
 
     if rules.reject_whitespace and any(char.isspace() for char in value):
-        raise ValidationError(
+        raise _field_error(
             "Password must not contain whitespace.",
-            field_name="password",
-            code="password_whitespace",
+            "password",
+            "password_whitespace",
         )
 
-    if rules.require_lowercase and not any(char.islower() for char in value):
-        raise ValidationError(
-            "Password must contain a lowercase letter.",
-            field_name="password",
-            code="password_lowercase",
-        )
+    checks = (
+        (rules.require_lowercase, any(char.islower() for char in value), "lowercase"),
+        (rules.require_uppercase, any(char.isupper() for char in value), "uppercase"),
+        (rules.require_digit, any(char.isdigit() for char in value), "digit"),
+        (
+            rules.require_symbol,
+            any(not char.isalnum() and not char.isspace() for char in value),
+            "symbol",
+        ),
+    )
 
-    if rules.require_uppercase and not any(char.isupper() for char in value):
-        raise ValidationError(
-            "Password must contain an uppercase letter.",
-            field_name="password",
-            code="password_uppercase",
-        )
-
-    if rules.require_digit and not any(char.isdigit() for char in value):
-        raise ValidationError(
-            "Password must contain a digit.",
-            field_name="password",
-            code="password_digit",
-        )
-
-    if rules.require_symbol and not any(
-        not char.isalnum() and not char.isspace()
-        for char in value
-    ):
-        raise ValidationError(
-            "Password must contain a symbol.",
-            field_name="password",
-            code="password_symbol",
-        )
+    for required, satisfied, label in checks:
+        if required and not satisfied:
+            raise _field_error(
+                f"Password must contain a {label}.",
+                "password",
+                f"password_{label}",
+            )
 
     if rules.reject_common_passwords and value.casefold() in _COMMON_PASSWORDS:
-        raise ValidationError(
+        raise _field_error(
             "Choose a less common password.",
-            field_name="password",
-            code="common_password",
+            "password",
+            "common_password",
         )
 
     return value
@@ -739,15 +626,15 @@ def validate_identifier(
     *,
     field_name: str = "identifier",
     min_length: int = 1,
-    max_length: int = 128,
+    max_length: int = MAX_IDENTIFIER_LENGTH,
     allow_colon: bool = True,
 ) -> str:
     """Validate a compact identifier, not a filesystem path."""
     if not isinstance(value, str):
-        raise ValidationError(
+        raise _field_error(
             "Identifier must be a string.",
-            field_name=field_name,
-            code="invalid_type",
+            field_name,
+            "invalid_type",
         )
 
     if (
@@ -757,44 +644,31 @@ def validate_identifier(
         or not isinstance(max_length, int)
         or min_length < 1
         or max_length < min_length
+        or max_length > MAX_IDENTIFIER_LENGTH
     ):
         raise ValueError("Invalid identifier length limits.")
 
     identifier = value.strip()
-
-    if not min_length <= len(identifier) <= max_length:
-        raise ValidationError(
-            f"Identifier must be {min_length}–{max_length} characters.",
-            field_name=field_name,
-            code="invalid_identifier_length",
-        )
-
     pattern = (
         _IDENTIFIER_PATTERN
         if allow_colon
         else re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
     )
 
-    if not pattern.fullmatch(identifier) or ".." in identifier:
-        raise ValidationError(
-            "Identifier contains unsupported characters.",
-            field_name=field_name,
-            code="invalid_identifier",
-        )
-
-    if identifier.endswith("."):
-        raise ValidationError(
-            "Identifier contains an invalid sequence.",
-            field_name=field_name,
-            code="invalid_identifier",
+    if (
+        not min_length <= len(identifier) <= max_length
+        or not pattern.fullmatch(identifier)
+        or ".." in identifier
+        or identifier.endswith(".")
+    ):
+        raise _field_error(
+            "Identifier contains unsupported characters or length.",
+            field_name,
+            "invalid_identifier",
         )
 
     return identifier
 
-
-# ---------------------------------------------------------------------------
-# Numbers, booleans, dates, and enumerations
-# ---------------------------------------------------------------------------
 
 def validate_integer(
     value: Any,
@@ -803,37 +677,45 @@ def validate_integer(
     minimum: int | None = None,
     maximum: int | None = None,
 ) -> int:
-    """Validate an integer, rejecting booleans and decimal strings."""
+    """Validate an integer without accepting booleans or decimal strings."""
     if isinstance(value, bool):
-        raise ValidationError(
-            "Value must be an integer.",
-            field_name=field_name,
-            code="invalid_type",
-        )
+        raise _field_error("Value must be an integer.", field_name, "invalid_type")
 
     if isinstance(value, int):
         number = value
-    elif isinstance(value, str) and re.fullmatch(r"-?\d+", value.strip()):
-        number = int(value.strip())
+    elif isinstance(value, str):
+        candidate = value.strip()
+        if len(candidate.lstrip("-")) > MAX_INTEGER_DIGITS or not re.fullmatch(
+            r"-?\d+", candidate
+        ):
+            raise _field_error(
+                "Value must be an integer.",
+                field_name,
+                "invalid_integer",
+            )
+        try:
+            number = int(candidate)
+        except ValueError as exc:
+            raise _field_error(
+                "Value must be an integer.",
+                field_name,
+                "invalid_integer",
+            ) from exc
     else:
-        raise ValidationError(
-            "Value must be an integer.",
-            field_name=field_name,
-            code="invalid_integer",
-        )
+        raise _field_error("Value must be an integer.", field_name, "invalid_integer")
 
     if minimum is not None and number < minimum:
-        raise ValidationError(
+        raise _field_error(
             f"Value must be at least {minimum}.",
-            field_name=field_name,
-            code="below_minimum",
+            field_name,
+            "below_minimum",
         )
 
     if maximum is not None and number > maximum:
-        raise ValidationError(
+        raise _field_error(
             f"Value must be at most {maximum}.",
-            field_name=field_name,
-            code="above_maximum",
+            field_name,
+            "above_maximum",
         )
 
     return number
@@ -847,49 +729,57 @@ def validate_number(
     maximum: float | Decimal | None = None,
     decimal_places: int | None = None,
 ) -> Decimal:
-    """Validate a finite numeric value and return Decimal for precision."""
+    """Validate a finite number and return Decimal for predictable precision."""
     if isinstance(value, bool) or value is None:
-        raise ValidationError(
-            "Value must be numeric.",
-            field_name=field_name,
-            code="invalid_number",
-        )
+        raise _field_error("Value must be numeric.", field_name, "invalid_number")
 
     if isinstance(value, float) and not math.isfinite(value):
-        raise ValidationError(
+        raise _field_error(
             "Value must be finite.",
-            field_name=field_name,
-            code="non_finite_number",
+            field_name,
+            "non_finite_number",
+        )
+
+    if not isinstance(value, (str, int, float, Decimal)):
+        raise _field_error("Value must be numeric.", field_name, "invalid_number")
+
+    raw = str(value).strip()
+
+    if len(raw) > MAX_NUMERIC_LENGTH:
+        raise _field_error(
+            "Numeric value is too long.",
+            field_name,
+            "invalid_number",
         )
 
     try:
-        number = Decimal(str(value).strip())
-    except (InvalidOperation, ValueError, AttributeError) as exc:
-        raise ValidationError(
+        number = Decimal(raw)
+    except (InvalidOperation, ValueError) as exc:
+        raise _field_error(
             "Value must be numeric.",
-            field_name=field_name,
-            code="invalid_number",
+            field_name,
+            "invalid_number",
         ) from exc
 
     if not number.is_finite():
-        raise ValidationError(
+        raise _field_error(
             "Value must be finite.",
-            field_name=field_name,
-            code="non_finite_number",
+            field_name,
+            "non_finite_number",
         )
 
     if minimum is not None and number < Decimal(str(minimum)):
-        raise ValidationError(
+        raise _field_error(
             f"Value must be at least {minimum}.",
-            field_name=field_name,
-            code="below_minimum",
+            field_name,
+            "below_minimum",
         )
 
     if maximum is not None and number > Decimal(str(maximum)):
-        raise ValidationError(
+        raise _field_error(
             f"Value must be at most {maximum}.",
-            field_name=field_name,
-            code="above_maximum",
+            field_name,
+            "above_maximum",
         )
 
     if decimal_places is not None:
@@ -897,33 +787,24 @@ def validate_number(
             isinstance(decimal_places, bool)
             or not isinstance(decimal_places, int)
             or decimal_places < 0
+            or decimal_places > 100
         ):
-            raise ValueError(
-                "decimal_places must be a non-negative integer."
-            )
+            raise ValueError("decimal_places must be between 0 and 100.")
 
         if max(0, -number.as_tuple().exponent) > decimal_places:
-            raise ValidationError(
+            raise _field_error(
                 f"Value may have at most {decimal_places} decimal places.",
-                field_name=field_name,
-                code="decimal_places",
+                field_name,
+                "decimal_places",
             )
 
     return number
 
 
-def validate_boolean(
-    value: Any,
-    *,
-    field_name: str = "value",
-) -> bool:
-    """Accept only an actual Python boolean."""
+def validate_boolean(value: Any, *, field_name: str = "value") -> bool:
+    """Accept only an actual boolean."""
     if not isinstance(value, bool):
-        raise ValidationError(
-            "Value must be a boolean.",
-            field_name=field_name,
-            code="invalid_boolean",
-        )
+        raise _field_error("Value must be a boolean.", field_name, "invalid_boolean")
     return value
 
 
@@ -933,13 +814,13 @@ def validate_date(
     field_name: str = "date",
     allow_datetime: bool = False,
 ) -> date:
-    """Validate a date object or a strict ISO YYYY-MM-DD string."""
+    """Validate a date object or strict ISO YYYY-MM-DD string."""
     if isinstance(value, datetime):
         if not allow_datetime:
-            raise ValidationError(
+            raise _field_error(
                 "A date is required, not a datetime.",
-                field_name=field_name,
-                code="invalid_date",
+                field_name,
+                "invalid_date",
             )
         return value.date()
 
@@ -947,10 +828,10 @@ def validate_date(
         return value
 
     if not isinstance(value, str):
-        raise ValidationError(
+        raise _field_error(
             "Date must be an ISO YYYY-MM-DD string.",
-            field_name=field_name,
-            code="invalid_date",
+            field_name,
+            "invalid_date",
         )
 
     candidate = value.strip()
@@ -958,17 +839,17 @@ def validate_date(
     try:
         parsed = date.fromisoformat(candidate)
     except ValueError as exc:
-        raise ValidationError(
+        raise _field_error(
             "Date must use YYYY-MM-DD format.",
-            field_name=field_name,
-            code="invalid_date",
+            field_name,
+            "invalid_date",
         ) from exc
 
     if parsed.isoformat() != candidate:
-        raise ValidationError(
+        raise _field_error(
             "Date must use YYYY-MM-DD format.",
-            field_name=field_name,
-            code="invalid_date",
+            field_name,
+            "invalid_date",
         )
 
     return parsed
@@ -981,49 +862,41 @@ def validate_enum(
     field_name: str = "value",
     case_sensitive: bool = False,
 ) -> str:
-    """Validate against an enum or sequence of allowed strings."""
+    """Validate a string against allowed values or an Enum."""
     if isinstance(allowed_values, type) and issubclass(allowed_values, Enum):
         allowed = [item.value for item in allowed_values]
     else:
+        if isinstance(allowed_values, (str, bytes)):
+            raise ValueError("allowed_values must be a sequence of strings.")
         allowed = list(allowed_values)
 
-    if not allowed or any(not isinstance(item, str) for item in allowed):
-        raise ValueError("allowed_values must contain strings.")
+    if (
+        not allowed
+        or len(allowed) > MAX_COLLECTION_ITEMS
+        or any(not isinstance(item, str) for item in allowed)
+    ):
+        raise ValueError("allowed_values must contain 1–100 strings.")
 
     if not isinstance(value, str):
-        raise ValidationError(
-            "Value must be a string.",
-            field_name=field_name,
-            code="invalid_type",
-        )
+        raise _field_error("Value must be a string.", field_name, "invalid_type")
 
     candidate = value.strip()
 
     if case_sensitive:
-        return candidate if candidate in allowed else _raise_invalid_choice(
-            field_name
-        )
+        if candidate in allowed:
+            return candidate
+    else:
+        lookup = {item.casefold(): item for item in allowed}
+        matched = lookup.get(candidate.casefold())
+        if matched is not None:
+            return matched
 
-    lookup = {item.casefold(): item for item in allowed}
-    matched = lookup.get(candidate.casefold())
-
-    if matched is None:
-        return _raise_invalid_choice(field_name)
-
-    return matched
-
-
-def _raise_invalid_choice(field_name: str) -> Any:
-    raise ValidationError(
+    raise _field_error(
         "Value is not an allowed option.",
-        field_name=field_name,
-        code="invalid_choice",
+        field_name,
+        "invalid_choice",
     )
 
-
-# ---------------------------------------------------------------------------
-# URLs
-# ---------------------------------------------------------------------------
 
 def validate_url(
     value: Any,
@@ -1032,55 +905,37 @@ def validate_url(
     allowed_schemes: Sequence[str] = ("https",),
     allow_localhost: bool = False,
     allow_ip_address: bool = False,
-    max_length: int = 2_048,
+    max_length: int = MAX_URL_LENGTH,
 ) -> str:
     """
     Validate an absolute URL.
 
-    This function does not resolve DNS or prevent SSRF by itself. For
-    server-side fetching, use a host allowlist, block private/reserved
-    destination addresses, and revalidate redirect targets.
+    This does not prevent SSRF. Server-side fetchers must additionally enforce
+    destination allowlists, resolve and block non-public IPs, and revalidate
+    every redirect.
     """
     if not isinstance(value, str):
-        raise ValidationError(
-            "URL must be a string.",
-            field_name=field_name,
-            code="invalid_type",
-        )
+        raise _field_error("URL must be a string.", field_name, "invalid_type")
 
     if (
         isinstance(max_length, bool)
         or not isinstance(max_length, int)
-        or max_length < 1
+        or not 1 <= max_length <= MAX_URL_LENGTH
     ):
-        raise ValueError("max_length must be a positive integer.")
+        raise ValueError("max_length must be between 1 and 2048.")
 
     url = value.strip()
 
-    if not url or len(url) > max_length:
-        raise ValidationError(
-            "URL is required and must be within the allowed length.",
-            field_name=field_name,
-            code="invalid_url",
-        )
+    if (
+        not url
+        or len(url) > max_length
+        or "\\" in url
+        or any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in url)
+    ):
+        raise _field_error("URL is malformed.", field_name, "invalid_url")
 
-    if any(ord(char) < 32 or char.isspace() for char in url):
-        raise ValidationError(
-            "URL must not contain whitespace or control characters.",
-            field_name=field_name,
-            code="invalid_url",
-        )
-
-    try:
-        parts = urlsplit(url)
-        port = parts.port
-        hostname = parts.hostname
-    except ValueError as exc:
-        raise ValidationError(
-            "URL is malformed.",
-            field_name=field_name,
-            code="invalid_url",
-        ) from exc
+    if isinstance(allowed_schemes, (str, bytes)):
+        raise ValueError("allowed_schemes must be a sequence of strings.")
 
     schemes = {
         scheme.lower()
@@ -1088,26 +943,45 @@ def validate_url(
         if isinstance(scheme, str)
     }
 
+    if not schemes or any(
+        not re.fullmatch(r"[a-z][a-z0-9+.-]*", scheme)
+        for scheme in schemes
+    ):
+        raise ValueError("allowed_schemes contains an invalid scheme.")
+
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+        hostname = parts.hostname
+    except ValueError as exc:
+        raise _field_error("URL is malformed.", field_name, "invalid_url") from exc
+
     if parts.scheme.lower() not in schemes:
-        raise ValidationError(
+        raise _field_error(
             "URL scheme is not permitted.",
-            field_name=field_name,
-            code="invalid_url_scheme",
+            field_name,
+            "invalid_url_scheme",
         )
 
     if not parts.netloc or not hostname:
-        raise ValidationError(
-            "URL must include a hostname.",
-            field_name=field_name,
-            code="invalid_url",
-        )
+        raise _field_error("URL must include a hostname.", field_name, "invalid_url")
 
     if parts.username is not None or parts.password is not None:
-        raise ValidationError(
+        raise _field_error(
             "URLs containing embedded credentials are not allowed.",
-            field_name=field_name,
-            code="url_credentials",
+            field_name,
+            "url_credentials",
         )
+
+    if parts.fragment:
+        raise _field_error(
+            "URL fragments are not allowed.",
+            field_name,
+            "url_fragment",
+        )
+
+    if port is not None and not 1 <= port <= 65535:
+        raise _field_error("URL port is invalid.", field_name, "invalid_port")
 
     normalized_host = hostname.rstrip(".").lower()
 
@@ -1115,45 +989,58 @@ def validate_url(
         normalized_host == "localhost"
         or normalized_host.endswith(".localhost")
     ) and not allow_localhost:
-        raise ValidationError(
+        raise _field_error(
             "Localhost URLs are not allowed.",
-            field_name=field_name,
-            code="local_hostname",
+            field_name,
+            "local_hostname",
         )
 
     try:
-        parsed_ip = ipaddress.ip_address(normalized_host)
+        address = ipaddress.ip_address(normalized_host)
     except ValueError:
-        parsed_ip = None
+        address = None
 
-    if parsed_ip is not None:
+    if address is not None:
         if not allow_ip_address:
-            raise ValidationError(
+            raise _field_error(
                 "IP-address URLs are not allowed.",
-                field_name=field_name,
-                code="ip_address_not_allowed",
+                field_name,
+                "ip_address_not_allowed",
             )
-
-        if not parsed_ip.is_global:
-            raise ValidationError(
+        if not address.is_global:
+            raise _field_error(
                 "Non-public IP addresses are not allowed.",
-                field_name=field_name,
-                code="non_public_ip",
+                field_name,
+                "non_public_ip",
             )
+    else:
+        try:
+            ascii_host = normalized_host.encode("idna").decode("ascii")
+        except UnicodeError as exc:
+            raise _field_error(
+                "URL hostname is invalid.",
+                field_name,
+                "invalid_hostname",
+            ) from exc
 
-    if port is not None and not 1 <= port <= 65535:
-        raise ValidationError(
-            "URL port is invalid.",
-            field_name=field_name,
-            code="invalid_port",
-        )
+        if (
+            not ascii_host
+            or len(ascii_host) > 253
+            or any(
+                not label
+                or len(label) > 63
+                or not _DOMAIN_LABEL_PATTERN.fullmatch(label)
+                for label in ascii_host.split(".")
+            )
+        ):
+            raise _field_error(
+                "URL hostname is invalid.",
+                field_name,
+                "invalid_hostname",
+            )
 
     return url
 
-
-# ---------------------------------------------------------------------------
-# Mapping and required fields
-# ---------------------------------------------------------------------------
 
 def validate_mapping(
     value: Any,
@@ -1163,37 +1050,54 @@ def validate_mapping(
     required_fields: set[str] | frozenset[str] | None = None,
     reject_unknown_fields: bool = True,
 ) -> dict[str, Any]:
-    """Validate an object and optionally enforce an explicit field schema."""
+    """Validate a mapping and enforce field-count and key constraints."""
     if not isinstance(value, Mapping):
-        raise ValidationError(
+        raise _field_error(
             "Payload must be a JSON object.",
-            field_name=field_name,
-            code="invalid_type",
+            field_name,
+            "invalid_type",
+        )
+
+    if len(value) > MAX_MAPPING_FIELDS:
+        raise _field_error(
+            "Payload contains too many fields.",
+            field_name,
+            "too_many_fields",
         )
 
     payload = dict(value)
 
-    if any(not isinstance(key, str) for key in payload):
-        raise ValidationError(
-            "Object field names must be strings.",
-            field_name=field_name,
-            code="invalid_field_name",
+    if any(
+        not isinstance(key, str)
+        or not key
+        or len(key) > 100
+        or _CONTROL_PATTERN.search(key)
+        for key in payload
+    ):
+        raise _field_error(
+            "Object field names are invalid.",
+            field_name,
+            "invalid_field_name",
         )
 
-    if allowed_fields is not None and reject_unknown_fields:
-        if set(payload) - set(allowed_fields):
-            raise ValidationError(
+    if allowed_fields is not None:
+        if any(not isinstance(key, str) for key in allowed_fields):
+            raise ValueError("allowed_fields must contain strings.")
+        if reject_unknown_fields and set(payload) - set(allowed_fields):
+            raise _field_error(
                 "Payload contains unsupported fields.",
-                field_name=field_name,
-                code="unknown_fields",
+                field_name,
+                "unknown_fields",
             )
 
     if required_fields:
+        if any(not isinstance(key, str) for key in required_fields):
+            raise ValueError("required_fields must contain strings.")
         if set(required_fields) - set(payload):
-            raise ValidationError(
+            raise _field_error(
                 "Payload is missing required fields.",
-                field_name=field_name,
-                code="missing_fields",
+                field_name,
+                "missing_fields",
             )
 
     return payload
@@ -1207,36 +1111,28 @@ def validate_required_fields(
 ) -> None:
     """Ensure required fields exist and are not missing or blank."""
     if not isinstance(payload, Mapping):
-        raise ValidationError(
-            "Payload must be an object.",
-            code="invalid_type",
-        )
+        raise ValidationError("Payload must be an object.", code="invalid_type")
 
     for field_name in required_fields:
         if field_name not in payload or payload[field_name] is None:
-            raise ValidationError(
+            raise _field_error(
                 "A required field is missing.",
-                field_name=field_name,
-                code="required",
+                field_name,
+                "required",
             )
 
         value = payload[field_name]
-
         if (
             not allow_blank_strings
             and isinstance(value, str)
             and not value.strip()
         ):
-            raise ValidationError(
+            raise _field_error(
                 "A required field cannot be blank.",
-                field_name=field_name,
-                code="required",
+                field_name,
+                "required",
             )
 
-
-# ---------------------------------------------------------------------------
-# Pagination
-# ---------------------------------------------------------------------------
 
 def validate_pagination(
     *,
@@ -1244,19 +1140,15 @@ def validate_pagination(
     page_size: Any = 20,
     max_page_size: int = 100,
 ) -> Pagination:
-    """Validate pagination values and calculate a bounded offset."""
+    """Validate pagination and reject offsets beyond signed 64-bit range."""
     if (
         isinstance(max_page_size, bool)
         or not isinstance(max_page_size, int)
-        or max_page_size < 1
+        or not 1 <= max_page_size <= 100_000
     ):
-        raise ValueError("max_page_size must be a positive integer.")
+        raise ValueError("max_page_size must be between 1 and 100000.")
 
-    normalized_page = validate_integer(
-        page,
-        field_name="page",
-        minimum=1,
-    )
+    normalized_page = validate_integer(page, field_name="page", minimum=1)
     normalized_size = validate_integer(
         page_size,
         field_name="page_size",
@@ -1264,16 +1156,16 @@ def validate_pagination(
         maximum=max_page_size,
     )
 
+    offset = (normalized_page - 1) * normalized_size
+    if offset > 9_223_372_036_854_775_807:
+        raise _field_error("Page offset is too large.", "page", "offset_too_large")
+
     return Pagination(
         page=normalized_page,
         page_size=normalized_size,
-        offset=(normalized_page - 1) * normalized_size,
+        offset=offset,
     )
 
-
-# ---------------------------------------------------------------------------
-# Upload validation
-# ---------------------------------------------------------------------------
 
 def validate_mime_type(
     value: Any,
@@ -1281,49 +1173,42 @@ def validate_mime_type(
     allowed_types: Sequence[str],
     field_name: str = "mime_type",
 ) -> str:
-    """
-    Validate a declared MIME type against an explicit allowlist.
-
-    The declared type is client-controlled. Verify file signatures and
-    inspect content server-side before trusting uploaded files.
-    """
+    """Validate a declared MIME type against an explicit allowlist."""
     if not isinstance(value, str):
-        raise ValidationError(
+        raise _field_error(
             "MIME type must be a string.",
-            field_name=field_name,
-            code="invalid_type",
+            field_name,
+            "invalid_type",
         )
 
     mime = value.strip().lower()
-
     if not _MIME_PATTERN.fullmatch(mime):
-        raise ValidationError(
+        raise _field_error(
             "MIME type is malformed.",
-            field_name=field_name,
-            code="invalid_mime_type",
+            field_name,
+            "invalid_mime_type",
         )
 
     if isinstance(allowed_types, (str, bytes)):
         raise ValueError("allowed_types must be a sequence of MIME types.")
 
-    normalized_allowlist: set[str] = set()
+    if len(allowed_types) > MAX_COLLECTION_ITEMS:
+        raise ValueError("allowed_types contains too many entries.")
 
+    normalized: set[str] = set()
     for item in allowed_types:
         if not isinstance(item, str):
             raise ValueError("allowed_types must contain strings.")
-
         candidate = item.strip().lower()
-
         if not _MIME_PATTERN.fullmatch(candidate):
             raise ValueError("allowed_types contains an invalid MIME type.")
+        normalized.add(candidate)
 
-        normalized_allowlist.add(candidate)
-
-    if mime not in normalized_allowlist:
-        raise ValidationError(
+    if mime not in normalized:
+        raise _field_error(
             "Uploaded file type is not permitted.",
-            field_name=field_name,
-            code="mime_type_not_allowed",
+            field_name,
+            "mime_type_not_allowed",
         )
 
     return mime
@@ -1355,9 +1240,92 @@ def validate_file_size(
     )
 
 
-# ---------------------------------------------------------------------------
-# Application payload
-# ---------------------------------------------------------------------------
+def _validate_payload_values(
+    value: Any,
+    *,
+    field_name: str,
+    depth: int = 0,
+) -> None:
+    """Bound nested data structures and reject unsupported value types."""
+    if depth > MAX_VALIDATION_DEPTH:
+        raise _field_error(
+            "Payload nesting is too deep.",
+            field_name,
+            "maximum_depth",
+        )
+
+    if isinstance(value, Mapping):
+        if len(value) > MAX_MAPPING_FIELDS:
+            raise _field_error(
+                "Object contains too many fields.",
+                field_name,
+                "too_many_fields",
+            )
+        for key, child in value.items():
+            if not isinstance(key, str) or len(key) > 100:
+                raise _field_error(
+                    "Object field names are invalid.",
+                    field_name,
+                    "invalid_field_name",
+                )
+            _validate_payload_values(
+                child,
+                field_name=field_name,
+                depth=depth + 1,
+            )
+        return
+
+    if isinstance(value, (list, tuple)):
+        if len(value) > MAX_COLLECTION_ITEMS:
+            raise _field_error(
+                "List contains too many items.",
+                field_name,
+                "too_many_items",
+            )
+        for child in value:
+            _validate_payload_values(
+                child,
+                field_name=field_name,
+                depth=depth + 1,
+            )
+        return
+
+    if isinstance(value, str):
+        if len(value) > MAX_TEXT_LENGTH:
+            raise _field_error(
+                "A payload value is too long.",
+                field_name,
+                "max_length",
+            )
+        if _CONTROL_PATTERN.search(value):
+            raise _field_error(
+                "Payload contains control characters.",
+                field_name,
+                "control_character",
+            )
+        return
+
+    if value is None or isinstance(value, (bool, int, float, Decimal, date)):
+        if isinstance(value, float) and not math.isfinite(value):
+            raise _field_error(
+                "Payload contains a non-finite number.",
+                field_name,
+                "non_finite_number",
+            )
+        if isinstance(value, Decimal) and not value.is_finite():
+            raise _field_error(
+                "Payload contains a non-finite number.",
+                field_name,
+                "non_finite_number",
+            )
+        return
+
+    raise _field_error(
+        "Payload contains an unsupported value type.",
+        field_name,
+        "invalid_type",
+    )
+
 
 def validate_application_payload(
     payload: Any,
@@ -1365,12 +1333,7 @@ def validate_application_payload(
     reject_unknown_fields: bool = True,
     required_fields: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
-    """
-    Validate the shape of an application submission.
-
-    Eligibility, admissions rules, consent recording, and authorization
-    must be enforced separately by the application service.
-    """
+    """Validate application payload shape and common field types."""
     required = (
         _APPLICATION_REQUIRED_FIELDS
         if required_fields is None
@@ -1384,6 +1347,7 @@ def validate_application_payload(
         required_fields=required,
         reject_unknown_fields=reject_unknown_fields,
     )
+    _validate_payload_values(data, field_name="application")
 
     if "full_name" in data:
         data["full_name"] = validate_name(
@@ -1397,33 +1361,31 @@ def validate_application_payload(
     if data.get("phone") not in (None, ""):
         data["phone"] = validate_phone(data["phone"]).normalized
 
-    for field_name in (
-        "course",
-        "course_type",
-        "qualification",
-        "institution",
-        "exam_name",
-        "city",
-        "state",
-        "country",
-        "postal_code",
-        "address",
+    for name in (
+        "course", "course_type", "qualification", "institution",
+        "exam_name", "city", "state", "country", "postal_code",
     ):
-        if field_name in data and data[field_name] is not None:
-            data[field_name] = validate_text(
-                data[field_name],
-                field_name=field_name,
-                max_length=500 if field_name == "address" else 250,
-                allow_newlines=field_name == "address",
+        if data.get(name) is not None:
+            data[name] = validate_text(
+                data[name],
+                field_name=name,
+                max_length=250,
+                allow_newlines=False,
             )
 
+    if data.get("address") is not None:
+        data["address"] = sanitize_plain_text(
+            data["address"],
+            max_length=500,
+            allow_newlines=True,
+        )
+
     if data.get("message") is not None:
-        if "message" in data:
-            data["message"] = sanitize_plain_text(
-                data["message"],
-                max_length=5_000,
-                allow_newlines=True,
-            )
+        data["message"] = sanitize_plain_text(
+            data["message"],
+            max_length=5_000,
+            allow_newlines=True,
+        )
 
     if data.get("date_of_birth") not in (None, ""):
         data["date_of_birth"] = validate_date(
@@ -1469,17 +1431,13 @@ def validate_application_payload(
     return data
 
 
-# ---------------------------------------------------------------------------
-# Job payload
-# ---------------------------------------------------------------------------
-
 def validate_job_payload(
     payload: Any,
     *,
     reject_unknown_fields: bool = True,
     required_fields: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
-    """Validate a job posting's basic data shape and numeric ranges."""
+    """Validate a job posting's structure and common field constraints."""
     required = (
         _JOB_REQUIRED_FIELDS
         if required_fields is None
@@ -1493,6 +1451,7 @@ def validate_job_payload(
         required_fields=required,
         reject_unknown_fields=reject_unknown_fields,
     )
+    _validate_payload_values(data, field_name="job")
 
     if "title" in data:
         data["title"] = validate_text(
@@ -1513,12 +1472,8 @@ def validate_job_payload(
         data["employment_type"] = validate_enum(
             data["employment_type"],
             (
-                "full_time",
-                "part_time",
-                "contract",
-                "internship",
-                "temporary",
-                "freelance",
+                "full_time", "part_time", "contract",
+                "internship", "temporary", "freelance",
             ),
             field_name="employment_type",
         )
@@ -1531,23 +1486,20 @@ def validate_job_payload(
             allow_newlines=False,
         )
 
-    for field_name in ("department", "currency"):
-        if data.get(field_name) is not None:
-            data[field_name] = validate_text(
-                data[field_name],
-                field_name=field_name,
+    for name in ("department", "currency"):
+        if data.get(name) is not None:
+            data[name] = validate_text(
+                data[name],
+                field_name=name,
                 max_length=100,
                 allow_newlines=False,
             )
 
-    for field_name in (
-        "experience_min_years",
-        "experience_max_years",
-    ):
-        if data.get(field_name) is not None:
-            data[field_name] = validate_number(
-                data[field_name],
-                field_name=field_name,
+    for name in ("experience_min_years", "experience_max_years"):
+        if data.get(name) is not None:
+            data[name] = validate_number(
+                data[name],
+                field_name=name,
                 minimum=0,
                 maximum=80,
                 decimal_places=1,
@@ -1555,63 +1507,58 @@ def validate_job_payload(
 
     minimum_experience = data.get("experience_min_years")
     maximum_experience = data.get("experience_max_years")
-
     if (
         minimum_experience is not None
         and maximum_experience is not None
         and minimum_experience > maximum_experience
     ):
-        raise ValidationError(
+        raise _field_error(
             "Minimum experience cannot exceed maximum experience.",
-            field_name="experience_min_years",
-            code="invalid_experience_range",
+            "experience_min_years",
+            "invalid_experience_range",
         )
 
-    for field_name in ("salary_min", "salary_max"):
-        if data.get(field_name) is not None:
-            data[field_name] = validate_number(
-                data[field_name],
-                field_name=field_name,
+    for name in ("salary_min", "salary_max"):
+        if data.get(name) is not None:
+            data[name] = validate_number(
+                data[name],
+                field_name=name,
                 minimum=0,
                 decimal_places=2,
             )
 
     minimum_salary = data.get("salary_min")
     maximum_salary = data.get("salary_max")
-
     if (
         minimum_salary is not None
         and maximum_salary is not None
         and minimum_salary > maximum_salary
     ):
-        raise ValidationError(
+        raise _field_error(
             "Minimum salary cannot exceed maximum salary.",
-            field_name="salary_min",
-            code="invalid_salary_range",
+            "salary_min",
+            "invalid_salary_range",
         )
 
-    for field_name in ("skills", "qualifications"):
-        if field_name in data:
-            items = data[field_name]
-
+    for name in ("skills", "qualifications"):
+        if name in data:
+            items = data[name]
             if not isinstance(items, list):
-                raise ValidationError(
+                raise _field_error(
                     "Value must be a list of strings.",
-                    field_name=field_name,
-                    code="invalid_type",
+                    name,
+                    "invalid_type",
                 )
-
-            if len(items) > 100:
-                raise ValidationError(
+            if len(items) > MAX_COLLECTION_ITEMS:
+                raise _field_error(
                     "List contains too many items.",
-                    field_name=field_name,
-                    code="too_many_items",
+                    name,
+                    "too_many_items",
                 )
-
-            data[field_name] = [
+            data[name] = [
                 validate_text(
                     item,
-                    field_name=field_name,
+                    field_name=name,
                     max_length=200,
                     allow_newlines=False,
                 )
@@ -1645,10 +1592,6 @@ def validate_job_payload(
 
     return data
 
-
-# ---------------------------------------------------------------------------
-# Assertion helper
-# ---------------------------------------------------------------------------
 
 def require_valid(
     condition: Any,

@@ -1,53 +1,52 @@
 
-"""
-MedOrbits Python package.
+"""MedOrbits Python package.
 
 File: src/python/medorbits/__init__.py
 
 Purpose:
-    Define package metadata and a stable, minimal public API for MedOrbits
-    Python components.
+    Define package metadata and a stable, lightweight public API.
 
 Design principles:
     - Avoid side effects during package import.
-    - Do not load environment files or initialize external services.
-    - Do not expose credentials, private configuration, or internal modules.
-    - Keep imports lightweight for tests, CLI tools, and application startup.
+    - Never load environment files or initialize external services.
+    - Never expose credentials or private configuration.
     - Prefer installed distribution metadata for the package version.
-    - Support importing directly from an uninstalled source checkout.
-
-Recommended package layout:
-
-    src/python/
-    └── medorbits/
-        ├── __init__.py
-        ├── config.py
-        ├── exceptions.py
-        └── ...
+    - Support imports from an uninstalled source checkout.
 """
 
 from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
+from typing import Final
 
-__title__ = "medorbits"
-__description__ = (
+
+__title__: Final[str] = "medorbits"
+
+__description__: Final[str] = (
     "MedOrbits education, admissions, career guidance, "
     "recruitment, and application services."
 )
-__author__ = "MedOrbits"
-__license__ = "Proprietary"
-__copyright__ = "Copyright MedOrbits"
 
-# Keep this fallback synchronized with the project's packaging metadata.
-# Installed distribution metadata takes precedence when available.
-_VERSION_FALLBACK = "0.1.0"
+__author__: Final[str] = "MedOrbits"
+__license__: Final[str] = "Proprietary"
+__copyright__: Final[str] = "Copyright MedOrbits"
 
-try:
-    __version__ = version(__title__)
-except PackageNotFoundError:
-    # Expected when importing directly from an uninstalled source checkout.
-    __version__ = _VERSION_FALLBACK
+# Keep synchronized with pyproject.toml or the project's packaging metadata.
+_VERSION_FALLBACK: Final[str] = "0.1.0"
+
+
+def _resolve_version() -> str:
+    """Return the installed distribution version or source fallback."""
+    try:
+        installed_version = version(__title__)
+    except PackageNotFoundError:
+        return _VERSION_FALLBACK
+
+    return installed_version or _VERSION_FALLBACK
+
+
+__version__: Final[str] = _resolve_version()
+
 
 __all__ = [
     "__author__",
