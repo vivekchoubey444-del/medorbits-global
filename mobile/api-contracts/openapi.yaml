@@ -1,0 +1,562 @@
+openapi: 3.1.0
+info:
+  title: MedOrbits API
+  version: 1.1.0
+  description: >
+    Proposed API contract for MedOrbits mobile and backend integration.
+    This specification is not proof that these endpoints are implemented.
+servers:
+  - url: /api/v1
+    description: Relative API base path; configure the deployed server URL per environment.
+tags:
+  - name: Admissions
+  - name: Applications
+  - name: Documents
+  - name: Notifications
+  - name: Users
+security:
+  - BearerAuth: []
+paths:
+  /admissions:
+    get:
+      tags: [Admissions]
+      summary: List published admissions
+      security: []
+      parameters:
+        - name: courseType
+          in: query
+          schema: { type: string }
+        - name: country
+          in: query
+          schema: { type: string }
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: year
+          in: query
+          schema: { type: integer }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Published admission opportunities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdmissionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /admissions/{admissionId}:
+    get:
+      tags: [Admissions]
+      summary: Get admission details
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AdmissionId'
+      responses:
+        '200':
+          description: Admission details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /courses:
+    get:
+      tags: [Admissions]
+      summary: List courses
+      security: []
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: country
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Course list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseListResponse'
+  /institutions:
+    get:
+      tags: [Admissions]
+      summary: List institutions
+      security: []
+      parameters:
+        - name: courseId
+          in: query
+          schema: { type: string }
+        - name: country
+          in: query
+          schema: { type: string }
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Institution list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericListResponse'
+  /eligibility/assess:
+    post:
+      tags: [Admissions]
+      summary: Assess informational eligibility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EligibilityRequest'
+      responses:
+        '200':
+          description: Assessment result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EligibilityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List applications belonging to the authenticated user
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Application list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Applications]
+      summary: Create a draft application
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Draft application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /applications/{applicationId}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Applications]
+      summary: Get an authorized application
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Applications]
+      summary: Update an editable application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                applicant:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    fullName: { type: string, minLength: 1, maxLength: 200 }
+                    email: { type: string, format: email, maxLength: 254 }
+                    phone: { type: [string, 'null'], maxLength: 40 }
+      responses:
+        '200':
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /applications/{applicationId}/submit:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [Applications]
+      summary: Submit an application
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /applications/{applicationId}/documents:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Documents]
+      summary: List document requirements and uploads
+      responses:
+        '200':
+          description: Document checklist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List the authenticated user's notifications
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the current user's profile
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Users]
+      summary: Update allowlisted current-user profile fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                fullName: { type: string, minLength: 1, maxLength: 200 }
+                preferredLanguage: { type: string, minLength: 2, maxLength: 16 }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    AdmissionId:
+      name: admissionId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1 }
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, minLength: 8, maxLength: 200 }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Resource not found or inaccessible
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Resource state conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+  schemas:
+    Meta:
+      type: object
+      properties:
+        requestId: { type: string }
+        nextCursor: { type: [string, 'null'] }
+        hasMore: { type: boolean }
+      additionalProperties: true
+    ErrorDetail:
+      type: object
+      required: [field, issue]
+      properties:
+        field: { type: string }
+        issue: { type: string }
+      additionalProperties: false
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: array
+              items: { $ref: '#/components/schemas/ErrorDetail' }
+          additionalProperties: false
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    Admission:
+      type: object
+      required: [id, title, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        courseType: { type: [string, 'null'] }
+        country: { type: [string, 'null'] }
+        state: { type: [string, 'null'] }
+        admissionYear: { type: [integer, 'null'] }
+        applicationOpenDate: { type: [string, 'null'], format: date }
+        applicationCloseDate: { type: [string, 'null'], format: date }
+        status: { type: string, enum: [published] }
+        sourceUrl: { type: [string, 'null'], format: uri }
+        lastVerifiedAt: { type: [string, 'null'], format: date-time }
+      additionalProperties: true
+    AdmissionListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Admission' }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    AdmissionResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: { $ref: '#/components/schemas/Admission' }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    Course:
+      type: object
+      required: [id, name, code]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        code: { type: string }
+        category: { type: [string, 'null'] }
+        duration: { type: [string, 'null'] }
+        status: { type: string }
+      additionalProperties: true
+    CourseListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Course' }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    GenericListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items: { type: object, additionalProperties: true }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    EligibilityRequest:
+      type: object
+      required: [admissionId]
+      properties:
+        admissionId: { type: string }
+        education:
+          type: object
+          additionalProperties: true
+        entranceExam:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    EligibilityResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data:
+          type: object
+          required: [assessmentId, admissionId, result]
+          properties:
+            assessmentId: { type: string }
+            admissionId: { type: string }
+            result:
+              type: string
+              enum: [eligible, not_eligible, requires_review, insufficient_information]
+            checks:
+              type: array
+              items: { type: object, additionalProperties: true }
+            disclaimer: { type: string }
+          additionalProperties: true
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    CreateApplicationRequest:
+      type: object
+      required: [admissionId, courseId, consents]
+      properties:
+        admissionId: { type: string }
+        institutionId: { type: [string, 'null'] }
+        courseId: { type: string }
+        applicant:
+          type: object
+          properties:
+            fullName: { type: string, minLength: 1, maxLength: 200 }
+            email: { type: string, format: email, maxLength: 254 }
+            phone: { type: [string, 'null'], maxLength: 40 }
+          additionalProperties: false
+        consents:
+          type: object
+          required: [privacyNoticeAccepted, dataProcessingAccepted]
+          properties:
+            privacyNoticeAccepted: { type: boolean, const: true }
+            dataProcessingAccepted: { type: boolean, const: true }
+          additionalProperties: false
+      additionalProperties: false
+    Application:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [draft, submitted, under_review, action_required, documents_pending, approved, rejected, withdrawn, closed]
+        createdAt: { type: [string, 'null'], format: date-time }
+        updatedAt: { type: [string, 'null'], format: date-time }
+        submittedAt: { type: [string, 'null'], format: date-time }
+      additionalProperties: true
+    ApplicationResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: { $ref: '#/components/schemas/Application' }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
+    User:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
+        fullName: { type: [string, 'null'] }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'] }
+        preferredLanguage: { type: [string, 'null'] }
+        createdAt: { type: [string, 'null'], format: date-time }
+      additionalProperties: false
+    UserResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: { $ref: '#/components/schemas/User' }
+        meta: { $ref: '#/components/schemas/Meta' }
+      additionalProperties: false
