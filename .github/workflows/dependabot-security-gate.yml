@@ -1,676 +1,597 @@
+==============================================================================
 
-# ==============================================================================
-# MedOrbits -- Dependabot Security Gate
-# File: .github/workflows/dependabot-security-gate.yml
-# Release target: 2.0.0
-#
-# Purpose:
-#   Validate dependency updates before they are merged.
-#
-# Policy:
-#   - Dependabot pull requests only.
-#   - No automatic approval, merging, or deployment.
-#   - Detect deleted files, empty files, and suspicious source truncation.
-#   - Validate package identity, scripts, dependency entries, and lockfile.
-#   - Install dependencies with lifecycle scripts disabled.
-#   - Run dependency audit and repository tests.
-# ==============================================================================
+MedOrbits – Dependabot Security Gate
+
+File: .github/workflows/dependabot-security-gate.yml
+
+Release target: 2.1.0
+
+Purpose:
+
+Validate Dependabot dependency updates before they are merged.
+
+Security policy:
+
+- Dependabot pull requests only.
+
+- Read-only GitHub permissions.
+
+- No automatic approval, merging, deployment, or release.
+
+- Verify PR author, state, target branch, repository, and commit SHA.
+
+- Reject deleted files, empty changed files, and suspicious truncation.
+
+- Preserve package identity, existing scripts, and dependency entries.
+
+- Validate npm manifest/lockfile consistency.
+
+- Install dependencies with lifecycle scripts disabled.
+
+- Run dependency audits and configured tests.
+
+- Produce a final status summary.
+
+Limitations:
+
+- Integrity heuristics cannot prove source code is safe.
+
+- npm audit requires registry access and may fail on registry outages.
+
+- Review all changes before merging; passing checks is not merge approval.
+
+==============================================================================
 
 name: Dependabot Security Gate
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-      - edited
+pull_request:
+branches:
+- main
+- develop
+types:
+- opened
+- synchronize
+- reopened
+- ready_for_review
+- edited
 
-  workflow_dispatch:
-    inputs:
-      pull_request_number:
-        description: "Dependabot pull request number to validate"
-        required: true
-        type: number
+workflow_dispatch:
+inputs:
+pull_request_number:
+description: "Open Dependabot pull request number to validate"
+required: true
+type: number
+
+permissions:
+contents: read
+pull-requests: read
+
+concurrency:
+group: dependabot-security-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+cancel-in-progress: true
+
+jobs:
+authorize:
+name: Authorize Dependabot update
+runs-on: ubuntu-latest
+timeout-minutes: 5
 
 permissions:
   contents: read
   pull-requests: read
+outputs:
+  pr_number: ${{ steps.context.outputs.pr_number }}
+  head_sha: ${{ steps.metadata.outputs.head_sha }}
+  base_sha: ${{ steps.metadata.outputs.base_sha }}
+  base_ref: ${{ steps.metadata.outputs.base_ref }}
+steps:
+  - name: Resolve pull request number
+    id: context
+    shell: bash
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+      INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
+      EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+    run: |
+      set -Eeuo pipefail
+      if [[ "$EVENT_NAME" == "pull_request" ]]; then
+        if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
+          echo "::error::Only Dependabot pull requests are permitted."
+          exit 1
+        fi
+        number="$EVENT_PR_NUMBER"
+      elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+        number="$INPUT_PR_NUMBER"
+        if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::A valid positive pull request number is required."
+          exit 1
+        fi
+      else
+        echo "::error::Unsupported event: $EVENT_NAME"
+        exit 1
+      fi
+      echo "pr_number=$number" >> "$GITHUB_OUTPUT"
+  - name: Verify pull request metadata
+    id: metadata
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      response="$RUNNER_TEMP/dependabot-pr.json"
+      gh api \
+        "repos/$REPOSITORY/pulls/$PR_NUMBER" \
+        > "$response"
+      author="$(jq -r '.user.login // ""' "$response")"
+      state="$(jq -r '.state // ""' "$response")"
+      merged="$(jq -r '.merged // false' "$response")"
+      draft="$(jq -r '.draft // false' "$response")"
+      base_ref="$(jq -r '.base.ref // ""' "$response")"
+      base_sha="$(jq -r '.base.sha // ""' "$response")"
+      head_sha="$(jq -r '.head.sha // ""' "$response")"
+      head_repo="$(jq -r '.head.repo.full_name // ""' "$response")"
+      if [[ "$author" != "dependabot[bot]" ]]; then
+        echo "::error::Pull request author is not Dependabot."
+        exit 1
+      fi
+      if [[ "$state" != "open" || "$merged" == "true" ]]; then
+        echo "::error::Pull request must be open and unmerged."
+        exit 1
+      fi
+      if [[ "$draft" == "true" ]]; then
+        echo "::error::Draft pull requests are not validated."
+        exit 1
+      fi
+      if [[ "$base_ref" != "main" && "$base_ref" != "develop" ]]; then
+        echo "::error::Unexpected target branch: $base_ref"
+        exit 1
+      fi
+      if [[ -z "$base_sha" || -z "$head_sha" || -z "$head_repo" ]]; then
+        echo "::error::Required pull request metadata is missing."
+        exit 1
+      fi
+      if [[ ! "$base_sha" =~ ^[0-9a-fA-F]{40,64}$ ||
+            ! "$head_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
+        echo "::error::Invalid commit SHA returned by GitHub."
+        exit 1
+      fi
+      echo "base_ref=$base_ref" >> "$GITHUB_OUTPUT"
+      echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+      echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+      {
+        echo "## Dependabot Authorization"
+        echo
+        echo "- Pull request: #$PR_NUMBER"
+        echo "- Author: $author"
+        echo "- Base branch: $base_ref"
+        echo "- Head repository: $head_repo"
+        echo "- Head commit: \`$head_sha\`"
+        echo "- State: $state"
+        echo
+      } >> "$GITHUB_STEP_SUMMARY"
 
-concurrency:
-  group: dependabot-security-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
-  cancel-in-progress: true
+integrity:
+name: Check repository integrity
+needs: authorize
+runs-on: ubuntu-latest
+timeout-minutes: 10
 
-jobs:
-  authorize:
-    name: Authorize Dependabot update
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    permissions:
-      contents: read
-      pull-requests: read
-
-    outputs:
-      pr_number: ${{ steps.context.outputs.pr_number }}
-      head_sha: ${{ steps.metadata.outputs.head_sha }}
-      base_sha: ${{ steps.metadata.outputs.base_sha }}
-      base_ref: ${{ steps.metadata.outputs.base_ref }}
-
-    steps:
-      - name: Resolve pull request number
-        id: context
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
-          EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: |
-          set -Eeuo pipefail
-
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
-              echo "::error::This workflow accepts Dependabot pull requests only."
-              exit 1
-            fi
-
-            number="$EVENT_PR_NUMBER"
-          else
-            number="$INPUT_PR_NUMBER"
-
-            if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
-              echo "::error::A valid positive pull request number is required."
-              exit 1
-            fi
-          fi
-
-          echo "pr_number=$number" >> "$GITHUB_OUTPUT"
-
-      - name: Verify pull request metadata
-        id: metadata
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          response="$RUNNER_TEMP/dependabot-pr.json"
-
-          gh api "repos/$REPOSITORY/pulls/$PR_NUMBER" > "$response"
-
-          author="$(jq -r '.user.login // ""' "$response")"
-          state="$(jq -r '.state // ""' "$response")"
-          merged="$(jq -r '.merged // false' "$response")"
-          base_ref="$(jq -r '.base.ref // ""' "$response")"
-          base_sha="$(jq -r '.base.sha // ""' "$response")"
-          head_sha="$(jq -r '.head.sha // ""' "$response")"
-          head_repo="$(jq -r '.head.repo.full_name // ""' "$response")"
-
-          if [[ "$author" != "dependabot[bot]" ]]; then
-            echo "::error::Pull request author is not Dependabot."
-            exit 1
-          fi
-
-          if [[ "$state" != "open" || "$merged" == "true" ]]; then
-            echo "::error::Pull request must be open and unmerged."
-            exit 1
-          fi
-
-          if [[ "$base_ref" != "main" && "$base_ref" != "develop" ]]; then
-            echo "::error::Unexpected target branch: $base_ref"
-            exit 1
-          fi
-
-          if [[ -z "$base_sha" || -z "$head_sha" || -z "$head_repo" ]]; then
-            echo "::error::Pull request commit or repository metadata is missing."
-            exit 1
-          fi
-
-          echo "base_ref=$base_ref" >> "$GITHUB_OUTPUT"
-          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
-          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
-
-          {
-            echo "## Dependabot Authorization"
-            echo
-            echo "- Pull request: #$PR_NUMBER"
-            echo "- Author: $author"
-            echo "- Base branch: $base_ref"
-            echo "- State: $state"
-            echo "- Head repository: $head_repo"
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  integrity:
-    name: Check repository integrity
-    needs: authorize
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out base revision
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.authorize.outputs.base_sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Fetch proposed revision
-        env:
-          HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
-          PR_NUMBER: ${{ needs.authorize.outputs.pr_number }}
-          REPOSITORY: ${{ github.repository }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          git fetch --no-tags origin "$HEAD_SHA"
-
-          actual="$(git rev-parse FETCH_HEAD)"
-          if [[ "$actual" != "$HEAD_SHA" ]]; then
-            echo "::error::Fetched revision does not match the proposed commit."
-            exit 1
-          fi
-
-          git cat-file -e "$HEAD_SHA^{commit}"
-
-      - name: Reject deleted tracked files
-        env:
-          BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
-          HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          python - <<'PY'
-          import os
-          import subprocess
-          import sys
-
-          base = os.environ["BASE_SHA"]
-          head = os.environ["HEAD_SHA"]
-
-          result = subprocess.run(
-              [
-                  "git", "diff", "--name-status", "-z",
-                  "--find-renames", f"{base}...{head}", "--"
-              ],
-              check=True,
-              stdout=subprocess.PIPE,
-          )
-
-          fields = result.stdout.decode(
+permissions:
+  contents: read
+steps:
+  - name: Check out base revision
+    uses: actions/checkout@v4
+    with:
+      ref: ${{ needs.authorize.outputs.base_sha }}
+      fetch-depth: 0
+      persist-credentials: false
+  - name: Fetch and verify proposed pull request revision
+    env:
+      HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
+      PR_NUMBER: ${{ needs.authorize.outputs.pr_number }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      # GitHub exposes pull request head refs for same-repository
+      # and fork-based pull requests.
+      git fetch --no-tags origin \
+        "+refs/pull/${PR_NUMBER}/head:refs/remotes/pull/${PR_NUMBER}/head"
+      actual="$(git rev-parse "refs/remotes/pull/${PR_NUMBER}/head^{commit}")"
+      if [[ "$actual" != "$HEAD_SHA" ]]; then
+        echo "::error::The pull request head changed during validation."
+        echo "::error::Expected: $HEAD_SHA"
+        echo "::error::Fetched:  $actual"
+        exit 1
+      fi
+      git cat-file -e "$HEAD_SHA^{commit}"
+      echo "Verified pull request head: $actual"
+  - name: Reject deleted tracked files
+    env:
+      BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
+      HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      python - <<'PY'
+      import os
+      import subprocess
+      import sys
+      base = os.environ["BASE_SHA"]
+      head = os.environ["HEAD_SHA"]
+      result = subprocess.run(
+          [
+              "git", "diff", "--name-only", "-z",
+              "--diff-filter=D", f"{base}...{head}", "--"
+          ],
+          check=True,
+          stdout=subprocess.PIPE,
+      )
+      paths = [
+          path for path in result.stdout.decode(
               "utf-8", errors="surrogateescape"
           ).split("\0")
-
-          if fields and fields[-1] == "":
-              fields.pop()
-
-          changes = []
-          index = 0
-
-          while index < len(fields):
-              status = fields[index]
-              index += 1
-
-              if status.startswith(("R", "C")):
-                  if index + 1 >= len(fields):
-                      sys.exit("Malformed Git rename/copy output.")
-
-                  old_path = fields[index]
-                  new_path = fields[index + 1]
-                  index += 2
-                  changes.append((status, old_path, new_path))
-              else:
-                  if index >= len(fields):
-                      sys.exit("Malformed Git diff output.")
-
-                  path = fields[index]
-                  index += 1
-                  changes.append((status, path, path))
-
-          failures = []
-
-          for status, old_path, new_path in changes:
-              if status.startswith("D"):
-                  failures.append(f"Deleted tracked file: {old_path}")
-
-          if failures:
-              print("::error::Destructive file deletions detected.")
-              for failure in failures:
-                  print(f"- {failure}")
-              print(
-                  "::error::Restore deleted files or submit an independently "
-                  "reviewed change outside this automated dependency update."
-              )
-              sys.exit(1)
-
-          print(f"Inspected {len(changes)} changed paths.")
-          print("No tracked files were deleted.")
-          PY
-
-      - name: Reject empty files and suspicious source truncation
-        env:
-          BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
-          HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          python - <<'PY'
-          import os
-          import pathlib
-          import subprocess
-          import sys
-
-          base = os.environ["BASE_SHA"]
-          head = os.environ["HEAD_SHA"]
-
-          result = subprocess.run(
-              [
-                  "git", "diff", "--name-status", "-z",
-                  "--find-renames", f"{base}...{head}", "--"
-              ],
-              check=True,
-              stdout=subprocess.PIPE,
-          )
-
-          fields = result.stdout.decode(
+          if path
+      ]
+      if paths:
+          print("::error::Deleted tracked files detected.")
+          for path in paths:
+              print(f"- {path}")
+          sys.exit(1)
+      print("No tracked files were deleted.")
+      PY
+  - name: Reject empty files and suspicious source truncation
+    env:
+      BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
+      HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      python - <<'PY'
+      import os
+      import pathlib
+      import subprocess
+      import sys
+      base = os.environ["BASE_SHA"]
+      head = os.environ["HEAD_SHA"]
+      changed_result = subprocess.run(
+          [
+              "git", "diff", "--name-only", "-z",
+              f"{base}...{head}", "--"
+          ],
+          check=True,
+          stdout=subprocess.PIPE,
+      )
+      changed_paths = [
+          path for path in changed_result.stdout.decode(
               "utf-8", errors="surrogateescape"
           ).split("\0")
-
-          if fields and fields[-1] == "":
-              fields.pop()
-
-          changes = []
-          index = 0
-
-          while index < len(fields):
-              status = fields[index]
-              index += 1
-
-              if status.startswith(("R", "C")):
-                  if index + 1 >= len(fields):
-                      sys.exit("Malformed rename/copy diff output.")
-
-                  old_path, new_path = fields[index:index + 2]
-                  index += 2
-                  changes.append((status, old_path, new_path))
-              else:
-                  if index >= len(fields):
-                      sys.exit("Malformed Git diff output.")
-
-                  path = fields[index]
-                  index += 1
-                  changes.append((status, path, path))
-
-          source_extensions = {
-              ".py", ".pyi", ".js", ".cjs", ".mjs",
-              ".jsx", ".ts", ".tsx",
-              ".html", ".htm", ".css", ".scss", ".sass",
-              ".json", ".jsonc", ".yaml", ".yml",
-              ".sh", ".bash", ".sql", ".php",
-              ".java", ".kt", ".go", ".rs",
-              ".c", ".h", ".cpp", ".hpp",
-              ".vue", ".svelte", ".xml", ".toml",
-              ".ini", ".cfg", ".conf", ".md", ".rst",
-          }
-
-          protected_names = {
-              "package.json",
-              "package-lock.json",
-              "requirements.txt",
-              "pyproject.toml",
-              "Cargo.toml",
-              "go.mod",
-              "Makefile",
-              "Dockerfile",
-          }
-
-          lockfile_names = {
-              "package-lock.json",
-              "npm-shrinkwrap.json",
-              "pnpm-lock.yaml",
-              "yarn.lock",
-              "poetry.lock",
-              "uv.lock",
-              "pipfile.lock",
-          }
-
-          failures = []
-          inspected = 0
-
-          def git_bytes(revision, path):
-              return subprocess.run(
-                  ["git", "show", f"{revision}:{path}"],
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE,
+          if path
+      ]
+      source_extensions = {
+          ".py", ".pyi", ".js", ".cjs", ".mjs",
+          ".jsx", ".ts", ".tsx", ".html", ".htm",
+          ".css", ".scss", ".sass", ".json", ".jsonc",
+          ".yaml", ".yml", ".sh", ".bash", ".sql",
+          ".php", ".java", ".kt", ".go", ".rs",
+          ".c", ".h", ".cpp", ".hpp", ".vue",
+          ".svelte", ".xml", ".toml", ".ini", ".cfg",
+          ".conf", ".md", ".rst",
+      }
+      lockfile_names = {
+          "package-lock.json",
+          "npm-shrinkwrap.json",
+          "pnpm-lock.yaml",
+          "yarn.lock",
+          "poetry.lock",
+          "uv.lock",
+          "pipfile.lock",
+      }
+      failures = []
+      inspected = 0
+      def read_git_file(revision, path):
+          return subprocess.run(
+              ["git", "show", f"{revision}:{path}"],
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+          )
+      for path_string in changed_paths:
+          path = pathlib.PurePosixPath(path_string)
+          current_result = read_git_file(head, path_string)
+          # A changed path may represent a deletion; deletions are
+          # independently rejected by the previous step.
+          if current_result.returncode != 0:
+              continue
+          current = current_result.stdout
+          inspected += 1
+          if not current.strip():
+              failures.append(f"Changed file is empty: {path_string}")
+              continue
+          previous_result = read_git_file(base, path_string)
+          if previous_result.returncode != 0:
+              # Newly added file: empty content was already rejected.
+              continue
+          previous = previous_result.stdout
+          name = path.name.lower()
+          if (
+              name not in lockfile_names
+              and path.suffix.lower() in source_extensions
+              and len(previous) >= 1000
+              and len(current) < len(previous) * 0.20
+          ):
+              failures.append(
+                  f"Possible source truncation: {path_string} "
+                  f"({len(previous)} -> {len(current)} bytes)"
               )
-
-          for status, old_path, new_path in changes:
-              if status.startswith("D"):
-                  continue
-
-              path = pathlib.PurePosixPath(new_path)
-              name = path.name.lower()
-
-              is_lockfile = (
-                  name in lockfile_names
-                  or name.endswith(".min.js")
-              )
-
-              current_result = git_bytes(head, new_path)
-
-              if current_result.returncode != 0:
-                  failures.append(
-                      f"Changed file cannot be read from proposed commit: {new_path}"
-                  )
-                  continue
-
-              current = current_result.stdout
-              inspected += 1
-
-              previously_existed = not status.startswith("A")
-
-              if previously_existed:
-                  previous_result = git_bytes(base, old_path)
-                  previous = (
-                      previous_result.stdout
-                      if previous_result.returncode == 0
-                      else b""
-                  )
-
-                  if previous.strip() and not current.strip():
-                      failures.append(
-                          f"Previously non-empty file is now empty: {new_path}"
-                      )
-                      continue
-
-                  if (
-                      not is_lockfile
-                      and path.suffix.lower() in source_extensions
-                      and len(previous) >= 1000
-                      and len(current) < len(previous) * 0.20
-                  ):
-                      failures.append(
-                          f"Suspicious source truncation: {new_path} "
-                          f"({len(previous)} -> {len(current)} bytes)"
-                      )
-
-              if name in protected_names and not current.strip():
-                  failures.append(
-                      f"Required project file is empty: {new_path}"
-                  )
-
-          if failures:
-              print("::error::Repository integrity checks failed.")
-              for failure in failures:
-                  print(f"- {failure}")
-              sys.exit(1)
-
-          print(f"Inspected {inspected} changed files.")
-          print("No empty files or suspicious source truncation detected.")
-          PY
-
-      - name: Verify essential npm manifest fields
-        env:
-          BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
-          HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          if [[ ! -f package.json ]]; then
-            echo "::error::Root package.json is missing."
-            exit 1
-          fi
-
-          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
-            echo "::error::Root npm lockfile is missing."
-            exit 1
-          fi
-
-          python - <<'PY'
-          import json
-          import os
-          import subprocess
-          import sys
-
-          base = os.environ["BASE_SHA"]
-          head = os.environ["HEAD_SHA"]
-
-          def read_manifest(revision):
-              result = subprocess.run(
-                  ["git", "show", f"{revision}:package.json"],
-                  check=True,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE,
-              )
-              return json.loads(result.stdout)
-
-          try:
-              old = read_manifest(base)
-              new = read_manifest(head)
-          except (
-              subprocess.CalledProcessError,
-              json.JSONDecodeError,
-          ) as exc:
-              print(f"::error::Cannot validate package manifests: {exc}")
-              sys.exit(1)
-
-          failures = []
-          old_scripts = old.get("scripts", {})
-          new_scripts = new.get("scripts", {})
-
+      if failures:
+          print("::error::Repository integrity checks failed.")
+          for failure in failures:
+              print(f"- {failure}")
+          sys.exit(1)
+      print(f"Inspected {inspected} changed files.")
+      print("No empty changed files or suspicious truncation detected.")
+      PY
+  - name: Validate package identity, scripts, and dependencies
+    env:
+      BASE_SHA: ${{ needs.authorize.outputs.base_sha }}
+      HEAD_SHA: ${{ needs.authorize.outputs.head_sha }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      python - <<'PY'
+      import json
+      import os
+      import subprocess
+      import sys
+      base = os.environ["BASE_SHA"]
+      head = os.environ["HEAD_SHA"]
+      def read_manifest(revision):
+          result = subprocess.run(
+              ["git", "show", f"{revision}:package.json"],
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+          )
+          if result.returncode != 0:
+              return None
+          return json.loads(result.stdout)
+      try:
+          old = read_manifest(base)
+          new = read_manifest(head)
+      except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+          print(f"::error::Invalid package.json: {exc}")
+          sys.exit(1)
+      if old is None and new is None:
+          print("No root package.json exists; npm-specific checks will fail later.")
+          sys.exit(1)
+      if new is None:
+          print("::error::Root package.json was removed.")
+          sys.exit(1)
+      if old is None:
+          print("::error::Root package.json was newly introduced in this update.")
+          sys.exit(1)
+      failures = []
+      for field in ("name", "version"):
+          if old.get(field) and new.get(field) != old[field]:
+              failures.append(f"Changed package {field}.")
+      old_scripts = old.get("scripts", {})
+      new_scripts = new.get("scripts", {})
+      if not isinstance(old_scripts, dict) or not isinstance(new_scripts, dict):
+          failures.append("Invalid npm scripts object.")
+      else:
           for name, command in old_scripts.items():
               if name not in new_scripts:
                   failures.append(f"Removed npm script: {name}")
               elif not str(new_scripts[name]).strip():
                   failures.append(f"Emptied npm script: {name}")
+      groups = (
+          "dependencies",
+          "devDependencies",
+          "optionalDependencies",
+          "peerDependencies",
+      )
+      for group in groups:
+          previous = old.get(group, {})
+          current = new.get(group, {})
+          if not isinstance(previous, dict) or not isinstance(current, dict):
+              failures.append(f"Invalid dependency group: {group}")
+              continue
+          for package in previous:
+              if package not in current:
+                  failures.append(
+                      f"Removed {group} entry: {package}"
+                  )
+          for package, version in current.items():
+              if not isinstance(package, str) or not package.strip():
+                  failures.append(f"Invalid package name in {group}.")
+              if not isinstance(version, str) or not version.strip():
+                  failures.append(
+                      f"Empty or invalid version for {package} in {group}."
+                  )
+      if failures:
+          print("::error::Package manifest integrity checks failed.")
+          for failure in failures:
+              print(f"- {failure}")
+          sys.exit(1)
+      print("Package identity, existing scripts, and dependency entries validated.")
+      PY
+  - name: Verify npm lockfile is present and valid JSON
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      if [[ -f npm-shrinkwrap.json ]]; then
+        lockfile="npm-shrinkwrap.json"
+      elif [[ -f package-lock.json ]]; then
+        lockfile="package-lock.json"
+      else
+        echo "::error::Root npm lockfile is missing."
+        exit 1
+      fi
+      node - "$lockfile" <<'NODE'
+      const fs = require("node:fs");
+      const file = process.argv[2];
+      const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+      const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+      if (!Number.isInteger(lock.lockfileVersion)) {
+        throw new Error("Missing or invalid lockfileVersion.");
+      }
+      if (lock.name && pkg.name && lock.name !== pkg.name) {
+        throw new Error("Package name mismatch between manifest and lockfile.");
+      }
+      if (lock.version && pkg.version && lock.version !== pkg.version) {
+        throw new Error("Package version mismatch between manifest and lockfile.");
+      }
+      console.log(`Manifest and ${file} are parseable.`);
+      NODE
 
-          if old.get("name") and new.get("name") != old["name"]:
-              failures.append("Changed package name.")
+validate:
+name: Validate dependency update
+needs:
+- authorize
+- integrity
+runs-on: ubuntu-latest
+timeout-minutes: 20
 
-          if old.get("version") and new.get("version") != old["version"]:
-              failures.append("Changed package version.")
+permissions:
+  contents: read
+steps:
+  - name: Check out proposed pull request revision
+    uses: actions/checkout@v4
+    with:
+      ref: refs/pull/${{ needs.authorize.outputs.pr_number }}/head
+      fetch-depth: 1
+      persist-credentials: false
+  - name: Verify checked-out commit
+    env:
+      EXPECTED_SHA: ${{ needs.authorize.outputs.head_sha }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      actual="$(git rev-parse HEAD)"
+      if [[ "$actual" != "$EXPECTED_SHA" ]]; then
+        echo "::error::Checked-out commit differs from the authorized PR head."
+        echo "::error::Expected: $EXPECTED_SHA"
+        echo "::error::Actual:   $actual"
+        exit 1
+      fi
+  - name: Set up Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: "22"
+      check-latest: false
+  - name: Verify npm manifests and lockfile
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      test -s package.json || {
+        echo "::error::package.json is missing or empty."
+        exit 1
+      }
+      if [[ -f npm-shrinkwrap.json ]]; then
+        export LOCKFILE="npm-shrinkwrap.json"
+      elif [[ -f package-lock.json ]]; then
+        export LOCKFILE="package-lock.json"
+      else
+        echo "::error::No npm lockfile found."
+        exit 1
+      fi
+      node <<'NODE'
+      const fs = require("node:fs");
+      const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+      const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
+      if (!Number.isInteger(lock.lockfileVersion)) {
+        throw new Error("Missing or invalid lockfileVersion.");
+      }
+      if (lock.name && pkg.name && lock.name !== pkg.name) {
+        throw new Error("Package name mismatch.");
+      }
+      if (lock.version && pkg.version && lock.version !== pkg.version) {
+        throw new Error("Package version mismatch.");
+      }
+      console.log(`Validated package.json and ${process.env.LOCKFILE}.`);
+      NODE
+  - name: Install locked dependencies without lifecycle scripts
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      npm ci --ignore-scripts --no-audit --no-fund
+  - name: Check installed dependency tree
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      npm ls --depth=0
+  - name: Audit all dependencies
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      npm audit --audit-level=high
+  - name: Run configured repository tests
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      if ! node -e '
+        const pkg = require("./package.json");
+        process.exit(
+          typeof pkg.scripts?.test === "string" &&
+          pkg.scripts.test.trim() ? 0 : 1
+        );
+      '; then
+        echo "::error::No non-empty npm test script is configured."
+        exit 1
+      fi
+      npm test
+  - name: Validate commit-message scripts when present
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      validator=".github/scripts/validate-commit-message.sh"
+      tests=".github/scripts/test-validate-commit-message.sh"
+      if [[ -f "$validator" && -f "$tests" ]]; then
+        bash -n "$validator"
+        bash -n "$tests"
+        bash "$tests"
+      elif [[ -f "$validator" || -f "$tests" ]]; then
+        echo "::error::Commit-message validator and its tests must both exist."
+        exit 1
+      else
+        echo "Commit-message validation scripts are not configured; skipping."
+      fi
 
-          dependency_groups = (
-              "dependencies",
-              "devDependencies",
-              "optionalDependencies",
-              "peerDependencies",
-          )
+security-summary:
+name: Security gate summary
+needs:
+- authorize
+- integrity
+- validate
+if: always()
+runs-on: ubuntu-latest
+timeout-minutes: 2
 
-          for group in dependency_groups:
-              previous = old.get(group, {})
-              current = new.get(group, {})
-
-              if not isinstance(previous, dict) or not isinstance(current, dict):
-                  failures.append(f"Invalid dependency group: {group}")
-                  continue
-
-              for package in previous:
-                  if package not in current:
-                      failures.append(f"Removed {group} entry: {package}")
-
-          if failures:
-              print("::error::Unexpected package.json changes detected.")
-              for failure in failures:
-                  print(f"- {failure}")
-              sys.exit(1)
-
-          print(
-              "Package identity, existing scripts, and dependency entries preserved."
-          )
-          PY
-
-  validate:
-    name: Validate dependency update
-    needs:
-      - authorize
-      - integrity
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out proposed pull request revision
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.authorize.outputs.head_sha }}
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          check-latest: false
-          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
-          cache-dependency-path: |
-            package-lock.json
-            npm-shrinkwrap.json
-
-      - name: Verify npm manifests
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          test -s package.json || {
-            echo "::error::package.json is missing or empty."
-            exit 1
-          }
-
-          if [[ -f npm-shrinkwrap.json ]]; then
-            export LOCKFILE="npm-shrinkwrap.json"
-          elif [[ -f package-lock.json ]]; then
-            export LOCKFILE="package-lock.json"
-          else
-            echo "::error::No npm lockfile found."
-            exit 1
-          fi
-
-          node <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
-
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error("Missing or invalid lockfileVersion.");
-          }
-
-          if (lock.name && pkg.name && lock.name !== pkg.name) {
-            throw new Error("Package name mismatch.");
-          }
-
-          if (lock.version && pkg.version && lock.version !== pkg.version) {
-            throw new Error("Package version mismatch.");
-          }
-
-          console.log(`Validated package.json and ${process.env.LOCKFILE}.`);
-          NODE
-
-      - name: Install locked dependencies
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Check dependency tree
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm ls --depth=0
-
-      - name: Audit production dependencies
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm audit --omit=dev --audit-level=high
-
-      - name: Run configured repository tests
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          if ! node -e '
-            const pkg = require("./package.json");
-            process.exit(pkg.scripts?.test ? 0 : 1);
-          '; then
-            echo "::error::No npm test script is configured."
-            exit 1
-          fi
-
-          npm test
-
-      - name: Validate commit-message scripts when present
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          validator=".github/scripts/validate-commit-message.sh"
-          tests=".github/scripts/test-validate-commit-message.sh"
-
-          if [[ -f "$validator" && -f "$tests" ]]; then
-            bash -n "$validator"
-            bash -n "$tests"
-            bash "$tests"
-          elif [[ -f "$validator" || -f "$tests" ]]; then
-            echo "::error::Commit-message validator and tests must both exist."
-            exit 1
-          else
-            echo "Commit-message validator suite is not configured; skipping."
-          fi
-
-  security-summary:
-    name: Security gate summary
-    needs:
-      - authorize
-      - integrity
-      - validate
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-
-    permissions: {}
-
-    steps:
-      - name: Evaluate required jobs
-        env:
-          AUTHORIZE_RESULT: ${{ needs.authorize.result }}
-          INTEGRITY_RESULT: ${{ needs.integrity.result }}
-          VALIDATE_RESULT: ${{ needs.validate.result }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          {
-            echo "## MedOrbits Dependabot Security Gate"
-            echo
-            echo "| Check | Result |"
-            echo "|---|---|"
-            echo "| Authorize pull request | $AUTHORIZE_RESULT |"
-            echo "| Repository integrity | $INTEGRITY_RESULT |"
-            echo "| Dependency validation | $VALIDATE_RESULT |"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [[ "$AUTHORIZE_RESULT" != "success" ||
-                "$INTEGRITY_RESULT" != "success" ||
-                "$VALIDATE_RESULT" != "success" ]]; then
-            echo "::error::Dependabot security gate failed."
-            exit 1
-          fi
-
-          echo "All required checks passed."
+permissions: {}
+steps:
+  - name: Evaluate required jobs
+    env:
+      AUTHORIZE_RESULT: ${{ needs.authorize.result }}
+      INTEGRITY_RESULT: ${{ needs.integrity.result }}
+      VALIDATE_RESULT: ${{ needs.validate.result }}
+    shell: bash
+    run: |
+      set -Eeuo pipefail
+      {
+        echo "## MedOrbits Dependabot Security Gate"
+        echo
+        echo "| Check | Result |"
+        echo "|---|---|"
+        echo "| Authorize pull request | $AUTHORIZE_RESULT |"
+        echo "| Repository integrity | $INTEGRITY_RESULT |"
+        echo "| Dependency validation | $VALIDATE_RESULT |"
+      } >> "$GITHUB_STEP_SUMMARY"
+      if [[ "$AUTHORIZE_RESULT" != "success" ||
+            "$INTEGRITY_RESULT" != "success" ||
+            "$VALIDATE_RESULT" != "success" ]]; then
+        echo "::error::Dependabot security gate failed."
+        exit 1
+      fi
+      echo "All required checks passed."
