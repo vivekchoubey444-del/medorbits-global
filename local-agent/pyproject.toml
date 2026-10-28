@@ -1,1 +1,182 @@
-[project]\nname="medorbits-local-agent"\nversion="1.0.0"\nrequires-python=">=3.10"\ndependencies=[]\n
+
+# ==============================================================================
+# MedOrbits Local Agent -- Python Project Configuration
+# File: /local-agent/pyproject.toml
+# Version: 1.1.0
+# Python: >=3.10
+# ==============================================================================
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medorbits-local-agent"
+version = "1.1.0"
+description = "Safe repository inspection, validation, security auditing, and controlled scaffolding utilities for MedOrbits."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "LicenseRef-Proprietary"
+keywords = [
+    "medorbits",
+    "local-agent",
+    "repository-validation",
+    "security-audit",
+    "safe-scaffolding",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+
+# Core tools use the Python standard library only.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<10.0",
+    "ruff>=0.11,<1.0",
+    "mypy>=1.15,<2.0",
+    "bandit>=1.8,<2.0",
+]
+
+[project.scripts]
+medorbits-agent = "agent:main"
+
+[tool.setuptools]
+py-modules = ["agent"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools*"]
+exclude = [
+    "tests*",
+    "src*",
+    "node_modules*",
+    "build*",
+    "dist*",
+]
+
+# ------------------------------------------------------------------------------
+# Pytest
+# ------------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra"
+norecursedirs = [
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    "dist",
+    "build",
+    "__pycache__",
+    ".local-agent",
+]
+
+# ------------------------------------------------------------------------------
+# Ruff -- linting and formatting
+# ------------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+respect-gitignore = true
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    "dist",
+    "build",
+    "__pycache__",
+    ".local-agent",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "B",
+    "UP",
+]
+ignore = [
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+"src/tests/**/*.py" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# ------------------------------------------------------------------------------
+# Mypy -- optional static type checking
+# ------------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+exclude = [
+    "^build/",
+    "^dist/",
+    "^\\.venv/",
+    "^venv/",
+    "^node_modules/",
+]
+
+# ------------------------------------------------------------------------------
+# Bandit -- optional Python security analysis
+# ------------------------------------------------------------------------------
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    "src/tests",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "node_modules",
+]
+skips = []
+
+# ------------------------------------------------------------------------------
+# Coverage -- optional test coverage
+# ------------------------------------------------------------------------------
+
+[tool.coverage.run]
+branch = true
+source = ["agent", "tools"]
+omit = [
+    "tests/*",
+    "src/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 0

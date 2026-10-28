@@ -1,0 +1,46 @@
+
+{
+  "name": "medorbits-local-agent",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Safe local repository inspection, validation, and controlled scaffolding utilities for MedOrbits.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "type": "commonjs",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:server": "node src/server.js",
+    "dev": "node --watch src/index.js",
+    "check": "npm run lint && npm run test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "node --test",
+    "test:python": "python -m unittest discover -s src/tests -p 'test_*.py'",
+    "check:python": "python -m compileall -q src tools agent.py",
+    "check:json": "node -e \"const fs=require('node:fs');for(const f of ['package.json','config/spec.json']){if(fs.existsSync(f)){JSON.parse(fs.readFileSync(f,'utf8'));console.log('Valid:',f)}}\"",
+    "validate:repo": "python tools/validate_repository.py .",
+    "audit:repo": "python tools/security_audit.py .",
+    "catalog:repo": "python tools/file_catalog.py .",
+    "agent:status": "python agent.py status",
+    "agent:validate": "python agent.py validate",
+    "agent:inventory": "python agent.py inventory",
+    "clean:python": "python -c \"import pathlib,shutil; [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__') if p.is_dir()]\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0"
+  },
+  "overrides": {},
+  "keywords": [
+    "medorbits",
+    "local-agent",
+    "repository-validation",
+    "safe-scaffolding",
+    "security-audit"
+  ]
+}

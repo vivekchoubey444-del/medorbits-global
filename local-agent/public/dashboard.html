@@ -1,0 +1,881 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="MedOrbits Local Agent operational dashboard for monitoring jobs, repository checks, task execution, and provider health.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Agent Dashboard | MedOrbits</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+
+  <style>
+    .dashboard-page {
+      display: grid;
+      gap: 28px;
+    }
+
+    .dashboard-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--mo-border);
+    }
+
+    .dashboard-heading__main {
+      min-width: 0;
+    }
+
+    .dashboard-heading__main h1 {
+      margin-bottom: 8px;
+    }
+
+    .dashboard-heading__main p {
+      max-width: 660px;
+      margin-bottom: 0;
+    }
+
+    .dashboard-heading__actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dashboard-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 11px;
+      color: var(--mo-gold);
+      font-size: .73rem;
+      font-weight: 850;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .dashboard-kicker::before {
+      width: 24px;
+      height: 1px;
+      background: var(--mo-gold);
+      content: "";
+    }
+
+    .dashboard-hero {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 28px;
+      padding: clamp(25px, 4vw, 42px);
+      overflow: hidden;
+      border: 1px solid rgba(91, 156, 255, .25);
+      border-radius: var(--mo-radius-xl);
+      background:
+        radial-gradient(circle at 85% 15%, rgba(91, 156, 255, .24), transparent 32%),
+        radial-gradient(circle at 70% 100%, rgba(227, 197, 138, .14), transparent 35%),
+        linear-gradient(125deg, #10243b, #102c49 60%, #172b41);
+      box-shadow: var(--mo-shadow-md);
+    }
+
+    .dashboard-hero::after {
+      position: absolute;
+      z-index: -1;
+      top: -125px;
+      right: -50px;
+      width: 300px;
+      height: 300px;
+      border: 1px solid rgba(227, 197, 138, .18);
+      border-radius: 50%;
+      box-shadow: 0 0 0 28px rgba(91, 156, 255, .035);
+      content: "";
+      animation: dashboard-orbit 24s linear infinite;
+    }
+
+    .dashboard-hero__content {
+      max-width: 760px;
+      min-width: 0;
+    }
+
+    .dashboard-hero__title {
+      margin-bottom: 14px;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      font-weight: 880;
+      letter-spacing: -.055em;
+      line-height: 1.12;
+    }
+
+    .dashboard-hero__title span {
+      color: var(--mo-gold);
+    }
+
+    .dashboard-hero__description {
+      max-width: 620px;
+      margin-bottom: 23px;
+      color: #bacbe0;
+      line-height: 1.8;
+    }
+
+    .dashboard-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .dashboard-hero__symbol {
+      display: grid;
+      width: 126px;
+      height: 126px;
+      place-items: center;
+      border: 1px solid rgba(227, 197, 138, .4);
+      border-radius: 32px;
+      color: var(--mo-gold);
+      background: rgba(7, 17, 31, .35);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05), var(--mo-shadow-md);
+      font-size: 3.5rem;
+      font-weight: 900;
+      animation: dashboard-float 5s ease-in-out infinite;
+    }
+
+    .dashboard-section {
+      display: grid;
+      gap: 17px;
+      min-width: 0;
+    }
+
+    .dashboard-section__heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dashboard-section__heading h2 {
+      margin-bottom: 5px;
+    }
+
+    .dashboard-section__heading p {
+      margin-bottom: 0;
+      font-size: .84rem;
+    }
+
+    .dashboard-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .dashboard-metric {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 180px;
+      padding: 22px;
+      border: 1px solid var(--mo-border);
+      border-radius: var(--mo-radius-lg);
+      background: linear-gradient(145deg, rgba(20, 43, 67, .97), rgba(11, 28, 46, .97));
+      box-shadow: var(--mo-shadow-sm);
+      transition: transform 200ms ease, border-color 200ms ease;
+    }
+
+    .dashboard-metric:hover {
+      transform: translateY(-3px);
+      border-color: var(--mo-border-strong);
+    }
+
+    .dashboard-metric__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dashboard-metric__label {
+      margin-bottom: 4px;
+      color: var(--mo-text-muted);
+      font-size: .79rem;
+    }
+
+    .dashboard-metric__title {
+      margin-bottom: 0;
+      font-size: .98rem;
+    }
+
+    .dashboard-metric__icon {
+      display: grid;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid rgba(91, 156, 255, .2);
+      border-radius: 12px;
+      color: var(--mo-blue-bright);
+      background: var(--mo-blue-soft);
+      font-size: 1.2rem;
+    }
+
+    .dashboard-metric__value {
+      margin: auto 0 4px;
+      padding-top: 18px;
+      color: var(--mo-text);
+      font-size: clamp(1.65rem, 2.6vw, 2.25rem);
+      font-weight: 880;
+      letter-spacing: -.045em;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .dashboard-metric__note {
+      margin-bottom: 0;
+      color: var(--mo-text-muted);
+      font-size: .77rem;
+    }
+
+    .dashboard-two-column {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+      gap: 18px;
+    }
+
+    .dashboard-action-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 205px;
+      padding: 23px;
+      border: 1px solid var(--mo-border);
+      border-radius: var(--mo-radius-lg);
+      background: linear-gradient(145deg, rgba(20, 43, 67, .97), rgba(11, 28, 46, .97));
+      box-shadow: var(--mo-shadow-sm);
+      transition: transform 200ms ease, border-color 200ms ease;
+    }
+
+    .dashboard-action-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--mo-border-strong);
+    }
+
+    .dashboard-action-card__heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .dashboard-action-card__heading h3 {
+      margin-bottom: 7px;
+    }
+
+    .dashboard-action-card__heading p {
+      margin-bottom: 0;
+      font-size: .83rem;
+    }
+
+    .dashboard-action-card .btn {
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .dashboard-task-container {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--mo-border);
+      border-radius: var(--mo-radius-lg);
+      background: rgba(10, 25, 42, .58);
+    }
+
+    .dashboard-task-container [data-task-list] {
+      min-width: 0;
+    }
+
+    .dashboard-task-container .empty-state {
+      margin: 0;
+    }
+
+    .dashboard-status-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 0;
+    }
+
+    .dashboard-status-details > div {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--mo-border);
+      border-radius: 12px;
+      background: rgba(7, 17, 31, .35);
+    }
+
+    .dashboard-status-details dt {
+      margin-bottom: 6px;
+      color: var(--mo-text-muted);
+      font-size: .78rem;
+    }
+
+    .dashboard-status-details dd {
+      margin: 0;
+      color: var(--mo-text);
+      font-size: .85rem;
+      overflow-wrap: anywhere;
+    }
+
+    .dashboard-page-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px 20px;
+      margin-top: 10px;
+      padding-top: 20px;
+      border-top: 1px solid var(--mo-border);
+      color: var(--mo-text-muted);
+      font-size: .76rem;
+    }
+
+    .dashboard-page-footer strong {
+      color: var(--mo-gold);
+      font-weight: 750;
+    }
+
+    [data-panel]:not([hidden]) {
+      animation: dashboard-panel-enter 300ms ease both;
+    }
+
+    @keyframes dashboard-panel-enter {
+      from {
+        opacity: 0;
+        transform: translateY(7px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes dashboard-float {
+      0%, 100% {
+        transform: translateY(0) rotate(-2deg);
+      }
+      50% {
+        transform: translateY(-7px) rotate(2deg);
+      }
+    }
+
+    @keyframes dashboard-orbit {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 850px) {
+      .dashboard-hero__symbol {
+        width: 100px;
+        height: 100px;
+        border-radius: 25px;
+        font-size: 2.8rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-heading {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .dashboard-heading__actions {
+        justify-content: flex-start;
+      }
+
+      .dashboard-hero {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 23px 19px;
+        border-radius: 21px;
+      }
+
+      .dashboard-hero__symbol {
+        display: none;
+      }
+
+      .dashboard-hero__title {
+        font-size: clamp(1.85rem, 8vw, 2.4rem);
+      }
+
+      .dashboard-metrics,
+      .dashboard-two-column,
+      .dashboard-status-details {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .dashboard-metric {
+        min-height: 150px;
+      }
+
+      .dashboard-action-card {
+        min-height: 180px;
+        padding: 18px;
+      }
+
+      .dashboard-task-container {
+        padding: 10px;
+      }
+
+      .dashboard-page-footer {
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-panel]:not([hidden]),
+      .dashboard-hero__symbol,
+      .dashboard-hero::after {
+        animation: none !important;
+      }
+
+      .dashboard-metric,
+      .dashboard-action-card {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Main navigation">
+      <a class="brand" href="#overview" data-view="overview" aria-label="MedOrbits Local Agent home">
+        <span class="brand__mark" aria-hidden="true">M</span>
+        <span>
+          <span class="brand__name">MedOrbits</span>
+          <span class="brand__caption">Local Agent Workspace</span>
+        </span>
+      </a>
+
+      <nav class="nav-group" aria-label="Workspace">
+        <span class="nav-group__title">Workspace</span>
+        <a class="nav-link" href="#overview" data-view="overview" aria-current="page">
+          <span class="nav-link__icon" aria-hidden="true">⌂</span>
+          Overview
+        </a>
+        <a class="nav-link" href="#tasks" data-view="tasks">
+          <span class="nav-link__icon" aria-hidden="true">▤</span>
+          Tasks
+        </a>
+        <a class="nav-link" href="#activity" data-view="activity">
+          <span class="nav-link__icon" aria-hidden="true">◷</span>
+          Activity
+        </a>
+        <a class="nav-link" href="#health" data-view="health">
+          <span class="nav-link__icon" aria-hidden="true">✓</span>
+          Repository health
+        </a>
+      </nav>
+
+      <nav class="nav-group" aria-label="Tools">
+        <span class="nav-group__title">Tools</span>
+        <button class="nav-link" type="button" data-action="audit">
+          <span class="nav-link__icon" aria-hidden="true">⌕</span>
+          Repository audit
+        </button>
+        <button class="nav-link" type="button" data-action="check">
+          <span class="nav-link__icon" aria-hidden="true">◇</span>
+          Run health checks
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="flex items-center gap-2">
+          <span class="badge badge--success">Safe mode</span>
+          <span class="muted">v<span data-app-version>1.0.0</span></span>
+        </div>
+        <p class="mt-4 mb-0">Local workspace · Read-only by default</p>
+      </div>
+    </aside>
+
+    <main class="app-main" id="main-content">
+      <div class="app-content dashboard-page">
+        <header class="dashboard-heading">
+          <div class="dashboard-heading__main">
+            <span class="dashboard-kicker">MedOrbits / Operations</span>
+            <h1>Agent Dashboard</h1>
+            <p>Monitor agent status, inspect repository health, and manage task requests from one workspace.</p>
+          </div>
+          <div class="dashboard-heading__actions">
+            <span data-agent-status data-state="unknown">
+              <span data-agent-status-text>Connecting</span>
+            </span>
+            <button class="btn btn--secondary" type="button" data-action="refresh">
+              <span aria-hidden="true">↻</span> Refresh
+            </button>
+          </div>
+        </header>
+
+        <div data-app-message hidden role="status" aria-live="polite"></div>
+
+        <div data-loading hidden role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          Processing request…
+        </div>
+
+        <!-- Overview -->
+        <section class="view-panel dashboard-page" data-panel="overview" aria-labelledby="overview-title">
+          <section class="dashboard-hero">
+            <div class="dashboard-hero__content">
+              <span class="eyebrow">Local-first automation</span>
+              <h2 class="dashboard-hero__title" id="overview-title">
+                Reliable workflows.<br>
+                <span>Clear operational control.</span>
+              </h2>
+              <p class="dashboard-hero__description">
+                Run bounded repository diagnostics, review task activity, and coordinate approved operations
+                while preserving safe defaults.
+              </p>
+              <div class="dashboard-hero__actions">
+                <button class="btn btn--primary" type="button" data-action="audit">
+                  <span aria-hidden="true">⌕</span> Audit repository
+                </button>
+                <button class="btn btn--gold" type="button" data-action="check">
+                  <span aria-hidden="true">✓</span> Run checks
+                </button>
+              </div>
+            </div>
+            <div class="dashboard-hero__symbol" aria-hidden="true">M</div>
+          </section>
+
+          <section class="dashboard-section" aria-labelledby="overview-metrics-title">
+            <div class="dashboard-section__heading">
+              <div>
+                <h2 id="overview-metrics-title">System overview</h2>
+                <p>Values are populated by the local-agent service when available.</p>
+              </div>
+              <span class="badge badge--primary">Local dashboard</span>
+            </div>
+
+            <div class="dashboard-metrics">
+              <article class="dashboard-metric">
+                <div class="dashboard-metric__top">
+                  <div>
+                    <p class="dashboard-metric__label">Agent status</p>
+                    <h3 class="dashboard-metric__title">Runtime version</h3>
+                  </div>
+                  <span class="dashboard-metric__icon" aria-hidden="true">◉</span>
+                </div>
+                <p class="dashboard-metric__value" data-agent-version>--</p>
+                <p class="dashboard-metric__note">Reported agent version</p>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="dashboard-metric__top">
+                  <div>
+                    <p class="dashboard-metric__label">Current workload</p>
+                    <h3 class="dashboard-metric__title">Active tasks</h3>
+                  </div>
+                  <span class="dashboard-metric__icon" aria-hidden="true">▤</span>
+                </div>
+                <p class="dashboard-metric__value" data-agent-active-tasks>0</p>
+                <p class="dashboard-metric__note">Tasks currently running</p>
+              </article>
+
+              <article class="dashboard-metric">
+                <div class="dashboard-metric__top">
+                  <div>
+                    <p class="dashboard-metric__label">Execution policy</p>
+                    <h3 class="dashboard-metric__title">Safety mode</h3>
+                  </div>
+                  <span class="dashboard-metric__icon" aria-hidden="true">◇</span>
+                </div>
+                <p class="dashboard-metric__value" data-agent-mode>Read-only</p>
+                <p class="dashboard-metric__note">Agent-reported operating mode</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="dashboard-section" aria-labelledby="quick-actions-title">
+            <div class="dashboard-section__heading">
+              <div>
+                <h2 id="quick-actions-title">Quick actions</h2>
+                <p>Start with checks that inspect rather than modify project files.</p>
+              </div>
+            </div>
+
+            <div class="dashboard-two-column">
+              <article class="dashboard-action-card">
+                <div class="dashboard-action-card__heading">
+                  <div>
+                    <h3>Repository audit</h3>
+                    <p>Inspect file inventory, references, and common security indicators.</p>
+                  </div>
+                  <span class="dashboard-metric__icon" aria-hidden="true">⌕</span>
+                </div>
+                <button class="btn btn--secondary" type="button" data-action="audit">Start audit</button>
+              </article>
+
+              <article class="dashboard-action-card">
+                <div class="dashboard-action-card__heading">
+                  <div>
+                    <h3>Repository health</h3>
+                    <p>Validate supported syntax and expected project structure.</p>
+                  </div>
+                  <span class="dashboard-metric__icon" aria-hidden="true">✓</span>
+                </div>
+                <button class="btn btn--secondary" type="button" data-action="check">Run health checks</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="dashboard-section" aria-labelledby="recent-tasks-title">
+            <div class="dashboard-section__heading">
+              <div>
+                <h2 id="recent-tasks-title">Recent tasks</h2>
+                <p>Task records returned by the local-agent API.</p>
+              </div>
+              <button class="btn btn--secondary btn--small" type="button" data-view="tasks">View task queue</button>
+            </div>
+            <div class="dashboard-task-container">
+              <div data-task-list aria-live="polite">
+                <p class="empty-state">Loading task records…</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- Tasks -->
+        <section class="view-panel dashboard-page" data-panel="tasks" aria-labelledby="tasks-title" hidden>
+          <div class="dashboard-section__heading">
+            <div>
+              <span class="dashboard-kicker">Work management</span>
+              <h2 id="tasks-title">Task queue</h2>
+              <p>Submit a request for server-side validation and authorization.</p>
+            </div>
+            <button class="btn btn--secondary btn--small" type="button" data-action="refresh">Refresh tasks</button>
+          </div>
+
+          <section class="card" aria-labelledby="submit-task-title">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title" id="submit-task-title">Create task request</h3>
+                <p class="card__description">Use a clear objective and an independently verifiable result.</p>
+              </div>
+              <span class="card__icon" aria-hidden="true">＋</span>
+            </div>
+
+            <form class="form" data-task-form>
+              <div class="form-group">
+                <label for="task-description">Task description</label>
+                <textarea
+                  id="task-description"
+                  name="task"
+                  maxlength="4000"
+                  required
+                  placeholder="Example: Audit local-agent files and report syntax errors."
+                  aria-describedby="task-help"
+                ></textarea>
+                <p class="form-help" id="task-help">
+                  Maximum 4,000 characters. Server-side authorization is required for every operation.
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <button class="btn btn--primary" type="submit">Submit task</button>
+                <span class="badge badge--success">Safe request mode</span>
+              </div>
+            </form>
+          </section>
+
+          <section class="dashboard-section" aria-labelledby="queue-list-title">
+            <div class="dashboard-section__heading">
+              <div>
+                <h2 id="queue-list-title">Task records</h2>
+                <p>Review current and recently completed tasks.</p>
+              </div>
+            </div>
+            <div class="dashboard-task-container">
+              <div data-task-list aria-live="polite">
+                <p class="empty-state">No task records loaded.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">Cancellation controls</h3>
+                <p class="card__description">Cancellation may not undo work that has already completed.</p>
+              </div>
+            </div>
+            <button class="btn btn--danger" type="button" data-action="cancel">Request cancellation</button>
+          </section>
+        </section>
+
+        <!-- Activity -->
+        <section class="view-panel dashboard-page" data-panel="activity" aria-labelledby="activity-title" hidden>
+          <div class="dashboard-section__heading">
+            <div>
+              <span class="dashboard-kicker">Session monitoring</span>
+              <h2 id="activity-title">Activity log</h2>
+              <p>Messages recorded by the current dashboard session.</p>
+            </div>
+            <button class="btn btn--secondary" type="button" data-action="refresh">Refresh</button>
+          </div>
+
+          <section class="card">
+            <div data-log-list aria-live="polite">
+              <p class="empty-state">No activity recorded yet.</p>
+            </div>
+          </section>
+
+          <p class="form-help">Browser activity is temporary and is not a substitute for a durable server audit log.</p>
+        </section>
+
+        <!-- Repository health -->
+        <section class="view-panel dashboard-page" data-panel="health" aria-labelledby="health-title" hidden>
+          <div class="dashboard-section__heading">
+            <div>
+              <span class="dashboard-kicker">Diagnostics</span>
+              <h2 id="health-title">Repository health</h2>
+              <p>Run focused checks before authorizing file changes.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-two-column">
+            <article class="dashboard-action-card">
+              <div class="dashboard-action-card__heading">
+                <div>
+                  <h3>Structural and security audit</h3>
+                  <p>Review inventory limits, suspicious paths, and reference consistency.</p>
+                </div>
+                <span class="dashboard-metric__icon" aria-hidden="true">⌕</span>
+              </div>
+              <button class="btn btn--primary" type="button" data-action="audit">Run repository audit</button>
+            </article>
+
+            <article class="dashboard-action-card">
+              <div class="dashboard-action-card__heading">
+                <div>
+                  <h3>Syntax and configuration</h3>
+                  <p>Check supported syntax and common configuration issues.</p>
+                </div>
+                <span class="dashboard-metric__icon" aria-hidden="true">✓</span>
+              </div>
+              <button class="btn btn--secondary" type="button" data-action="check">Run health checks</button>
+            </article>
+          </div>
+
+          <section class="card">
+            <h3 class="card__title">Current agent status</h3>
+            <dl class="dashboard-status-details">
+              <div>
+                <dt>Status</dt>
+                <dd data-agent-status-text>Connecting</dd>
+              </div>
+              <div>
+                <dt>Operating mode</dt>
+                <dd data-agent-mode>Read-only</dd>
+              </div>
+              <div>
+                <dt>Active tasks</dt>
+                <dd data-agent-active-tasks>0</dd>
+              </div>
+              <div>
+                <dt>Completed tasks</dt>
+                <dd data-agent-completed-tasks>0</dd>
+              </div>
+              <div>
+                <dt>Last updated</dt>
+                <dd data-agent-last-updated>--</dd>
+              </div>
+            </dl>
+          </section>
+        </section>
+
+        <footer class="dashboard-page-footer">
+          <span>© <span id="footer-year">2026</span> MedOrbits · Local Agent</span>
+          <span><strong>Local-first</strong> · Explicit authorization · Safe defaults</span>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const year = document.getElementById("footer-year");
+      if (year) year.textContent = String(new Date().getFullYear());
+
+      /*
+       * View navigation only. Task execution remains in app.js and the
+       * server API. This script does not execute commands or modify files.
+       */
+      const panels = Array.from(document.querySelectorAll("[data-panel]"));
+      const controls = Array.from(document.querySelectorAll("[data-view]"));
+
+      function activateView(view, updateUrl = true) {
+        const selectedPanel = panels.find(panel => panel.dataset.panel === view);
+        if (!selectedPanel) return;
+
+        panels.forEach(panel => {
+          panel.hidden = panel !== selectedPanel;
+        });
+
+        controls.forEach(control => {
+          const active = control.dataset.view === view;
+
+          if (active) {
+            control.setAttribute("aria-current", "page");
+            control.classList.add("is-active");
+          } else {
+            control.removeAttribute("aria-current");
+            control.classList.remove("is-active");
+          }
+        });
+
+        if (updateUrl && window.location.hash !== `#${view}`) {
+          history.replaceState(null, "", `#${view}`);
+        }
+      }
+
+      controls.forEach(control => {
+        control.addEventListener("click", event => {
+          const view = control.dataset.view;
+          if (!view || !panels.some(panel => panel.dataset.panel === view)) return;
+
+          event.preventDefault();
+          activateView(view);
+        });
+      });
+
+      window.addEventListener("hashchange", () => {
+        const view = window.location.hash.slice(1);
+        if (panels.some(panel => panel.dataset.panel === view)) {
+          activateView(view, false);
+        }
+      });
+
+      const requestedView = window.location.hash.slice(1);
+      activateView(
+        panels.some(panel => panel.dataset.panel === requestedView)
+          ? requestedView
+          : "overview",
+        false
+      );
+    })();
+  </script>
+</body>
+</html>

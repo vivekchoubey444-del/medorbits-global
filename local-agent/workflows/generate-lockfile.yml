@@ -1,0 +1,312 @@
+
+# ==============================================================================
+# MedOrbits -- Generate and Validate Lockfiles
+# File: /local-agent/workflows/generate-lockfile.yml
+# Version: 1.0.0
+#
+# Purpose:
+#   Detect dependency manifest changes, generate lockfiles using supported
+#   package managers, validate the results, and upload reviewable artifacts.
+#
+# Security:
+#   - Never commit dependency changes automatically.
+#   - Never expose secrets in workflow logs.
+#   - Use frozen/strict lockfile checks in verification jobs.
+#   - Do not execute untrusted pull-request code with privileged secrets.
+# ==============================================================================
+
+name: MedOrbits - Generate Lockfiles
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_manager:
+        description: "Package manager to process"
+        required: true
+        type: choice
+        options:
+          - npm
+          - python
+          - all
+        default: all
+      strict:
+        description: "Fail if required lockfiles are missing or inconsistent"
+        required: true
+        type: boolean
+        default: true
+
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "poetry.lock"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "local-agent/workflows/generate-lockfile.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "poetry.lock"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "local-agent/workflows/generate-lockfile.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generate-lockfile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect package manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      npm: ${{ steps.manifests.outputs.npm }}
+      python: ${{ steps.manifests.outputs.python }}
+      has_node_lock: ${{ steps.manifests.outputs.has_node_lock }}
+      has_python_lock: ${{ steps.manifests.outputs.has_python_lock }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Detect manifests and existing lockfiles
+        id: manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f package.json ]]; then
+            echo "npm=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f pyproject.toml || -f requirements.txt ||
+                -f Pipfile ]]; then
+            echo "python=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            echo "has_node_lock=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_node_lock=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -f uv.lock || -f poetry.lock ||
+                -f Pipfile.lock ]]; then
+            echo "has_python_lock=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_python_lock=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  npm-lockfile:
+    name: Generate and verify npm lockfile
+    needs: detect
+    if: >-
+      needs.detect.outputs.npm == 'true' &&
+      (github.event_name != 'workflow_dispatch' ||
+      inputs.package_manager == 'npm' ||
+      inputs.package_manager == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Generate lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --version
+          npm --version
+
+          if [[ ! -f package-lock.json &&
+                ! -f npm-shrinkwrap.json ]]; then
+            npm install --package-lock-only --ignore-scripts
+          else
+            npm install --package-lock-only --ignore-scripts
+          fi
+
+          if [[ ! -f package-lock.json &&
+                ! -f npm-shrinkwrap.json ]]; then
+            echo "::error::npm did not produce a lockfile."
+            exit 1
+          fi
+
+      - name: Validate lockfile consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Upload npm lockfile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: medorbits-npm-lockfile
+          path: |
+            package-lock.json
+            npm-shrinkwrap.json
+          if-no-files-found: error
+          retention-days: 14
+
+  python-lockfile:
+    name: Validate Python dependency lockfiles
+    needs: detect
+    if: >-
+      needs.detect.outputs.python == 'true' &&
+      (github.event_name != 'workflow_dispatch' ||
+      inputs.package_manager == 'python' ||
+      inputs.package_manager == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python --version
+          python -m pip --version
+
+          if [[ -f pyproject.toml ]]; then
+            python -m pip install --disable-pip-version-check \
+              --no-input "validate-pyproject>=0.16,<1"
+
+            validate-pyproject pyproject.toml
+          fi
+
+          if [[ -f requirements.txt ]]; then
+            python -m pip install --dry-run --ignore-installed \
+              --disable-pip-version-check \
+              --no-input -r requirements.txt
+          fi
+
+          if [[ -f uv.lock ]]; then
+            python -m pip install --disable-pip-version-check \
+              --no-input "uv>=0.6,<1"
+
+            uv lock --check
+          fi
+
+          if [[ -f poetry.lock ]]; then
+            python -m pip install --disable-pip-version-check \
+              --no-input "poetry>=2,<3"
+
+            poetry check --lock
+          fi
+
+          if [[ -f Pipfile.lock ]]; then
+            python -m pip install --disable-pip-version-check \
+              --no-input "pipenv>=2024.0"
+
+            pipenv verify
+          fi
+
+      - name: Upload Python dependency files
+        uses: actions/upload-artifact@v4
+        with:
+          name: medorbits-python-lockfiles
+          path: |
+            requirements.txt
+            pyproject.toml
+            uv.lock
+            poetry.lock
+            Pipfile
+            Pipfile.lock
+          if-no-files-found: warn
+          retention-days: 14
+
+  report:
+    name: Lockfile workflow summary
+    if: always()
+    needs:
+      - detect
+      - npm-lockfile
+      - python-lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Report workflow results
+        env:
+          DETECT_RESULT: ${{ needs.detect.result }}
+          NPM_RESULT: ${{ needs.npm-lockfile.result }}
+          PYTHON_RESULT: ${{ needs.python-lockfile.result }}
+          STRICT: ${{ inputs.strict }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## MedOrbits Lockfile Report"
+            echo
+            echo "| Job | Result |"
+            echo "|---|---|"
+            echo "| Manifest detection | ${DETECT_RESULT} |"
+            echo "| npm lockfile | ${NPM_RESULT} |"
+            echo "| Python lockfiles | ${PYTHON_RESULT} |"
+            echo
+            echo "Lockfile generation does not automatically commit or push changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$DETECT_RESULT" != "success" ]]; then
+            echo "::error::Manifest detection failed."
+            exit 1
+          fi
+
+          if [[ "$NPM_RESULT" == "failure" ||
+                "$PYTHON_RESULT" == "failure" ]]; then
+            echo "::error::One or more lockfile jobs failed."
+            exit 1
+          fi

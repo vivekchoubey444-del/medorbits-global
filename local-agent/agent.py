@@ -1,144 +1,606 @@
+
 #!/usr/bin/env python3
+"""
+MedOrbits Local Agent
+=====================
+
+Safe repository manager for inspecting, validating, cataloguing, and generating
+files from an explicit JSON specification.
+
+Python: 3.10+
+Dependencies: Python standard library only.
+
+Safety:
+- Read-only by default.
+- No shell execution, network access, package installation, or deployment.
+- File generation requires explicit --apply or create without --dry-run.
+- Existing files are skipped unless --force is supplied.
+- Replacements are backed up under .local-agent/backups/.
+- Repository paths and symlinks are checked before file operations.
+"""
+
 from __future__ import annotations
-import argparse, ast, datetime, json, os, re, shutil, sys, tempfile
+
+import argparse
+import ast
+import datetime
+import html
+import json
+import os
+import re
+import shutil
+import sys
+import tempfile
 from pathlib import Path
-VERSION='1.0.0'
-SKIP={'.git','node_modules','vendor','.venv','venv','__pycache__','dist','build','.next','.local-agent'}
-KINDS={'text','json','html','css','js','python','markdown','env'}
-def safe_root(value):
-    p=Path(value).expanduser().resolve()
-    if not p.is_dir(): raise ValueError(f'Not a repository directory: {p}')
-    return p
-def safe_target(root, rel):
-    p=Path(rel)
-    if not isinstance(rel,str) or not rel.strip() or p.is_absolute() or '..' in p.parts: raise ValueError(f'Unsafe relative path: {rel}')
-    out=(root/p).resolve(strict=False)
-    try: out.relative_to(root)
-    except ValueError as e: raise ValueError(f'Path escapes root: {rel}') from e
-    cur=root
-    for part in p.parts:
-        cur=cur/part
-        if cur.is_symlink():
-            try: cur.resolve().relative_to(root)
-            except ValueError as e: raise ValueError(f'Symlink escape: {rel}') from e
-    return out
-def load_spec(path):
-    if not path.is_file() or path.stat().st_size>2_000_000: raise ValueError(f'Spec missing or too large: {path}')
-    data=json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(data,dict) or not isinstance(data.get('files'),list) or len(data['files'])>500: raise ValueError('Spec needs a files array with at most 500 items.')
-    seen=set()
-    for item in data['files']:
-        if not isinstance(item,dict) or not isinstance(item.get('path'),str): raise ValueError('Each item needs a string path.')
-        key=Path(item['path']).as_posix().casefold()
-        if key in seen: raise ValueError(f'Duplicate path: {item["path"]}')
+from typing import Any
+
+VERSION = "1.1.0"
+MAX_SPEC_BYTES = 2_000_000
+MAX_FILES_PER_SPEC = 500
+MAX_FILE_BYTES = 5_000_000
+MAX_INVENTORY_FILES = 100_000
+
+SKIP = {
+    ".git", ".hg", ".svn", "node_modules", "vendor", ".venv", "venv",
+    "__pycache__", "dist", "build", ".next", ".local-agent",
+    "coverage", ".pytest_cache", ".mypy_cache",
+}
+
+KINDS = {
+    "text", "json", "html", "css", "js", "python", "markdown", "env"
+}
+
+SENSITIVE_NAMES = {
+    ".env", ".env.local", ".env.production", "credentials.json",
+    "secrets.json", "id_rsa", "id_ed25519",
+}
+
+TEXT_EXTENSIONS = {
+    ".json", ".py", ".html", ".htm", ".js", ".cjs", ".mjs", ".css",
+    ".md", ".txt", ".yml", ".yaml", ".toml", ".xml", ".svg", ".sh",
+}
+
+
+class AgentError(ValueError):
+    """Raised when an agent operation is invalid or unsafe."""
+
+
+def safe_root(value: str | Path) -> Path:
+    """Resolve and validate the repository root."""
+    path = Path(value).expanduser().resolve(strict=True)
+    if not path.is_dir():
+        raise AgentError(f"Not a repository directory: {path}")
+    return path
+
+
+def safe_target(root: Path, relative: str) -> Path:
+    """Resolve a repository-relative path and reject traversal and symlinks."""
+    if not isinstance(relative, str) or not relative.strip():
+        raise AgentError("A non-empty relative path is required.")
+
+    candidate = Path(relative)
+
+    if candidate.is_absolute():
+        raise AgentError(f"Absolute paths are not allowed: {relative}")
+
+    if ".." in candidate.parts:
+        raise AgentError(f"Parent-directory traversal is not allowed: {relative}")
+
+    resolved_root = root.resolve(strict=True)
+    output = (resolved_root / candidate).resolve(strict=False)
+
+    try:
+        output.relative_to(resolved_root)
+    except ValueError as exc:
+        raise AgentError(f"Path escapes repository root: {relative}") from exc
+
+    current = resolved_root
+    for part in candidate.parts:
+        current = current / part
+        if current.is_symlink():
+            raise AgentError(f"Symbolic-link paths are not allowed: {relative}")
+
+    return output
+
+
+def is_sensitive(path: Path) -> bool:
+    """Identify common secret and credential filenames."""
+    name = path.name.lower()
+    return (
+        name in SENSITIVE_NAMES
+        or name.startswith(".env.")
+        or name.endswith((".pem", ".key", ".p12", ".pfx", ".keystore"))
+    )
+
+
+def load_spec(path: Path) -> dict[str, Any]:
+    """Load and validate a bounded JSON generation specification."""
+    if not path.is_file():
+        raise AgentError(f"Specification file not found: {path}")
+
+    if path.stat().st_size > MAX_SPEC_BYTES:
+        raise AgentError("Specification exceeds the maximum allowed size.")
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise AgentError(f"Could not read valid JSON specification: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise AgentError("Specification must be a JSON object.")
+
+    entries = data.get("files")
+    if not isinstance(entries, list):
+        raise AgentError("Specification must contain a files array.")
+
+    if len(entries) > MAX_FILES_PER_SPEC:
+        raise AgentError(
+            f"Specification exceeds {MAX_FILES_PER_SPEC} file entries."
+        )
+
+    seen: set[str] = set()
+
+    for item in entries:
+        if not isinstance(item, dict):
+            raise AgentError("Every specification entry must be an object.")
+
+        relative = item.get("path")
+        if not isinstance(relative, str) or not relative.strip():
+            raise AgentError("Every entry needs a non-empty string path.")
+
+        # Validate paths now, before planning any writes.
+        Path(relative)
+        key = relative.replace("\\", "/").casefold()
+
+        if key in seen:
+            raise AgentError(f"Duplicate path in specification: {relative}")
         seen.add(key)
+
+        kind = item.get("kind", "text")
+        if not isinstance(kind, str) or kind.lower() not in KINDS:
+            raise AgentError(f"Unsupported file kind for {relative}: {kind}")
+
     return data
-def render(item):
-    kind=item.get('kind','text').lower(); rel=item['path']
-    if kind not in KINDS: raise ValueError(f'Unsupported kind: {kind}')
-    if kind=='json':
-        if 'data' not in item: raise ValueError(f'JSON needs data: {rel}')
-        content=json.dumps(item['data'],ensure_ascii=False,indent=2)+'\\n'
-    elif 'content' in item:
-        if not isinstance(item['content'],str): raise ValueError('content must be text')
-        content=item['content']
-    elif kind=='html':
-        d=item.get('data',{}); title=str(d.get('title',Path(rel).stem.title()))
-        desc=str(d.get('description','Education and career guidance from MedOrbits.'))
-        css=str(d.get('css','/assets/css/main.css')); js=str(d.get('js','/assets/js/main.js'))
-        content='<!doctype html>\\n<html lang="en">\\n<head>\\n<meta charset="utf-8">\\n<meta name="viewport" content="width=device-width, initial-scale=1">\\n<meta name="description" content="'+desc+'">\\n<title>'+title+'</title>\\n<link rel="stylesheet" href="'+css+'">\\n</head>\\n<body>\\n<main><h1>'+title+'</h1></main>\\n<script src="'+js+'" defer></script>\\n</body>\\n</html>\\n'
+
+
+def render(item: dict[str, Any]) -> bytes:
+    """Render one specification item into bounded UTF-8 bytes."""
+    relative = item["path"]
+    kind = item.get("kind", "text")
+
+    if not isinstance(kind, str):
+        raise AgentError(f"Invalid kind for {relative}")
+
+    kind = kind.lower()
+    if kind not in KINDS:
+        raise AgentError(f"Unsupported kind: {kind}")
+
+    if kind == "json":
+        if "data" not in item:
+            raise AgentError(f"JSON entry needs a data field: {relative}")
+        content = json.dumps(
+            item["data"], ensure_ascii=False, indent=2
+        ) + "\n"
+
+    elif "content" in item:
+        if not isinstance(item["content"], str):
+            raise AgentError(f"content must be text: {relative}")
+        content = item["content"]
+
+    elif kind == "html":
+        data = item.get("data", {})
+        if not isinstance(data, dict):
+            raise AgentError(f"HTML data must be an object: {relative}")
+
+        title = html.escape(str(data.get(
+            "title", Path(relative).stem.replace("-", " ").title()
+        )), quote=True)
+        description = html.escape(str(data.get(
+            "description", "Education and career guidance from MedOrbits."
+        )), quote=True)
+        css = html.escape(str(data.get(
+            "css", "/assets/css/main.css"
+        )), quote=True)
+        js = html.escape(str(data.get(
+            "js", "/assets/js/main.js"
+        )), quote=True)
+
+        content = (
+            "<!doctype html>\n"
+            '<html lang="en">\n'
+            "<head>\n"
+            '  <meta charset="utf-8">\n'
+            '  <meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            f'  <meta name="description" content="{description}">\n'
+            f"  <title>{title}</title>\n"
+            f'  <link rel="stylesheet" href="{css}">\n'
+            "</head>\n"
+            "<body>\n"
+            f"  <main><h1>{title}</h1></main>\n"
+            f'  <script src="{js}" defer></script>\n'
+            "</body>\n"
+            "</html>\n"
+        )
+
     else:
-        templates={'text':'','markdown':'# '+Path(rel).stem.title()+'\\n\\n','python':'# Generated Python module\\nfrom __future__ import annotations\\n\\ndef main() -> int:\\n    return 0\\n\\nif __name__ == "__main__":\\n    raise SystemExit(main())\\n','js':'"use strict";\\n','css':'/* Generated stylesheet */\\n:root { color-scheme: light; }\\n','env':'# Template only; never commit secrets.\\n'}
-        content=templates[kind]
-    raw=content.encode('utf-8')
-    if len(raw)>5_000_000: raise ValueError(f'Output too large: {rel}')
+        templates = {
+            "text": "",
+            "markdown": f"# {Path(relative).stem.replace('-', ' ').title()}\n\n",
+            "python": (
+                '"""Generated Python module."""\n'
+                "from __future__ import annotations\n\n"
+                "def main() -> int:\n"
+                "    return 0\n\n"
+                'if __name__ == "__main__":\n'
+                "    raise SystemExit(main())\n"
+            ),
+            "js": '"use strict";\n',
+            "css": (
+                "/* Generated stylesheet */\n"
+                ":root {\n"
+                "  color-scheme: dark;\n"
+                "}\n"
+            ),
+            "env": "# Template only; never commit secrets.\n",
+        }
+        content = templates[kind]
+
+    raw = content.encode("utf-8")
+    if len(raw) > MAX_FILE_BYTES:
+        raise AgentError(f"Generated output exceeds size limit: {relative}")
+
     return raw
-def atomic_write(path,data):
-    path.parent.mkdir(parents=True,exist_ok=True)
-    fd,tmp=tempfile.mkstemp(prefix='.local-agent-',dir=str(path.parent))
+
+
+def atomic_write(path: Path, payload: bytes) -> None:
+    """Atomically replace a destination using a temporary file in its directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Revalidate the destination after parent directories have been created.
+    fd, temporary = tempfile.mkstemp(
+        prefix=".local-agent-", dir=str(path.parent)
+    )
+
     try:
-        with os.fdopen(fd,'wb') as f: f.write(data); f.flush(); os.fsync(f.fileno())
-        os.replace(tmp,path)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
     except Exception:
-        try: os.unlink(tmp)
-        except OSError: pass
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
         raise
-def generate(root,specfile,apply=False,force=False):
-    spec=load_spec(specfile); plan=[]; errors=[]
-    for item in spec['files']:
+
+
+def backup_existing(root: Path, target: Path) -> Path:
+    """Create a timestamped backup for a file that is about to be replaced."""
+    relative = target.relative_to(root)
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    backup_relative = Path(".local-agent") / "backups" / stamp / relative
+
+    backup = safe_target(root, backup_relative.as_posix())
+    backup.parent.mkdir(parents=True, exist_ok=True)
+
+    # Refuse symlink files and re-check after creating the backup directory.
+    if target.is_symlink() or not target.is_file():
+        raise AgentError(f"Refusing to back up a non-regular file: {relative}")
+
+    backup = safe_target(root, backup_relative.as_posix())
+    shutil.copy2(target, backup)
+    return backup
+
+
+def generate(
+    root: Path,
+    specfile: Path,
+    apply: bool = False,
+    force: bool = False,
+) -> int:
+    """Plan or apply a complete specification after validating every entry."""
+    spec = load_spec(specfile)
+    plan: list[tuple[Path, bytes, str]] = []
+    errors: list[str] = []
+
+    for item in spec["files"]:
         try:
-            target=safe_target(root,item['path']); payload=render(item)
-            plan.append((target,payload,'SKIP' if target.exists() and not force else ('REPLACE' if target.exists() else 'CREATE')))
-        except Exception as e: errors.append(f'ERROR {item.get("path","?")}: {e}')
-    for e in errors: print(e)
-    if errors: print('No writes: fix invalid spec entries.'); return 2
-    for target,payload,action in plan:
-        rel=target.relative_to(root)
-        if action=='SKIP': print(f'SKIP {rel} (exists; use --force to replace)')
-        elif not apply: print(f'WOULD_{action} {rel} ({len(payload)} bytes)')
-        else:
-            if action=='REPLACE':
-                stamp=datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')
-                backup=safe_target(root,f'.local-agent/backups/{stamp}/{rel.as_posix()}')
-                backup.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(target,backup); print(f'BACKUP {backup.relative_to(root)}')
-            atomic_write(target,payload); print(f'{action} {rel}')
-    print(f'{len(plan)} item(s); {"applied" if apply else "dry-run only"}.'); return 0
-def files(root):
-    for cur,dirs,names in os.walk(root,followlinks=False):
-        dirs[:]=[d for d in dirs if d not in SKIP and not (Path(cur)/d).is_symlink()]
-        for name in names:
-            p=Path(cur)/name
-            if p.is_file() and not p.is_symlink(): yield p
-def validate(root):
-    errors=[]; warnings=[]; counts={'JSON':0,'Python':0,'HTML':0}
-    for p in files(root):
-        rel=p.relative_to(root).as_posix()
-        if p.stat().st_size>5_000_000: continue
-        try:
-            if p.suffix.lower()=='.json':
-                counts['JSON']+=1
-                try: json.loads(p.read_text(encoding='utf-8'))
-                except Exception as e: errors.append(f'JSON {rel}: {e}')
-            elif p.suffix.lower()=='.py':
-                counts['Python']+=1
-                try: ast.parse(p.read_text(encoding='utf-8'),filename=rel)
-                except Exception as e: errors.append(f'PYTHON {rel}: {e}')
-            elif p.suffix.lower() in ('.html','.htm'):
-                counts['HTML']+=1; body=p.read_text(encoding='utf-8')
-                for ref in re.findall(r'''(?:src|href)\\s*=\\s*['"]([^'"]+)['"]''',body,re.I):
-                    if ref.startswith(('http:','https:','//','data:','mailto:','tel:','#')): continue
-                    local=ref.split('?',1)[0].split('#',1)[0]
-                    target=root/local.lstrip('/') if local.startswith('/') else p.parent/local
-                    if local and not target.exists(): warnings.append(f'Missing reference in {rel}: {ref}')
-        except (OSError,UnicodeError) as e: warnings.append(f'READ {rel}: {e}')
-    print('Counts:',counts)
-    for e in errors: print('ERROR',e)
-    for w in warnings: print('WARN',w)
-    print(f'{len(errors)} error(s), {len(warnings)} warning(s)')
-    return 1 if errors else 0
-def main():
-    ap=argparse.ArgumentParser(); ap.add_argument('--root',default='.'); sub=ap.add_subparsers(dest='cmd',required=True)
-    sub.add_parser('status'); sub.add_parser('validate'); sub.add_parser('inventory')
-    for name in ('plan','create','scaffold'):
-        p=sub.add_parser(name); p.add_argument('--spec',required=True)
-        if name=='create': p.add_argument('--dry-run',action='store_true'); p.add_argument('--force',action='store_true')
-        if name=='scaffold': p.add_argument('--apply',action='store_true'); p.add_argument('--force',action='store_true')
-    a=ap.parse_args()
+            target = safe_target(root, item["path"])
+
+            if is_sensitive(target):
+                raise AgentError(
+                    "Refusing to generate a file at a sensitive path."
+                )
+
+            payload = render(item)
+
+            if target.exists() and not target.is_file():
+                raise AgentError("Destination exists but is not a regular file.")
+
+            action = (
+                "SKIP" if target.exists() and not force
+                else "REPLACE" if target.exists()
+                else "CREATE"
+            )
+            plan.append((target, payload, action))
+        except (AgentError, OSError, TypeError, ValueError) as exc:
+            errors.append(f"ERROR {item.get('path', '?')}: {exc}")
+
+    for error in errors:
+        print(error, file=sys.stderr)
+
+    if errors:
+        print("No writes performed: correct the specification first.")
+        return 2
+
+    if not apply:
+        for target, payload, action in plan:
+            relative = target.relative_to(root)
+            if action == "SKIP":
+                print(f"SKIP {relative} (exists; use --force to replace)")
+            else:
+                print(f"WOULD_{action} {relative} ({len(payload)} bytes)")
+        print(f"{len(plan)} item(s); dry-run only.")
+        return 0
+
+    # Check all paths again before the first write. This reduces, but cannot
+    # eliminate, races with another process changing filesystem entries.
     try:
-        root=safe_root(a.root)
-        if a.cmd=='status':
-            print(f'MedOrbits Local Agent {VERSION}\\nRoot: {root}')
-            for m in ('package.json','requirements.txt','pyproject.toml','server.js','index.html','pages','assets','tools','api','tests'):
-                if (root/m).exists(): print('FOUND',m)
-            print('Safe mode: no network, installs, code execution, deployment or Git mutation.'); return 0
-        if a.cmd=='validate': return validate(root)
-        if a.cmd=='inventory':
-            for p in files(root): print(p.relative_to(root).as_posix())
-            return 0
-        spec=Path(a.spec).expanduser().resolve()
-        if a.cmd=='plan': return generate(root,spec)
-        if a.cmd=='create': return generate(root,spec,not a.dry_run,a.force)
-        if a.cmd=='scaffold': return generate(root,spec,a.apply,a.force)
-    except (ValueError,OSError,json.JSONDecodeError) as e: print('ERROR:',e,file=sys.stderr); return 2
+        for target, _, action in plan:
+            safe_target(root, target.relative_to(root).as_posix())
+            if action == "REPLACE" and not target.is_file():
+                raise AgentError(f"Replacement target changed: {target}")
+
+        for target, payload, action in plan:
+            relative = target.relative_to(root)
+
+            if action == "SKIP":
+                print(f"SKIP {relative} (already exists)")
+                continue
+
+            safe_target(root, relative.as_posix())
+
+            if action == "REPLACE":
+                backup = backup_existing(root, target)
+                print(f"BACKUP {backup.relative_to(root)}")
+
+            atomic_write(target, payload)
+            print(f"{action} {relative}")
+
+    except (AgentError, OSError, ValueError) as exc:
+        print(f"ERROR during generation: {exc}", file=sys.stderr)
+        print("Some earlier files may already have been written.")
+        return 2
+
+    print(f"{len(plan)} item(s); applied.")
+    return 0
+
+
+def iter_files(root: Path):
+    """Yield regular files while excluding generated and dependency directories."""
+    yielded = 0
+
+    for current, directories, names in os.walk(root, followlinks=False):
+        base = Path(current)
+        directories[:] = sorted(
+            name for name in directories
+            if name not in SKIP and not (base / name).is_symlink()
+        )
+
+        for name in sorted(names):
+            path = base / name
+
+            if path.is_symlink() or not path.is_file():
+                continue
+
+            yield path
+            yielded += 1
+
+            if yielded >= MAX_INVENTORY_FILES:
+                return
+
+
+def validate(root: Path) -> int:
+    """Validate JSON/Python syntax and check relative HTML references."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    counts = {"JSON": 0, "Python": 0, "HTML": 0}
+    reference_pattern = re.compile(
+        r"""(?:src|href)\s*=\s*['"]([^'"]+)['"]""", re.IGNORECASE
+    )
+
+    for path in iter_files(root):
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                continue
+
+            relative = path.relative_to(root).as_posix()
+            suffix = path.suffix.lower()
+
+            if suffix == ".json":
+                counts["JSON"] += 1
+                try:
+                    json.loads(path.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                    errors.append(f"JSON {relative}: {exc}")
+
+            elif suffix == ".py":
+                counts["Python"] += 1
+                try:
+                    ast.parse(
+                        path.read_text(encoding="utf-8"),
+                        filename=relative,
+                    )
+                except (OSError, UnicodeError, SyntaxError) as exc:
+                    errors.append(f"PYTHON {relative}: {exc}")
+
+            elif suffix in {".html", ".htm"}:
+                counts["HTML"] += 1
+
+                try:
+                    body = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeError) as exc:
+                    warnings.append(f"READ {relative}: {exc}")
+                    continue
+
+                for reference in reference_pattern.findall(body):
+                    if reference.startswith((
+                        "http:", "https:", "//", "data:", "mailto:",
+                        "tel:", "#", "javascript:"
+                    )):
+                        if reference.lower().startswith("javascript:"):
+                            warnings.append(
+                                f"Potential javascript URL in {relative}: "
+                                f"{reference[:100]}"
+                            )
+                        continue
+
+                    local = reference.split("?", 1)[0].split("#", 1)[0]
+                    if not local:
+                        continue
+
+                    # Root-relative paths are interpreted from the repository
+                    # root. Relative paths are interpreted from the HTML file.
+                    target = (
+                        root / local.lstrip("/")
+                        if local.startswith("/")
+                        else path.parent / local
+                    )
+
+                    try:
+                        target.resolve(strict=False).relative_to(root)
+                    except ValueError:
+                        warnings.append(
+                            f"Reference escapes repository in {relative}: "
+                            f"{reference}"
+                        )
+                        continue
+
+                    if not target.exists():
+                        warnings.append(
+                            f"Missing reference in {relative}: {reference}"
+                        )
+
+        except OSError as exc:
+            warnings.append(f"READ {path}: {exc}")
+
+    print("Counts:", json.dumps(counts))
+    for error in errors:
+        print("ERROR", error)
+    for warning in warnings:
+        print("WARN", warning)
+
+    print(f"{len(errors)} error(s), {len(warnings)} warning(s)")
+    return 1 if errors else 0
+
+
+def status(root: Path) -> int:
+    """Print repository and local-agent status without modifying files."""
+    print(f"MedOrbits Local Agent {VERSION}")
+    print(f"Root: {root}")
+
+    for name in (
+        "package.json", "requirements.txt", "pyproject.toml", "server.js",
+        "index.html", "pages", "assets", "tools", "api", "tests",
+        "local-agent",
+    ):
+        if (root / name).exists():
+            print("FOUND", name)
+
+    print("Mode: safe")
+    print("No network, installs, deployment, shell tasks, or Git mutations.")
+    return 0
+
+
+def inventory(root: Path) -> int:
+    """Print repository-relative file paths."""
+    count = 0
+
+    for path in iter_files(root):
+        print(path.relative_to(root).as_posix())
+        count += 1
+
+    print(f"\n{count} file(s) listed.", file=sys.stderr)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="MedOrbits Local Agent -- safe repository utility."
+    )
+    parser.add_argument(
+        "--root", default=".",
+        help="Repository root directory (default: current directory).",
+    )
+
+    subparsers = parser.add_subparsers(dest="cmd", required=True)
+    subparsers.add_parser("status", help="Show repository status.")
+    subparsers.add_parser("validate", help="Validate JSON, Python and HTML.")
+    subparsers.add_parser("inventory", help="List repository files.")
+
+    for command in ("plan", "create", "scaffold"):
+        subparser = subparsers.add_parser(command)
+        subparser.add_argument("--spec", required=True)
+        if command == "create":
+            subparser.add_argument(
+                "--dry-run", action="store_true",
+                help="Preview only; do not write files.",
+            )
+            subparser.add_argument("--force", action="store_true")
+        elif command == "scaffold":
+            subparser.add_argument(
+                "--apply", action="store_true",
+                help="Apply the scaffold. Default is preview only.",
+            )
+            subparser.add_argument("--force", action="store_true")
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    try:
+        root = safe_root(args.root)
+
+        if args.cmd == "status":
+            return status(root)
+
+        if args.cmd == "validate":
+            return validate(root)
+
+        if args.cmd == "inventory":
+            return inventory(root)
+
+        specfile = Path(args.spec).expanduser().resolve(strict=True)
+
+        if args.cmd == "plan":
+            return generate(root, specfile, apply=False)
+
+        if args.cmd == "create":
+            return generate(
+                root,
+                specfile,
+                apply=not args.dry_run,
+                force=args.force,
+            )
+
+        if args.cmd == "scaffold":
+            return generate(
+                root,
+                specfile,
+                apply=args.apply,
+                force=args.force,
+            )
+
+    except (AgentError, OSError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
     return 2
-if __name__=='__main__': raise SystemExit(main())
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,326 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "metadata": {
+    "name": "MedOrbits Site Page Example",
+    "description": "Reference configuration for creating, validating, and maintaining repository website pages through the MedOrbits Local Agent.",
+    "project": "MedOrbits",
+    "type": "site-page",
+    "locale": "en-IN",
+    "status": "example"
+  },
+  "page": {
+    "id": "career-opportunities",
+    "title": "Career Opportunities",
+    "slug": "careers",
+    "path": "pages/careers.html",
+    "canonicalPath": "/careers",
+    "template": "standard",
+    "language": "en",
+    "status": "draft",
+    "visibility": "public",
+    "indexable": true,
+    "description": "Explore career opportunities, internships, apprenticeships, recruitment services, and professional development resources with MedOrbits.",
+    "keywords": [
+      "careers",
+      "jobs",
+      "internships",
+      "apprenticeships",
+      "recruitment",
+      "career guidance"
+    ]
+  },
+  "branding": {
+    "name": "MedOrbits",
+    "theme": "sapphire-blue",
+    "appearance": "premium",
+    "backgroundPolicy": {
+      "avoidPureWhite": true,
+      "useTintedSections": true,
+      "maintainTextContrast": true
+    },
+    "colors": {
+      "primary": "#123B67",
+      "secondary": "#245C91",
+      "accent": "#D5B477",
+      "background": "#EAF0F7",
+      "surface": "#F4F0E8",
+      "text": "#172B43",
+      "mutedText": "#53677D",
+      "border": "#C7D3E0",
+      "success": "#236B52",
+      "warning": "#8B5A18",
+      "danger": "#A63838"
+    },
+    "typography": {
+      "headingFont": "system-ui",
+      "bodyFont": "system-ui",
+      "baseFontSize": "16px",
+      "lineHeight": 1.6
+    }
+  },
+  "layout": {
+    "responsive": true,
+    "maxContentWidth": "1200px",
+    "header": {
+      "enabled": true,
+      "sticky": true,
+      "navigationSource": "shared-navigation"
+    },
+    "hero": {
+      "enabled": true,
+      "layout": "split",
+      "animation": {
+        "enabled": true,
+        "respectReducedMotion": true,
+        "effects": [
+          "fade-in",
+          "subtle-float"
+        ]
+      },
+      "title": "Build Your Future with MedOrbits",
+      "subtitle": "Discover career opportunities, professional guidance, and pathways to your next role.",
+      "primaryAction": {
+        "label": "Explore Opportunities",
+        "href": "#opportunities",
+        "type": "anchor"
+      },
+      "secondaryAction": {
+        "label": "Request Guidance",
+        "href": "/request-guidance",
+        "type": "internal-link"
+      },
+      "media": {
+        "type": "image",
+        "src": "/assets/images/career-hero.webp",
+        "alt": "Professionals exploring career opportunities",
+        "loading": "eager"
+      }
+    },
+    "sections": [
+      {
+        "id": "opportunities",
+        "type": "card-grid",
+        "title": "Explore Opportunities",
+        "description": "Browse career pathways and professional development resources.",
+        "columns": {
+          "desktop": 2,
+          "tablet": 2,
+          "mobile": 1
+        },
+        "cards": [
+          {
+            "id": "jobs",
+            "title": "Jobs",
+            "description": "Explore employment opportunities and career pathways.",
+            "icon": "briefcase",
+            "href": "/jobs"
+          },
+          {
+            "id": "internships",
+            "title": "Internships",
+            "description": "Discover practical learning and internship opportunities.",
+            "icon": "graduation-cap",
+            "href": "/internships"
+          },
+          {
+            "id": "apprenticeships",
+            "title": "Apprenticeships",
+            "description": "Explore structured workplace learning opportunities.",
+            "icon": "book-open",
+            "href": "/apprenticeships"
+          },
+          {
+            "id": "career-guidance",
+            "title": "Career Guidance",
+            "description": "Get support with career planning and professional development.",
+            "icon": "compass",
+            "href": "/request-guidance"
+          }
+        ]
+      },
+      {
+        "id": "services",
+        "type": "feature-list",
+        "title": "Career Support Services",
+        "items": [
+          {
+            "id": "resume-support",
+            "title": "Resume Assistance",
+            "description": "Guidance on preparing and improving professional resumes."
+          },
+          {
+            "id": "interview-preparation",
+            "title": "Interview Preparation",
+            "description": "Preparation resources for interviews and recruitment processes."
+          },
+          {
+            "id": "recruitment",
+            "title": "Recruitment Support",
+            "description": "Information about recruitment services and relevant opportunities."
+          }
+        ]
+      },
+      {
+        "id": "how-it-works",
+        "type": "steps",
+        "title": "How It Works",
+        "items": [
+          {
+            "step": 1,
+            "title": "Explore",
+            "description": "Review opportunities and available support services."
+          },
+          {
+            "step": 2,
+            "title": "Prepare",
+            "description": "Organize your profile and relevant application documents."
+          },
+          {
+            "step": 3,
+            "title": "Apply",
+            "description": "Follow the official application process for your selected opportunity."
+          },
+          {
+            "step": 4,
+            "title": "Progress",
+            "description": "Track your applications and continue developing your skills."
+          }
+        ]
+      },
+      {
+        "id": "faq",
+        "type": "faq",
+        "title": "Frequently Asked Questions",
+        "items": [
+          {
+            "question": "How can I find relevant opportunities?",
+            "answer": "Browse the available opportunity categories and review the eligibility and application instructions on each listing."
+          },
+          {
+            "question": "Can I request career guidance?",
+            "answer": "Yes. Use the guidance request page to submit your requirements through the configured contact process."
+          },
+          {
+            "question": "Are jobs guaranteed?",
+            "answer": "No. Listing or using career support services does not guarantee employment, selection, or an interview."
+          }
+        ]
+      }
+    ]
+  },
+  "dataSources": [
+    {
+      "id": "jobs",
+      "type": "json",
+      "path": "data/jobs.json",
+      "required": false,
+      "cacheSeconds": 300
+    },
+    {
+      "id": "services",
+      "type": "json",
+      "path": "data/services.json",
+      "required": false,
+      "cacheSeconds": 300
+    },
+    {
+      "id": "faqs",
+      "type": "json",
+      "path": "data/faqs.json",
+      "required": false,
+      "cacheSeconds": 300
+    }
+  ],
+  "seo": {
+    "title": "Careers and Job Opportunities | MedOrbits",
+    "description": "Explore jobs, internships, apprenticeships, recruitment resources, and career guidance with MedOrbits.",
+    "canonical": "/careers",
+    "robots": "index,follow",
+    "openGraph": {
+      "type": "website",
+      "title": "Career Opportunities | MedOrbits",
+      "description": "Discover career opportunities and professional development resources.",
+      "image": "/assets/images/career-social.webp"
+    },
+    "twitter": {
+      "card": "summary_large_image",
+      "title": "Career Opportunities | MedOrbits",
+      "description": "Explore careers, internships, and professional guidance.",
+      "image": "/assets/images/career-social.webp"
+    },
+    "structuredData": {
+      "enabled": true,
+      "types": [
+        "WebPage",
+        "BreadcrumbList"
+      ]
+    }
+  },
+  "accessibility": {
+    "target": "WCAG-2.2-AA",
+    "semanticHtml": true,
+    "keyboardNavigation": true,
+    "visibleFocus": true,
+    "imageAltRequired": true,
+    "formLabelsRequired": true,
+    "respectReducedMotion": true,
+    "minimumContrastRatio": {
+      "normalText": 4.5,
+      "largeText": 3
+    }
+  },
+  "performance": {
+    "deferNonCriticalScripts": true,
+    "lazyLoadBelowFoldImages": true,
+    "useResponsiveImages": true,
+    "minimizeLayoutShift": true,
+    "cacheStaticAssets": true
+  },
+  "security": {
+    "allowInlineScripts": false,
+    "allowInlineStyles": false,
+    "sanitizeDynamicContent": true,
+    "validateInternalLinks": true,
+    "allowArbitraryHtml": false,
+    "allowExternalDataSources": false
+  },
+  "validation": {
+    "requiredFields": [
+      "page.id",
+      "page.title",
+      "page.slug",
+      "page.path",
+      "branding.name",
+      "layout.sections"
+    ],
+    "checks": [
+      "json-syntax",
+      "schema-validation",
+      "unique-section-ids",
+      "internal-link-validation",
+      "asset-existence",
+      "accessibility-review",
+      "seo-validation"
+    ],
+    "failOnMissingRequiredAssets": true,
+    "failOnInvalidInternalLinks": true
+  },
+  "publishing": {
+    "enabled": false,
+    "requireValidation": true,
+    "requireApproval": true,
+    "preserveExistingFiles": true,
+    "createBackupBeforeMutation": true
+  },
+  "agent": {
+    "managedBy": "medorbits-local-agent",
+    "executionMode": "validate-before-write",
+    "allowAutomaticFileCreation": true,
+    "allowAutomaticOverwrite": false,
+    "allowAutomaticDeletion": false,
+    "continueOnIndependentTaskFailure": true,
+    "requireHumanApprovalForDestructiveChanges": true
+  }
+}
