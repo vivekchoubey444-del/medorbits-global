@@ -1,0 +1,149 @@
+
+name: Test Suite
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-tests:
+    name: Node.js Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate package manifest
+        id: project
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No root package.json; Node.js tests skipped."
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+              throw new Error("package.json must contain a JSON object.");
+            }
+          '
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        if: steps.project.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f npm-shrinkwrap.json || -f package-lock.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            echo "::warning::No npm lockfile found; using npm install."
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Run tests when configured
+        if: steps.project.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test
+          else
+            echo "::notice::No npm test script is configured."
+          fi
+
+      - name: Check JavaScript syntax for tracked files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z", "--", "*.js", "*.cjs", "*.mjs"],
+              check=True,
+              capture_output=True,
+          )
+
+          files = [
+              item.decode("utf-8", errors="replace")
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          failures = []
+
+          for name in files:
+              path = Path(name)
+
+              if not path.is_file():
+                  continue
+
+              check = subprocess.run(
+                  ["node", "--check", str(path)],
+                  text=True,
+                  capture_output=True,
+              )
+
+              if check.returncode:
+                  failures.append(name)
+                  print(f"::error file={name}::JavaScript syntax check failed.")
+                  if check.stderr:
+                      print(check.stderr)
+
+          print(f"Checked {len(files)} tracked JavaScript file(s).")
+
+          if failures:
+              print("Files with syntax errors:", ", ".join(failures))
+              sys.exit(1)
+          PY
+
+      - name: Write test summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Test Suite"
+            echo
+            echo "- Result: $STATUS"
+            echo "- Node.js: 22"
+            echo "- npm tests: executed when configured"
+            echo "- JavaScript syntax validation: enabled"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,132 @@
+
+name: Validate JSON Files
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**/*.json"
+      - ".github/workflows/validate-json.yml"
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**/*.json"
+      - ".github/workflows/validate-json.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-json-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate JSON
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate tracked JSON files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", "vendor",
+              "dist", "build", "coverage", ".venv", "venv"
+          }
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z", "--", "*.json"],
+              check=True,
+              capture_output=True,
+          )
+
+          paths = [
+              Path(item.decode("utf-8", errors="replace"))
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          checked = 0
+          failures = []
+
+          def reject_duplicate_keys(pairs):
+              obj = {}
+              for key, value in pairs:
+                  if key in obj:
+                      raise ValueError(f"Duplicate JSON key: {key!r}")
+                  obj[key] = value
+              return obj
+
+          def reject_nonstandard_constant(value):
+              raise ValueError(
+                  f"Non-standard JSON constant is not allowed: {value}"
+              )
+
+          for path in paths:
+              if not path.is_file():
+                  continue
+
+              if any(part in ignored for part in path.parts):
+                  continue
+
+              try:
+                  with path.open("r", encoding="utf-8") as file:
+                      json.load(
+                          file,
+                          object_pairs_hook=reject_duplicate_keys,
+                          parse_constant=reject_nonstandard_constant,
+                      )
+
+                  checked += 1
+
+              except Exception as error:
+                  failures.append((path.as_posix(), str(error)))
+                  print(
+                      f"::error file={path.as_posix()}::Invalid JSON."
+                  )
+
+          print(f"Validated {checked} tracked JSON file(s).")
+
+          if failures:
+              print("\nJSON validation errors:")
+              for filename, error in failures:
+                  print(f" - {filename}: {error}")
+              sys.exit(1)
+
+          print("All tracked JSON files passed validation.")
+          PY
+
+      - name: Write validation summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## JSON Validation"
+            echo
+            echo "- Result: $STATUS"
+            echo "- Syntax validation: enabled"
+            echo "- Duplicate-key detection: enabled"
+            echo "- Non-standard JSON constants: rejected"
+          } >> "$GITHUB_STEP_SUMMARY"

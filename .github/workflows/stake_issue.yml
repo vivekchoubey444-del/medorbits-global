@@ -1,0 +1,124 @@
+
+name: Issue Classification
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - edited
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-classification-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    name: Classify Issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Classify issue and apply labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            if (!issue || issue.pull_request) {
+              core.info("Event is not a standard issue. Skipping.");
+              return;
+            }
+
+            const text = `${issue.title || ""}\n${issue.body || ""}`
+              .toLowerCase();
+
+            const rules = [
+              {
+                label: "bug",
+                patterns: [
+                  /\bbug\b/,
+                  /\berror\b/,
+                  /\bcrash(?:es|ed)?\b/,
+                  /\bnot working\b/,
+                  /\bbroken\b/,
+                  /\bregression\b/
+                ]
+              },
+              {
+                label: "enhancement",
+                patterns: [
+                  /\bfeature request\b/,
+                  /\bnew feature\b/,
+                  /\benhancement\b/,
+                  /\badd support\b/,
+                  /\bimprovement\b/
+                ]
+              },
+              {
+                label: "documentation",
+                patterns: [
+                  /\bdocumentation\b/,
+                  /\breadme\b/,
+                  /\btypo\b/,
+                  /\bdocs?\b/,
+                  /\bguide\b/
+                ]
+              },
+              {
+                label: "security",
+                patterns: [
+                  /\bvulnerability\b/,
+                  /\bsecurity issue\b/,
+                  /\bsecurity concern\b/,
+                  /\bunauthorized access\b/
+                ]
+              },
+              {
+                label: "question",
+                patterns: [
+                  /\bhow do i\b/,
+                  /\bhow can i\b/,
+                  /\bquestion\b/,
+                  /\bhelp needed\b/,
+                  /\bclarification\b/
+                ]
+              }
+            ];
+
+            const selected = rules
+              .filter(rule =>
+                rule.patterns.some(pattern => pattern.test(text))
+              )
+              .map(rule => rule.label);
+
+            if (selected.length === 0) {
+              core.info("No confident classification found; leaving labels unchanged.");
+              return;
+            }
+
+            const existing = new Set(
+              (issue.labels || []).map(label =>
+                typeof label === "string" ? label : label.name
+              )
+            );
+
+            const missing = selected.filter(label => !existing.has(label));
+
+            if (missing.length === 0) {
+              core.info("Applicable labels are already present.");
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: missing
+            });
+
+            core.info(`Added labels: ${missing.join(", ")}`);

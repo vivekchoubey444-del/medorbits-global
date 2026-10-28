@@ -1,0 +1,78 @@
+
+name: Manage Stale Issues and Pull Requests
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: stale-items
+  cancel-in-progress: false
+
+jobs:
+  stale:
+    name: Mark and Close Stale Items
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Mark stale issues and pull requests
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          days-before-stale: 60
+          days-before-close: 14
+
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+
+          stale-issue-message: >
+            This issue has been inactive for 60 days.
+            Please comment with an update if it is still relevant.
+            Otherwise, it may be closed after 14 additional days.
+
+          stale-pr-message: >
+            This pull request has been inactive for 60 days.
+            Please update it or comment if further work is planned.
+            Otherwise, it may be closed after 14 additional days.
+
+          close-issue-message: >
+            This issue was closed because it remained inactive after
+            the stale notice. You may reopen it or create a new issue
+            if the problem persists.
+
+          close-pr-message: >
+            This pull request was closed due to inactivity.
+            Reopen it if the changes are still needed.
+
+          exempt-issue-labels: "pinned,security,keep-open,priority:high"
+          exempt-pr-labels: "pinned,security,keep-open,priority:high"
+
+          exempt-all-milestones: true
+          exempt-all-assignees: true
+
+          operations-per-run: 100
+          remove-stale-when-updated: true
+          delete-branch: false
+
+      - name: Write summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Stale Issue Management"
+            echo
+            echo "- Status: $STATUS"
+            echo "- Inactivity threshold: 60 days"
+            echo "- Closure grace period: 14 days"
+            echo "- Protected labels: pinned, security, keep-open, priority:high"
+            echo "- Pull request branches are never automatically deleted"
+          } >> "$GITHUB_STEP_SUMMARY"

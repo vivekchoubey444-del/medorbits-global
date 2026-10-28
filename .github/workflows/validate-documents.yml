@@ -1,0 +1,162 @@
+
+name: Validate Documents
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/*.rst"
+      - ".github/workflows/validate-documents.yml"
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/*.rst"
+      - ".github/workflows/validate-documents.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-documents-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate tracked documents
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+
+          excluded = {
+              ".git", "node_modules", "vendor",
+              "dist", "build", "coverage", ".venv", "venv"
+          }
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              capture_output=True,
+          )
+
+          tracked = [
+              Path(item.decode("utf-8", errors="replace"))
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          documents = [
+              path for path in tracked
+              if path.is_file()
+              and path.suffix.lower() in {".md", ".txt", ".rst"}
+              and not any(part in excluded for part in path.parts)
+          ]
+
+          failures = []
+          checked = 0
+
+          markdown_link = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
+          markdown_reference = re.compile(
+              r"^\s*\[[^\]]+\]:\s*(\S+)",
+              re.MULTILINE,
+          )
+
+          for path in documents:
+              try:
+                  content = path.read_text(encoding="utf-8")
+              except (OSError, UnicodeError) as error:
+                  failures.append((path.as_posix(), str(error)))
+                  continue
+
+              checked += 1
+
+              if not content.strip():
+                  failures.append((path.as_posix(), "Document is empty."))
+                  continue
+
+              links = markdown_link.findall(content)
+              links.extend(markdown_reference.findall(content))
+
+              for link in links:
+                  link = link.strip("<>")
+
+                  if link.startswith(("#", "http://", "https://", "mailto:", "tel:")):
+                      continue
+
+                  parsed = urlsplit(link)
+
+                  if parsed.scheme or parsed.netloc:
+                      continue
+
+                  target = unquote(parsed.path)
+
+                  if not target:
+                      continue
+
+                  destination = (path.parent / target).resolve()
+
+                  if not destination.exists():
+                      failures.append((
+                          path.as_posix(),
+                          f"Local link target does not exist: {target}",
+                      ))
+
+              for number, line in enumerate(content.splitlines(), 1):
+                  if line.rstrip() != line:
+                      print(
+                          f"::warning file={path.as_posix()},line={number}::"
+                          "Trailing whitespace detected."
+                      )
+
+          print(f"Checked {checked} document(s).")
+
+          if failures:
+              print("\nDocument validation failures:")
+              for filename, error in failures:
+                  print(f" - {filename}: {error}")
+              sys.exit(1)
+
+          print("Document validation passed.")
+          PY
+
+      - name: Write document validation summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Document Validation"
+            echo
+            echo "- Result: $STATUS"
+            echo "- Document types: Markdown, TXT, RST"
+            echo "- Empty-document check: enabled"
+            echo "- Relative Markdown link check: enabled"
+            echo "- Trailing whitespace: warning only"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,196 @@
+
+name: Validate Configuration
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "*.json"
+      - "*.yml"
+      - "*.yaml"
+      - "*.toml"
+      - "*.ini"
+      - ".github/**"
+      - "config/**"
+      - ".npmrc"
+      - ".nvmrc"
+      - "package.json"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - ".github/workflows/validate-config.yml"
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "*.json"
+      - "*.yml"
+      - "*.yaml"
+      - "*.toml"
+      - "*.ini"
+      - ".github/**"
+      - "config/**"
+      - ".npmrc"
+      - ".nvmrc"
+      - "package.json"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - ".github/workflows/validate-config.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-config-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Configuration Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validators
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "PyYAML>=6,<7" \
+            "tomli>=2,<3"
+
+      - name: Validate tracked configuration files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import configparser
+          import json
+          import subprocess
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          import yaml
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              capture_output=True,
+          )
+
+          paths = [
+              Path(item.decode("utf-8", errors="replace"))
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          ignored = {
+              ".git", "node_modules", "vendor",
+              "dist", "build", "coverage", ".venv", "venv"
+          }
+
+          failures = []
+          checked = 0
+
+          for path in paths:
+              if not path.is_file():
+                  continue
+
+              if any(part in ignored for part in path.parts):
+                  continue
+
+              name = path.name.lower()
+              suffix = path.suffix.lower()
+
+              if suffix not in {".json", ".yaml", ".yml", ".toml", ".ini"}:
+                  continue
+
+              if name.endswith(".lock"):
+                  continue
+
+              try:
+                  content = path.read_text(encoding="utf-8")
+                  if suffix == ".json":
+                      json.loads(content)
+                  elif suffix in {".yaml", ".yml"}:
+                      yaml.safe_load(content)
+                  elif suffix == ".toml":
+                      tomllib.loads(content)
+                  elif suffix == ".ini":
+                      parser = configparser.ConfigParser()
+                      parser.read_string(content)
+
+                  checked += 1
+
+              except Exception as error:
+                  failures.append((path.as_posix(), str(error)))
+                  print(f"::error file={path.as_posix()}::Invalid configuration.")
+
+              if failures and failures[-1][0] == path.as_posix():
+                  print(f"Details: {failures[-1][1]}")
+
+          print(f"Validated {checked} configuration file(s).")
+
+          if failures:
+              print("\nConfiguration validation failed:")
+              for filename, error in failures:
+                  print(f"- {filename}: {error}")
+              sys.exit(1)
+          PY
+
+      - name: Validate package.json when present
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f package.json ]]; then
+            node -e '
+              const fs = require("node:fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+              if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+                throw new Error("package.json must contain a JSON object.");
+              }
+
+              if (pkg.scripts !== undefined &&
+                  (pkg.scripts === null ||
+                   typeof pkg.scripts !== "object" ||
+                   Array.isArray(pkg.scripts))) {
+                throw new Error("package.json scripts must be an object.");
+              }
+
+              console.log("package.json validation passed.");
+            '
+          else
+            echo "No root package.json; package-specific checks skipped."
+          fi
+
+      - name: Write validation summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Configuration Validation"
+            echo
+            echo "- Result: $STATUS"
+            echo "- JSON: checked"
+            echo "- YAML: checked"
+            echo "- TOML: checked"
+            echo "- INI: checked"
+          } >> "$GITHUB_STEP_SUMMARY"
