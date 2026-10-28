@@ -1,18 +1,28 @@
 
 #!/usr/bin/env sh
-# ============================================================
-# MedOrbits -- Pre-Commit Quality Gate
+# ==============================================================================
+# MedOrbits -- Enterprise Pre-Commit Quality Gate
 # File: .husky/pre-commit
-# Release: 2.1.0
+# Version: 2.2.0
+# Shell: POSIX sh
 #
-# Runs available checks before committing.
+# Checks:
+#   - Git repository and index integrity
+#   - Exact staged JSON contents
+#   - Exact staged JavaScript contents
+#   - Exact staged Python syntax, when Python is available
+#   - Optional package-manager lint/check scripts
+#
+# Environment:
+#   MEDORBITS_SKIP_PROJECT_CHECKS=1  Skip package lint/check commands.
+#   MEDORBITS_STRICT_HOOKS=1         Fail if required runtimes are missing.
 #
 # Safety:
 #   - Does not install dependencies.
-#   - Does not stage or modify files.
-#   - Does not create commits or push.
-#   - Validates staged file contents.
-# ============================================================
+#   - Does not stage, commit, or push.
+#   - Reads staged source from the Git index.
+#   - Uses temporary files only when necessary and cleans them up.
+# ==============================================================================
 
 set -eu
 
@@ -20,167 +30,363 @@ log() {
   printf '%s\n' "[MedOrbits] $*"
 }
 
-error() {
-  printf '%s\n' "[MedOrbits] ERROR: $*" >&2
-}
-
 warning() {
   printf '%s\n' "[MedOrbits] WARNING: $*" >&2
 }
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-  error "Not inside a Git repository."
+error() {
+  printf '%s\n' "[MedOrbits] ERROR: $*" >&2
+}
+
+die() {
+  error "$*"
   exit 1
 }
 
-cd "$ROOT"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" ||
+  die "Not inside a Git repository."
 
-log "Starting pre-commit checks..."
+cd "$ROOT" || die "Cannot enter repository root."
 
-# ------------------------------------------------------------
-# 1. Require Git and inspect staged files
-# ------------------------------------------------------------
+log "Starting pre-commit quality checks..."
+
+# ------------------------------------------------------------------------------
+# 1. Validate Git state
+# ------------------------------------------------------------------------------
+
+if ! git diff --cached --quiet --; then
+  :
+else
+  die "No staged changes to validate."
+fi
+
+git diff --cached --check ||
+  die "Staged whitespace errors detected."
 
 if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
-  # Permit the initial commit, where HEAD does not yet exist.
-  if ! git diff --cached --quiet --; then
-    log "Initial commit detected; validating staged changes."
-  else
-    error "No valid HEAD and no staged changes."
-    exit 1
-  fi
+  log "Initial commit detected."
 fi
 
-# ------------------------------------------------------------
-# 2. Validate staged JSON files
-#    Read from the Git index, not the working tree.
-# ------------------------------------------------------------
+if [ -n "$(git ls-files -u)" ]; then
+  die "Unresolved Git index conflicts detected."
+fi
+
+log "Git index checks passed."
+
+# ------------------------------------------------------------------------------
+# 2. Validate exact staged JSON and JavaScript contents
+#
+# Node receives NUL-delimited paths from Git. This supports filenames
+# containing spaces, tabs, and newlines without shell word splitting.
+# No source files are overwritten.
+# ------------------------------------------------------------------------------
 
 if command -v node >/dev/null 2>&1; then
-  JSON_LIST="$(mktemp)"
-  JSON_FILE="$(mktemp)"
+  node <<'NODE'
+'use strict';
 
-  trap 'rm -f "$JSON_LIST" "$JSON_FILE"' 0
-  trap 'exit 1' HUP INT TERM
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const cp = require('node:child_process');
 
-  if ! git diff --cached --name-only --diff-filter=ACMR \
-    -- '*.json' '*.schema.json' '*.shema.json' > "$JSON_LIST"; then
-    error "Unable to enumerate staged JSON files."
-    exit 1
+function git(args, options = {}) {
+  return cp.spawnSync('git', args, {
+    encoding: options.encoding,
+    maxBuffer: 64 * 1024 * 1024,
+    ...options
+  });
+}
+
+function fail(message) {
+  console.error(`[MedOrbits] ERROR: ${message}`);
+  process.exitCode = 1;
+}
+
+const listing = git([
+  'diff', '--cached', '--name-only', '-z',
+  '--diff-filter=ACMR', '--'
+], { encoding: null });
+
+if (listing.error || listing.status !== 0) {
+  fail('Unable to enumerate staged files.');
+  process.exit();
+}
+
+const files = listing.stdout.toString('utf8').split('\0').filter(Boolean);
+let jsonCount = 0;
+let jsCount = 0;
+
+const packageFile = path.join(process.cwd(), 'package.json');
+let packageType = 'commonjs';
+
+try {
+  const pkg = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+  if (pkg.type === 'module') packageType = 'module';
+} catch (error) {
+  if (fs.existsSync(packageFile)) {
+    fail('Root package.json is invalid JSON.');
+    process.exit();
+  }
+}
+
+function readStagedBlob(file) {
+  const result = git(['show', `:${file}`], { encoding: null });
+
+  if (result.error || result.status !== 0) {
+    fail(`Unable to read staged file: ${file}`);
+    return null;
+  }
+
+  return result.stdout;
+}
+
+function checkJavaScript(file, source) {
+  const extension = path.extname(file).toLowerCase();
+
+  // --check reads source from stdin. This validates the staged blob
+  // without replacing the working-tree file.
+  let inputType;
+
+  if (extension === '.mjs') {
+    inputType = 'module';
+  } else if (extension === '.cjs') {
+    inputType = 'commonjs';
+  } else {
+    inputType = packageType;
+  }
+
+  const result = cp.spawnSync(
+    process.execPath,
+    ['--check', `--input-type=${inputType}`],
+    {
+      input: source,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024
+    }
+  );
+
+  if (result.error || result.status !== 0) {
+    fail(`JavaScript syntax validation failed: ${file}`);
+    const detail = (result.stderr || result.stdout || '').trim();
+    if (detail) console.error(detail);
+    return;
+  }
+
+  jsCount += 1;
+}
+
+for (const file of files) {
+  const extension = path.extname(file).toLowerCase();
+
+  if (extension !== '.json' &&
+      extension !== '.js' &&
+      extension !== '.mjs' &&
+      extension !== '.cjs') {
+    continue;
+  }
+
+  const source = readStagedBlob(file);
+  if (source === null) continue;
+
+  if (extension === '.json') {
+    try {
+      JSON.parse(source.toString('utf8'));
+      jsonCount += 1;
+    } catch (error) {
+      fail(`Invalid staged JSON: ${file}`);
+    }
+  } else {
+    checkJavaScript(file, source);
+  }
+}
+
+if (process.exitCode) process.exit(process.exitCode);
+
+console.log(`[MedOrbits] Staged JSON validation passed (${jsonCount} files).`);
+console.log(`[MedOrbits] Staged JavaScript syntax passed (${jsCount} files).`);
+NODE
+
+else
+  if [ "${MEDORBITS_STRICT_HOOKS:-0}" = "1" ]; then
+    die "Node.js is required by strict pre-commit mode."
   fi
 
-  JSON_COUNT=0
+  warning "Node.js unavailable; JSON and JavaScript checks skipped."
+fi
 
-  while IFS= read -r file || [ -n "$file" ]; do
-    [ -n "$file" ] || continue
+# ------------------------------------------------------------------------------
+# 3. Validate exact staged Python syntax
+#
+# Python reads staged blobs directly and uses ast.parse. It does not generate
+# bytecode or write Python source files.
+# ------------------------------------------------------------------------------
 
-    JSON_COUNT=$((JSON_COUNT + 1))
+if command -v python3 >/dev/null 2>&1; then
+  python3 <<'PY'
+import ast
+import subprocess
+import sys
 
-    if ! git show ":$file" > "$JSON_FILE"; then
-      error "Unable to read staged JSON: $file"
-      exit 1
-    fi
+def fail(message):
+    print(f"[MedOrbits] ERROR: {message}", file=sys.stderr)
+    sys.exit(1)
 
-    if ! node -e '
+result = subprocess.run(
+    [
+        "git", "diff", "--cached", "--name-only", "-z",
+        "--diff-filter=ACMR", "--"
+    ],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    check=False,
+)
+
+if result.returncode:
+    fail("Unable to enumerate staged Python files.")
+
+paths = [
+    item.decode("utf-8", errors="surrogateescape")
+    for item in result.stdout.split(b"\0")
+    if item
+]
+
+count = 0
+
+for path in paths:
+    if not path.lower().endswith(".py"):
+        continue
+
+    blob = subprocess.run(
+        ["git", "show", f":{path}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if blob.returncode:
+        fail(f"Unable to read staged Python file: {path}")
+
+    try:
+        source = blob.stdout.decode("utf-8-sig")
+        ast.parse(source, filename=path)
+    except (SyntaxError, UnicodeError, ValueError) as exc:
+        fail(f"Python syntax validation failed: {path} ({exc})")
+
+    count += 1
+
+print(f"[MedOrbits] Staged Python syntax passed ({count} files).")
+PY
+
+else
+  if [ "${MEDORBITS_STRICT_HOOKS:-0}" = "1" ]; then
+    die "Python 3 is required by strict pre-commit mode."
+  fi
+
+  warning "Python 3 unavailable; Python syntax checks skipped."
+fi
+
+# ------------------------------------------------------------------------------
+# 4. Run configured project quality scripts
+#
+# Important: package scripts run against the working tree, not a temporary
+# reconstruction of the staged snapshot. Exact staged syntax checks above
+# remain separate from these project-wide checks.
+# ------------------------------------------------------------------------------
+
+if [ "${MEDORBITS_SKIP_PROJECT_CHECKS:-0}" = "1" ]; then
+  log "Project quality scripts skipped by configuration."
+else
+  if [ -f package.json ] && command -v node >/dev/null 2>&1; then
+    if node -e '
       const fs = require("node:fs");
-      JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-    ' "$JSON_FILE" >/dev/null 2>&1; then
-      error "Invalid staged JSON: $file"
-      exit 1
-    fi
-  done < "$JSON_LIST"
+      const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+      process.exit(p.scripts && typeof p.scripts === "object" ? 0 : 1);
+    ' >/dev/null 2>&1; then
 
-  if [ "$JSON_COUNT" -gt 0 ]; then
-    log "JSON validation passed ($JSON_COUNT staged files)."
-  else
-    log "No staged JSON files to validate."
-  fi
-else
-  warning "Node.js unavailable; JSON validation skipped."
-fi
+      PACKAGE_MANAGER=""
+      LOCK_COUNT=0
 
-# ------------------------------------------------------------
-# 3. Check staged JavaScript syntax
-#    Validate exact staged contents.
-# ------------------------------------------------------------
-
-if command -v node >/dev/null 2>&1; then
-  JS_LIST="$(mktemp)"
-  JS_DIR="$(mktemp -d)"
-
-  trap 'rm -f "${JSON_LIST:-}" "${JSON_FILE:-}" "${JS_LIST:-}"; rm -rf "${JS_DIR:-}"' 0
-
-  if ! git diff --cached --name-only --diff-filter=ACMR \
-    -- '*.js' '*.mjs' '*.cjs' > "$JS_LIST"; then
-    error "Unable to enumerate staged JavaScript files."
-    exit 1
-  fi
-
-  JS_COUNT=0
-
-  while IFS= read -r file || [ -n "$file" ]; do
-    [ -n "$file" ] || continue
-
-    JS_COUNT=$((JS_COUNT + 1))
-
-    # Preserve the extension so Node can infer the module format.
-    case "$file" in
-      *.mjs) extension="mjs" ;;
-      *.cjs) extension="cjs" ;;
-      *)     extension="js" ;;
-    esac
-
-    staged_file="$JS_DIR/staged.$extension"
-
-    if ! git show ":$file" > "$staged_file"; then
-      error "Unable to read staged JavaScript: $file"
-      exit 1
-    fi
-
-    if ! node --check "$staged_file"; then
-      error "JavaScript syntax check failed: $file"
-      exit 1
-    fi
-  done < "$JS_LIST"
-
-  if [ "$JS_COUNT" -gt 0 ]; then
-    log "JavaScript syntax validation passed ($JS_COUNT staged files)."
-  else
-    log "No staged JavaScript files to validate."
-  fi
-else
-  warning "Node.js unavailable; JavaScript syntax validation skipped."
-fi
-
-# ------------------------------------------------------------
-# 4. Run configured npm quality scripts
-# ------------------------------------------------------------
-
-if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
-  if [ ! -d node_modules ]; then
-    warning "node_modules is missing; npm checks skipped."
-  else
-    for script in lint check; do
-      if node -e '
-        const fs = require("node:fs");
-        const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
-        process.exit(p.scripts && p.scripts[process.argv[1]] ? 0 : 1);
-      ' "$script" >/dev/null 2>&1; then
-        log "Running npm run $script..."
-        npm run "$script"
-        log "npm run $script passed."
-      else
-        log "No '$script' script configured; skipping."
+      if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+        PACKAGE_MANAGER="npm"
+        LOCK_COUNT=$((LOCK_COUNT + 1))
       fi
-    done
+
+      if [ -f pnpm-lock.yaml ]; then
+        PACKAGE_MANAGER="pnpm"
+        LOCK_COUNT=$((LOCK_COUNT + 1))
+      fi
+
+      if [ -f yarn.lock ]; then
+        PACKAGE_MANAGER="yarn"
+        LOCK_COUNT=$((LOCK_COUNT + 1))
+      fi
+
+      if [ -f bun.lock ] || [ -f bun.lockb ]; then
+        PACKAGE_MANAGER="bun"
+        LOCK_COUNT=$((LOCK_COUNT + 1))
+      fi
+
+      if [ "$LOCK_COUNT" -gt 1 ]; then
+        die "Multiple package-manager lockfiles detected."
+      fi
+
+      if [ "$LOCK_COUNT" -eq 0 ]; then
+        warning "No package-manager lockfile found; project scripts skipped."
+      elif [ ! -d node_modules ] && [ "$PACKAGE_MANAGER" = "npm" ]; then
+        warning "node_modules is missing; project scripts skipped."
+      elif [ ! -d node_modules ] && [ "$PACKAGE_MANAGER" != "npm" ]; then
+        warning "Dependencies may be missing; project scripts skipped."
+      else
+        case "$PACKAGE_MANAGER" in
+          npm)  PM_AVAILABLE="$(command -v npm || true)" ;;
+          pnpm) PM_AVAILABLE="$(command -v pnpm || true)" ;;
+          yarn) PM_AVAILABLE="$(command -v yarn || true)" ;;
+          bun)  PM_AVAILABLE="$(command -v bun || true)" ;;
+          *)    PM_AVAILABLE="" ;;
+        esac
+
+        if [ -z "$PM_AVAILABLE" ]; then
+          if [ "${MEDORBITS_STRICT_HOOKS:-0}" = "1" ]; then
+            die "Declared package manager '$PACKAGE_MANAGER' is unavailable."
+          fi
+          warning "Package manager '$PACKAGE_MANAGER' unavailable; scripts skipped."
+        else
+          for script in lint check; do
+            if node -e '
+              const fs = require("node:fs");
+              const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+              const s = p.scripts && p.scripts[process.argv[1]];
+              process.exit(typeof s === "string" && s.trim() ? 0 : 1);
+            ' "$script" >/dev/null 2>&1; then
+
+              log "Running $PACKAGE_MANAGER $script..."
+
+              case "$PACKAGE_MANAGER" in
+                npm)  npm run "$script" ;;
+                pnpm) pnpm run "$script" ;;
+                yarn) yarn run "$script" ;;
+                bun)  bun run "$script" ;;
+              esac
+
+              log "$script passed."
+            else
+              log "No '$script' script configured; skipping."
+            fi
+          done
+        fi
+      fi
+    else
+      die "package.json contains invalid JSON or an invalid scripts object."
+    fi
+  else
+    log "No package.json/Node.js project detected; project scripts skipped."
   fi
-else
-  warning "npm or package.json unavailable; npm checks skipped."
 fi
 
-# ------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 5. Complete
-# ------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 log "All enabled pre-commit checks passed."
 exit 0

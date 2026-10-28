@@ -1,0 +1,155 @@
+{
+  "MedOrbits Python module": {
+    "prefix": "mo-module",
+    "body": [
+      "\"\"\"${1:Module description}.\"\"\"",
+      "",
+      "from __future__ import annotations",
+      "",
+      "import logging",
+      "",
+      "logger = logging.getLogger(__name__)",
+      "",
+      "",
+      "def ${2:function_name}() -> None:",
+      "    \"\"\"${3:Describe the operation}.\"\"\"",
+      "    ${0:pass}",
+      "",
+      "",
+      "def main() -> int:",
+      "    \"\"\"Run the module as a standalone program.\"\"\"",
+      "    logger.info(\"Starting %s\", __name__)",
+      "    ${4:return 0}",
+      "",
+      "",
+      "if __name__ == \"__main__\":",
+      "    raise SystemExit(main())"
+    ],
+    "description": "MedOrbits Python module starter with logging, type annotations, and CLI entry point"
+  },
+  "MedOrbits pytest test": {
+    "prefix": "mo-test",
+    "body": [
+      "from __future__ import annotations",
+      "",
+      "import pytest",
+      "",
+      "",
+      "def test_${1:behavior}() -> None:",
+      "    \"\"\"Verify ${2:expected behavior}.\"\"\"",
+      "    ${0:assert True}"
+    ],
+    "description": "MedOrbits pytest test starter with type annotations"
+  },
+  "MedOrbits parameterized pytest test": {
+    "prefix": "mo-param-test",
+    "body": [
+      "from __future__ import annotations",
+      "",
+      "import pytest",
+      "",
+      "",
+      "@pytest.mark.parametrize(",
+      "    \"${1:input_value}, ${2:expected_value}\",",
+      "    [",
+      "        (${3:input_example}, ${4:expected_example}),",
+      "    ],",
+      ")",
+      "def test_${5:behavior}(${1:input_value}: object, ${2:expected_value}: object) -> None:",
+      "    \"\"\"Verify ${6:behavior} for multiple inputs.\"\"\"",
+      "    assert ${7:actual_expression} == ${2:expected_value}"
+    ],
+    "description": "Parameterized pytest test for multiple input and expected-output cases"
+  },
+  "MedOrbits repository issue": {
+    "prefix": "mo-issue",
+    "body": [
+      "report.add(",
+      "    \"${1:WARN}\",",
+      "    \"${2:ISSUE_CODE}\",",
+      "    ${3:path},",
+      "    \"${4:Explain the issue}\",",
+      ")"
+    ],
+    "description": "Add a structured issue to the MedOrbits repository manager report"
+  },
+  "MedOrbits logging": {
+    "prefix": "mo-logging",
+    "body": [
+      "import logging",
+      "",
+      "logger = logging.getLogger(__name__)",
+      "",
+      "logger.debug(\"${1:Diagnostic details}\")",
+      "logger.info(\"${2:Operation completed}\")",
+      "logger.warning(\"${3:Unexpected condition}\")"
+    ],
+    "description": "Create a module-level logger using Python's standard logging library"
+  },
+  "MedOrbits safe file operation": {
+    "prefix": "mo-safe-file",
+    "body": [
+      "from pathlib import Path",
+      "",
+      "",
+      "def ${1:process_file}(file_path: str | Path) -> bool:",
+      "    \"\"\"${2:Describe the file operation}.\"\"\"",
+      "    path = Path(file_path)",
+      "",
+      "    if not path.is_file():",
+      "        logger.warning(\"File does not exist: %s\", path)",
+      "        return False",
+      "",
+      "    try:",
+      "        content = path.read_text(encoding=\"utf-8\")",
+      "        ${3:# Process content safely}",
+      "        return True",
+      "    except (OSError, UnicodeError) as exc:",
+      "        logger.exception(\"Unable to process %s: %s\", path, exc)",
+      "        return False"
+    ],
+    "description": "Safe UTF-8 file-processing function with filesystem error handling"
+  },
+  "MedOrbits TODO": {
+    "prefix": "mo-todo",
+    "body": [
+      "# TODO(${1:component}): ${2:Describe the required work}.",
+      "# Reason: ${3:Why this change is needed}.",
+      "# Acceptance: ${4:Define the expected outcome}."
+    ],
+    "description": "Document actionable technical debt with reason and acceptance criteria"
+  },
+  "MedOrbits typed dataclass": {
+    "prefix": "mo-dataclass",
+    "body": [
+      "from __future__ import annotations",
+      "",
+      "from dataclasses import dataclass",
+      "",
+      "",
+      "@dataclass(frozen=True, slots=True)",
+      "class ${1:Record}:",
+      "    \"\"\"${2:Describe the immutable data record}.\"\"\"",
+      "",
+      "    ${3:identifier}: str",
+      "    ${4:status}: str = \"active\""
+    ],
+    "description": "Immutable, slotted dataclass for typed repository data"
+  },
+  "MedOrbits JSON loading": {
+    "prefix": "mo-json",
+    "body": [
+      "import json",
+      "from pathlib import Path",
+      "from typing import Any",
+      "",
+      "",
+      "def load_json(file_path: str | Path) -> Any:",
+      "    \"\"\"Load JSON from a UTF-8 file.\"\"\"",
+      "    path = Path(file_path)",
+      "    with path.open(\"r\", encoding=\"utf-8\") as file:",
+      "        return json.load(file)"
+    ],
+    "description": "Load UTF-8 JSON using pathlib and the standard library"
+  }
+}

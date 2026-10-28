@@ -1,19 +1,29 @@
-
 # ==============================================================================
 # MedOrbits -- Docker Build Context Exclusions
 # File: /.dockerignore
-# Release: 2.1.0
+# Release: 3.0.0
 #
 # Purpose:
-#   Reduce Docker build context size and prevent accidental inclusion
-#   of local secrets, development artifacts, and repository metadata.
+#   Minimize Docker build-context size, prevent accidental exposure of local
+#   secrets, and exclude development artifacts without removing required
+#   application source, production assets, or build inputs.
 #
 # Security:
-#   This file does not replace secret management, .gitignore, or image scanning.
+#   - Never copy secrets into the build context unless explicitly required.
+#   - Use BuildKit secret mounts for build-time credentials.
+#   - Use runtime secret management for production credentials.
+#   - Review Dockerfile COPY/ADD instructions and final image contents.
+#   - This file is not a replacement for .gitignore, secret scanning,
+#     dependency auditing, or container image scanning.
+#
+# IMPORTANT:
+#   Docker ignore patterns are evaluated in order.
+#   Negation rules cannot re-include files beneath an excluded parent directory
+#   unless that parent directory is also made available.
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Git metadata and repository configuration
+# 1. Version control metadata
 # ------------------------------------------------------------------------------
 
 .git
@@ -21,148 +31,262 @@
 .gitignore
 .gitattributes
 .gitmodules
+.gitkeep
 
 # ------------------------------------------------------------------------------
-# GitHub workflows and internal repository tooling
+# 2. Repository governance and development-only tooling
 # ------------------------------------------------------------------------------
 
 .github
 .github/**
+.vscode
+.vscode/**
+.idea
+.idea/**
+.history
+.history/**
+
+# Repository reports and local audit artifacts
 tools/repository-reports
 tools/repository-reports/**
 
 # ------------------------------------------------------------------------------
-# Environment files and secrets
-# Keep explicitly approved environment templates only.
+# 3. Environment files and local configuration
+#
+# Keep only explicitly approved environment templates.
+# Never include actual environment files in the Docker build context.
 # ------------------------------------------------------------------------------
 
 .env
 .env.*
+**/.env
+**/.env.*
+
 !.env.example
 !.env.sample
 !.env.template
-
-**/.env
-**/.env.*
 !**/.env.example
 !**/.env.sample
 !**/.env.template
 
+# Local development configuration
+.npmrc.local
+.npmrc.dev
+.npmrc.secret
+.npmrc.auth
+**/.npmrc.local
+**/.npmrc.dev
+**/.npmrc.secret
+**/.npmrc.auth
+
 # ------------------------------------------------------------------------------
-# Private keys, certificates, credentials, and secret material
+# 4. Private keys, certificates, credentials, and secret material
 # ------------------------------------------------------------------------------
 
 **/*.pem
 **/*.key
 **/*.p12
 **/*.pfx
+**/*.crt
+**/*.cer
+**/*.der
+**/*.jks
+**/*.keystore
+
+**/id_rsa
+**/id_rsa.*
+**/id_ed25519
+**/id_ed25519.*
+**/id_ecdsa
+**/id_ecdsa.*
+
 **/*_rsa
 **/*_ed25519
-**/id_rsa
-**/id_ed25519
+**/*_private_key*
+
 **/credentials.json
 **/service-account*.json
+**/*service-account*.json
 **/secrets.*
 **/*secret*
 **/*credential*
+**/*password*
+**/*token*
+**/*private-key*
+
+# Do not exclude ordinary application configuration indiscriminately.
+# Review any JSON/YAML files containing credentials before building.
 
 # ------------------------------------------------------------------------------
-# Dependencies
-# Install production dependencies inside the Docker build.
+# 5. Dependencies and package-manager caches
+#
+# Install dependencies in the image or build stage using lockfiles.
 # ------------------------------------------------------------------------------
 
 node_modules
-node_modules/**
 **/node_modules
-**/node_modules/**
-
-# ------------------------------------------------------------------------------
-# Package manager caches
-# ------------------------------------------------------------------------------
 
 .npm
+.npm/**
 .pnpm-store
+.pnpm-store/**
 .yarn/cache
 .yarn/unplugged
+.yarn/install-state.gz
+.yarn/build-state.yml
+
+.pnp.*
+**/.pnp.*
 
 # ------------------------------------------------------------------------------
-# Logs and temporary files
+# 6. Logs, temporary files, and process artifacts
 # ------------------------------------------------------------------------------
 
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 logs
-logs/**
+**/logs
 tmp
-tmp/**
+**/tmp
 temp
-temp/**
+**/temp
+
 *.tmp
 *.temp
 *.swp
 *.swo
+*.pid
+*.seed
 *~
 
 # ------------------------------------------------------------------------------
-# Operating system and editor files
+# 7. Operating-system and editor artifacts
 # ------------------------------------------------------------------------------
 
 .DS_Store
+**/.DS_Store
 Thumbs.db
+**/Thumbs.db
 desktop.ini
-.idea
-.vscode
-.history
+**/desktop.ini
 
 # ------------------------------------------------------------------------------
-# Test output and coverage
+# 8. Test reports, coverage, and browser-test artifacts
 # ------------------------------------------------------------------------------
 
 coverage
-coverage/**
+**/coverage
 .nyc_output
-.nyc_output/**
+**/.nyc_output
+
 playwright-report
-playwright-report/**
+**/playwright-report
 test-results
-test-results/**
+**/test-results
 __screenshots__
-__screenshots__/**
+**/__screenshots__
+
+# Common test-runner caches
+.vitest
+**/.vitest
+.jest
+**/.jest
 
 # ------------------------------------------------------------------------------
-# Local caches
+# 9. Tool caches and generated local state
 # ------------------------------------------------------------------------------
 
 .cache
-.cache/**
+**/.cache
 .parcel-cache
-.parcel-cache/**
+**/.parcel-cache
 .eslintcache
+**/.eslintcache
 .stylelintcache
+**/.stylelintcache
 .turbo
-.turbo/**
+**/.turbo
+
+.webpack
+**/.webpack
+.sass-cache
+**/.sass-cache
 
 # ------------------------------------------------------------------------------
-# Build output
-# Uncomment only when these directories are not required by the Docker build.
+# 10. Build output
+#
+# Leave dist/build/.next/out enabled by default because some projects
+# intentionally generate artifacts before docker build.
+#
+# Uncomment these only when the Dockerfile builds everything from source
+# and does not COPY prebuilt application artifacts.
 # ------------------------------------------------------------------------------
 
 # dist
+# **/dist
 # build
+# **/build
 # .next
+# **/.next
 # out
+# **/out
+# .output
+# **/.output
 
 # ------------------------------------------------------------------------------
-# Local databases and database dumps
+# 11. Python virtual environments and generated artifacts
+# ------------------------------------------------------------------------------
+
+.venv
+**/.venv
+venv
+**/venv
+env
+**/env
+
+__pycache__
+**/__pycache__
+*.py[cod]
+*$py.class
+
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+**/.mypy_cache
+.ruff_cache
+**/.ruff_cache
+.tox
+**/.tox
+.nox
+**/.nox
+htmlcov
+**/htmlcov
+
+# ------------------------------------------------------------------------------
+# 12. Local databases, dumps, and runtime data
 # ------------------------------------------------------------------------------
 
 *.sqlite
 *.sqlite3
 *.db
+*.db-journal
 *.dump
 *.sql.gz
+*.backup.sql
+*.dump.sql
+
+# Local uploads and runtime-generated data; adjust if required at build time.
+storage
+**/storage
+uploads
+**/uploads
 
 # ------------------------------------------------------------------------------
-# Backups and editor recovery files
+# 13. Backups, recovery files, and migration leftovers
 # ------------------------------------------------------------------------------
 
 *.bak
@@ -170,45 +294,58 @@ __screenshots__/**
 *.old
 *.orig
 *.rej
+*.swp
+*.swo
 *~
 
 # ------------------------------------------------------------------------------
-# Python artifacts
+# 14. Documentation excluded from production builds
+#
+# Uncomment only if these documents are not needed during the image build.
 # ------------------------------------------------------------------------------
 
-__pycache__
-__pycache__/**
-*.py[cod]
-.venv
-venv
-.pytest_cache
-.mypy_cache
+# CONTRIBUTING.md
+# CODE_OF_CONDUCT.md
+# SECURITY.md
+# SUPPORT.md
+# CHANGELOG.md
+# docs
+# **/docs
 
 # ------------------------------------------------------------------------------
-# Documentation and repository-only files
-# Remove these only if the application does not need them at build time.
-# ------------------------------------------------------------------------------
-
-CONTRIBUTING.md
-CODE_OF_CONDUCT.md
-SECURITY.md
-
-# ------------------------------------------------------------------------------
-# Docker development overrides
+# 15. Docker development overrides and local orchestration files
 # ------------------------------------------------------------------------------
 
 docker-compose.override.yml
+docker-compose.override.yaml
+compose.override.yml
 compose.override.yaml
 
 # ------------------------------------------------------------------------------
-# Keep required application inputs available.
+# 16. Archive files and unrelated binary artifacts
 #
-# Do not ignore:
-#   - Dockerfile and required build scripts
-#   - package.json and package-lock.json
-#   - pnpm-lock.yaml or yarn.lock when used by the project
-#   - application source and required public assets
-#   - required runtime configuration templates
+# Do not exclude fonts, images, or other assets required by the application.
+# ------------------------------------------------------------------------------
+
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ------------------------------------------------------------------------------
+# 17. Explicitly retained build inputs
 #
-# Docker ignore rules are evaluated in order; review exceptions carefully.
+# Do not add broad exclusions for:
+#   - Dockerfile / Dockerfile.*
+#   - package.json and the active package-manager lockfile
+#   - required source files, scripts, and application assets
+#   - required public directories
+#   - build configuration and schemas consumed during the build
+#
+# IMPORTANT:
+#   Docker does not support ordinary .gitignore-style directory exceptions
+#   in every situation as users might expect. Test all negation rules with
+#   the actual Dockerfile and build context.
 # ==============================================================================

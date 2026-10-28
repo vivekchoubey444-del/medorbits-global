@@ -9,6 +9,9 @@
         "tools/repository_manager.py",
         "inspect"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -21,6 +24,9 @@
         "--json-report",
         "reports/repository-report.json"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -32,6 +38,9 @@
         "pages",
         "--discover"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -42,6 +51,9 @@
         "tools/repository_manager.py",
         "pages"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -53,6 +65,9 @@
         "pages",
         "--apply"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -63,6 +78,9 @@
         "tools/repository_manager.py",
         "audit-pages"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -73,6 +91,9 @@
         "tools/repository_manager.py",
         "organize"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -86,6 +107,9 @@
         "tools",
         "python"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": []
     },
     {
@@ -97,6 +121,9 @@
         "pytest",
         "-q"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "group": {
         "kind": "test",
         "isDefault": true
@@ -113,6 +140,52 @@
         "check",
         "tools",
         "python"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Format Python",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "tools",
+        "python"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Validate JSON files",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-c",
+        "import json,pathlib,sys; files=[p for p in pathlib.Path('.').rglob('*.json') if not any(x in {'.git','node_modules','.venv','venv','dist','build'} for x in p.parts)]; errors=[]; [(errors.append(f'{p}: {e}') if (lambda p: (json.loads(p.read_text(encoding='utf-8-sig')) is None))(p) is False else None) for p in []]; exec('for p in files:\\n try:\\n  json.loads(p.read_text(encoding=\"utf-8-sig\"))\\n except (OSError,UnicodeError,json.JSONDecodeError) as e:\\n  errors.append(f\"{p}: {e}\")'); [print(e,file=sys.stderr) for e in errors]; print(f'Checked {len(files)} JSON file(s).'); sys.exit(bool(errors))"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "MedOrbits: Full local checks",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "MedOrbits: Python compile check",
+        "MedOrbits: Validate JSON files",
+        "MedOrbits: Run Ruff",
+        "MedOrbits: Format Python",
+        "MedOrbits: Run pytest",
+        "MedOrbits: Validate repository"
       ],
       "problemMatcher": []
     }

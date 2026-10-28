@@ -2,30 +2,34 @@ MedOrbits — Package Notes
 
 Project: MedOrbits
 Package: All-in-One Repository Starter
-Package Version: 0.1.0
-Status: Starter Scaffold
-Purpose: Education, Admissions, Careers, and Recruitment
+Package Version: 3.0.0
+Status: Starter Scaffold — Integration and Verification Required
+Purpose: Education, Admissions, Careers, Recruitment, and Application Services
 
 ⸻
 
 1. Package Overview
 
-The MedOrbits All-in-One Repository Starter provides a structured foundation for repository organization, documentation, configuration templates, validation utilities, automated testing, API documentation, security guidance, and operational procedures.
+The MedOrbits All-in-One Repository Starter provides a structured foundation for repository organization, documentation, configuration management, validation utilities, automated testing, API documentation, security guidance, and operational procedures.
 
 Its objectives are to:
 
-* Standardize repository organization.
-* Improve maintainability and consistency.
-* Reduce configuration and integration errors.
-* Establish security-conscious development practices.
-* Support testing, documentation, and deployment preparation.
-* Provide a foundation for future application development.
+* Standardize repository organization and development conventions.
+* Improve maintainability, consistency, and reproducibility.
+* Reduce configuration, dependency, and integration errors.
+* Establish security-conscious development and deployment practices.
+* Support automated testing, documentation, and CI/CD validation.
+* Provide a maintainable foundation for future application development.
 
-Important: This package is not a verified snapshot of the complete MedOrbits production application. Review and integrate it with the actual application source code, dependencies, database configuration, environment variables, and hosting environment before use.
+Important: This package is a development and repository-management foundation. It is not a verified snapshot of the complete MedOrbits production application. The existence of a configuration file, script, API specification, or operational document does not establish that the corresponding application functionality is implemented.
+
+All components must be reviewed against the actual source code, dependencies, database configuration, environment variables, and deployment environment before operational use.
 
 2. Included Components
 
-2.1 Project Documentation
+The following sections describe the intended package structure. Verify each path against the actual repository before treating this inventory as authoritative.
+
+2.1 Project documentation
 
 * README.md
 * README-PRODUCTION.md
@@ -36,22 +40,30 @@ Important: This package is not a verified snapshot of the complete MedOrbits pro
 * SUPPORT.md
 * PACKAGE-NOTES.md
 
-These documents describe the package purpose, development practices, security reporting, support guidance, production-readiness considerations, and maintenance expectations.
+These documents establish project conventions, installation guidance, security reporting procedures, production-readiness considerations, and maintenance expectations.
 
-2.2 Repository Configuration
+Replace placeholder contact information, commands, and deployment instructions with verified project-specific details.
+
+2.2 Repository configuration
 
 * package.json
+* package-lock.json — generated and committed for the finalized npm dependency tree.
 * .env.example
+* .env.test.example
 * .gitignore
+* .gitattributes
 * .editorconfig
 * .prettierrc.json
+* ruff.toml
 * repository.manifest.json
 
-These files provide package metadata, sanitized environment examples, Git ignore rules, editor conventions, formatting preferences, and a high-level repository manifest.
+These files provide package metadata, sanitized environment templates, Git policies, editor conventions, Python linting and formatting settings, and a high-level repository inventory.
 
-Reconcile these files with the existing MedOrbits configuration before replacing any project files.
+Reconcile all configuration with the existing MedOrbits implementation before replacing project files. Do not assume that a listed configuration file exists or is consumed by the application until verified.
 
-2.3 Documentation and API Resources
+2.3 Documentation and API resources
+
+Intended documentation resources include:
 
 * docs/README.md
 * docs/api/openapi.yaml
@@ -60,239 +72,361 @@ Reconcile these files with the existing MedOrbits configuration before replacing
 * docs/operations/README.md
 * docs/security/REPOSITORY-HARDENING.md
 
-The OpenAPI document is a starter contract, not verified API documentation. Confirm actual routes, HTTP methods, request and response schemas, authentication, authorization, and error formats before treating it as authoritative.
+The OpenAPI specification is a starter contract until validated against the real application. Confirm mounted routes, HTTP methods, authentication, authorization, request schemas, response formats, and error handling before publishing it as authoritative API documentation.
 
-2.4 Validation Utilities
+2.4 Validation utilities
 
+The repository may include utilities such as:
+
+* scripts/check-json.mjs
 * scripts/validate-json.js
 * scripts/validate-repository.js
 * scripts/check-environment.js
 
-These scripts provide basic JSON syntax validation, checks for selected expected repository files, and a Node.js runtime-version check.
+Use only scripts that actually exist and are maintained in the repository. Where multiple utilities perform the same function, designate one canonical implementation and document any compatibility wrappers.
 
-They are not a complete security scanner, configuration audit, application health check, or production-readiness assessment.
+Validation utilities should report failures clearly, return appropriate non-zero exit codes, and avoid modifying project files unless explicitly designed and documented to do so.
 
-2.5 Test Resources
+2.5 Python tooling
+
+Python tooling may include:
+
+* Ruff linting and formatting.
+* pytest-based automated tests.
+* mypy type checking.
+* Python dependency integrity checks.
+* Python dependency security auditing.
+* Repository maintenance utilities under tools/, scripts/, or python/.
+
+The exact test paths, configuration files, Python version, and dependencies must match the actual repository.
+
+A successful Python check covers only the files and rules selected by its configuration.
+
+2.6 Test resources
+
+The starter may include:
 
 * tests/README.md
 * tests/unit/smoke.test.js
+* Python tests under the configured test directories.
+* API, integration, validation, and security test suites where implemented.
 
-The included test is a minimal smoke test for the Node.js built-in test runner.
+A smoke test establishes only that its tested operation behaves as expected. It does not verify admissions, career, recruitment, account, payment, document, administrative, or database workflows unless those workflows are explicitly exercised.
 
-It does not verify actual education, admissions, career, recruitment, account, payment, document, administrative, or database workflows. Develop additional tests against the real application and its verified interfaces.
+Develop tests against real application interfaces and use isolated test services, synthetic records, and deterministic fixtures wherever possible.
 
-2.6 Infrastructure and Operations
+2.7 Infrastructure and operations
+
+Intended operational documentation includes:
 
 * infrastructure/deployment/README.md
 * infrastructure/backups/README.md
 * infrastructure/incident-response/README.md
 
-These documents provide guidance for deployment, backup and restoration, and incident response.
+These documents should explain deployment, backup and restoration, incident response, and recovery responsibilities.
 
-They do not configure production infrastructure, schedule backups, establish monitoring, or prove that recovery procedures have been tested.
+Documentation alone does not configure production infrastructure, schedule backups, enable monitoring, or prove that a recovery procedure works. Verify operational procedures through controlled testing.
 
-2.7 Public Document Manifests
+2.8 Public document manifests
+
+Potential public-document resources include:
 
 * assets/documents/README.md
 * assets/documents/admission-guide.manifest.json
 * assets/documents/fee-guide.manifest.json
 
-The admission and fee-guide manifests are draft metadata examples. They do not establish the accuracy of admission information, fee data, or published guide files.
+These manifests are metadata examples unless their entries have been verified against published assets.
 
-Before publication, verify document contents, asset paths, sources, publication status, and review dates.
+Before publication, confirm document content, source references, file paths, publication status, review dates, and the accuracy of admissions and fee information. Do not publish confidential applicant records or private documents through public asset directories.
 
 3. Runtime and Tooling Requirements
 
-The starter package declares:
+The package manifest must be treated as the primary declaration of runtime compatibility, subject to verification against the application and hosting environment.
 
-* Node.js 20 or newer.
-* npm compatible with the selected Node.js version.
-* Git.
-* A compatible operating system and shell.
+3.1 JavaScript runtime
 
-Select a runtime supported by both the actual MedOrbits application and the deployment platform. Check the runtime’s current support lifecycle before production deployment.
+The current package configuration specifies:
 
-Configure database servers, payment providers, email services, storage systems, queues, and other external dependencies separately when required by the integrated application.
+* Node.js: >=22.0.0
+* Package manager: npm, with npm@10.8.2 declared in package.json.
+* Module system: ECMAScript modules, using “type”: “module”.
+
+The declared minimum version is a compatibility constraint, not a guarantee that every future Node.js version is supported. Select a currently supported Node.js LTS release compatible with the actual application and deployment platform.
+
+Verify the selected runtime with:
+
+node —version
+npm —version
+npm run check:environment
+
+3.2 Python tooling
+
+Where Python checks are enabled, install and pin the project’s intended Python dependencies through the approved dependency-management workflow.
+
+Potential development tools include:
+
+* pytest for testing.
+* Ruff for linting and formatting.
+* mypy for static type checking.
+* pip-audit for dependency vulnerability auditing.
+
+The presence of a corresponding npm script does not install these tools automatically. Maintain a requirements file, constraints file, or another reproducible Python dependency specification as appropriate.
+
+3.3 External services
+
+Configure only the services required by the integrated application, which may include:
+
+* PostgreSQL or another verified database engine.
+* Email delivery providers.
+* Payment gateways.
+* Object storage and document services.
+* Redis or another cache.
+* Background job processing.
+* AI providers.
+* Monitoring and error-reporting services.
+
+Do not infer that a service is implemented simply because its variables appear in an environment template.
 
 4. Installation and Validation
 
-The package documentation specifies these npm commands:
+The available npm scripts should be verified against the final package.json.
 
-npm run validate
-npm test
-npm run test:unit
-
-The intended validation workflow checks JSON files, selected repository structure, and the Node.js runtime. The test commands are intended to run the included smoke test and any additional tests configured for the project.
-
-Integration check: Ensure that the validate, test, and test:unit scripts actually exist in the final package.json. Script names in this document do not create npm commands automatically.
-
-A successful run confirms only the checks that executed. It does not establish that the complete application is functional, secure, or production-ready.
-
-5. Package Lockfile
-
-A package-lock.json file is intentionally excluded from this starter archive.
-
-After reviewing and finalizing dependencies, generate a lockfile in the intended development environment:
-
-npm install —package-lock-only
-
-Then install and validate the dependency tree:
+The intended workflow includes:
 
 npm ci
 npm run validate
 npm test
+npm run check:dependencies
+npm run check:dependencies:python
 
-If integrating this package into the existing MedOrbits repository, preserve and reconcile the existing dependency declarations and lockfile rather than replacing them blindly.
+For stricter validation, where the relevant scripts and dependencies are installed:
 
-Commit the lockfile generated for the package manager and dependency configuration actually used by the project.
+npm run validate:strict
+npm run ci
+npm run ci:security
+
+4.1 Script alignment
+
+The package must not document a command as operational unless its script exists and its implementation matches the description.
+
+For example:
+
+* npm run validate invokes the validation workflow configured in package.json.
+* npm test runs the configured test command.
+* npm run test:unit works only if a test:unit script is defined.
+* npm run validate:strict works only if the referenced validation scripts are defined and available.
+
+The package’s current Python-oriented test configuration must not be confused with Node.js’s built-in test runner. If the project uses both, document their responsibilities and provide separate commands as necessary.
+
+A successful command confirms only the checks that actually executed. It does not establish that the complete application is functional, secure, or production-ready.
+
+5. Package Lockfile and Dependency Reproducibility
+
+A starter archive may omit package-lock.json, but the integrated application should commit a lockfile when using npm with a lockfile-based installation workflow.
+
+After reconciling and reviewing dependencies:
+
+npm install —package-lock-only
+npm ci
+npm run validate
+npm test
+
+Run these commands from the package root in the intended development environment.
+
+npm install —package-lock-only generates or updates the lockfile without performing a normal full dependency installation. npm ci requires a compatible committed lockfile and fails when the manifest and lockfile are inconsistent.
+
+If dependency installation requires special flags, ensure the same relevant configuration is used when generating the lockfile and running CI.
+
+Do not replace an existing production lockfile blindly. Review dependency changes, peer-dependency constraints, platform-specific packages, and security advisories before committing.
 
 6. Environment Configuration
 
-The .env.example file contains sanitized configuration examples. It must not contain active credentials, real passwords, API keys, private keys, session secrets, payment credentials, production database passwords, or other confidential values.
+The .env.example and .env.test.example files provide configuration templates, not proof of application behavior.
 
 Before integration:
 
-1. Inspect the actual application configuration.
-2. Identify environment variables consumed by the application.
-3. Remove unused examples or document their intended future use.
-4. Validate required variables at startup.
-5. Store production credentials in an approved secret-management service.
-6. Keep development, testing, staging, and production environments separate.
+1. Inspect the actual application configuration and startup code.
+2. Identify which environment variables the application reads.
+3. Document required, optional, and deprecated variables.
+4. Remove unused examples or label future integrations clearly.
+5. Validate required values and types at startup.
+6. Keep development, testing, staging, and production configurations separate.
+7. Store production secrets in the hosting platform’s secret manager or another approved secrets system.
+8. Prevent real environment files and credentials from entering Git history.
 
-The presence of a variable in .env.example does not prove that the application reads or enforces it.
+6.1 Database configuration
+
+Verify the actual database engine, driver, connection mechanism, migration strategy, and deployment configuration.
+
+If PostgreSQL is the application’s primary database, align DATABASE_URL, connection settings, SSL behavior, and pool configuration with the database adapter and hosting environment.
+
+Do not enable SSL, disable certificate verification, run migrations, or seed production data solely because a template contains a corresponding variable.
+
+6.2 Environment isolation
+
+Automated tests must use an isolated test database and non-production credentials. External email delivery, payments, webhooks, and other side effects should be disabled or replaced with safe test doubles unless the test explicitly requires a controlled integration environment.
+
+A variable’s presence in an environment file does not mean the application enforces it.
 
 7. GitHub Actions and CI/CD
 
-The starter package includes a GitHub Actions CI workflow intended to run validation and tests.
+The starter may include a GitHub Actions workflow for automated validation and testing. Verify its actual location, triggers, commands, permissions, and runtime configuration before enabling it.
 
-Before enabling it as a required repository status check:
+Before making CI checks mandatory:
 
-* Confirm branch and pull-request requirements.
+* Confirm branch protection and pull-request requirements.
 * Review third-party actions and their maintenance status.
-* Consider pinning third-party actions to verified full commit SHAs.
-* Apply least-privilege permissions to workflows and jobs.
+* Pin third-party actions to verified full commit SHAs where practical.
+* Apply least-privilege workflow and job permissions.
 * Do not expose production secrets to untrusted pull-request code.
-* Confirm the selected Node.js version is supported.
-* Verify that the workflow succeeds on the actual repository.
-* Confirm the exact status-check names before making them mandatory.
+* Use a supported Node.js runtime.
+* Install Python dependencies reproducibly when Python checks run.
+* Confirm that every referenced script and configuration file exists.
+* Verify the workflow against the actual repository.
+* Record exact status-check names before requiring them for merges.
 
-The workflow does not deploy the application or establish production deployment security.
+A validation workflow does not automatically establish a secure deployment pipeline. Deployment permissions, environments, approval requirements, secrets, rollback procedures, and release provenance require separate review.
 
 8. API Contract Limitations
 
-The included OpenAPI file is a documentation scaffold.
+The included OpenAPI file is a documentation scaffold until it has been verified against the implemented API.
 
-Before publishing it as the official MedOrbits API contract:
+Before publishing it as the official MedOrbits contract:
 
-1. Enumerate actual mounted API routes.
+1. Enumerate actual mounted routes.
 2. Confirm HTTP methods and paths.
-3. Document authentication and authorization requirements.
-4. Define request parameters, payloads, and validation rules.
+3. Document authentication and resource-level authorization.
+4. Define path parameters, query parameters, request bodies, and validation rules.
 5. Document successful responses and error formats.
-6. Identify applicable HTTP status codes.
-7. Remove example endpoints that are not implemented.
-8. Validate the specification against its declared OpenAPI version.
+6. Specify applicable HTTP status codes.
+7. Identify pagination, filtering, sorting, and rate-limit behavior where applicable.
+8. Remove example endpoints that are not implemented.
+9. Validate the specification against its declared OpenAPI version.
+10. Add automated contract checks where practical.
 
-An example endpoint or schema is not evidence that the corresponding application feature exists.
+An example endpoint or schema is not evidence that a corresponding application feature exists.
 
-9. Database Safety
+9. Database Safety and Recovery
 
-This starter package does not configure or execute production database migrations, seeds, backups, or restoration.
+This package does not, by itself, configure or execute production database migrations, seeds, backups, or restoration.
 
 Before integrating database utilities:
 
-* Confirm the actual database engine and driver.
-* Identify the migration mechanism and schema ownership.
-* Review each migration before applying it.
+* Confirm the database engine and driver used by the application.
+* Identify the schema owner and migration mechanism.
+* Review migrations before applying them.
 * Use an isolated test database for automated tests.
 * Use synthetic fixtures instead of real personal records.
 * Verify the target environment before destructive operations.
+* Restrict database credentials to the minimum necessary privileges.
+* Encrypt and restrict access to backups.
+* Establish retention and deletion rules.
 * Test restoration in a non-production environment.
-* Document recovery procedures and responsible owners.
+* Document recovery objectives, responsibilities, and escalation procedures.
 
 Never assume a database command is safe merely because it is included in a script or runbook.
 
 10. Security and Privacy Limitations
 
-The included security documentation describes recommended practices. It does not prove that the application implements those controls.
+The included security documentation provides recommended practices. It does not prove that the application implements the described controls.
 
 Before production deployment, verify the actual implementation of:
 
-* Authentication and session management.
-* Resource-level authorization.
-* Input validation and safe output handling.
-* Rate limiting and abuse prevention.
-* Secure cookie and HTTPS configuration.
+* Authentication and session lifecycle management.
+* Resource-level authorization and administrative access controls.
+* Input validation, output encoding, and injection prevention.
+* Rate limiting, abuse prevention, and request-size limits.
+* HTTPS enforcement and secure cookie configuration.
+* CSRF protections where applicable.
 * Private document storage and access controls.
 * Payment webhook signature verification and idempotency, if payments are implemented.
-* Secret management and dependency scanning.
-* Logging, monitoring, and incident response.
-* Data retention and deletion procedures.
+* Secret management and dependency vulnerability scanning.
+* Logging, monitoring, alerting, and incident response.
+* Data retention, export, and deletion procedures.
+* Access controls for applicant, student, employee, and recruitment records.
 
-Do not include production credentials, real user records, identity documents, payment data, or confidential logs in the archive.
+Avoid logging passwords, access tokens, session identifiers, payment credentials, or unnecessary personal information.
+
+Do not include production credentials, real user records, identity documents, payment data, or confidential operational logs in the starter archive.
 
 11. License and Third-Party Materials
 
-The package contains an MIT license template and a supplementary NOTICE file.
+The repository may contain an MIT license template and a supplementary NOTICE file. The actual repository license must be confirmed before distribution.
 
-Before applying these files to the complete MedOrbits repository, confirm that the relevant copyright holders have authority to license the materials concerned.
+Before applying a license to the complete MedOrbits repository, confirm that the relevant copyright holders have authority to license the materials concerned.
 
-Third-party dependencies, fonts, images, datasets, and other materials may have separate licensing, attribution, and usage requirements.
+Third-party dependencies, fonts, images, datasets, templates, and other materials may have separate licensing, attribution, and usage requirements.
 
-The included license does not override third-party licenses or grant ownership of materials that MedOrbits does not own.
+An included license does not override third-party licenses or grant ownership of materials that MedOrbits does not own. Keep the license status consistent with package.json and the actual distribution terms.
 
 12. Integration with the Existing MedOrbits Repository
 
-Before merging the starter package:
+Integrate the starter into the existing repository through a controlled review process:
 
-1. Create a branch or backup of the current repository.
-2. Compare starter files with existing files.
+1. Create a dedicated branch or a verified backup.
+2. Compare starter files with their existing counterparts.
 3. Preserve working application code and project-specific configuration.
-4. Reconcile package scripts and dependencies.
-5. Preserve database configuration and migration history.
+4. Reconcile package scripts, dependencies, and lockfiles.
+5. Preserve database configuration, migrations, and schema history.
 6. Verify the actual application entry point.
-7. Align environment variables with the implementation.
-8. Replace placeholder documentation with verified details.
-9. Add tests for real application routes and workflows.
-10. Review security settings and deployment requirements.
-11. Run validation and tests.
-12. Test the integrated application in a non-production environment.
+7. Align environment templates with the implemented configuration.
+8. Validate repository manifests against real files.
+9. Replace placeholder documentation with verified details.
+10. Add tests for implemented application routes and workflows.
+11. Review security settings and deployment requirements.
+12. Run syntax checks, schema validation, tests, and quality checks.
+13. Test the integrated application in a non-production environment.
+14. Review the complete diff before merging.
 
 Do not overwrite existing server files, package metadata, environment configuration, or deployment files without reviewing their current contents.
 
 13. Known Limitations
 
-This package does not, by itself:
+Unless separately implemented and verified, this starter does not:
 
-* Reproduce the complete existing MedOrbits website.
+* Reproduce the complete MedOrbits website.
 * Implement authentication or account management.
 * Implement education or admissions workflows.
-* Implement job listings, internships, or recruitment services.
-* Configure a production database.
+* Guarantee current admission dates, eligibility criteria, or fee information.
+* Implement job listings, internships, or recruitment workflows.
+* Configure a production database or execute safe migrations automatically.
 * Implement private document upload and download.
 * Process payments or manage subscriptions.
 * Configure production monitoring or alerting.
 * Schedule or verify database backups.
 * Configure a production deployment.
 * Certify application security or regulatory compliance.
+* Prove that every documented route, script, or service exists.
 
 Implement and test these capabilities in the actual application wherever required.
 
-14. Maintenance
+14. Maintenance and Release Management
 
-Review this package whenever the application architecture, runtime, dependencies, environment variables, API contracts, database schema, security controls, or deployment procedures change.
+Review the package whenever the application architecture, runtime, dependencies, environment variables, API contracts, database schema, security controls, or deployment procedures change.
 
-Keep the repository manifest and documentation synchronized with files and behavior that actually exist.
+Keep package.json, the lockfile, repository manifests, validation scripts, tests, and documentation synchronized with the actual implementation.
 
-Record significant changes in CHANGELOG.md, and update relevant tests and operational guidance.
+Record significant changes in CHANGELOG.md. Use version numbers consistently across package metadata and release documentation, and distinguish starter-scaffold releases from verified application releases.
+
+Before publishing a release:
+
+* Verify the package contents.
+* Run the documented validation workflow.
+* Confirm dependency and runtime compatibility.
+* Check for accidentally included secrets and private data.
+* Review license and attribution requirements.
+* Verify installation and test commands in a clean environment.
+* Document known limitations and unresolved issues.
+
+A release version alone does not imply that the package has passed production-readiness or security review.
 
 15. Final Notice
 
-This package is a starter foundation intended to support MedOrbits development and hardening.
+The MedOrbits All-in-One Repository Starter is a foundation for repository organization, validation, documentation, and development hardening.
 
-It is not a verified production release, a complete application implementation, a penetration-test report, or a guarantee of security.
+It is not a verified production release, a complete application implementation, a penetration-test report, or a guarantee of security or regulatory compliance.
 
-Verify all application-specific settings, dependencies, endpoints, database operations, support channels, and deployment procedures before operational use.
+Verify all application-specific settings, dependencies, endpoints, database operations, support channels, licensing requirements, and deployment procedures before operational use.
 
 ⸻
 

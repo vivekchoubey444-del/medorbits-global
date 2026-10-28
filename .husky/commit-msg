@@ -1,15 +1,17 @@
-
 #!/usr/bin/env sh
 # ============================================================
 # MedOrbits -- Commit Message Validation
 # File: .husky/commit-msg
-# Release: 2.1.0
+# Release: 2.2.0
 #
 # Enforces Conventional Commits subject format.
+# POSIX-compatible; safe for Git hooks.
 # Does not modify the commit message or repository.
 # ============================================================
 
 set -eu
+
+readonly SCRIPT_VERSION="2.2.0"
 
 log() {
   printf '%s\n' "[MedOrbits] $*"
@@ -19,15 +21,28 @@ error() {
   printf '%s\n' "[MedOrbits] ERROR: $*" >&2
 }
 
+usage() {
+  error "Usage: .husky/commit-msg <commit-message-file>"
+  exit 2
+}
+
+# ------------------------------------------------------------
+# 1. Validate input
+# ------------------------------------------------------------
+
 COMMIT_MSG_FILE="${1:-}"
 
-if [ -z "$COMMIT_MSG_FILE" ] || [ ! -f "$COMMIT_MSG_FILE" ]; then
-  error "Commit message file was not provided or does not exist."
-  exit 1
+if [ "$#" -ne 1 ] || [ -z "$COMMIT_MSG_FILE" ]; then
+  usage
+fi
+
+if [ ! -f "$COMMIT_MSG_FILE" ] || [ ! -r "$COMMIT_MSG_FILE" ]; then
+  error "Commit message file does not exist or is not readable."
+  exit 2
 fi
 
 # ------------------------------------------------------------
-# 1. Extract the first non-comment, non-empty line
+# 2. Extract the first non-empty, non-comment subject line
 # ------------------------------------------------------------
 
 SUBJECT="$(
@@ -48,38 +63,41 @@ if [ -z "$SUBJECT" ]; then
 fi
 
 # ------------------------------------------------------------
-# 2. Validate Conventional Commits format
+# 3. Validate Conventional Commits
 #
-# Accepted:
-#   feat: add course search
-#   fix(api): handle missing application
-#   docs: update support guide
-#   chore(deps): update dependencies
-#   feat!: change public API
-#   feat(api)!: change API response
+# Format:
+#   type(scope)!: description
 #
-# Subject requirements:
-#   - Allowed type
-#   - Optional scope
-#   - Optional breaking-change marker
-#   - Colon followed by one space
-#   - Description of 1-100 characters
+# Allowed types:
+#   feat, fix, docs, style, refactor, perf, test,
+#   build, ci, chore, revert
+#
+# Scope is optional.
+# Breaking-change marker (!) is optional.
+# Description must contain 1-100 characters.
 # ------------------------------------------------------------
 
 PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .{1,100}$'
 
-if ! printf '%s\n' "$SUBJECT" | grep -Eq "$PATTERN"; then
+if ! printf '%s\n' "$SUBJECT" | grep -E "$PATTERN" >/dev/null 2>&1; then
   error "Invalid commit message subject."
   printf '\n' >&2
   printf '%s\n' \
-    "Use Conventional Commits:" \
+    "Required format:" \
     "  type(scope): short description" \
     "" \
     "Allowed types:" \
     "  feat, fix, docs, style, refactor, perf," \
     "  test, build, ci, chore, revert" \
     "" \
-    "Examples:" \
+    "Rules:" \
+    "  - Use a lowercase allowed type." \
+    "  - Scope is optional; use parentheses when provided." \
+    "  - Add ! before the colon for breaking changes." \
+    "  - Include exactly one space after the colon." \
+    "  - Description must contain 1-100 characters." \
+    "" \
+    "Valid examples:" \
     "  feat(admissions): add course search" \
     "  fix(api): handle missing application" \
     "  docs: update support guide" \
@@ -89,5 +107,5 @@ if ! printf '%s\n' "$SUBJECT" | grep -Eq "$PATTERN"; then
   exit 1
 fi
 
-log "Commit message validated."
+log "Commit message validated (v${SCRIPT_VERSION})."
 exit 0

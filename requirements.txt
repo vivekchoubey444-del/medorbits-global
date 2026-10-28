@@ -1,75 +1,85 @@
+
 # =============================================================================
 # MedOrbits -- Python Dependencies
 # File: requirements.txt
-# Purpose: Reproducible dependencies for repository tools, validation,
-#          testing, reporting, and optional integrations.
+# Purpose: Repository tooling, validation, testing, reporting and security.
 # Python: 3.10+
-# Policy: Keep dependencies minimal; pin versions after compatibility testing.
+# Policy: Use a virtual environment. Pin tested versions for reproducible builds.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Core repository tooling
-# -----------------------------------------------------------------------------
-# No third-party dependencies are required for the standard-library-only
-# repository manager. Keep this file minimal unless a feature needs a package.
-
-# -----------------------------------------------------------------------------
-# Testing
+# Testing and coverage
 # -----------------------------------------------------------------------------
 pytest>=8.3,<10.0
 pytest-cov>=5.0,<8.0
 
 # -----------------------------------------------------------------------------
-# Python code quality
+# Python linting, formatting and static typing
 # -----------------------------------------------------------------------------
 ruff>=0.11,<1.0
 mypy>=1.15,<2.0
 
 # -----------------------------------------------------------------------------
-# Security and dependency auditing
+# Security analysis and dependency auditing
 # -----------------------------------------------------------------------------
 pip-audit>=2.7,<3.0
 bandit>=1.8,<2.0
 
 # -----------------------------------------------------------------------------
-# JSON Schema validation
+# JSON and JSON Schema validation
 # -----------------------------------------------------------------------------
 jsonschema>=4.23,<5.0
 
 # -----------------------------------------------------------------------------
-# HTML validation and parsing
+# HTML parsing and validation support
 # -----------------------------------------------------------------------------
 beautifulsoup4>=4.12,<5.0
 html5lib>=1.1,<2.0
 
 # -----------------------------------------------------------------------------
-# YAML configuration validation
+# YAML configuration and workflow validation
 # -----------------------------------------------------------------------------
 PyYAML>=6.0,<7.0
 
 # -----------------------------------------------------------------------------
-# HTTP downloads and optional API integrations
+# HTTP requests for explicitly configured integrations
 # -----------------------------------------------------------------------------
 requests>=2.32,<3.0
 
 # -----------------------------------------------------------------------------
-# Optional developer convenience
+# Optional packages -- uncomment only when implemented and needed
 # -----------------------------------------------------------------------------
-# Uncomment only if the corresponding feature is implemented and required.
-#
+# Rich terminal output:
 # rich>=13.9,<15.0
+#
+# Environment configuration:
 # python-dotenv>=1.0,<2.0
 #
-# -----------------------------------------------------------------------------
-# Installation
-# -----------------------------------------------------------------------------
+# Retry utilities for external network integrations:
+# tenacity>=9.0,<10.0
+
+# =============================================================================
+# INSTALLATION
+# =============================================================================
+# Linux/macOS:
+# python3 -m venv .venv
+# source .venv/bin/activate
 # python -m pip install --upgrade pip
 # python -m pip install -r requirements.txt
 #
-# Testing:
+# Windows PowerShell:
+# py -3 -m venv .venv
+# .venv\Scripts\Activate.ps1
+# python -m pip install --upgrade pip
+# python -m pip install -r requirements.txt
+
+# =============================================================================
+# VALIDATION AND QUALITY CHECKS
+# =============================================================================
+# Tests:
 # python -m pytest
 #
-# Coverage:
+# Tests with coverage:
 # python -m pytest --cov=python --cov-report=term-missing
 #
 # Python lint:
@@ -78,13 +88,28 @@ requests>=2.32,<3.0
 # Python formatting check:
 # python -m ruff format --check .
 #
+# Type checking:
+# python -m mypy python
+#
 # Security scan:
 # python -m bandit -r python -x python/tests
+#
+# Dependency vulnerability audit:
 # python -m pip_audit
 #
-# NOTE:
-# 1. Review dependency compatibility with the project's supported Python range.
-# 2. Run tests after installing or upgrading dependencies.
-# 3. Generate a lock file for reproducible CI/deployment environments.
-# 4. Do not install dependencies globally; use a virtual environment.
-# 5. Do not place credentials, API keys, or tokens in this file.
+# JSON Schema validation:
+# Implement the repository's schema-checking script using jsonschema.
+#
+# =============================================================================
+# DEPENDENCY POLICY
+# =============================================================================
+# 1. Keep standard-library-only tools dependency-free where practical.
+# 2. Install dependencies in a virtual environment, not globally.
+# 3. Review Python-version and package compatibility before upgrades.
+# 4. Run tests, linting and security checks after changing dependencies.
+# 5. Generate and review a lock file separately for reproducible CI builds.
+# 6. Never commit credentials, tokens, private URLs or API keys.
+# 7. Do not use automated dependency upgrades without reviewing their changes.
+# 8. Optional dependencies must remain optional until their features are used.
+# 9. Keep this file compatible with the Python versions supported by MedOrbits.
+# =============================================================================

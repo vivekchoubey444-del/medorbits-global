@@ -7,10 +7,27 @@
       "request": "launch",
       "program": "${workspaceFolder}/tools/repository_manager.py",
       "args": [
-        "validate"
+        "validate",
+        "--json-report",
+        "reports/repository-report.json"
       ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Debug repository inspection",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/repository_manager.py",
+      "args": [
+        "inspect"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "stopOnEntry": false
     },
     {
       "name": "MedOrbits: Debug page discovery",
@@ -21,8 +38,37 @@
         "pages",
         "--discover"
       ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Preview page generation",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/repository_manager.py",
+      "args": [
+        "pages"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Generate missing pages",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/repository_manager.py",
+      "args": [
+        "pages",
+        "--apply"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "stopOnEntry": false
     },
     {
       "name": "MedOrbits: Debug page audit",
@@ -32,16 +78,69 @@
       "args": [
         "audit-pages"
       ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "stopOnEntry": false
     },
     {
-      "name": "MedOrbits: Run current Python file",
+      "name": "MedOrbits: Preview asset organization",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/repository_manager.py",
+      "args": [
+        "organize"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Run Python tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-q",
+        "tests",
+        "python/scr/tests"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Debug current Python file",
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "stopOnEntry": false
+    },
+    {
+      "name": "MedOrbits: Debug current Python file with arguments",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "stopOnEntry": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "MedOrbits: Repository quality checks",
+      "configurations": [
+        "MedOrbits: Debug repository manager",
+        "MedOrbits: Debug page audit"
+      ],
+      "stopAll": true
     }
   ]
 }

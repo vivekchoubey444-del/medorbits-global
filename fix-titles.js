@@ -1,40 +1,49 @@
+
 'use strict';
+
 /**
  * MedOrbits -- Test Title Quote Migration
  * File: /fix-titles.js
+ * Policy version: 2.0.0
  *
  * Converts eligible single-quoted test titles to double quotes.
  *
- * Examples:
+ * Supported examples:
  *   it('loads the homepage', () => {});
  *   test('validates user input', function () {});
  *   describe('API routes', () => {});
  *
- * Safety features:
- *   - Dry-run by default.
- *   - Requires --write to modify files.
- *   - Supports an explicit --root directory.
- *   - Never follows symbolic links during traversal.
- *   - Skips dependency/build/coverage directories.
- *   - Creates exclusive backups without overwriting existing ones.
- *   - Writes through a temporary file and renames atomically.
- *   - Preserves original files when backup creation fails.
- *   - Reports skipped titles and filesystem errors.
- *
- * Usage:
+ * Commands:
  *   node fix-titles.js
  *   node fix-titles.js --root .
+ *   node fix-titles.js --check
  *   node fix-titles.js --write
  *   node fix-titles.js --write --root .
- *   node fix-titles.js --check
+ *   node fix-titles.js --verbose
  *   node fix-titles.js --help
  *
+ * Safety:
+ *   - Dry-run unless --write is specified.
+ *   - --check never writes files.
+ *   - Explicit root validation.
+ *   - No symbolic-link traversal.
+ *   - Skips dependency and generated directories.
+ *   - Exclusive backups; existing backups are never overwritten.
+ *   - Removes incomplete backups created by this process on failure.
+ *   - Uses same-directory temporary files and atomic rename.
+ *   - Checks original content immediately before replacement.
+ *   - Preserves file permission bits.
+ *   - Rejects mixed or unsupported line endings.
+ *   - Conservative, line-oriented transformation; not an AST codemod.
+ *
  * IMPORTANT:
- *   Review the dry-run output before using --write.
+ *   Review dry-run output and repository changes before committing.
  */
+
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+
 const SKIP_DIRS = new Set([
   '.git',
   '.hg',
@@ -51,10 +60,24 @@ const SKIP_DIRS = new Set([
   'tmp',
   'temp',
 ]);
+
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+
 const DEFAULT_ROOT = process.cwd();
+
+/**
+ * Matches a simple, single-line call:
+ *
+ *   it('title', ...)
+ *   test('title', ...)
+ *   describe('title', ...)
+ *
+ * The title must be a regular single-quoted string literal.
+ * Calls with unsupported syntax are intentionally ignored.
+ */
 const TITLE_PATTERN =
   /^(\s*(?:it|test|describe)(?:\.\w+)?\s*\(\s*)'((?:\\.|[^'\\])*)'(\s*,.*)$/;
+
 const options = {
   root: DEFAULT_ROOT,
   write: false,
@@ -62,6 +85,7 @@ const options = {
   help: false,
   verbose: false,
 };
+
 const stats = {
   scanned: 0,
   matched: 0,
@@ -71,69 +95,94 @@ const stats = {
   backupsCreated: 0,
   errors: 0,
 };
+
 function log(message) {
   console.log(`[fix-titles] ${message}`);
 }
+
 function warn(message) {
   console.warn(`[fix-titles] WARNING: ${message}`);
 }
+
 function error(message) {
   console.error(`[fix-titles] ERROR: ${message}`);
   stats.errors++;
 }
+
 function showHelp() {
   console.log(`
 MedOrbits Test Title Quote Migration
+
 Usage:
   node fix-titles.js [options]
+
 Options:
   --root PATH   Root directory to scan. Defaults to current directory.
-  --write       Apply changes. Without this flag, the script is dry-run.
-  --check       Report whether eligible titles remain single-quoted.
+  --write       Apply changes. Without this flag, the script is a dry-run.
+  --check       Exit nonzero if convertible single-quoted titles remain.
   --verbose     Show additional scanning information.
-  --help        Display this help message.
+  --help, -h    Display this help message.
+
 Safety:
-  No files are modified without --write.
+  Source files are not modified without --write.
   Existing backup files are never overwritten.
   Symbolic links are skipped.
-  Files with ambiguous line endings are preserved.
+  Files with unsupported line endings are preserved.
+  This script does not parse JavaScript with a full syntax tree.
+
+Examples:
+  node fix-titles.js
+  node fix-titles.js --check
+  node fix-titles.js --write --root ./tests
 `);
 }
+
 function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+
     switch (arg) {
       case '--root': {
         const value = argv[++i];
+
         if (!value || value.startsWith('--')) {
           throw new Error('--root requires a directory path.');
         }
+
         options.root = path.resolve(value);
         break;
       }
+
       case '--write':
         options.write = true;
         break;
+
       case '--check':
         options.check = true;
         break;
+
       case '--verbose':
         options.verbose = true;
         break;
+
       case '--help':
       case '-h':
         options.help = true;
         break;
+
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
+
   if (options.write && options.check) {
     throw new Error('--write and --check cannot be used together.');
   }
 }
+
 function isInsideRoot(root, candidate) {
   const relative = path.relative(root, candidate);
+
   return (
     relative === '' ||
     (
@@ -143,75 +192,86 @@ function isInsideRoot(root, candidate) {
     )
   );
 }
+
 function validateRoot(root) {
-  let realRoot;
-  try {
-    realRoot = fs.realpathSync(root);
-  } catch {
-    throw new Error(`Root directory does not exist: ${root}`);
-  }
   const rootStat = fs.lstatSync(root);
+
   if (rootStat.isSymbolicLink()) {
     throw new Error('The selected root must not be a symbolic link.');
   }
+
+  if (!rootStat.isDirectory()) {
+    throw new Error(`Root is not a directory: ${root}`);
+  }
+
+  const realRoot = fs.realpathSync(root);
+
   if (!fs.statSync(realRoot).isDirectory()) {
     throw new Error(`Root is not a directory: ${root}`);
   }
+
   return realRoot;
 }
+
 function isTestFile(filename) {
   return TEST_FILE.test(filename);
 }
-function shouldSkipDirectory(entry) {
-  return entry.isSymbolicLink() || SKIP_DIRS.has(entry.name);
-}
+
 /**
- * Convert the captured title's content into a double-quoted
- * JavaScript string literal without changing its meaning.
+ * Convert captured single-quoted string contents to double-quoted
+ * string contents while preserving supported JavaScript escapes.
  *
- * Existing escape sequences are preserved where possible.
- * Escaped single quotes can become ordinary apostrophes inside
- * double-quoted strings.
+ * Escaped apostrophes become ordinary apostrophes.
+ * Double quotes are escaped.
+ * Other escape sequences are preserved.
  *
- * Unsupported escape sequences are rejected conservatively.
+ * Returns null for conservatively rejected content.
  */
 function convertTitle(title) {
+  // Avoid changing strings whose contents could be ambiguous to
+  // downstream template-oriented tooling.
   if (title.includes('${')) {
     return null;
   }
+
   let output = '';
+
   for (let i = 0; i < title.length; i++) {
     const char = title[i];
+
     if (char === '"') {
       output += '\\"';
       continue;
     }
+
     if (char !== '\\') {
       output += char;
       continue;
     }
+
     const next = title[i + 1];
+
     if (next === undefined) {
       return null;
     }
+
     if (next === "'") {
       output += "'";
       i++;
       continue;
     }
+
     // Preserve other escape sequences exactly.
     output += char + next;
     i++;
   }
+
   return output;
 }
-/**
- * This deliberately handles only simple, single-line declarations.
- * It does not parse JavaScript syntax and should not be treated as
- * a substitute for an AST-based codemod.
- */
+
 function transformLine(line) {
   const match = line.match(TITLE_PATTERN);
+
   if (!match) {
     return {
       changed: false,
@@ -219,8 +279,9 @@ function transformLine(line) {
       line,
     };
   }
-  const title = match[2];
-  const converted = convertTitle(title);
+
+  const converted = convertTitle(match[2]);
+
   if (converted === null) {
     return {
       changed: false,
@@ -228,19 +289,26 @@ function transformLine(line) {
       line,
     };
   }
+
   const updated = `${match[1]}"${converted}"${match[3]}`;
+
   return {
     changed: updated !== line,
     skipped: false,
     line: updated,
   };
 }
+
+/**
+ * Transform content without silently normalizing line endings.
+ *
+ * UTF-8 is required because the migration is intended for JavaScript
+ * and TypeScript source files.
+ */
 function transformContent(content) {
-  // Preserve the original line ending style.
-  const usesCRLF = content.includes('\r\n');
-  const newline = usesCRLF ? '\r\n' : '\n';
-  // Do not silently normalize mixed line endings.
+  const hasCRLF = content.includes('\r\n');
   const withoutCRLF = content.replace(/\r\n/g, '');
+
   if (withoutCRLF.includes('\r')) {
     return {
       safe: false,
@@ -250,15 +318,27 @@ function transformContent(content) {
       skippedTitles: 0,
     };
   }
+
+  const newline = hasCRLF ? '\r\n' : '\n';
   const lines = content.split(/\r?\n/);
+
   let changedTitles = 0;
   let skippedTitles = 0;
+
   const updatedLines = lines.map((line) => {
     const result = transformLine(line);
-    if (result.changed) changedTitles++;
-    if (result.skipped) skippedTitles++;
+
+    if (result.changed) {
+      changedTitles++;
+    }
+
+    if (result.skipped) {
+      skippedTitles++;
+    }
+
     return result.line;
   });
+
   return {
     safe: true,
     content: updatedLines.join(newline),
@@ -266,58 +346,113 @@ function transformContent(content) {
     skippedTitles,
   };
 }
+
 /**
- * Backup creation uses exclusive creation.
- * If a backup already exists, do not overwrite it.
+ * Create an exclusive backup.
+ *
+ * If writing the newly created backup fails, remove only the partial
+ * backup created by this invocation. Never remove a pre-existing backup.
  */
 function createBackup(file, content) {
   const backupPath = `${file}.bak`;
-  const descriptor = fs.openSync(
-    backupPath,
-    'wx',
-    0o600
-  );
+
+  let descriptor;
+  let created = false;
+
   try {
-    fs.writeFileSync(descriptor, content);
+    descriptor = fs.openSync(backupPath, 'wx', 0o600);
+    created = true;
+
+    fs.writeFileSync(descriptor, content, 'utf8');
     fs.fsyncSync(descriptor);
-  } finally {
     fs.closeSync(descriptor);
+    descriptor = undefined;
+
+    stats.backupsCreated++;
+
+    return backupPath;
+  } catch (err) {
+    if (descriptor !== undefined) {
+      try {
+        fs.closeSync(descriptor);
+      } catch {
+        // Preserve the original failure.
+      }
+    }
+
+    if (created) {
+      try {
+        fs.unlinkSync(backupPath);
+      } catch (cleanupError) {
+        warn(
+          `Could not remove incomplete backup ${backupPath}: ` +
+          cleanupError.message
+        );
+      }
+    }
+
+    throw err;
   }
-  stats.backupsCreated++;
-  return backupPath;
 }
+
 /**
- * Write to a unique temporary file in the same directory, then
- * atomically rename it into place.
+ * Replace a file through a unique temporary file in the same directory.
  *
- * A backup must already exist before this function is called.
+ * The original file is checked again before replacement. This reduces
+ * accidental overwrites when another process modifies the source.
+ *
+ * Atomic rename protects readers from seeing a partially written file,
+ * but this is not a cross-platform file-locking mechanism.
  */
-function atomicWrite(file, content, originalStat) {
+function atomicWrite(file, content, originalBuffer, originalStat) {
   const directory = path.dirname(file);
   const basename = path.basename(file);
+
   const temporaryPath = path.join(
     directory,
-    `.${basename}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`
+    `.${basename}.${process.pid}.` +
+      `${crypto.randomBytes(8).toString('hex')}.tmp`
   );
+
   let descriptor;
+
   try {
     descriptor = fs.openSync(
       temporaryPath,
       'wx',
       originalStat.mode & 0o777
     );
-    fs.writeFileSync(descriptor, content);
+
+    fs.writeFileSync(descriptor, content, 'utf8');
     fs.fsyncSync(descriptor);
     fs.closeSync(descriptor);
     descriptor = undefined;
-    // Refuse to replace a file that changed after it was read.
-    const currentStat = fs.statSync(file);
-    if (
-      currentStat.size !== originalStat.size ||
-      currentStat.mtimeMs !== originalStat.mtimeMs
-    ) {
-      throw new Error('File changed during processing; refusing to overwrite.');
+
+    // Refuse to replace a file that has become a symlink or changed.
+    const currentStat = fs.lstatSync(file);
+
+    if (!currentStat.isFile() || currentStat.isSymbolicLink()) {
+      throw new Error('Source is no longer a regular file.');
     }
+
+    const currentBuffer = fs.readFileSync(file);
+
+    if (!currentBuffer.equals(originalBuffer)) {
+      throw new Error(
+        'File contents changed during processing; refusing to overwrite.'
+      );
+    }
+
+    // Also detect common same-content replacement or metadata races.
+    if (
+      currentStat.dev !== originalStat.dev ||
+      currentStat.ino !== originalStat.ino
+    ) {
+      throw new Error(
+        'File identity changed during processing; refusing to overwrite.'
+      );
+    }
+
     fs.renameSync(temporaryPath, file);
   } finally {
     if (descriptor !== undefined) {
@@ -327,62 +462,92 @@ function atomicWrite(file, content, originalStat) {
         // Preserve the original error.
       }
     }
-    // Only remove this script's own temporary file.
-    // Never remove a user file or an existing backup.
+
     try {
       if (fs.existsSync(temporaryPath)) {
         fs.unlinkSync(temporaryPath);
       }
-    } catch {
-      warn(`Could not remove temporary file: ${temporaryPath}`);
+    } catch (cleanupError) {
+      warn(
+        `Could not remove temporary file ${temporaryPath}: ` +
+        cleanupError.message
+      );
     }
   }
 }
+
 function processFile(file, root) {
   stats.scanned++;
+
   let fileStat;
+  let originalBuffer;
   let original;
+
   try {
     fileStat = fs.lstatSync(file);
+
     if (!fileStat.isFile() || fileStat.isSymbolicLink()) {
       return;
     }
+
     const realFile = fs.realpathSync(file);
+
     if (!isInsideRoot(root, realFile)) {
       warn(`Skipped path outside root: ${file}`);
       return;
     }
-    original = fs.readFileSync(file, 'utf8');
+
+    originalBuffer = fs.readFileSync(file);
+    original = originalBuffer.toString('utf8');
+
+    // Reject invalid UTF-8 rather than risking byte-level corruption.
+    if (!Buffer.from(original, 'utf8').equals(originalBuffer)) {
+      warn(`Skipped ${file}: file is not valid UTF-8.`);
+      return;
+    }
   } catch (err) {
     error(`Could not read ${file}: ${err.message}`);
     return;
   }
+
   const result = transformContent(original);
+
   stats.skippedTitles += result.skippedTitles;
+
   if (!result.safe) {
     warn(`Skipped ${file}: ${result.reason}`);
     return;
   }
+
   if (result.changedTitles === 0) {
     if (options.verbose) {
       log(`No eligible titles: ${path.relative(root, file)}`);
     }
+
     return;
   }
+
   stats.matched += result.changedTitles;
+
   if (!options.write) {
     log(
-      `DRY RUN ${path.relative(root, file)}: ` +
+      `${options.check ? 'CHECK' : 'DRY RUN'} ` +
+      `${path.relative(root, file)}: ` +
       `${result.changedTitles} title(s) would change`
     );
+
     stats.changedTitles += result.changedTitles;
     return;
   }
+
+  let backupPath;
+
   try {
-    // Create a backup before any replacement is attempted.
-    const backupPath = createBackup(file, original);
+    // Preserve the original before attempting replacement.
+    backupPath = createBackup(file, original);
+
     try {
-      atomicWrite(file, result.content, fileStat);
+      atomicWrite(file, result.content, originalBuffer, fileStat);
     } catch (writeError) {
       error(
         `Could not update ${file}: ${writeError.message}. ` +
@@ -390,21 +555,23 @@ function processFile(file, root) {
       );
       return;
     }
+
     stats.changedFiles++;
     stats.changedTitles += result.changedTitles;
-    successLog(
-      `${path.relative(root, file)}: ` +
-      `${result.changedTitles} title(s) updated`
+
+    log(
+      `UPDATED ${path.relative(root, file)}: ` +
+      `${result.changedTitles} title(s) updated; ` +
+      `backup: ${path.basename(backupPath)}`
     );
   } catch (err) {
     error(`Could not back up ${file}: ${err.message}`);
   }
 }
-function successLog(message) {
-  console.log(`[fix-titles] UPDATED ${message}`);
-}
+
 function walk(directory, root) {
   let entries;
+
   try {
     entries = fs.readdirSync(directory, {
       withFileTypes: true,
@@ -413,68 +580,117 @@ function walk(directory, root) {
     error(`Cannot scan directory ${directory}: ${err.message}`);
     return;
   }
+
   for (const entry of entries) {
+    const target = path.join(directory, entry.name);
+
     if (entry.isSymbolicLink()) {
       if (options.verbose) {
-        log(`Skipping symbolic link: ${path.join(directory, entry.name)}`);
+        log(`Skipping symbolic link: ${target}`);
       }
+
       continue;
     }
-    const target = path.join(directory, entry.name);
+
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name)) {
+        if (options.verbose) {
+          log(`Skipping directory: ${target}`);
+        }
+
+        continue;
+      }
+
       if (!isInsideRoot(root, target)) {
         warn(`Skipping directory outside root: ${target}`);
         continue;
       }
+
       walk(target, root);
       continue;
     }
+
     if (!entry.isFile() || !isTestFile(entry.name)) {
       continue;
     }
+
     processFile(target, root);
   }
 }
+
 function printSummary() {
   console.log('\n--- Migration Summary ---');
-  console.log(`Files scanned:        ${stats.scanned}`);
-  console.log(`Eligible titles:      ${stats.matched}`);
-  console.log(`Files updated:        ${stats.changedFiles}`);
-  console.log(`Titles updated:       ${stats.changedTitles}`);
-  console.log(`Titles skipped:       ${stats.skippedTitles}`);
-  console.log(`Backups created:      ${stats.backupsCreated}`);
-  console.log(`Errors:               ${stats.errors}`);
-  if (!options.write && !options.check) {
+  console.log(`Test files scanned:    ${stats.scanned}`);
+  console.log(`Eligible titles:       ${stats.matched}`);
+  console.log(`Files updated:         ${stats.changedFiles}`);
+  console.log(`Titles updated:        ${stats.changedTitles}`);
+  console.log(`Titles skipped:        ${stats.skippedTitles}`);
+  console.log(`Backups created:       ${stats.backupsCreated}`);
+  console.log(`Errors:                ${stats.errors}`);
+
+  if (options.check) {
+    if (stats.matched > 0) {
+      console.log(
+        '\nCHECK FAILED: convertible single-quoted titles remain.'
+      );
+    } else {
+      console.log(
+        '\nCHECK PASSED: no convertible single-quoted titles remain.'
+      );
+    }
+
+    if (stats.skippedTitles > 0) {
+      console.log(
+        'WARNING: some titles were skipped and require manual review.'
+      );
+    }
+
+    return;
+  }
+
+  if (!options.write) {
     console.log('\nDry-run only: no source files were modified.');
     console.log('Review the output, then use --write to apply changes.');
   }
 }
+
 function main() {
   parseArgs(process.argv.slice(2));
+
   if (options.help) {
     showHelp();
     return 0;
   }
+
   const root = validateRoot(options.root);
+
   log(`Root: ${root}`);
-  log(`Mode: ${options.check ? 'CHECK' : options.write ? 'WRITE' : 'DRY RUN'}`);
+  log(
+    `Mode: ${
+      options.check ? 'CHECK' : options.write ? 'WRITE' : 'DRY RUN'
+    }`
+  );
+
   walk(root, root);
   printSummary();
+
   if (stats.errors > 0) {
     return 1;
   }
+
   if (options.check && stats.matched > 0) {
-    console.error(
-      '\n[fix-titles] CHECK FAILED: eligible single-quoted titles remain.'
-    );
     return 1;
   }
-  if (options.check) {
-    log('CHECK PASSED: no eligible single-quoted titles remain.');
+
+  if (options.check && stats.skippedTitles > 0) {
+    // A skipped title means the migration could not fully assess
+    // all matched title-like declarations.
+    return 2;
   }
+
   return 0;
 }
+
 try {
   process.exitCode = main();
 } catch (err) {

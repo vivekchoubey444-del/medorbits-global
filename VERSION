@@ -1,4 +1,3 @@
-  
 MedOrbits
 =========
 
@@ -6,13 +5,13 @@ PROJECT VERSION MANIFEST
 ========================
 
 Project Name       : MedOrbits
-Version            : 1.0.0
+Version            : 3.0.0
 Versioning Scheme  : Semantic Versioning 2.0.0
 Release Channel    : development
 Release Status     : pre-release
 Manifest Format    : Plain text
 Manifest Path      : /VERSION
-Last Updated       : 2026-10-27
+Last Updated       : 2026-10-28
 
 1. PROJECT IDENTITY
 -------------------
@@ -23,10 +22,15 @@ Repository: https://github.com/vivekchoubey366-dot/MedOrbits-global
 
 Purpose:
 Education, admissions, career guidance, college information,
-recruitment support, and related digital services.
+recruitment support, application services, repository tooling,
+and related digital services.
 
-The repository URL above is a project reference and should be
-verified against the actual Git remote before release.
+The repository URL is a project reference. Verify it against the
+actual Git remote before publishing a release.
+
+This manifest records intended repository metadata. It does not
+establish that all application components are implemented or verified.
+
 
 2. VERSIONING POLICY
 --------------------
@@ -36,8 +40,8 @@ Version format:
     MAJOR.MINOR.PATCH
 
 MAJOR:
-    Increment for incompatible changes to public interfaces,
-    API contracts, configuration, or supported data formats.
+    Increment for incompatible changes to public interfaces, API
+    contracts, configuration, or supported data formats.
 
 MINOR:
     Increment for backward-compatible features, integrations,
@@ -47,31 +51,39 @@ PATCH:
     Increment for backward-compatible bug fixes, security fixes,
     documentation corrections, and maintenance.
 
-Pre-release identifiers may be used when needed:
+Pre-release identifiers:
 
-    1.0.0-alpha.1
-    1.0.0-beta.1
-    1.0.0-rc.1
+    3.0.0-alpha.1
+    3.0.0-beta.1
+    3.0.0-rc.1
 
-Build metadata may be appended:
+Build metadata:
 
-    1.0.0+build.20261027
+    3.0.0+build.20261028
 
 Build metadata does not affect SemVer precedence.
+
+Use the version appropriate to the actual release. A manifest version
+does not automatically determine the package version or Git tag.
+
 
 3. RUNTIME REQUIREMENTS
 -----------------------
 
 Python:
     Minimum version: 3.10
-    Required for repository utilities that declare Python support.
+    Required by repository utilities and tests that declare Python
+    support. Individual tools may require a newer version.
 
 Node.js:
-    Minimum version: 20.0.0
-    Required for JavaScript tooling where specified by package.json.
+    Minimum project baseline: 22.0.0
+    Must satisfy package.json engines.node, tool requirements,
+    and the selected hosting platform's supported runtime lifecycle.
 
 Package Manager:
-    npm, subject to package.json and lockfile requirements.
+    npm, as declared by package.json.
+    The package manager version must be compatible with the committed
+    package-lock.json and the project's installation configuration.
 
 Shell:
     Bash-compatible environment for repository shell utilities.
@@ -80,72 +92,97 @@ Operating System:
     Linux, macOS, or another compatible Unix-like environment.
     Windows requires a compatible Bash environment for shell scripts.
 
-These are project-level defaults. Individual tools may have stricter
-requirements documented in their own files.
+These are project-level defaults. The actual package manifest,
+tool-specific configuration, and deployment environment determine
+the effective requirements.
+
 
 4. COMPATIBILITY POLICY
 -----------------------
 
 - Preserve existing public URLs unless a migration is provided.
-- Maintain compatibility with existing JSON data contracts where practical.
+- Maintain compatibility with existing JSON data contracts where
+  practical.
 - Validate API and schema changes before release.
 - Avoid silently removing existing pages, assets, or configuration.
 - Document breaking changes and required migrations.
-- Do not commit credentials, private keys, access tokens, or production
+- Never commit credentials, private keys, access tokens, or production
   secrets.
-- Keep dependency versions and lockfiles synchronized.
+- Keep dependency declarations and lockfiles synchronized.
 - Test supported runtime versions before declaring compatibility.
+- Preserve existing database schemas and migration history unless
+  a reviewed migration explicitly changes them.
+- Maintain backward compatibility for public interfaces where required.
+- Verify repository paths before using them in automated operations.
+
 
 5. RELEASE CHANNELS
 -------------------
 
 development:
-    Active development; features may change.
+    Active development. Features and interfaces may change.
 
 alpha:
-    Early testing; functionality may be incomplete.
+    Early testing. Functionality may be incomplete.
 
 beta:
-    Feature-complete candidate for broader testing.
+    Broader testing of a substantially complete feature set.
 
 rc:
-    Release candidate pending final verification.
+    Release candidate awaiting final verification and approval.
 
 stable:
-    Approved production release.
+    Approved production release that has passed the required gates.
 
-The channel must reflect the actual release state. This manifest
-does not itself certify a release as production-ready.
+The channel and status must reflect the actual release state.
+This manifest does not certify production readiness.
+
 
 6. RELEASE QUALITY GATES
 ------------------------
 
 Before publishing a release:
 
-[ ] Verify the current Git branch and working-tree status.
-[ ] Resolve all merge conflicts.
-[ ] Run VERIFY.sh.
-[ ] Run SCHEMA-CHECK.sh.
-[ ] Run SECURITY.sh.
-[ ] Run the project test suite.
-[ ] Validate all relevant HTML, CSS, JavaScript, and JSON references.
-[ ] Review dependency vulnerabilities and update requirements as needed.
+[ ] Verify the Git repository root, remote, branch, and working tree.
+[ ] Resolve merge conflicts.
+[ ] Verify VERSION and package version consistency.
+[ ] Run VERIFY.sh if present and applicable.
+[ ] Run SCHEMA-CHECK.sh if present and applicable.
+[ ] Run SECURITY.sh if present and applicable.
+[ ] Run the configured project test suite.
+[ ] Validate relevant HTML, CSS, JavaScript, Python, and JSON files.
+[ ] Validate API schemas and documentation against implemented routes.
+[ ] Review dependency vulnerabilities and required updates.
 [ ] Verify required environment variables and deployment configuration.
 [ ] Confirm that no credentials or private data are committed.
 [ ] Review release notes and migration instructions.
-[ ] Create a recoverable backup or ensure the repository is recoverable.
-[ ] Obtain the required release approval.
+[ ] Confirm that recovery and backup procedures are appropriate.
+[ ] Obtain required release approval.
+[ ] Review the complete release diff.
+[ ] Create a local annotated Git tag only after explicit approval.
+[ ] Verify the release artifact before any separate publication or deploy.
+
+A gate must not be marked complete merely because a script exists.
+Record actual results and investigate failed or skipped checks.
+
 
 7. SECURITY AND DATA INTEGRITY
 ------------------------------
 
 - Never store live credentials in this manifest.
-- Keep secrets in approved environment or secret-management systems.
-- Treat imported files as untrusted until validated.
+- Store secrets in approved environment or secret-management systems.
+- Treat imported files and external input as untrusted until validated.
 - Avoid overwriting existing data without explicit authorization.
 - Preserve source files during automated repository maintenance.
-- Require review before applying generated changes.
+- Review generated changes before applying them.
+- Use isolated test databases and disposable test resources.
+- Never point destructive tests at production services.
 - Do not force-push or deploy automatically as part of verification.
+- Restrict private documents and personal records to authorized users.
+- Use least-privilege credentials and review access controls.
+- Verify backup restoration rather than assuming a backup is usable.
+- Do not claim security certification without independent evidence.
+
 
 8. VERSION UPDATE PROCEDURE
 ---------------------------
@@ -154,47 +191,133 @@ When preparing a release:
 
 1. Determine whether the change is major, minor, or patch-level.
 2. Update VERSION.
-3. Update package.json and other version manifests when applicable.
-4. Keep Python package metadata synchronized if the repository defines it.
-5. Update changelog and release notes.
-6. Run validation and tests.
-7. Review the final diff.
-8. Commit and tag only after explicit release approval.
+3. Update package.json and other version manifests as applicable.
+4. Synchronize Python package metadata if the repository defines it.
+5. Update the changelog and release notes.
+6. Review API, schema, and data-format compatibility.
+7. Run validation and tests.
+8. Review the final diff.
+9. Obtain release approval.
+10. Create a Git tag only after all required checks pass.
 
-Do not assume all version-bearing files should contain identical values
-if a component is independently versioned. Document intentional
-differences.
+Do not assume all version-bearing files must contain identical values
+when a component is independently versioned. Document intentional
+differences and their compatibility implications.
+
+Never automatically overwrite conflicting version declarations.
+
 
 9. SOURCE OF TRUTH
 ------------------
 
-The VERSION file records the intended repository release version.
+VERSION:
+    Intended repository release version.
 
-Other version sources may include:
-- package.json
-- Python project metadata
-- API version declarations
-- schema versions
-- deployment configuration
-- Git tags and release records
+package.json:
+    Node.js package name, version, scripts, dependencies, and runtime
+    constraints.
+
+package-lock.json:
+    Resolved npm dependency tree for reproducible installation.
+
+Python project metadata:
+    Python package version and supported runtime constraints, if defined.
+
+API and schema declarations:
+    Independently versioned interfaces and data contracts, where applicable.
+
+Git tags and release records:
+    Recorded source-control release references.
+
+Deployment configuration:
+    Runtime and operational settings used by the hosting environment.
 
 Conflicts between these sources must be reviewed rather than silently
-overwritten.
+overwritten. Git tags do not automatically update the manifest, and
+the manifest does not create a release.
 
-10. CHANGE HISTORY
+
+10. VALIDATION COMMANDS
+-----------------------
+
+Run only commands that are defined in the actual repository.
+
+General checks:
+
+    node --version
+    npm --version
+    npm ci
+    npm run validate
+    npm test
+
+Strict checks, when configured:
+
+    npm run validate:strict
+    npm run check:dependencies
+    npm run check:dependencies:python
+
+Repository-specific checks, when present:
+
+    bash VERIFY.sh
+    bash SCHEMA-CHECK.sh
+    bash SECURITY.sh
+
+Python checks, when configured:
+
+    python -m pytest
+    python -m ruff check .
+    python -m ruff format --check .
+    python -m mypy .
+
+A missing script must be reported as missing. Do not silently treat a
+skipped check as a successful check.
+
+Successful validation confirms only the checks that actually ran.
+
+
+11. RELEASE AND DEPLOYMENT POLICY
+---------------------------------
+
+- Preview and validation should be the default for release utilities.
+- Require explicit confirmation before creating a release tag.
+- Require explicit confirmation before pushing to a remote.
+- Never force-push as a routine release operation.
+- Never run destructive cleanup or reset operations automatically.
+- Never deploy merely because validation passed.
+- Verify the target branch, commit, tag, and remote before publishing.
+- Keep deployment credentials outside the repository.
+- Follow the deployment platform's approval and rollback procedures.
+
+A local Git tag is not the same as a published release or deployment.
+
+
+12. CHANGE HISTORY
 ------------------
 
-2026-10-27
-    Created detailed project version manifest.
-    Established Semantic Versioning policy.
-    Defined compatibility defaults, security expectations,
-    release channels, and release quality gates.
+2026-10-27:
+    Initial project version manifest created.
+    Semantic Versioning policy and release quality gates documented.
 
-11. DISCLAIMER
+2026-10-28:
+    Updated manifest documentation for the MedOrbits repository
+    tooling and release workflow.
+    Clarified runtime compatibility, source-of-truth rules,
+    validation requirements, and release safety.
+    Updated the intended repository version to 3.0.0.
+
+This history documents manifest changes; it does not prove that a
+release has been built, tested, tagged, or published.
+
+
+13. DISCLAIMER
 --------------
 
 This file is project metadata and documentation. It does not install
-dependencies, validate code, create a release, update Git tags,
-or certify production readiness.
+dependencies, validate code, create Git tags, update package metadata,
+publish releases, deploy the application, or certify production readiness.
+
+Verify all version declarations, scripts, repository URLs, runtime
+requirements, dependencies, and release procedures against the actual
+MedOrbits repository before operational use.
 
 End of VERSION manifest.

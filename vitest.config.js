@@ -1,16 +1,27 @@
-
 /**
  * MedOrbits -- Vitest Configuration
- * File: vitest.config.js
+ * File: /vitest.config.js
+ * Policy version: 2.0.0
  *
  * Requirements:
  *   Node.js >= 20
  *   vitest
+ *   @vitest/coverage-v8 (for coverage reports)
  *
- * Run:
+ * Commands:
  *   npx vitest run
  *   npx vitest
  *   npx vitest run --coverage
+ *   npx vitest run --reporter=verbose
+ *   npx vitest run tests/
+ *
+ * Design goals:
+ *   - Deterministic Node.js testing
+ *   - Explicit test discovery
+ *   - Isolated mocks and predictable cleanup
+ *   - Coverage for API and repository tooling
+ *   - Stable CI execution
+ *   - No implicit developer-specific setup files
  */
 
 import { defineConfig } from "vitest/config";
@@ -19,56 +30,91 @@ import { dirname, resolve } from "node:path";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 
+const sourceExtensions = "{js,mjs,cjs,ts,mts,cts}";
+
+const excludedPaths = [
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/coverage/**",
+  "**/.git/**",
+  "**/.next/**",
+  "**/.cache/**",
+  "**/storage/**",
+  "**/vendor/**",
+  "**/fixtures/**",
+  "**/*.d.ts",
+];
+
+const testPatterns = [
+  `tests/**/*.{test,spec}.${sourceExtensions}`,
+  `api/**/*.{test,spec}.${sourceExtensions}`,
+  `scripts/**/*.{test,spec}.${sourceExtensions}`,
+  `tools/**/*.{test,spec}.${sourceExtensions}`,
+];
+
+const coveragePatterns = [
+  `api/**/*.${sourceExtensions}`,
+  `scripts/**/*.${sourceExtensions}`,
+  `tools/**/*.${sourceExtensions}`,
+];
+
 export default defineConfig({
   root: rootDir,
+
+  // Keep aliases consistent between tests and application modules.
+  resolve: {
+    alias: {
+      "@": resolve(rootDir, "api"),
+      "@api": resolve(rootDir, "api"),
+      "@scripts": resolve(rootDir, "scripts"),
+      "@tools": resolve(rootDir, "tools"),
+    },
+  },
 
   test: {
     name: "medorbits",
 
-    // Backend and repository utility tests.
+    // Repository tools and backend modules run in Node.js.
     environment: "node",
 
+    // Tests must import Vitest APIs explicitly.
     globals: false,
 
-    include: [
-      "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
-      "api/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
-      "scripts/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
-      "tools/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
-    ],
+    include: testPatterns,
+    exclude: excludedPaths,
 
-    exclude: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/coverage/**",
-      "**/.git/**",
-      "**/storage/**",
-      "**/vendor/**",
-      "**/*.d.ts",
-    ],
-
-    // Prevent accidental interference between tests.
+    // Isolation and mock lifecycle.
     isolate: true,
     clearMocks: true,
     mockReset: true,
     restoreMocks: true,
 
-    // Avoid hiding useful failures behind excessive parallelism.
-    fileParallelism: true,
-    maxWorkers: "50%",
+    // Async operations and timeouts.
     testTimeout: 10_000,
     hookTimeout: 10_000,
+    teardownTimeout: 10_000,
 
-    // Keep tests deterministic and avoid silently loading developer-specific
-    // environment variables from an implicit setup file.
+    // Parallel execution. Set fileParallelism=false if tests share
+    // mutable files, databases, ports, or other process-wide resources.
+    fileParallelism: true,
+    maxWorkers: "50%",
+
+    // Stable default test environment.
     env: {
       NODE_ENV: "test",
     },
 
-    // Coverage is opt-in through --coverage.
+    // Do not automatically retry flaky tests.
+    retry: 0,
+
+    // Keep output concise while preserving failure details.
+    reporters: ["default"],
+
+    // Coverage is enabled explicitly with `--coverage`.
     coverage: {
       provider: "v8",
+      enabled: false,
 
       reportsDirectory: resolve(rootDir, "coverage"),
 
@@ -79,41 +125,25 @@ export default defineConfig({
         "json-summary",
       ],
 
-      include: [
-        "api/**/*.{js,mjs,cjs,ts,mts,cts}",
-        "scripts/**/*.{js,mjs,cjs,ts,mts,cts}",
-        "tools/**/*.{js,mjs,cjs,ts,mts,cts}",
-      ],
+      include: coveragePatterns,
 
       exclude: [
+        ...excludedPaths,
         "**/*.test.*",
         "**/*.spec.*",
         "**/*.config.*",
-        "**/node_modules/**",
-        "**/dist/**",
-        "**/build/**",
-        "**/coverage/**",
-        "**/vendor/**",
+        "**/index.{js,mjs,cjs,ts,mts,cts}",
+        "**/types/**",
         "**/*.d.ts",
       ],
 
-      // Start without imposing arbitrary thresholds on an unmeasured project.
-      // Introduce thresholds after establishing a reliable baseline.
+      // Establish a trustworthy baseline before adding thresholds.
+      // When ready, configure lines/functions/branches/statements thresholds.
       thresholds: undefined,
-    },
 
-    reporters: ["default"],
-
-    // Do not silently retry flaky tests.
-    retry: 0,
-  },
-
-  resolve: {
-    alias: {
-      "@": resolve(rootDir, "api"),
-      "@api": resolve(rootDir, "api"),
-      "@scripts": resolve(rootDir, "scripts"),
-      "@tools": resolve(rootDir, "tools"),
+      // Fail coverage runs if a source file is not exercised only when
+      // explicitly enabled after the project has a stable coverage baseline.
+      all: false,
     },
   },
 });

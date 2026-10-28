@@ -1,51 +1,81 @@
+
 # ============================================================
 # MedOrbits -- Ruff Configuration
 # File: ruff.toml
 # Release target: 2.0.0
+# Python: 3.11+
 #
 # Purpose:
-#   Python linting, import sorting, and code formatting.
+#   Python linting, import sorting, security checks,
+#   modernization, and code formatting.
+#
+# Policy:
+#   Lint and format checks must not modify files unless
+#   an explicit formatting or autofix command is executed.
 # ============================================================
+
 # Python language version targeted by the project.
 target-version = "py311"
-# Directories Ruff should search for Python source files.
+
+# Project source directories.
 src = [
     "src",
     "scripts",
     "tests",
-    "tools"
+    "test",
+    "tools",
+    "python",
 ]
-# Exclude generated, vendor, and environment directories.
+
+# Maximum line length.
+line-length = 100
+
+# Indentation.
+indent-width = 4
+
+# Generated, external, and environment directories.
 extend-exclude = [
     ".git",
     ".agent-backup",
     ".venv",
     "venv",
-    "node_modules",
+    "env",
     "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    "node_modules",
     "coverage",
+    "htmlcov",
     "dist",
     "build",
     ".next",
+    ".nuxt",
     ".wrangler",
-    "vendor"
+    ".cache",
+    "vendor",
+    "site-packages",
+    "third_party",
 ]
-# Maximum permitted line length.
-line-length = 100
-# Indentation and source encoding.
-indent-width = 4
+
 # ------------------------------------------------------------
 # Linter
 # ------------------------------------------------------------
+
 [lint]
-# Enable:
-# E/F: pycodestyle errors and Pyflakes
+
+# E4/E7/E9: pycodestyle errors
+# F: Pyflakes
 # I: import sorting
-# UP: modern Python syntax suggestions
-# B: common bug-prone patterns
-# SIM: simplification suggestions
-# S: selected security-related patterns
+# UP: Python modernization
+# B: bug-prone patterns
+# SIM: simplification
+# S: Bandit-derived security checks
 # RUF: Ruff-specific checks
+# PTH: pathlib best practices
+# PERF: performance-oriented checks
 select = [
     "E4",
     "E7",
@@ -56,40 +86,73 @@ select = [
     "B",
     "SIM",
     "S",
-    "RUF"
+    "RUF",
+    "PTH",
+    "PERF",
 ]
-# Permit common development conventions where appropriate.
+
+# Long lines are handled by the configured formatter and review.
 ignore = [
-    "E501"
+    "E501",
 ]
-# Allow unused imports in package initialization modules.
+
+# Permit selected development and test conventions.
 [lint.per-file-ignores]
+
+# Public package exports and initialization side effects.
 "__init__.py" = [
-    "F401"
+    "F401",
 ]
+
+# Assertions are appropriate in tests.
 "tests/**/*.py" = [
-    "S101"
+    "S101",
 ]
 "test/**/*.py" = [
-    "S101"
+    "S101",
 ]
+"**/tests/**/*.py" = [
+    "S101",
+]
+"**/test_*.py" = [
+    "S101",
+]
+
+# Test fixtures sometimes need temporary directories and subprocesses.
+# Keep other security checks enabled.
+"tests/**/*.py" = [
+    "S101",
+]
+"test/**/*.py" = [
+    "S101",
+]
+
 # ------------------------------------------------------------
 # Import sorting
 # ------------------------------------------------------------
+
 [lint.isort]
+
 known-first-party = [
-    "medorbits"
+    "medorbits",
 ]
+
 combine-as-imports = true
 force-sort-within-sections = true
+force-single-line = false
+split-on-trailing-comma = true
+
 # ------------------------------------------------------------
 # Formatter
 # ------------------------------------------------------------
+
 [format]
+
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
 docstring-code-format = true
 skip-magic-trailing-comma = false
-# Keep source files in their existing layout unless formatting
-# is explicitly run by a developer or CI job.
+
+# Preserve existing source layout during ordinary checks.
+# Ruff format --check verifies formatting without rewriting files.

@@ -1,34 +1,48 @@
-
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/repository.manifest.schema.json",
+  "manifestVersion": "3.0.0",
   "project": "MedOrbits",
+  "package": {
+    "name": "medorbits",
+    "version": "3.0.0",
+    "type": "all-in-one-repository-starter",
+    "status": "starter-scaffold",
+    "license": "UNLICENSED"
+  },
   "runtime": {
     "platform": "Node.js",
-    "minimumNodeVersion": "20.19.0",
+    "minimumNodeVersion": "22.0.0",
     "versionSource": [
       "package.json:engines.node",
       ".nvmrc"
     ],
     "packageManager": "npm",
+    "packageManagerVersion": "10.8.2",
     "packageManifest": "package.json",
     "lockfile": "package-lock.json",
     "nodeVersionFile": ".nvmrc",
     "environmentTemplate": ".env.example",
+    "testEnvironmentTemplate": ".env.test.example",
+    "moduleSystem": "esm",
     "entryPoints": {
       "server": {
         "path": "server.js",
-        "purpose": "Production HTTP server bootstrap",
-        "status": "planned"
+        "purpose": "HTTP server bootstrap and application startup",
+        "status": "planned",
+        "required": true
       },
       "application": {
         "path": "src/app.js",
-        "purpose": "Express application construction and middleware/route registration",
-        "status": "planned"
+        "purpose": "Express application construction, middleware and route registration",
+        "status": "planned",
+        "required": false
       },
       "frontend": {
         "path": "index.html",
         "purpose": "Public website entry page",
-        "status": "planned"
+        "status": "planned",
+        "required": false
       }
     },
     "startupPolicy": {
@@ -40,14 +54,209 @@
       "lockfileMustMatchPackageManifest": true,
       "productionDependenciesMustBeDeclared": true,
       "secretsMustNotBeCommitted": true,
-      "startupMustFailOnInvalidConfiguration": true
+      "startupMustFailOnInvalidConfiguration": true,
+      "databaseConnectionMustBeVerifiedWhenRequired": true,
+      "gracefulShutdownMustBeImplemented": true,
+      "healthChecksMustReflectApplicationReadiness": true
     },
     "verification": {
       "checkNodeVersion": "node --version",
       "checkNpmVersion": "npm --version",
       "installDependencies": "npm ci",
+      "validate": "npm run validate",
       "runTests": "npm test",
+      "checkDependencies": "npm run check:dependencies",
       "productionStart": "npm start"
     }
+  },
+  "repository": {
+    "root": ".",
+    "configuration": {
+      "packageManifest": "package.json",
+      "packageLock": "package-lock.json",
+      "gitAttributes": ".gitattributes",
+      "gitIgnore": ".gitignore",
+      "editorConfig": ".editorconfig",
+      "prettierConfig": ".prettierrc.json",
+      "pytestConfig": "pytest.ini",
+      "pythonLintConfig": "ruff.toml",
+      "environmentTemplate": ".env.example",
+      "testEnvironmentTemplate": ".env.test.example"
+    },
+    "documentation": {
+      "readme": "README.md",
+      "productionGuide": "README-PRODUCTION.md",
+      "packageNotes": "PACKAGE-NOTES.md",
+      "changelog": "CHANGELOG.md",
+      "contributing": "CONTRIBUTING.md",
+      "codeOfConduct": "CODE_OF_CONDUCT.md",
+      "security": "SECURITY.md",
+      "support": "SUPPORT.md"
+    },
+    "scripts": {
+      "jsonValidator": "scripts/check-json.mjs",
+      "releaseUtility": "RELEASE.sh",
+      "pushUtility": "PUSH.sh"
+    },
+    "directories": {
+      "api": "api",
+      "assets": "assets",
+      "documentation": "docs",
+      "infrastructure": "infrastructure",
+      "python": "python",
+      "scripts": "scripts",
+      "source": "src",
+      "tests": "tests",
+      "tools": "tools"
+    },
+    "fileStatusPolicy": {
+      "allowedValues": [
+        "planned",
+        "implemented",
+        "verified",
+        "deprecated",
+        "not-applicable"
+      ],
+      "requireEvidenceForVerifiedStatus": true,
+      "missingRequiredFilesMustFailValidation": true,
+      "plannedFilesMustNotBeReportedAsImplemented": true
+    }
+  },
+  "validation": {
+    "commands": {
+      "syntax": "npm run check:syntax",
+      "json": "npm run check:json",
+      "strictJson": "npm run check:json:strict",
+      "pythonTests": "npm run check:python",
+      "pythonLint": "npm run lint:python",
+      "pythonFormat": "npm run format:python:check",
+      "pythonTypes": "npm run typecheck:python",
+      "all": "npm run validate",
+      "strict": "npm run validate:strict",
+      "dependencies": "npm run check:dependencies",
+      "pythonDependencies": "npm run check:dependencies:python",
+      "pythonSecurity": "npm run check:security:python"
+    },
+    "policy": {
+      "commandsMustExistBeforeDocumentation": true,
+      "missingRequiredScriptsFailValidation": true,
+      "validationMustReturnNonZeroOnFailure": true,
+      "generatedFilesMustBeHandledExplicitly": true,
+      "validationMustNotDeleteUserData": true,
+      "networkChecksMustBeExplicit": true,
+      "productionServicesMustNotBeUsedForDestructiveTests": true
+    }
+  },
+  "testing": {
+    "node": {
+      "runner": "node:test",
+      "status": "optional",
+      "testDirectory": "tests"
+    },
+    "python": {
+      "runner": "pytest",
+      "configuration": "pytest.ini",
+      "testDirectory": "tests",
+      "markers": [
+        "unit",
+        "integration",
+        "e2e",
+        "security",
+        "regression",
+        "slow",
+        "network",
+        "database",
+        "smoke",
+        "asyncio",
+        "serial",
+        "destructive"
+      ]
+    },
+    "policy": {
+      "isolatedTestDatabase": true,
+      "syntheticTestData": true,
+      "externalSideEffectsDisabledByDefault": true,
+      "destructiveTestsRequireExplicitSafetyChecks": true,
+      "productionCredentialsForbidden": true
+    }
+  },
+  "database": {
+    "primaryEngine": "postgresql",
+    "driverPackage": "pg",
+    "configurationSource": ".env.example",
+    "migrationDirectory": null,
+    "migrationStrategy": "must-be-verified",
+    "automaticProductionMigrations": false,
+    "automaticProductionSeeding": false,
+    "isolatedTestDatabaseRequired": true,
+    "backupRestoreTestingRequired": true,
+    "status": "must-be-verified"
+  },
+  "api": {
+    "documentation": "docs/api/openapi.yaml",
+    "specificationVersion": "must-be-verified",
+    "routeInventory": "must-be-verified",
+    "authenticationRequirements": "must-be-verified",
+    "authorizationRequirements": "must-be-verified",
+    "requestResponseSchemas": "must-be-verified",
+    "status": "starter-contract"
+  },
+  "security": {
+    "secretFilesMustNotBeCommitted": true,
+    "EnvironmentTemplatesMustContainNoRealCredentials": true,
+    "dependencyAuditRequired": true,
+    "authenticationMustBeVerified": true,
+    "authorizationMustBeVerified": true,
+    "privateDocumentAccessMustBeVerified": true,
+    "productionDatabaseIsolationRequired": true,
+    "httpsRequiredInProduction": true,
+    "paymentSecurityRequiredWhenPaymentsAreImplemented": true,
+    "incidentResponseDocumentation": "infrastructure/incident-response/README.md",
+    "status": "not-certified"
+  },
+  "deployment": {
+    "provider": "must-be-verified",
+    "productionCommand": "npm start",
+    "runtimeVersionMustMatchManifest": true,
+    "SecretsMustBeProvidedByDeploymentEnvironment": true,
+    "HealthCheckMustBeConfiguredWhenSupported": true,
+    "RollbackProcedureRequired": true,
+    "BackupAndRestoreProcedureRequired": true,
+    "DeploymentMustBeExplicit": true,
+    "automaticDeploymentByReleaseUtilities": false,
+    "status": "must-be-verified"
+  },
+  "release": {
+    "tagPrefix": "v",
+    "tagType": "annotated",
+    "automaticCommit": false,
+    "automaticPush": false,
+    "automaticDeployment": false,
+    "cleanWorkingTreeRequired": true,
+    "existingTagsMustNotBeOverwritten": true,
+    "releaseUtility": "RELEASE.sh",
+    "pushUtility": "PUSH.sh",
+    "productionReadinessMustBeVerifiedSeparately": true
+  },
+  "publicDocuments": {
+    "directory": "assets/documents",
+    "manifestFiles": [
+      "assets/documents/admission-guide.manifest.json",
+      "assets/documents/fee-guide.manifest.json"
+    ],
+    "publicationRequiresContentReview": true,
+    "publicationRequiresSourceVerification": true,
+    "publicationRequiresPathVerification": true,
+    "privateApplicantDocumentsMustNotBePublic": true,
+    "status": "draft-metadata"
+  },
+  "limitations": {
+    "productionApplicationVerified": false,
+    "allDocumentedRoutesVerified": false,
+    "securityCertificationProvided": false,
+    "regulatoryComplianceCertified": false,
+    "productionDeploymentVerified": false,
+    "backupRestorationVerified": false,
+    "admissionsDataAccuracyGuaranteed": false
   }
 }

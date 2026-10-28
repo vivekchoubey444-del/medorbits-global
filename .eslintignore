@@ -1,17 +1,19 @@
-
 # ============================================================
 # MedOrbits -- ESLint Ignore Rules
 # File: .eslintignore
-# Release target: 2.0.0
+# Release target: 2.1.0
 #
 # Purpose:
-# Exclude generated files, dependencies, build outputs, local
-# data, and non-source artifacts from legacy ESLint file scans.
+# Exclude dependencies, generated output, local runtime data,
+# and non-source artifacts from legacy ESLint file scans.
+#
+# Compatibility:
+#   - Legacy ESLint configurations: .eslintignore
+#   - ESLint 9+ flat configuration: ignores in eslint.config.js
 #
 # IMPORTANT:
-# Modern ESLint flat configuration (ESLint 9+) uses ignores
-# in eslint.config.js or eslint.config.mjs. This file is
-# primarily for legacy ESLint configurations.
+# .eslintignore is not supported by ESLint 9+ flat configuration.
+# Migrate these rules to eslint.config.js when using flat config.
 # ============================================================
 
 
@@ -33,11 +35,13 @@ vendor/
 # ------------------------------------------------------------
 
 .git/
-.github/
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Keep .github/ lintable if it contains JavaScript or TypeScript
+# tooling. Workflow YAML files are not ESLint source files.
 
 
 # ------------------------------------------------------------
@@ -85,10 +89,11 @@ lerna-debug.log*
 !.env.example
 !.env.test.example
 
-# Private credentials and local overrides.
 secrets/
 private/
 .local/
+
+# Exclude private key material from lint scans.
 *.pem
 *.key
 *.p12
@@ -96,14 +101,14 @@ private/
 
 
 # ------------------------------------------------------------
-# 06. GENERATED API AND DOCUMENTATION ARTIFACTS
+# 06. VERIFIED GENERATED API AND DOCUMENTATION OUTPUT
 # ------------------------------------------------------------
 
-# Ignore generated files only when these directories are
-# exclusively generated output in this repository.
-generated/
-swagger-output/
-openapi-generated/
+# Enable these rules only when the paths are generated output.
+# Do not exclude source schemas or maintained documentation.
+# generated/
+# swagger-output/
+# openapi-generated/
 
 
 # ------------------------------------------------------------
@@ -122,6 +127,7 @@ reports/
 # ------------------------------------------------------------
 
 __pycache__/
+**/__pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
@@ -134,11 +140,10 @@ venv/
 # 09. DATABASE, UPLOAD, AND LOCAL DATA
 # ------------------------------------------------------------
 
-# Exclude local runtime data from linting; keep source schemas,
-# migrations, fixtures, and tracked test files lintable.
 storage/uploads/
 storage/tmp/
 data/local/
+
 *.sqlite
 *.sqlite3
 *.db
@@ -164,9 +169,8 @@ data/local/
 # 11. GENERATED FRONTEND ASSETS
 # ------------------------------------------------------------
 
-# Do not ignore source assets such as assets/js or assets/css.
-# Add specific generated bundle paths here only when verified.
-# Example:
+# Keep maintained source assets such as assets/js and assets/css.
+# Add verified generated bundle paths only when necessary.
 # public/assets/generated/
 
 
@@ -174,9 +178,9 @@ data/local/
 # 12. PROJECT-SPECIFIC EXCLUSIONS
 # ------------------------------------------------------------
 
-# Add only verified generated or non-source paths below.
-# Do not exclude api/, controllers/, middleware/, routes/,
-# services/, models/, schemas/, scripts/, or tools/ wholesale.
+# Do not exclude application source directories wholesale.
+# Keep api/, controllers/, middleware/, routes/, services/,
+# models/, schemas/, scripts/, and tools/ lintable.
 
 
 # ============================================================

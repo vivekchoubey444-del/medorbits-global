@@ -1,16 +1,17 @@
-
 {
   "name": "MedOrbits Development Environment",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
   "remoteUser": "node",
   "updateRemoteUserUID": true,
-
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "overrideCommand": false,
   "shutdownAction": "stopContainer",
   "init": true,
 
   "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
@@ -35,29 +36,45 @@
     "NODE_ENV": "development",
     "HOST": "0.0.0.0",
     "PORT": "3000",
-    "API_PREFIX": "/api/v1"
+    "API_PREFIX": "/api/v1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1"
   },
 
   "customizations": {
     "vscode": {
       "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "EditorConfig.EditorConfig",
         "GitHub.vscode-pull-request-github",
         "GitHub.vscode-github-actions",
         "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
         "ms-azuretools.vscode-docker",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "davidanson.vscode-markdownlint",
+        "streetsidesoftware.code-spell-checker"
       ],
+
       "settings": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "explicit"
+          "source.fixAll.eslint": "explicit",
+          "source.fixAll.ruff": "explicit",
+          "source.organizeImports.ruff": "explicit"
         },
+        "files.encoding": "utf8",
+        "files.eol": "\n",
         "files.autoSave": "off",
         "files.insertFinalNewline": true,
         "files.trimTrailingWhitespace": true,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
         "git.autofetch": false,
         "git.confirmSync": true,
         "git.enableSmartCommit": false,
@@ -66,16 +83,40 @@
         "security.workspace.trust.enabled": true,
         "terminal.integrated.defaultProfile.linux": "bash",
         "javascript.updateImportsOnFileMove.enabled": "prompt",
-        "typescript.updateImportsOnFileMove.enabled": "prompt"
+        "typescript.updateImportsOnFileMove.enabled": "prompt",
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "python.analysis.typeCheckingMode": "basic",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[html]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[css]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
       }
     }
   },
 
   "waitFor": "onCreateCommand",
 
-  "onCreateCommand": "node --version && npm --version && git --version",
+  "onCreateCommand": "node --version && npm --version && python --version && git --version",
 
-  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'No package-lock.json found; skipping automatic installation for reproducibility.'; else echo 'No package.json found; skipping dependency installation.'; fi",
+  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'No package-lock.json found; dependencies were not installed automatically. Add and commit a lockfile for reproducible installs.'; else echo 'No package.json found; skipping Node dependency installation.'; fi",
 
   "postStartCommand": "git status --short --branch",
 

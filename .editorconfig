@@ -1,19 +1,26 @@
-
 # ==============================================================================
-# MedOrbits -- EditorConfig
+# MedOrbits -- Advanced EditorConfig
 # File: /.editorconfig
-# Release: 2.1.0
+# Release: 3.0.0
 #
 # Purpose:
-#   Consistent formatting across editors and development environments.
-#   Formatting preferences only; this file does not run a formatter.
+#   Establish consistent whitespace, indentation, line endings, character
+#   encoding, and final-newline policies across the MedOrbits repository.
+#
+# Compatibility:
+#   EditorConfig Core 0.11.0+
+#   Compatible with common VS Code, JetBrains, Visual Studio, and Vim workflows.
+#
+# Policy:
+#   Formatting preferences only. EditorConfig does not execute formatters,
+#   validate syntax, enforce lint rules, or modify files automatically.
 # ==============================================================================
 
 root = true
 
-# ------------------------------------------------------------------------------
-# Default rules
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 1. Repository-wide defaults
+# ==============================================================================
 
 [*]
 charset = utf-8
@@ -22,151 +29,441 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-
-# ------------------------------------------------------------------------------
-# Markdown documentation
-# Preserve intentional Markdown hard line breaks.
-# ------------------------------------------------------------------------------
-
-[*.md]
-trim_trailing_whitespace = false
 max_line_length = off
 
-# ------------------------------------------------------------------------------
-# HTML templates and pages
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 2. HTML, templates, and web documents
+# ==============================================================================
 
-[*.{html,htm,xhtml}]
+[*.{html,htm,xhtml,vue,svelte,astro}]
+charset = utf-8
+end_of_line = lf
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# CSS and stylesheet languages
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 3. CSS and stylesheet preprocessors
+# ==============================================================================
 
-[*.{css,scss,sass,less}]
+[*.{css,scss,sass,less,pcss,postcss}]
 indent_style = space
 indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# JavaScript and TypeScript
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 4. JavaScript, TypeScript, and module variants
+# ==============================================================================
 
 [*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}]
 indent_style = space
 indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# JSON and JSONC configuration
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 5. JSON, JSONC, and JSON5
+# ==============================================================================
 
-[*.{json,jsonc}]
+[*.{json,jsonc,json5}]
+charset = utf-8
 indent_style = space
 indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# YAML, workflows, and configuration
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 6. YAML, CI workflows, and container orchestration
+# ==============================================================================
 
-[*.{yml,yaml}]
+[*.{yaml,yml}]
 indent_style = space
 indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# Python
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 7. Python
+# ==============================================================================
 
 [*.py]
+charset = utf-8
 indent_style = space
 indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# Shell scripts
-# ------------------------------------------------------------------------------
-
-[*.{sh,bash}]
+# Python documentation and reStructuredText files
+[*.{rst,pyi}]
 indent_style = space
 indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# Makefiles require literal tabs for recipe lines.
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 8. Shell scripts and command files
+# ==============================================================================
+
+[*.{sh,bash,zsh,ksh}]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# POSIX shell and Bash configuration files
+[.{bashrc,bash_profile,profile,zshrc}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+# Windows batch and command scripts
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# PowerShell scripts
+[*.{ps1,psm1,psd1}]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 9. Markdown and documentation
+# ==============================================================================
+
+[*.md]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = false
+max_line_length = off
+
+[*.{mdx,mdoc}]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Plain-text documentation
+[*.txt]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 10. Makefiles and build automation
+# ==============================================================================
 
 [{Makefile,makefile,GNUmakefile}]
 indent_style = tab
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# Docker build files
-# ------------------------------------------------------------------------------
+[*.mk]
+indent_style = tab
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 11. Docker and container build configuration
+# ==============================================================================
 
 [{Dockerfile,Containerfile}]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# TOML, INI, and related configuration
-# ------------------------------------------------------------------------------
+[Dockerfile.*]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+[*.dockerfile]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+# ==============================================================================
+# 12. TOML, INI, and application configuration
+# ==============================================================================
 
 [*.toml]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
 [*.ini]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
 [*.conf]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# XML and SVG assets
-# ------------------------------------------------------------------------------
-
-[*.{xml,svg}]
+[*.properties]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# SQL scripts and migrations
-# ------------------------------------------------------------------------------
+[*.editorconfig]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-[*.sql]
+[*.npmrc]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.nvmrc]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 13. XML, SVG, XSL, and web manifests
+# ==============================================================================
+
+[*.{xml,svg,xsl,xslt,webmanifest}]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 14. SQL, database schemas, and migrations
+# ==============================================================================
+
+[*.{sql,pgsql,psql}]
 indent_style = space
 indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# Diff and patch files
-# Preserve original whitespace in patches.
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# 15. Java, Kotlin, C, C++, C#, Go, Rust, and related source files
+# ==============================================================================
 
-[*.{diff,patch}]
-trim_trailing_whitespace = false
+[*.{java,kt,kts,scala,groovy}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
 
-# ------------------------------------------------------------------------------
-# Lockfiles
-# Avoid unnecessary formatting changes.
-# ------------------------------------------------------------------------------
+[*.{c,h,cc,hh,cpp,hpp,cxx,hxx}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,fs,fsx,vb}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.go]
+indent_style = tab
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{rs,swift}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 16. PHP, Ruby, and other scripting languages
+# ==============================================================================
+
+[*.php]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{rb,rake,gemspec}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 17. JavaScript package managers and lockfiles
+# ==============================================================================
+
+[package.json]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
 
 [package-lock.json]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
+
+[npm-shrinkwrap.json]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
 
 [pnpm-lock.yaml]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
 
 [yarn.lock]
 indent_style = space
 indent_size = 2
+insert_final_newline = true
 
-# ------------------------------------------------------------------------------
-# Environment files
-# Formatting rules only; never place actual secrets in this file.
-# ------------------------------------------------------------------------------
+[bun.lock]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+[bun.lockb]
+insert_final_newline = false
+
+# ==============================================================================
+# 18. Python package and tool configuration
+# ==============================================================================
+
+[pyproject.toml]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[requirements*.txt]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[Pipfile]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[Pipfile.lock]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[ruff.toml]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[.flake8]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+# ==============================================================================
+# 19. Git metadata and patch files
+# ==============================================================================
+
+[*.{diff,patch}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[.gitmodules]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+[.gitattributes]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+[.gitignore]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+# ==============================================================================
+# 20. Environment configuration
+# ==============================================================================
 
 [.env]
+charset = utf-8
+end_of_line = lf
 insert_final_newline = true
+trim_trailing_whitespace = true
 
 [.env.*]
+charset = utf-8
+end_of_line = lf
 insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==============================================================================
+# 21. Test fixtures, snapshots, and generated text
+# ==============================================================================
+
+[*.snap]
+insert_final_newline = true
+trim_trailing_whitespace = false
+
+[*.golden]
+insert_final_newline = true
+trim_trailing_whitespace = false
+
+# ==============================================================================
+# 22. CSV and tabular text data
+# ==============================================================================
+
+[*.csv]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = false
+
+[*.tsv]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = false
+
+# ==============================================================================
+# 23. Binary assets and generated files
+# ==============================================================================
+#
+# EditorConfig cannot determine whether a file is binary or generated.
+# Exclude such paths from formatting tools through their own configuration.
+#
+# Do not apply text formatting to images, fonts, archives, databases,
+# compiled assets, or other binary content.
+#
+# ==============================================================================
+# End of MedOrbits EditorConfig
+# ==============================================================================

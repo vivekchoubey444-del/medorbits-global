@@ -1,248 +1,372 @@
-
 # ============================================================
 # MedOrbits -- Git Attributes
 # File: .gitattributes
-# Release target: 2.0.0
+# Release target: 3.0.0
 #
 # Purpose:
 # - Normalize text files to LF line endings.
 # - Preserve binary assets without text conversion.
-# - Improve consistent diffs across operating systems.
-# - Mark generated and vendor content appropriately.
+# - Keep source, configuration, and lockfiles diffable.
+# - Configure GitHub language statistics for generated content.
+# - Improve cross-platform collaboration and release consistency.
 #
-# NOTE:
-# Review repository-specific paths before adopting these rules.
+# Policy:
+# - Keep rules narrow and predictable.
+# - Never mark source code as binary.
+# - Do not suppress meaningful diffs for security-sensitive files.
+# - Review path-specific rules before adding them.
 # ============================================================
 
 
 # ------------------------------------------------------------
-# 01. DEFAULT TEXT NORMALIZATION
+# 01. DEFAULT TEXT DETECTION
 # ------------------------------------------------------------
 
 * text=auto
 
-# Explicit text files: normalize to LF.
-*.c          text eol=lf
-*.cc         text eol=lf
-*.cpp        text eol=lf
-*.css        text eol=lf
-*.csv        text eol=lf
-*.env.example text eol=lf
-*.html       text eol=lf
-*.java       text eol=lf
-*.js         text eol=lf
-*.jsx        text eol=lf
-*.json       text eol=lf
-*.md         text eol=lf
-*.mjs        text eol=lf
-*.cjs        text eol=lf
-*.py         text eol=lf
-*.sh         text eol=lf
-*.sql        text eol=lf
-*.svg        text eol=lf
-*.ts         text eol=lf
-*.tsx        text eol=lf
-*.txt        text eol=lf
-*.xml        text eol=lf
-*.yaml       text eol=lf
-*.yml        text eol=lf
-*.toml       text eol=lf
-*.properties text eol=lf
-*.graphql    text eol=lf
-*.gql        text eol=lf
 
-# Common extensionless text files.
-Dockerfile   text eol=lf
-Makefile     text eol=lf
-Justfile     text eol=lf
-Procfile     text eol=lf
-.editorconfig text eol=lf
-.gitignore   text eol=lf
-.gitattributes text eol=lf
-.npmrc       text eol=lf
-.nvmrc       text eol=lf
+# ------------------------------------------------------------
+# 02. SOURCE CODE -- LF LINE ENDINGS
+# ------------------------------------------------------------
+
+*.c             text eol=lf
+*.h             text eol=lf
+*.cc            text eol=lf
+*.hh            text eol=lf
+*.cpp           text eol=lf
+*.hpp           text eol=lf
+*.cs            text eol=lf
+*.go            text eol=lf
+*.java          text eol=lf
+*.kt            text eol=lf
+*.kts           text eol=lf
+*.php           text eol=lf
+*.rb            text eol=lf
+*.rs            text eol=lf
+*.swift         text eol=lf
+*.vue           text eol=lf
+*.svelte        text eol=lf
+
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.mjs           text eol=lf
+*.cjs           text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.mts           text eol=lf
+*.cts           text eol=lf
+
+*.py            text eol=lf
+*.pyi           text eol=lf
+*.pyx           text eol=lf
+*.ipynb         text eol=lf
+
+*.css           text eol=lf
+*.scss          text eol=lf
+*.sass          text eol=lf
+*.less          text eol=lf
+*.html          text eol=lf
+*.htm           text eol=lf
+*.xml           text eol=lf
+*.xhtml         text eol=lf
+*.svg            text eol=lf
+
+
+# ------------------------------------------------------------
+# 03. DATA, API SCHEMAS, AND CONFIGURATION
+# ------------------------------------------------------------
+
+*.json          text eol=lf
+*.jsonc         text eol=lf
+*.json5         text eol=lf
+*.ndjson        text eol=lf
+*.jsonl         text eol=lf
+
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.toml          text eol=lf
+*.ini           text eol=lf
+*.cfg           text eol=lf
+*.conf          text eol=lf
+*.properties    text eol=lf
+*.config        text eol=lf
+*.xml           text eol=lf
+*.graphql       text eol=lf
+*.gql           text eol=lf
+*.proto         text eol=lf
+*.sql           text eol=lf
+*.prisma        text eol=lf
+*.tf            text eol=lf
+*.tfvars        text eol=lf
+*.hcl           text eol=lf
+
+
+# ------------------------------------------------------------
+# 04. DOCUMENTATION AND TEXT
+# ------------------------------------------------------------
+
+*.md            text eol=lf
+*.mdx           text eol=lf
+*.rst           text eol=lf
+*.adoc          text eol=lf
+*.txt           text eol=lf
+*.text           text eol=lf
+*.csv           text eol=lf
+*.tsv           text eol=lf
+*.log           text eol=lf
+*.diff          text eol=lf
+*.patch         text eol=lf
+*.license       text eol=lf
+
+LICENSE         text eol=lf
+LICENSE.*       text eol=lf
+NOTICE          text eol=lf
+NOTICE.*        text eol=lf
+CHANGELOG       text eol=lf
+CHANGELOG.*     text eol=lf
+CONTRIBUTING    text eol=lf
+CONTRIBUTING.*  text eol=lf
+CODE_OF_CONDUCT.md text eol=lf
+SECURITY.md     text eol=lf
+SUPPORT.md      text eol=lf
+
+
+# ------------------------------------------------------------
+# 05. EXTENSIONLESS FILES AND DOTFILES
+# ------------------------------------------------------------
+
+.editorconfig   text eol=lf
+.gitattributes  text eol=lf
+.gitignore      text eol=lf
+.gitmodules     text eol=lf
+.npmrc          text eol=lf
+.nvmrc          text eol=lf
+.node-version   text eol=lf
+.python-version text eol=lf
 .prettierignore text eol=lf
-.prettierrc  text eol=lf
-LICENSE      text eol=lf
-NOTICE       text eol=lf
+.prettierrc     text eol=lf
+. Ruff.toml     text eol=lf
+ruff.toml       text eol=lf
+pyproject.toml  text eol=lf
+pytest.ini      text eol=lf
+tox.ini         text eol=lf
+setup.cfg       text eol=lf
+.babelrc        text eol=lf
+.browserslistrc text eol=lf
+.eslintrc       text eol=lf
+.stylelintrc    text eol=lf
+
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+Containerfile   text eol=lf
+Makefile        text eol=lf
+GNUmakefile     text eol=lf
+Justfile        text eol=lf
+Procfile        text eol=lf
+CMakeLists.txt  text eol=lf
+Brewfile        text eol=lf
+Taskfile.yml    text eol=lf
 
 
 # ------------------------------------------------------------
-# 02. SHELL SCRIPTS AND WORKFLOWS
+# 06. SHELL SCRIPTS AND AUTOMATION
 # ------------------------------------------------------------
 
-*.sh         text eol=lf
-*.bash       text eol=lf
-*.zsh        text eol=lf
-*.ps1        text eol=lf
-*.yml        text eol=lf
-*.yaml       text eol=lf
+*.sh            text eol=lf
+*.bash          text eol=lf
+*.zsh           text eol=lf
+*.fish          text eol=lf
+*.ps1           text eol=lf
+*.psm1          text eol=lf
+*.psd1          text eol=lf
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
 
-# Preserve executable metadata for scripts in Git.
-# Set executable permissions with chmod +x where required.
-
-
-# ------------------------------------------------------------
-# 03. WINDOWS-SPECIFIC TEXT FILES
-# ------------------------------------------------------------
-
-# Keep Windows command scripts compatible with CRLF.
-*.bat        text eol=crlf
-*.cmd        text eol=crlf
+# GitHub Actions and repository automation.
+.github/**      text=auto eol=lf
+.vscode/**      text=auto eol=lf
 
 
 # ------------------------------------------------------------
-# 04. BINARY IMAGES
+# 07. ENVIRONMENT FILES
 # ------------------------------------------------------------
 
-*.avif       binary
-*.bmp        binary
-*.gif        binary
-*.ico        binary
-*.jpeg       binary
-*.jpg        binary
-*.png        binary
-*.psd        binary
-*.tif        binary
-*.tiff       binary
-*.webp       binary
+# Templates are reviewable text files.
+*.env.example   text eol=lf
+.env.example    text eol=lf
+.env.*.example  text eol=lf
+
+# Do not add real secret-bearing environment files to the repository.
+# Use .gitignore and secret scanning for that purpose.
+# Attributes do not protect secrets or prevent them from being committed.
 
 
 # ------------------------------------------------------------
-# 05. VIDEO AND AUDIO
+# 08. PACKAGE MANAGER LOCKFILES
 # ------------------------------------------------------------
 
-*.aac        binary
-*.aiff       binary
-*.flac       binary
-*.m4a        binary
-*.m4v        binary
-*.mkv        binary
-*.mov        binary
-*.mp3        binary
-*.mp4        binary
-*.ogg        binary
-*.wav        binary
-*.webm       binary
+package-lock.json   text eol=lf diff
+npm-shrinkwrap.json text eol=lf diff
+yarn.lock           text eol=lf diff
+pnpm-lock.yaml      text eol=lf diff
+bun.lock            text eol=lf diff
+
+# Lockfiles intentionally remain text and diffable.
+# Resolve conflicts using the relevant package manager and validate
+# the resulting dependency tree. Do not use merge=ours.
 
 
 # ------------------------------------------------------------
-# 06. FONTS
+# 09. DATABASE AND MIGRATION FILES
 # ------------------------------------------------------------
 
-*.eot        binary
-*.otf        binary
-*.ttf        binary
-*.woff       binary
-*.woff2      binary
-
-
-# ------------------------------------------------------------
-# 07. ARCHIVES AND EXECUTABLES
-# ------------------------------------------------------------
-
-*.7z         binary
-*.dmg        binary
-*.exe        binary
-*.gz         binary
-*.jar        binary
-*.pdf        binary
-*.rar        binary
-*.so         binary
-*.tar        binary
-*.tgz        binary
-*.wasm       binary
-*.zip        binary
+*.sql           text eol=lf diff
+*.pgsql         text eol=lf diff
+*.mysql         text eol=lf diff
+*.prisma        text eol=lf diff
+*.migration     text eol=lf diff
 
 
 # ------------------------------------------------------------
-# 08. DATABASE AND GENERATED BINARY FILES
+# 10. IMAGES -- BINARY
 # ------------------------------------------------------------
 
-*.db         binary
-*.sqlite     binary
-*.sqlite3    binary
-*.bin        binary
-*.dat        binary
-
-
-# ------------------------------------------------------------
-# 09. DIFF BEHAVIOR
-# ------------------------------------------------------------
-
-# Lockfiles are text and should remain reviewable.
-package-lock.json diff
-npm-shrinkwrap.json diff
-yarn.lock diff
-pnpm-lock.yaml diff
-
-# JSON and structured source files should remain diffable.
-*.json       diff
-*.yaml       diff
-*.yml        diff
-*.xml        diff
-*.sql        diff
+*.avif          binary
+*.bmp           binary
+*.gif           binary
+*.heic          binary
+*.heif          binary
+*.ico           binary
+*.jpeg          binary
+*.jpg           binary
+*.png           binary
+*.psd           binary
+*.raw           binary
+*.tif           binary
+*.tiff          binary
+*.webp          binary
 
 
 # ------------------------------------------------------------
-# 10. MERGE BEHAVIOR
+# 11. AUDIO AND VIDEO -- BINARY
 # ------------------------------------------------------------
 
-# Treat lockfiles as text; resolve conflicts using the package
-# manager and verify the result instead of blindly choosing a side.
-package-lock.json text eol=lf
-npm-shrinkwrap.json text eol=lf
-yarn.lock text eol=lf
-pnpm-lock.yaml text eol=lf
+*.aac           binary
+*.aiff          binary
+*.alac          binary
+*.flac          binary
+*.m4a           binary
+*.m4v           binary
+*.mka           binary
+*.mkv           binary
+*.mov           binary
+*.mp3           binary
+*.mp4           binary
+*.mpeg          binary
+*.mpg           binary
+*.ogg           binary
+*.opus          binary
+*.wav           binary
+*.webm          binary
+*.wmv           binary
 
 
 # ------------------------------------------------------------
-# 11. DOCUMENTATION AND REPOSITORY POLICIES
+# 12. FONTS -- BINARY
 # ------------------------------------------------------------
 
-*.md         text eol=lf
-*.rst        text eol=lf
-*.adoc       text eol=lf
-*.license    text eol=lf
+*.eot           binary
+*.otf           binary
+*.ttf           binary
+*.woff          binary
+*.woff2         binary
 
 
 # ------------------------------------------------------------
-# 12. GENERATED FILES
+# 13. ARCHIVES, DOCUMENTS, AND EXECUTABLES -- BINARY
 # ------------------------------------------------------------
 
-# Do not mark all generated files as binary. Generated text must
-# remain diffable unless a specific format requires otherwise.
+*.7z            binary
+*.apk           binary
+*.appx          binary
+*.cab           binary
+*.class         binary
+*.deb           binary
+*.dmg           binary
+*.doc            binary
+*.docx          binary
+*.dll           binary
+*.exe           binary
+*.gz            binary
+*.jar            binary
+*.msi           binary
+*.o             binary
+*.obj           binary
+*.pdf            binary
+*.ppt            binary
+*.pptx           binary
+*.rar            binary
+*.rpm            binary
+*.so             binary
+*.tar            binary
+*.tgz            binary
+*.war            binary
+*.wasm           binary
+*.xls            binary
+*.xlsx           binary
+*.xz             binary
+*.zip            binary
+*.zst            binary
+
+
+# ------------------------------------------------------------
+# 14. DATABASE AND RAW BINARY FILES
+# ------------------------------------------------------------
+
+*.db             binary
+*.sqlite         binary
+*.sqlite3        binary
+*.bin            binary
+*.dat            binary
+*.dump           binary
+*.backup         binary
+*.bak            binary
+
+# Note: SQL dump files such as *.sql remain text by default.
+# Use binary attributes only for actual binary database backups.
+
+
+# ------------------------------------------------------------
+# 15. GENERATED CONTENT -- TARGETED RULES ONLY
+# ------------------------------------------------------------
+
+# Uncomment only when these paths contain generated output and
+# the team intentionally wants GitHub to classify them as generated.
 #
-# If a particular generated directory contains large machine-
-# generated artifacts, add narrow path-specific rules here.
+# public/generated/** linguist-generated=true
+# docs/api/generated/** linguist-generated=true
+# src/generated/** linguist-generated=true
 #
-# Example:
-# public/generated/*.map linguist-generated=true
+# Do not broadly classify assets, API schemas, or source files as
+# generated without reviewing the repository's contribution workflow.
 
 
 # ------------------------------------------------------------
-# 13. GITHUB AND CONFIGURATION FILES
+# 16. DIFF AND MERGE POLICY
 # ------------------------------------------------------------
 
-.github/**   text eol=lf
-.vscode/**   text eol=lf
-
-# YAML, JSON, Markdown, and shell files under these directories
-# remain text so GitHub workflows and repository policies are
-# reviewable in pull requests.
-
-
-# ------------------------------------------------------------
-# 14. GIT ATTRIBUTES POLICY
-# ------------------------------------------------------------
-
-# Do not use export-ignore broadly without reviewing release
-# packaging requirements.
+# Preserve normal text diffs for source, schemas, documentation,
+# configuration, and lockfiles.
 #
-# Do not mark source directories as binary.
-# Do not hide meaningful source changes from diffs.
-# Do not add merge=ours to security, configuration, or lockfiles.
+# Avoid:
+#   * merge=ours on lockfiles or security-sensitive configuration
+#   * diff=off on files where changes need review
+#   * export-ignore rules without release-package review
 #
+# Git attributes do not replace code review, secret scanning,
+# file validation, or dependency security checks.
+
+
 # ============================================================
 # END OF .gitattributes
 # ============================================================
