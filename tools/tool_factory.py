@@ -4,44 +4,27 @@
 MedOrbits Tool Factory
 ======================
 
-File:
-    tools/tool_factory.py
+File: tools/tool_factory.py
 
-Purpose:
-    Create, organize, document, audit, and expand the MedOrbits /tools/
-    directory using safe, repeatable repository automation.
-
-Capabilities:
-    1. Initialize the tools directory and development guidelines.
-    2. Create a machine-readable tool registry.
-    3. Generate reusable Python tool templates.
-    4. Scaffold new Python tools from a name and description.
-    5. Audit existing Python tools without executing them.
-    6. Detect missing documentation, duplicate names, syntax problems,
-       unsafe-operation indicators, and incomplete tool structure.
-    7. Recommend useful new repository tools.
-    8. Generate a JSON audit report.
-    9. Preserve existing files.
-   10. Support dry-run mode and explicit apply mode.
+Initialize, scaffold, and statically audit MedOrbits repository tools.
 
 Safety:
     - Dry-run is the default.
-    - Existing files are never overwritten.
-    - No files are deleted or renamed.
-    - Repository Python files are parsed, never imported or executed.
-    - Generated code is a scaffold and must be reviewed before use.
-    - Symlinks and paths outside the selected repository are rejected.
-    - Python standard library only.
+    - Existing files are never overwritten or deleted.
+    - Python files are parsed, never imported or executed.
+    - Symlinked paths are rejected for file creation.
+    - Uses only the Python standard library.
 
 Examples:
-    python tools/tool_factory.py
+    python tools/tool_factory.py --init
     python tools/tool_factory.py --init --apply
-    python tools/tool_factory.py --audit
     python tools/tool_factory.py --audit --report
+    python tools/tool_factory.py --audit --strict
     python tools/tool_factory.py --recommend
-    python tools/tool_factory.py --scaffold validate_json --description "Validate repository JSON files"
-    python tools/tool_factory.py --scaffold validate_json --description "Validate repository JSON files" --apply
-    python tools/tool_factory.py --root . --init --audit --apply
+    python tools/tool_factory.py --scaffold validate_json \
+        --description "Validate repository JSON files"
+    python tools/tool_factory.py --scaffold validate_json \
+        --description "Validate repository JSON files" --apply
 """
 
 from __future__ import annotations
@@ -52,329 +35,92 @@ import json
 import keyword
 import os
 import re
+import stat
 import sys
-
 from datetime import datetime, timezone
 from pathlib import Path
 
+VERSION = "1.1.0"
 
-VERSION = "1.0.0"
-
-DEFAULT_IGNORED_DIRS = {
-    ".git",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    ".pytest_cache",
+IGNORED_DIRS = {
+    ".git", ".venv", "venv", "__pycache__", "node_modules",
+    "dist", "build", "coverage", ".pytest_cache",
+    ".mypy_cache", ".ruff_cache",
 }
 
-TOOL_CATALOG = [
-    {
-        "name": "repository_health",
-        "purpose": "Check repository structure, required files, and basic consistency.",
-        "priority": "high",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "validate_json",
-        "purpose": "Validate JSON and JSON Schema documents.",
-        "priority": "high",
-        "dependencies": "Python standard library for JSON; schema validation may require an optional package.",
-    },
-    {
-        "name": "validate_html",
-        "purpose": "Check HTML structure, metadata, and internal references.",
-        "priority": "high",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "check_internal_links",
-        "purpose": "Find broken local links and missing linked pages.",
-        "priority": "high",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "asset_reference_audit",
-        "purpose": "Find missing CSS, JavaScript, image, and font references.",
-        "priority": "high",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "security_audit",
-        "purpose": "Identify suspicious patterns and configuration risks for manual review.",
-        "priority": "high",
-        "dependencies": "Python standard library; not a replacement for a security scanner",
-    },
-    {
-        "name": "accessibility_audit",
-        "purpose": "Flag common HTML accessibility issues for review.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "seo_audit",
-        "purpose": "Check page titles, descriptions, headings, and canonical metadata.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "i18n_audit",
-        "purpose": "Check translation key consistency across language files.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "data_catalog_builder",
-        "purpose": "Generate a catalog of local JSON data files and their top-level keys.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "duplicate_content_audit",
-        "purpose": "Identify duplicate or near-duplicate HTML and text content.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "documentation_builder",
-        "purpose": "Build a local Markdown index for tools and project documentation.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "dependency_inventory",
-        "purpose": "Inventory declared dependencies and lockfiles without installing packages.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "release_readiness",
-        "purpose": "Check release documentation, version metadata, tests, and workflows.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "backup_manifest",
-        "purpose": "Create a checksum manifest for selected repository files.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
-    {
-        "name": "test_inventory",
-        "purpose": "List test files and summarize their test functions.",
-        "priority": "medium",
-        "dependencies": "Python standard library",
-    },
+CATALOG = [
+    {"name": "repository_health", "priority": "high",
+     "purpose": "Check repository structure and consistency."},
+    {"name": "validate_json", "priority": "high",
+     "purpose": "Validate JSON files and optional schemas."},
+    {"name": "validate_html", "priority": "high",
+     "purpose": "Check HTML structure, metadata, and references."},
+    {"name": "check_internal_links", "priority": "high",
+     "purpose": "Find broken local links."},
+    {"name": "asset_reference_audit", "priority": "high",
+     "purpose": "Find missing CSS, JavaScript, image, and font assets."},
+    {"name": "security_audit", "priority": "high",
+     "purpose": "Flag suspicious patterns for manual review."},
+    {"name": "accessibility_audit", "priority": "medium",
+     "purpose": "Flag common accessibility issues."},
+    {"name": "seo_audit", "priority": "medium",
+     "purpose": "Check titles, descriptions, headings, and canonical metadata."},
+    {"name": "i18n_audit", "priority": "medium",
+     "purpose": "Check translation-key consistency."},
+    {"name": "data_catalog_builder", "priority": "medium",
+     "purpose": "Catalog JSON files and their top-level keys."},
+    {"name": "documentation_builder", "priority": "medium",
+     "purpose": "Build a local documentation index."},
+    {"name": "dependency_inventory", "priority": "medium",
+     "purpose": "Inventory dependencies without installing packages."},
+    {"name": "release_readiness", "priority": "medium",
+     "purpose": "Check release documentation, tests, and workflows."},
+    {"name": "backup_manifest", "priority": "medium",
+     "purpose": "Create checksums for selected repository files."},
+    {"name": "test_inventory", "priority": "medium",
+     "purpose": "List tests and summarize test functions."},
 ]
 
-
-GUIDE_CONTENT = r'''# MedOrbits Tools Development Guide
-
-## 1. Purpose
-
-The `tools/` directory contains maintainable developer utilities for repository
-maintenance, validation, documentation, data quality, accessibility, security
-review, testing, and release preparation.
-
-Tools must be predictable, documented, auditable, and safe by default.
-
-## 2. Naming conventions
-
-- Use lowercase `snake_case` for Python tool filenames.
-- Prefer action-oriented names such as `validate_json.py`.
-- Give each tool one primary responsibility.
-- Avoid ambiguous names such as `helper.py`, `misc.py`, or `final_tool.py`.
-- Keep shared utilities separate from command-line entry points when practical.
-
-## 3. Required Python tool structure
-
-Every new command-line Python tool should include:
-
-1. A shebang and module docstring.
-2. A clear purpose and usage examples.
-3. Standard-library imports grouped at the top.
-4. A `main()` function.
-5. An `argparse.ArgumentParser`.
-6. A `if __name__ == "__main__":` entry point.
-7. Explicit error handling and meaningful exit codes.
-8. A dry-run option for operations that change files.
-9. Path validation and protection against path traversal.
-10. Tests or documented manual verification steps.
-
-## 4. File modification policy
-
-- Never overwrite existing files unless the user explicitly requests a
-  separate, reviewed migration or replacement workflow.
-- Prefer writing a new file with exclusive creation (`open(..., "x")`).
-- Do not delete or rename files automatically.
-- Preview changes before applying them.
-- Avoid following symlinks outside the repository.
-- Write reports to a dedicated output location.
-- Do not place generated reports or caches into source directories unnecessarily.
-
-## 5. Security requirements
-
-- Never execute discovered repository scripts during an audit.
-- Do not use `eval`, `exec`, or dynamic imports to run repository content.
-- Do not print API keys, passwords, tokens, or environment variables.
-- Do not hardcode secrets in generated tools.
-- Validate user-supplied paths and filenames.
-- Do not disable TLS verification or security checks.
-- Treat audit findings as indicators requiring review, not definitive proof.
-- Do not automatically run package installation, deployment, migrations,
-  network requests, or destructive commands.
-
-## 6. Recommended CLI conventions
-
-Use consistent flags when applicable:
-
-- `--root`: repository root.
-- `--apply`: apply changes after preview.
-- `--report`: emit a machine-readable JSON report.
-- `--output`: explicit report destination.
-- `--max-files`: limit work on large repositories.
-- `--verbose`: show detailed progress.
-- `--strict`: return a nonzero exit code for configured policy violations.
-
-Do not add irrelevant options to simple tools.
-
-## 7. Exit codes
-
-- `0`: successful execution; no configured policy failure.
-- `1`: audit findings or validation failures.
-- `2`: invalid arguments, invalid configuration, or fatal execution error.
-
-Document any tool that uses a different convention.
-
-## 8. Testing requirements
-
-For each tool, consider:
-
-- A normal successful case.
-- Missing files and directories.
-- Empty files and malformed input.
-- Unicode paths and content.
-- Symlink and path traversal handling.
-- Permission errors.
-- Existing-output collision.
-- Dry-run behavior.
-- Large input and resource limits where relevant.
-
-Use temporary directories for file-operation tests.
-
-## 9. Suggested development workflow
-
-1. Identify a repetitive or error-prone repository task.
-2. Define inputs, outputs, limits, and failure behavior.
-3. Check whether an existing tool already performs the task.
-4. Create a uniquely named tool with `tool_factory.py`.
-5. Review the generated scaffold.
-6. Implement the actual business logic.
-7. Add tests and update the tool registry.
-8. Run syntax and static checks.
-9. Preview file modifications.
-10. Review the report before committing changes.
-
-## 10. Useful MedOrbits tool categories
-
-- Repository integrity and structure
-- HTML, CSS, JavaScript, and asset references
-- JSON and schema validation
-- College, course, fee, scholarship, and admissions data quality
-- SEO and accessibility checks
-- Internationalization and translation completeness
-- Security configuration and secret-handling review
-- Documentation and API inventory
-- Test coverage inventory
-- Build and release readiness
-
-## 11. Generated content policy
-
-Generated HTML, data records, documentation, and configuration must be reviewed
-before publication or deployment.
-
-Never invent admission deadlines, eligibility rules, fees, rankings, cutoffs,
-official contact information, accreditation status, or legal requirements.
-Use verified sources for factual content and record the source and verification
-date where appropriate.
-
-## 12. Completion checklist
-
-- [ ] Clear module docstring and usage examples
-- [ ] Correct repository-root handling
-- [ ] No accidental overwrite or deletion
-- [ ] Dry-run for modifications
-- [ ] Safe error handling
-- [ ] Tests or verification instructions
-- [ ] Tool registry updated
-- [ ] Documentation updated
-- [ ] Static analysis completed
-- [ ] Changes reviewed before release
-'''
-
-
-README_CONTENT = r'''# MedOrbits Repository Tools
-
-This directory contains utilities for repository quality, validation, security
-review, documentation, data consistency, and release preparation.
+README = """# MedOrbits Repository Tools
 
 ## Tool factory
 
-Run from the repository root:
-
 ```bash
-python tools/tool_factory.py
+python tools/tool_factory.py --init
 python tools/tool_factory.py --init --apply
 python tools/tool_factory.py --audit --report
+python tools/tool_factory.py --audit --strict
 python tools/tool_factory.py --recommend
+python tools/tool_factory.py --scaffold validate_json --description "Validate JSON files"
 ```
 
-Scaffold a new Python utility:
+Dry-run is the default. Existing files are never overwritten or deleted.
+Generated tools are scaffolds and must be implemented, tested, and reviewed.
+See `TOOLING_GUIDE.md`.
+"""
 
-```bash
-python tools/tool_factory.py \
-  --scaffold validate_json \
-  --description "Validate JSON files in the repository"
-```
+GUIDE = """# MedOrbits Tools Development Guide
 
-Preview first, then explicitly create it:
+- Use lowercase `snake_case` filenames and one primary responsibility per tool.
+- CLI tools should document usage, expose `main()`, use `argparse`, and return meaningful exit codes.
+- Default to read-only or dry-run behavior.
+- Never overwrite or delete repository files automatically.
+- Validate paths and reject symlinks when writing files.
+- Never execute discovered repository scripts during an audit.
+- Do not print secrets, install packages, deploy, or run destructive commands automatically.
+- Treat heuristic security findings as indicators for manual review, not proof.
+- Test malformed input, missing files, Unicode paths, permissions, output collisions, and dry-run behavior.
+- Verify admissions deadlines, fees, eligibility, cutoffs, rankings, and legal facts before publication.
+"""
 
-```bash
-python tools/tool_factory.py \
-  --scaffold validate_json \
-  --description "Validate JSON files in the repository" \
-  --apply
-```
-
-## Safety
-
-The factory does not execute tools that it discovers. It does not overwrite
-existing files or delete repository content. Generated tools are starter
-scaffolds and require implementation, testing, and review before use.
-
-See `TOOLING_GUIDE.md` for development standards.
-'''
-
-
-TEMPLATE_CONTENT = r'''#!/usr/bin/env python3
+TEMPLATE = '''#!/usr/bin/env python3
 """
 {title}
-{underline}
 
 Purpose:
     {description}
 
-Safety:
-    - Does not execute other repository scripts.
-    - Does not overwrite or delete files by default.
-    - Review all changes before using this tool in production.
-
-Example:
-    python tools/{filename} --root .
+This is a scaffold. Implement and test before production use.
 """
 
 from __future__ import annotations
@@ -382,62 +128,37 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-
 from datetime import datetime, timezone
 from pathlib import Path
-
 
 VERSION = "1.0.0"
 
 
-def utc_now() -> str:
-    """Return the current UTC timestamp."""
-    return datetime.now(timezone.utc).isoformat()
-
-
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description={description_repr}
-    )
-    parser.add_argument(
-        "--root",
-        default=".",
-        help="Repository root (default: current directory).",
-    )
-    parser.add_argument(
-        "--report",
-        action="store_true",
-        help="Output a JSON report.",
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Display additional diagnostic information.",
-    )
+    parser = argparse.ArgumentParser(description={description_repr})
+    parser.add_argument("--root", default=".", help="Repository root.")
+    parser.add_argument("--report", action="store_true", help="Print JSON report.")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
-
     if not root.is_dir():
-        print(f"ERROR: repository root does not exist: {{root}}", file=sys.stderr)
+        print("ERROR: repository root does not exist: " + str(root), file=sys.stderr)
         return 2
 
-    # TODO: Implement the tool's documented responsibility here.
-    # Keep the default operation read-only.
-    result = {{
-        "tool": "{tool_name}",
+    result = {
+        "tool": {name_repr},
         "version": VERSION,
-        "timestamp": utc_now(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "repository": str(root),
         "status": "scaffold",
         "message": "Implementation and tests are required.",
-    }}
+    }
 
     if args.report:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(result["message"])
-        print(f"Repository: {{root}}")
+        print("Repository: " + str(root))
 
     return 0
 
@@ -452,10 +173,11 @@ def utc_now() -> str:
 
 
 def safe_name(value: str) -> str:
-    """Normalize a proposed tool name to a safe Python identifier."""
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9_]+", "_", value)
-    value = re.sub(r"_+", "_", value).strip("_")
+    """Convert a requested tool name into a valid Python identifier."""
+    value = re.sub(
+        r"_+", "_",
+        re.sub(r"[^a-z0-9_]+", "_", value.strip().lower()),
+    ).strip("_")
 
     if not value:
         raise ValueError("Tool name must contain letters or numbers.")
@@ -472,7 +194,7 @@ def safe_name(value: str) -> str:
     return value
 
 
-def inside(path: Path, root: Path) -> bool:
+def is_within(path: Path, root: Path) -> bool:
     try:
         path.relative_to(root)
         return True
@@ -480,87 +202,91 @@ def inside(path: Path, root: Path) -> bool:
         return False
 
 
-def safe_path(root: Path, candidate: Path) -> Path | None:
-    """Reject paths outside root and symlinked path components."""
+def safe_components(path: Path, root: Path) -> bool:
+    """Reject paths outside root and existing symlink components."""
     root = Path(os.path.abspath(root))
-    candidate = Path(os.path.abspath(candidate))
+    path = Path(os.path.abspath(path))
 
-    if not inside(candidate, root):
-        return None
+    if not is_within(path, root) or root.is_symlink():
+        return False
 
     current = root
-
-    try:
-        parts = candidate.relative_to(root).parts
-    except ValueError:
-        return None
-
-    for part in parts:
-        current = current / part
+    for component in path.relative_to(root).parts:
+        current = current / component
         if current.is_symlink():
-            return None
+            return False
 
-    return candidate
+    return True
 
 
-def discover_python_tools(tools_dir: Path) -> list[Path]:
-    if not tools_dir.is_dir():
-        return []
+def discover_tools(
+    tools_dir: Path,
+    root: Path,
+    limit: int,
+) -> tuple[list[Path], bool]:
+    """Find Python files without following symlinks."""
+    found: list[Path] = []
 
-    found = []
+    if not tools_dir.is_dir() or tools_dir.is_symlink():
+        return found, False
 
-    for directory, dirs, filenames in os.walk(tools_dir, followlinks=False):
+    for directory, dirs, filenames in os.walk(
+        tools_dir, followlinks=False
+    ):
         current = Path(directory)
 
-        dirs[:] = [
+        dirs[:] = sorted(
             name for name in dirs
-            if name not in DEFAULT_IGNORED_DIRS
+            if name not in IGNORED_DIRS
             and not (current / name).is_symlink()
-        ]
+        )
 
-        for filename in filenames:
+        for filename in sorted(filenames):
             path = current / filename
 
-            if path.is_symlink() or path.suffix.lower() != ".py":
-                continue
-
-            if filename.startswith("."):
+            if (
+                path.suffix.lower() != ".py"
+                or filename.startswith(".")
+                or path.is_symlink()
+                or not safe_components(path, root)
+            ):
                 continue
 
             found.append(path)
 
-    return sorted(found)
+            if len(found) > limit:
+                return sorted(found[:limit]), True
+
+    return sorted(found), False
 
 
-def analyze_python(path: Path, root: Path) -> dict:
-    """Statically inspect a Python file without importing or executing it."""
-    relative = path.relative_to(root).as_posix()
-
+def audit_file(path: Path, root: Path) -> dict:
+    """Inspect a Python file statically without importing or executing it."""
     result = {
-        "file": relative,
+        "file": path.relative_to(root).as_posix(),
         "bytes": 0,
         "syntax_valid": None,
         "has_docstring": False,
         "has_main": False,
         "has_cli_parser": False,
         "has_entry_point": False,
+        "imports": [],
         "findings": [],
     }
 
     try:
-        source = path.read_text(encoding="utf-8-sig", errors="replace")
+        source = path.read_text(encoding="utf-8-sig")
         result["bytes"] = path.stat().st_size
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         result["findings"].append(f"Cannot read file: {exc}")
         return result
 
     if not source.strip():
         result["findings"].append("Empty Python file.")
-        result["syntax_valid"] = None
         return result
 
     try:
-        tree = ast.parse(source, filename=relative)
+        tree = ast.parse(source, filename=result["file"])
         result["syntax_valid"] = True
     except SyntaxError as exc:
         result["syntax_valid"] = False
@@ -573,81 +299,147 @@ def analyze_python(path: Path, root: Path) -> dict:
     if not result["has_docstring"]:
         result["findings"].append("Missing module docstring.")
 
-    names = set()
-    imports = set()
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            names.add(node.name)
-
-        if isinstance(node, ast.Import):
-            imports.update(alias.name.split(".")[0] for alias in node.names)
-
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            imports.add(node.module.split(".")[0])
+    names = {
+        node.name
+        for node in ast.walk(tree)
+        if isinstance(
+            node,
+            (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef),
+        )
+    }
 
     result["has_main"] = "main" in names
     if not result["has_main"]:
         result["findings"].append("No main() function found.")
 
+    imports = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imports.update(
+                alias.name.split(".")[0] for alias in node.names
+            )
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imports.add(node.module.split(".")[0])
+
+    result["imports"] = sorted(imports)
     result["has_cli_parser"] = "argparse" in imports
+
     if not result["has_cli_parser"]:
         result["findings"].append(
             "No argparse import found; confirm whether CLI arguments are needed."
         )
 
-    result["has_entry_point"] = bool(
-        re.search(
-            r"""if\s+__name__\s*==\s*["']__main__["']\s*:""",
-            source,
-        )
-    )
-    if not result["has_entry_point"]:
-        result["findings"].append("Missing standard __main__ entry point.")
+    result["has_entry_point"] = bool(re.search(
+        r"""if\s+__name__\s*==\s*["']__main__["']\s*:""",
+        source,
+    ))
 
-    # Heuristic flags only. These patterns are not proof of malicious behavior.
+    if not result["has_entry_point"]:
+        result["findings"].append(
+            "Missing standard __main__ entry point."
+        )
+
     suspicious_patterns = {
         "Dynamic code execution pattern": r"\b(?:eval|exec)\s*\(",
-        "Subprocess execution pattern": r"\bsubprocess\.(?:run|Popen|call|check_call|check_output)\s*\(",
+        "Subprocess execution pattern":
+            r"\bsubprocess\.(?:run|Popen|call|check_call|check_output)\s*\(",
         "Shell command pattern": r"\bos\.system\s*\(",
-        "Potential network access": r"\b(?:requests\.(?:get|post|put|delete)|urlopen)\s*\(",
-        "Potential embedded secret": r"""(?i)\b(?:api[_-]?key|secret|password|access[_-]?token)\s*=\s*["'][^"']{8,}["']""",
+        "Potential network access":
+            r"\b(?:requests\.(?:get|post|put|delete)|urlopen)\s*\(",
+        "Potential embedded secret":
+            r"""(?i)\b(?:api[_-]?key|secret|password|access[_-]?token)\s*=\s*["'][^"']{8,}["']""",
     }
 
     for label, pattern in suspicious_patterns.items():
         if re.search(pattern, source):
             result["findings"].append(
-                f"{label}: manual review recommended."
+                label + ": manual review recommended."
             )
 
-    result["standard_library_imports"] = sorted(imports)
     return result
 
 
 def make_scaffold(name: str, description: str) -> str:
+    """Build a scaffold without formatting arbitrary user text as a template."""
     title = name.replace("_", " ").title()
-    underline = "=" * len(title)
 
-    return TEMPLATE_CONTENT.format(
-        title=title,
-        underline=underline,
-        description=description.replace("\n", " ").strip(),
-        description_repr=repr(description.strip()),
-        filename=name + ".py",
-        tool_name=name,
-    )
+    replacements = {
+        "title": title,
+        "description": description.replace("\r", " ").replace("\n", " ").strip(),
+        "description_repr": repr(description.strip()),
+        "name_repr": repr(name),
+    }
+
+    output = TEMPLATE
+    for key, value in replacements.items():
+        output = output.replace("{" + key + "}", value)
+
+    return output
 
 
-def build_registry(existing_tools: list[Path], root: Path) -> dict:
+def create_exclusive(
+    path: Path,
+    content: str,
+    root: Path,
+    executable: bool = False,
+) -> tuple[str, str]:
+    """Create a new file exclusively; preserve any existing file."""
+    if not safe_components(path, root):
+        return "rejected", "Path is outside the repository or contains a symlink."
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Recheck after making parent directories.
+        if not safe_components(path, root):
+            return "rejected", "Path became unsafe during creation."
+
+        with path.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(content)
+
+        if executable:
+            mode = stat.S_IMODE(path.stat().st_mode)
+            path.chmod(
+                mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+            )
+
+        return "created", "Created successfully."
+
+    except FileExistsError:
+        return "skipped", "Existing file preserved."
+    except OSError as exc:
+        return "error", str(exc)
+
+
+def build_registry(
+    existing: list[Path],
+    root: Path,
+    extra_names: set[str],
+) -> dict:
     entries = []
+    seen_paths = set()
 
-    for path in existing_tools:
+    for path in existing:
+        relative = path.relative_to(root).as_posix()
         entries.append({
             "name": path.stem,
-            "path": path.relative_to(root).as_posix(),
+            "path": relative,
             "type": "python",
             "managed_by": "manual_or_tool_factory",
         })
+        seen_paths.add(relative)
+
+    for name in extra_names:
+        relative = f"tools/{name}.py"
+        if relative not in seen_paths:
+            entries.append({
+                "name": name,
+                "path": relative,
+                "type": "python",
+                "managed_by": "tool_factory_scaffold",
+            })
+
+    entries.sort(key=lambda item: (item["name"], item["path"]))
 
     return {
         "registry_version": 1,
@@ -656,85 +448,43 @@ def build_registry(existing_tools: list[Path], root: Path) -> dict:
     }
 
 
-def recommend_tools() -> list[dict]:
-    return TOOL_CATALOG.copy()
-
-
-def write_new_file(path: Path, content: str, root: Path) -> tuple[str, str]:
-    """Create a new file exclusively; never replace existing content."""
-    checked = safe_path(root, path)
-
-    if checked is None:
-        return "rejected", "Path is outside the repository or contains a symlink."
-
-    if checked.exists():
-        return "skipped", "File already exists; existing content preserved."
-
-    try:
-        checked.parent.mkdir(parents=True, exist_ok=True)
-
-        # Exclusive creation protects against accidental overwrite and races.
-        with checked.open("x", encoding="utf-8", newline="\n") as handle:
-            handle.write(content)
-
-        return "created", "Created successfully."
-
-    except FileExistsError:
-        return "skipped", "File appeared during execution; existing content preserved."
-    except OSError as exc:
-        return "error", str(exc)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Initialize, audit, and expand the MedOrbits tools directory."
+        description="Initialize, scaffold, and audit MedOrbits tools."
     )
-
+    parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument(
-        "--root",
-        default=".",
-        help="Repository root (default: current directory).",
-    )
-    parser.add_argument(
-        "--init",
-        action="store_true",
-        help="Prepare tools/README.md, TOOLING_GUIDE.md, template, and registry.",
+        "--init", action="store_true",
+        help="Prepare README, guide, example template, and registry.",
     )
     parser.add_argument(
-        "--audit",
-        action="store_true",
-        help="Audit existing Python tools without executing them.",
+        "--audit", action="store_true",
+        help="Audit Python tools without executing them.",
     )
     parser.add_argument(
-        "--recommend",
-        action="store_true",
-        help="Display a catalog of useful future tools.",
+        "--recommend", action="store_true",
+        help="Display recommended future tools.",
     )
-    parser.add_argument(
-        "--scaffold",
-        metavar="NAME",
-        help="Prepare a new Python tool using a safe snake_case name.",
-    )
+    parser.add_argument("--scaffold", metavar="NAME")
     parser.add_argument(
         "--description",
         default="A MedOrbits repository utility.",
-        help="Description for a scaffolded tool.",
     )
     parser.add_argument(
-        "--apply",
-        action="store_true",
-        help="Create missing files. Without this flag, the tool only previews.",
+        "--apply", action="store_true",
+        help="Create missing files; default is dry-run.",
     )
     parser.add_argument(
-        "--report",
-        action="store_true",
-        help="Output a machine-readable JSON report.",
+        "--report", action="store_true",
+        help="Output machine-readable JSON.",
     )
     parser.add_argument(
-        "--max-files",
-        type=int,
-        default=5000,
-        help="Maximum number of Python tools to audit.",
+        "--strict", action="store_true",
+        help="Return 1 when audit findings or truncation occur.",
+    )
+    parser.add_argument(
+        "--max-files", type=int, default=5000,
+        help="Maximum Python files to inspect.",
     )
 
     args = parser.parse_args()
@@ -742,49 +492,62 @@ def main() -> int:
     if args.max_files < 1:
         parser.error("--max-files must be at least 1")
 
-    root = Path(args.root).resolve()
+    try:
+        supplied_root = Path(os.path.abspath(args.root))
 
-    if not root.is_dir():
-        print(f"ERROR: repository root not found: {root}", file=sys.stderr)
+        if supplied_root.is_symlink():
+            print(
+                "ERROR: repository root cannot be a symlink.",
+                file=sys.stderr,
+            )
+            return 2
+
+        root = supplied_root.resolve(strict=True)
+
+        if not root.is_dir():
+            print("ERROR: repository root is not a directory.", file=sys.stderr)
+            return 2
+
+    except (OSError, RuntimeError) as exc:
+        print(f"ERROR: invalid repository root: {exc}", file=sys.stderr)
         return 2
 
     tools_dir = root / "tools"
-    checked_tools_dir = safe_path(root, tools_dir)
 
-    if checked_tools_dir is None:
-        print("ERROR: tools/ is outside the root or contains a symlink.", file=sys.stderr)
+    if tools_dir.exists() and (
+        tools_dir.is_symlink() or not tools_dir.is_dir()
+    ):
+        print("ERROR: tools path is not a safe directory.", file=sys.stderr)
         return 2
 
-    existing_tools = discover_python_tools(tools_dir)[:args.max_files]
-    audit_results = []
+    if not safe_components(tools_dir, root):
+        print(
+            "ERROR: tools path is outside root or contains a symlink.",
+            file=sys.stderr,
+        )
+        return 2
 
-    if args.audit:
-        audit_results = [
-            analyze_python(path, root)
-            for path in existing_tools
-        ]
+    existing, truncated = discover_tools(
+        tools_dir, root, args.max_files
+    )
 
-    planned_files: dict[Path, str] = {}
+    audits = [
+        audit_file(path, root) for path in existing
+    ] if args.audit else []
+
+    planned: dict[Path, tuple[str, bool]] = {}
+    extra_names: set[str] = set()
 
     if args.init:
-        planned_files[tools_dir / "README.md"] = README_CONTENT
-        planned_files[tools_dir / "TOOLING_GUIDE.md"] = GUIDE_CONTENT
-        planned_files[tools_dir / "templates" / "tool_template.py"] = (
+        planned[tools_dir / "README.md"] = (README, False)
+        planned[tools_dir / "TOOLING_GUIDE.md"] = (GUIDE, False)
+        planned[tools_dir / "templates" / "tool_template.py"] = (
             make_scaffold(
                 "example_tool",
                 "Example starter utility. Replace this description with the actual task.",
-            )
+            ),
+            True,
         )
-
-        registry_path = tools_dir / "tool_registry.json"
-
-        # The registry is generated only if it does not already exist.
-        registry = build_registry(existing_tools, root)
-        planned_files[registry_path] = json.dumps(
-            registry,
-            indent=2,
-            ensure_ascii=False,
-        ) + "\n"
 
     if args.scaffold:
         try:
@@ -796,12 +559,25 @@ def main() -> int:
         if not description:
             parser.error("--description must not be empty")
 
-        scaffold_path = tools_dir / f"{name}.py"
-        planned_files[scaffold_path] = make_scaffold(name, description)
+        planned[tools_dir / f"{name}.py"] = (
+            make_scaffold(name, description),
+            True,
+        )
+        extra_names.add(name)
+
+    if args.init:
+        planned[tools_dir / "tool_registry.json"] = (
+            json.dumps(
+                build_registry(existing, root, extra_names),
+                indent=2,
+                ensure_ascii=False,
+            ) + "\n",
+            False,
+        )
 
     actions = []
 
-    for path, content in planned_files.items():
+    for path, (body, executable) in planned.items():
         relative = path.relative_to(root).as_posix()
 
         if path.exists():
@@ -810,23 +586,31 @@ def main() -> int:
                 "status": "skipped",
                 "reason": "Existing file preserved.",
             })
-            continue
-
-        if not args.apply:
+        elif not args.apply:
             actions.append({
                 "path": relative,
                 "status": "would_create",
-                "bytes": len(content.encode("utf-8")),
+                "bytes": len(body.encode("utf-8")),
             })
-            continue
+        else:
+            status, message = create_exclusive(
+                path, body, root, executable
+            )
+            actions.append({
+                "path": relative,
+                "status": status,
+                "message": message,
+                "bytes": len(body.encode("utf-8"))
+                if status == "created" else 0,
+            })
 
-        status, message = write_new_file(path, content, root)
-        actions.append({
-            "path": relative,
-            "status": status,
-            "message": message,
-            "bytes": len(content.encode("utf-8")) if status == "created" else 0,
-        })
+    flagged = [item for item in audits if item["findings"]]
+    syntax_errors = sum(
+        item["syntax_valid"] is False for item in audits
+    )
+    fatal = any(
+        item["status"] in {"error", "rejected"} for item in actions
+    )
 
     report = {
         "tool": "MedOrbits Tool Factory",
@@ -834,17 +618,17 @@ def main() -> int:
         "timestamp": utc_now(),
         "repository": str(root),
         "mode": "apply" if args.apply else "dry-run",
-        "existing_python_tools": len(existing_tools),
+        "existing_python_tools": len(existing),
+        "audit_truncated": truncated,
         "actions": actions,
         "audit": {
             "requested": args.audit,
-            "files_analyzed": len(audit_results),
-            "files_with_findings": sum(
-                bool(item["findings"]) for item in audit_results
-            ),
-            "results": audit_results,
+            "files_analyzed": len(audits),
+            "files_with_findings": len(flagged),
+            "syntax_errors": syntax_errors,
+            "results": audits,
         },
-        "recommendations": recommend_tools() if args.recommend else [],
+        "recommendations": CATALOG if args.recommend else [],
         "safety": {
             "existing_files_overwritten": False,
             "files_deleted": False,
@@ -855,56 +639,64 @@ def main() -> int:
 
     if args.report:
         print(json.dumps(report, indent=2, ensure_ascii=False))
-        return 0
+    else:
+        print(f"MedOrbits Tool Factory v{VERSION}")
+        print(f"Repository: {root}")
+        print(
+            f"Python tools discovered: {len(existing)}"
+            + (" (truncated at --max-files)" if truncated else "")
+        )
+        print(f"Mode: {'APPLY' if args.apply else 'DRY RUN'}")
 
-    print(f"MedOrbits Tool Factory v{VERSION}")
-    print(f"Repository: {root}")
-    print(f"Python tools discovered: {len(existing_tools)}")
-    print(f"Mode: {'APPLY' if args.apply else 'DRY RUN'}")
+        if actions:
+            print("\nFile actions:")
+            for action in actions:
+                print(f"  {action['status'].upper():12} {action['path']}")
+                if action.get("reason"):
+                    print("               " + action["reason"])
+                if action.get("message"):
+                    print("               " + action["message"])
 
-    if actions:
-        print("\nFile actions:")
-        for action in actions:
-            print(f"  {action['status'].upper():12} {action['path']}")
-            if action.get("message"):
-                print(f"               {action['message']}")
-
-    if args.audit:
-        print("\nStatic audit:")
-        print(f"  Files analyzed: {len(audit_results)}")
-        flagged = [
-            item for item in audit_results
-            if item["findings"]
-        ]
-        print(f"  Files with findings: {len(flagged)}")
-
-        for item in flagged:
-            print(f"\n  {item['file']}")
-            for finding in item["findings"]:
-                print(f"    - {finding}")
-
-    if args.recommend:
-        print("\nRecommended tools:")
-        for item in recommend_tools():
+        if args.audit:
             print(
-                f"  [{item['priority'].upper():6}] "
-                f"{item['name']}: {item['purpose']}"
+                f"\nStatic audit: {len(audits)} files; "
+                f"{len(flagged)} with findings; "
+                f"{syntax_errors} syntax errors."
+            )
+            for item in flagged:
+                print(f"\n  {item['file']}")
+                for finding in item["findings"]:
+                    print("    - " + finding)
+
+        if args.recommend:
+            print("\nRecommended tools:")
+            for item in CATALOG:
+                print(
+                    f"  [{item['priority'].upper():6}] "
+                    f"{item['name']}: {item['purpose']}"
+                )
+
+        if not (
+            args.init or args.audit or args.recommend or args.scaffold
+        ):
+            print(
+                "\nNo operation selected. Try --init, --audit, "
+                "--recommend, or --scaffold NAME."
             )
 
-    if not (args.init or args.audit or args.recommend or args.scaffold):
-        print("\nNo operation selected. Suggested next steps:")
-        print("  python tools/tool_factory.py --init")
-        print("  python tools/tool_factory.py --audit")
-        print("  python tools/tool_factory.py --recommend")
-        print("  python tools/tool_factory.py --scaffold validate_json "
-              '--description "Validate repository JSON files"')
+        if not args.apply and actions:
+            print(
+                "\nDRY RUN: no files were created. "
+                "Add --apply to create missing files."
+            )
 
-    if not args.apply and actions:
-        print("\nDRY RUN: no files were created.")
-        print("Add --apply to create missing files.")
+        print("\nExisting files are never overwritten or deleted.")
 
-    print("\nExisting files are never overwritten or deleted.")
-    print("Review generated code and test it before production use.")
+    if fatal:
+        return 2
+
+    if args.strict and (flagged or truncated):
+        return 1
 
     return 0
 

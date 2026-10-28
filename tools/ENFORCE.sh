@@ -1,35 +1,28 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # MedOrbits Repository Enforcement Tool
-# File: /tools/ENFORCE.sh
-# Version: 1.0.0
+# File: tools/ENFORCE.sh
+# Version: 1.1.0
 #
 # Purpose:
-#   Enforce repository standards, validate project structure, check available
-#   tooling, inspect configuration files, and run safe quality checks.
-#
-# Runtime:
-#   Bash 4+
-#   Node.js/npm, Python, and Git are optional but recommended.
+#   Safe repository inventory and quality checks for mixed HTML/CSS/JS/Python/
+#   JSON/Bash projects. Reports findings; it does not suppress failures.
 #
 # Usage:
-#   bash tools/ENFORCE.sh
-#   bash tools/ENFORCE.sh --strict
-#   bash tools/ENFORCE.sh --fix
-#   bash tools/ENFORCE.sh --security
-#   bash tools/ENFORCE.sh --help
+#   bash tools/ENFORCE.sh [--strict] [--fix] [--security] [--quiet]
 #
 # Safety:
-#   --fix only applies explicitly safe whitespace/line-ending fixes to
-#   supported text files. It never deletes files, installs dependencies,
-#   changes Git history, or overwrites environment secrets.
+#   --fix removes trailing whitespace only from supported text files.
+#   It uses same-directory temporary files and atomic replacement, preserving
+#   file mode where supported. It does not delete caches, install packages,
+#   alter Git history, deploy code, or modify environment secrets.
 # ==============================================================================
 
 set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-readonly SCRIPT_VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.1.0"
 readonly SCRIPT_NAME="ENFORCE.sh"
 
 ROOT_DIR=""
@@ -42,57 +35,20 @@ ERRORS=0
 WARNINGS=0
 CHECKS=0
 SKIPS=0
-
-declare -a TEMP_FILES=()
-
-# ------------------------------------------------------------------------------
-# Output
-# ------------------------------------------------------------------------------
-
-log() {
-    printf '[ENFORCE] %s\n' "$*"
-}
-
-info() {
-    ((QUIET)) || printf '[INFO] %s\n' "$*"
-}
-
-success() {
-    printf '[PASS] %s\n' "$*"
-}
-
-warn() {
-    WARNINGS=$((WARNINGS + 1))
-    printf '[WARN] %s\n' "$*" >&2
-}
-
-error() {
-    ERRORS=$((ERRORS + 1))
-    printf '[FAIL] %s\n' "$*" >&2
-}
-
-skip() {
-    SKIPS=$((SKIPS + 1))
-    ((QUIET)) || printf '[SKIP] %s\n' "$*"
-}
-
-check_start() {
-    CHECKS=$((CHECKS + 1))
-}
-
-cleanup() {
-    local file
-    for file in "${TEMP_FILES[@]:-}"; do
-        [[ -n "$file" ]] && rm -f -- "$file"
-    done
-}
-
-trap cleanup EXIT
+FILES_SCANNED=0
 
 die() {
     printf '[ERROR] %s\n' "$*" >&2
     exit 2
 }
+
+log()     { printf '[ENFORCE] %s\n' "$*"; }
+info()    { (( QUIET )) || printf '[INFO] %s\n' "$*"; }
+success() { printf '[PASS] %s\n' "$*"; }
+warn()    { WARNINGS=$((WARNINGS + 1)); printf '[WARN] %s\n' "$*" >&2; }
+error()   { ERRORS=$((ERRORS + 1)); printf '[FAIL] %s\n' "$*" >&2; }
+skip()    { SKIPS=$((SKIPS + 1)); (( QUIET )) || printf '[SKIP] %s\n' "$*"; }
+check_start() { CHECKS=$((CHECKS + 1)); }
 
 usage() {
     cat <<'EOF'
@@ -103,11 +59,11 @@ Usage:
 
 Options:
   --strict       Treat warnings as failures.
-  --fix          Apply safe whitespace and line-ending fixes to text files.
-  --security     Run additional dependency and secret-pattern checks.
+  --fix          Remove trailing whitespace from supported text files.
+  --security     Run additional secret-pattern and npm production audit checks.
   --quiet        Reduce informational output.
-  --help         Display this help message.
-  --version      Display the script version.
+  --help, -h     Display help.
+  --version      Display version.
 
 Environment:
   ENFORCE_ROOT   Optional repository root directory.
@@ -115,49 +71,25 @@ Environment:
 Examples:
   bash tools/ENFORCE.sh
   bash tools/ENFORCE.sh --strict
-  bash tools/ENFORCE.sh --fix --strict
+  bash tools/ENFORCE.sh --fix
   bash tools/ENFORCE.sh --security
 
-This script does not install packages, deploy code, or modify Git history.
+The script does not install packages, deploy code, delete caches, or modify Git history.
 EOF
 }
 
-# ------------------------------------------------------------------------------
-# Arguments
-# ------------------------------------------------------------------------------
-
 while (($#)); do
     case "$1" in
-        --strict)
-            STRICT=1
-            ;;
-        --fix)
-            FIX=1
-            ;;
-        --security)
-            SECURITY=1
-            ;;
-        --quiet)
-            QUIET=1
-            ;;
-        --help|-h)
-            usage
-            exit 0
-            ;;
-        --version)
-            printf '%s %s\n' "$SCRIPT_NAME" "$SCRIPT_VERSION"
-            exit 0
-            ;;
-        *)
-            die "Unknown option: $1. Use --help for usage."
-            ;;
+        --strict)   STRICT=1 ;;
+        --fix)      FIX=1 ;;
+        --security) SECURITY=1 ;;
+        --quiet)    QUIET=1 ;;
+        --help|-h)  usage; exit 0 ;;
+        --version)  printf '%s %s\n' "$SCRIPT_NAME" "$SCRIPT_VERSION"; exit 0 ;;
+        *)          die "Unknown option: $1. Use --help for usage." ;;
     esac
     shift
 done
-
-# ------------------------------------------------------------------------------
-# Repository root detection
-# ------------------------------------------------------------------------------
 
 SCRIPT_DIR="$(
     cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &&
@@ -165,9 +97,7 @@ SCRIPT_DIR="$(
 )"
 
 if [[ -n "${ENFORCE_ROOT:-}" ]]; then
-    [[ -d "$ENFORCE_ROOT" ]] ||
-        die "ENFORCE_ROOT is not a directory: $ENFORCE_ROOT"
-
+    [[ -d "$ENFORCE_ROOT" ]] || die "ENFORCE_ROOT is not a directory: $ENFORCE_ROOT"
     ROOT_DIR="$(cd -- "$ENFORCE_ROOT" && pwd -P)"
 elif command -v git >/dev/null 2>&1 &&
      git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
@@ -182,33 +112,18 @@ log "MedOrbits repository enforcement v${SCRIPT_VERSION}"
 info "Repository root: $ROOT_DIR"
 info "Strict mode: $STRICT | Fix mode: $FIX | Security mode: $SECURITY"
 
-# ------------------------------------------------------------------------------
-# File helpers
-# ------------------------------------------------------------------------------
-
-is_inside_root() {
-    local candidate="$1"
-    [[ "$candidate" == "$ROOT_DIR" || "$candidate" == "$ROOT_DIR/"* ]]
-}
+has_command() { command -v "$1" >/dev/null 2>&1; }
 
 is_ignored_path() {
-    case "$1" in
-        .git/*|node_modules/*|vendor/*|.venv/*|venv/*|\
-        __pycache__/*|dist/*|build/*|coverage/*|.next/*|\
-        .pytest_cache/*|.mypy_cache/*|.ruff_cache/*)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
+    case "/$1/" in
+        */.git/*|*/node_modules/*|*/vendor/*|*/.venv/*|*/venv/*|\
+        */__pycache__/*|*/dist/*|*/build/*|*/coverage/*|*/.next/*|\
+        */.pytest_cache/*|*/.mypy_cache/*|*/.ruff_cache/*)
+            return 0 ;;
+        *) return 1 ;;
     esac
 }
 
-has_command() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# Find tracked files when Git is available; otherwise scan common project files.
 collect_files() {
     if has_command git &&
        git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -220,83 +135,48 @@ collect_files() {
             done
     else
         find "$ROOT_DIR" \
-            \( -type d \( \
-                -name .git -o \
-                -name node_modules -o \
-                -name vendor -o \
-                -name .venv -o \
-                -name venv -o \
-                -name __pycache__ -o \
-                -name dist -o \
-                -name build -o \
-                -name coverage \
-            \) -prune \) -o \
+            \( -type d \( -name .git -o -name node_modules -o -name vendor \
+                -o -name .venv -o -name venv -o -name __pycache__ \
+                -o -name dist -o -name build -o -name coverage \
+                -o -name .next -o -name .pytest_cache -o -name .mypy_cache \
+                -o -name .ruff_cache \) -prune \) -o \
             \( -type f -print \) |
             sed "s#^$ROOT_DIR/##"
     fi
 }
 
-# ------------------------------------------------------------------------------
-# Repository checks
-# ------------------------------------------------------------------------------
+is_text_candidate() {
+    case "$1" in
+        *.html|*.htm|*.css|*.scss|*.js|*.mjs|*.cjs|*.ts|*.tsx|*.jsx|\
+        *.py|*.sh|*.json|*.yml|*.yaml|*.md|*.sql|*.xml|*.txt|*.toml|\
+        *.ini|*.conf|*.example)
+            return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 check_repository_root() {
     check_start
-
-    if [[ -d "$ROOT_DIR/.git" ]] ||
-       (has_command git &&
-        git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+    if has_command git && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         success "Git repository detected"
     else
         warn "Git repository metadata not detected"
     fi
 
-    if [[ -f "$ROOT_DIR/package.json" ]]; then
-        success "Node.js project manifest found"
-    else
-        info "No root package.json found"
-    fi
-
-    if [[ -f "$ROOT_DIR/requirements.txt" ]]; then
-        success "Python requirements file found"
-    else
-        info "No root requirements.txt found"
-    fi
+    [[ -f "$ROOT_DIR/package.json" ]] && success "Root package.json found" || info "No root package.json"
+    [[ -f "$ROOT_DIR/requirements.txt" ]] && success "Root requirements.txt found" || info "No root requirements.txt"
+    [[ -f "$ROOT_DIR/.env.example" ]] && success ".env.example found" || warn ".env.example is missing"
+    [[ -f "$ROOT_DIR/.gitignore" ]] && success ".gitignore found" || warn ".gitignore is missing"
 
     if [[ -f "$ROOT_DIR/.env" ]]; then
-        warn "Root .env exists; ensure it is excluded from version control"
-    fi
-
-    if [[ -f "$ROOT_DIR/.env.example" ]]; then
-        success ".env.example found"
-    else
-        warn ".env.example not found"
-    fi
-
-    if [[ -f "$ROOT_DIR/.gitignore" ]]; then
-        success ".gitignore found"
-    else
-        warn ".gitignore is missing"
+        warn "Root .env exists; confirm it is ignored and contains no committed secrets"
     fi
 }
 
 check_required_structure() {
     check_start
-
-    local -a candidates=(
-        "tools"
-        "assets"
-        "pages"
-        "education"
-        "career"
-        "api"
-        "python"
-        "tests"
-        "monitoring"
-    )
-
-    local existing=0
-    local path
+    local -a candidates=(tools assets pages education career api python tests monitoring)
+    local existing=0 path
 
     for path in "${candidates[@]}"; do
         if [[ -d "$ROOT_DIR/$path" ]]; then
@@ -305,43 +185,31 @@ check_required_structure() {
         fi
     done
 
-    if [[ -d "$ROOT_DIR/tools" ]]; then
-        success "Tools directory exists"
+    [[ -d "$ROOT_DIR/tools" ]] && success "tools/ directory exists" || warn "tools/ directory is missing"
+    if (( existing > 0 )); then
+        success "Structure scan completed ($existing recognized directories)"
     else
-        warn "tools/ directory is missing"
-    fi
-
-    if ((existing > 0)); then
-        success "Repository structure check completed ($existing recognized directories)"
-    else
-        warn "No expected MedOrbits project directories were detected"
+        warn "No recognized MedOrbits project directories detected"
     fi
 }
 
-check_required_tooling() {
+check_tooling() {
     check_start
-
     local tool
     for tool in bash git node npm python3; do
         if has_command "$tool"; then
             info "Available: $tool"
         else
             case "$tool" in
-                bash|git)
-                    warn "Recommended command unavailable: $tool"
-                    ;;
-                *)
-                    skip "Optional command unavailable: $tool"
-                    ;;
+                bash|git) warn "Recommended command unavailable: $tool" ;;
+                *) skip "Optional command unavailable: $tool" ;;
             esac
         fi
     done
 
     if has_command bash; then
-        local bash_major
-        bash_major="${BASH_VERSINFO[0]}"
-        if ((bash_major < 4)); then
-            warn "Bash 4+ is recommended; current major version is $bash_major"
+        if (( BASH_VERSINFO[0] < 4 )); then
+            warn "Bash 4+ recommended; detected $BASH_VERSION"
         else
             success "Bash version supported: $BASH_VERSION"
         fi
@@ -350,8 +218,8 @@ check_required_tooling() {
     if has_command node; then
         local node_major
         node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || printf '0')"
-        if [[ "$node_major" =~ ^[0-9]+$ ]] && ((node_major < 20)); then
-            warn "Node.js 20+ is recommended; detected major version $node_major"
+        if [[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major < 20 )); then
+            warn "Node.js 20+ recommended; detected major version $node_major"
         else
             success "Node.js runtime check completed"
         fi
@@ -360,481 +228,330 @@ check_required_tooling() {
 
 check_package_json() {
     check_start
-
-    if [[ ! -f "$ROOT_DIR/package.json" ]]; then
-        skip "package.json validation: no root package.json"
-        return
+    [[ -f "$ROOT_DIR/package.json" ]] || { skip "No root package.json"; return 0; }
+    if ! has_command node; then
+        skip "package.json structure check requires Node.js"
+        return 0
     fi
 
-    if has_command node; then
-        if node -e '
-            const fs = require("fs");
-            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            if (!p || typeof p !== "object" || Array.isArray(p)) {
-              throw new Error("package.json root must be an object");
-            }
-            if (p.name !== undefined && typeof p.name !== "string") {
-              throw new Error("package.json name must be a string");
-            }
-            if (p.scripts !== undefined &&
-                (typeof p.scripts !== "object" || Array.isArray(p.scripts))) {
-              throw new Error("package.json scripts must be an object");
-            }
-        ' >/dev/null 2>&1; then
-            success "package.json is valid JSON with a valid basic structure"
-        else
-            error "package.json has invalid JSON or an invalid basic structure"
-        fi
+    if node -e '
+        const fs = require("fs");
+        const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+        if (!p || typeof p !== "object" || Array.isArray(p)) throw Error("root must be an object");
+        if (p.name !== undefined && typeof p.name !== "string") throw Error("name must be a string");
+        if (p.scripts !== undefined && (!p.scripts || typeof p.scripts !== "object" || Array.isArray(p.scripts))) throw Error("scripts must be an object");
+    ' >/dev/null 2>&1; then
+        success "package.json parses and has valid basic structure"
     else
-        skip "package.json semantic validation requires Node.js"
+        error "package.json is invalid JSON or has invalid basic structure"
     fi
 }
 
 check_python_syntax() {
     check_start
+    has_command python3 || { skip "Python syntax check requires python3"; return 0; }
 
-    if ! has_command python3; then
-        skip "Python syntax validation: python3 is unavailable"
-        return
-    fi
-
-    local count=0
-    local failed=0
-    local file
-
+    local count=0 failed=0 file
     while IFS= read -r file; do
-        [[ "$file" == *.py ]] || continue
-        [[ -f "$ROOT_DIR/$file" ]] || continue
-
+        [[ "$file" == *.py && -f "$ROOT_DIR/$file" ]] || continue
         count=$((count + 1))
-        if ! python3 -m py_compile "$ROOT_DIR/$file" >/dev/null 2>&1; then
+        # compile() checks syntax without writing .pyc files or deleting caches.
+        if ! python3 -c '
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+source = path.read_bytes()
+compile(source, str(path), "exec")
+' "$ROOT_DIR/$file" >/dev/null 2>&1; then
             error "Python syntax error: $file"
             failed=$((failed + 1))
         fi
     done < <(collect_files)
 
-    # Remove bytecode created by py_compile only within project Python caches.
-    find "$ROOT_DIR" \
-        \( -type d \( -name .git -o -name node_modules -o -name vendor \) -prune \) -o \
-        \( -type d -name __pycache__ -exec rm -rf -- {} + \) 2>/dev/null || true
-
-    if ((count == 0)); then
+    if (( count == 0 )); then
         skip "No Python files found"
-    elif ((failed == 0)); then
+    elif (( failed == 0 )); then
         success "Python syntax validation passed ($count files)"
     fi
 }
 
 check_json_files() {
     check_start
-
-    local count=0
-    local failed=0
-    local file
-
+    local count=0 failed=0 file
     while IFS= read -r file; do
-        case "$file" in
-            *.json)
-                ;;
-            *)
-                continue
-                ;;
-        esac
-
-        [[ -f "$ROOT_DIR/$file" ]] || continue
+        [[ "$file" == *.json && -f "$ROOT_DIR/$file" ]] || continue
         count=$((count + 1))
-
         if has_command node; then
-            if ! node -e '
-                const fs = require("fs");
-                JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-            ' "$ROOT_DIR/$file" >/dev/null 2>&1; then
-                error "Invalid JSON: $file"
-                failed=$((failed + 1))
-            fi
+            node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
+                "$ROOT_DIR/$file" >/dev/null 2>&1 || {
+                    error "Invalid JSON: $file"
+                    failed=$((failed + 1))
+                }
         elif has_command python3; then
-            if ! python3 -m json.tool "$ROOT_DIR/$file" >/dev/null 2>&1; then
+            python3 -m json.tool "$ROOT_DIR/$file" >/dev/null 2>&1 || {
                 error "Invalid JSON: $file"
                 failed=$((failed + 1))
-            fi
+            }
         else
             skip "JSON validation requires Node.js or Python"
-            return
+            return 0
         fi
     done < <(collect_files)
 
-    if ((count == 0)); then
+    if (( count == 0 )); then
         skip "No JSON files found"
-    elif ((failed == 0)); then
+    elif (( failed == 0 )); then
         success "JSON validation passed ($count files)"
     fi
 }
 
 check_shell_syntax() {
     check_start
-
-    local count=0
-    local failed=0
-    local file
-
+    local count=0 failed=0 file
     while IFS= read -r file; do
-        case "$file" in
-            *.sh)
-                ;;
-            *)
-                continue
-                ;;
-        esac
-
-        [[ -f "$ROOT_DIR/$file" ]] || continue
+        [[ "$file" == *.sh && -f "$ROOT_DIR/$file" ]] || continue
         count=$((count + 1))
-
-        if ! bash -n "$ROOT_DIR/$file" 2>/dev/null; then
+        bash -n "$ROOT_DIR/$file" 2>/dev/null || {
             error "Shell syntax error: $file"
             failed=$((failed + 1))
-        fi
+        }
     done < <(collect_files)
 
-    if ((count == 0)); then
+    if (( count == 0 )); then
         skip "No shell scripts found"
-    elif ((failed == 0)); then
+    elif (( failed == 0 )); then
         success "Shell syntax validation passed ($count files)"
     fi
 }
 
 check_conflict_markers() {
     check_start
-
-    local count=0
-    local file
-
+    local found=0 file
     while IFS= read -r file; do
         [[ -f "$ROOT_DIR/$file" ]] || continue
-
-        case "$file" in
-            *.html|*.htm|*.css|*.scss|*.js|*.mjs|*.cjs|*.ts|*.tsx|*.jsx|\
-            *.py|*.sh|*.json|*.yml|*.yaml|*.md|*.sql|*.xml|*.txt)
-                ;;
-            *)
-                continue
-                ;;
-        esac
-
-        if grep -nE '^(<<<<<<< |=======|>>>>>>> )' "$ROOT_DIR/$file" \
-            >/dev/null 2>&1; then
+        is_text_candidate "$file" || continue
+        if grep -nE '^(<<<<<<< |=======|>>>>>>> )' "$ROOT_DIR/$file" >/dev/null 2>&1; then
             error "Possible merge-conflict marker: $file"
-            count=$((count + 1))
+            found=$((found + 1))
         fi
     done < <(collect_files)
-
-    if ((count == 0)); then
-        success "No obvious merge-conflict markers found"
-    fi
+    (( found > 0 )) || success "No obvious merge-conflict markers found"
 }
 
 check_trailing_whitespace() {
     check_start
-
-    local count=0
-    local file
-    local temp
-    local changed=0
-
+    local count=0 changed=0 file temp dir base mode
     while IFS= read -r file; do
         [[ -f "$ROOT_DIR/$file" ]] || continue
+        is_text_candidate "$file" || continue
+        grep -nE '[[:blank:]]+$' "$ROOT_DIR/$file" >/dev/null 2>&1 || continue
+        count=$((count + 1))
 
-        case "$file" in
-            *.html|*.htm|*.css|*.scss|*.js|*.mjs|*.cjs|*.ts|*.tsx|*.jsx|\
-            *.py|*.sh|*.json|*.yml|*.yaml|*.md|*.sql|*.xml|*.txt|*.toml|\
-            *.ini|*.conf|*.example)
-                ;;
-            *)
-                continue
-                ;;
-        esac
+        if (( ! FIX )); then
+            warn "Trailing whitespace detected: $file"
+            continue
+        fi
 
-        if grep -nE '[[:blank:]]+$' "$ROOT_DIR/$file" >/dev/null 2>&1; then
-            count=$((count + 1))
+        dir="$(dirname -- "$ROOT_DIR/$file")"
+        base="$(basename -- "$ROOT_DIR/$file")"
+        temp="$(mktemp "$dir/.${base}.enforce.XXXXXX")" || {
+            error "Could not create temporary file for: $file"
+            continue
+        }
 
-            if ((FIX)); then
-                temp="$(mktemp "${TMPDIR:-/tmp}/enforce.XXXXXX")"
-                TEMP_FILES+=("$temp")
+        if ! sed 's/[[:blank:]]*$//' "$ROOT_DIR/$file" > "$temp"; then
+            rm -f -- "$temp"
+            error "Could not prepare whitespace fix: $file"
+            continue
+        fi
 
-                if sed 's/[[:blank:]]*$//' "$ROOT_DIR/$file" > "$temp"; then
-                    if cat "$temp" > "$ROOT_DIR/$file"; then
-                        changed=$((changed + 1))
-                    else
-                        error "Could not apply whitespace fix: $file"
-                    fi
-                else
-                    error "Could not prepare whitespace fix: $file"
-                fi
-            else
-                warn "Trailing whitespace detected: $file"
+        if has_command stat; then
+            if mode="$(stat -c '%a' "$ROOT_DIR/$file" 2>/dev/null)"; then
+                chmod "$mode" "$temp" 2>/dev/null || true
+            elif mode="$(stat -f '%Lp' "$ROOT_DIR/$file" 2>/dev/null)"; then
+                chmod "$mode" "$temp" 2>/dev/null || true
             fi
+        fi
+
+        if mv -f -- "$temp" "$ROOT_DIR/$file"; then
+            changed=$((changed + 1))
+        else
+            rm -f -- "$temp"
+            error "Could not replace file after whitespace fix: $file"
         fi
     done < <(collect_files)
 
-    if ((FIX)); then
+    if (( FIX )); then
         success "Whitespace fix pass completed ($changed files changed)"
-    elif ((count == 0)); then
-        success "No trailing whitespace detected in supported text files"
+    elif (( count == 0 )); then
+        success "No trailing whitespace detected"
     fi
 }
 
 check_line_endings() {
     check_start
-
-    local count=0
-    local file
-
+    local found=0 file
     while IFS= read -r file; do
         [[ -f "$ROOT_DIR/$file" ]] || continue
-
-        case "$file" in
-            *.html|*.htm|*.css|*.scss|*.js|*.mjs|*.cjs|*.ts|*.tsx|*.jsx|\
-            *.py|*.sh|*.json|*.yml|*.yaml|*.md|*.sql|*.xml|*.txt|*.toml)
-                ;;
-            *)
-                continue
-                ;;
-        esac
-
+        is_text_candidate "$file" || continue
         if LC_ALL=C grep -Il $'\r' "$ROOT_DIR/$file" >/dev/null 2>&1; then
-            warn "CRLF or carriage-return characters detected: $file"
-            count=$((count + 1))
+            warn "Carriage-return characters detected; review line endings: $file"
+            found=$((found + 1))
         fi
     done < <(collect_files)
-
-    if ((count == 0)); then
-        success "No carriage-return characters detected in supported text files"
-    fi
+    (( found > 0 )) || success "No carriage-return characters detected in supported text files"
 }
 
 check_environment_safety() {
     check_start
+    local gi="$ROOT_DIR/.gitignore"
 
-    if [[ -f "$ROOT_DIR/.gitignore" ]]; then
-        local ignore_file="$ROOT_DIR/.gitignore"
-
-        if ! grep -Eq '(^|/)\.env(\*|$|/)' "$ignore_file" ||
-           grep -Eq '^[[:space:]]*!?\.env\.example([[:space:]]|$)' "$ignore_file"; then
-            warn "Review .gitignore rules: protect .env files while allowing .env.example"
+    if [[ -f "$gi" ]]; then
+        # This is a heuristic review; Git ignore rules have additional semantics.
+        if grep -Eq '^[[:space:]]*\.env([/[:space:]]|$)' "$gi" &&
+           grep -Eq '^[[:space:]]*\.env\.\*([/[:space:]]|$)' "$gi"; then
+            success ".gitignore appears to exclude .env and .env.* files"
         else
-            success ".gitignore contains an environment-file exclusion pattern"
+            warn "Review .gitignore: add .env and .env.* exclusions and explicitly allow .env.example"
+        fi
+        if ! grep -Eq '^[[:space:]]*!\.env\.example([/[:space:]]|$)' "$gi"; then
+            info "If using a broad .env.* ignore rule, add !.env.example after it"
         fi
     else
         warn "Cannot verify environment-file exclusions without .gitignore"
     fi
 
-    if has_command git &&
-       git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if has_command git && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         if git -C "$ROOT_DIR" ls-files --error-unmatch .env >/dev/null 2>&1; then
-            error "Root .env is tracked by Git; remove secrets from version control"
+            error "Root .env is tracked by Git; remove secrets from version control and rotate exposed credentials"
         else
             success "Root .env is not tracked by Git"
         fi
     else
-        skip "Tracked secret-file check requires Git"
+        skip "Tracked .env check requires Git"
     fi
 }
 
 check_html_basics() {
     check_start
-
-    local count=0
-    local file
-
+    local count=0 file
     while IFS= read -r file; do
-        case "$file" in
-            *.html|*.htm)
-                ;;
-            *)
-                continue
-                ;;
-        esac
-
+        case "$file" in *.html|*.htm) ;; *) continue ;; esac
         [[ -f "$ROOT_DIR/$file" ]] || continue
         count=$((count + 1))
 
-        if ! grep -Eiq '<!doctype[[:space:]]+html' "$ROOT_DIR/$file"; then
+        grep -Eiq '<!doctype[[:space:]]+html' "$ROOT_DIR/$file" ||
             warn "HTML document lacks an HTML5 doctype: $file"
-        fi
-
-        if ! grep -Eiq '<html([[:space:]>])' "$ROOT_DIR/$file"; then
+        grep -Eiq '<html([[:space:]>])' "$ROOT_DIR/$file" ||
             warn "HTML document lacks an html root element: $file"
-        fi
-
-        if ! grep -Eiq '<meta[^>]+charset[[:space:]]*=' "$ROOT_DIR/$file"; then
+        grep -Eiq '<meta[^>]+charset[[:space:]]*=' "$ROOT_DIR/$file" ||
             warn "HTML document may be missing a charset declaration: $file"
-        fi
-
-        if ! grep -Eiq '<meta[^>]+name=["'\'']viewport["'\'']' "$ROOT_DIR/$file"; then
+        grep -Eiq "<meta[^>]+name=[\"']viewport[\"']" "$ROOT_DIR/$file" ||
             warn "HTML document may be missing a responsive viewport: $file"
-        fi
     done < <(collect_files)
 
-    if ((count == 0)); then
+    if (( count == 0 )); then
         skip "No HTML files found"
     else
-        success "HTML basic metadata scan completed ($count files)"
+        success "HTML basic metadata scan completed ($count files; review warnings above)"
     fi
 }
 
 check_dependency_lockfiles() {
     check_start
-
-    if [[ -f "$ROOT_DIR/package.json" ]]; then
-        if [[ -f "$ROOT_DIR/package-lock.json" ||
-              -f "$ROOT_DIR/npm-shrinkwrap.json" ||
-              -f "$ROOT_DIR/yarn.lock" ||
-              -f "$ROOT_DIR/pnpm-lock.yaml" ]]; then
-            success "Node.js dependency lockfile found"
-        else
-            warn "package.json exists without a recognized dependency lockfile"
-        fi
+    [[ -f "$ROOT_DIR/package.json" ]] || { skip "No root package.json"; return 0; }
+    if [[ -f "$ROOT_DIR/package-lock.json" ||
+          -f "$ROOT_DIR/npm-shrinkwrap.json" ||
+          -f "$ROOT_DIR/yarn.lock" ||
+          -f "$ROOT_DIR/pnpm-lock.yaml" ]]; then
+        success "Node.js dependency lockfile found"
     else
-        skip "Dependency lockfile check: no root package.json"
+        warn "package.json exists without a recognized dependency lockfile"
     fi
 }
 
 check_npm_scripts() {
     check_start
+    [[ -f "$ROOT_DIR/package.json" ]] || { skip "No root package.json"; return 0; }
+    has_command node || { skip "npm scripts check requires Node.js"; return 0; }
 
-    if [[ ! -f "$ROOT_DIR/package.json" ]]; then
-        skip "npm scripts check: no root package.json"
-        return
-    fi
+    local scripts script
+    scripts="$(node -e 'const p=require("./package.json"); console.log(Object.keys(p.scripts||{}).join("\n"))' 2>/dev/null)" ||
+        { error "Unable to read npm scripts from package.json"; return 0; }
 
-    if ! has_command node; then
-        skip "npm scripts check requires Node.js"
-        return
-    fi
-
-    local scripts
-    scripts="$(node -e '
-        const p = require("./package.json");
-        console.log(Object.keys(p.scripts || {}).join("\n"));
-    ' 2>/dev/null)" || {
-        error "Unable to read scripts from package.json"
-        return
-    }
-
-    if [[ -z "$scripts" ]]; then
-        warn "No npm scripts are defined in package.json"
-        return
-    fi
-
-    local script
+    [[ -n "$scripts" ]] || { warn "No npm scripts are defined"; return 0; }
     for script in lint test build; do
-        if grep -Fxq "$script" <<< "$scripts"; then
-            info "npm script available: $script"
-        else
+        grep -Fxq "$script" <<< "$scripts" && info "npm script available: $script" ||
             info "Optional npm script not configured: $script"
-        fi
     done
-
     success "npm script inventory completed"
 }
 
-# ------------------------------------------------------------------------------
-# Security checks
-# ------------------------------------------------------------------------------
-
 check_secret_patterns() {
     check_start
-
-    local file
-    local findings=0
-
+    local file findings=0
     while IFS= read -r file; do
         [[ -f "$ROOT_DIR/$file" ]] || continue
-
+        is_text_candidate "$file" || continue
         case "$file" in
-            *.html|*.htm|*.css|*.scss|*.js|*.mjs|*.cjs|*.ts|*.tsx|*.jsx|\
-            *.py|*.sh|*.json|*.yml|*.yaml|*.md|*.sql|*.xml|*.toml|*.ini|\
-            *.conf|*.env.example|*.txt)
-                ;;
-            *)
-                continue
-                ;;
+            *.example|*example*|*sample*|*template*|*test*|*fixture*|*lock*|*LICENSE*|*license*)
+                continue ;;
         esac
 
-        case "$file" in
-            .env.example|*.example|*example*|*sample*|*template*|*test*|\
-            *fixture*|*lock*|*LICENSE*|*license*)
-                continue
-                ;;
-        esac
-
-        # These are heuristic matches only. Results require manual review.
         if grep -nEI \
-            '(-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{24,}|AIza[0-9A-Za-z_-]{30,})' \
-            "$ROOT_DIR/$file" >/dev/null 2>&1; then
-            warn "Possible hard-coded credential pattern: $file"
+          '(-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{24,}|AIza[0-9A-Za-z_-]{30,})' \
+          "$ROOT_DIR/$file" >/dev/null 2>&1; then
+            warn "Possible hard-coded credential pattern: $file (manual review required)"
             findings=$((findings + 1))
         fi
     done < <(collect_files)
 
-    if ((findings == 0)); then
+    if (( findings == 0 )); then
         success "No known high-signal credential patterns detected"
     else
-        warn "Secret-pattern scan found $findings file(s) requiring manual review"
+        warn "Secret-pattern scan flagged $findings file(s); results are heuristic"
     fi
 }
 
 check_npm_audit() {
     check_start
+    [[ -f "$ROOT_DIR/package-lock.json" ]] || { skip "npm audit requires package-lock.json"; return 0; }
+    has_command npm || { skip "npm audit requires npm"; return 0; }
 
-    if [[ ! -f "$ROOT_DIR/package-lock.json" ]]; then
-        skip "npm audit requires package-lock.json"
-        return
-    fi
-
-    if ! has_command npm; then
-        skip "npm audit requires npm"
-        return
-    fi
-
-    info "Running npm audit --omit=dev (network access may be required)"
-
+    info "Running npm audit --omit=dev --audit-level=high (network access may be required)"
     if npm --prefix "$ROOT_DIR" audit --omit=dev --audit-level=high; then
         success "npm production dependency audit passed"
     else
-        warn "npm audit reported issues or could not reach the registry; inspect output above"
+        warn "npm audit reported vulnerabilities or could not reach the registry; inspect its output"
     fi
 }
-
-# ------------------------------------------------------------------------------
-# Optional package checks
-# ------------------------------------------------------------------------------
 
 check_python_dependencies() {
     check_start
+    [[ -f "$ROOT_DIR/requirements.txt" ]] || { skip "No root requirements.txt"; return 0; }
+    has_command python3 || { skip "Python dependency check requires python3"; return 0; }
 
-    if [[ ! -f "$ROOT_DIR/requirements.txt" ]]; then
-        skip "Python dependency check: no requirements.txt"
-        return
-    fi
-
-    if has_command python3; then
-        if python3 -m pip check >/dev/null 2>&1; then
-            success "Installed Python package dependency consistency check passed"
-        else
-            warn "Python package dependency check failed or pip environment is unavailable"
-        fi
+    if python3 -m pip check; then
+        success "Installed Python package dependency consistency check passed"
     else
-        skip "Python dependency check requires python3"
+        warn "Python package dependency check failed or pip environment is unavailable"
     fi
 }
 
-# ------------------------------------------------------------------------------
-# Run all standard checks
-# ------------------------------------------------------------------------------
+check_file_inventory() {
+    check_start
+    local count=0 file
+    while IFS= read -r file; do
+        [[ -n "$file" ]] || continue
+        count=$((count + 1))
+    done < <(collect_files)
+    FILES_SCANNED=$count
+    success "Repository inventory collected ($FILES_SCANNED files)"
+}
 
 check_repository_root
 check_required_structure
-check_required_tooling
+check_tooling
+check_file_inventory
 check_package_json
 check_python_syntax
 check_json_files
@@ -848,38 +565,33 @@ check_dependency_lockfiles
 check_npm_scripts
 check_python_dependencies
 
-if ((SECURITY)); then
+if (( SECURITY )); then
     log "Running additional security checks"
     check_secret_patterns
     check_npm_audit
 fi
-
-# ------------------------------------------------------------------------------
-# Summary and exit status
-# ------------------------------------------------------------------------------
 
 printf '\n'
 printf '%s\n' "============================================================"
 printf '%s\n' " MedOrbits Enforcement Summary"
 printf '%s\n' "============================================================"
 printf 'Repository: %s\n' "$ROOT_DIR"
+printf 'Files scanned: %s\n' "$FILES_SCANNED"
 printf 'Checks run: %s\n' "$CHECKS"
-printf 'Errors:     %s\n' "$ERRORS"
-printf 'Warnings:   %s\n' "$WARNINGS"
-printf 'Skipped:    %s\n' "$SKIPS"
-printf 'Strict:     %s\n' "$STRICT"
-printf 'Security:   %s\n' "$SECURITY"
+printf 'Errors: %s\n' "$ERRORS"
+printf 'Warnings: %s\n' "$WARNINGS"
+printf 'Skipped: %s\n' "$SKIPS"
+printf 'Strict mode: %s\n' "$STRICT"
+printf 'Security mode: %s\n' "$SECURITY"
 printf '%s\n' "============================================================"
 
-if ((ERRORS > 0)); then
-    printf '[RESULT] FAILED: resolve the reported errors.\n' >&2
+if (( ERRORS > 0 )); then
+    printf '[RESULT] FAILED: resolve reported errors.\n' >&2
     exit 1
 fi
-
-if ((STRICT && WARNINGS > 0)); then
+if (( STRICT && WARNINGS > 0 )); then
     printf '[RESULT] FAILED: strict mode treats warnings as failures.\n' >&2
     exit 1
 fi
 
-printf '[RESULT] PASSED: no blocking errors detected.\n'
-exit 0
+printf '[RESULT] PASSED: no blocking errors detected by the enabled checks.\n'
