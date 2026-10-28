@@ -1,0 +1,119 @@
+
+name: Publish npm Package
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run npm publish in dry-run mode"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate and Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate package files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          test -f package.json || {
+            echo "::error::package.json is missing."
+            exit 1
+          }
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (!pkg.name || typeof pkg.name !== "string") {
+            throw new Error("package.json must define a package name.");
+          }
+
+          if (!pkg.version || typeof pkg.version !== "string") {
+            throw new Error("package.json must define a version.");
+          }
+
+          if (pkg.private === true) {
+            throw new Error("Cannot publish a package marked private.");
+          }
+
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
+          NODE
+
+      - name: Validate lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Run package tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node -e '
+            const pkg = require("./package.json");
+            if (!pkg.scripts || !pkg.scripts.test) {
+              console.log("No test script defined; skipping package tests.");
+              process.exit(0);
+            }
+          '
+
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test -- --runInBand
+          fi
+
+      - name: Check package contents
+        run: npm pack --dry-run
+
+      - name: Publish dry run
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: npm publish --dry-run --ignore-scripts
+
+      - name: Publish released package
+        if: github.event_name == 'release' && github.event.action == 'published'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --ignore-scripts
+
+      - name: Publish manually
+        if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --ignore-scripts

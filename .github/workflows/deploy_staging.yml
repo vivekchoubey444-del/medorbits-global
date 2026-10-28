@@ -1,0 +1,267 @@
+
+# ==============================================================================
+# MedOrbits -- Deploy Staging
+# File: .github/workflows/deploy_staging.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate the application and trigger a Render staging deployment.
+#
+# Security:
+#   - Read-only GitHub repository permissions.
+#   - No automatic commits or pushes.
+#   - Manual deployments require explicit confirmation.
+#   - Render deploy hook is stored as an environment secret.
+#   - Deployment runs only from the staging branch or a confirmed manual run.
+# ==============================================================================
+
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deployment:
+        description: "Type deploy to confirm staging deployment"
+        required: true
+        type: string
+
+  push:
+    branches:
+      - staging
+    paths:
+      - "server.js"
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "render.yaml"
+      - "api/**"
+      - "config/**"
+      - "controllers/**"
+      - "middleware/**"
+      - "models/**"
+      - "routes/**"
+      - "services/**"
+      - "public/**"
+      - ".github/workflows/deploy_staging.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: medorbits-staging
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate staging build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify deployment source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$REF_NAME" != "staging" ]]; then
+            echo "::error::Staging deployments must run from the staging branch."
+            exit 1
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" &&
+                "$CONFIRMATION" != "deploy" ]]; then
+            echo "::error::Enter exactly 'deploy' to confirm deployment."
+            exit 1
+          fi
+
+          echo "Deployment source verified."
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          check-latest: false
+          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
+          cache-dependency-path: |
+            package-lock.json
+            npm-shrinkwrap.json
+
+      - name: Validate package.json
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          test -s package.json || {
+            echo "::error::Root package.json is missing or empty."
+            exit 1
+          }
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
+          NODE
+
+      - name: Validate lockfile and manifest consistency
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f npm-shrinkwrap.json ]]; then
+            LOCKFILE="npm-shrinkwrap.json"
+          elif [[ -f package-lock.json ]]; then
+            LOCKFILE="package-lock.json"
+          else
+            echo "::error::package-lock.json or npm-shrinkwrap.json is required."
+            exit 1
+          fi
+
+          export LOCKFILE
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const file = process.env.LOCKFILE;
+          const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+
+          if (!lock || typeof lock !== "object" || Array.isArray(lock)) {
+            throw new Error("Lockfile root must be a JSON object.");
+          }
+
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("Lockfile version is missing or invalid.");
+          }
+
+          if (lock.name && pkg.name && lock.name !== pkg.name) {
+            throw new Error("Package name does not match the lockfile.");
+          }
+
+          if (lock.version && pkg.version && lock.version !== pkg.version) {
+            throw new Error("Package version does not match the lockfile.");
+          }
+
+          console.log(`Validated ${file}; lockfileVersion=${lock.lockfileVersion}.`);
+          NODE
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check dependency tree
+        run: npm ls --depth=0
+
+      - name: Run configured tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+            npm test
+          else
+            echo "::error::No npm test script is configured."
+            echo "Add a real test script before deploying staging."
+            exit 1
+          fi
+
+      - name: Validate server JavaScript syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f server.js ]]; then
+            node --check server.js
+          else
+            echo "::error::server.js is missing."
+            exit 1
+          fi
+
+  deploy:
+    name: Trigger Render staging deployment
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    environment:
+      name: staging
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validate Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
+            echo "::error::Configure RENDER_STAGING_DEPLOY_HOOK in the staging environment secrets."
+            exit 1
+          fi
+
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://api\.render\.com/deploy/ ]]; then
+            echo "::error::The Render deploy hook must use the expected HTTPS Render endpoint."
+            exit 1
+          fi
+
+      - name: Trigger Render staging deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          if ! http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --connect-timeout 10 \
+              --max-time 30 \
+              "$RENDER_DEPLOY_HOOK"
+          )"; then
+            echo "::error::Unable to contact Render staging."
+            exit 1
+          fi
+
+          if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::error::Render returned HTTP $http_code."
+            echo "Response body is withheld to avoid exposing sensitive metadata."
+            exit 1
+          fi
+
+          {
+            echo "## Render Staging Deployment"
+            echo
+            echo "- Request status: accepted"
+            echo "- HTTP status: $http_code"
+            echo "- Environment: staging"
+            echo
+            echo "Verify build completion and application health in Render."
+          } >> "$GITHUB_STEP_SUMMARY"

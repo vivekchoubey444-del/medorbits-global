@@ -1,0 +1,271 @@
+
+# ==============================================================================
+# MedOrbits -- Production Deployment
+# File: .github/workflows/deploy.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Validate the production application and trigger a Render deployment.
+#
+# Security:
+#   - Read-only GitHub repository permissions.
+#   - Production environment protection.
+#   - Manual deployment requires explicit confirmation.
+#   - Render deployment hook stored in GitHub environment secrets.
+#   - No automatic commits, merges, or deployments from pull requests.
+#   - Detect deleted or emptied existing files before deployment.
+#
+# IMPORTANT:
+#   A successful deploy-hook request does not prove application health.
+# ==============================================================================
+
+name: Deploy MedOrbits
+
+on:
+  # Automatic production deployments are handled by deploy_production.yml.
+  workflow_dispatch:
+    inputs:
+      confirm_deployment:
+        description: "Type deploy to confirm production deployment"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: medorbits-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  pre-deploy:
+    name: Pre-deployment checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify deployment source and confirmation
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          CONFIRMATION: ${{ inputs.confirm_deployment }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$REF_NAME" != "main" ]]; then
+            echo "::error::Production deployment is allowed only from main."
+            exit 1
+          fi
+
+          if [[ "$CONFIRMATION" != "deploy" ]]; then
+            echo "::error::Manual deployment cancelled. Enter exactly 'deploy'."
+            exit 1
+          fi
+
+          echo "Production deployment source validated."
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          check-latest: false
+          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
+          cache-dependency-path: |
+            package-lock.json
+            npm-shrinkwrap.json
+
+      - name: Validate application configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -s package.json ]]; then
+            echo "::error::Root package.json is missing or empty."
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
+          NODE
+
+          if [[ -f npm-shrinkwrap.json ]]; then
+            export LOCKFILE="npm-shrinkwrap.json"
+          elif [[ -f package-lock.json ]]; then
+            export LOCKFILE="package-lock.json"
+          else
+            echo "::error::A root npm lockfile is required."
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
+
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("Invalid npm lockfile version.");
+          }
+
+          if (lock.name && pkg.name && lock.name !== pkg.name) {
+            throw new Error("package.json and lockfile names differ.");
+          }
+
+          if (lock.version && pkg.version && lock.version !== pkg.version) {
+            throw new Error("package.json and lockfile versions differ.");
+          }
+
+          console.log(`Validated ${process.env.LOCKFILE}.`);
+          NODE
+
+          if [[ ! -s server.js ]]; then
+            echo "::error::Expected server.js is missing or empty."
+            exit 1
+          fi
+
+          node --check server.js
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check dependency tree
+        run: npm ls --depth=0
+
+      - name: Run production tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.test ? 0 : 1);
+          '; then
+            npm test
+          else
+            echo "::error::No npm test script is configured."
+            exit 1
+          fi
+
+      - name: Validate configured build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.build ? 0 : 1);
+          '; then
+            npm run build
+          else
+            echo "::notice::No build script is configured; skipping build."
+          fi
+
+  deploy:
+    name: Trigger Render production deployment
+    needs: pre-deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    environment:
+      name: production
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validate Render deployment hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
+            echo "::error::Missing RENDER_DEPLOY_HOOK in the production environment secrets."
+            exit 1
+          fi
+
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://api\.render\.com/deploy/ ]]; then
+            echo "::error::The deployment hook must use the expected Render HTTPS endpoint."
+            exit 1
+          fi
+
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          if ! http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --connect-timeout 10 \
+              --max-time 30 \
+              "$RENDER_DEPLOY_HOOK"
+          )"; then
+            echo "::error::Unable to contact the Render deployment endpoint."
+            exit 1
+          fi
+
+          if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::error::Render returned HTTP $http_code."
+            echo "Response body withheld to avoid exposing deployment metadata."
+            exit 1
+          fi
+
+          {
+            echo "## Render Production Deployment"
+            echo
+            echo "- Request status: accepted"
+            echo "- HTTP status: $http_code"
+            echo "- Provider: Render"
+            echo "- Environment: production"
+            echo
+            echo "The request was accepted; build completion and application health must still be verified."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write deployment summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Deployment Workflow Result"
+            echo
+            echo "- Job result: $JOB_STATUS"
+            echo "- Trigger: $EVENT_NAME"
+            echo "- Commit: $COMMIT_SHA"
+            echo "- Automatic merge: disabled"
+            echo "- Git repository writes: disabled"
+            echo "- Application health verification: required"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,137 @@
+
+# =============================================================================
+# MedOrbits -- Package Lockfile Generator
+# File: .github/workflows/generate-lockfile.yml
+# Purpose: Generate and maintain package-lock.json using npm.
+# =============================================================================
+
+name: Generate Package Lockfile
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - ".npmrc"
+      - ".github/workflows/generate-lockfile.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - ".npmrc"
+      - ".github/workflows/generate-lockfile.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-lockfile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-lockfile:
+    name: Generate and Validate Lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate package.json JSON syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+              throw new Error("package.json must contain a JSON object.");
+            }
+            console.log("package.json is valid JSON.");
+          '
+
+      - name: Check package manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "::error::package.json was not found in the repository root."
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+            if (!pkg.name) {
+              console.log("Warning: package.json has no package name.");
+            }
+
+            console.log(`Package: ${pkg.name || "(unnamed)"}`);
+            console.log(`Version: ${pkg.version || "(unspecified)"}`);
+          '
+
+      - name: Generate package-lock.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Validate lockfile consistency
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check generated changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f package-lock.json ]] && ! git diff --quiet -- package-lock.json; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [[ -f package-lock.json ]] && ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit updated lockfile
+        if: github.event_name != 'pull_request' && steps.changes.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -- package-lock.json
+
+          if git diff --cached --quiet -- package-lock.json; then
+            echo "No lockfile changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(deps): update package-lock.json"
+          git push
+
+      - name: Report lockfile status
+        if: always()
+        run: |
+          if [[ -f package-lock.json ]]; then
+            echo "package-lock.json exists."
+          else
+            echo "::error::package-lock.json was not generated."
+            exit 1
+          fi

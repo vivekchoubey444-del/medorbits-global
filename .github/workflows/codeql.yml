@@ -1,0 +1,80 @@
+
+# ==============================================================================
+# MedOrbits -- CodeQL Security Analysis
+# File: .github/workflows/codeql.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Detect security vulnerabilities in JavaScript, TypeScript, and Python code.
+#
+# Policy:
+#   - Least-privilege GitHub permissions.
+#   - Security analysis on pushes, pull requests, and a weekly schedule.
+#   - No automatic merging, deployment, or source modification.
+#   - Security findings are published to GitHub code scanning.
+# ==============================================================================
+
+name: CodeQL Security Analysis
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  schedule:
+    # Weekly on Monday at 02:30 UTC.
+    - cron: "30 2 * * 1"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }} for vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+
+          - language: python
+            build-mode: none
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          upload: true

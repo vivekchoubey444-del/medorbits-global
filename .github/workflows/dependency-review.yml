@@ -1,0 +1,174 @@
+
+# ==============================================================================
+# MedOrbits -- Dependency Review
+# File: .github/workflows/dependency-review.yml
+# Release target: 2.1.0
+#
+# Purpose:
+#   Review dependency changes for known vulnerabilities and prohibited licenses.
+#
+# Security policy:
+#   - Read-only repository contents.
+#   - No checkout credentials persisted.
+#   - No automatic merging, committing, or deployment.
+#   - High-severity runtime dependency findings fail the check.
+#   - License policy is enforced where dependency metadata is available.
+#   - Manual runs explain that no pull-request comparison was performed.
+#
+# IMPORTANT:
+#   Require this check in branch protection or a ruleset for main.
+# ==============================================================================
+
+name: Dependency Review
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "npm-shrinkwrap.json"
+      - "requirements.txt"
+      - "requirements-*.txt"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "uv.lock"
+      - "setup.py"
+      - "setup.cfg"
+      - "go.mod"
+      - "go.sum"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "composer.json"
+      - "composer.lock"
+      - "Dockerfile"
+      - "**/Dockerfile"
+      - ".github/dependabot.yml"
+      - ".github/dependabot.yaml"
+      - ".github/workflows/dependency-review.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Record review context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo "## MedOrbits Dependency Review"
+            echo
+            echo "- Event: \`${EVENT_NAME}\`"
+            echo "- Pull request: \`${PR_NUMBER:-not applicable}\`"
+            echo "- Author: \`${PR_AUTHOR:-not applicable}\`"
+            echo "- Base branch: \`${BASE_REF:-not applicable}\`"
+            echo "- Proposed revision: \`${HEAD_SHA:-not applicable}\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate pull request context
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$BASE_REF" != "main" ]]; then
+            echo "::error::Dependency review only supports pull requests targeting main."
+            exit 1
+          fi
+
+          if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+            echo "::error::Pull request base or head SHA is missing."
+            exit 1
+          fi
+
+          echo "Pull request context validated."
+
+      - name: Review dependency vulnerabilities and licenses
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime
+          comment-summary-in-pr: always
+          warn-only: false
+          deny-licenses: >-
+            GPL-3.0-only,
+            GPL-3.0-or-later,
+            AGPL-3.0-only,
+            AGPL-3.0-or-later
+          show-patched-versions: true
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 60
+
+      - name: Explain manual run behavior
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo "## Manual execution"
+            echo
+            echo "No pull-request dependency comparison was performed."
+            echo "The dependency review action requires a pull_request event."
+            echo "Open or update a pull request targeting main to review dependency changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record final review status
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo
+            echo "### Workflow result"
+            echo
+            echo "- Status: \`${JOB_STATUS}\`"
+            echo "- Trigger: \`${EVENT_NAME}\`"
+            echo
+            echo "A passing dependency review does not replace application tests, code review, or a complete license audit."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,197 @@
+
+# ==============================================================================
+# MedOrbits -- Dependabot Review
+# File: .github/workflows/dependabot-review.yml
+# Release target: 2.0.0
+#
+# Purpose:
+#   Inspect Dependabot pull requests and summarize dependency-related changes.
+#
+# Policy:
+#   - Read-only repository and pull request access.
+#   - Verify Dependabot authorship using GitHub API metadata.
+#   - Accept only open pull requests targeting main or develop.
+#   - No automatic approvals, merging, comments, or repository modifications.
+#   - Do not execute code from pull request branches.
+# ==============================================================================
+
+name: Dependabot Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "Open Dependabot pull request number to review"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependabot-review-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review Dependabot Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Validate pull request number
+        id: context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
+          EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
+              echo "::error::Pull request is not authored by Dependabot."
+              exit 1
+            fi
+
+            number="$EVENT_PR_NUMBER"
+          else
+            number="$INPUT_PR_NUMBER"
+
+            if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::Enter a valid positive pull request number."
+              exit 1
+            fi
+          fi
+
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect pull request metadata
+        id: metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          response="$RUNNER_TEMP/pull-request.json"
+
+          gh api \
+            "repos/$REPOSITORY/pulls/$PR_NUMBER" \
+            > "$response"
+
+          author="$(jq -r '.user.login // ""' "$response")"
+          state="$(jq -r '.state // ""' "$response")"
+          base="$(jq -r '.base.ref // ""' "$response")"
+          merged="$(jq -r '.merged // false' "$response")"
+          draft="$(jq -r '.draft // false' "$response")"
+
+          echo "Pull request: #$PR_NUMBER"
+          echo "Author: $author"
+          echo "State: $state"
+          echo "Base branch: $base"
+          echo "Draft: $draft"
+
+          if [[ "$author" != "dependabot[bot]" ]]; then
+            echo "::error::The pull request is not authored by Dependabot."
+            exit 1
+          fi
+
+          if [[ "$state" != "open" || "$merged" == "true" ]]; then
+            echo "::error::The pull request is not open or has already been merged."
+            exit 1
+          fi
+
+          if [[ "$base" != "main" && "$base" != "develop" ]]; then
+            echo "::error::Unexpected target branch: $base"
+            exit 1
+          fi
+
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "draft=$draft" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          output="$RUNNER_TEMP/changed-files.tsv"
+
+          gh api --paginate \
+            "repos/$REPOSITORY/pulls/$PR_NUMBER/files" \
+            --jq '.[] | [.filename, .status, (.additions|tostring), (.deletions|tostring)] | @tsv' \
+            > "$output"
+
+          if [[ ! -s "$output" ]]; then
+            echo "::warning::No changed files were returned."
+            exit 0
+          fi
+
+          echo "Changed files:"
+          cat "$output"
+
+          while IFS=$'\t' read -r filename status additions deletions; do
+            case "$filename" in
+              package.json|package-lock.json|npm-shrinkwrap.json|\
+              yarn.lock|pnpm-lock.yaml|requirements.txt|\
+              poetry.lock|Pipfile.lock|Cargo.toml|Cargo.lock|\
+              go.mod|go.sum|Gemfile|Gemfile.lock|composer.json|\
+              composer.lock)
+                echo "::notice::Dependency file: $filename ($status; +$additions -$deletions)"
+                ;;
+              *)
+                echo "::notice::Other changed file: $filename ($status; +$additions -$deletions)"
+                ;;
+            esac
+          done < "$output"
+
+      - name: Publish review summary
+        if: always()
+        env:
+          PR_NUMBER: ${{ steps.context.outputs.number }}
+          JOB_RESULT: ${{ job.status }}
+          BASE_BRANCH: ${{ steps.metadata.outputs.base }}
+          DRAFT_STATUS: ${{ steps.metadata.outputs.draft }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo "## Dependabot Review"
+            echo
+            echo "- Pull request: #${PR_NUMBER:-unavailable}"
+            echo "- Target branch: ${BASE_BRANCH:-not verified}"
+            echo "- Draft: ${DRAFT_STATUS:-unknown}"
+            echo "- Result: $JOB_RESULT"
+            echo "- Automated approval: No"
+            echo "- Automatic merge: No"
+            echo "- Repository modifications: No"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,202 @@
+
+name: Security Checks
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  schedule:
+    - cron: "0 4 * * 1"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-audit:
+    name: npm Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Detect npm project
+        id: detect
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f package.json ]]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.detect.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -f npm-shrinkwrap.json || -f package-lock.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            echo "::warning::No npm lockfile found; using npm install."
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Audit production dependencies
+        if: steps.detect.outputs.found == 'true'
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit all dependencies
+        if: steps.detect.outputs.found == 'true'
+        run: npm audit --audit-level=high
+
+      - name: Report missing npm project
+        if: steps.detect.outputs.found == 'false'
+        run: echo "No root package.json found; npm auditing was skipped."
+
+  repository-hygiene:
+    name: Repository Security Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check for accidentally committed environment files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import subprocess
+          import sys
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              capture_output=True,
+          )
+
+          files = [
+              item.decode("utf-8", errors="replace")
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          suspicious = []
+
+          for path in files:
+              name = path.rsplit("/", 1)[-1]
+
+              if name == ".env":
+                  suspicious.append(path)
+              elif name.startswith(".env.") and name not in {
+                  ".env.example",
+                  ".env.sample",
+                  ".env.template",
+              }:
+                  suspicious.append(path)
+
+          if suspicious:
+              print(
+                  "::error::Potentially sensitive environment files are tracked:"
+              )
+              for path in suspicious:
+                  print(f" - {path}")
+              print(
+                  "Remove real secrets from version control and rotate "
+                  "any credentials that may have been exposed."
+              )
+              sys.exit(1)
+
+          print("No tracked .env secret files detected.")
+          PY
+
+      - name: Check for common private-key files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import subprocess
+          import sys
+
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              capture_output=True,
+          )
+
+          paths = [
+              item.decode("utf-8", errors="replace")
+              for item in result.stdout.split(b"\0")
+              if item
+          ]
+
+          suspicious = []
+
+          for path in paths:
+              lower = path.lower()
+              base = lower.rsplit("/", 1)[-1]
+
+              if base in {
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  "server.key",
+                  "private.key",
+              }:
+                  suspicious.append(path)
+
+          if suspicious:
+              print(
+                  "::error::Potential private-key files are tracked:"
+              )
+              for path in suspicious:
+                  print(f" - {path}")
+              sys.exit(1)
+
+          print("No common private-key filenames detected.")
+          PY
+
+      - name: Security summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Repository Security Hygiene"
+            echo
+            echo "- Status: $STATUS"
+            echo "- Environment-file check: enabled"
+            echo "- Common private-key filename check: enabled"
+            echo
+            echo "These checks are basic safeguards, not a replacement for secret scanning."
+          } >> "$GITHUB_STEP_SUMMARY"
