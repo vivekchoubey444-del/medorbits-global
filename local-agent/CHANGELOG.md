@@ -1,0 +1,1 @@
+# Changelog\n\n## 1.0.0\n- Initial safe generator and validator.\n
