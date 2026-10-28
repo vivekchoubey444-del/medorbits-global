@@ -25,7 +25,7 @@ Generate reports
 
 From the repository root:
 
-python -m py_compile tools/repository_connector.py
+python3 -c "import ast, pathlib; ast.parse(pathlib.Path('tools/repository_connector.py').read_text(encoding='utf-8'))"
 python tools/repository_connector.py —dry-run
 python tools/repository_connector.py —show-conflicts
 

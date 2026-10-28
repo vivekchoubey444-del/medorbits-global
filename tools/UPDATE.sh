@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # MedOrbits Repository Upgrade Utility
-# File: tools/UPGRADE.sh
+# File: tools/UPDATE.sh
 # Version: 1.1.0
 #
 # Purpose:

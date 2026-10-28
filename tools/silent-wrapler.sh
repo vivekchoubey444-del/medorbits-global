@@ -2,7 +2,7 @@
 # ==============================================================================
 # MedOrbits -- Silent Command Wrapper
 #
-# File: tools/silent-wrapper.sh
+# File: tools/silent-wrapler.sh (legacy filename; see silent-wrapper.sh)
 # Version: 2.0.0
 #
 # Usage:
@@ -66,7 +66,7 @@ Examples:
     --log-file storage/logs/build.log -- npm run build
 
   bash tools/silent-wrapper.sh --log-file reports/check.log -- \
-    python3 tools/check_repository.py --root .
+    python3 tools/medorbits_repo_toolkit.py --root . validate
 
 Exit status:
   Command exit status is preserved when wrapper operations succeed.
