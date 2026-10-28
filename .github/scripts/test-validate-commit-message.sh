@@ -3,18 +3,8 @@
 # ==============================================================================
 # MedOrbits -- Commit Message Validator Test Suite
 # File: .github/scripts/test-validate-commit-message.sh
-# Version: 2.1.0
+# Version: 2.1.1
 # Bash: 4+
-#
-# Usage:
-#   bash .github/scripts/test-validate-commit-message.sh
-#   bash .github/scripts/test-validate-commit-message.sh --verbose
-#   bash .github/scripts/test-validate-commit-message.sh --strict
-#   bash .github/scripts/test-validate-commit-message.sh --help
-#
-# Environment:
-#   VALIDATOR_PATH  Optional validator script path.
-#   TEST_TIMEOUT    Per-case timeout in seconds; default 10.
 #
 # Contract:
 #   Validator argument 1 is a commit-message file.
@@ -38,7 +28,7 @@ PASSED=0
 FAILED=0
 SKIPPED=0
 TEMP_DIR=""
-VALIDATOR_PATH=""
+VALIDATOR_PATH="${VALIDATOR_PATH:-$SCRIPT_DIR/validate-commit-message.sh}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-10}"
 
 log()  { printf '[TEST] %s\n' "$*"; }
@@ -57,12 +47,12 @@ MedOrbits Commit Message Validator -- Test Suite
 
 Options:
   --verbose, -v   Display validator output for each case.
-  --strict        Treat skipped tests as failures.
+  --strict        Treat skipped checks as failures.
   --help, -h      Show this help.
 
 Environment:
-  VALIDATOR_PATH  Validator script path.
-  TEST_TIMEOUT    Per-case timeout in seconds (default: 10).
+  VALIDATOR_PATH  Validator script path (default: sibling validator).
+  TEST_TIMEOUT    Positive timeout in seconds (default: 10).
 
 Examples:
   bash .github/scripts/test-validate-commit-message.sh
@@ -99,19 +89,17 @@ parse_args() {
 }
 
 resolve_validator() {
-    local candidate="${VALIDATOR_PATH:-$SCRIPT_DIR/validate-commit-message.sh}"
+    local candidate="$VALIDATOR_PATH"
 
-    if [[ "$candidate" == /* ]]; then
-        VALIDATOR_PATH="$candidate"
-    else
-        VALIDATOR_PATH="$(cd -- "$PWD" && printf '%s/%s' "$PWD" "$candidate")"
+    if [[ "$candidate" != /* ]]; then
+        candidate="$REPO_ROOT/$candidate"
     fi
 
-    [[ -f "$VALIDATOR_PATH" ]] ||
-        die "Validator not found: $VALIDATOR_PATH"
+    if [[ ! -f "$candidate" || ! -r "$candidate" ]]; then
+        die "Validator not found or unreadable: $candidate"
+    fi
 
-    [[ -r "$VALIDATOR_PATH" ]] ||
-        die "Validator is not readable."
+    VALIDATOR_PATH="$(cd -- "$(dirname -- "$candidate")" && pwd -P)/$(basename -- "$candidate")"
 
     if ! bash -n "$VALIDATOR_PATH"; then
         die "Validator contains Bash syntax errors."
@@ -124,10 +112,7 @@ validate_test_environment() {
     [[ "$TEST_TIMEOUT" =~ ^[1-9][0-9]*$ ]] ||
         die "TEST_TIMEOUT must be a positive integer."
 
-    if command -v timeout >/dev/null 2>&1; then
-        :
-    else
-        warn_timeout_unavailable=1
+    if ! command -v timeout >/dev/null 2>&1; then
         if (( STRICT )); then
             die "The timeout command is required in strict mode."
         fi
@@ -179,14 +164,13 @@ run_case() {
         printf '\n--- %s ---\n' "$label"
         printf 'Expected: %s\n' "$expected"
         printf 'Actual exit code: %s\n' "$actual"
-        sed -n '1,20p' "$output_file"
+        sed -n '1,20p' "$output_file" || true
         printf '%s\n' '--------------------'
     fi
 
-    # Exit 124 or 137 normally indicates timeout. It must not count as a
-    # successful rejection of an invalid message.
+    # timeout commonly returns 124; 137 may indicate forced termination.
     if (( actual == 124 || actual == 137 )); then
-        fail "$label (validator timed out)"
+        fail "$label (validator timed out or was forcibly terminated)"
         return
     fi
 
@@ -205,53 +189,22 @@ run_case() {
 run_valid_cases() {
     log "Valid message cases"
 
-    run_case "Feature with scope" valid \
-        "feat(auth): add session refresh support"
-
-    run_case "Fix with scope" valid \
-        "fix(api): handle missing request body"
-
-    run_case "Documentation" valid \
-        "docs(readme): explain local setup"
-
-    run_case "Style" valid \
-        "style(css): normalize heading spacing"
-
-    run_case "Refactor" valid \
-        "refactor(routes): simplify route registration"
-
-    run_case "Performance" valid \
-        "perf(search): reduce repeated database queries"
-
-    run_case "Test" valid \
-        "test(auth): cover expired access tokens"
-
-    run_case "Build" valid \
-        "build(deps): update build tooling"
-
-    run_case "CI" valid \
-        "ci(github): validate pull request workflow"
-
-    run_case "Chore" valid \
-        "chore(config): organize application settings"
-
-    run_case "Revert without scope" valid \
-        "revert: restore previous route behavior"
-
-    run_case "Security" valid \
-        "security(api): reject malformed authorization headers"
-
-    run_case "Issue reference in subject" valid \
-        "fix(login): handle timeout for issue #123"
-
-    run_case "Hyphenated scope" valid \
-        "feat(study-abroad): add course comparison"
-
-    run_case "Subject containing punctuation" valid \
-        "docs(api): document /health endpoint"
-
-    run_case "Uppercase subject text" valid \
-        "fix(auth): Handle expired sessions"
+    run_case "Feature with scope" valid "feat(auth): add session refresh support"
+    run_case "Fix with scope" valid "fix(api): handle missing request body"
+    run_case "Documentation" valid "docs(readme): explain local setup"
+    run_case "Style" valid "style(css): normalize heading spacing"
+    run_case "Refactor" valid "refactor(routes): simplify route registration"
+    run_case "Performance" valid "perf(search): reduce repeated database queries"
+    run_case "Test" valid "test(auth): cover expired access tokens"
+    run_case "Build" valid "build(deps): update build tooling"
+    run_case "CI" valid "ci(github): validate pull request workflow"
+    run_case "Chore" valid "chore(config): organize application settings"
+    run_case "Revert without scope" valid "revert: restore previous route behavior"
+    run_case "Security" valid "security(api): reject malformed authorization headers"
+    run_case "Issue reference in subject" valid "fix(login): handle timeout for issue #123"
+    run_case "Hyphenated scope" valid "feat(study-abroad): add course comparison"
+    run_case "Subject containing punctuation" valid "docs(api): document /health endpoint"
+    run_case "Uppercase subject text" valid "fix(auth): Handle expired sessions"
 }
 
 run_invalid_cases() {

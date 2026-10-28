@@ -2,16 +2,15 @@
 # ==============================================================================
 # MedOrbits -- Dependabot Configuration
 # File: .github/dependabot.yml
-# Release target: 2.0.0
+# Release: 2.1.1
 #
 # Purpose:
 #   Schedule controlled dependency updates for review.
 #
 # Policy:
-#   - No automatic merging configured here.
-#   - No automatic deployment configured here.
-#   - Dependency updates must pass the repository's required checks.
-#   - Review dependency changes before merging.
+#   - No automatic merging or deployment.
+#   - Updates must pass required repository checks.
+#   - Security updates and dependency changes require human review.
 # ==============================================================================
 
 version: 2
@@ -44,7 +43,7 @@ updates:
 
   # ---------------------------------------------------------------------------
   # npm / Node.js
-  # Keep this entry only if the repository uses npm.
+  # Keep this entry only when package.json and the npm lockfile are maintained.
   # ---------------------------------------------------------------------------
   - package-ecosystem: npm
     directory: /
@@ -79,7 +78,7 @@ updates:
 
   # ---------------------------------------------------------------------------
   # Python / pip
-  # Uncomment only if the repository manages Python dependencies.
+  # Uncomment when requirements.txt or another supported pip manifest is used.
   # ---------------------------------------------------------------------------
   # - package-ecosystem: pip
   #   directory: /
@@ -98,8 +97,7 @@ updates:
 
   # ---------------------------------------------------------------------------
   # Docker
-  # Uncomment only if the repository has Docker dependencies to update.
-  # Add additional entries with the appropriate directory when required.
+  # Uncomment when a Dockerfile exists at the repository root.
   # ---------------------------------------------------------------------------
   # - package-ecosystem: docker
   #   directory: /
