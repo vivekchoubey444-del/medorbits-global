@@ -1,132 +1,37 @@
+
 # MedOrbits Mobile Application
 
 **Path:** `/mobile/README.md`  
-**Purpose:** Main documentation entry point for the MedOrbits mobile application, its architecture, development workflow, security requirements, API integration, testing, and release process.
+**Status:** Starter scaffold. Verify all backend endpoints and production settings before release.
 
-—
+MedOrbits Mobile is a proposed React Native + Expo + TypeScript client for education and medical-admission guidance, student applications, documents, notifications, career resources, and support.
 
-## 1. Overview
+## Requirements
+- Node.js version supported by the selected Expo SDK.
+- npm (or the package manager already adopted by the repository).
+- Android Studio and/or Xcode for native builds.
+- A verified MedOrbits API base URL for backend-dependent features.
 
-The `/mobile` directory contains the source code, configuration, documentation, tests, and supporting resources for the MedOrbits mobile application.
+## Setup
+1. Review `package.json` and `.env.example`.
+2. Copy `.env.example` to `.env` and set `EXPO_PUBLIC_API_BASE_URL` to a verified API URL.
+3. Install dependencies with `npm install` (commit and use the generated lockfile).
+4. Start Expo with `npm run start`.
 
-The mobile application is intended to provide users with a consistent interface for accessing MedOrbits services, including:
+Do not use placeholder endpoints in production. `EXPO_PUBLIC_*` values are bundled into the client and must never contain secrets.
 
-- Medical and higher-education admission guidance.
-- College, university, course, and fee information.
-- Student profiles and admission applications.
-- Application status and document management.
-- Notifications and important admission updates.
-- Career guidance, recruitment, and job assistance.
-- Support services and communication.
-- Secure access to applicable account features.
+## Project structure
+- `app/`: file-based routes and screens.
+- `src/api/`: shared HTTP client and error handling.
+- `src/features/`: domain-oriented feature modules.
+- `src/components/`: reusable UI.
+- `src/config/`: runtime configuration.
+- `src/storage/`: local persistence abstractions.
+- `assets/`: image, icon, font, and animation assets.
+- `architecture/`: design and operational guidance.
+- `api-contracts/`: proposed API contracts; reconcile against the actual backend.
+- `tests/`: unit, integration, and end-to-end test locations.
+- `scripts/`: local validation utilities.
 
-**Implementation status:** This document defines the intended project structure and engineering requirements. Features, endpoints, and integrations must be verified against the actual source code and backend before being considered implemented.
-
-—
-
-## 2. Project Structure
-
-Recommended structure:
-
-```text
-mobile/
-├── README.md
-├── package.json
-├── .env.example
-├── .gitignore
-│
-├── app/
-│   ├── index.tsx
-│   ├── _layout.tsx
-│   ├── +not-found.tsx
-│   ├── (auth)/
-│   │   ├── login.tsx
-│   │   ├── register.tsx
-│   │   └── forgot-password.tsx
-│   ├── (tabs)/
-│   │   ├── index.tsx
-│   │   ├── admissions.tsx
-│   │   ├── colleges.tsx
-│   │   ├── careers.tsx
-│   │   └── profile.tsx
-│   ├── applications/
-│   │   └── [id].tsx
-│   └── settings/
-│       └── index.tsx
-│
-├── src/
-│   ├── api/
-│   │   ├── client.ts
-│   │   ├── endpoints.ts
-│   │   └── errors.ts
-│   ├── components/
-│   ├── config/
-│   ├── features/
-│   │   ├── authentication/
-│   │   ├── admissions/
-│   │   ├── colleges/
-│   │   ├── applications/
-│   │   ├── documents/
-│   │   ├── notifications/
-│   │   ├── careers/
-│   │   └── support/
-│   ├── hooks/
-│   ├── localization/
-│   ├── navigation/
-│   ├── services/
-│   ├── state/
-│   ├── storage/
-│   ├── theme/
-│   ├── types/
-│   └── utils/
-│
-├── assets/
-│   ├── images/
-│   ├── icons/
-│   ├── fonts/
-│   └── animations/
-│
-├── architecture/
-│   ├── README.md
-│   ├── architecture-overview.md
-│   ├── navigation.md
-│   ├── networking.md
-│   ├── state-management.md
-│   ├── data-storage.md
-│   ├── offline-support.md
-│   ├── security.md
-│   ├── accessibility.md
-│   ├── localization.md
-│   ├── notifications.md
-│   ├── deep-links.md
-│   ├── error-handling.md
-│   ├── testing.md
-│   ├── observability.md
-│   ├── release-and-configuration.md
-│   ├── feature-modules.md
-│   └── manifest.json
-│
-├── api-contracts/
-│   ├── README.md
-│   ├── common.md
-│   ├── errors.md
-│   ├── authentication.md
-│   ├── users.md
-│   ├── admissions.md
-│   ├── applications.md
-│   ├── documents.md
-│   ├── payments.md
-│   ├── notifications.md
-│   ├── webhooks.md
-│   ├── security.md
-│   ├── testing.md
-│   └── openapi.yaml
-│
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-│
-└── scripts/
-    ├── check-environment.js
-    └── validate-contracts.js
+## Important limitations
+This scaffold does not prove that any backend route, payment flow, document upload, notification provider, or production authentication flow exists. Implement and test those integrations against the real service before enabling them.
