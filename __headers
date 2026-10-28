@@ -3,14 +3,7 @@
 # MedOrbits -- HTTP Headers and Security Policy
 # File: /__headers
 # Format: Netlify-compatible headers configuration
-# Release: 2.1.0
-#
-# Purpose:
-#   Apply baseline security headers, route-specific cache controls,
-#   and crawler directives for static content.
-#
-# Deployment:
-#   Ensure this file is deployed at the published site root.
+# Release: 2.1.1
 # ==============================================================================
 
 /*
@@ -32,7 +25,7 @@
 
 # ------------------------------------------------------------------------------
 # Static assets
-# Use shorter caching unless filenames are content-fingerprinted.
+# Use immutable only for content-hashed filenames.
 # ------------------------------------------------------------------------------
 
 /assets/*
@@ -69,8 +62,8 @@
   X-Robots-Tag: index, follow
 
 # ------------------------------------------------------------------------------
-# JSON data
-# These rules are for public static JSON, not private application data.
+# Public static JSON only
+# Never publish secrets or private user data in static JSON files.
 # ------------------------------------------------------------------------------
 
 /*.json
@@ -90,6 +83,7 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
 
 # ------------------------------------------------------------------------------
 # Sitemap and crawler directives
@@ -104,7 +98,7 @@
   X-Content-Type-Options: nosniff
 
 # ------------------------------------------------------------------------------
-# Error pages
+# Error and offline pages
 # ------------------------------------------------------------------------------
 
 /404.html
