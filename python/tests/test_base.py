@@ -44,12 +44,21 @@ def discover_project_root(start: Path | None = None) -> Path:
         "requirements.txt",
         "README.md",
     )
-    for directory in (current, *current.parents):
-        if any((directory / marker).exists() for marker in markers):
+    directories = (current, *current.parents)
+    # Prefer unambiguous repository markers before README.md, because
+    # subdirectories such as python/tests may contain their own README.
+    for directory in directories:
+        if (directory / ".git").exists() or (directory / "package.json").is_file():
             return directory
-    for directory in (current, *current.parents):
+    for directory in directories:
+        if (directory / "pyproject.toml").is_file() and (directory / "python").is_dir():
+            return directory
+    for directory in directories:
         if directory.name.lower() == "python":
             return directory.parent
+    for directory in directories:
+        if (directory / "README.md").is_file() and (directory / "python").is_dir():
+            return directory
     raise RuntimeError(
         "Unable to discover the MedOrbits project root. "
         "Set MEDORBITS_PROJECT_ROOT to the repository directory."

@@ -125,8 +125,8 @@ throw httpError(
 return userService[methodName].bind(userService);
 }
 
-async function callUserService(methodName, …args) {
-return requireServiceMethod(methodName)(…args);
+async function callUserService(methodName, ...args) {
+return requireServiceMethod(methodName)(...args);
 }
 
 function getAuthenticatedUserId(req) {
@@ -153,8 +153,8 @@ function requireResult(result, entityName = "User") {
 if (result === null || result === undefined) {
 throw httpError(
 404,
-${entityName.toUpperCase()}_NOT_FOUND,
-${entityName} not found.
+`${entityName.toUpperCase()}_NOT_FOUND`,
+`${entityName} not found.`,
 );
 }
 
@@ -502,7 +502,7 @@ additionalProperties: false
     asyncHandler(async (req, res) => {
     const pagination = getPagination(req.query);
     const result = await callUserService("listUsers", {
-    …pagination,
+    ...pagination,
     search: req.query.search,
     role: req.query.role,
     status: req.query.status,

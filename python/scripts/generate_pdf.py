@@ -1,9 +1,3 @@
-/python/scripts/generate_pdf.py
-
-A Python 3.12+ utility for generating professional PDF documents from MedOrbits project data. Supports JSON, CSV, TXT, and Markdown inputs, with multi-page layouts, page numbers, tables, metadata, and optional report summaries.
-
-Dependency: reportlab for PDF generation.
-
 #!/usr/bin/env python3
 """
 MedOrbits PDF Generator
@@ -739,41 +733,42 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-Installation and usage
-
-Install the dependency:
-
-python -m pip install reportlab
-
-Generate a PDF from one JSON dataset:
-
-python python/scripts/generate_pdf.py data/colleges.json \
-  --output reports/colleges.pdf \
-  --title "MedOrbits College Directory"
-
-Convert a CSV file:
-
-python python/scripts/generate_pdf.py data/jobs.csv \
-  --output reports/jobs.pdf \
-  --landscape
-
-Convert an entire directory:
-
-python python/scripts/generate_pdf.py data/ \
-  --output reports/ \
-  --recursive
-
-Preview without generating PDFs:
-
-python python/scripts/generate_pdf.py data/ \
-  --output reports/ \
-  --recursive \
-  --dry-run
-
-Generate a conversion report:
-
-python python/scripts/generate_pdf.py data/colleges.json \
-  --output reports/colleges.pdf \
-  --report reports/pdf-generation-report.json
-
-Implementation note: The PDF layout uses ReportLab’s standard Helvetica fonts. Complex nested JSON values are rendered as serialized text within table cells; very wide datasets are best exported using --landscape or split into smaller reports.
+# Installation and usage
+#
+# Install the dependency:
+#
+# python -m pip install reportlab
+#
+# Generate a PDF from one JSON dataset:
+#
+# python python/scripts/generate_pdf.py data/colleges.json \
+#   --output reports/colleges.pdf \
+#   --title "MedOrbits College Directory"
+#
+# Convert a CSV file:
+#
+# python python/scripts/generate_pdf.py data/jobs.csv \
+#   --output reports/jobs.pdf \
+#   --landscape
+#
+# Convert an entire directory:
+#
+# python python/scripts/generate_pdf.py data/ \
+#   --output reports/ \
+#   --recursive
+#
+# Preview without generating PDFs:
+#
+# python python/scripts/generate_pdf.py data/ \
+#   --output reports/ \
+#   --recursive \
+#   --dry-run
+#
+# Generate a conversion report:
+#
+# python python/scripts/generate_pdf.py data/colleges.json \
+#   --output reports/colleges.pdf \
+#   --report reports/pdf-generation-report.json
+#
+# #
+# # Implementation note: The PDF layout uses ReportLab's standard Helvetica fonts. Complex nested JSON values are rendered as serialized text within table cells; very wide datasets are best exported using --landscape or split into smaller reports.

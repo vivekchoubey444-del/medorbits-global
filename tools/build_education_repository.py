@@ -1981,3 +1981,4 @@ From the repository root:
 ```bash
 python build_education_repository.py
 python build_education_repository.py --validate
+""")

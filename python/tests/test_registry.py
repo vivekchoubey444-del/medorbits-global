@@ -252,20 +252,21 @@ class TestIntegrationRegistry(unittest.TestCase):
     def test_empty_name_is_rejected(self) -> None:
         with self.assertRaises(Exception):
             self.registry.register("", object())
-    def test_missing_integration_raises_error(self) -> None:
-        with self.assertRaises(Exception):
-            self.registry.get("not-registered")
+    def test_missing_integration_returns_default(self) -> None:
+        self.assertIsNone(self.registry.get("not-registered"))
+        sentinel = object()
+        self.assertIs(self.registry.get("not-registered", default=sentinel), sentinel)
     def test_contains_returns_false_for_missing_name(self) -> None:
         self.assertFalse(self.registry.contains("missing"))
     def test_metadata_is_preserved(self) -> None:
         self.register_sample()
-        metadata = self.registry.get_metadata("sample")
-        self.assertEqual(metadata["version"], "1.0")
-        self.assertEqual(metadata["category"], "testing")
+        registration = self.registry.registration("sample")
+        self.assertEqual(registration.metadata["version"], "1.0")
+        self.assertEqual(registration.metadata["category"], "testing")
     def test_list_integrations(self) -> None:
         self.registry.register("alpha", object())
         self.registry.register("beta", object())
-        names = self.registry.list_integrations()
+        names = self.registry.names()
         self.assertIn("alpha", names)
         self.assertIn("beta", names)
     def test_disable_and_enable_integration(self) -> None:
@@ -290,7 +291,7 @@ class TestIntegrationRegistry(unittest.TestCase):
             )
         self.registry.register("alpha", object())
         self.registry.clear()
-        self.assertEqual(self.registry.list_integrations(), [])
+        self.assertEqual(self.registry.names(), ())
     def test_production_registry_source_is_identified(self) -> None:
         if PRODUCTION_REGISTRY_CLASS is None:
             self.skipTest(

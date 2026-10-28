@@ -146,8 +146,8 @@ throw httpError(
 return admissionsService[methodName].bind(admissionsService);
 }
 
-async function callAdmissionsService(methodName, …args) {
-return requireServiceMethod(methodName)(…args);
+async function callAdmissionsService(methodName, ...args) {
+return requireServiceMethod(methodName)(...args);
 }
 
 function requireResult(result, res) {
@@ -216,7 +216,7 @@ MAX_LIMIT
 
 function getListFilters(query) {
 return {
-…getPagination(query),
+...getPagination(query),
 status: query.status,
 course: query.course,
 academicYear: query.academicYear,
@@ -402,12 +402,12 @@ type: "object",
 minProperties: 1,
 properties: {
 applicantDetails: {
-…applicantDetailsSchema,
+...applicantDetailsSchema,
 required: undefined,
 minProperties: 1
 },
 preferences: {
-…preferencesSchema,
+...preferencesSchema,
 minProperties: 1
 },
 documents: documentsSchema

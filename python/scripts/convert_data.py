@@ -1,7 +1,3 @@
-/python/scripts/convert_data.py
-
-A Python 3.12+ data conversion utility for MedOrbits. Converts JSON, JSONL, CSV, TSV, and XML files into supported output formats, with validation, encoding support, safe output handling, and conversion reports. Uses the Python standard library only.
-
 #!/usr/bin/env python3
 """
 MedOrbits Data Converter
@@ -698,37 +694,38 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-Usage
-
-# Convert one JSON dataset to CSV
-python python/scripts/convert_data.py data/colleges.json \
-  --format csv \
-  --output data/exports/colleges.csv
-# Convert CSV to formatted JSON
-python python/scripts/convert_data.py data/courses.csv \
-  --format json \
-  --output data/exports/courses.json \
-  --pretty
-# Convert JSON to JSONL
-python python/scripts/convert_data.py data/jobs.json \
-  --format jsonl \
-  --output data/exports/jobs.jsonl
-# Convert a complete directory recursively
-python python/scripts/convert_data.py data/ \
-  --format json \
-  --output data/converted/ \
-  --recursive \
-  --pretty
-# Preview conversions without writing files
-python python/scripts/convert_data.py data/ \
-  --format csv \
-  --output data/converted/ \
-  --recursive \
-  --dry-run
-# Generate a conversion report
-python python/scripts/convert_data.py data/colleges.json \
-  --format csv \
-  --output data/exports/colleges.csv \
-  --report reports/conversion-report.json
-
-Important: CSV and TSV cannot represent nested objects natively, so nested dictionaries are flattened into dot-separated column names, while lists are serialized as JSON strings. XML conversion uses a generic records structure; it does not preserve every original XML schema or namespace. Source files are never intentionally modified.
+#
+# Usage
+#
+# # Convert one JSON dataset to CSV
+# python python/scripts/convert_data.py data/colleges.json \
+#   --format csv \
+#   --output data/exports/colleges.csv
+# # Convert CSV to formatted JSON
+# python python/scripts/convert_data.py data/courses.csv \
+#   --format json \
+#   --output data/exports/courses.json \
+#   --pretty
+# # Convert JSON to JSONL
+# python python/scripts/convert_data.py data/jobs.json \
+#   --format jsonl \
+#   --output data/exports/jobs.jsonl
+# # Convert a complete directory recursively
+# python python/scripts/convert_data.py data/ \
+#   --format json \
+#   --output data/converted/ \
+#   --recursive \
+#   --pretty
+# # Preview conversions without writing files
+# python python/scripts/convert_data.py data/ \
+#   --format csv \
+#   --output data/converted/ \
+#   --recursive \
+#   --dry-run
+# # Generate a conversion report
+# python python/scripts/convert_data.py data/colleges.json \
+#   --format csv \
+#   --output data/exports/colleges.csv \
+#   --report reports/conversion-report.json
+#
+# Important: CSV and TSV cannot represent nested objects natively, so nested dictionaries are flattened into dot-separated column names, while lists are serialized as JSON strings. XML conversion uses a generic records structure; it does not preserve every original XML schema or namespace. Source files are never intentionally modified.

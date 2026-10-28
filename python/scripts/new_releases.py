@@ -1,5 +1,3 @@
-/python/scripts/new_releases.py
-
 #!/usr/bin/env python3
 """
 MedOrbits New Releases Manager

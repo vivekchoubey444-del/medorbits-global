@@ -1627,9 +1627,3 @@ describe('subscription.service', () => {
     );
   });
 });
-</CodeBlock>
-
-Run the suite:
-
-```bash
-npx jest tests/unit/services.test.js --runInBand

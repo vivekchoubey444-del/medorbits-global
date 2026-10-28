@@ -205,7 +205,7 @@ Promise.resolve()
     typeof jobsService[name] !== "function"
     ) {
     const error = new Error(
-    Required jobs service method is unavailable: ${name}
+    `Required jobs service method is unavailable: ${name}`
     );
     error.status = 500;
     error.code = "SERVICE_CONFIGURATION_ERROR";
@@ -254,7 +254,7 @@ limit: Number.isSafeInteger(requestedLimit)
     const pagination = getPagination(query);
 
 return {
-…pagination,
+...pagination,
 search: query.search,
 category: query.category,
 employmentType: query.employmentType,
@@ -289,7 +289,7 @@ return false;
 
 const schema = (definition) => ({
 $schema: DIALECT,
-…definition
+...definition
 });
 
 const stringField = (minLength, maxLength) => ({
@@ -580,7 +580,7 @@ minimum: 1,
 maximum: 100000
 },
 
-…applicationFields,
+...applicationFields,
 
 tags: arrayOfStrings({
 maxItems: 30,
@@ -623,7 +623,7 @@ const createJobSchema = schema({
 type: "object",
 additionalProperties: false,
 properties: {
-…jobContentProperties,
+...jobContentProperties,
 
 slug: {
   type: "string",
@@ -753,7 +753,7 @@ allOf: applicationMethodRules
     const result = await serviceMethod("listMyJobs")({
     user: req.user,
     filters: {
-    …getPagination(req.query),
+    ...getPagination(req.query),
     search: req.query.search,
     status: req.query.status,
     sortBy: req.query.sortBy || "createdAt",

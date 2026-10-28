@@ -1,9 +1,9 @@
-‘use strict’;
+'use strict';
 
-const request = require(‘supertest’);
-const app = require(’../../src/app’);
+const request = require('supertest');
+const app = require('../../src/app');
 
-const baseUrl = ‘/api/colleges’;
+const baseUrl = '/api/colleges';
 
 const sensitiveResponsePatterns = [
 /stack trace/i,
@@ -19,28 +19,28 @@ const sensitiveResponsePatterns = [
 ];
 
 const forbiddenFields = new Set([
-‘password’,
-‘passwordhash’,
-‘password_hash’,
-‘accesstoken’,
-‘access_token’,
-‘refreshtoken’,
-‘refresh_token’,
-‘clientsecret’,
-‘client_secret’,
-‘privatekey’,
-‘private_key’,
-‘databaseurl’,
-‘database_url’,
-‘sessionsecret’,
-‘session_secret’,
-‘aiapikey’,
-‘ai_api_key’,
+'password',
+'passwordhash',
+'password_hash',
+'accesstoken',
+'access_token',
+'refreshtoken',
+'refresh_token',
+'clientsecret',
+'client_secret',
+'privatekey',
+'private_key',
+'databaseurl',
+'database_url',
+'sessionsecret',
+'session_secret',
+'aiapikey',
+'ai_api_key',
 ]);
 
 function expectJsonResponse(response) {
-expect(response.headers[‘content-type’]).toMatch(
-/application/json/i,
+expect(response.headers['content-type']).toMatch(
+/application\/json/i,
 );
 expect(response.body).toEqual(expect.any(Object));
 expect(response.body).not.toBeNull();
@@ -55,7 +55,7 @@ expectNoSensitiveFields(item);
 return;
 }
 
-if (!value || typeof value !== ‘object’) {
+if (!value || typeof value !== 'object') {
 return;
 }
 
@@ -98,12 +98,12 @@ expect(response.status).toBeLessThan(500);
 expectSafeError(response);
 }
 
-describe(‘MedOrbits Colleges API’, () => {
-describe(‘college listing’, () => {
-test(‘responds without an internal server error’, async () => {
+describe('MedOrbits Colleges API', () => {
+describe('college listing', () => {
+test('responds without an internal server error', async () => {
 const response = await request(app)
 .get(baseUrl)
-.set(‘Accept’, ‘application/json’);
+.set('Accept', 'application/json');
 
   expectNoServerError(response);
 });
@@ -163,11 +163,11 @@ test('handles invalid pagination values safely', async () => {
 
 });
 
-describe(‘college detail’, () => {
-test(‘handles an unknown college identifier safely’, async () => {
+describe('college detail', () => {
+test('handles an unknown college identifier safely', async () => {
 const response = await request(app)
-.get(${baseUrl}/COLLEGE-DOES-NOT-EXIST)
-.set(‘Accept’, ‘application/json’);
+.get(`${baseUrl}/COLLEGE-DOES-NOT-EXIST`)
+.set('Accept', 'application/json');
 
   expect([400, 404, 422]).toContain(response.status);
   expectSafeError(response);
@@ -199,15 +199,15 @@ test('returns a valid college object when a college exists', async () => {
 
 });
 
-describe(‘search and filters’, () => {
+describe('search and filters', () => {
 test.each([
-[‘search’, { search: ‘medical’ }],
-[‘country filter’, { countryCode: ‘IN’ }],
-[‘course filter’, { course: ‘MBBS’ }],
-])(‘handles the %s query safely’, async (_label, query) => {
+['search', { search: 'medical' }],
+['country filter', { countryCode: 'IN' }],
+['course filter', { course: 'MBBS' }],
+])('handles the %s query safely', async (_label, query) => {
 const response = await request(app)
 .get(baseUrl)
-.set(‘Accept’, ‘application/json’)
+.set('Accept', 'application/json')
 .query(query);
 
   expectNoServerError(response);
@@ -247,11 +247,11 @@ test('handles SQL injection-like search input safely', async () => {
 
 });
 
-describe(‘data validation and response safety’, () => {
-test(‘does not expose database errors or stack traces’, async () => {
+describe('data validation and response safety', () => {
+test('does not expose database errors or stack traces', async () => {
 const response = await request(app)
-.get(${baseUrl}/INVALID-COLLEGE-ID)
-.set(‘Accept’, ‘application/json’);
+.get(`${baseUrl}/INVALID-COLLEGE-ID`)
+.set('Accept', 'application/json');
 
   expectSafeError(response);
   expect(responseTextForTest(response)).not.toMatch(
@@ -292,7 +292,7 @@ test('does not permit unauthenticated college deletion', async () => {
 });
 
 function responseTextForTest(response) {
-if (typeof response.text === ‘string’) {
+if (typeof response.text === 'string') {
 return response.text;
 }
 

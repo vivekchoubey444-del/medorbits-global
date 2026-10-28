@@ -1,16 +1,16 @@
-‘use strict’;
+'use strict';
 
-const request = require(‘supertest’);
-const app = require(’../../src/app’);
+const request = require('supertest');
+const app = require('../../src/app');
 
 const healthPaths = [
-‘/health’,
-‘/health/live’,
-‘/health/ready’,
-‘/api/health’,
+'/health',
+'/health/live',
+'/health/ready',
+'/api/health',
 ];
 
-const jsonContentType = /application/json/i;
+const jsonContentType = /application\/json/i;
 
 const sensitiveResponsePatterns = [
 /stack trace/i,
@@ -23,19 +23,19 @@ const sensitiveResponsePatterns = [
 /\bBEGIN\s+(?:RSA|OPENSSH|EC)\s+PRIVATE KEY\b/i,
 /\bER_ACCESS_DENIED_ERROR\b/i,
 /\bECONNREFUSED\b/i,
-/mysql:///i,
-/postgres(?:ql)?:///i,
+/mysql:\/\//i,
+/postgres(?:ql)?:\/\//i,
 ];
 
 function responseText(response) {
-if (typeof response.text === ‘string’) {
+if (typeof response.text === 'string') {
 return response.text;
 }
 
 try {
 return JSON.stringify(response.body ?? {});
 } catch {
-return ‘’;
+return '';
 }
 }
 
@@ -48,7 +48,7 @@ expect(text).not.toMatch(pattern);
 }
 
 function expectJsonResponse(response) {
-expect(response.headers[‘content-type’]).toMatch(jsonContentType);
+expect(response.headers['content-type']).toMatch(jsonContentType);
 expect(response.body).toEqual(expect.any(Object));
 expect(response.body).not.toBeNull();
 expect(Array.isArray(response.body)).toBe(false);
@@ -59,14 +59,14 @@ expect(response.status).toBeLessThan(500);
 expectSafeResponse(response);
 }
 
-describe(‘MedOrbits Health API’, () => {
-describe(‘Health endpoint discovery’, () => {
+describe('MedOrbits Health API', () => {
+describe('Health endpoint discovery', () => {
 test.each(healthPaths)(
-‘handles health endpoint %s safely’,
+'handles health endpoint %s safely',
 async (endpoint) => {
 const response = await request(app)
 .get(endpoint)
-.set(‘Accept’, ‘application/json’);
+.set('Accept', 'application/json');
 
     expectNoServerError(response);
     if (response.status === 200) {
@@ -81,11 +81,11 @@ const response = await request(app)
 
 });
 
-describe(‘Liveness checks’, () => {
-test(‘returns a successful response when the application is alive’, async () => {
+describe('Liveness checks', () => {
+test('returns a successful response when the application is alive', async () => {
 const response = await request(app)
-.get(’/health/live’)
-.set(‘Accept’, ‘application/json’);
+.get('/health/live')
+.set('Accept', 'application/json');
 
   // This test requires the documented liveness route to exist.
   expect(response.status).toBe(200);
@@ -109,11 +109,11 @@ test('returns liveness independently of optional dependency health', async () =>
 
 });
 
-describe(‘Readiness checks’, () => {
-test(‘returns a valid readiness response’, async () => {
+describe('Readiness checks', () => {
+test('returns a valid readiness response', async () => {
 const response = await request(app)
-.get(’/health/ready’)
-.set(‘Accept’, ‘application/json’);
+.get('/health/ready')
+.set('Accept', 'application/json');
 
   expect([200, 429, 503]).toContain(response.status);
   expectSafeResponse(response);
@@ -134,11 +134,11 @@ test('does not expose database connection details in readiness output', async ()
 
 });
 
-describe(‘General health response contract’, () => {
-test(‘returns JSON from the primary health endpoint’, async () => {
+describe('General health response contract', () => {
+test('returns JSON from the primary health endpoint', async () => {
 const response = await request(app)
-.get(’/health’)
-.set(‘Accept’, ‘application/json’);
+.get('/health')
+.set('Accept', 'application/json');
 
   expect(response.status).toBe(200);
   expectJsonResponse(response);
@@ -195,11 +195,11 @@ test('responds within the application test time budget', async () => {
 
 });
 
-describe(‘HTTP method handling’, () => {
-test(‘supports HEAD requests without an internal server error’, async () => {
+describe('HTTP method handling', () => {
+test('supports HEAD requests without an internal server error', async () => {
 const response = await request(app)
-.head(’/health’)
-.set(‘Accept’, ‘application/json’);
+.head('/health')
+.set('Accept', 'application/json');
 
   expect([200, 404, 405]).toContain(response.status);
   expectSafeResponse(response);

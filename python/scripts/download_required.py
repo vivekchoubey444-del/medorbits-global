@@ -1,7 +1,3 @@
-Updated /python/scripts/download_required.py
-
-Replace the previous script with this version. The domain allowlist is now optional; when omitted, the downloader accepts public internet hosts while blocking non-public IP destinations and validating redirects.
-
 #!/usr/bin/env python3
 """
 MedOrbits Required Asset Downloader
@@ -607,43 +603,44 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-Usage
-
-1. Download from any publicly accessible HTTPS host
-
-python python/scripts/download_required.py \
-  python/data/required-assets.json \
-  --output assets
-
-2. Download from any public host, allowing HTTP too
-
-python python/scripts/download_required.py \
-  python/data/required-assets.json \
-  --output assets \
-  --allow-http
-
-3. Preview without downloading
-
-python python/scripts/download_required.py \
-  python/data/required-assets.json \
-  --output assets \
-  --dry-run
-
-4. Download with larger file limits and more retries
-
-python python/scripts/download_required.py \
-  python/data/required-assets.json \
-  --output assets \
-  --max-size-mb 200 \
-  --timeout 45 \
-  --retries 5
-
-5. Restrict downloads to trusted domains when needed
-
-python python/scripts/download_required.py \
-  python/data/required-assets.json \
-  --output assets \
-  --allow-domain example.com \
-  --allow-domain github.com
-
-The downloader now accepts public hosts without requiring --allow-domain. DNS checks and redirect validation provide additional protections, but standard-library DNS validation cannot completely eliminate DNS-rebinding or network-level risks. Use this script only with trusted manifests, particularly in automated deployments.
+#
+# Usage
+#
+# 1. Download from any publicly accessible HTTPS host
+#
+# python python/scripts/download_required.py \
+#   python/data/required-assets.json \
+#   --output assets
+#
+# 2. Download from any public host, allowing HTTP too
+#
+# python python/scripts/download_required.py \
+#   python/data/required-assets.json \
+#   --output assets \
+#   --allow-http
+#
+# 3. Preview without downloading
+#
+# python python/scripts/download_required.py \
+#   python/data/required-assets.json \
+#   --output assets \
+#   --dry-run
+#
+# 4. Download with larger file limits and more retries
+#
+# python python/scripts/download_required.py \
+#   python/data/required-assets.json \
+#   --output assets \
+#   --max-size-mb 200 \
+#   --timeout 45 \
+#   --retries 5
+#
+# 5. Restrict downloads to trusted domains when needed
+#
+# python python/scripts/download_required.py \
+#   python/data/required-assets.json \
+#   --output assets \
+#   --allow-domain example.com \
+#   --allow-domain github.com
+#
+# The downloader now accepts public hosts without requiring --allow-domain. DNS checks and redirect validation provide additional protections, but standard-library DNS validation cannot completely eliminate DNS-rebinding or network-level risks. Use this script only with trusted manifests, particularly in automated deployments.

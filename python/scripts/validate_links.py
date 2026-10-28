@@ -1,7 +1,3 @@
-/python/scripts/validate_links.py
-
-A Python 3.12+ utility for validating URLs and internal links across MedOrbits project files. Uses the Python standard library only, preserves source files, supports offline validation, and generates JSON reports.
-
 #!/usr/bin/env python3
 """
 MedOrbits Link Validator
@@ -934,29 +930,30 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-Run commands
-
-# Scan the entire MedOrbits project
-python python/scripts/validate_links.py --root .
-# Scan the website pages and assets
-python python/scripts/validate_links.py --root pages
-# Check external HTTP/HTTPS links (requires network access)
-python python/scripts/validate_links.py --root . --check-external
-# Save a JSON report
-python python/scripts/validate_links.py \
-  --root . \
-  --report reports/link-validation.json
-# Fail on warnings as well as errors
-python python/scripts/validate_links.py --root . --strict
-# Exclude a directory and a file
-python python/scripts/validate_links.py \
-  --root . \
-  --exclude-dir archives \
-  --exclude pages/legacy.html
-# Allow known external domains to be skipped during online checks
-python python/scripts/validate_links.py \
-  --root . \
-  --check-external \
-  --allow-domain example.com
-
-Important: External checks are disabled by default, so the validator can run offline. Internal links are resolved against the project root for root-relative website paths such as /assets/images/logo.svg. The script checks whether local targets exist; it does not verify that a fragment such as #section-name exists inside the target document.
+#
+# Run commands
+#
+# # Scan the entire MedOrbits project
+# python python/scripts/validate_links.py --root .
+# # Scan the website pages and assets
+# python python/scripts/validate_links.py --root pages
+# # Check external HTTP/HTTPS links (requires network access)
+# python python/scripts/validate_links.py --root . --check-external
+# # Save a JSON report
+# python python/scripts/validate_links.py \
+#   --root . \
+#   --report reports/link-validation.json
+# # Fail on warnings as well as errors
+# python python/scripts/validate_links.py --root . --strict
+# # Exclude a directory and a file
+# python python/scripts/validate_links.py \
+#   --root . \
+#   --exclude-dir archives \
+#   --exclude pages/legacy.html
+# # Allow known external domains to be skipped during online checks
+# python python/scripts/validate_links.py \
+#   --root . \
+#   --check-external \
+#   --allow-domain example.com
+#
+# Important: External checks are disabled by default, so the validator can run offline. Internal links are resolved against the project root for root-relative website paths such as /assets/images/logo.svg. The script checks whether local targets exist; it does not verify that a fragment such as #section-name exists inside the target document.

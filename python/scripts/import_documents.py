@@ -1,5 +1,3 @@
-/python/scripts/import_documents.py
-
 #!/usr/bin/env python3
 """
 MedOrbits Document Importer

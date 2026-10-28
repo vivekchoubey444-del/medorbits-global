@@ -39,7 +39,7 @@ import logging
 import re
 import threading
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any, TypeVar
 
@@ -569,6 +569,34 @@ class IntegrationRegistry:
                 )
 
             return entry.registration
+
+    def enable(self, name: str) -> Any:
+        """Enable a registered integration and return its instance."""
+        canonical_name = self._resolve_name(name)
+        with self._lock:
+            entry = self._entries.get(canonical_name)
+            if entry is None:
+                raise IntegrationNotFoundError(
+                    f"Integration {canonical_name!r} is not registered."
+                )
+            entry.registration = replace(entry.registration, enabled=True)
+            return entry.instance
+
+    def disable(self, name: str) -> Any:
+        """Disable a registered integration and return its instance."""
+        canonical_name = self._resolve_name(name)
+        with self._lock:
+            entry = self._entries.get(canonical_name)
+            if entry is None:
+                raise IntegrationNotFoundError(
+                    f"Integration {canonical_name!r} is not registered."
+                )
+            entry.registration = replace(entry.registration, enabled=False)
+            return entry.instance
+
+    def is_enabled(self, name: str) -> bool:
+        """Return whether a registered integration is enabled."""
+        return self.registration(name).enabled
 
     # ------------------------------------------------------------------
     # Discovery and snapshots

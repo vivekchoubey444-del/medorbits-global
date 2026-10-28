@@ -286,7 +286,7 @@ class TestHttpClientRequests(unittest.TestCase):
             timeout=3.0,
             default_headers={"X-App": "MedOrbits"},
         )
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_get_request(self, mock_urlopen: Mock) -> None:
         mock_urlopen.return_value = MockResponse(
             b'{"courses": 12}',
@@ -299,7 +299,7 @@ class TestHttpClientRequests(unittest.TestCase):
         self.assertEqual(result["data"], {"courses": 12})
         self.assertEqual(result["method"], "GET")
         mock_urlopen.assert_called_once()
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_post_request(self, mock_urlopen: Mock) -> None:
         mock_urlopen.return_value = MockResponse(
             b'{"created": true}',
@@ -317,7 +317,7 @@ class TestHttpClientRequests(unittest.TestCase):
             json.loads(request.data.decode("utf-8")),
             {"course": "MBBS"},
         )
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_query_parameters(self, mock_urlopen: Mock) -> None:
         mock_urlopen.return_value = MockResponse()
         result = self.client.get(
@@ -331,7 +331,7 @@ class TestHttpClientRequests(unittest.TestCase):
         query = parse_qs(parsed.query)
         self.assertEqual(query["course"], ["MBBS"])
         self.assertEqual(query["country"], ["India"])
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_default_headers_are_attached(
         self,
         mock_urlopen: Mock,
@@ -344,7 +344,7 @@ class TestHttpClientRequests(unittest.TestCase):
             request.get_header("Accept"),
             "application/json",
         )
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_custom_headers_override_defaults(
         self,
         mock_urlopen: Mock,
@@ -359,7 +359,7 @@ class TestHttpClientRequests(unittest.TestCase):
         )
         request = mock_urlopen.call_args.args[0]
         self.assertEqual(request.get_header("X-app"), "Override")
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_json_content_type_is_set(
         self,
         mock_urlopen: Mock,
@@ -374,7 +374,7 @@ class TestHttpClientRequests(unittest.TestCase):
             request.get_header("Content-type"),
             "application/json",
         )
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_empty_response_body_returns_none(
         self,
         mock_urlopen: Mock,
@@ -383,7 +383,7 @@ class TestHttpClientRequests(unittest.TestCase):
         result = self.client.get("https://example.com/api/status")
         self.assertIsNone(result["data"])
         self.assertEqual(result["status_code"], 204)
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_invalid_json_response_raises_error(
         self,
         mock_urlopen: Mock,
@@ -399,7 +399,7 @@ class TestHttpClientRequests(unittest.TestCase):
             )
 class TestHttpClientFailures(unittest.TestCase):
     """Test transport failures, HTTP errors, and retries."""
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_http_404_raises_response_error(
         self,
         mock_urlopen: Mock,
@@ -413,7 +413,7 @@ class TestHttpClientFailures(unittest.TestCase):
         )
         with self.assertRaises(HttpResponseError):
             HttpClient().get("https://example.com/missing")
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_http_500_is_retried(self, mock_urlopen: Mock) -> None:
         mock_urlopen.side_effect = [
             HTTPError(
@@ -430,7 +430,7 @@ class TestHttpClientFailures(unittest.TestCase):
         )
         self.assertEqual(result["status_code"], 200)
         self.assertEqual(mock_urlopen.call_count, 2)
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_transport_error_raises_request_error(
         self,
         mock_urlopen: Mock,
@@ -438,7 +438,7 @@ class TestHttpClientFailures(unittest.TestCase):
         mock_urlopen.side_effect = URLError("Connection refused")
         with self.assertRaises(HttpRequestError):
             HttpClient().get("https://example.com/api")
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_timeout_raises_timeout_error(
         self,
         mock_urlopen: Mock,
@@ -446,7 +446,7 @@ class TestHttpClientFailures(unittest.TestCase):
         mock_urlopen.side_effect = TimeoutError("Timed out")
         with self.assertRaises(HttpTimeoutError):
             HttpClient().get("https://example.com/api")
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_transport_error_retries(
         self,
         mock_urlopen: Mock,
@@ -460,7 +460,7 @@ class TestHttpClientFailures(unittest.TestCase):
         )
         self.assertEqual(result["status_code"], 200)
         self.assertEqual(mock_urlopen.call_count, 2)
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_failed_retries_raise_request_error(
         self,
         mock_urlopen: Mock,
@@ -471,7 +471,7 @@ class TestHttpClientFailures(unittest.TestCase):
                 "https://example.com/api"
             )
         self.assertEqual(mock_urlopen.call_count, 3)
-    @patch("urllib.request.urlopen")
+    @patch(__name__ + ".urlopen")
     def test_http_400_is_not_retried(
         self,
         mock_urlopen: Mock,

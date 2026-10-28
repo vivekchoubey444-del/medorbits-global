@@ -1,5 +1,3 @@
-/python/scripts/import_career.py
-
 #!/usr/bin/env python3
 """
 MedOrbits Career Ecosystem Importer
@@ -737,51 +735,51 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
-Usage
-
-# Import one career dataset
-python /python/scripts/import_career.py ./data/careers.json
-# Import every recognized related dataset in a directory
-python /python/scripts/import_career.py ./data --all-related \
-  --output ./data/imported/career
-# Explicitly identify an input file
-python /python/scripts/import_career.py ./data/my-career-data.csv \
-  --dataset careers
-# Validate without writing files
-python /python/scripts/import_career.py ./data --all-related --dry-run
-# Replace previously generated output files
-python /python/scripts/import_career.py ./data --all-related \
-  --output ./data/imported/career --overwrite
-
-Expected output structure
-
-data/imported/career/
-├── careers.json
-├── job_categories.json
-├── job_roles.json
-├── job_listings.json
-├── industries.json
-├── employers.json
-├── skills.json
-├── qualifications.json
-├── courses.json
-├── certifications.json
-├── career_pathways.json
-├── salary_data.json
-├── internships.json
-├── apprenticeships.json
-├── fellowships.json
-├── career_services.json
-├── recruitment.json
-├── career_resources.json
-├── examinations.json
-├── scholarships.json
-├── work_arrangements.json
-├── experience_levels.json
-├── career_faqs.json
-├── career_locations.json
-└── import-report.json
-
-Only datasets with recognized input files are generated. The importer does not fabricate missing records, salaries, job openings, or employer information.
-
-Important: this is a general-purpose importer, not a guarantee that every MedOrbits JSON schema will match it exactly. Review the report and adapt field requirements to your existing schemas before using it in production.
+# Usage
+#
+# # Import one career dataset
+# python /python/scripts/import_career.py ./data/careers.json
+# # Import every recognized related dataset in a directory
+# python /python/scripts/import_career.py ./data --all-related \
+#   --output ./data/imported/career
+# # Explicitly identify an input file
+# python /python/scripts/import_career.py ./data/my-career-data.csv \
+#   --dataset careers
+# # Validate without writing files
+# python /python/scripts/import_career.py ./data --all-related --dry-run
+# # Replace previously generated output files
+# python /python/scripts/import_career.py ./data --all-related \
+#   --output ./data/imported/career --overwrite
+#
+# # Expected output structure
+# #
+# # data/imported/career/
+# # ├── careers.json
+# # ├── job_categories.json
+# # ├── job_roles.json
+# # ├── job_listings.json
+# # ├── industries.json
+# # ├── employers.json
+# # ├── skills.json
+# # ├── qualifications.json
+# # ├── courses.json
+# # ├── certifications.json
+# # ├── career_pathways.json
+# # ├── salary_data.json
+# # ├── internships.json
+# # ├── apprenticeships.json
+# # ├── fellowships.json
+# # ├── career_services.json
+# # ├── recruitment.json
+# # ├── career_resources.json
+# # ├── examinations.json
+# # ├── scholarships.json
+# # ├── work_arrangements.json
+# # ├── experience_levels.json
+# # ├── career_faqs.json
+# # ├── career_locations.json
+# # └── import-report.json
+# #
+# # Only datasets with recognized input files are generated. The importer does not fabricate missing records, salaries, job openings, or employer information.
+# #
+# # Important: this is a general-purpose importer, not a guarantee that every MedOrbits JSON schema will match it exactly. Review the report and adapt field requirements to your existing schemas before using it in production.

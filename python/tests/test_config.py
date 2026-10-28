@@ -34,15 +34,16 @@ def discover_project_root() -> Path:
             )
         return root
     current = Path(__file__).resolve().parent
-    for directory in (current, *current.parents):
+    directories = (current, *current.parents)
+    # Prefer repository-root markers over a nested python/pyproject.toml.
+    for directory in directories:
+        if (directory / ".git").exists() or (directory / "package.json").is_file():
+            return directory
+    for directory in directories:
         if (
-            (directory / ".git").exists()
-            or (directory / "package.json").is_file()
-            or (directory / "pyproject.toml").is_file()
-            or (
-                (directory / "python").is_dir()
-                and (directory / "assets").is_dir()
-            )
+            (directory / "python").is_dir()
+            and (directory / "assets").is_dir()
+            and (directory / "pyproject.toml").is_file()
         ):
             return directory
     # Expected location: <project>/python/tests/test_config.py

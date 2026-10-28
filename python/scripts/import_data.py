@@ -1,5 +1,3 @@
-/python/scripts/import_data.py
-
 #!/usr/bin/env python3
 """
 MedOrbits Universal Data Importer

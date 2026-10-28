@@ -213,7 +213,7 @@ MAX_LIMIT
 
 function getTicketFilters(query) {
 return {
-…getPagination(query),
+...getPagination(query),
 category: query.category,
 status: query.status,
 search: query.search,

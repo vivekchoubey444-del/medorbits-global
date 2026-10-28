@@ -208,7 +208,7 @@ MAX_LIMIT
 
 function getListFilters(query) {
 return {
-…getPagination(query),
+...getPagination(query),
 category: query.category,
 status: query.status,
 applicationId: query.applicationId,
