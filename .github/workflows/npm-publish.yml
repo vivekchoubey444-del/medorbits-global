@@ -1,14 +1,20 @@
 
+# =============================================================================
+# MedOrbits -- Publish npm Package
+# File: /.github/workflows/publish-npm.yml
+# Node.js: 22
+# =============================================================================
+
 name: Publish npm Package
 
 on:
   release:
-    types:
-      - published
+    types: [published]
+
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Run npm publish in dry-run mode"
+        description: "Validate and simulate publishing without releasing"
         required: true
         type: boolean
         default: true
@@ -22,7 +28,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Validate and Publish
+    name: Validate, Test and Publish
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -40,80 +46,158 @@ jobs:
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
+          cache: npm
 
-      - name: Validate package files
+      - name: Validate package metadata
         shell: bash
         run: |
           set -Eeuo pipefail
 
           test -f package.json || {
-            echo "::error::package.json is missing."
+            echo "::error::Root package.json is missing."
+            exit 1
+          }
+
+          test -f package-lock.json || {
+            echo "::error::Commit package-lock.json for reproducible installs."
             exit 1
           }
 
           node <<'NODE'
           const fs = require("node:fs");
+
           const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-          if (!pkg.name || typeof pkg.name !== "string") {
-            throw new Error("package.json must define a package name.");
+          if (typeof pkg.name !== "string" || !pkg.name.trim()) {
+            throw new Error("A valid package name is required.");
           }
 
-          if (!pkg.version || typeof pkg.version !== "string") {
-            throw new Error("package.json must define a version.");
+          if (typeof pkg.version !== "string" ||
+              !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(pkg.version)) {
+            throw new Error("package.json must contain a valid semantic version.");
           }
 
           if (pkg.private === true) {
             throw new Error("Cannot publish a package marked private.");
           }
 
+          if (pkg.publishConfig?.registry &&
+              pkg.publishConfig.registry !== "https://registry.npmjs.org/") {
+            throw new Error("Unexpected publishConfig.registry.");
+          }
+
           console.log(`Package: ${pkg.name}`);
           console.log(`Version: ${pkg.version}`);
+          console.log(`Private: ${pkg.private === true}`);
           NODE
 
-      - name: Validate lockfile
+      - name: Verify release tag matches package version
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -Eeuo pipefail
+
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          NORMALIZED_TAG="${RELEASE_TAG#v}"
+
+          if [[ "$NORMALIZED_TAG" != "$PACKAGE_VERSION" ]]; then
+            echo "::error::Release tag '$RELEASE_TAG' does not match package version '$PACKAGE_VERSION'."
+            exit 1
+          fi
+
+          echo "Release tag matches package version."
+
+      - name: Install dependencies from lockfile
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate npm package configuration
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
-            npm ci --ignore-scripts --no-audit --no-fund
-          else
-            npm install --ignore-scripts --no-audit --no-fund
-          fi
+          npm pkg get name version private
+          npm --version
+          node --version
 
       - name: Run package tests
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          node -e '
-            const pkg = require("./package.json");
-            if (!pkg.scripts || !pkg.scripts.test) {
-              console.log("No test script defined; skipping package tests.");
-              process.exit(0);
-            }
-          '
-
           if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
-            npm test -- --runInBand
+            npm test
+          else
+            echo "::warning::No test script is defined. Tests were skipped."
           fi
 
-      - name: Check package contents
-        run: npm pack --dry-run
+      - name: Run package build when configured
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
-      - name: Publish dry run
+          if node -e 'process.exit(require("./package.json").scripts?.build ? 0 : 1)'; then
+            npm run build
+          else
+            echo "No build script defined; skipping build."
+          fi
+
+      - name: Inspect package contents
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm pack --dry-run --ignore-scripts
+
+      - name: Simulate publishing on manual dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
-        run: npm publish --dry-run --ignore-scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm publish --dry-run --ignore-scripts
 
-      - name: Publish released package
+      - name: Publish tagged release
         if: github.event_name == 'release' && github.event.action == 'published'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --ignore-scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::NPM_TOKEN secret is missing."
+            exit 1
+          fi
+
+          npm publish --ignore-scripts
 
       - name: Publish manually
         if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --ignore-scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "::error::NPM_TOKEN secret is missing."
+            exit 1
+          fi
+
+          npm publish --ignore-scripts
+
+# =============================================================================
+# Setup:
+#
+# 1. Add NPM_TOKEN under GitHub repository Actions secrets.
+# 2. Commit package.json and package-lock.json.
+# 3. Ensure tests and any required build steps are configured.
+# 4. Run this workflow manually with dry_run=true.
+# 5. Publish a release whose tag matches package.json version.
+#
+# Security:
+# - Never print or commit npm authentication tokens.
+# - Review the package contents before publishing.
+# - --ignore-scripts prevents npm publish lifecycle scripts from running.
+# - Required build steps are run explicitly before packaging.
+# =============================================================================
