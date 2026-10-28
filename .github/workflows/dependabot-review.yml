@@ -1,277 +1,290 @@
-==============================================================================
 
-MedOrbits – Dependabot Review
-
-File: .github/workflows/dependabot-review.yml
-
-Release target: 2.1.0
-
-Purpose:
-
-Inspect Dependabot pull requests and summarize dependency-related changes.
-
-Policy:
-
-- Read-only repository and pull request access.
-
-- Verify Dependabot authorship using GitHub API metadata.
-
-- Accept only open pull requests targeting main or develop.
-
-- No automatic approvals, merging, comments, or repository modifications.
-
-- Do not check out or execute code from pull request branches.
-
-- Report changed files and dependency-related changes in the workflow summary.
-
-==============================================================================
+# MedOrbits -- Dependabot Review
+# Release: 2.1.1
+# Read-only review; never approves, merges, comments, or modifies the repository.
 
 name: Dependabot Review
 
 on:
-pull_request:
-branches:
-- main
-- develop
-types:
-- opened
-- synchronize
-- reopened
-- ready_for_review
-- edited
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
 
-workflow_dispatch:
-inputs:
-pull_request_number:
-description: "Open Dependabot pull request number to review"
-required: true
-type: number
-
-permissions:
-contents: read
-pull-requests: read
-
-concurrency:
-group: dependabot-review-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
-cancel-in-progress: true
-
-jobs:
-review:
-name: Review Dependabot Pull Request
-runs-on: ubuntu-latest
-timeout-minutes: 5
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "Open Dependabot pull request number to review"
+        required: true
+        type: number
 
 permissions:
   contents: read
   pull-requests: read
-outputs:
-  pr_number: ${{ steps.context.outputs.pr_number }}
-  base_branch: ${{ steps.metadata.outputs.base_branch }}
-  draft: ${{ steps.metadata.outputs.draft }}
-steps:
-  - name: Resolve pull request number
-    id: context
-    shell: bash
-    env:
-      EVENT_NAME: ${{ github.event_name }}
-      EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-      INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
-      EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
-    run: |
-      set -Eeuo pipefail
-      if [[ "$EVENT_NAME" == "pull_request" ]]; then
-        if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
-          echo "::error::Only Dependabot pull requests are accepted."
-          exit 1
-        fi
-        number="$EVENT_PR_NUMBER"
-      elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-        number="$INPUT_PR_NUMBER"
-        if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
-          echo "::error::A valid positive pull request number is required."
-          exit 1
-        fi
-      else
-        echo "::error::Unsupported workflow event."
-        exit 1
-      fi
-      echo "pr_number=$number" >> "$GITHUB_OUTPUT"
-  - name: Verify pull request metadata
-    id: metadata
-    env:
-      GH_TOKEN: ${{ github.token }}
-      REPOSITORY: ${{ github.repository }}
-      PR_NUMBER: ${{ steps.context.outputs.pr_number }}
-    shell: bash
-    run: |
-      set -Eeuo pipefail
-      response="$RUNNER_TEMP/dependabot-pr.json"
-      gh api \
-        "repos/$REPOSITORY/pulls/$PR_NUMBER" \
-        > "$response"
-      author="$(jq -r '.user.login // ""' "$response")"
-      state="$(jq -r '.state // ""' "$response")"
-      merged="$(jq -r '.merged // false' "$response")"
-      draft="$(jq -r '.draft // false' "$response")"
-      base_branch="$(jq -r '.base.ref // ""' "$response")"
-      base_repo="$(jq -r '.base.repo.full_name // ""' "$response")"
-      head_sha="$(jq -r '.head.sha // ""' "$response")"
-      if [[ "$author" != "dependabot[bot]" ]]; then
-        echo "::error::Pull request is not authored by Dependabot."
-        exit 1
-      fi
-      if [[ "$state" != "open" || "$merged" == "true" ]]; then
-        echo "::error::Pull request must be open and unmerged."
-        exit 1
-      fi
-      if [[ "$base_branch" != "main" && "$base_branch" != "develop" ]]; then
-        echo "::error::Unexpected target branch: $base_branch"
-        exit 1
-      fi
-      if [[ "$base_repo" != "$REPOSITORY" ]]; then
-        echo "::error::Pull request base repository does not match this repository."
-        exit 1
-      fi
-      if [[ ! "$head_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
-        echo "::error::Pull request head SHA is missing or invalid."
-        exit 1
-      fi
-      echo "base_branch=$base_branch" >> "$GITHUB_OUTPUT"
-      echo "draft=$draft" >> "$GITHUB_OUTPUT"
-      {
-        echo "## Dependabot Pull Request Metadata"
-        echo
-        echo "- Pull request: #$PR_NUMBER"
-        echo "- Author: $author"
-        echo "- State: $state"
-        echo "- Target branch: $base_branch"
-        echo "- Draft: $draft"
-        echo "- Head SHA: \`$head_sha\`"
-        echo
-      } >> "$GITHUB_STEP_SUMMARY"
-  - name: Inspect changed files
-    id: changed_files
-    env:
-      GH_TOKEN: ${{ github.token }}
-      REPOSITORY: ${{ github.repository }}
-      PR_NUMBER: ${{ steps.context.outputs.pr_number }}
-    shell: bash
-    run: |
-      set -Eeuo pipefail
-      output="$RUNNER_TEMP/changed-files.jsonl"
-      # Use JSON Lines rather than TSV so filenames containing tabs
-      # or other unusual characters cannot corrupt field parsing.
-      gh api --paginate \
-        "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
-        --jq '.[] | {
-          filename: .filename,
-          status: .status,
-          additions: .additions,
-          deletions: .deletions,
-          changes: .changes
-        } | @json' \
-        > "$output"
-      if [[ ! -s "$output" ]]; then
-        echo "::error::GitHub returned no changed-file metadata."
-        exit 1
-      fi
-      python - "$output" <<'PY'
-      import json
-      import pathlib
-      import sys
-      filename = pathlib.Path(sys.argv[1])
-      dependency_names = {
-          "package.json", "package-lock.json", "npm-shrinkwrap.json",
-          "yarn.lock", "pnpm-lock.yaml", "requirements.txt",
-          "pyproject.toml", "poetry.lock", "uv.lock",
-          "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock",
-          "go.mod", "go.sum", "gemfile", "gemfile.lock",
-          "composer.json", "composer.lock",
-      }
-      records = []
-      with filename.open(encoding="utf-8") as stream:
-          for line_number, line in enumerate(stream, 1):
-              line = line.strip()
-              if not line:
-                  continue
-              try:
-                  record = json.loads(line)
-              except json.JSONDecodeError as exc:
-                  raise SystemExit(
-                      f"Invalid changed-file JSON at line {line_number}: {exc}"
-                  )
-              if not isinstance(record, dict):
-                  raise SystemExit("Unexpected changed-file record.")
-              records.append(record)
-      if not records:
-          raise SystemExit("No changed-file records were parsed.")
-      print(f"Changed files: {len(records)}")
-      dependency_count = 0
-      additions = 0
-      deletions = 0
-      for record in records:
-          path = str(record.get("filename", ""))
-          status = str(record.get("status", "unknown"))
-          added = int(record.get("additions", 0))
-          removed = int(record.get("deletions", 0))
-          name = path.rsplit("/", 1)[-1].lower()
-          additions += added
-          deletions += removed
-          category = "dependency" if name in dependency_names else "other"
-          if category == "dependency":
-              dependency_count += 1
-          print(
-              f"- [{category}] {path} "
-              f"({status}; +{added} -{removed})"
-          )
-      print(f"Dependency-related files: {dependency_count}")
-      print(f"Total additions: {additions}")
-      print(f"Total deletions: {deletions}")
-      with open(
-          __import__("os").environ["GITHUB_OUTPUT"],
-          "a",
-          encoding="utf-8"
-      ) as output:
-          output.write(f"file_count={len(records)}\n")
-          output.write(f"dependency_count={dependency_count}\n")
-          output.write(f"additions={additions}\n")
-          output.write(f"deletions={deletions}\n")
-      PY
-  - name: Publish review summary
-    if: always()
-    env:
-      PR_NUMBER: ${{ steps.context.outputs.pr_number }}
-      JOB_RESULT: ${{ job.status }}
-      BASE_BRANCH: ${{ steps.metadata.outputs.base_branch }}
-      DRAFT_STATUS: ${{ steps.metadata.outputs.draft }}
-      FILE_COUNT: ${{ steps.changed_files.outputs.file_count }}
-      DEPENDENCY_COUNT: ${{ steps.changed_files.outputs.dependency_count }}
-      ADDITIONS: ${{ steps.changed_files.outputs.additions }}
-      DELETIONS: ${{ steps.changed_files.outputs.deletions }}
-    shell: bash
-    run: |
-      set -Eeuo pipefail
-      {
-        echo "## MedOrbits Dependabot Review"
-        echo
-        echo "- Pull request: #${PR_NUMBER:-unavailable}"
-        echo "- Target branch: ${BASE_BRANCH:-not verified}"
-        echo "- Draft: ${DRAFT_STATUS:-unknown}"
-        echo "- Workflow result: $JOB_RESULT"
-        echo "- Changed files: ${FILE_COUNT:-not available}"
-        echo "- Dependency-related files: ${DEPENDENCY_COUNT:-not available}"
-        echo "- Lines added: ${ADDITIONS:-not available}"
-        echo "- Lines deleted: ${DELETIONS:-not available}"
-        echo
-        echo "### Actions"
-        echo "- Automated approval: No"
-        echo "- Automatic merge: No"
-        echo "- PR comments: No"
-        echo "- Repository modifications: No"
-        echo "- Pull request branch code executed: No"
-        echo
-        echo "### Review note"
-        echo "This workflow summarizes GitHub pull request metadata and file-change statistics."
-        echo "It does not establish that dependencies are safe or that the proposed code is correct."
-        echo "Review dependency advisories, release notes, lockfile changes, and required CI checks before merging."
-      } >> "$GITHUB_STEP_SUMMARY"
+
+concurrency:
+  group: dependabot-review-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review Dependabot Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      pr_number: ${{ steps.context.outputs.pr_number }}
+      base_branch: ${{ steps.metadata.outputs.base_branch }}
+      draft: ${{ steps.metadata.outputs.draft }}
+
+    steps:
+      - name: Resolve pull request number
+        id: context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
+          EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
+              echo "::error::Only Dependabot pull requests are accepted."
+              exit 1
+            fi
+            number="$EVENT_PR_NUMBER"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            number="$INPUT_PR_NUMBER"
+            if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::A valid positive pull request number is required."
+              exit 1
+            fi
+          else
+            echo "::error::Unsupported workflow event."
+            exit 1
+          fi
+
+          echo "pr_number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Verify pull request metadata
+        id: metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+        run: |
+          set -Eeuo pipefail
+
+          response="$RUNNER_TEMP/dependabot-pr.json"
+
+          gh api "repos/$REPOSITORY/pulls/$PR_NUMBER" > "$response"
+
+          author="$(jq -r '.user.login // ""' "$response")"
+          state="$(jq -r '.state // ""' "$response")"
+          merged="$(jq -r '.merged // false' "$response")"
+          draft="$(jq -r '.draft // false' "$response")"
+          base_branch="$(jq -r '.base.ref // ""' "$response")"
+          base_repo="$(jq -r '.base.repo.full_name // ""' "$response")"
+          head_sha="$(jq -r '.head.sha // ""' "$response")"
+
+          if [[ "$author" != "dependabot[bot]" ]]; then
+            echo "::error::Pull request is not authored by Dependabot."
+            exit 1
+          fi
+
+          if [[ "$state" != "open" || "$merged" == "true" ]]; then
+            echo "::error::Pull request must be open and unmerged."
+            exit 1
+          fi
+
+          if [[ "$base_branch" != "main" && "$base_branch" != "develop" ]]; then
+            echo "::error::Unexpected target branch: $base_branch"
+            exit 1
+          fi
+
+          if [[ "$base_repo" != "$REPOSITORY" ]]; then
+            echo "::error::Pull request base repository does not match this repository."
+            exit 1
+          fi
+
+          if [[ ! "$head_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
+            echo "::error::Pull request head SHA is missing or invalid."
+            exit 1
+          fi
+
+          {
+            echo "base_branch=$base_branch"
+            echo "draft=$draft"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Dependabot Pull Request Metadata"
+            echo
+            echo "- Pull request: #$PR_NUMBER"
+            echo "- Author: $author"
+            echo "- State: $state"
+            echo "- Target branch: $base_branch"
+            echo "- Draft: $draft"
+            echo "- Head SHA: \`$head_sha\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inspect changed files
+        id: changed_files
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+        run: |
+          set -Eeuo pipefail
+
+          output="$RUNNER_TEMP/changed-files.jsonl"
+
+          gh api --paginate \
+            "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
+            --jq '.[] | {
+              filename: .filename,
+              status: .status,
+              additions: .additions,
+              deletions: .deletions,
+              changes: .changes
+            } | @json' > "$output"
+
+          if [[ ! -s "$output" ]]; then
+            echo "::error::GitHub returned no changed-file metadata."
+            exit 1
+          fi
+
+          python - "$output" <<'PY'
+          import json
+          import os
+          import pathlib
+          import sys
+
+          filename = pathlib.Path(sys.argv[1])
+          dependency_names = {
+              "package.json", "package-lock.json", "npm-shrinkwrap.json",
+              "yarn.lock", "pnpm-lock.yaml", "requirements.txt",
+              "pyproject.toml", "poetry.lock", "uv.lock",
+              "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock",
+              "go.mod", "go.sum", "gemfile", "gemfile.lock",
+              "composer.json", "composer.lock",
+          }
+
+          records = []
+          with filename.open(encoding="utf-8") as stream:
+              for line_number, line in enumerate(stream, 1):
+                  line = line.strip()
+                  if not line:
+                      continue
+                  try:
+                      record = json.loads(line)
+                  except json.JSONDecodeError as exc:
+                      raise SystemExit(
+                          f"Invalid changed-file JSON at line {line_number}: {exc}"
+                      )
+                  if not isinstance(record, dict):
+                      raise SystemExit("Unexpected changed-file record.")
+                  records.append(record)
+
+          if not records:
+              raise SystemExit("No changed-file records were parsed.")
+
+          dependency_count = 0
+          additions = 0
+          deletions = 0
+
+          print(f"Changed files: {len(records)}")
+
+          for record in records:
+              path = str(record.get("filename", ""))
+              status = str(record.get("status", "unknown"))
+              added = int(record.get("additions", 0))
+              removed = int(record.get("deletions", 0))
+              name = path.rsplit("/", 1)[-1].lower()
+
+              additions += added
+              deletions += removed
+
+              category = (
+                  "dependency"
+                  if name in dependency_names
+                  else "other"
+              )
+
+              if category == "dependency":
+                  dependency_count += 1
+
+              print(
+                  f"- [{category}] {path} "
+                  f"({status}; +{added} -{removed})"
+              )
+
+          print(f"Dependency-related files: {dependency_count}")
+          print(f"Total additions: {additions}")
+          print(f"Total deletions: {deletions}")
+
+          with open(
+              os.environ["GITHUB_OUTPUT"],
+              "a",
+              encoding="utf-8"
+          ) as output:
+              output.write(f"file_count={len(records)}\n")
+              output.write(f"dependency_count={dependency_count}\n")
+              output.write(f"additions={additions}\n")
+              output.write(f"deletions={deletions}\n")
+          PY
+
+      - name: Publish review summary
+        if: always()
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+          JOB_RESULT: ${{ job.status }}
+          BASE_BRANCH: ${{ steps.metadata.outputs.base_branch }}
+          DRAFT_STATUS: ${{ steps.metadata.outputs.draft }}
+          FILE_COUNT: ${{ steps.changed_files.outputs.file_count }}
+          DEPENDENCY_COUNT: ${{ steps.changed_files.outputs.dependency_count }}
+          ADDITIONS: ${{ steps.changed_files.outputs.additions }}
+          DELETIONS: ${{ steps.changed_files.outputs.deletions }}
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo "## MedOrbits Dependabot Review"
+            echo
+            echo "- Pull request: #${PR_NUMBER:-unavailable}"
+            echo "- Target branch: ${BASE_BRANCH:-not verified}"
+            echo "- Draft: ${DRAFT_STATUS:-unknown}"
+            echo "- Workflow result: $JOB_RESULT"
+            echo "- Changed files: ${FILE_COUNT:-not available}"
+            echo "- Dependency-related files: ${DEPENDENCY_COUNT:-not available}"
+            echo "- Lines added: ${ADDITIONS:-not available}"
+            echo "- Lines deleted: ${DELETIONS:-not available}"
+            echo
+            echo "### Actions"
+            echo "- Automated approval: No"
+            echo "- Automatic merge: No"
+            echo "- PR comments: No"
+            echo "- Repository modifications: No"
+            echo "- Pull request branch code executed: No"
+            echo
+            echo "### Review note"
+            echo "This workflow reports pull request metadata and file-change statistics."
+            echo "It does not establish that dependencies are safe or proposed code is correct."
+            echo "Review advisories, release notes, lockfile changes, and required CI checks before merging."
+          } >> "$GITHUB_STEP_SUMMARY"
