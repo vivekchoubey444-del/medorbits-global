@@ -1,3 +1,4 @@
+
 {
   "name": "MedOrbits Development Environment",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
@@ -74,7 +75,7 @@
 
   "onCreateCommand": "node --version && npm --version && git --version",
 
-  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'No package-lock.json found; install dependencies only after reviewing the project instructions.'; else echo 'No package.json found; skipping dependency installation.'; fi",
+  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'No package-lock.json found; skipping automatic installation for reproducibility.'; else echo 'No package.json found; skipping dependency installation.'; fi",
 
   "postStartCommand": "git status --short --branch",
 

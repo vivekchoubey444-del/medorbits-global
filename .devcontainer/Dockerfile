@@ -6,10 +6,10 @@
 # Purpose: Secure, reproducible Node.js development environment
 #
 # Security:
-#   - Non-root execution
+#   - Non-root execution by default
 #   - No embedded credentials or production secrets
 #   - Minimal OS packages
-#   - Dependency installation controlled by the devcontainer lifecycle
+#   - Dependency installation controlled by devcontainer lifecycle
 #   - No application deployment or database migration
 # =============================================================================
 
@@ -29,8 +29,7 @@ ENV NODE_ENV=development \
 
 WORKDIR /workspaces
 
-# Install only the minimal utilities required by the development environment.
-# Keep package installation reproducible where possible and remove apt metadata.
+# Install only essential development utilities.
 USER root
 
 RUN apt-get update \
@@ -42,22 +41,22 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Ensure the standard development user owns the workspace root.
+# Prepare workspace permissions for the standard development user.
 RUN mkdir -p /workspaces \
     && chown node:node /workspaces
 
-# Do not copy application source or install project dependencies at image build
-# time. The devcontainer mounts the repository as the workspace.
+# Do not copy source files or install project dependencies during image build.
+# The Dev Containers runtime mounts the repository into the workspace.
 USER node
 
 WORKDIR /workspaces
 
-# Confirm essential tooling is available without installing project packages.
+# Verify essential tooling.
 RUN node --version \
     && npm --version \
     && git --version
 
 EXPOSE 3000
 
-# The Dev Containers runtime manages the development container lifecycle.
+# The Dev Containers runtime manages the container lifecycle.
 CMD ["sleep", "infinity"]
