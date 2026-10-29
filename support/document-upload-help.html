@@ -1447,6 +1447,283 @@
       }
     }
   </style>
+
+<style id="medorbits-support-visual-enhancements">
+
+/* =========================================================
+   MedOrbits Support — additive visual enhancement layer
+   Existing HTML structure and page content remain unchanged.
+   ========================================================= */
+:root {
+  --support-card-a: rgba(255, 40, 95, .17);
+  --support-card-b: rgba(255, 193, 126, .10);
+  --support-card-line: rgba(255, 120, 153, .36);
+  --support-card-glow: rgba(255, 40, 95, .17);
+}
+@supports (background: color-mix(in srgb, red, blue)) {
+  :root {
+    --support-card-a: color-mix(in srgb, var(--accent, #ff285f) 19%, transparent);
+    --support-card-b: color-mix(in srgb, var(--accent-light, #ffe3eb) 9%, transparent);
+    --support-card-line: color-mix(in srgb, var(--accent-soft, #ff7899) 44%, transparent);
+    --support-card-glow: color-mix(in srgb, var(--accent, #ff285f) 17%, transparent);
+  }
+}
+
+/* Two-column / 2×2 catalog layouts on desktop and tablet. */
+.topic-grid,
+.category-grid,
+.info-grid,
+.support-grid,
+.shortcut-grid,
+.process-grid,
+.action-grid,
+.resource-grid,
+.catalog-grid,
+.feature-grid,
+.benefit-grid,
+.topic-catalog,
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: clamp(12px, 1.8vw, 20px);
+}
+
+/* Keep the page's existing markup, while adding dual-tone artwork and depth. */
+.topic-card,
+.category-card,
+.info-card,
+.support-card,
+.process-step,
+.shortcut-card,
+.action-card,
+.resource-card,
+.catalog-card,
+.feature-card,
+.benefit-card,
+article[class$="-card"] {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  overflow: hidden;
+  border-color: var(--support-card-line, var(--border));
+  background:
+    radial-gradient(ellipse at 100% 0%, var(--support-card-a), transparent 48%),
+    radial-gradient(ellipse at 0% 100%, var(--support-card-b), transparent 55%),
+    linear-gradient(135deg, rgba(255,255,255,.045), transparent 42%),
+    linear-gradient(145deg, var(--surface, #2c0718), var(--bg-soft, #1c0410));
+  box-shadow: 0 14px 34px rgba(0,0,0,.19), inset 0 1px 0 rgba(255,255,255,.045);
+  transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease, filter .28s ease;
+}
+
+/* Decorative illustration panel — generated locally as an SVG, no remote dependency. */
+.topic-card::before,
+.category-card::before,
+.info-card::before,
+.support-card::before,
+.process-step::before,
+.shortcut-card::before,
+.action-card::before,
+.resource-card::before,
+.catalog-card::before,
+.feature-card::before,
+.benefit-card::before,
+article[class$="-card"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -24px;
+  right: -18px;
+  width: clamp(92px, 12vw, 148px);
+  height: clamp(92px, 12vw, 148px);
+  border-radius: 36% 64% 61% 39% / 42% 40% 60% 58%;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255,255,255,.22) 0 2px, transparent 3px),
+    radial-gradient(circle at 68% 62%, var(--support-card-a), transparent 58%),
+    linear-gradient(145deg, var(--support-card-a), var(--support-card-b));
+  border: 1px solid var(--support-card-line);
+  opacity: .92;
+  transform: rotate(14deg);
+  transition: transform .45s ease, opacity .3s ease;
+  pointer-events: none;
+}
+
+/* Add relevant, decorative emoji artwork without editing card contents. */
+.topic-card::after,
+.category-card::after,
+.info-card::after,
+.support-card::after,
+.process-step::after,
+.shortcut-card::after,
+.action-card::after,
+.resource-card::after,
+.catalog-card::after,
+.feature-card::after,
+.benefit-card::after,
+article[class$="-card"]::after {
+  content: "✦";
+  position: absolute;
+  top: 13px;
+  right: 16px;
+  z-index: 1;
+  color: var(--accent-light, #ffe3eb);
+  font-size: clamp(20px, 2.5vw, 29px);
+  line-height: 1;
+  text-shadow: 0 0 18px var(--support-card-glow);
+  opacity: .95;
+  pointer-events: none;
+  animation: support-spark-drift 5.5s ease-in-out infinite;
+}
+.topic-card:nth-child(4n + 1)::after,
+.category-card:nth-child(4n + 1)::after,
+.info-card:nth-child(4n + 1)::after,
+.support-card:nth-child(4n + 1)::after { content: "✦"; }
+.topic-card:nth-child(4n + 2)::after,
+.category-card:nth-child(4n + 2)::after,
+.info-card:nth-child(4n + 2)::after,
+.support-card:nth-child(4n + 2)::after { content: "🌐"; }
+.topic-card:nth-child(4n + 3)::after,
+.category-card:nth-child(4n + 3)::after,
+.info-card:nth-child(4n + 3)::after,
+.support-card:nth-child(4n + 3)::after { content: "💡"; }
+.topic-card:nth-child(4n)::after,
+.category-card:nth-child(4n)::after,
+.info-card:nth-child(4n)::after,
+.support-card:nth-child(4n)::after { content: "🚀"; }
+
+.topic-card:nth-child(even),
+.category-card:nth-child(even),
+.info-card:nth-child(even),
+.support-card:nth-child(even),
+article[class$="-card"]:nth-child(even) {
+  --support-card-a: rgba(255, 190, 113, .16);
+  --support-card-b: rgba(255, 40, 95, .11);
+  --support-card-line: rgba(255, 190, 113, .34);
+}
+
+.topic-card:hover,
+.category-card:hover,
+.info-card:hover,
+.support-card:hover,
+.process-step:hover,
+.shortcut-card:hover,
+.action-card:hover,
+.resource-card:hover,
+.catalog-card:hover,
+.feature-card:hover,
+.benefit-card:hover,
+article[class$="-card"]:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-soft, #ff7899);
+  box-shadow: 0 20px 42px rgba(0,0,0,.27), 0 0 24px var(--support-card-glow);
+  filter: saturate(1.08);
+}
+.topic-card:hover::before,
+.category-card:hover::before,
+.info-card:hover::before,
+.support-card:hover::before,
+.process-step:hover::before,
+article[class$="-card"]:hover::before {
+  transform: rotate(-5deg) scale(1.08);
+  opacity: 1;
+}
+
+/* Enhance existing card icon holders without replacing their text or emoji. */
+.topic-icon,
+.category-icon,
+.info-icon,
+.support-icon,
+.card-icon,
+.process-icon,
+.shortcut-icon {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 7px;
+  border: 1px solid var(--support-card-line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--support-card-a), var(--support-card-b));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 8px 20px rgba(0,0,0,.12);
+  font-size: 25px;
+}
+
+/* 2×2 cards at medium widths; one column on narrow phones. */
+@media (max-width: 680px) {
+  .topic-grid,
+  .category-grid,
+  .info-grid,
+  .support-grid,
+  .shortcut-grid,
+  .process-grid,
+  .action-grid,
+  .resource-grid,
+  .catalog-grid,
+  .feature-grid,
+  .benefit-grid,
+  .topic-catalog,
+  .help-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+  }
+  .topic-card,
+  .category-card,
+  .info-card,
+  .support-card,
+  .process-step,
+  article[class$="-card"] {
+    padding: clamp(13px, 3.2vw, 20px);
+  }
+}
+@media (max-width: 420px) {
+  .topic-grid,
+  .category-grid,
+  .info-grid,
+  .support-grid,
+  .shortcut-grid,
+  .process-grid,
+  .action-grid,
+  .resource-grid,
+  .catalog-grid,
+  .feature-grid,
+  .benefit-grid,
+  .topic-catalog,
+  .help-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@keyframes support-spark-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-5px) rotate(8deg) scale(1.06); }
+}
+@keyframes support-card-enter {
+  from { opacity: .75; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topic-card, .category-card, .info-card, .support-card, .process-step,
+  .shortcut-card, .action-card, .resource-card, .catalog-card,
+  .feature-card, .benefit-card, article[class$="-card"] {
+    animation: support-card-enter .55s ease-out both;
+  }
+  .topic-card:nth-child(4n + 2), .category-card:nth-child(4n + 2),
+  .info-card:nth-child(4n + 2), .support-card:nth-child(4n + 2) { animation-delay: .06s; }
+  .topic-card:nth-child(4n + 3), .category-card:nth-child(4n + 3),
+  .info-card:nth-child(4n + 3), .support-card:nth-child(4n + 3) { animation-delay: .12s; }
+  .topic-card:nth-child(4n), .category-card:nth-child(4n),
+  .info-card:nth-child(4n), .support-card:nth-child(4n) { animation-delay: .18s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topic-card, .category-card, .info-card, .support-card, .process-step,
+  .topic-card::after, .category-card::after, .info-card::after, .support-card::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+</style>
 </head>
 
 <body>
