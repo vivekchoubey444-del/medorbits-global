@@ -1,13 +1,31 @@
 
+# ==============================================================================
+# MedOrbits -- CodeQL Security Analysis
+# File: .github/workflows/codeql.yml
+# Release: 2.1.2
+# ==============================================================================
+
 name: CodeQL Security Analysis
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
+
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
   schedule:
-    - cron: "30 2 * * 1"
+    - cron: "23 3 * * 1"
+
   workflow_dispatch:
 
 permissions:
@@ -31,19 +49,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - javascript-typescript
-          - python
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
 
     steps:
-      - name: Verify runner
-        run: |
-          echo "CodeQL workflow started"
-          echo "Event: $GITHUB_EVENT_NAME"
-          echo "Ref: $GITHUB_REF"
-          git --version
-
-      - name: Check out repository
+      - name: Check out repository source
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -53,9 +66,11 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: security-extended
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
+          upload: true

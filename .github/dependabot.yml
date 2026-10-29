@@ -1,77 +1,29 @@
 
 # ==============================================================================
-# MedOrbits -- CodeQL Security Analysis
-# File: .github/workflows/codeql.yml
-# Release: 2.1.1
-#
-# Purpose:
-#   Analyze JavaScript/TypeScript and Python for security vulnerabilities.
-#
-# Permissions:
-#   Read source and pull-request metadata; publish security findings.
-#   Never approve, merge, or modify pull requests.
+# MedOrbits -- Dependabot Configuration
+# File: .github/dependabot.yml
 # ==============================================================================
 
-name: CodeQL Security Analysis
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: "Asia/Kolkata"
+    labels:
+      - dependencies
+    open-pull-requests-limit: 10
 
-on:
-  push:
-    branches:
-      - main
-      - develop
-
-  pull_request:
-    branches:
-      - main
-      - develop
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-
-  schedule:
-    - cron: "23 3 * * 1"
-
-  workflow_dispatch:
-
-permissions:
-  actions: read
-  contents: read
-  security-events: write
-  pull-requests: read
-
-concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  analyze:
-    name: Analyze ${{ matrix.language }} for vulnerabilities
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: javascript-typescript
-            build-mode: none
-          - language: python
-            build-mode: none
-
-    steps:
-      - name: Check out repository source
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
-          upload: true
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: "Asia/Kolkata"
+    labels:
+      - dependencies
+    open-pull-requests-limit: 10
