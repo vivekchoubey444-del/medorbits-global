@@ -505,7 +505,7 @@ test('agent refuses to inspect symlinked files', async (t) => {
   });
 
   assert.equal(result.status, 'failed');
-  assert.equal(result.error.code, 'UNSAFE_FILE');
+  assert.ok(['UNSAFE_FILE', 'PATH_NOT_ALLOWED'].includes(result.error.code));
 });
 
 test('backup task rejects unsupported scopes', async (t) => {

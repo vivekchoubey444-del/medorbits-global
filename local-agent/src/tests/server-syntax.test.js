@@ -8,7 +8,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const REPOSITORY_ROOT = path.resolve(__dirname, '../../..');
-const AGENT_ROOT = path.resolve(__dirname, '..');
+const AGENT_ROOT = path.resolve(__dirname, '../..');
 
 const EXCLUDED_DIRECTORIES = new Set([
   '.git',

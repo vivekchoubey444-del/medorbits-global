@@ -1,28 +1,42 @@
-#!/usr/bin/env node
 'use strict';
+
 const fs = require('node:fs');
 const path = require('node:path');
-const root = path.resolve(__dirname, '..');
-const excluded = new Set(['.git', 'node_modules', '.venv', 'venv', 'dist', 'build', 'coverage', '.local-agent']);
-const errors = [];
+
+const ROOT = path.resolve(__dirname, '..');
+const EXCLUDED = new Set(['node_modules', '.git', 'coverage', 'dist', 'build']);
+const failures = [];
 let checked = 0;
-function walk(dir) {
-  let entries;
-  try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
-  catch (error) { errors.push(`${path.relative(root, dir)}: ${error.message}`); return; }
-  for (const entry of entries) {
-    if (excluded.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
+
+function walk(directory) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (EXCLUDED.has(entry.name)) continue;
+    const file = path.join(directory, entry.name);
     if (entry.isSymbolicLink()) continue;
-    if (entry.isDirectory()) walk(full);
-    else if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
-      checked++;
-      try { JSON.parse(fs.readFileSync(full, 'utf8')); }
-      catch (error) { errors.push(`${path.relative(root, full)}: ${error.message}`); }
+    if (entry.isDirectory()) {
+      walk(file);
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      checked += 1;
+      try {
+        JSON.parse(fs.readFileSync(file, 'utf8'));
+      } catch (error) {
+        failures.push(`${path.relative(ROOT, file)}: ${error.message}`);
+      }
     }
   }
 }
-walk(root);
-console.log(`JSON files checked: ${checked}`);
-if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-else console.log('JSON validation passed.');
+
+try {
+  walk(ROOT);
+} catch (error) {
+  console.error(`JSON validation could not complete: ${error.message}`);
+  process.exit(2);
+}
+
+if (failures.length) {
+  console.error(`Invalid JSON files (${failures.length}/${checked} checked):`);
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
+console.log(`JSON validation passed: ${checked} files checked.`);

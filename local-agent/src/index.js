@@ -222,6 +222,13 @@ function resolveInsideRoot(root, requestedPath) {
     );
   }
 
+  if (requestedPath.includes('\0')) {
+    throw new AgentError(
+      'Null bytes are not permitted in paths.',
+      'INVALID_PATH'
+    );
+  }
+
   if (path.isAbsolute(requestedPath)) {
     throw new AgentError(
       'Absolute paths are not permitted.',

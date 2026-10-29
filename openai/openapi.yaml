@@ -1,623 +1,597 @@
 openapi: 3.1.1
-
 info:
-title: MedOrbits API
-version: 1.0.0
-summary: API specification for the MedOrbits platform.
-description: |
-API contract for MedOrbits education, admissions, careers,
-recruitment, applications, and supporting services.
+  title: MedOrbits API
+  version: 1.0.0
+  summary: API specification for the MedOrbits platform.
+  description: |
+    API contract for MedOrbits education, admissions, careers,
+    recruitment, applications, and supporting services.
 
-This specification documents intended API behavior.
-Each endpoint must be verified against the actual server
-implementation before being treated as operational.
-
+    This specification documents intended API behavior.
+    Each endpoint must be verified against the actual server
+    implementation before being treated as operational.
 servers:
-
-* url: https://www.medorbits.in/api
+  - url: https://www.medorbits.in/api
     description: Production API base URL (verify deployment configuration).
-* url: http://127.0.0.1:3035/api
+  - url: http://127.0.0.1:3035/api
     description: Local development example.
-
 tags:
-
-* name: System
+  - name: System
     description: Health and service status.
-* name: Authentication
+  - name: Authentication
     description: Authentication and session operations.
-* name: Users
+  - name: Users
     description: User profile operations.
-* name: Colleges
+  - name: Colleges
     description: College discovery and information.
-* name: Courses
+  - name: Courses
     description: Education and course information.
-* name: Jobs
+  - name: Jobs
     description: Career and recruitment listings.
-* name: Applications
+  - name: Applications
     description: Application submission and status.
-* name: Notifications
+  - name: Notifications
     description: User notification operations.
-
 security:
-
-* bearerAuth: []
-
+  - bearerAuth: []
 paths:
-/health:
-get:
-tags: [System]
-summary: Check API health
-operationId: getHealth
-security: []
-responses:
-‘200’:
-description: Service is responding.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/HealthResponse’
-‘503’:
-$ref: ‘#/components/responses/ServiceUnavailable’
-
-/auth/login:
-post:
-tags: [Authentication]
-summary: Authenticate a user
-operationId: login
-security: []
-requestBody:
-required: true
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/LoginRequest’
-responses:
-‘200’:
-description: Authentication successful.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/AuthResponse’
-‘400’:
-$ref: ‘#/components/responses/BadRequest’
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-‘429’:
-$ref: ‘#/components/responses/TooManyRequests’
-
-/auth/logout:
-post:
-tags: [Authentication]
-summary: End the current session
-operationId: logout
-responses:
-‘200’:
-description: Session ended successfully.
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-
-/users/me:
-get:
-tags: [Users]
-summary: Get the authenticated user’s profile
-operationId: getCurrentUser
-responses:
-‘200’:
-description: User profile returned.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/UserProfile’
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-
-/colleges:
-get:
-tags: [Colleges]
-summary: Search colleges
-operationId: listColleges
-security: []
-parameters:
-- name: query
-in: query
-description: Search phrase.
-schema:
-type: string
-maxLength: 150
-- name: state
-in: query
-schema:
-type: string
-maxLength: 100
-- name: course
-in: query
-schema:
-type: string
-maxLength: 100
-- name: page
-in: query
-schema:
-type: integer
-minimum: 1
-default: 1
-- name: limit
-in: query
-schema:
-type: integer
-minimum: 1
-maximum: 100
-default: 20
-responses:
-‘200’:
-description: Matching colleges.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/CollegeListResponse’
-‘400’:
-$ref: ‘#/components/responses/BadRequest’
-
-/colleges/{collegeId}:
-get:
-tags: [Colleges]
-summary: Get college details
-operationId: getCollege
-security: []
-parameters:
-- $ref: ‘#/components/parameters/CollegeId’
-responses:
-‘200’:
-description: College details returned.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/College’
-‘404’:
-$ref: ‘#/components/responses/NotFound’
-
-/courses:
-get:
-tags: [Courses]
-summary: List education courses
-operationId: listCourses
-security: []
-parameters:
-- name: category
-in: query
-schema:
-type: string
-maxLength: 100
-- name: country
-in: query
-schema:
-type: string
-maxLength: 100
-responses:
-‘200’:
-description: Available course records.
-content:
-application/json:
-schema:
-type: object
-required: [items]
-properties:
-items:
-type: array
-items:
-$ref: ‘#/components/schemas/Course’
-
-/jobs:
-get:
-tags: [Jobs]
-summary: Search job listings
-operationId: listJobs
-security: []
-parameters:
-- name: query
-in: query
-schema:
-type: string
-maxLength: 150
-- name: location
-in: query
-schema:
-type: string
-maxLength: 150
-- name: employmentType
-in: query
-schema:
-type: string
-enum: [full-time, part-time, internship, apprenticeship, contract]
-- name: page
-in: query
-schema:
-type: integer
-minimum: 1
-default: 1
-- name: limit
-in: query
-schema:
-type: integer
-minimum: 1
-maximum: 100
-default: 20
-responses:
-‘200’:
-description: Matching job listings.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/JobListResponse’
-
-/applications:
-get:
-tags: [Applications]
-summary: List the authenticated user’s applications
-operationId: listApplications
-responses:
-‘200’:
-description: Application records.
-content:
-application/json:
-schema:
-type: object
-required: [items]
-properties:
-items:
-type: array
-items:
-$ref: ‘#/components/schemas/Application’
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-
-post:
-  tags: [Applications]
-  summary: Submit an application
-  operationId: createApplication
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: '#/components/schemas/ApplicationRequest'
-  responses:
-    '201':
-      description: Application submitted.
-      content:
-        application/json:
+  /health:
+    get:
+      tags: [System]
+      summary: Check API health
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is responding.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate a user
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: End the current session
+      operationId: logout
+      responses:
+        '200':
+          description: Session ended successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the authenticated user's profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /colleges:
+    get:
+      tags: [Colleges]
+      summary: Search colleges
+      operationId: listColleges
+      security: []
+      parameters:
+        - name: query
+          in: query
+          description: Search phrase.
           schema:
-            $ref: '#/components/schemas/Application'
-    '400':
-      $ref: '#/components/responses/BadRequest'
-    '401':
-      $ref: '#/components/responses/Unauthorized'
-    '409':
-      description: Duplicate or conflicting submission.
+            type: string
+            maxLength: 150
+        - name: state
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: course
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Matching colleges.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollegeListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /colleges/{collegeId}:
+    get:
+      tags: [Colleges]
+      summary: Get college details
+      operationId: getCollege
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CollegeId'
+      responses:
+        '200':
+          description: College details returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/College'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /courses:
+    get:
+      tags: [Courses]
+      summary: List education courses
+      operationId: listCourses
+      security: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: country
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Available course records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Course'
+  /jobs:
+    get:
+      tags: [Jobs]
+      summary: Search job listings
+      operationId: listJobs
+      security: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+            maxLength: 150
+        - name: location
+          in: query
+          schema:
+            type: string
+            maxLength: 150
+        - name: employmentType
+          in: query
+          schema:
+            type: string
+            enum: [full-time, part-time, internship, apprenticeship, contract]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Matching job listings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListResponse'
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List the authenticated user's applications
+      operationId: listApplications
+      responses:
+        '200':
+          description: Application records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Applications]
+      summary: Submit an application
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationRequest'
+      responses:
+        '201':
+          description: Application submitted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Duplicate or conflicting submission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /applications/{applicationId}:
+    get:
+      tags: [Applications]
+      summary: Get application status
+      operationId: getApplication
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application details returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for the authenticated user
+      operationId: listNotifications
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Notifications returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use a short-lived access token issued by the implemented authentication service.
+  parameters:
+    CollegeId:
+      name: collegeId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+  responses:
+    BadRequest:
+      description: Invalid request.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-
-/applications/{applicationId}:
-get:
-tags: [Applications]
-summary: Get application status
-operationId: getApplication
-parameters:
-- $ref: ‘#/components/parameters/ApplicationId’
-responses:
-‘200’:
-description: Application details returned.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/Application’
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-‘404’:
-$ref: ‘#/components/responses/NotFound’
-
-/notifications:
-get:
-tags: [Notifications]
-summary: List notifications for the authenticated user
-operationId: listNotifications
-parameters:
-- name: unreadOnly
-in: query
-schema:
-type: boolean
-default: false
-- name: limit
-in: query
-schema:
-type: integer
-minimum: 1
-maximum: 100
-default: 20
-responses:
-‘200’:
-description: Notifications returned.
-content:
-application/json:
-schema:
-type: object
-required: [items]
-properties:
-items:
-type: array
-items:
-$ref: ‘#/components/schemas/Notification’
-‘401’:
-$ref: ‘#/components/responses/Unauthorized’
-
-components:
-securitySchemes:
-bearerAuth:
-type: http
-scheme: bearer
-bearerFormat: JWT
-description: Use a short-lived access token issued by the implemented authentication service.
-
-parameters:
-CollegeId:
-name: collegeId
-in: path
-required: true
-schema:
-type: string
-minLength: 1
-maxLength: 100
-
-ApplicationId:
-  name: applicationId
-  in: path
-  required: true
-  schema:
-    type: string
-    minLength: 1
-    maxLength: 100
-
-responses:
-BadRequest:
-description: Invalid request.
-content:
-application/json:
-schema:
-$ref: ‘#/components/schemas/ErrorResponse’
-
-Unauthorized:
-  description: Authentication is missing or invalid.
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/ErrorResponse'
-NotFound:
-  description: Resource not found or unavailable to the requester.
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/ErrorResponse'
-TooManyRequests:
-  description: Request rate limit exceeded.
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/ErrorResponse'
-ServiceUnavailable:
-  description: Service or required dependency is unavailable.
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/ErrorResponse'
-
-schemas:
-HealthResponse:
-type: object
-required: [status]
-properties:
-status:
-type: string
-enum: [ok, degraded]
-timestamp:
-type: string
-format: date-time
-version:
-type: string
-
-LoginRequest:
-  type: object
-  additionalProperties: false
-  required: [email, password]
-  properties:
-    email:
-      type: string
-      format: email
-      maxLength: 254
-    password:
-      type: string
-      format: password
-      minLength: 1
-      maxLength: 1024
-AuthResponse:
-  type: object
-  required: [user]
-  properties:
-    accessToken:
-      type: string
-      description: Include only if the implemented authentication design returns a token in the response body.
-    tokenType:
-      type: string
-      const: Bearer
-    expiresIn:
-      type: integer
-      minimum: 1
-    user:
-      $ref: '#/components/schemas/UserProfile'
-UserProfile:
-  type: object
-  required: [id]
-  properties:
-    id:
-      type: string
-    name:
-      type: string
-      maxLength: 150
-    email:
-      type: string
-      format: email
-    role:
-      type: string
-      enum: [student, applicant, employer, counselor, administrator]
-College:
-  type: object
-  required: [id, name]
-  properties:
-    id:
-      type: string
-    name:
-      type: string
-    state:
-      type: string
-    city:
-      type: string
-    courses:
-      type: array
-      items:
-        type: string
-    website:
-      type: string
-      format: uri
-CollegeListResponse:
-  type: object
-  required: [items, page, limit]
-  properties:
-    items:
-      type: array
-      items:
-        $ref: '#/components/schemas/College'
-    page:
-      type: integer
-      minimum: 1
-    limit:
-      type: integer
-      minimum: 1
-    total:
-      type: integer
-      minimum: 0
-Course:
-  type: object
-  required: [id, name, category]
-  properties:
-    id:
-      type: string
-    name:
-      type: string
-    category:
-      type: string
-    country:
-      type: string
-    description:
-      type: string
-Job:
-  type: object
-  required: [id, title]
-  properties:
-    id:
-      type: string
-    title:
-      type: string
-    employer:
-      type: string
-    location:
-      type: string
-    employmentType:
-      type: string
-      enum: [full-time, part-time, internship, apprenticeship, contract]
-    description:
-      type: string
-    publishedAt:
-      type: string
-      format: date-time
-JobListResponse:
-  type: object
-  required: [items]
-  properties:
-    items:
-      type: array
-      items:
-        $ref: '#/components/schemas/Job'
-    page:
-      type: integer
-      minimum: 1
-    limit:
-      type: integer
-      minimum: 1
-    total:
-      type: integer
-      minimum: 0
-ApplicationRequest:
-  type: object
-  additionalProperties: false
-  required: [courseId]
-  properties:
-    courseId:
-      type: string
-      minLength: 1
-      maxLength: 100
-    collegeId:
-      type: string
-      maxLength: 100
-    applicantMessage:
-      type: string
-      maxLength: 5000
-Application:
-  type: object
-  required: [id, status]
-  properties:
-    id:
-      type: string
-    courseId:
-      type: string
-    collegeId:
-      type: string
-    status:
-      type: string
-      enum: [submitted, under_review, action_required, accepted, rejected, withdrawn]
-    submittedAt:
-      type: string
-      format: date-time
-    updatedAt:
-      type: string
-      format: date-time
-Notification:
-  type: object
-  required: [id, title, createdAt, read]
-  properties:
-    id:
-      type: string
-    title:
-      type: string
-      maxLength: 200
-    message:
-      type: string
-      maxLength: 5000
-    createdAt:
-      type: string
-      format: date-time
-    read:
-      type: boolean
-ErrorResponse:
-  type: object
-  required: [error]
-  properties:
-    error:
+    Unauthorized:
+      description: Authentication is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found or unavailable to the requester.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Service or required dependency is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    HealthResponse:
       type: object
-      required: [code, message]
+      required: [status]
       properties:
-        code:
+        status:
           type: string
+          enum: [ok, degraded]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 1024
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        accessToken:
+          type: string
+          description: Include only if the implemented authentication design returns a token in the response body.
+        tokenType:
+          type: string
+          const: Bearer
+        expiresIn:
+          type: integer
+          minimum: 1
+        user:
+          $ref: '#/components/schemas/UserProfile'
+    UserProfile:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [student, applicant, employer, counselor, administrator]
+    College:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        state:
+          type: string
+        city:
+          type: string
+        courses:
+          type: array
+          items:
+            type: string
+        website:
+          type: string
+          format: uri
+    CollegeListResponse:
+      type: object
+      required: [items, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/College'
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    Course:
+      type: object
+      required: [id, name, category]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        country:
+          type: string
+        description:
+          type: string
+    Job:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        employer:
+          type: string
+        location:
+          type: string
+        employmentType:
+          type: string
+          enum: [full-time, part-time, internship, apprenticeship, contract]
+        description:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+    JobListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    ApplicationRequest:
+      type: object
+      additionalProperties: false
+      required: [courseId]
+      properties:
+        courseId:
+          type: string
+          minLength: 1
+          maxLength: 100
+        collegeId:
+          type: string
+          maxLength: 100
+        applicantMessage:
+          type: string
+          maxLength: 5000
+    Application:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        collegeId:
+          type: string
+        status:
+          type: string
+          enum: [submitted, under_review, action_required, accepted, rejected, withdrawn]
+        submittedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      required: [id, title, createdAt, read]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 200
         message:
           type: string
-        requestId:
+          maxLength: 5000
+        createdAt:
           type: string
+          format: date-time
+        read:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string

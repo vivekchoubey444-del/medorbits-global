@@ -139,7 +139,7 @@ function safeError(error, options, depth, seen) {
   return result;
 }
 
-function sanitizeValue(value, options, depth = 0, seen = new WeakSet()) {
+function sanitizeValue(value, options = DEFAULTS, depth = 0, seen = new WeakSet()) {
   if (value === null || value === undefined) {
     return value === undefined ? null : value;
   }
