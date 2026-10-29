@@ -1,23 +1,21 @@
 
-openapi: 3.1.1
+openapi: 3.1.0
 
 info:
   title: MedOrbits API
   version: 1.0.0
   summary: API specification for the MedOrbits platform.
-  description: |
+  description: >
     API contract for MedOrbits education, admissions, careers,
     recruitment, applications, and supporting services.
-
-    This specification documents intended API behavior.
-    Each endpoint must be verified against the actual server
-    implementation before being treated as operational.
+    Verify endpoints against the deployed server before treating
+    them as operational.
 
 servers:
   - url: https://www.medorbits.in/api
-    description: Production API base URL (verify deployment configuration).
+    description: Production API; verify the deployed base URL.
   - url: http://127.0.0.1:3035/api
-    description: Local development example.
+    description: Local development.
 
 tags:
   - name: System
@@ -33,13 +31,50 @@ tags:
   - name: Jobs
     description: Career and recruitment listings.
   - name: Applications
-    description: Application management.
+    description: Application submission and status.
   - name: Notifications
-    description: Notification services.
+    description: User notification operations.
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Check API health
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is responding.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        status:
+          type: string
+          examples:
+            - ok
+      required:
+        - status
+
+  responses:
+    ServiceUnavailable:
+      description: Service is temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                examples:
+                  - Service unavailable
