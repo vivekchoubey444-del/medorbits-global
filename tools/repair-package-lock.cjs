@@ -3,53 +3,46 @@
 'use strict';
 
 /**
- * MedOrbits -- NPM Lockfile Repair Utility
+ * MedOrbits -- Package Lock Repair Utility
  * File: tools/repair-package-lock.cjs
- * Requires: Node.js >= 22, npm >= 10
+ * Requires: Node.js >= 22 and npm >= 10
  *
  * Usage:
  *   node tools/repair-package-lock.cjs
  *   node tools/repair-package-lock.cjs --check
  *   node tools/repair-package-lock.cjs --local-agent
  *   node tools/repair-package-lock.cjs --local-agent --check
- *
- * This utility does not commit, push, delete project files, or run
- * package lifecycle scripts.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const VALID_ARGS = new Set(['--check', '--local-agent']);
-const args = process.argv.slice(2);
+const VALID_OPTIONS = new Set(['--check', '--local-agent']);
 
-for (const arg of args) {
-  if (!VALID_ARGS.has(arg)) {
-    console.error(`ERROR: Unknown option: ${arg}`);
-    console.error(
-      'Usage: node tools/repair-package-lock.cjs ' +
-      '[--check] [--local-agent]'
-    );
-    process.exit(2);
-  }
+function fail(message, code = 1) {
+  console.error(`ERROR: ${message}`);
+  process.exitCode = code;
+  throw new Error('MEDORBITS_REPAIR_STOP');
 }
 
-const checkOnly = args.includes('--check');
-const useLocalAgent = args.includes('--local-agent');
+function parseOptions() {
+  const options = process.argv.slice(2);
 
-const repositoryRoot = path.resolve(__dirname, '..');
+  for (const option of options) {
+    if (!VALID_OPTIONS.has(option)) {
+      console.error(
+        'Usage: node tools/repair-package-lock.cjs ' +
+        '[--check] [--local-agent]'
+      );
+      fail(`Unknown option: ${option}`, 2);
+    }
+  }
 
-const packageDirectory = useLocalAgent
-  ? path.join(repositoryRoot, 'local-agent')
-  : repositoryRoot;
-
-const packageJsonPath = path.join(packageDirectory, 'package.json');
-const packageLockPath = path.join(packageDirectory, 'package-lock.json');
-
-function fail(message, exitCode = 1) {
-  console.error(`ERROR: ${message}`);
-  process.exit(exitCode);
+  return {
+    checkOnly: options.includes('--check'),
+    localAgent: options.includes('--local-agent')
+  };
 }
 
 function readJson(filePath) {
@@ -58,55 +51,70 @@ function readJson(filePath) {
   try {
     source = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
-    fail(
-      `Cannot read ${path.relative(repositoryRoot, filePath)}: ` +
-      error.message
-    );
+    fail(`Cannot read ${filePath}: ${error.message}`);
   }
 
   try {
     return JSON.parse(source);
   } catch (error) {
-    fail(
-      `Invalid JSON in ${path.relative(repositoryRoot, filePath)}: ` +
-      error.message
-    );
+    fail(`Invalid JSON in ${filePath}: ${error.message}`);
   }
 }
 
-function validateManifest(manifest) {
+function validateManifest(manifest, filePath) {
   if (
     !manifest ||
     typeof manifest !== 'object' ||
     Array.isArray(manifest)
   ) {
-    fail('package.json must contain a JSON object.');
+    fail(`${filePath} must contain a JSON object.`);
   }
 
   if (
     typeof manifest.name !== 'string' ||
     manifest.name.trim() === ''
   ) {
-    fail('package.json must contain a non-empty "name" string.');
+    fail(`${filePath} must contain a non-empty "name" string.`);
   }
 
   if (
     manifest.version !== undefined &&
     typeof manifest.version !== 'string'
   ) {
-    fail('package.json "version" must be a string when specified.');
+    fail(`${filePath}: "version" must be a string.`);
   }
 }
 
-function validateLockfile(manifest, lock) {
-  if (!lock || typeof lock !== 'object' || Array.isArray(lock)) {
-    fail('package-lock.json must contain a JSON object.');
+function validateLock(manifest, lock, lockPath) {
+  if (
+    !lock ||
+    typeof lock !== 'object' ||
+    Array.isArray(lock)
+  ) {
+    fail(`${lockPath} must contain a JSON object.`);
+  }
+
+  if (lock.lockfileVersion !== 3) {
+    fail(
+      `${lockPath}: expected lockfileVersion 3; ` +
+      `found ${lock.lockfileVersion}.`
+    );
+  }
+
+  if (!lock.packages || typeof lock.packages !== 'object') {
+    fail(`${lockPath} is missing its "packages" object.`);
+  }
+
+  const rootPackage = lock.packages[''];
+
+  if (!rootPackage || typeof rootPackage !== 'object') {
+    fail(`${lockPath} is missing packages[""] root metadata.`);
   }
 
   if (lock.name !== manifest.name) {
     fail(
       `Lockfile name "${lock.name}" does not match ` +
-      `manifest name "${manifest.name}".`
+      `package name "${manifest.name}".`
     );
   }
 
@@ -114,54 +122,26 @@ function validateLockfile(manifest, lock) {
     manifest.version !== undefined &&
     lock.version !== manifest.version
   ) {
-    fail(
-      `Lockfile version "${lock.version}" does not match ` +
-      `manifest version "${manifest.version}".`
-    );
+    fail('Lockfile version does not match package.json.');
   }
 
-  if (lock.lockfileVersion !== 3) {
-    fail(
-      `Expected lockfileVersion 3; found ${lock.lockfileVersion}.`
-    );
-  }
-
-  if (
-    !lock.packages ||
-    typeof lock.packages !== 'object' ||
-    Array.isArray(lock.packages)
-  ) {
-    fail('Lockfile is missing the "packages" object.');
-  }
-
-  if (
-    !lock.packages[''] ||
-    typeof lock.packages[''] !== 'object'
-  ) {
-    fail('Lockfile is missing the root packages[""] entry.');
-  }
-
-  if (lock.packages[''].name !== manifest.name) {
-    fail('Root package metadata does not match package.json.');
+  if (rootPackage.name !== manifest.name) {
+    fail('Lockfile root package name does not match package.json.');
   }
 
   if (
     manifest.version !== undefined &&
-    lock.packages[''].version !== manifest.version
+    rootPackage.version !== manifest.version
   ) {
-    fail('Root package version metadata does not match package.json.');
+    fail('Lockfile root package version does not match package.json.');
   }
 
-  return true;
+  console.log('PASS: package manifest and lockfile metadata match.');
 }
 
-function runNpm(argsToRun) {
-  const npmCommand = process.platform === 'win32'
-    ? 'npm.cmd'
-    : 'npm';
-
-  const result = spawnSync(npmCommand, argsToRun, {
-    cwd: packageDirectory,
+function execute(command, args, cwd) {
+  const result = spawnSync(command, args, {
+    cwd,
     encoding: 'utf8',
     stdio: 'inherit',
     shell: process.platform === 'win32',
@@ -169,112 +149,108 @@ function runNpm(argsToRun) {
   });
 
   if (result.error) {
-    fail(`Unable to start npm: ${result.error.message}`);
+    fail(`Could not execute ${command}: ${result.error.message}`);
   }
 
   if (result.status !== 0) {
-    fail(`npm exited with status ${result.status ?? 'unknown'}.`);
+    fail(`${command} exited with status ${result.status ?? 'unknown'}.`);
   }
 }
 
 function main() {
-  console.log('');
-  console.log('MedOrbits NPM Lockfile Repair');
-  console.log('-----------------------------');
+  const options = parseOptions();
+  const repositoryRoot = path.resolve(__dirname, '..');
+
+  const packageDirectory = options.localAgent
+    ? path.join(repositoryRoot, 'local-agent')
+    : repositoryRoot;
+
+  const manifestPath = path.join(packageDirectory, 'package.json');
+  const lockPath = path.join(packageDirectory, 'package-lock.json');
+
+  console.log('MedOrbits Package Lock Repair');
   console.log(`Repository: ${repositoryRoot}`);
   console.log(`Package directory: ${packageDirectory}`);
 
-  if (!fs.existsSync(packageJsonPath)) {
-    fail(
-      `package.json not found at ` +
-      `${path.relative(repositoryRoot, packageJsonPath)}.`
-    );
+  if (!fs.existsSync(manifestPath)) {
+    fail(`Missing package.json: ${manifestPath}`);
   }
 
-  const manifest = readJson(packageJsonPath);
-  validateManifest(manifest);
+  const manifest = readJson(manifestPath);
+  validateManifest(manifest, manifestPath);
 
   console.log(`Package name: ${manifest.name}`);
-  console.log(`Package version: ${manifest.version || '(not specified)'}`);
 
-  if (checkOnly) {
-    if (!fs.existsSync(packageLockPath)) {
-      fail(
-        `package-lock.json not found at ` +
-        `${path.relative(repositoryRoot, packageLockPath)}.`
-      );
+  if (options.checkOnly) {
+    if (!fs.existsSync(lockPath)) {
+      fail(`Missing package-lock.json: ${lockPath}`);
     }
 
-    const lock = readJson(packageLockPath);
-    validateLockfile(manifest, lock);
-
-    console.log('');
-    console.log('PASS: package.json and package-lock.json are consistent.');
+    const lock = readJson(lockPath);
+    validateLock(manifest, lock, lockPath);
     return;
   }
 
   const nodeMajor = Number(process.versions.node.split('.')[0]);
 
   if (nodeMajor < 22) {
-    fail(`Node.js >= 22 is required; found ${process.versions.node}.`);
+    fail(`Node.js >= 22 required; found ${process.versions.node}.`);
   }
 
   const npmCommand = process.platform === 'win32'
     ? 'npm.cmd'
     : 'npm';
 
-  const npmVersionResult = spawnSync(npmCommand, ['--version'], {
+  const npmVersion = spawnSync(npmCommand, ['--version'], {
     cwd: packageDirectory,
     encoding: 'utf8',
     shell: process.platform === 'win32',
     windowsHide: true
   });
 
-  if (npmVersionResult.error || npmVersionResult.status !== 0) {
-    fail(
-      'npm is unavailable. Install npm >= 10 with a supported Node.js release.'
-    );
+  if (npmVersion.error || npmVersion.status !== 0) {
+    fail('npm is unavailable. Install npm >= 10.');
   }
 
-  const npmVersion = String(npmVersionResult.stdout || '').trim();
-  const npmMajor = Number(npmVersion.split('.')[0]);
+  const npmVersionText = String(npmVersion.stdout || '').trim();
+  const npmMajor = Number(npmVersionText.split('.')[0]);
 
   if (!Number.isFinite(npmMajor) || npmMajor < 10) {
-    fail(`npm >= 10 is required; found ${npmVersion || 'unknown'}.`);
+    fail(`npm >= 10 required; found ${npmVersionText || 'unknown'}.`);
   }
 
   console.log(`Node.js: ${process.versions.node}`);
-  console.log(`npm: ${npmVersion}`);
-
-  console.log('');
+  console.log(`npm: ${npmVersionText}`);
   console.log('Generating lockfile from package.json...');
-  console.log('Lifecycle scripts and audit requests are disabled.');
 
-  runNpm([
-    'install',
-    '--package-lock-only',
-    '--ignore-scripts',
-    '--no-audit',
-    '--no-fund'
-  ]);
+  execute(
+    npmCommand,
+    [
+      'install',
+      '--package-lock-only',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund'
+    ],
+    packageDirectory
+  );
 
-  if (!fs.existsSync(packageLockPath)) {
-    fail('npm completed without creating package-lock.json.');
+  if (!fs.existsSync(lockPath)) {
+    fail('npm did not create package-lock.json.');
   }
 
-  const generatedLock = readJson(packageLockPath);
-  validateLockfile(manifest, generatedLock);
+  const generatedLock = readJson(lockPath);
+  validateLock(manifest, generatedLock, lockPath);
 
-  console.log('');
-  console.log('SUCCESS: Lockfile generated and validated.');
-  console.log(
-    'Next: review the Git diff and run your repository checks.'
-  );
+  console.log('SUCCESS: package-lock.json generated and validated.');
+  console.log('Review the changes before committing.');
 }
 
 try {
   main();
 } catch (error) {
-  console.error(`UNEXPECTED ERROR: ${error.message}`);
-  process.exitCode = 1;
+  if (error.message !== 'MEDORBITS_REPAIR_STOP') {
+    console.error(`Unexpected error: ${error.stack || error.message}`);
+    process.exitCode = 1;
+  }
 }
