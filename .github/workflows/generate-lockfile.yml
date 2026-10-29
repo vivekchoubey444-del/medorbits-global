@@ -8,86 +8,222 @@ permissions:
   contents: write
 
 concurrency:
-  group: generate-root-lockfile
+  group: medorbits-lockfile-generation
   cancel-in-progress: false
 
 jobs:
   generate-lockfile:
-    name: Generate and commit package-lock.json
+    name: Generate, Validate and Commit Lockfile
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout selected branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
-      - name: Set up Node.js
+      - name: Set up Node.js and npm
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          registry-url: https://registry.npmjs.org/
 
-      - name: Verify package.json
+      - name: Validate root package.json
+        shell: bash
         run: |
-          if [ ! -f package.json ]; then
-            echo "::error::Root package.json is missing."
+          set -Eeuo pipefail
+
+          test -s package.json || {
+            echo "::error::Root package.json is missing or empty."
+            exit 1
+          }
+
+          node -e '
+            const fs = require("node:fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+            if (!p || Array.isArray(p) || typeof p !== "object") {
+              throw new Error("package.json must be a JSON object");
+            }
+
+            if (typeof p.name !== "string" || !p.name.trim()) {
+              throw new Error("package.json must define a package name");
+            }
+
+            if (typeof p.version !== "string" || !p.version.trim()) {
+              throw new Error("package.json must define a version");
+            }
+
+            console.log("Package:", p.name);
+            console.log("Version:", p.version);
+          '
+
+      - name: Check npm configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          npm --version
+          node --version
+
+          npm config get registry
+          npm config get package-lock
+
+          if [ "$(npm config get package-lock)" != "true" ]; then
+            echo "::error::npm package-lock configuration must be true."
             exit 1
           fi
 
-          node -e "
-            const p = require('./package.json');
-            if (!p.name || !p.version) {
-              throw new Error('package.json requires name and version');
-            }
-            console.log('Package:', p.name);
-            console.log('Version:', p.version);
-          "
-
-      - name: Generate lockfile without running install scripts
+      - name: Generate real package-lock.json
+        shell: bash
         run: |
+          set -Eeuo pipefail
+
+          # Remove only an empty or malformed lockfile.
+          # Preserve a valid existing lockfile for npm to reconcile.
+          if [ -f package-lock.json ]; then
+            if [ ! -s package-lock.json ] ||
+               ! node -e '
+                 const fs = require("node:fs");
+                 const x = JSON.parse(
+                   fs.readFileSync("package-lock.json", "utf8")
+                 );
+                 if (!x || typeof x !== "object" || Array.isArray(x)) {
+                   process.exit(1);
+                 }
+               ' 2>/dev/null; then
+              cp package-lock.json package-lock.json.invalid-backup
+              rm package-lock.json
+              echo "Removed invalid lockfile; backup retained."
+            fi
+          fi
+
           npm install \
             --package-lock-only \
             --ignore-scripts \
             --no-audit \
-            --no-fund
+            --no-fund \
+            --package-lock=true
 
-      - name: Validate generated lockfile
+          test -s package-lock.json || {
+            echo "::error::npm did not generate a non-empty lockfile."
+            exit 1
+          }
+
+      - name: Validate lockfile from files
+        shell: bash
         run: |
-          node -e "
-            const fs = require('fs');
-            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            const l = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          set -Eeuo pipefail
 
-            if (l.lockfileVersion !== 2 && l.lockfileVersion !== 3) {
-              throw new Error('Unexpected lockfile version');
+          # Read both files directly. Do not pipe JSON into node -,
+          # because that consumes standard input as JavaScript source.
+          node -e '
+            const fs = require("node:fs");
+
+            const pkg = JSON.parse(
+              fs.readFileSync("package.json", "utf8")
+            );
+            const lock = JSON.parse(
+              fs.readFileSync("package-lock.json", "utf8")
+            );
+
+            if (!lock || typeof lock !== "object" ||
+                Array.isArray(lock)) {
+              throw new Error("Lockfile must be a JSON object");
             }
 
-            if (!l.packages || !l.packages['']) {
-              throw new Error('Root package metadata is missing');
+            if (![2, 3].includes(lock.lockfileVersion)) {
+              throw new Error(
+                "Expected npm lockfile version 2 or 3; got " +
+                lock.lockfileVersion
+              );
             }
 
-            if (l.name && l.name !== p.name) {
-              throw new Error('Package name mismatch');
+            if (!lock.packages ||
+                typeof lock.packages !== "object" ||
+                !lock.packages[""]) {
+              throw new Error("Lockfile root package metadata is missing");
             }
 
-            if (l.version && l.version !== p.version) {
-              throw new Error('Package version mismatch');
+            const root = lock.packages[""];
+
+            if (lock.name && lock.name !== pkg.name) {
+              throw new Error("Lockfile package name mismatch");
             }
 
-            console.log('Root npm lockfile validated.');
-          "
+            if (lock.version && lock.version !== pkg.version) {
+              throw new Error("Lockfile package version mismatch");
+            }
+
+            if (root.name && root.name !== pkg.name) {
+              throw new Error("Root package name mismatch");
+            }
+
+            if (root.version && root.version !== pkg.version) {
+              throw new Error("Root package version mismatch");
+            }
+
+            console.log("Lockfile JSON: valid");
+            console.log("Lockfile version:", lock.lockfileVersion);
+            console.log("Package:", pkg.name);
+            console.log("Version:", pkg.version);
+            console.log(
+              "Lockfile entries:",
+              Object.keys(lock.packages).length
+            );
+          '
 
       - name: Commit generated lockfile
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
         run: |
-          git add package-lock.json
+          set -Eeuo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+            echo "::error::This workflow must be run manually."
+            exit 1
+          fi
+
+          if [ "$TARGET_BRANCH" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Unexpected target branch."
+            exit 1
+          fi
+
+          git add -- package-lock.json
 
           if git diff --cached --quiet; then
-            echo "No lockfile changes to commit."
+            echo "The lockfile is already committed and unchanged."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: generate root npm lockfile"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "fix: generate valid root npm lockfile"
+          git push origin "HEAD:${TARGET_BRANCH}"
+
+      - name: Confirm committed lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          git show "HEAD:package-lock.json" > /tmp/package-lock.json
+
+          test -s /tmp/package-lock.json
+
+          node -e '
+            const fs = require("node:fs");
+            const lock = JSON.parse(
+              fs.readFileSync("/tmp/package-lock.json", "utf8")
+            );
+            if (!lock.packages || !lock.packages[""]) {
+              throw new Error("Committed lockfile is incomplete");
+            }
+            console.log("Committed root package-lock.json is valid.");
+          '
+
+          echo "Commit: $(git rev-parse --short HEAD)"
