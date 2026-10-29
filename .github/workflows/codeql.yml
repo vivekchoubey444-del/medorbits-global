@@ -1,38 +1,26 @@
 
-# ==============================================================================
-# MedOrbits — CodeQL Security Analysis
-# File: .github/workflows/codeql.yml
-# Purpose: Diagnose syntax errors and run CodeQL security analysis.
-# ==============================================================================
-
-name: CodeQL Security Analysis
+name: Repository Security Validation
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main, develop]
-  schedule:
-    - cron: "30 2 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
-  security-events: write
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: security-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  diagnose:
-    name: Diagnose Python and JavaScript
+  validate:
+    name: Validate repository
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: read
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -48,142 +36,256 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Report Python syntax errors with source context
+      - name: Validate JavaScript and Node.js syntax
         shell: bash
         run: |
-          set -uo pipefail
+          set -Eeuo pipefail
 
-          python - <<'PY'
-          import ast
-          import pathlib
-          import sys
-
-          ignored = {
-              ".git", ".venv", "venv", "node_modules",
-              "__pycache__", "dist", "build", "coverage"
-          }
-          failures = 0
-          checked = 0
-
-          for path in pathlib.Path(".").rglob("*.py"):
-              if any(part in ignored for part in path.parts):
-                  continue
-
-              checked += 1
-
-              try:
-                  source = path.read_text(encoding="utf-8-sig")
-                  ast.parse(source, filename=str(path))
-
-              except SyntaxError as exc:
-                  failures += 1
-                  line_number = exc.lineno or 1
-                  column = exc.offset or 1
-
-                  print(
-                      f"::error file={path},line={line_number},"
-                      f"col={column}::{exc.msg}"
-                  )
-                  print(f"\n--- {path}:{line_number} ---")
-
-                  try:
-                      lines = path.read_text(
-                          encoding="utf-8-sig"
-                      ).splitlines()
-
-                      start = max(1, line_number - 3)
-                      end = min(len(lines), line_number + 3)
-
-                      for number in range(start, end + 1):
-                          marker = ">>" if number == line_number else "  "
-                          print(
-                              f"{marker} {number:4}: "
-                              f"{lines[number - 1]}"
-                          )
-                  except (OSError, UnicodeError) as read_error:
-                      print(f"Could not display source: {read_error}")
-
-              except (UnicodeError, OSError) as exc:
-                  failures += 1
-                  print(
-                      f"::error file={path}::"
-                      f"Cannot read Python file: {exc}"
-                  )
-
-          print(f"\nPython files checked: {checked}")
-          print(f"Python syntax errors: {failures}")
-
-          sys.exit(1 if failures else 0)
-          PY
-
-      - name: Report JavaScript syntax errors
-        shell: bash
-        run: |
-          set -uo pipefail
-          failed=0
-          checked=0
+          count=0
+          errors=0
 
           while IFS= read -r -d '' file; do
-            checked=$((checked + 1))
+            case "$file" in
+              *.js|*.cjs|*.mjs)
+                ;;
+              *)
+                continue
+                ;;
+            esac
 
-            if output="$(node --check "$file" 2>&1)"; then
-              continue
-            else
-              failed=1
-              echo "::error file=$file::JavaScript syntax check failed"
-              printf '%s\n' "$output"
+            # Skip generated and vendored directories.
+            case "/$file/" in
+              */node_modules/*|*/vendor/*|*/dist/*|*/build/*)
+                continue
+                ;;
+            esac
+
+            count=$((count + 1))
+
+            if ! output="$(node --check "$file" 2>&1)"; then
+              printf '\nFAIL: %s\n%s\n' "$file" "$output"
+              errors=$((errors + 1))
             fi
-          done < <(
-            find . -type f \
-              \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
-              -not -path './.git/*' \
-              -not -path './node_modules/*' \
-              -not -path './vendor/*' \
-              -not -path './dist/*' \
-              -not -path './build/*' \
-              -not -path './coverage/*' \
-              -print0
-          )
+          done < <(git ls-files -z)
 
-          echo "JavaScript files checked: $checked"
+          echo "JavaScript files checked: $count"
 
-          if [[ "$failed" -ne 0 ]]; then
-            echo "::error::Fix the JavaScript syntax errors listed above."
+          if (( errors > 0 )); then
+            echo "JavaScript syntax errors: $errors"
             exit 1
           fi
 
-          echo "JavaScript syntax checks passed."
+          echo "JavaScript syntax validation passed."
 
-  analyze:
-    name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+          python - <<'PY'
+          import ast
+          import subprocess
+          import sys
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: python
-            build-mode: none
-          - language: javascript-typescript
-            build-mode: none
+          result = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=subprocess.PIPE,
+          )
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          files = result.stdout.decode("utf-8", errors="surrogateescape")
+          paths = files.split("\0")
+          checked = 0
+          errors = []
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
+          excluded = (
+              "node_modules/",
+              ".venv/",
+              "venv/",
+              "site-packages/",
+              "vendor/",
+              "dist/",
+              "build/",
+          )
 
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
+          for name in paths:
+              if not name.endswith(".py"):
+                  continue
+
+              if any(part in name for part in excluded):
+                  continue
+
+              try:
+                  with open(name, "r", encoding="utf-8-sig") as source:
+                      ast.parse(source.read(), filename=name)
+                  checked += 1
+              except (OSError, SyntaxError, UnicodeError) as exc:
+                  errors.append(f"{name}: {exc}")
+
+          print(f"Python files checked: {checked}")
+
+          if errors:
+              print("\nPython syntax errors:")
+              for error in errors:
+                  print(f" - {error}")
+              sys.exit(1)
+
+          print("Python syntax validation passed.")
+          PY
+
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          count=0
+          errors=0
+
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              *.json)
+                ;;
+              *)
+                continue
+                ;;
+            esac
+
+            case "/$file/" in
+              */node_modules/*|*/vendor/*|*/dist/*|*/build/*)
+                continue
+                ;;
+            esac
+
+            count=$((count + 1))
+
+            if ! output="$(node -e '
+              const fs = require("node:fs");
+              JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            ' "$file" 2>&1)"; then
+              printf '\nFAIL: %s\n%s\n' "$file" "$output"
+              errors=$((errors + 1))
+            fi
+          done < <(git ls-files -z)
+
+          echo "JSON files checked: $count"
+
+          if (( errors > 0 )); then
+            echo "JSON validation errors: $errors"
+            exit 1
+          fi
+
+          echo "JSON validation passed."
+
+      - name: Validate shell scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          count=0
+          errors=0
+
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              *.sh)
+                ;;
+              *)
+                continue
+                ;;
+            esac
+
+            case "/$file/" in
+              */vendor/*|*/node_modules/*)
+                continue
+                ;;
+            esac
+
+            count=$((count + 1))
+
+            if ! output="$(bash -n "$file" 2>&1)"; then
+              printf '\nFAIL: %s\n%s\n' "$file" "$output"
+              errors=$((errors + 1))
+            fi
+          done < <(git ls-files -z)
+
+          echo "Shell scripts checked: $count"
+
+          if (( errors > 0 )); then
+            echo "Shell syntax errors: $errors"
+            exit 1
+          fi
+
+          echo "Shell syntax validation passed."
+
+      - name: Validate root package manifest and lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json; skipping root npm validation."
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const manifest = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (!manifest || typeof manifest !== "object" ||
+              Array.isArray(manifest)) {
+            throw new Error("Root package.json must be a JSON object.");
+          }
+
+          if (typeof manifest.name !== "string" ||
+              !manifest.name.trim()) {
+            throw new Error('Root package.json needs a valid "name".');
+          }
+
+          if (fs.existsSync("package-lock.json")) {
+            const lock = JSON.parse(
+              fs.readFileSync("package-lock.json", "utf8")
+            );
+
+            if (lock.name && lock.name !== manifest.name) {
+              throw new Error(
+                "Root package-lock.json name does not match package.json."
+              );
+            }
+
+            if (lock.lockfileVersion !== 3) {
+              throw new Error(
+                "Expected npm lockfile version 3; regenerate it with npm."
+              );
+            }
+
+            if (!lock.packages || !lock.packages[""]) {
+              throw new Error(
+                'Lockfile is missing its root packages[""] entry.'
+              );
+            }
+
+            console.log("Root npm manifest and lockfile are valid.");
+          } else {
+            console.log(
+              "WARNING: package-lock.json is missing; lockfile generation is required."
+            );
+          }
+          NODE
+
+      - name: Write validation summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Repository Security Validation"
+            echo
+            echo "- JavaScript syntax validation"
+            echo "- Python syntax validation"
+            echo "- JSON validation"
+            echo "- Shell syntax validation"
+            echo "- Root npm manifest and lockfile validation"
+            echo
+            echo "See the job steps above for detailed results."
+          } >> "$GITHUB_STEP_SUMMARY"

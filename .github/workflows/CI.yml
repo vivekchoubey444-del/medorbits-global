@@ -38,10 +38,7 @@ jobs:
           check-latest: false
 
       - name: Install YAML validator
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          python -m pip install --disable-pip-version-check "PyYAML==6.0.3"
+        run: python -m pip install --disable-pip-version-check "PyYAML==6.0.3"
 
       - name: Validate YAML syntax and duplicate keys
         shell: bash
@@ -96,11 +93,21 @@ jobs:
               construct_mapping,
           )
 
+          result = __import__("subprocess").run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=__import__("subprocess").PIPE,
+          )
+
           files = sorted(
-              path for path in Path(".").rglob("*")
-              if path.is_file()
-              and path.suffix.lower() in {".yml", ".yaml"}
-              and not any(part in EXCLUDED for part in path.parts)
+              Path(name)
+              for name in result.stdout.decode(
+                  "utf-8", errors="surrogateescape"
+              ).split("\0")
+              if name.lower().endswith((".yaml", ".yml"))
+              and name
+              and not any(part in EXCLUDED for part in Path(name).parts)
+              and Path(name).is_file()
           )
 
           errors = []
@@ -114,6 +121,7 @@ jobs:
                   errors.append(f"{path}: {exc}")
 
           if errors:
+              print("\nYAML validation failed:", file=sys.stderr)
               print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
@@ -127,6 +135,7 @@ jobs:
 
           python <<'PY'
           import json
+          import subprocess
           import sys
           from pathlib import Path
 
@@ -146,10 +155,18 @@ jobs:
           def reject_constant(value):
               raise ValueError(f"Non-standard JSON constant: {value}")
 
+          tracked = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=subprocess.PIPE,
+          ).stdout.decode("utf-8", errors="surrogateescape").split("\0")
+
           files = sorted(
-              path for path in Path(".").rglob("*.json")
-              if path.is_file()
-              and not any(part in EXCLUDED for part in path.parts)
+              Path(name) for name in tracked
+              if name.lower().endswith(".json")
+              and name
+              and not any(part in EXCLUDED for part in Path(name).parts)
+              and Path(name).is_file()
           )
 
           errors = []
@@ -163,10 +180,11 @@ jobs:
                           parse_constant=reject_constant,
                       )
                   print(f"[PASS] {path}")
-              except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+              except (OSError, UnicodeError, ValueError) as exc:
                   errors.append(f"{path}: {exc}")
 
           if errors:
+              print("\nJSON validation failed:", file=sys.stderr)
               print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
@@ -179,6 +197,7 @@ jobs:
           set -Eeuo pipefail
 
           python <<'PY'
+          import subprocess
           import sys
           import tomllib
           from pathlib import Path
@@ -188,12 +207,21 @@ jobs:
               "__pycache__", ".next", "dist", "build", "coverage"
           }
 
-          errors = []
+          tracked = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=subprocess.PIPE,
+          ).stdout.decode("utf-8", errors="surrogateescape").split("\0")
+
           files = sorted(
-              path for path in Path(".").rglob("*.toml")
-              if path.is_file()
-              and not any(part in EXCLUDED for part in path.parts)
+              Path(name) for name in tracked
+              if name.lower().endswith(".toml")
+              and name
+              and not any(part in EXCLUDED for part in Path(name).parts)
+              and Path(name).is_file()
           )
+
+          errors = []
 
           for path in files:
               try:
@@ -204,6 +232,7 @@ jobs:
                   errors.append(f"{path}: {exc}")
 
           if errors:
+              print("\nTOML validation failed:", file=sys.stderr)
               print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
@@ -217,6 +246,7 @@ jobs:
 
           python <<'PY'
           import ast
+          import subprocess
           import sys
           from pathlib import Path
 
@@ -225,17 +255,26 @@ jobs:
               "__pycache__", ".next", "dist", "build", "coverage"
           }
 
-          errors = []
+          tracked = subprocess.run(
+              ["git", "ls-files", "-z"],
+              check=True,
+              stdout=subprocess.PIPE,
+          ).stdout.decode("utf-8", errors="surrogateescape").split("\0")
+
           files = sorted(
-              path for path in Path(".").rglob("*.py")
-              if path.is_file()
-              and not any(part in EXCLUDED for part in path.parts)
+              Path(name) for name in tracked
+              if name.lower().endswith(".py")
+              and name
+              and not any(part in EXCLUDED for part in Path(name).parts)
+              and Path(name).is_file()
           )
+
+          errors = []
 
           for path in files:
               try:
                   ast.parse(
-                      path.read_text(encoding="utf-8"),
+                      path.read_text(encoding="utf-8-sig"),
                       filename=str(path),
                   )
                   print(f"[PASS] {path}")
@@ -243,6 +282,7 @@ jobs:
                   errors.append(f"{path}: {exc}")
 
           if errors:
+              print("\nPython syntax validation failed:", file=sys.stderr)
               print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
@@ -301,6 +341,10 @@ jobs:
             throw new Error("package.json must contain a JSON object.");
           }
 
+          if (typeof pkg.name !== "string" || !pkg.name.trim()) {
+            throw new Error('package.json needs a non-empty "name".');
+          }
+
           if (
             pkg.scripts !== undefined &&
             (!pkg.scripts || typeof pkg.scripts !== "object" ||
@@ -309,41 +353,36 @@ jobs:
             throw new Error("package.json scripts must be an object.");
           }
 
-          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Package: ${pkg.name}`);
           console.log(`Node.js: ${process.version}`);
           JS
 
       - name: Check lockfile prerequisites
-        if: steps.node-project.outputs.present == 'true'
         id: lockfile
+        if: steps.node-project.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
 
           if [[ -f npm-shrinkwrap.json ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Using npm-shrinkwrap.json."
+            echo "file=npm-shrinkwrap.json" >> "$GITHUB_OUTPUT"
           elif [[ -f package-lock.json ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Using package-lock.json."
+            echo "file=package-lock.json" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No npm lockfile found; dependency installation and npm scripts will be skipped."
+            echo "::error::Root npm lockfile is missing. Generate and commit a real lockfile."
+            exit 1
           fi
 
       - name: Validate lockfile consistency
-        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        if: steps.node-project.outputs.present == 'true'
+        env:
+          LOCKFILE: ${{ steps.lockfile.outputs.file }}
         shell: bash
         run: |
           set -Eeuo pipefail
-
-          LOCKFILE="$(
-            if [[ -f npm-shrinkwrap.json ]]; then
-              printf '%s' npm-shrinkwrap.json
-            else
-              printf '%s' package-lock.json
-            fi
-          )"
 
           LOCKFILE="$LOCKFILE" node <<'JS'
           const fs = require("node:fs");
@@ -367,18 +406,18 @@ jobs:
           }
 
           for (const key of ["name", "version"]) {
-            if (manifest[key] !== undefined &&
-                root[key] !== undefined &&
-                manifest[key] !== root[key]) {
-              throw new Error(`package.json ${key} does not match the lockfile.`);
+            if (manifest[key] !== undefined && root[key] !== manifest[key]) {
+              throw new Error(
+                `Root lockfile ${key} must exactly match package.json.`
+              );
             }
           }
 
-          console.log(`Validated ${process.env.LOCKFILE}.`);
+          console.log(`Lockfile metadata validated: ${process.env.LOCKFILE}`);
           JS
 
       - name: Install locked dependencies
-        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        if: steps.node-project.outputs.present == 'true'
         run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Check JavaScript syntax
@@ -395,53 +434,48 @@ jobs:
             ".git", "node_modules", ".venv", "venv", "vendor",
             "__pycache__", ".next", "dist", "build", "coverage"
           ]);
+
           const extensions = new Set([".js", ".mjs", ".cjs"]);
-          const files = [];
+          const result = spawnSync("git", ["ls-files", "-z"], {
+            encoding: "utf8"
+          });
 
-          function walk(directory) {
-            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-              if (entry.isSymbolicLink()) continue;
-              if (entry.isDirectory() && excluded.has(entry.name)) continue;
-
-              const file = path.join(directory, entry.name);
-
-              if (entry.isDirectory()) {
-                walk(file);
-              } else if (
-                entry.isFile() &&
-                extensions.has(path.extname(entry.name).toLowerCase())
-              ) {
-                files.push(file);
-              }
-            }
+          if (result.error || result.status !== 0) {
+            throw result.error || new Error("git ls-files failed");
           }
 
-          walk(".");
+          const files = result.stdout
+            .split("\0")
+            .filter(Boolean)
+            .filter(file => extensions.has(path.extname(file).toLowerCase()))
+            .filter(file => !file.split(/[\\/]/).some(part => excluded.has(part)))
+            .filter(file => fs.existsSync(file) && fs.statSync(file).isFile())
+            .sort();
+
           let failed = false;
 
-          for (const file of files.sort()) {
-            const result = spawnSync(
-              process.execPath,
-              ["--check", file],
-              { encoding: "utf8" }
-            );
+          for (const file of files) {
+            const check = spawnSync(process.execPath, ["--check", file], {
+              encoding: "utf8"
+            });
 
-            if (result.error || result.status !== 0) {
+            if (check.error || check.status !== 0) {
               failed = true;
-              console.error(`[FAIL] ${file}`);
-              if (result.stderr) console.error(result.stderr.trim());
-              if (result.error) console.error(result.error.message);
+              console.error(`\n[FAIL] ${file}`);
+              if (check.stderr) console.error(check.stderr.trim());
+              if (check.error) console.error(check.error.message);
             } else {
               console.log(`[PASS] ${file}`);
             }
           }
 
           console.log(`JavaScript files checked: ${files.length}`);
+
           if (failed) process.exit(1);
           JS
 
       - name: Run configured lint script
-        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        if: steps.node-project.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -453,7 +487,7 @@ jobs:
           fi
 
       - name: Run configured tests
-        if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
+        if: steps.node-project.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -462,23 +496,6 @@ jobs:
             npm test
           else
             echo "No npm test script configured; test check skipped."
-          fi
-
-      - name: Report dependency manifest status
-        if: always()
-        env:
-          PROJECT_PRESENT: ${{ steps.node-project.outputs.present }}
-          LOCKFILE_PRESENT: ${{ steps.lockfile.outputs.present }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          if [[ "$PROJECT_PRESENT" == "true" && "$LOCKFILE_PRESENT" == "true" ]]; then
-            echo "Root npm project and lockfile detected."
-          elif [[ "$PROJECT_PRESENT" == "true" ]]; then
-            echo "Root npm project detected; lockfile-dependent checks were skipped."
-          else
-            echo "No root npm project; Node.js project checks were skipped."
           fi
 
   shell-validation:
@@ -498,23 +515,14 @@ jobs:
           set -Eeuo pipefail
 
           mapfile -d '' files < <(
-            find . \
-              \( -type d \( \
-                -name .git -o \
-                -name node_modules -o \
-                -name .venv -o \
-                -name venv -o \
-                -name vendor -o \
-                -name __pycache__ -o \
-                -name dist -o \
-                -name build \
-              \) -prune \) \
-              -o \( -type f -name '*.sh' -print0 \)
+            git ls-files -z -- '*.sh'
           )
 
           failed=0
 
           for file in "${files[@]}"; do
+            [[ -f "$file" ]] || continue
+
             if bash -n "$file"; then
               printf '[PASS] %s\n' "$file"
             else
@@ -523,13 +531,13 @@ jobs:
             fi
           done
 
-          if ((failed)); then
+          if (( failed )); then
             exit 1
           fi
 
-          echo "Validated ${#files[@]} shell script(s)."
+          echo "Validated ${#files[@]} tracked shell script(s)."
 
-      - name: Test commit-message validator when available
+      - name: Test commit-message validator
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -537,13 +545,24 @@ jobs:
           validator=".github/scripts/validate-commit-message.sh"
           tests=".github/scripts/test-validate-commit-message.sh"
 
-          if [[ -f "$validator" && -f "$tests" ]]; then
-            bash -n "$validator"
-            bash -n "$tests"
-            bash "$tests"
-          else
-            echo "Commit-message validator and test suite are not both present; check skipped."
+          if [[ ! -f "$validator" && ! -f "$tests" ]]; then
+            echo "Commit-message validator suite not configured; check skipped."
+            exit 0
           fi
+
+          if [[ ! -f "$validator" ]]; then
+            echo "::error::Missing $validator"
+            exit 1
+          fi
+
+          if [[ ! -f "$tests" ]]; then
+            echo "::error::Missing $tests"
+            exit 1
+          fi
+
+          bash -n "$validator"
+          bash -n "$tests"
+          bash "$tests"
 
   ci-summary:
     name: CI Summary
