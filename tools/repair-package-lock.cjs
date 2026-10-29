@@ -1,99 +1,173 @@
 #!/usr/bin/env node
 'use strict';
 
+/**
+ * MedOrbits package-lock repair utility.
+ *
+ * Usage:
+ *   node tools/repair-package-lock.cjs
+ *   node tools/repair-package-lock.cjs --check
+ *   node tools/repair-package-lock.cjs --local-agent
+ *   node tools/repair-package-lock.cjs --local-agent --check
+ */
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const root = process.cwd();
-const packagePath = path.join(root, 'package.json');
-const lockPath = path.join(root, 'package-lock.json');
+const args = process.argv.slice(2);
+const allowed = new Set(['--check', '--local-agent']);
+
+for (const arg of args) {
+  if (!allowed.has(arg)) {
+    console.error(`Unknown argument: ${arg}`);
+    process.exit(2);
+  }
+}
+
+const checkOnly = args.includes('--check');
+const localAgent = args.includes('--local-agent');
+
+const root = path.resolve(__dirname, '..');
+const directory = localAgent
+  ? path.join(root, 'local-agent')
+  : root;
+
+const manifestPath = path.join(directory, 'package.json');
+const lockPath = path.join(directory, 'package-lock.json');
+
+function fail(message) {
+  console.error(`ERROR: ${message}`);
+  process.exit(1);
+}
 
 function readJson(file) {
+  let content;
+
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    content = fs.readFileSync(file, 'utf8');
   } catch (error) {
-    throw new Error(`${path.basename(file)} is invalid: ${error.message}`);
+    fail(`Cannot read ${file}: ${error.message}`);
+  }
+
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    fail(`Invalid JSON in ${file}: ${error.message}`);
   }
 }
 
-if (!fs.existsSync(packagePath)) {
-  console.error('ERROR: package.json not found in the current directory.');
-  process.exit(1);
+if (!fs.existsSync(manifestPath)) {
+  fail(`package.json not found: ${manifestPath}`);
 }
 
-let pkg;
-try {
-  pkg = readJson(packagePath);
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
+const manifest = readJson(manifestPath);
+
+if (
+  !manifest ||
+  typeof manifest !== 'object' ||
+  Array.isArray(manifest) ||
+  typeof manifest.name !== 'string' ||
+  !manifest.name.trim()
+) {
+  fail('package.json must contain a non-empty string "name".');
 }
 
-if (!pkg.name || !pkg.version) {
-  console.error('ERROR: package.json must contain name and version.');
-  process.exit(1);
-}
+console.log(`Package: ${manifest.name}`);
+console.log(`Directory: ${directory}`);
 
-let lock = null;
-let needsRepair = !fs.existsSync(lockPath);
-
-if (!needsRepair) {
-  try {
-    lock = readJson(lockPath);
-    const lockedRoot = lock.packages && lock.packages[''];
-    needsRepair = lock.name !== pkg.name ||
-      lock.version !== pkg.version ||
-      !lockedRoot ||
-      lockedRoot.name !== pkg.name ||
-      lockedRoot.version !== pkg.version ||
-      JSON.stringify(lockedRoot.dependencies || {}) !== JSON.stringify(pkg.dependencies || {}) ||
-      JSON.stringify(lockedRoot.devDependencies || {}) !== JSON.stringify(pkg.devDependencies || {});
-  } catch (error) {
-    console.warn(error.message);
-    needsRepair = true;
+if (checkOnly) {
+  if (!fs.existsSync(lockPath)) {
+    fail(`package-lock.json not found: ${lockPath}`);
   }
-}
 
-if (!needsRepair) {
-  console.log('package-lock.json metadata matches package.json.');
+  const lock = readJson(lockPath);
+
+  if (lock.name !== manifest.name) {
+    fail('Lockfile name does not match package.json.');
+  }
+
+  if (
+    manifest.version !== undefined &&
+    lock.version !== manifest.version
+  ) {
+    fail('Lockfile version does not match package.json.');
+  }
+
+  if (
+    lock.lockfileVersion !== 3 ||
+    !lock.packages ||
+    typeof lock.packages !== 'object' ||
+    !lock.packages['']
+  ) {
+    fail('Lockfile is missing required npm lockfile v3 metadata.');
+  }
+
+  console.log('PASS: package.json and package-lock.json are consistent.');
   process.exit(0);
 }
 
-if (fs.existsSync(lockPath)) {
-  const backupPath = `${lockPath}.backup-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-  fs.copyFileSync(lockPath, backupPath);
-  console.log(`Backup created: ${path.basename(backupPath)}`);
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+const version = spawnSync(npm, ['--version'], {
+  cwd: directory,
+  encoding: 'utf8',
+  shell: process.platform === 'win32'
+});
+
+if (version.error || version.status !== 0) {
+  fail(
+    `Unable to execute npm: ${
+      version.error ? version.error.message : version.stderr
+    }`
+  );
 }
 
-console.log('Regenerating lockfile metadata and dependency resolution with npm...');
+console.log(`npm version: ${version.stdout.trim()}`);
+console.log('Generating the lockfile from package.json...');
+
 const result = spawnSync(
-  process.platform === 'win32' ? 'npm.cmd' : 'npm',
-  ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'],
-  { cwd: root, stdio: 'inherit', shell: false, windowsHide: true }
+  npm,
+  [
+    'install',
+    '--package-lock-only',
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund'
+  ],
+  {
+    cwd: directory,
+    stdio: 'inherit',
+    shell: process.platform === 'win32'
+  }
 );
 
-if (result.error || result.status !== 0) {
-  console.error('ERROR: npm could not regenerate the lockfile.');
-  console.error('Check registry connectivity and dependency versions, then rerun this script.');
-  process.exit(2);
+if (result.error) {
+  fail(`npm execution failed: ${result.error.message}`);
 }
 
-try {
-  pkg = readJson(packagePath);
-  lock = readJson(lockPath);
-  const lockedRoot = lock.packages && lock.packages[''];
-  if (
-    lock.name !== pkg.name || lock.version !== pkg.version ||
-    !lockedRoot || lockedRoot.name !== pkg.name || lockedRoot.version !== pkg.version ||
-    JSON.stringify(lockedRoot.dependencies || {}) !== JSON.stringify(pkg.dependencies || {}) ||
-    JSON.stringify(lockedRoot.devDependencies || {}) !== JSON.stringify(pkg.devDependencies || {})
-  ) {
-    throw new Error('Generated lockfile metadata still does not match package.json.');
-  }
-} catch (error) {
-  console.error(`ERROR: ${error.message}`);
-  process.exit(2);
+if (result.status !== 0) {
+  fail(`npm exited with code ${result.status ?? 'unknown'}.`);
 }
 
-console.log('Lockfile regenerated and verified.');
+if (!fs.existsSync(lockPath)) {
+  fail('npm did not create package-lock.json.');
+}
+
+const lock = readJson(lockPath);
+
+if (
+  lock.name !== manifest.name ||
+  (
+    manifest.version !== undefined &&
+    lock.version !== manifest.version
+  ) ||
+  lock.lockfileVersion !== 3 ||
+  !lock.packages ||
+  !lock.packages['']
+) {
+  fail('Generated lockfile failed validation.');
+}
+
+console.log('SUCCESS: package-lock.json generated and validated.');
+console.log('Review your Git changes before committing.');
