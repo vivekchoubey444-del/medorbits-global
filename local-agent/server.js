@@ -3,7 +3,7 @@
 
 /**
  * MedOrbits Local Agent -- Local HTTP Server
- * File: /local-agent/server.js
+ * File: /local-agent/server.mjs
  * Version: 1.0.0
  * Runtime: Node.js 20+
  *

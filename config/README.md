@@ -16,3 +16,9 @@ This file documents the scope, expected responsibilities, and safe operating pra
 ## Status
 
 This document was populated because the tracked file was empty. Replace generic guidance with feature-specific details when the implementation is finalized.
+
+# Configuration
+
+Non-secret environment defaults (`development.json`, `testing.json`, `production.json`) and `env.schema.js`, an audit of environment-variable usage.
+
+Never put secrets here. Use environment variables (see `.env.example`) or your platform’s secrets manager.
