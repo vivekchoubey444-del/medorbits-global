@@ -1,5 +1,5 @@
 
-name: Validate Configuration
+name: MedOrbits - Validate Configuration
 
 on:
   push:
@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: validate-config-${{ github.workflow }}-${{ github.ref }}
+  group: validate-config-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -44,26 +44,14 @@ jobs:
       - name: Validate YAML syntax and duplicate keys
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
 
           python <<'PY'
+          import subprocess
           import sys
           from pathlib import Path
-          import yaml
 
-          EXCLUDED = {
-              ".git",
-              "node_modules",
-              ".venv",
-              "venv",
-              "vendor",
-              "__pycache__",
-              ".next",
-              ".nuxt",
-              "dist",
-              "build",
-              "coverage"
-          }
+          import yaml
 
           class UniqueKeyLoader(yaml.SafeLoader):
               pass
@@ -76,65 +64,67 @@ jobs:
 
                   try:
                       duplicate = key in mapping
-                  except TypeError:
+                  except TypeError as exc:
                       raise yaml.constructor.ConstructorError(
                           "while constructing a mapping",
                           node.start_mark,
                           "unhashable mapping key",
-                          key_node.start_mark
-                      )
+                          key_node.start_mark,
+                      ) from exc
 
                   if duplicate:
                       raise yaml.constructor.ConstructorError(
                           "while constructing a mapping",
                           node.start_mark,
                           f"duplicate key {key!r}",
-                          key_node.start_mark
+                          key_node.start_mark,
                       )
 
                   mapping[key] = loader.construct_object(
                       value_node,
-                      deep=deep
+                      deep=deep,
                   )
 
               return mapping
 
           UniqueKeyLoader.add_constructor(
               yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-              construct_mapping
+              construct_mapping,
           )
 
+          try:
+              result = subprocess.run(
+                  ["git", "ls-files", "-z", "--", "*.yml", "*.yaml"],
+                  check=True,
+                  stdout=subprocess.PIPE,
+              )
+          except (OSError, subprocess.CalledProcessError) as exc:
+              print(f"ERROR: Cannot list tracked YAML files: {exc}", file=sys.stderr)
+              sys.exit(2)
+
           files = sorted(
-              path for path in Path(".").rglob("*")
-              if path.is_file()
-              and path.suffix.lower() in {".yml", ".yaml"}
-              and not any(part in EXCLUDED for part in path.parts)
+              Path(path.decode("utf-8"))
+              for path in result.stdout.split(b"\0")
+              if path
           )
 
           if not files:
-              print("No YAML files found.", file=sys.stderr)
+              print("ERROR: No tracked YAML files found.", file=sys.stderr)
               sys.exit(1)
 
           failures = []
 
           for path in files:
               try:
-                  with path.open(
-                      "r",
-                      encoding="utf-8-sig"
-                  ) as stream:
-                      list(yaml.load_all(
-                          stream,
-                          Loader=UniqueKeyLoader
-                      ))
-
+                  with path.open("r", encoding="utf-8-sig") as stream:
+                      list(yaml.load_all(stream, Loader=UniqueKeyLoader))
                   print(f"PASS {path}")
 
               except (
                   OSError,
                   UnicodeError,
                   yaml.YAMLError,
-                  ValueError
+                  ValueError,
               ) as exc:
                   failures.append((path, exc))
                   print(f"FAIL {path}: {exc}", file=sys.stderr)
@@ -144,13 +134,10 @@ jobs:
           print(f"Failures: {len(failures)}")
 
           if failures:
-              print(
-                  "\nCorrect the specific files listed above.",
-                  file=sys.stderr
-              )
+              print("Correct the specific files listed above.", file=sys.stderr)
               sys.exit(1)
 
-          print("All YAML files passed validation.")
+          print("All tracked YAML files passed syntax validation.")
           PY
 
       - name: Write validation summary
@@ -160,9 +147,10 @@ jobs:
         shell: bash
         run: |
           {
-            echo "# YAML Validation"
+            echo "# MedOrbits YAML Validation"
             echo
             echo "- Result: ${RESULT}"
             echo "- Scope: YAML syntax and duplicate mapping keys"
-            echo "- npm installation is not required for this job"
+            echo "- Files: tracked .yml and .yaml files"
+            echo "- npm installation: not required"
           } >> "$GITHUB_STEP_SUMMARY"

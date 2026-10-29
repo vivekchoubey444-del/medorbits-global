@@ -1,6 +1,7 @@
+
 {
   "name": "MedOrbits Development Environment",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
   "remoteUser": "node",
   "updateRemoteUserUID": true,
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -10,7 +11,7 @@
 
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.11"
+      "version": "3.12"
     },
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
@@ -89,6 +90,7 @@
         "python.analysis.typeCheckingMode": "basic",
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
+
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.formatOnSave": true
@@ -116,7 +118,7 @@
 
   "onCreateCommand": "node --version && npm --version && python --version && git --version",
 
-  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'No package-lock.json found; dependencies were not installed automatically. Add and commit a lockfile for reproducible installs.'; else echo 'No package.json found; skipping Node dependency installation.'; fi",
+  "postCreateCommand": "if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then echo 'WARNING: package-lock.json is missing; run npm install and commit the generated lockfile.'; else echo 'No package.json found; skipping Node dependency installation.'; fi",
 
   "postStartCommand": "git status --short --branch",
 

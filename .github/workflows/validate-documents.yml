@@ -1,6 +1,6 @@
-File: .github/workflows/validate-documents.yml
 
 name: Validate MedOrbits Documents
+
 on:
   push:
     branches:
@@ -12,6 +12,7 @@ on:
       - ".github/workflows/validate-documents.yml"
       - "package.json"
       - "package-lock.json"
+
   pull_request:
     branches:
       - main
@@ -22,43 +23,48 @@ on:
       - ".github/workflows/validate-documents.yml"
       - "package.json"
       - "package-lock.json"
+
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: validate-documents-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   validate:
-    name: Validate document manifests and catalogue
+    name: Validate Document Manifests and Catalogue
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     permissions:
       contents: read
+
     steps:
-      # 1. CHECKOUT
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-      # 2. SET UP NODE.JS
+
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-      # 3. VERIFY REQUIRED PROJECT FILES
+          node-version: "22"
+
       - name: Verify required files and directories
         shell: bash
         run: |
           set -euo pipefail
+
           required_files=(
             "package.json"
             "package-lock.json"
             "scripts/validate-document-manifests.mjs"
             "scripts/build-document-catalogue.mjs"
           )
+
           for file in "${required_files[@]}"; do
             if [[ ! -f "$file" ]]; then
               echo "::error::Required file is missing: $file"
@@ -66,99 +72,109 @@ jobs:
             fi
             echo "PASS: $file"
           done
+
           if [[ ! -d assets/documents ]]; then
             echo "::error::assets/documents directory is missing."
             exit 1
           fi
+
           node --version
           npm --version
-      # 4. VALIDATE PACKAGE AND LOCKFILE METADATA
+
       - name: Validate package metadata
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
-          const fs = require('node:fs');
+          const fs = require("node:fs");
+
           const pkg = JSON.parse(
-            fs.readFileSync('package.json', 'utf8')
+            fs.readFileSync("package.json", "utf8")
           );
+
           const lock = JSON.parse(
-            fs.readFileSync('package-lock.json', 'utf8')
+            fs.readFileSync("package-lock.json", "utf8")
           );
+
           if (!pkg.name || !pkg.version) {
             throw new Error(
-              'package.json must define name and version.'
+              "package.json must define name and version."
             );
           }
-          const root = lock.packages?.[''];
+
+          const root = lock.packages?.[""];
+
           if (!root) {
             throw new Error(
-              'package-lock.json is missing its root package entry.'
+              "package-lock.json is missing its root package entry."
             );
           }
+
           if (
             pkg.name !== root.name ||
             pkg.version !== root.version
           ) {
             throw new Error(
-              'package.json and package-lock.json metadata differ.'
+              "package.json and package-lock.json metadata differ."
             );
           }
+
           if (![2, 3].includes(lock.lockfileVersion)) {
             throw new Error(
               `Unsupported lockfileVersion: ${lock.lockfileVersion}`
             );
           }
+
           console.log(`PASS: ${pkg.name}@${pkg.version}`);
-          console.log(`PASS: lockfile version ${lock.lockfileVersion}`);
+          console.log(
+            `PASS: lockfile version ${lock.lockfileVersion}`
+          );
           NODE
-      # 5. INSTALL LOCKED DEPENDENCIES
+
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
         env:
           CI: "true"
-      # 6. CHECK VALIDATOR SYNTAX
+
       - name: Check document script syntax
         shell: bash
         run: |
           set -euo pipefail
+
           node --check scripts/validate-document-manifests.mjs
           node --check scripts/build-document-catalogue.mjs
-      # 7. VALIDATE DOCUMENT MANIFESTS
+
       - name: Validate document manifests
-        id: manifests
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/validate-document-manifests.mjs --strict
-      # 8. PREVIEW DOCUMENT CATALOGUE
+        run: node scripts/validate-document-manifests.mjs --strict
+
       - name: Preview document catalogue
-        id: catalogue
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/build-document-catalogue.mjs --dry-run
-      # 9. CHECK DOCUMENT ASSET INVENTORY
+        run: node scripts/build-document-catalogue.mjs --dry-run
+
       - name: Check document asset inventory
-        id: inventory
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const root = 'assets/documents';
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const root = "assets/documents";
           const files = [];
           const symlinks = [];
+
           function walk(directory) {
             for (const entry of fs.readdirSync(directory, {
               withFileTypes: true
             })) {
               const fullPath = path.join(directory, entry.name);
+
               if (entry.isSymbolicLink()) {
                 symlinks.push(fullPath);
                 continue;
               }
+
               if (entry.isDirectory()) {
                 walk(fullPath);
               } else if (entry.isFile()) {
@@ -166,70 +182,68 @@ jobs:
               }
             }
           }
+
           walk(root);
+
           if (symlinks.length > 0) {
-            console.error('Symbolic links found in document assets:');
+            console.error("Symbolic links found in document assets:");
+
             for (const file of symlinks) {
               console.error(`- ${file}`);
             }
+
             throw new Error(
-              'Review symbolic links in assets/documents before merging.'
+              "Review symbolic links in assets/documents before merging."
             );
           }
+
           const extensions = new Set([
-            '.pdf',
-            '.doc',
-            '.docx',
-            '.xls',
-            '.xlsx',
-            '.ppt',
-            '.pptx',
-            '.txt',
-            '.csv',
-            '.json',
-            '.md'
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+            ".ppt", ".pptx", ".txt", ".csv", ".json", ".md"
           ]);
+
           const unsupported = files.filter(
-            (file) => !extensions.has(path.extname(file).toLowerCase())
+            (file) =>
+              !extensions.has(path.extname(file).toLowerCase())
           );
+
           console.log(`Document asset files: ${files.length}`);
-          if (unsupported.length > 0) {
-            console.log(
-              'Files with extensions outside the approved inventory:'
-            );
-            for (const file of unsupported) {
-              console.log(`- ${file}`);
-            }
-            console.log(
-              'These files are reported for review, not rejected.'
-            );
+          console.log(
+            `Files with unlisted extensions: ${unsupported.length}`
+          );
+
+          for (const file of unsupported) {
+            console.log(`REVIEW: ${file}`);
           }
+
           fs.appendFileSync(
             process.env.GITHUB_STEP_SUMMARY,
             [
-              '## Document asset inventory',
-              '',
+              "## Document Asset Inventory",
+              "",
               `- Files found: **${files.length}**`,
               `- Symbolic links: **${symlinks.length}**`,
               `- Files requiring extension review: **${unsupported.length}**`,
-              ''
-            ].join('\n')
+              ""
+            ].join("\n")
           );
           NODE
-      # 10. FINAL VALIDATION SUMMARY
+
       - name: Publish validation summary
         if: ${{ success() }}
         shell: bash
         run: |
           set -euo pipefail
+
           {
             echo "## MedOrbits Document Validation"
             echo
+            echo "- Package metadata: **PASSED**"
+            echo "- Dependency installation: **PASSED**"
+            echo "- JavaScript syntax: **PASSED**"
             echo "- Manifest validation: **PASSED**"
             echo "- Catalogue dry run: **PASSED**"
-            echo "- JavaScript syntax: **PASSED**"
-            echo "- Dependency installation: **PASSED**"
-            echo "- Document asset inventory: **PASSED**"
+            echo "- Asset inventory: **PASSED**"
             echo
             echo "All required document validation steps completed successfully."
           } >> "$GITHUB_STEP_SUMMARY"

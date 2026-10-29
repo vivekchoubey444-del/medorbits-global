@@ -1,24 +1,30 @@
 
 # ==============================================================================
 # MedOrbits -- CODEOWNERS
-# Release: 2.1.0
+# Release: 2.1.1
 #
 # Location: .github/CODEOWNERS
 #
 # Purpose:
-#   Assign default and path-specific code review responsibility.
+#   Define default and path-specific code review ownership.
 #
 # Important:
-#   CODEOWNERS assigns review requests; it does not grant repository access.
-#   Configure branch protection or repository rules to require code-owner review.
-#   Verify the owner has write access and the rules cover main/develop.
+#   - CODEOWNERS requests reviews; it does not grant repository access.
+#   - Owners must have write access to the repository.
+#   - Configure branch protection or repository rules to require code-owner review.
+#   - Verify required reviews and status checks for every protected branch.
+#   - The last matching pattern determines the owners for a changed file.
+#   - Keep this file below GitHub's CODEOWNERS size limit.
 # ==============================================================================
 
-# Default owner for all repository files.
+# ------------------------------------------------------------------------------
+# Default owner
+# ------------------------------------------------------------------------------
+
 * @vivekchoubey444-del
 
 # ------------------------------------------------------------------------------
-# Documentation and policies
+# Documentation, project policies, and legal notices
 # ------------------------------------------------------------------------------
 
 /README.md @vivekchoubey444-del
@@ -64,13 +70,17 @@
 /legal/ @vivekchoubey444-del
 
 # ------------------------------------------------------------------------------
-# Database and migrations
+# Database, schemas, and migrations
 # ------------------------------------------------------------------------------
 
 /database/ @vivekchoubey444-del
 /db/ @vivekchoubey444-del
 /migrations/ @vivekchoubey444-del
 /prisma/ @vivekchoubey444-del
+/api/ @vivekchoubey444-del
+/schemas/ @vivekchoubey444-del
+/openapi.yaml @vivekchoubey444-del
+/openapi.json @vivekchoubey444-del
 
 # ------------------------------------------------------------------------------
 # Tests and quality assurance
@@ -115,7 +125,9 @@
 # ------------------------------------------------------------------------------
 # Security-sensitive application components
 # ------------------------------------------------------------------------------
- 
+# These rules are intentionally explicit for future ownership changes.
+# They currently use the same owner as the default rule.
+
 /src/auth/ @vivekchoubey444-del
 /src/middleware/ @vivekchoubey444-del
 /src/validators/ @vivekchoubey444-del
@@ -136,27 +148,9 @@
 /.pre-commit-config.yaml @vivekchoubey444-del
 
 # ------------------------------------------------------------------------------
-# API schemas and contracts
-# ------------------------------------------------------------------------------
-
-/api/ @vivekchoubey444-del
-/schemas/ @vivekchoubey444-del
-/openapi.yaml @vivekchoubey444-del
-/openapi.json @vivekchoubey444-del
-
-# ------------------------------------------------------------------------------
 # Monitoring, logging, and observability
 # ------------------------------------------------------------------------------
 
 /monitoring/ @vivekchoubey444-del
 /logs/README.md @vivekchoubey444-del
 /observability/ @vivekchoubey444-del
-
-# ------------------------------------------------------------------------------
-# Security policies and automation
-# ------------------------------------------------------------------------------
-
-/.github/SECURITY.md @vivekchoubey444-del
-/.github/dependabot.yml @vivekchoubey444-del
-/.github/renovate.json @vivekchoubey444-del
-/.github/workflows/ @vivekchoubey444-del

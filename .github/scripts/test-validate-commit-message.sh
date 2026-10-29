@@ -3,12 +3,13 @@
 # ==============================================================================
 # MedOrbits -- Commit Message Validator Test Suite
 # File: .github/scripts/test-validate-commit-message.sh
-# Version: 2.1.1
+# Version: 2.1.2
 # Bash: 4+
 #
 # Contract:
 #   Validator argument 1 is a commit-message file.
-#   Exit 0 means valid; nonzero means invalid.
+#   Exit 0 means valid; exit 1 means invalid; exit 2 means usage/configuration
+#   error.
 #
 # Safety:
 #   No commits, Git-history changes, dependency installs, or source edits.
@@ -52,7 +53,7 @@ Options:
 
 Environment:
   VALIDATOR_PATH  Validator script path (default: sibling validator).
-  TEST_TIMEOUT    Positive timeout in seconds (default: 10).
+  TEST_TIMEOUT   Positive timeout in seconds (default: 10).
 
 Examples:
   bash .github/scripts/test-validate-commit-message.sh
@@ -69,7 +70,9 @@ cleanup() {
     if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
         if ! rm -rf -- "$TEMP_DIR"; then
             printf '[WARN] Temporary directory cleanup failed.\n' >&2
-            (( status == 0 )) && status=1
+            if (( status == 0 )); then
+                status=1
+            fi
         fi
     fi
 
@@ -79,10 +82,19 @@ cleanup() {
 parse_args() {
     while (($#)); do
         case "$1" in
-            --verbose|-v) VERBOSE=1 ;;
-            --strict) STRICT=1 ;;
-            --help|-h) usage; exit 0 ;;
-            *) die "Unknown option: $1" ;;
+            --verbose|-v)
+                VERBOSE=1
+                ;;
+            --strict)
+                STRICT=1
+                ;;
+            --help|-h)
+                usage
+                exit 0
+                ;;
+            *)
+                die "Unknown option: $1"
+                ;;
         esac
         shift
     done
@@ -99,7 +111,10 @@ resolve_validator() {
         die "Validator not found or unreadable: $candidate"
     fi
 
-    VALIDATOR_PATH="$(cd -- "$(dirname -- "$candidate")" && pwd -P)/$(basename -- "$candidate")"
+    VALIDATOR_PATH="$(
+        cd -- "$(dirname -- "$candidate")" &&
+        pwd -P
+    )/$(basename -- "$candidate")"
 
     if ! bash -n "$VALIDATOR_PATH"; then
         die "Validator contains Bash syntax errors."
@@ -112,6 +127,14 @@ validate_test_environment() {
     [[ "$TEST_TIMEOUT" =~ ^[1-9][0-9]*$ ]] ||
         die "TEST_TIMEOUT must be a positive integer."
 
+    if ! command -v awk >/dev/null 2>&1; then
+        die "Required command 'awk' is unavailable."
+    fi
+
+    if ! command -v sed >/dev/null 2>&1; then
+        die "Required command 'sed' is unavailable."
+    fi
+
     if ! command -v timeout >/dev/null 2>&1; then
         if (( STRICT )); then
             die "The timeout command is required in strict mode."
@@ -119,8 +142,9 @@ validate_test_environment() {
         skip "Timeout protection unavailable; validator calls are unbounded"
     fi
 
-    TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/medorbits-commit-test.XXXXXXXX")" ||
-        die "Unable to create private temporary directory."
+    TEMP_DIR="$(
+        mktemp -d "${TMPDIR:-/tmp}/medorbits-commit-test.XXXXXXXX"
+    )" || die "Unable to create private temporary directory."
 
     chmod 700 "$TEMP_DIR"
     trap cleanup EXIT
@@ -168,7 +192,6 @@ run_case() {
         printf '%s\n' '--------------------'
     fi
 
-    # timeout commonly returns 124; 137 may indicate forced termination.
     if (( actual == 124 || actual == 137 )); then
         fail "$label (validator timed out or was forcibly terminated)"
         return
@@ -176,7 +199,7 @@ run_case() {
 
     if [[ "$expected" == "valid" && "$actual" -eq 0 ]]; then
         pass "$label"
-    elif [[ "$expected" == "invalid" && "$actual" -ne 0 ]]; then
+    elif [[ "$expected" == "invalid" && "$actual" -eq 1 ]]; then
         pass "$label"
     else
         fail "$label (expected $expected; got exit code $actual)"
@@ -205,6 +228,9 @@ run_valid_cases() {
     run_case "Hyphenated scope" valid "feat(study-abroad): add course comparison"
     run_case "Subject containing punctuation" valid "docs(api): document /health endpoint"
     run_case "Uppercase subject text" valid "fix(auth): Handle expired sessions"
+    run_case "Colon in subject" valid "fix(api): handle errors: safely"
+    run_case "Subject exactly 100 characters" valid \
+        "feat: $(printf '%099d' 0 | tr '0' 'a')"
 }
 
 run_invalid_cases() {
@@ -227,11 +253,13 @@ run_invalid_cases() {
     run_case "Merge message" invalid "Merge branch 'feature/login' into main"
     run_case "Fixup message" invalid "fixup! feat(auth): add login validation"
     run_case "Squash message" invalid "squash! feat(auth): add login validation"
+    run_case "Amend message" invalid "amend! feat(auth): add login validation"
     run_case "Subject begins with period" invalid "feat(auth): .add login validation"
     run_case "Subject begins with whitespace" invalid "feat(auth):  add login validation"
     run_case "Missing space after colon" invalid "feat(auth):add login validation"
     run_case "Bare type and colon" invalid "feat: "
     run_case "Multiple header lines" invalid $'feat(auth): add login\nfix(api): add fallback'
+    run_case "Header containing conflict marker" invalid "feat(api): resolve <<<<<<< marker"
 }
 
 print_summary() {

@@ -1,12 +1,11 @@
-File: .github/workflows/dependency-review.yml
 
 name: MedOrbits Dependency Review
-# Validate dependency changes before they can be merged.
-# This workflow does not install dependencies or execute application code.
+
 on:
   pull_request:
     branches:
       - main
+      - master
       - develop
     paths:
       - "package.json"
@@ -17,78 +16,37 @@ on:
       - "**/npm-shrinkwrap.json"
       - "Dockerfile"
       - "**/Dockerfile"
-      - "docker-compose.yml"
-      - "docker-compose.yaml"
       - "**/docker-compose.yml"
       - "**/docker-compose.yaml"
       - ".github/workflows/**"
       - ".github/dependabot.yml"
       - ".github/dependabot.yaml"
+
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: dependency-review-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   dependency-review:
-    name: Dependency security and license review
+    name: Dependency Security and License Review
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Least-privilege permissions support fork pull requests.
+
     permissions:
       contents: read
+      pull-requests: read
+
     steps:
       - name: Review dependency changes
         uses: actions/dependency-review-action@v5
         with:
-          # Fail when a newly introduced dependency has a high
-          # or critical vulnerability.
+          base-ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+          head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fail-on-severity: high
-          # Check every dependency scope, including unknown scope.
           fail-on-scopes: runtime, development, unknown
-          # Avoid requiring write permissions for PR comments.
           comment-summary-in-pr: never
-          # Optional strict license policy.
-          #
-          # IMPORTANT:
-          # Replace this example allowlist with the licenses approved
-          # by MedOrbits after reviewing the project's legal policy.
-          # Remove this setting entirely if no allowlist is ready.
-          # Unrecognized or missing license metadata may need review.
-          #
-          # Example only -- do not enable without validating the list:
-          # allow-licenses: >-
-          #   MIT,
-          #   Apache-2.0,
-          #   BSD-2-Clause,
-          #   BSD-3-Clause,
-          #   ISC
-          # Do not allow newly introduced dependencies with known
-          # restricted licenses until the project policy is reviewed.
-          # Use a validated allowlist instead of the deprecated
-          # deny-licenses option when the policy is ready.
-
-MedOrbits dependency-review activation checklist
-
-Use this checklist separately from the YAML file. It is not executable workflow syntax.
-
-* [ ]	Confirm the repository’s target branches are main and develop.
-* [ ]	Enable the GitHub dependency graph in repository security settings.
-* [ ]	Review the licenses of current runtime and development dependencies.
-* [ ]	Define and approve a license allowlist before enabling allow-licenses.
-* [ ]	Open a test PR that changes package.json and package-lock.json.
-* [ ]	Confirm the dependency-review job runs and reports new vulnerable dependencies.
-* [ ]	Add the workflow’s status check to branch protection or a repository ruleset.
-* [ ]	Enable Dependabot alerts and security updates if available.
-* [ ]	Review the workflow periodically as the dependency and licensing policies evolve.
-
-Operational notes
-
-* Severity: fail-on-severity: high covers high and critical vulnerability findings.
-* Scope: Runtime, development, and unknown-scope dependency changes are checked.
-* Fork PRs: The job uses read-only permissions and does not depend on PR-comment write access.
-* Path filters: Only the listed file changes trigger the pull-request workflow. Add any additional package-manager lockfiles used by the project.
-* License policy: An allowlist is intentionally not activated by default. An incomplete allowlist can reject legitimate dependencies; an overly broad one can undermine the policy.
-* Merge enforcement: The workflow alone does not prevent merging. Configure a required status check in GitHub repository rules.
-* Action maintenance: actions/dependency-review-action@v5 is a major-version reference, not an immutable pin. For stricter supply-chain security, pin the action to a reviewed full commit SHA and update it through a controlled maintenance process.

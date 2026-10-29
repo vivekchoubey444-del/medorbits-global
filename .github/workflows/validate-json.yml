@@ -1,6 +1,6 @@
-File: .github/workflows/validate-json.yml
 
-name: MedOrbits -- Validate JSON
+name: MedOrbits - Validate JSON
+
 on:
   push:
     branches:
@@ -21,47 +21,52 @@ on:
       - "**/*.JSON"
       - ".github/workflows/validate-json.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: validate-json-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   validate:
     name: Validate JSON files
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
-      # 1. CHECKOUT
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      # 2. SET UP NODE.JS
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-      # 3. DISCOVER AND VALIDATE JSON FILES
-      - name: Validate JSON syntax
-        id: json
+          node-version: "22"
+
+      - name: Validate tracked JSON syntax
         shell: bash
         run: |
           set -uo pipefail
+
           report="${RUNNER_TEMP}/json-validation-report.txt"
-          errors="${RUNNER_TEMP}/json-validation-errors.txt"
           : > "$report"
-          : > "$errors"
+
           count=0
           passed=0
           failed=0
+
           while IFS= read -r -d '' file; do
             count=$((count + 1))
-            if node - "$file" <<'NODE'
-          const fs = require('node:fs');
+
+            if node - "$file" 2>"${RUNNER_TEMP}/json-error.txt" <<'NODE'
+          const fs = require("node:fs");
           const file = process.argv[2];
+
           try {
-            JSON.parse(fs.readFileSync(file, 'utf8'));
+            JSON.parse(fs.readFileSync(file, "utf8"));
           } catch (error) {
             console.error(error.message);
             process.exitCode = 1;
@@ -72,25 +77,17 @@ jobs:
               printf 'PASS %s\n' "$file" | tee -a "$report"
             else
               failed=$((failed + 1))
-              printf 'FAIL %s\n' "$file" | tee -a "$report"
+              {
+                printf 'FAIL %s\n' "$file"
+                sed 's/^/  /' "${RUNNER_TEMP}/json-error.txt"
+              } | tee -a "$report"
+
+              echo "::error file=${file}::Invalid JSON; see validation report."
             fi
           done < <(
-            find . \
-              -type d \( \
-                -name .git -o \
-                -name node_modules -o \
-                -name .next -o \
-                -name .nuxt -o \
-                -name dist -o \
-                -name build -o \
-                -name coverage -o \
-                -name .wrangler -o \
-                -name .vercel \
-              \) -prune \
-              -o -type f \
-              \( -iname '*.json' \) \
-              -print0
+            git ls-files -z -- '*.json' '*.JSON'
           )
+
           {
             echo "## MedOrbits JSON Validation"
             echo
@@ -107,42 +104,40 @@ jobs:
               cat "$report"
               echo '```'
             else
-              echo "No JSON files were found."
+              echo "No tracked JSON files were found."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "files_checked=${count}" >> "$GITHUB_OUTPUT"
-          echo "files_passed=${passed}" >> "$GITHUB_OUTPUT"
-          echo "files_failed=${failed}" >> "$GITHUB_OUTPUT"
-          echo
-          echo "JSON files checked: $count"
+
+          echo "Files checked: $count"
           echo "Passed: $passed"
           echo "Failed: $failed"
+
           if (( count == 0 )); then
-            echo "::error::No JSON files were found to validate."
+            echo "::error::No tracked JSON files were found."
             exit 1
           fi
+
           if (( failed > 0 )); then
             echo "::error::${failed} JSON file(s) failed validation."
             exit 1
           fi
-          echo "All JSON files passed syntax validation."
-      # 4. VALIDATE THE PACKAGE MANIFEST AND LOCKFILE JSON
-      - name: Validate package JSON files
+
+          echo "All tracked JSON files passed syntax validation."
+
+      - name: Validate package manifest and lockfile consistency
         if: ${{ success() }}
         shell: bash
         run: |
           set -euo pipefail
-          for file in package.json package-lock.json; do
-            if [[ -f "$file" ]]; then
-              node -e '
-                const fs = require("node:fs");
-                JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-                console.log(`PASS ${process.argv[1]}`);
-              ' "$file"
-            fi
-          done
-      # 5. REPORT COMPLETION
+
+          if [[ -f package.json && -f package-lock.json ]]; then
+            npm ci --ignore-scripts --no-audit --no-fund --dry-run
+          else
+            echo "::notice::package.json or package-lock.json is absent; consistency check skipped."
+          fi
+
       - name: Report validation status
         if: ${{ success() }}
+        shell: bash
         run: |
           echo "MedOrbits JSON validation completed successfully."

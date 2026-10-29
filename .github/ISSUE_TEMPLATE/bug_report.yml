@@ -1,4 +1,20 @@
 
+# =============================================================================
+# MedOrbits | Bug Report Issue Form
+#
+# File: .github/ISSUE_TEMPLATE/bug_report.yml
+# Release: 2.1.1
+#
+# Purpose:
+#   Collect reproducible bug reports and relevant diagnostic information.
+#
+# Security:
+#   - Public issues are not confidential.
+#   - Never request credentials, private records, or exploitable details.
+#   - Direct security vulnerabilities to the verified reporting channel in
+#     SECURITY.md.
+# =============================================================================
+
 name: "🐛 Bug Report"
 description: "Report a reproducible bug or unexpected behavior in MedOrbits."
 title: "[Bug]: "
@@ -15,25 +31,27 @@ body:
 
         Thank you for helping improve MedOrbits.
 
-        Before submitting, check existing issues for duplicates.
-        Report one problem per issue. Remove personal, confidential,
-        medical, financial, and authentication information from all
-        screenshots, logs, and attachments.
+        Before submitting, check existing issues for duplicates and report
+        one problem per issue. Include only information necessary to diagnose
+        the problem.
 
-        **🔐 Security notice:** Do not disclose exploitable vulnerabilities,
-        exposed credentials, or private user data in a public issue.
-        Follow the repository's `SECURITY.md` for the designated private
-        reporting process.
+        Remove personal, confidential, medical, financial, authentication,
+        and other sensitive information from screenshots, logs, and attachments.
+
+        **Security notice:** Public GitHub issues are not confidential.
+        Do not disclose exploitable vulnerabilities, credentials, access tokens,
+        or private user data. Follow the repository's `SECURITY.md` for its
+        designated private reporting process.
 
   - type: checkboxes
     id: checks
     attributes:
       label: "✅ Pre-submission Checklist"
-      description: Confirm these items before submitting your report.
+      description: Confirm these items before submitting.
       options:
         - label: "I searched existing issues for a similar report."
           required: true
-        - label: "I can describe the steps needed to reproduce the problem."
+        - label: "I have provided reproduction steps to the best of my ability."
           required: true
         - label: "I removed passwords, tokens, personal data, and other secrets from the evidence."
           required: true
@@ -66,7 +84,7 @@ body:
     id: severity
     attributes:
       label: "🚦 Impact and Severity"
-      description: Choose the level that best describes the user impact.
+      description: This is the reporter's initial assessment, not a confirmed severity rating.
       options:
         - Critical -- widespread outage or major data-integrity impact
         - High -- major feature unavailable with no practical workaround
@@ -89,7 +107,7 @@ body:
     id: reproduction
     attributes:
       label: "🔁 Steps to Reproduce"
-      description: List the exact steps that trigger the problem.
+      description: List the steps needed to reproduce the problem. Do not include exploit instructions or private data.
       placeholder: |
         1. Open the affected page.
         2. Select the relevant option.
@@ -111,8 +129,8 @@ body:
     id: actual
     attributes:
       label: "⚠️ Actual Behavior"
-      description: Explain what happened instead, including any visible error.
-      placeholder: "Describe the observed behavior or error message."
+      description: Explain what happened instead, including any safe-to-share error message.
+      placeholder: "Describe the observed behavior or error."
     validations:
       required: true
 
@@ -134,7 +152,7 @@ body:
     id: page-url
     attributes:
       label: "🔗 Affected Page or Endpoint"
-      description: "Provide a public URL or API route if applicable. Do not include private query parameters, session identifiers, or access tokens."
+      description: Provide a public URL or non-sensitive API route if applicable. Remove private query parameters, session identifiers, and access tokens.
       placeholder: "https://medorbits.in/affected-page"
 
   - type: input
@@ -175,6 +193,7 @@ body:
     id: operating-system
     attributes:
       label: "💻 Operating System"
+      description: Include the version if relevant and known.
       placeholder: "e.g. iOS, Android, Windows, macOS, Linux"
 
   - type: input
@@ -189,10 +208,12 @@ body:
     attributes:
       label: "📋 Relevant Error Messages or Logs"
       description: |
-        Paste only the relevant, redacted error output.
+        Paste only relevant, redacted error output.
 
         Never include passwords, cookies, session identifiers, API keys,
         authorization headers, private user records, or production secrets.
+        Do not include sensitive stack traces or exploitable security details
+        in a public issue.
       render: text
 
   - type: textarea
@@ -203,7 +224,8 @@ body:
         Attach screenshots or describe other relevant evidence.
 
         Redact personal information, confidential records, account details,
-        and secrets before uploading.
+        browser profile information, and secrets before uploading.
+        Do not attach private documents or sensitive production data.
 
   - type: textarea
     id: workaround
@@ -216,7 +238,7 @@ body:
     id: additional-context
     attributes:
       label: "📚 Additional Context"
-      description: Include relevant details that do not fit elsewhere.
+      description: Include relevant non-sensitive details that do not fit elsewhere.
       placeholder: "Optional -- include relevant technical context."
 
   - type: markdown
@@ -230,7 +252,7 @@ body:
         or private user data in a public issue.
 
         Follow the repository's `SECURITY.md` for the designated private
-        reporting process. If no verified private reporting channel exists,
-        do not publish sensitive details while waiting for clarification.
+        reporting process. If no private reporting channel can be verified,
+        do not publish sensitive details while seeking clarification.
 
         **Thank you for helping keep MedOrbits reliable, secure, and accessible.**

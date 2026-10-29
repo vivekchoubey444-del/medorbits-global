@@ -1,219 +1,264 @@
-File: .github/workflows/sync-official-releases.yml
 
 name: MedOrbits Official Release Candidate Sync
+
 on:
   schedule:
-    # Run every 6 hours at minute 17 (UTC).
     - cron: "17 */6 * * *"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: medorbits-official-release-sync-main
   cancel-in-progress: false
+
 jobs:
   discover:
-    name: Discover and validate release candidates
+    name: Discover and Validate Release Candidates
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     permissions:
       contents: read
+
     outputs:
       source_sha: ${{ steps.source.outputs.sha }}
       changed: ${{ steps.changes.outputs.changed }}
+
     steps:
-      - name: Check out main
-        uses: actions/checkout@v7
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
           persist-credentials: false
+
       - name: Record source commit
         id: source
         shell: bash
         run: |
           set -euo pipefail
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
+
       - name: Verify required files
         shell: bash
         run: |
           set -euo pipefail
+
           for file in package.json package-lock.json assets/data/news.json; do
             if [[ ! -f "$file" ]]; then
               echo "::error::Required file is missing: $file"
               exit 1
             fi
           done
+
       - name: Verify sync script
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
           const fs = require("node:fs");
           const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
           if (!pkg.scripts?.["releases:sync"]) {
             console.error("::error::Missing npm script: releases:sync");
             process.exit(1);
           }
+
           console.log("Release synchronization script found.");
           NODE
+
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
         env:
           CI: "true"
+
       - name: Discover official release candidates
         run: npm run releases:sync
         env:
           CI: "true"
+
       - name: Validate generated news data
         shell: bash
         run: |
           set -euo pipefail
+
           node <<'NODE'
           const fs = require("node:fs");
           const file = "assets/data/news.json";
+
           let data;
+
           try {
             data = JSON.parse(fs.readFileSync(file, "utf8"));
           } catch (error) {
             console.error(`::error::Invalid ${file}: ${error.message}`);
             process.exit(1);
           }
+
           if (
             data === null ||
             typeof data !== "object"
           ) {
-            console.error("::error::News data must be a JSON object or array.");
+            console.error(
+              "::error::News data must be a JSON object or array."
+            );
             process.exit(1);
           }
-          console.log("Generated news JSON is syntactically valid.");
-          console.log(`Top-level structure: ${Array.isArray(data) ? "array" : "object"}`);
+
+          console.log("Generated news JSON is valid.");
+          console.log(
+            `Top-level structure: ${Array.isArray(data) ? "array" : "object"}`
+          );
           NODE
+
       - name: Check generated changes
         id: changes
         shell: bash
         run: |
           set -euo pipefail
+
           git diff --check
-          # The sync script must not modify unrelated tracked files.
+
           unexpected="$(
-            git status --porcelain --untracked-files=all |
-            awk '{
-              path = substr($0, 4)
-              if (path != "assets/data/news.json") print path
-            }'
+            {
+              git diff --name-only
+              git ls-files --others --exclude-standard
+            } | sort -u | grep -vx 'assets/data/news.json' || true
           )"
+
           if [[ -n "$unexpected" ]]; then
-            echo "::error::The sync script modified unexpected files:"
-            echo "$unexpected"
+            echo "::error::Unexpected files changed:"
+            printf '%s\n' "$unexpected"
             exit 1
           fi
+
           if git diff --quiet -- assets/data/news.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No new release candidates were detected."
             exit 0
           fi
+
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "Release candidate data has changed."
           git diff --stat -- assets/data/news.json
+
       - name: Upload validated release data
         if: steps.changes.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: medorbits-official-release-candidates
+          name: medorbits-official-release-candidates-${{ github.run_id }}-${{ github.run_attempt }}
           path: assets/data/news.json
           if-no-files-found: error
           retention-days: 2
+
   commit:
-    name: Commit validated release candidates
+    name: Commit Validated Release Candidates
     needs:
       - discover
+
     if: >-
-      ${{
-        needs.discover.result == 'success' &&
-        needs.discover.outputs.changed == 'true'
-      }}
+      needs.discover.result == 'success' &&
+      needs.discover.outputs.changed == 'true'
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     permissions:
       contents: write
+
     steps:
-      - name: Check out main
-        uses: actions/checkout@v7
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: true
+
       - name: Verify source commit is still current
         shell: bash
         env:
           SOURCE_SHA: ${{ needs.discover.outputs.source_sha }}
         run: |
           set -euo pipefail
+
           git fetch origin main --depth=1
           current_sha="$(git rev-parse origin/main)"
+
           if [[ "$current_sha" != "$SOURCE_SHA" ]]; then
             echo "::error::main changed during discovery."
             echo "No changes were committed. Run the workflow again."
             exit 1
           fi
+
       - name: Download validated release data
         uses: actions/download-artifact@v4
         with:
-          name: medorbits-official-release-candidates
+          name: medorbits-official-release-candidates-${{ github.run_id }}-${{ github.run_attempt }}
           path: generated
+
       - name: Install generated news data
         shell: bash
         run: |
           set -euo pipefail
+
           test -s generated/news.json
+
           node -e '
             const fs = require("node:fs");
-            JSON.parse(fs.readFileSync("generated/news.json", "utf8"));
+            const data = JSON.parse(
+              fs.readFileSync("generated/news.json", "utf8")
+            );
+
+            if (data === null || typeof data !== "object") {
+              throw new Error("News data must be an object or array.");
+            }
           '
+
           cp generated/news.json assets/data/news.json
+
       - name: Review staged change scope
         shell: bash
         run: |
           set -euo pipefail
+
           git diff --check
           git add -- assets/data/news.json
-          if git diff --cached --quiet; then
-            echo "No changes remain to commit."
-            exit 0
-          fi
-          unexpected="$(git diff --cached --name-only | grep -vx 'assets/data/news.json' || true)"
+
+          unexpected="$(
+            git diff --cached --name-only |
+            grep -vx 'assets/data/news.json' || true
+          )"
+
           if [[ -n "$unexpected" ]]; then
             echo "::error::Unexpected staged files:"
-            echo "$unexpected"
+            printf '%s\n' "$unexpected"
             exit 1
           fi
-      - name: Commit release candidates
+
+      - name: Commit and push release candidates
         shell: bash
         run: |
           set -euo pipefail
+
           if git diff --cached --quiet; then
             echo "No staged changes to commit."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
           git commit -m "chore: sync official release candidates"
-          # Never force-push or overwrite a concurrent main update.
+
+          # No force push: concurrent branch updates must never be overwritten.
           git push origin HEAD:main
-
-Required setup
-
-* Confirm assets/data/news.json is the intended destination and npm run releases:sync updates only that file.
-* Ensure the sync script uses authoritative official sources, records source URLs and publication dates where appropriate, and distinguishes candidates from confirmed releases.
-* Enable GitHub Actions artifact support and allow the repository’s GITHUB_TOKEN to write to main, subject to branch protection.
-* If branch protection prohibits direct pushes, change the commit job to open a pull request instead.
-
-Important: This workflow deliberately fails safely if main changes while discovery is running. It does not force-push, and it does not independently certify that a release announcement is genuine; that responsibility belongs to the source-verification logic in releases:sync.

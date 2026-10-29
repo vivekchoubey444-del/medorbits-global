@@ -3,7 +3,7 @@
 # ==============================================================================
 # MedOrbits -- Commit Message Validator
 # File: .github/scripts/validate-commit-message.sh
-# Release: 2.1.1
+# Release: 2.1.2
 # Bash: 4+
 #
 # Format:
@@ -11,7 +11,7 @@
 #   type: subject
 #
 # Exit codes:
-#   0 = valid
+#   0 = valid commit message
 #   1 = invalid commit message
 #   2 = usage or configuration error
 #
@@ -45,7 +45,7 @@ Rules:
   - Type must be lowercase and supported.
   - Scope is optional; allowed characters are letters, digits, dots,
     underscores, hyphens, and slashes.
-  - Header must contain exactly one space after the colon.
+  - Exactly one space must follow the header colon.
   - Subject must be non-empty, have no leading/trailing whitespace,
     contain at least one letter or digit, and be at most 100 characters.
   - Merge, fixup, squash, and amend headers are rejected.
@@ -78,7 +78,7 @@ if (($# != 1)); then
     usage_error "Expected exactly one commit-message file path."
 fi
 
-MESSAGE_FILE="$1"
+readonly MESSAGE_FILE="$1"
 
 [[ -f "$MESSAGE_FILE" ]] ||
     usage_error "Commit-message file does not exist or is not a regular file."
@@ -89,17 +89,17 @@ MESSAGE_FILE="$1"
 command -v awk >/dev/null 2>&1 ||
     usage_error "Required command 'awk' is unavailable."
 
-# Preserve the original first line so CRLF can be rejected explicitly.
+# Read the first line without command substitution so trailing whitespace
+# and carriage returns remain visible to the validator.
 RAW_HEADER=""
 if IFS= read -r RAW_HEADER < "$MESSAGE_FILE"; then
     :
 else
-    # read returns nonzero for a final line without a newline, but may
-    # still have read data. Keep that data for validation.
+    # A final line without a newline is still a valid input line.
     :
 fi
 
-if [[ "$RAW_HEADER" == *$'\r' ]]; then
+if [[ "$RAW_HEADER" == *$'\r'* ]]; then
     fail "Header contains a carriage return; normalize line endings."
 fi
 
@@ -108,8 +108,12 @@ HEADER="$RAW_HEADER"
 [[ -n "$HEADER" ]] ||
     fail "Commit header is empty."
 
-if [[ "$HEADER" =~ ^[[:space:]] || "$HEADER" =~ [[:space:]]$ ]]; then
-    fail "Header must not start or end with whitespace."
+if [[ "$HEADER" =~ ^[[:space:]] ]]; then
+    fail "Header must not start with whitespace."
+fi
+
+if [[ "$HEADER" =~ [[:space:]]$ ]]; then
+    fail "Header must not end with whitespace."
 fi
 
 case "$HEADER" in
@@ -133,7 +137,12 @@ if [[ ! "$HEADER" =~ $HEADER_REGEX ]]; then
     fail "Expected 'type(scope): subject' or 'type: subject' with a supported lowercase type."
 fi
 
-SUBJECT="${HEADER#*: }"
+# Remove the type and optional scope, rather than splitting at the first
+# colon. This preserves colons that legitimately occur in the subject.
+SUBJECT="$(
+    printf '%s\n' "$HEADER" |
+        sed -E 's/^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|security)(\([A-Za-z0-9._/-]+\))?: //'
+)"
 
 [[ -n "$SUBJECT" ]] ||
     fail "Subject must not be empty."
@@ -143,8 +152,7 @@ if [[ "$SUBJECT" =~ [[:space:]]$ ]]; then
 fi
 
 SUBJECT_LENGTH="$(
-    LC_ALL="${LC_CTYPE:-${LANG:-C}}" \
-        awk -v text="$SUBJECT" 'BEGIN { print length(text) }'
+    LC_ALL=C awk -v text="$SUBJECT" 'BEGIN { print length(text) }'
 )"
 
 if [[ ! "$SUBJECT_LENGTH" =~ ^[0-9]+$ ]]; then
