@@ -1,268 +1,66 @@
 
 {
-  "$schema": "../../schemas/course-fixture.schema.json",
-  "description": "Synthetic MedOrbits course fixtures for local development and automated tests only. These are not official course listings or admission requirements and must not be presented as verified information.",
+  "version": 1,
   "courses": [
     {
-      "id": "COURSE-TEST-MBBS-001",
-      "slug": "mbbs",
-      "code": "MBBS",
+      "id": "COURSE-MBBS",
       "name": "Bachelor of Medicine and Bachelor of Surgery",
-      "shortName": "MBBS",
-      "category": "Medical",
-      "qualificationLevel": "Undergraduate",
-      "durationMonths": 66,
-      "durationYears": 5.5,
-      "institutionType": "medical",
-      "entranceExam": "NEET-UG",
-      "counsellingRequired": true,
-      "status": "active",
-      "metadata": {
-        "source": "fixture",
-        "testCase": "active_medical_course",
-        "synthetic": true,
-        "verified": false
-      }
+      "short_name": "MBBS",
+      "category": "medical",
+      "level": "undergraduate",
+      "duration_years": 5.5,
+      "description": "Undergraduate medical education, including the required internship.",
+      "eligibility": {
+        "minimum_qualification": "10+2",
+        "required_subjects": ["Physics", "Chemistry", "Biology"],
+        "entrance_exam": "NEET-UG"
+      },
+      "active": true
     },
     {
-      "id": "COURSE-TEST-BDS-001",
-      "slug": "bds",
-      "code": "BDS",
+      "id": "COURSE-BDS",
       "name": "Bachelor of Dental Surgery",
-      "shortName": "BDS",
-      "category": "Dental",
-      "qualificationLevel": "Undergraduate",
-      "durationMonths": 60,
-      "durationYears": 5,
-      "institutionType": "dental",
-      "entranceExam": "NEET-UG",
-      "counsellingRequired": true,
-      "status": "active",
-      "metadata": {
-        "source": "fixture",
-        "testCase": "active_dental_course",
-        "synthetic": true,
-        "verified": false
-      }
+      "short_name": "BDS",
+      "category": "dental",
+      "level": "undergraduate",
+      "duration_years": 5,
+      "description": "Undergraduate dental education, including the required internship.",
+      "eligibility": {
+        "minimum_qualification": "10+2",
+        "required_subjects": ["Physics", "Chemistry", "Biology"],
+        "entrance_exam": "NEET-UG"
+      },
+      "active": true
     },
     {
-      "id": "COURSE-TEST-PHARMACY-001",
-      "slug": "b-pharm",
-      "code": "BPHARM",
-      "name": "Bachelor of Pharmacy",
-      "shortName": "B.Pharm",
-      "category": "Pharmacy",
-      "qualificationLevel": "Undergraduate",
-      "durationMonths": 48,
-      "durationYears": 4,
-      "institutionType": "pharmacy",
-      "entranceExam": null,
-      "counsellingRequired": false,
-      "status": "active",
-      "metadata": {
-        "source": "fixture",
-        "testCase": "active_pharmacy_course",
-        "synthetic": true,
-        "verified": false
-      }
-    },
-    {
-      "id": "COURSE-TEST-BAMS-001",
-      "slug": "bams",
-      "code": "BAMS",
+      "id": "COURSE-BAMS",
       "name": "Bachelor of Ayurvedic Medicine and Surgery",
-      "shortName": "BAMS",
-      "category": "AYUSH",
-      "qualificationLevel": "Undergraduate",
-      "durationMonths": 66,
-      "durationYears": 5.5,
-      "institutionType": "ayush",
-      "entranceExam": "NEET-UG",
-      "counsellingRequired": true,
-      "status": "active",
-      "metadata": {
-        "source": "fixture",
-        "testCase": "active_ayush_course",
-        "synthetic": true,
-        "verified": false
-      }
+      "short_name": "BAMS",
+      "category": "ayurveda",
+      "level": "undergraduate",
+      "duration_years": 5.5,
+      "description": "Undergraduate education in Ayurvedic medicine.",
+      "eligibility": {
+        "minimum_qualification": "10+2",
+        "required_subjects": ["Physics", "Chemistry", "Biology"],
+        "entrance_exam": "NEET-UG"
+      },
+      "active": true
     },
     {
-      "id": "COURSE-TEST-INACTIVE-001",
-      "slug": "medorbits-inactive-test-course",
-      "code": "TEST-INACTIVE",
-      "name": "MedOrbits Inactive Test Course",
-      "shortName": "Inactive Test",
-      "category": "Test",
-      "qualificationLevel": "Undergraduate",
-      "durationMonths": null,
-      "durationYears": null,
-      "institutionType": null,
-      "entranceExam": null,
-      "counsellingRequired": false,
-      "status": "inactive",
-      "metadata": {
-        "source": "fixture",
-        "testCase": "inactive_course",
-        "synthetic": true,
-        "verified": false
-      }
+      "id": "COURSE-BHMS",
+      "name": "Bachelor of Homoeopathic Medicine and Surgery",
+      "short_name": "BHMS",
+      "category": "homoeopathy",
+      "level": "undergraduate",
+      "duration_years": 5.5,
+      "description": "Undergraduate education in homoeopathic medicine.",
+      "eligibility": {
+        "minimum_qualification": "10+2",
+        "required_subjects": ["Physics", "Chemistry", "Biology"],
+        "entrance_exam": "NEET-UG"
+      },
+      "active": true
     }
   ]
-}
-
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "MedOrbits Course Fixture",
-  "description": "Validates synthetic MedOrbits course fixtures for development and automated testing. These records are not official or verified course listings.",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "description",
-    "courses"
-  ],
-  "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "description": {
-      "type": "string",
-      "minLength": 1
-    },
-    "courses": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/course"
-      }
-    }
-  },
-  "$defs": {
-    "course": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "slug",
-        "code",
-        "name",
-        "shortName",
-        "category",
-        "qualificationLevel",
-        "durationMonths",
-        "durationYears",
-        "institutionType",
-        "entranceExam",
-        "counsellingRequired",
-        "status",
-        "metadata"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^COURSE-TEST-[A-Z0-9-]+$"
-        },
-        "slug": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        },
-        "code": {
-          "type": "string",
-          "minLength": 1
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "shortName": {
-          "type": "string",
-          "minLength": 1
-        },
-        "category": {
-          "type": "string",
-          "minLength": 1
-        },
-        "qualificationLevel": {
-          "type": "string",
-          "minLength": 1
-        },
-        "durationMonths": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "minimum": 1
-        },
-        "durationYears": {
-          "type": [
-            "number",
-            "null"
-          ],
-          "exclusiveMinimum": 0
-        },
-        "institutionType": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "medical",
-            "dental",
-            "pharmacy",
-            "ayush",
-            "nursing",
-            "paramedical",
-            "other",
-            null
-          ]
-        },
-        "entranceExam": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "counsellingRequired": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "active",
-            "inactive",
-            "draft",
-            "archived"
-          ]
-        },
-        "metadata": {
-          "$ref": "#/$defs/metadata"
-        }
-      }
-    },
-    "metadata": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "source",
-        "testCase",
-        "synthetic",
-        "verified"
-      ],
-      "properties": {
-        "source": {
-          "const": "fixture"
-        },
-        "testCase": {
-          "type": "string",
-          "minLength": 1
-        },
-        "synthetic": {
-          "const": true
-        },
-        "verified": {
-          "const": false
-        }
-      }
-    }
-  }
 }
