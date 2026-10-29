@@ -2,7 +2,7 @@
 # ==============================================================================
 # MedOrbits — CodeQL Security Analysis
 # File: .github/workflows/codeql.yml
-# Purpose: Python and JavaScript security analysis plus syntax diagnostics.
+# Purpose: Diagnose syntax errors and run CodeQL security analysis.
 # ==============================================================================
 
 name: CodeQL Security Analysis
@@ -27,9 +27,9 @@ concurrency:
 
 jobs:
   diagnose:
-    name: Diagnose Python and JavaScript syntax
+    name: Diagnose Python and JavaScript
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     permissions:
       contents: read
@@ -48,10 +48,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Report Python syntax errors
+      - name: Report Python syntax errors with source context
         shell: bash
         run: |
           set -uo pipefail
+
           python - <<'PY'
           import ast
           import pathlib
@@ -69,20 +70,49 @@ jobs:
                   continue
 
               checked += 1
+
               try:
                   source = path.read_text(encoding="utf-8-sig")
                   ast.parse(source, filename=str(path))
-              except (SyntaxError, UnicodeError, OSError) as exc:
+
+              except SyntaxError as exc:
                   failures += 1
-                  line = getattr(exc, "lineno", 1) or 1
-                  message = str(exc).replace("\n", " ")
+                  line_number = exc.lineno or 1
+                  column = exc.offset or 1
+
                   print(
-                      f"::error file={path},line={line}::"
-                      f"Python syntax/encoding error: {message}"
+                      f"::error file={path},line={line_number},"
+                      f"col={column}::{exc.msg}"
+                  )
+                  print(f"\n--- {path}:{line_number} ---")
+
+                  try:
+                      lines = path.read_text(
+                          encoding="utf-8-sig"
+                      ).splitlines()
+
+                      start = max(1, line_number - 3)
+                      end = min(len(lines), line_number + 3)
+
+                      for number in range(start, end + 1):
+                          marker = ">>" if number == line_number else "  "
+                          print(
+                              f"{marker} {number:4}: "
+                              f"{lines[number - 1]}"
+                          )
+                  except (OSError, UnicodeError) as read_error:
+                      print(f"Could not display source: {read_error}")
+
+              except (UnicodeError, OSError) as exc:
+                  failures += 1
+                  print(
+                      f"::error file={path}::"
+                      f"Cannot read Python file: {exc}"
                   )
 
-          print(f"Python files checked: {checked}")
+          print(f"\nPython files checked: {checked}")
           print(f"Python syntax errors: {failures}")
+
           sys.exit(1 if failures else 0)
           PY
 
@@ -95,9 +125,12 @@ jobs:
 
           while IFS= read -r -d '' file; do
             checked=$((checked + 1))
-            if ! output="$(node --check "$file" 2>&1)"; then
+
+            if output="$(node --check "$file" 2>&1)"; then
+              continue
+            else
               failed=1
-              printf '%s\n' "::error file=$file::JavaScript syntax check failed"
+              echo "::error file=$file::JavaScript syntax check failed"
               printf '%s\n' "$output"
             fi
           done < <(
@@ -113,7 +146,8 @@ jobs:
           )
 
           echo "JavaScript files checked: $checked"
-          if [ "$failed" -ne 0 ]; then
+
+          if [[ "$failed" -ne 0 ]]; then
             echo "::error::Fix the JavaScript syntax errors listed above."
             exit 1
           fi
