@@ -786,6 +786,104 @@
       }
     }
   </style>
+
+
+<!-- MEDORBITS REFERENCE-STYLE ENHANCEMENT: additive, page-specific dual-tone layer -->
+
+
+
+
+
+
+<style id="medorbits-reference-clean-design">
+/* Shared reference interface: preserve original page structure and content. */
+:root {
+  color-scheme: dark;
+  --ref-bg: #071512;
+  --ref-surface: #102c28;
+  --ref-accent: #174b39;
+  --ref-accent-soft: #86e0bf;
+  --ref-gold: #e9c779;
+  --ref-text: #effcf7;
+  --ref-muted: #c9e5da;
+  --ref-border: color-mix(in srgb, var(--ref-accent) 34%, transparent);
+}
+html { scroll-behavior:smooth; }
+body {
+  background:
+    radial-gradient(ellipse at 7% 4%, color-mix(in srgb,var(--ref-accent) 14%,transparent),transparent 35%),
+    radial-gradient(ellipse at 94% 38%, color-mix(in srgb,var(--ref-gold) 10%,transparent),transparent 34%),
+    linear-gradient(135deg,var(--ref-bg),var(--ref-surface) 56%,#080811) !important;
+  color:var(--ref-text);
+}
+.site-header,.announcement,.site-footer { border-color:var(--ref-border) !important; }
+.site-header { background:color-mix(in srgb,var(--ref-bg) 94%,transparent) !important; }
+.announcement { background:linear-gradient(100deg,var(--ref-bg),var(--ref-surface),var(--ref-bg)) !important; }
+.hero,.hero-art,.hero-visual,.hero-panel,.hero-card,.sidebar,.legal-card,.contact-card {
+  border-color:var(--ref-border) !important;
+}
+.hero { background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ref-accent) 14%,transparent),transparent 42%),linear-gradient(135deg,color-mix(in srgb,var(--ref-surface) 90%,transparent),color-mix(in srgb,var(--ref-bg) 94%,transparent)) !important; }
+.hero h1 span,.hero h1 .accent,.eyebrow,.brand strong,.breadcrumbs a,.sidebar-label,
+.section-top h2,.legal-card h3,.section-number,.toc a span,.legal-card a,.contact-card a { color:var(--ref-accent-soft) !important; }
+.meta-chip,.notice,.notice-icon,.inline-highlight { border-color:var(--ref-border) !important; }
+.notice,.inline-highlight { background:color-mix(in srgb,var(--ref-accent) 8%,transparent) !important; }
+.sidebar,.legal-card,.contact-card {
+  background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ref-accent) 7%,transparent),transparent 45%),linear-gradient(145deg,color-mix(in srgb,var(--ref-surface) 86%,#fff 1%),color-mix(in srgb,var(--ref-bg) 96%,#000)) !important;
+  box-shadow:0 14px 36px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+.btn,.button,.btn-primary {
+  border-color:color-mix(in srgb,var(--ref-accent) 55%,transparent) !important;
+  background:linear-gradient(115deg,color-mix(in srgb,var(--ref-accent) 28%,var(--ref-surface)),color-mix(in srgb,var(--ref-gold) 22%,var(--ref-surface))) !important;
+  color:var(--ref-text) !important;
+  text-decoration:none !important;
+  transition:transform .2s ease,border-color .2s ease,filter .2s ease;
+}
+.btn:hover,.button:hover,.btn-primary:hover { transform:translateY(-2px);filter:brightness(1.07); }
+/* Resource/link cards only: aligned 2×2 layout. Legal article sections remain in their original reading order. */
+.catalog-grid,.catalog-cards,.directory-grid,.card-grid,.cards-grid,.resource-grid,.policy-grid,
+.feature-grid,.services-grid,.destination-grid,.course-grid,.college-grid,.support-grid,.link-grid,
+.quick-links-grid,.legal-grid,.resource-cards,.cards,.document-grid,.documents-grid,.legal-extra-grid,
+.contact-grid,.mo-reference-grid {
+  display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:clamp(12px,2vw,20px) !important; align-items:stretch !important;
+}
+.catalog-grid>*,.catalog-cards>*,.directory-grid>*,.card-grid>*,.cards-grid>*,.resource-grid>*,
+.policy-grid>*,.feature-grid>*,.services-grid>*,.destination-grid>*,.course-grid>*,.college-grid>*,
+.support-grid>*,.link-grid>*,.quick-links-grid>*,.legal-grid>*,.resource-cards>*,.cards>*,
+.document-grid>*,.documents-grid>*,.contact-grid>* {
+  min-width:0; height:100%; display:flex; flex-direction:column; align-items:flex-start;
+}
+/* No page-opening, scroll-entry, shimmer, orbit, or reveal animation. Carousel navigation remains functional. */
+*,*::before,*::after { animation:none !important; animation-delay:0s !important; }
+.hero:before,.hero:after,.site-header,.legal-card,.contact-card,.sidebar,.btn,.button,.btn-primary { animation:none !important; }
+/* Three-slide reference panel: static cards switch instantly with previous/next and dot controls. */
+.legal-visual-slides { width:min(1180px,calc(100% - 40px)); margin:0 auto 28px; position:relative; }
+.legal-slide-window { overflow:hidden; border:1px solid var(--ref-border); border-radius:20px; background:linear-gradient(125deg,color-mix(in srgb,var(--ref-surface) 88%,transparent),color-mix(in srgb,var(--ref-bg) 94%,transparent)); box-shadow:0 18px 45px rgba(0,0,0,.22); }
+.legal-slide { display:none; min-height:175px; padding:clamp(22px,4vw,38px); grid-template-columns:auto minmax(0,1fr); gap:clamp(15px,3vw,26px); align-items:center; }
+.legal-slide.active { display:grid; }
+.legal-slide-icon { display:grid; place-items:center; width:clamp(64px,9vw,92px); aspect-ratio:1; border:1px solid var(--ref-border); border-radius:20px; background:color-mix(in srgb,var(--ref-accent) 10%,var(--ref-surface)); font-size:clamp(32px,4vw,46px); }
+.legal-slide h2,.legal-slide h3 { margin:0 0 8px; color:var(--ref-accent-soft); font-family:'Playfair Display',Georgia,serif; }
+.legal-slide p { margin:0; color:var(--ref-muted); max-width:72ch; }
+.legal-slide-controls { display:flex; justify-content:center; align-items:center; gap:12px; padding:12px; }
+.legal-slide-controls button { min-width:38px; min-height:36px; padding:7px 12px; border:1px solid var(--ref-border); border-radius:999px; background:var(--ref-surface); color:var(--ref-text); cursor:pointer; }
+.legal-slide-dots { display:flex; gap:8px; align-items:center; }
+.legal-slide-dots button { min-width:9px; width:9px; min-height:9px; height:9px; padding:0; border-radius:50%; background:color-mix(in srgb,var(--ref-muted) 45%,transparent); }
+.legal-slide-dots button[aria-current="true"] { background:var(--ref-gold); outline:3px solid color-mix(in srgb,var(--ref-gold) 18%,transparent); }
+/* Button alignment is scoped to explicit card actions, never ordinary policy text links. */
+.mo-reference-card,.legal-extra-link { min-width:0; height:100%; border:1px solid var(--ref-border); border-radius:15px; background:linear-gradient(135deg,color-mix(in srgb,var(--ref-accent) 8%,var(--ref-surface)),color-mix(in srgb,var(--ref-gold) 5%,var(--ref-bg))); }
+.mo-reference-card .mo-reference-icon { border-color:var(--ref-border); color:var(--ref-accent-soft); }
+@media(max-width:650px) {
+  .catalog-grid,.catalog-cards,.directory-grid,.card-grid,.cards-grid,.resource-grid,.policy-grid,
+  .feature-grid,.services-grid,.destination-grid,.course-grid,.college-grid,.support-grid,.link-grid,
+  .quick-links-grid,.legal-grid,.resource-cards,.cards,.document-grid,.documents-grid,.legal-extra-grid,
+  .contact-grid,.mo-reference-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .legal-slide { grid-template-columns:1fr; text-align:center; justify-items:center; }
+  .legal-slide p { margin-inline:auto; }
+  .legal-visual-slides { width:calc(100% - 28px); }
+}
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*::before,*::after { transition:none !important; } }
+</style>
+
 </head>
 
 <body>
@@ -894,6 +992,24 @@
           <span class="meta-chip">Verify official fees</span>
         </div>
       </section>
+
+
+
+
+
+<section class="legal-visual-slides" aria-label="Legal centre highlights" data-legal-slideshow>
+ <div class="legal-slide-window" aria-live="polite">
+  <article class="legal-slide active"><div class="legal-slide-icon" aria-hidden="true">⚖️</div><div><h2>Clear policies. Better decisions.</h2><p>Review service terms, privacy practices, payment rules and user responsibilities before using a MedOrbits service.</p></div></article>
+  <article class="legal-slide"><div class="legal-slide-icon" aria-hidden="true">🛡️</div><div><h2>Privacy and responsible handling</h2><p>Share only information needed for your request and use official contact channels for corrections, access requests or concerns.</p></div></article>
+  <article class="legal-slide"><div class="legal-slide-icon" aria-hidden="true">📄</div><div><h2>Read the applicable policy</h2><p>Individual service terms may apply. Confirm current fees, deadlines and official requirements with the relevant provider or authority.</p></div></article>
+ </div>
+ <div class="legal-slide-controls"><button type="button" data-slide-prev aria-label="Previous slide">←</button><div class="legal-slide-dots" aria-label="Choose slide"><button type="button" aria-label="Slide 1" aria-current="true" data-slide-dot="0"></button><button type="button" aria-label="Slide 2" aria-current="false" data-slide-dot="1"></button><button type="button" aria-label="Slide 3" aria-current="false" data-slide-dot="2"></button></div><button type="button" data-slide-next aria-label="Next slide">→</button></div>
+</section>
+<script id="medorbits-legal-slideshow-script">
+(()=>{document.querySelectorAll('[data-legal-slideshow]').forEach(root=>{if(root.dataset.ready)return;root.dataset.ready='1';const slides=[...root.querySelectorAll('.legal-slide')],dots=[...root.querySelectorAll('[data-slide-dot]')];let i=0,timer=null;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;function show(n){i=(n+slides.length)%slides.length;slides.forEach((s,j)=>{s.classList.toggle('active',j===i);s.setAttribute('aria-hidden',String(j!==i))});dots.forEach((d,j)=>d.setAttribute('aria-current',String(j===i)))}function stop(){if(timer)clearInterval(timer);timer=null}function start(){stop();if(!reduced&&!root.matches(':hover')&&!root.contains(document.activeElement))timer=setInterval(()=>show(i+1),6500)}root.querySelector('[data-slide-prev]').addEventListener('click',()=>{show(i-1);start()});root.querySelector('[data-slide-next]').addEventListener('click',()=>{show(i+1);start()});dots.forEach((d,j)=>d.addEventListener('click',()=>{show(j);start()}));root.addEventListener('mouseenter',stop);root.addEventListener('mouseleave',start);root.addEventListener('focusin',stop);root.addEventListener('focusout',start);show(0);start()})})();
+</script>
+
+
 
       <div class="notice" role="note">
         <div class="notice-icon" aria-hidden="true">!</div>

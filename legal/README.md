@@ -119,3 +119,17 @@ Assign an owner to review these pages whenever the business model, services, pay
 Record approved revisions and keep related pages synchronized.
 
 Implementation note: This README describes the intended scope of the legal pages. It does not confirm that any specific policy, consent mechanism, deletion workflow, grievance process, or compliance control has been implemented.
+
+## Expanded dual-tone legal pages (added)
+The following additional, non-duplicate pages are included in this package:
+- `ai-use-transparency.html` — AI use and transparency
+- `information-security.html` — information security
+- `document-verification-policy.html` — document verification
+- `education-agent-disclosure.html` — education consultancy and agent disclosure
+- `complaint-handling-policy.html` — complaint handling and escalation
+- `financial-aid-disclaimer.html` — scholarship and financial-aid disclaimer
+- `editorial-corrections-policy.html` — editorial standards and corrections
+- `third-party-service-disclosure.html` — third-party service disclosure
+
+The legal pages receive an additive dual-tone animation layer and a three-slide carousel. The legal directory index links to the new pages. Existing source files and redirect aliases are preserved. New policy text is a general draft, not legal advice; confirm it reflects actual operations and obtain qualified legal review before publication.
+
