@@ -8,48 +8,17 @@ File:
     python/tools/data_source_manager.py
 
 Purpose:
-    Discover, load, validate, catalog, and expose JSON datasets from
-    assets/data/ and other configured project locations.
-
-Features:
-    - Recursively discovers JSON datasets.
-    - Prioritizes configured data directories.
-    - Loads datasets without modifying source files.
-    - Supports dictionaries, lists, strings, numbers, booleans and null.
-    - Tracks the source path and modification time of each dataset.
-    - Detects invalid JSON and duplicate dataset names.
-    - Supports explicit dataset aliases and required datasets.
-    - Provides a unified read-only data access interface.
-    - Supports refreshing the data catalog.
-    - Generates JSON data catalog and validation reports.
-    - Does not invent data, endpoints, credentials or schemas.
-    - Uses only the Python standard library.
+    Discover, load, validate, catalog, and expose JSON datasets.
 
 Compatibility:
     Python 3.10+
 
-Run from repository root:
-    python python/tools/data_source_manager.py
-
-Inspect datasets:
-    python python/tools/data_source_manager.py --list
-
-Validate all discovered JSON:
-    python python/tools/data_source_manager.py --validate
-
-Export catalog:
-    python python/tools/data_source_manager.py --catalog
-
-Custom repository root:
-    python python/tools/data_source_manager.py --root .
-
-Environment:
-    MEDORBITS_DATA_DIRS may contain additional data directories separated
-    by the platform-specific path separator.
-
-Important:
-    This module reads local files. It does not automatically fetch external
-    APIs, database records, or connected-app data sources.
+Security:
+    - Standard library only.
+    - Read-only access to source datasets.
+    - Rejects paths outside the repository root.
+    - Prevents catalog exports from overwriting discovered datasets.
+    - Does not access networks, credentials, or external services.
 """
 
 from __future__ import annotations
@@ -78,7 +47,7 @@ DEFAULT_DATA_DIRECTORIES = (
     "config/data",
 )
 
-DEFAULT_IGNORED_DIRECTORIES = {
+DEFAULT_IGNORED_DIRECTORIES = frozenset({
     ".git",
     ".venv",
     "venv",
@@ -90,16 +59,17 @@ DEFAULT_IGNORED_DIRECTORIES = {
     "dist",
     "build",
     "coverage",
-}
+})
 
 DATASET_NAME_PATTERN = re.compile(
     r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,199}$"
 )
 
+APP_NAME = "MedOrbits Data Source Manager"
+APP_VERSION = "1.1.0"
 
-# ---------------------------------------------------------------------------
-# Exceptions
-# ---------------------------------------------------------------------------
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
 
 class DataSourceError(RuntimeError):
@@ -122,11 +92,6 @@ class InvalidDatasetNameError(DataSourceError, ValueError):
     """Raised when a dataset identifier is invalid."""
 
 
-# ---------------------------------------------------------------------------
-# Dataset metadata
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True, slots=True)
 class DatasetRecord:
     """Metadata describing a discovered JSON dataset."""
@@ -145,7 +110,7 @@ class DatasetRecord:
 
 @dataclass(frozen=True, slots=True)
 class DatasetIssue:
-    """A dataset discovery, validation, or loading issue."""
+    """A discovery, validation, or loading issue."""
 
     severity: str
     code: str
@@ -153,26 +118,8 @@ class DatasetIssue:
     message: str
 
 
-# ---------------------------------------------------------------------------
-# Data source manager
-# ---------------------------------------------------------------------------
-
-
 class DataSourceManager:
-    """
-    Centralized JSON data access for MedOrbits.
-
-    Dataset identifiers are derived from filenames. For example:
-
-        assets/data/colleges.json -> colleges
-        assets/data/jobs.json -> jobs
-        assets/data/medical/colleges.json -> medical/colleges
-
-    When the same dataset name occurs in multiple directories, lookup raises
-    DuplicateDatasetError unless a specific source path is supplied.
-
-    This prevents silently selecting the wrong dataset.
-    """
+    """Centralized, read-only JSON data access for MedOrbits."""
 
     def __init__(
         self,
@@ -186,30 +133,26 @@ class DataSourceManager:
         self.root = Path(root).expanduser().resolve()
 
         if not self.root.is_dir():
-            raise DataSourceError(
-                f"Repository root does not exist: {self.root}"
-            )
+            raise DataSourceError("Repository root is not a directory.")
 
         if data_directories is None:
             configured = list(DEFAULT_DATA_DIRECTORIES)
-            environment_dirs = os.environ.get("MEDORBITS_DATA_DIRS", "")
-
-            if environment_dirs:
-                configured.extend(
-                    item
-                    for item in environment_dirs.split(os.pathsep)
-                    if item.strip()
-                )
-
-            self.data_directories = tuple(
-                dict.fromkeys(configured)
+            configured.extend(
+                item.strip()
+                for item in os.environ.get(
+                    "MEDORBITS_DATA_DIRS", ""
+                ).split(os.pathsep)
+                if item.strip()
             )
+            self.data_directories = tuple(dict.fromkeys(configured))
         else:
             self.data_directories = tuple(data_directories)
 
         self.recursive = recursive
         self.ignore_directories = set(
-            ignore_directories or DEFAULT_IGNORED_DIRECTORIES
+            DEFAULT_IGNORED_DIRECTORIES
+            if ignore_directories is None
+            else ignore_directories
         )
         self.include_hidden = include_hidden
 
@@ -221,18 +164,15 @@ class DataSourceManager:
 
         self.refresh()
 
-    # ------------------------------------------------------------------
-    # Path and name validation
-    # ------------------------------------------------------------------
-
     def _safe_path(self, path: Path) -> Path:
+        """Resolve a path and ensure it remains inside the repository."""
         resolved = path.resolve()
 
         try:
             resolved.relative_to(self.root)
         except ValueError as exc:
             raise DataSourceError(
-                f"Path is outside repository root: {path}"
+                "Requested path is outside the repository root."
             ) from exc
 
         return resolved
@@ -246,19 +186,17 @@ class DataSourceManager:
 
         normalized = name.strip().replace("\\", "/")
 
-        if not normalized or normalized.startswith("/"):
-            raise InvalidDatasetNameError(
-                "Dataset name cannot be empty or absolute."
+        if (
+            not normalized
+            or normalized.startswith("/")
+            or any(
+                part in {"", ".", ".."}
+                for part in normalized.split("/")
             )
-
-        if any(part in {"", ".", ".."} for part in normalized.split("/")):
-            raise InvalidDatasetNameError(
-                f"Unsafe dataset name: {name!r}"
+            or not all(
+                DATASET_NAME_PATTERN.fullmatch(part)
+                for part in normalized.split("/")
             )
-
-        if not all(
-            DATASET_NAME_PATTERN.fullmatch(part)
-            for part in normalized.split("/")
         ):
             raise InvalidDatasetNameError(
                 f"Invalid dataset name: {name!r}"
@@ -266,28 +204,29 @@ class DataSourceManager:
 
         return normalized
 
-    def _configured_roots(self) -> list[Path]:
+    def _configured_roots(
+        self,
+        issues: list[DatasetIssue],
+    ) -> list[Path]:
         roots: list[Path] = []
 
         for directory in self.data_directories:
-            candidate = Path(directory)
+            candidate = Path(directory).expanduser()
 
             if not candidate.is_absolute():
                 candidate = self.root / candidate
 
-            candidate = candidate.resolve(strict=False)
+            candidate = candidate.resolve()
 
             try:
                 candidate.relative_to(self.root)
             except ValueError:
-                self._issues.append(
-                    DatasetIssue(
-                        severity="WARNING",
-                        code="DATA_DIRECTORY_OUTSIDE_ROOT",
-                        path=str(candidate),
-                        message="Configured data directory is outside the repository.",
-                    )
-                )
+                issues.append(DatasetIssue(
+                    "WARNING",
+                    "DATA_DIRECTORY_OUTSIDE_ROOT",
+                    candidate.name,
+                    "Configured directory is outside the repository.",
+                ))
                 continue
 
             if candidate.is_dir() and candidate not in roots:
@@ -295,21 +234,18 @@ class DataSourceManager:
 
         return roots
 
-    # ------------------------------------------------------------------
-    # Discovery
-    # ------------------------------------------------------------------
-
     def refresh(self) -> None:
-        """Rediscover JSON files and invalidate the in-memory data cache."""
-
+        """Rediscover datasets and atomically replace the current catalog."""
         records: dict[str, list[DatasetRecord]] = defaultdict(list)
         issues: list[DatasetIssue] = []
+        roots = self._configured_roots(issues)
 
-        for directory in self._configured_roots():
-            if self.recursive:
-                candidates = directory.rglob("*.json")
-            else:
-                candidates = directory.glob("*.json")
+        for directory in roots:
+            candidates = (
+                directory.rglob("*.json")
+                if self.recursive
+                else directory.glob("*.json")
+            )
 
             for path in sorted(candidates):
                 if not path.is_file():
@@ -333,46 +269,44 @@ class DataSourceManager:
                     safe_path = self._safe_path(path)
                     raw = safe_path.read_bytes()
                     stat = safe_path.stat()
-                except (OSError, DataSourceError) as exc:
-                    issues.append(
-                        DatasetIssue(
-                            severity="ERROR",
-                            code="DATASET_READ_FAILED",
-                            path=str(path),
-                            message=str(exc),
-                        )
-                    )
+                except (OSError, DataSourceError):
+                    issues.append(DatasetIssue(
+                        "ERROR",
+                        "DATASET_READ_FAILED",
+                        path.name,
+                        "Dataset could not be read safely.",
+                    ))
                     continue
 
-                relative_path = safe_path.relative_to(self.root).as_posix()
-                name = safe_path.relative_to(directory).with_suffix("").as_posix()
+                relative_path = safe_path.relative_to(
+                    self.root
+                ).as_posix()
+                name = safe_path.relative_to(
+                    directory
+                ).with_suffix("").as_posix()
 
                 try:
                     payload = json.loads(raw.decode("utf-8-sig"))
-                    top_level_type = type(payload).__name__
-
-                    if isinstance(payload, dict):
-                        keys = tuple(sorted(str(key) for key in payload))
-                    else:
-                        keys = ()
-
-                    valid_json = True
+                    top_type = type(payload).__name__
+                    keys = (
+                        tuple(sorted(str(key) for key in payload))
+                        if isinstance(payload, dict)
+                        else ()
+                    )
+                    valid = True
                     error = None
 
-                except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                    top_level_type = None
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    top_type = None
                     keys = ()
-                    valid_json = False
-                    error = str(exc)
-
-                    issues.append(
-                        DatasetIssue(
-                            severity="ERROR",
-                            code="INVALID_JSON",
-                            path=relative_path,
-                            message=error,
-                        )
-                    )
+                    valid = False
+                    error = "Invalid JSON or UTF-8 encoding."
+                    issues.append(DatasetIssue(
+                        "ERROR",
+                        "INVALID_JSON",
+                        relative_path,
+                        error,
+                    ))
 
                 record = DatasetRecord(
                     name=name,
@@ -384,79 +318,72 @@ class DataSourceManager:
                         timezone.utc,
                     ).isoformat(),
                     sha256=hashlib.sha256(raw).hexdigest(),
-                    top_level_type=top_level_type,
+                    top_level_type=top_type,
                     top_level_keys=keys,
-                    valid_json=valid_json,
+                    valid_json=valid,
                     error=error,
                 )
-
                 records[name].append(record)
 
-        with self._lock:
-            self._records = {
-                name: sorted(
-                    entries,
-                    key=lambda entry: entry.relative_path,
-                )
-                for name, entries in records.items()
-            }
-            self._cache.clear()
-            self._issues = issues
+        finalized = {
+            name: sorted(
+                entries,
+                key=lambda entry: entry.relative_path,
+            )
+            for name, entries in records.items()
+        }
 
-    # ------------------------------------------------------------------
-    # Aliases
-    # ------------------------------------------------------------------
+        with self._lock:
+            self._records = finalized
+            self._issues = issues
+            self._cache.clear()
 
     def register_alias(self, alias: str, dataset_name: str) -> None:
-        """
-        Register an explicit alias for a dataset.
-
-        Aliases do not override existing datasets or other aliases.
-        """
-
-        normalized_alias = self._validate_name(alias)
-        normalized_dataset = self._validate_name(dataset_name)
+        """Register an explicit alias without overriding an existing name."""
+        alias = self._validate_name(alias)
+        dataset_name = self._validate_name(dataset_name)
 
         with self._lock:
-            if normalized_alias in self._records:
+            if alias in self._records or alias in self._aliases:
                 raise DuplicateDatasetError(
-                    f"Alias conflicts with dataset name: {normalized_alias}"
+                    f"Alias already conflicts with an existing name: {alias}"
                 )
 
-            if normalized_alias in self._aliases:
-                raise DuplicateDatasetError(
-                    f"Alias already exists: {normalized_alias}"
-                )
-
-            if normalized_dataset not in self._records:
+            if dataset_name not in self._records:
                 raise DatasetNotFoundError(
-                    f"Target dataset does not exist: {normalized_dataset}"
+                    f"Alias target does not exist: {dataset_name}"
                 )
 
-            self._aliases[normalized_alias] = normalized_dataset
+            self._aliases[alias] = dataset_name
 
-    # ------------------------------------------------------------------
-    # Listing and lookup
-    # ------------------------------------------------------------------
+    def _resolve_alias(self, name: str) -> str:
+        seen: set[str] = set()
+
+        while name in self._aliases:
+            if name in seen:
+                raise DataSourceError("Alias cycle detected.")
+            seen.add(name)
+            name = self._aliases[name]
+
+        return name
 
     def names(self, *, include_invalid: bool = True) -> tuple[str, ...]:
-        """List all dataset identifiers."""
-
+        """Return sorted dataset identifiers."""
         with self._lock:
             if include_invalid:
                 return tuple(sorted(self._records))
 
-            return tuple(
-                sorted(
-                    name
-                    for name, entries in self._records.items()
-                    if any(record.valid_json for record in entries)
-                )
-            )
+            return tuple(sorted(
+                name
+                for name, entries in self._records.items()
+                if any(record.valid_json for record in entries)
+            ))
 
-    def records(self, name: str | None = None) -> tuple[DatasetRecord, ...]:
-        """Return metadata for every dataset or one named dataset."""
-
+    def records(
+        self,
+        name: str | None = None,
+    ) -> tuple[DatasetRecord, ...]:
+        """Return dataset metadata."""
         with self._lock:
             if name is None:
                 return tuple(
@@ -468,7 +395,6 @@ class DataSourceManager:
             normalized = self._resolve_alias(
                 self._validate_name(name)
             )
-
             entries = self._records.get(normalized)
 
             if not entries:
@@ -478,82 +404,61 @@ class DataSourceManager:
 
             return tuple(entries)
 
-    def _resolve_alias(self, name: str) -> str:
-        seen: set[str] = set()
-        current = name
-
-        while current in self._aliases:
-            if current in seen:
-                raise DataSourceError(
-                    f"Dataset alias cycle detected: {name}"
-                )
-
-            seen.add(current)
-            current = self._aliases[current]
-
-        return current
-
     def _select_record(
         self,
         name: str,
-        *,
         source: str | Path | None = None,
     ) -> DatasetRecord:
-        normalized = self._resolve_alias(
-            self._validate_name(name)
-        )
+        normalized = self._validate_name(name)
 
         with self._lock:
+            normalized = self._resolve_alias(normalized)
             entries = list(self._records.get(normalized, []))
 
         if source is not None:
-            source_path = Path(source)
-
+            source_path = Path(source).expanduser()
             if not source_path.is_absolute():
                 source_path = self.root / source_path
 
             resolved_source = self._safe_path(source_path)
+            matches = [
+                record for record in entries
+                if Path(record.absolute_path) == resolved_source
+            ]
 
-            for record in entries:
-                if Path(record.absolute_path) == resolved_source:
-                    if not record.valid_json:
-                        raise DatasetLoadError(
-                            f"Dataset contains invalid JSON: {record.relative_path}"
-                        )
-                    return record
+            if not matches:
+                raise DatasetNotFoundError(
+                    f"No matching dataset source for {normalized}."
+                )
 
-            raise DatasetNotFoundError(
-                f"No matching source for {normalized}: {source}"
-            )
+            record = matches[0]
+            if not record.valid_json:
+                raise DatasetLoadError(
+                    f"Invalid JSON: {record.relative_path}"
+                )
+            return record
 
-        valid_entries = [
-            record for record in entries
-            if record.valid_json
-        ]
+        valid = [record for record in entries if record.valid_json]
 
-        if not valid_entries:
+        if not valid:
             if entries:
                 raise DatasetLoadError(
-                    f"No valid JSON source exists for dataset: {normalized}"
+                    f"No valid JSON source exists for {normalized}."
                 )
             raise DatasetNotFoundError(
                 f"Dataset not found: {normalized}"
             )
 
-        if len(valid_entries) > 1:
+        if len(valid) != 1:
             locations = ", ".join(
-                record.relative_path for record in valid_entries
+                record.relative_path for record in valid
             )
             raise DuplicateDatasetError(
-                f"Dataset {normalized!r} has multiple sources: {locations}. "
-                "Specify source=... to choose one."
+                f"Ambiguous dataset {normalized!r}: {locations}. "
+                "Specify source= to select one."
             )
 
-        return valid_entries[0]
-
-    # ------------------------------------------------------------------
-    # Data loading
-    # ------------------------------------------------------------------
+        return valid[0]
 
     def load(
         self,
@@ -562,47 +467,28 @@ class DataSourceManager:
         source: str | Path | None = None,
         use_cache: bool = True,
     ) -> Any:
-        """
-        Load a JSON dataset.
-
-        Returns ordinary Python dictionaries, lists, and scalar values.
-        Returned objects are not recursively immutable; callers should treat
-        shared cached values as read-only.
-
-        Use use_cache=False to request a fresh read from disk.
-        """
-
-        record = self._select_record(name, source=source)
-
+        """Load a JSON dataset. Callers should treat returned values as read-only."""
+        record = self._select_record(name, source)
         cache_key = record.relative_path
 
         with self._lock:
             cached = self._cache.get(cache_key)
-
             if use_cache and cached and cached[0] == record.sha256:
                 return cached[1]
 
-        path = Path(record.absolute_path)
-
         try:
-            raw = path.read_bytes()
-        except OSError as exc:
-            raise DatasetLoadError(
-                f"Unable to read dataset {record.relative_path}: {exc}"
-            ) from exc
-
-        actual_hash = hashlib.sha256(raw).hexdigest()
-
-        try:
+            raw = Path(record.absolute_path).read_bytes()
             payload = json.loads(raw.decode("utf-8-sig"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise DatasetLoadError(
-                f"Unable to parse {record.relative_path}: {exc}"
+                f"Unable to load {record.relative_path}."
             ) from exc
+
+        digest = hashlib.sha256(raw).hexdigest()
 
         with self._lock:
             if use_cache:
-                self._cache[cache_key] = (actual_hash, payload)
+                self._cache[cache_key] = (digest, payload)
 
         return payload
 
@@ -613,19 +499,14 @@ class DataSourceManager:
         *,
         source: str | Path | None = None,
     ) -> Any:
-        """Load a dataset, returning default if it is absent or ambiguous."""
-
+        """Return a dataset or default when it is missing or ambiguous."""
         try:
             return self.load(name, source=source)
         except (DatasetNotFoundError, DuplicateDatasetError):
             return default
 
-    def require(
-        self,
-        names: Iterable[str],
-    ) -> Mapping[str, Any]:
-        """Load all required datasets or raise a clear error."""
-
+    def require(self, names: Iterable[str]) -> Mapping[str, Any]:
+        """Load all required datasets or report failures."""
         loaded: dict[str, Any] = {}
         failures: list[str] = []
 
@@ -637,7 +518,7 @@ class DataSourceManager:
 
         if failures:
             raise DatasetLoadError(
-                "Required datasets could not all be loaded:\n- "
+                "Required datasets could not be loaded:\n- "
                 + "\n- ".join(failures)
             )
 
@@ -648,38 +529,28 @@ class DataSourceManager:
         *,
         include_invalid: bool = False,
     ) -> Mapping[str, Any]:
-        """
-        Load datasets with unique names.
-
-        Duplicate names are reported in issues and omitted rather than
-        silently selecting an arbitrary file.
-        """
+        """Load only unambiguous datasets."""
+        with self._lock:
+            names = tuple(sorted(self._records))
 
         loaded: dict[str, Any] = {}
 
-        for name in self.names(include_invalid=include_invalid):
-            entries = self._records.get(name, [])
+        for name in names:
+            entries = self.records(name)
+            valid = [entry for entry in entries if entry.valid_json]
 
-            if len([item for item in entries if item.valid_json]) != 1:
+            if len(valid) != 1:
+                continue
+
+            if not include_invalid and not valid[0].valid_json:
                 continue
 
             try:
                 loaded[name] = self.load(name)
-            except DataSourceError as exc:
-                self._issues.append(
-                    DatasetIssue(
-                        severity="WARNING",
-                        code="DATASET_LOAD_FAILED",
-                        path=name,
-                        message=str(exc),
-                    )
-                )
+            except DataSourceError:
+                continue
 
         return MappingProxyType(loaded)
-
-    # ------------------------------------------------------------------
-    # Validation and catalog
-    # ------------------------------------------------------------------
 
     def validate(
         self,
@@ -687,81 +558,77 @@ class DataSourceManager:
         required_datasets: Iterable[str] = (),
         expected_types: Mapping[str, type] | None = None,
     ) -> tuple[DatasetIssue, ...]:
-        """
-        Validate JSON parsing and optional top-level data contracts.
+        """Validate JSON syntax, duplicate names, required names, and types."""
+        with self._lock:
+            issues = list(self._issues)
+            snapshot = {
+                name: tuple(entries)
+                for name, entries in self._records.items()
+            }
 
-        Example:
-            manager.validate(
-                required_datasets=("colleges", "courses"),
-                expected_types={
-                    "colleges": list,
-                    "courses": dict,
-                },
-            )
-        """
-
-        issues = list(self._issues)
-        expected_types = expected_types or {}
+        for name, entries in snapshot.items():
+            valid = [entry for entry in entries if entry.valid_json]
+            if len(valid) > 1:
+                issues.append(DatasetIssue(
+                    "ERROR",
+                    "DUPLICATE_DATASET_NAME",
+                    name,
+                    "Multiple valid JSON files resolve to the same dataset name.",
+                ))
 
         for name in required_datasets:
             try:
                 self._select_record(name)
             except DataSourceError as exc:
-                issues.append(
-                    DatasetIssue(
-                        severity="ERROR",
-                        code="REQUIRED_DATASET_MISSING",
-                        path=name,
-                        message=str(exc),
-                    )
-                )
+                issues.append(DatasetIssue(
+                    "ERROR",
+                    "REQUIRED_DATASET_UNAVAILABLE",
+                    name,
+                    str(exc),
+                ))
 
-        for name, expected_type in expected_types.items():
+        for name, expected_type in (expected_types or {}).items():
             try:
                 payload = self.load(name)
             except DataSourceError as exc:
-                issues.append(
-                    DatasetIssue(
-                        severity="ERROR",
-                        code="EXPECTED_TYPE_UNAVAILABLE",
-                        path=name,
-                        message=str(exc),
-                    )
-                )
+                issues.append(DatasetIssue(
+                    "ERROR",
+                    "EXPECTED_TYPE_UNAVAILABLE",
+                    name,
+                    str(exc),
+                ))
                 continue
 
             if not isinstance(payload, expected_type):
-                issues.append(
-                    DatasetIssue(
-                        severity="ERROR",
-                        code="DATASET_TYPE_MISMATCH",
-                        path=name,
-                        message=(
-                            f"Expected {expected_type.__name__}, "
-                            f"received {type(payload).__name__}."
-                        ),
-                    )
-                )
+                issues.append(DatasetIssue(
+                    "ERROR",
+                    "DATASET_TYPE_MISMATCH",
+                    name,
+                    f"Expected {expected_type.__name__}; "
+                    f"received {type(payload).__name__}.",
+                ))
 
         return tuple(issues)
 
     def catalog(self) -> dict[str, Any]:
-        """Return a JSON-serializable catalog of discovered datasets."""
-
+        """Return a JSON-serializable snapshot of the catalog."""
         with self._lock:
             records = [
                 asdict(record)
                 for name in sorted(self._records)
                 for record in self._records[name]
             ]
-
             aliases = dict(self._aliases)
             issues = [asdict(issue) for issue in self._issues]
+            snapshot = dict(self._records)
 
-        duplicate_names = {
-            name: [record.relative_path for record in entries]
-            for name, entries in self._records.items()
-            if len([record for record in entries if record.valid_json]) > 1
+        duplicates = {
+            name: [
+                record.relative_path
+                for record in entries if record.valid_json
+            ]
+            for name, entries in snapshot.items()
+            if sum(record.valid_json for record in entries) > 1
         }
 
         return {
@@ -770,39 +637,46 @@ class DataSourceManager:
             "repository_root": str(self.root),
             "configured_data_directories": list(self.data_directories),
             "dataset_count": len(records),
-            "unique_dataset_names": len(self._records),
-            "duplicate_dataset_names": duplicate_names,
+            "unique_dataset_names": len(snapshot),
+            "duplicate_dataset_names": duplicates,
             "aliases": aliases,
             "datasets": records,
             "issues": issues,
         }
 
     def export_catalog(self, output: str | Path) -> Path:
-        """Write the dataset catalog without modifying source datasets."""
-
-        destination = Path(output)
+        """Write a catalog without overwriting discovered source datasets."""
+        destination = Path(output).expanduser()
 
         if not destination.is_absolute():
             destination = self.root / destination
 
         destination = self._safe_path(destination)
+
+        if destination.suffix.lower() != ".json":
+            raise DataSourceError("Catalog output must have a .json extension.")
+
+        with self._lock:
+            source_paths = {
+                Path(record.absolute_path).resolve()
+                for entries in self._records.values()
+                for record in entries
+            }
+
+        if destination in source_paths:
+            raise DataSourceError(
+                "Catalog output cannot overwrite a discovered source dataset."
+            )
+
         destination.parent.mkdir(parents=True, exist_ok=True)
+        content = json.dumps(
+            self.catalog(),
+            indent=2,
+            ensure_ascii=False,
+        ) + "\n"
 
-        destination.write_text(
-            json.dumps(
-                self.catalog(),
-                indent=2,
-                ensure_ascii=False,
-            ) + "\n",
-            encoding="utf-8",
-        )
-
+        destination.write_text(content, encoding="utf-8")
         return destination
-
-
-# ---------------------------------------------------------------------------
-# Convenience API
-# ---------------------------------------------------------------------------
 
 
 _default_manager: DataSourceManager | None = None
@@ -814,12 +688,7 @@ def get_manager(
     *,
     refresh: bool = False,
 ) -> DataSourceManager:
-    """
-    Return the default manager, creating it lazily.
-
-    Pass root to create a separate manager for another repository.
-    """
-
+    """Return the default manager or a manager for an explicit root."""
     global _default_manager
 
     if root is not None:
@@ -828,82 +697,64 @@ def get_manager(
             manager.refresh()
         return manager
 
-    if _default_manager is None:
-        with _default_lock:
-            if _default_manager is None:
-                _default_manager = DataSourceManager(PROJECT_ROOT)
+    with _default_lock:
+        if _default_manager is None:
+            _default_manager = DataSourceManager(PROJECT_ROOT)
+        manager = _default_manager
 
     if refresh:
-        _default_manager.refresh()
+        manager.refresh()
 
-    return _default_manager
+    return manager
 
 
 def load_dataset(name: str, default: Any = None) -> Any:
-    """Convenience function for loading one dataset from the default manager."""
-
+    """Load a dataset from the default manager."""
     return get_manager().get(name, default)
-
-
-# ---------------------------------------------------------------------------
-# Command-line interface
-# ---------------------------------------------------------------------------
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Discover and load MedOrbits JSON datasets."
+        description=APP_NAME + " -- central JSON data source manager."
     )
-
     parser.add_argument(
         "--root",
         type=Path,
         default=PROJECT_ROOT,
         help="Repository root directory.",
     )
-
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List discovered dataset names and their sources.",
-    )
-
+    parser.add_argument("--list", action="store_true", help="List datasets.")
     parser.add_argument(
         "--validate",
         action="store_true",
         help="Validate discovered JSON datasets.",
     )
-
     parser.add_argument(
         "--catalog",
         action="store_true",
         help="Export the data catalog.",
     )
-
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("reports/data-catalog.json"),
-        help="Catalog output path relative to the repository root.",
+        help="Catalog output path.",
     )
-
     parser.add_argument(
         "--include-hidden",
         action="store_true",
-        help="Include hidden files and directories.",
+        help="Include hidden paths.",
     )
-
     parser.add_argument(
         "--flat",
         action="store_true",
-        help="Scan only the top level of configured data directories.",
+        help="Scan only the top level of each data directory.",
     )
-
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args() if argv is None else argparse.ArgumentParser().parse_args(argv)
 
     try:
         manager = DataSourceManager(
@@ -914,20 +765,16 @@ def main() -> int:
 
         if args.list:
             for name in manager.names():
-                print(f"\n{name}")
-
+                print(name)
                 for record in manager.records(name):
                     status = "valid" if record.valid_json else "INVALID"
-                    print(
-                        f"  [{status}] {record.relative_path} "
-                        f"({record.size_bytes} bytes)"
-                    )
+                    print(f"  [{status}] {record.relative_path}")
 
         if args.validate:
             issues = manager.validate()
 
             if not issues:
-                print("All discovered JSON datasets passed syntax validation.")
+                print("All discovered JSON datasets passed validation.")
             else:
                 for issue in issues:
                     print(
@@ -935,17 +782,12 @@ def main() -> int:
                         f"{issue.path}: {issue.message}"
                     )
 
+                if any(issue.severity == "ERROR" for issue in issues):
+                    return 1
+
         if args.catalog or not (args.list or args.validate):
             output = manager.export_catalog(args.output)
             print(f"Data catalog written to: {output}")
-
-        if not (args.list or args.validate or args.catalog):
-            print(f"Datasets discovered: {len(manager.names())}")
-
-        if args.validate:
-            issues = manager.validate()
-            if any(issue.severity == "ERROR" for issue in issues):
-                return 1
 
         return 0
 

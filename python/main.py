@@ -1,6 +1,8 @@
 
 #!/usr/bin/env python3
-"""MedOrbits Python tooling CLI.
+"""
+MedOrbits Python Tooling CLI
+============================
 
 Commands:
     validate   Validate JSON datasets.
@@ -23,7 +25,7 @@ Security:
     - Does not modify source datasets.
     - Writes reports only when explicitly requested.
     - Does not enable network access automatically.
-    - Does not resolve Git conflicts or stage repository changes.
+    - Does not stage, commit, or merge repository changes.
 
 Compatible with Python 3.10+.
 """
@@ -41,7 +43,7 @@ from typing import Sequence
 
 
 APP_NAME = "MedOrbits"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 
 PYTHON_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = PYTHON_DIR.parent
@@ -53,6 +55,16 @@ EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 EXIT_OPERATIONAL_ERROR = 2
 EXIT_INTERRUPTED = 130
+
+LOGGER = logging.getLogger("medorbits")
+
+
+def _relative_path(path: Path) -> str:
+    """Return a safe repository-relative path where possible."""
+    try:
+        return path.resolve().relative_to(PROJECT_ROOT).as_posix()
+    except (ValueError, OSError):
+        return path.name
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -183,11 +195,10 @@ def _load_module_from_path(
     module_name: str,
     script_path: Path,
 ) -> ModuleType:
-    """Load a Python script by path without running its CLI entry point."""
+    """Load a Python module from a known repository path."""
     if not script_path.is_file():
         raise FileNotFoundError(
-            f"Required script is missing: "
-            f"{script_path.relative_to(PROJECT_ROOT).as_posix()}"
+            f"Required script is missing: {_relative_path(script_path)}"
         )
 
     spec = importlib.util.spec_from_file_location(
@@ -199,9 +210,6 @@ def _load_module_from_path(
         raise ImportError("Could not initialize the required module.")
 
     module = importlib.util.module_from_spec(spec)
-
-    # Register before execution for compatibility with decorators and
-    # dataclasses that inspect sys.modules during module initialization.
     sys.modules[module_name] = module
 
     try:
@@ -213,51 +221,67 @@ def _load_module_from_path(
     return module
 
 
+def _load_entrypoint(
+    script_path: Path,
+    module_name: str,
+):
+    """Load a utility and return its callable main entry point."""
+    module = _load_module_from_path(module_name, script_path)
+    entrypoint = getattr(module, "main", None)
+
+    if not callable(entrypoint):
+        raise ImportError(
+            f"{_relative_path(script_path)} must expose main(argv)."
+        )
+
+    return entrypoint
+
+
 def _run_validation(args: argparse.Namespace) -> int:
     """Run the repository validation utility."""
     script = SCRIPTS_DIR / "validation_data.py"
 
     try:
-        module = _load_module_from_path(
-            "_medorbits_validation_data",
+        entrypoint = _load_entrypoint(
             script,
+            "_medorbits_validation_data",
         )
-    except (OSError, ImportError, SyntaxError) as exc:
-        logging.getLogger("medorbits").error(
-            "Unable to load validation utility (%s).",
-            type(exc).__name__,
-        )
-        return EXIT_OPERATIONAL_ERROR
 
-    entrypoint = getattr(module, "main", None)
+        cli_args = [str(args.input)]
 
-    if not callable(entrypoint):
-        logging.getLogger("medorbits").error(
-            "Validation utility does not expose main(argv)."
-        )
-        return EXIT_OPERATIONAL_ERROR
+        if args.recursive:
+            cli_args.append("--recursive")
 
-    cli_args = [str(args.input)]
+        if args.required:
+            cli_args.extend(["--required", *args.required])
 
-    if args.recursive:
-        cli_args.append("--recursive")
-    if args.required:
-        cli_args.extend(["--required", *args.required])
-    if args.id_field:
-        cli_args.extend(["--id-field", args.id_field])
-    if args.schema:
-        cli_args.extend(["--schema", str(args.schema)])
-    if args.report:
-        cli_args.extend(["--report", str(args.report)])
-    if args.strict:
-        cli_args.append("--strict")
-    if args.quiet:
-        cli_args.append("--quiet")
+        if args.id_field:
+            cli_args.extend(["--id-field", args.id_field])
 
-    try:
-        return int(entrypoint(cli_args))
-    except (OSError, ValueError, TypeError) as exc:
-        logging.getLogger("medorbits").error(
+        if args.schema:
+            cli_args.extend(["--schema", str(args.schema)])
+
+        if args.report:
+            cli_args.extend(["--report", str(args.report)])
+
+        if args.strict:
+            cli_args.append("--strict")
+
+        if args.quiet:
+            cli_args.append("--quiet")
+
+        result = entrypoint(cli_args)
+
+        if isinstance(result, bool) or not isinstance(result, int):
+            LOGGER.error("Validation utility returned an invalid exit code.")
+            return EXIT_OPERATIONAL_ERROR
+
+        return result
+
+    except KeyboardInterrupt:
+        raise
+    except Exception as exc:
+        LOGGER.error(
             "Validation command failed (%s).",
             type(exc).__name__,
         )
@@ -269,49 +293,46 @@ def _run_report(args: argparse.Namespace) -> int:
     script = SCRIPTS_DIR / "generate_report.py"
 
     try:
-        module = _load_module_from_path(
-            "_medorbits_generate_report",
+        entrypoint = _load_entrypoint(
             script,
+            "_medorbits_generate_report",
         )
-    except (OSError, ImportError, SyntaxError) as exc:
-        logging.getLogger("medorbits").error(
-            "Unable to load report utility (%s).",
-            type(exc).__name__,
-        )
-        return EXIT_OPERATIONAL_ERROR
 
-    entrypoint = getattr(module, "main", None)
+        cli_args = [
+            "--root",
+            str(args.root),
+            "--output",
+            str(args.output),
+            "--format",
+            args.format,
+        ]
 
-    if not callable(entrypoint):
-        logging.getLogger("medorbits").error(
-            "Report utility does not expose main(argv)."
-        )
-        return EXIT_OPERATIONAL_ERROR
+        if args.include_git:
+            cli_args.append("--include-git")
 
-    cli_args = [
-        "--root",
-        str(args.root),
-        "--output",
-        str(args.output),
-        "--format",
-        args.format,
-    ]
+        if args.validation_report:
+            cli_args.extend(
+                ["--validation-report", str(args.validation_report)]
+            )
 
-    if args.include_git:
-        cli_args.append("--include-git")
-    if args.validation_report:
-        cli_args.extend(
-            ["--validation-report", str(args.validation_report)]
-        )
-    if args.stdout:
-        cli_args.append("--stdout")
-    if args.quiet:
-        cli_args.append("--quiet")
+        if args.stdout:
+            cli_args.append("--stdout")
 
-    try:
-        return int(entrypoint(cli_args))
-    except (OSError, ValueError, TypeError) as exc:
-        logging.getLogger("medorbits").error(
+        if args.quiet:
+            cli_args.append("--quiet")
+
+        result = entrypoint(cli_args)
+
+        if isinstance(result, bool) or not isinstance(result, int):
+            LOGGER.error("Report utility returned an invalid exit code.")
+            return EXIT_OPERATIONAL_ERROR
+
+        return result
+
+    except KeyboardInterrupt:
+        raise
+    except Exception as exc:
+        LOGGER.error(
             "Report command failed (%s).",
             type(exc).__name__,
         )
@@ -321,33 +342,32 @@ def _run_report(args: argparse.Namespace) -> int:
 def _run_config() -> int:
     """Print a safe configuration summary."""
     try:
-        # The package lives under python/scr.
         package_init = TOOLS_PACKAGE_DIR / "__init__.py"
+        config_file = TOOLS_PACKAGE_DIR / "config.py"
 
-        if not package_init.is_file():
-            print(
-                "ERROR: MedOrbits tools package is missing.",
-                file=sys.stderr,
-            )
+        if not package_init.is_file() or not config_file.is_file():
+            LOGGER.error("MedOrbits configuration package is incomplete.")
             return EXIT_OPERATIONAL_ERROR
-
-        if str(SCR_DIR) not in sys.path:
-            sys.path.insert(0, str(SCR_DIR))
 
         from medorbits_tools.config import get_config
 
         config = get_config()
-        print(
-            json.dumps(
-                config.safe_summary(),
-                ensure_ascii=False,
-                indent=2,
-            )
+        safe_summary = config.safe_summary()
+
+        # Ensure the result is JSON-serializable before printing.
+        output = json.dumps(
+            safe_summary,
+            ensure_ascii=False,
+            indent=2,
         )
+
+        print(output)
         return EXIT_SUCCESS
 
-    except (ImportError, ValueError, OSError) as exc:
-        logging.getLogger("medorbits").error(
+    except KeyboardInterrupt:
+        raise
+    except Exception as exc:
+        LOGGER.error(
             "Configuration command failed (%s).",
             type(exc).__name__,
         )
@@ -355,51 +375,48 @@ def _run_config() -> int:
 
 
 def _run_check() -> int:
-    """Check expected tooling paths without modifying files."""
+    """Check required paths without creating or modifying files."""
     expected_paths = (
-        PYTHON_DIR,
-        SCR_DIR,
-        SCRIPTS_DIR,
-        TOOLS_PACKAGE_DIR,
-        TOOLS_PACKAGE_DIR / "__init__.py",
-        TOOLS_PACKAGE_DIR / "config.py",
-        TOOLS_PACKAGE_DIR / "logging_config.py",
-        SCRIPTS_DIR / "validation_data.py",
-        SCRIPTS_DIR / "generate_report.py",
-        SCR_DIR / "tests",
+        (PYTHON_DIR, True),
+        (SCR_DIR, True),
+        (SCRIPTS_DIR, True),
+        (TOOLS_PACKAGE_DIR, True),
+        (TOOLS_PACKAGE_DIR / "__init__.py", False),
+        (TOOLS_PACKAGE_DIR / "config.py", False),
+        (TOOLS_PACKAGE_DIR / "logging_config.py", False),
+        (SCRIPTS_DIR / "validation_data.py", False),
+        (SCRIPTS_DIR / "generate_report.py", False),
+        (SCR_DIR / "tests", True),
     )
 
     failures = 0
 
-    for path in expected_paths:
-        exists = path.exists()
+    for path, expect_directory in expected_paths:
+        if expect_directory:
+            exists = path.is_dir()
+        else:
+            exists = path.is_file()
+
         status = "OK" if exists else "MISSING"
-
-        try:
-            relative = path.relative_to(PROJECT_ROOT).as_posix()
-        except ValueError:
-            relative = path.name
-
-        print(f"[{status}] {relative}")
+        print(f"[{status}] {_relative_path(path)}")
 
         if not exists:
             failures += 1
 
-    print(
-        f"Structure check: {len(expected_paths) - failures}/"
-        f"{len(expected_paths)} paths present."
-    )
+    total = len(expected_paths)
+    passed = total - failures
+
+    print(f"Structure check: {passed}/{total} paths present.")
 
     return EXIT_SUCCESS if failures == 0 else EXIT_FAILURE
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run a MedOrbits command."""
+    """Run a MedOrbits CLI command."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 
     try:
-        # Configure logging only when a command is actually executed.
         if str(SCR_DIR) not in sys.path:
             sys.path.insert(0, str(SCR_DIR))
 
@@ -409,6 +426,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
 
             configure_from_environment()
+
         except ImportError:
             logging.basicConfig(
                 level=logging.INFO,
@@ -438,7 +456,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_SUCCESS
 
     except Exception as exc:
-        logging.getLogger("medorbits").error(
+        LOGGER.error(
             "Command failed (%s).",
             type(exc).__name__,
         )
