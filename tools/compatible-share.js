@@ -8,7 +8,7 @@ const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 
-function runGit(args) {
+function git(args) {
   return spawnSync('git', args, {
     cwd: ROOT,
     encoding: 'utf8',
@@ -18,22 +18,12 @@ function runGit(args) {
 }
 
 function getTrackedJsonFiles() {
-  const result = runGit([
-    'ls-files',
-    '-z',
-    '--',
-    '*.json',
-    '**/*.json'
-  ]);
+  const result = git(['ls-files', '-z']);
 
-  if (result.error) {
-    throw result.error;
-  }
+  if (result.error) throw result.error;
 
   if (result.status !== 0) {
-    throw new Error(
-      result.stderr.trim() || 'Unable to list tracked JSON files.'
-    );
+    throw new Error(result.stderr.trim() || 'Git could not list tracked files.');
   }
 
   return [...new Set(
@@ -44,13 +34,10 @@ function getTrackedJsonFiles() {
   )].sort();
 }
 
-function validateJsonFile(relativePath) {
+function validateFile(relativePath) {
   const absolutePath = path.resolve(ROOT, relativePath);
 
-  if (
-    absolutePath !== ROOT &&
-    !absolutePath.startsWith(ROOT + path.sep)
-  ) {
+  if (!absolutePath.startsWith(ROOT + path.sep)) {
     console.error(`FAIL ${relativePath}: path is outside the repository.`);
     return false;
   }
@@ -58,6 +45,13 @@ function validateJsonFile(relativePath) {
   let contents;
 
   try {
+    const stat = fs.lstatSync(absolutePath);
+
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      console.error(`FAIL ${relativePath}: not a regular file.`);
+      return false;
+    }
+
     contents = fs.readFileSync(absolutePath, 'utf8');
   } catch (error) {
     console.error(`FAIL ${relativePath}: ${error.message}`);
@@ -74,9 +68,9 @@ function validateJsonFile(relativePath) {
 
     if (match) {
       const position = Number(match[1]);
-      const beforeError = contents.slice(0, position);
-      const line = beforeError.split('\n').length;
-      const lastNewline = beforeError.lastIndexOf('\n');
+      const prefix = contents.slice(0, position);
+      const line = prefix.split('\n').length;
+      const lastNewline = prefix.lastIndexOf('\n');
       const column = position - lastNewline;
 
       location = ` at line ${line}, column ${column}`;
@@ -89,19 +83,23 @@ function validateJsonFile(relativePath) {
 }
 
 function main() {
-  if (!fs.existsSync(path.join(ROOT, '.git'))) {
-    const gitDirectory = runGit(['rev-parse', '--show-toplevel']);
-
-    if (gitDirectory.status !== 0) {
-      console.error('ERROR: Run this utility inside a Git repository.');
-      process.exitCode = 2;
-      return;
-    }
-  }
-
   let files;
 
   try {
+    const rootResult = git(['rev-parse', '--show-toplevel']);
+
+    if (rootResult.status !== 0) {
+      throw new Error('Run this script inside a Git repository.');
+    }
+
+    const gitRoot = path.resolve(rootResult.stdout.trim());
+
+    if (gitRoot !== ROOT) {
+      throw new Error(
+        `Expected repository root ${ROOT}, but Git reports ${gitRoot}.`
+      );
+    }
+
     files = getTrackedJsonFiles();
   } catch (error) {
     console.error(`ERROR: ${error.message}`);
@@ -110,7 +108,7 @@ function main() {
   }
 
   if (files.length === 0) {
-    console.log('No tracked JSON files were found.');
+    console.log('No tracked JSON files found.');
     return;
   }
 
@@ -118,21 +116,19 @@ function main() {
   let failed = 0;
 
   for (const file of files) {
-    if (validateJsonFile(file)) {
-      passed += 1;
+    if (validateFile(file)) {
+      passed++;
     } else {
-      failed += 1;
+      failed++;
     }
   }
 
-  console.log('');
-  console.log(`Tracked JSON files: ${files.length}`);
+  console.log('\nJSON validation summary');
+  console.log(`Total: ${files.length}`);
   console.log(`Passed: ${passed}`);
   console.log(`Failed: ${failed}`);
 
-  if (failed > 0) {
-    process.exitCode = 1;
-  }
+  if (failed > 0) process.exitCode = 1;
 }
 
 main();
