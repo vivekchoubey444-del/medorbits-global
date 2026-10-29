@@ -1,13 +1,13 @@
 
-# ==============================================================================
+# =============================================================================
 # MedOrbits -- Dependabot Review
 # File: .github/workflows/dependabot-review.yml
-# Release: 2.1.2
+# Release: 2.1.3
 #
 # Read-only metadata review.
-# Never checks out or executes pull-request code.
-# Never approves, merges, comments on, or modifies pull requests.
-# ==============================================================================
+# Does not check out or execute pull-request code.
+# Does not approve, merge, comment on, or modify pull requests.
+# =============================================================================
 
 name: Dependabot Review
 
@@ -62,14 +62,16 @@ jobs:
 
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             if [[ "$EVENT_AUTHOR" != "dependabot[bot]" ]]; then
-              echo "::error::Only Dependabot pull requests are accepted."
-              exit 1
+              echo "Not a Dependabot PR; skipping review."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
             number="$EVENT_PR_NUMBER"
           elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             number="$INPUT_PR_NUMBER"
+
             if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
-              echo "::error::A valid positive pull request number is required."
+              echo "::error::A valid positive PR number is required."
               exit 1
             fi
           else
@@ -78,9 +80,11 @@ jobs:
           fi
 
           echo "pr_number=$number" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Verify pull request metadata
         id: metadata
+        if: steps.context.outputs.skip != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -90,6 +94,7 @@ jobs:
           set -Eeuo pipefail
 
           response="$RUNNER_TEMP/dependabot-pr.json"
+
           gh api "repos/$REPOSITORY/pulls/$PR_NUMBER" > "$response"
 
           author="$(jq -r '.user.login // ""' "$response")"
@@ -101,33 +106,35 @@ jobs:
           head_sha="$(jq -r '.head.sha // ""' "$response")"
 
           if [[ "$author" != "dependabot[bot]" ]]; then
-            echo "::error::Pull request is not authored by Dependabot."
+            echo "::error::PR is not authored by Dependabot."
             exit 1
           fi
 
           if [[ "$state" != "open" || "$merged" == "true" ]]; then
-            echo "::error::Pull request must be open and unmerged."
+            echo "::error::PR must be open and unmerged."
             exit 1
           fi
 
-          if [[ "$base_branch" != "main" && "$base_branch" != "develop" ]]; then
+          if [[ "$base_branch" != "main" &&
+                "$base_branch" != "develop" ]]; then
             echo "::error::Unexpected target branch: $base_branch"
             exit 1
           fi
 
           if [[ "$base_repo" != "$REPOSITORY" ]]; then
-            echo "::error::Pull request base repository does not match this repository."
+            echo "::error::Base repository does not match this repository."
             exit 1
           fi
 
           if [[ ! "$head_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
-            echo "::error::Pull request head SHA is missing or invalid."
+            echo "::error::PR head SHA is missing or invalid."
             exit 1
           fi
 
           {
             echo "base_branch=$base_branch"
             echo "draft=$draft"
+            echo "head_sha=$head_sha"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -144,6 +151,7 @@ jobs:
 
       - name: Retrieve changed-file metadata
         id: retrieve
+        if: steps.context.outputs.skip != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -154,12 +162,13 @@ jobs:
 
           response="$RUNNER_TEMP/dependabot-changed-files.json"
 
+          # --paginate --slurp returns an array of pages.
           gh api --paginate --slurp \
             "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
             > "$response"
 
           if [[ ! -s "$response" ]]; then
-            echo "::error::GitHub returned an empty changed-file response."
+            echo "::error::GitHub returned an empty response."
             exit 1
           fi
 
@@ -167,11 +176,10 @@ jobs:
 
       - name: Validate and summarize changed files
         id: files
+        if: steps.context.outputs.skip != 'true'
         shell: bash
         env:
           RESPONSE_FILE: ${{ steps.retrieve.outputs.response }}
-          GITHUB_STEP_SUMMARY: ${{ github.step_summary }}
-          GITHUB_OUTPUT: ${{ github.output }}
         run: |
           set -Eeuo pipefail
 
@@ -179,16 +187,17 @@ jobs:
           import json
           import os
           import pathlib
-          import sys
 
           source = pathlib.Path(os.environ["RESPONSE_FILE"])
 
           dependency_names = {
-              "package.json", "package-lock.json", "npm-shrinkwrap.json",
-              "yarn.lock", "pnpm-lock.yaml", "requirements.txt",
-              "requirements-dev.txt", "pyproject.toml", "poetry.lock",
-              "uv.lock", "pipfile", "pipfile.lock", "cargo.toml",
-              "cargo.lock", "go.mod", "go.sum", "gemfile",
+              "package.json", "package-lock.json",
+              "npm-shrinkwrap.json", "yarn.lock",
+              "pnpm-lock.yaml", "requirements.txt",
+              "requirements-dev.txt", "pyproject.toml",
+              "poetry.lock", "uv.lock", "pipfile",
+              "pipfile.lock", "cargo.toml", "cargo.lock",
+              "go.mod", "go.sum", "gemfile",
               "gemfile.lock", "composer.json", "composer.lock",
           }
 
@@ -224,15 +233,18 @@ jobs:
               removed = record.get("deletions", 0)
 
               if not isinstance(path, str) or not path:
-                  raise SystemExit("Changed-file record has no filename.")
+                  raise SystemExit("Missing changed filename.")
 
               if not isinstance(status, str):
                   raise SystemExit(f"Invalid status for {path}")
 
               if (
-                  not isinstance(added, int) or isinstance(added, bool)
-                  or not isinstance(removed, int) or isinstance(removed, bool)
-                  or added < 0 or removed < 0
+                  not isinstance(added, int)
+                  or isinstance(added, bool)
+                  or not isinstance(removed, int)
+                  or isinstance(removed, bool)
+                  or added < 0
+                  or removed < 0
               ):
                   raise SystemExit(f"Invalid line counts for {path}")
 
@@ -248,7 +260,6 @@ jobs:
               additions += added
               deletions += removed
 
-              # Prevent filenames from injecting Markdown table rows.
               safe_path = (
                   path.replace("\\", "\\\\")
                   .replace("|", "\\|")
@@ -276,20 +287,19 @@ jobs:
               f"- Lines added: {additions}",
               f"- Lines deleted: {deletions}",
               "",
-              "> This report classifies filenames and summarizes GitHub metadata. "
-              "It does not establish that changes are safe or dependencies are "
-              "free from vulnerabilities.",
+              "> This report summarizes file metadata. It does not establish "
+              "that dependencies are safe or vulnerability-free.",
               "",
           ]
 
-          with pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
-              "a", encoding="utf-8"
-          ) as file:
+          with pathlib.Path(
+              os.environ["GITHUB_STEP_SUMMARY"]
+          ).open("a", encoding="utf-8") as file:
               file.write("\n".join(summary))
 
-          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open(
-              "a", encoding="utf-8"
-          ) as file:
+          with pathlib.Path(
+              os.environ["GITHUB_OUTPUT"]
+          ).open("a", encoding="utf-8") as file:
               file.write(f"file_count={len(records)}\n")
               file.write(f"dependency_count={dependency_count}\n")
               file.write(f"additions={additions}\n")
@@ -301,6 +311,7 @@ jobs:
         shell: bash
         env:
           PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+          SKIPPED: ${{ steps.context.outputs.skip }}
           JOB_RESULT: ${{ job.status }}
           BASE_BRANCH: ${{ steps.metadata.outputs.base_branch }}
           DRAFT_STATUS: ${{ steps.metadata.outputs.draft }}
@@ -317,6 +328,7 @@ jobs:
             echo "- Target branch: ${BASE_BRANCH:-not verified}"
             echo "- Draft: ${DRAFT_STATUS:-unknown}"
             echo "- Workflow result: $JOB_RESULT"
+            echo "- Skipped non-Dependabot PR: ${SKIPPED:-unknown}"
             echo "- Changed files: ${FILE_COUNT:-not available}"
             echo "- Dependency-related files: ${DEPENDENCY_COUNT:-not available}"
             echo "- Pull request code executed: No"
