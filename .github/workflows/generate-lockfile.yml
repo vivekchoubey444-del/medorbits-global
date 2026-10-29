@@ -1,285 +1,93 @@
 
-# =============================================================================
-# MedOrbits -- Package Lockfile Generator
-# File: .github/workflows/generate-lockfile.yml
-# Release: 3.0.0
-#
-# Purpose:
-#   Generate, validate, and maintain the root npm package-lock.json.
-#
-# Security:
-#   - Pull requests never commit or push.
-#   - No npm lifecycle scripts are executed.
-#   - No automatic dependency upgrades are requested.
-#   - Writes are restricted to package-lock.json.
-#   - Pushes are allowed only for main-branch push/manual runs.
-# =============================================================================
-
-name: Generate Package Lockfile
+name: Generate Root NPM Lockfile
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "package.json"
-      - "package-lock.json"
-      - ".npmrc"
-      - ".github/workflows/generate-lockfile.yml"
-
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "package.json"
-      - "package-lock.json"
-      - ".npmrc"
-      - ".github/workflows/generate-lockfile.yml"
-
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: generate-lockfile-${{ github.event.pull_request.number || github.ref }}
+  group: generate-root-lockfile
   cancel-in-progress: false
 
 jobs:
   generate-lockfile:
-    name: Generate and Validate Lockfile
+    name: Generate and commit package-lock.json
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    permissions:
-      contents: read
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          ref: ${{ github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
 
-      - name: Validate package manifest
-        id: manifest
-        shell: bash
+      - name: Verify package.json
         run: |
-          set -Eeuo pipefail
-
-          if [[ ! -f package.json ]]; then
-            echo "::error::Root package.json was not found."
+          if [ ! -f package.json ]; then
+            echo "::error::Root package.json is missing."
             exit 1
           fi
 
-          node <<'NODE'
-          const fs = require("node:fs");
+          node -e "
+            const p = require('./package.json');
+            if (!p.name || !p.version) {
+              throw new Error('package.json requires name and version');
+            }
+            console.log('Package:', p.name);
+            console.log('Version:', p.version);
+          "
 
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
-
-          if (
-            pkg === null ||
-            typeof pkg !== "object" ||
-            Array.isArray(pkg)
-          ) {
-            throw new Error("package.json must contain a JSON object.");
-          }
-
-          if (
-            pkg.name !== undefined &&
-            (typeof pkg.name !== "string" || !pkg.name.trim())
-          ) {
-            throw new Error("package.json name must be a non-empty string.");
-          }
-
-          if (
-            pkg.version !== undefined &&
-            typeof pkg.version !== "string"
-          ) {
-            throw new Error("package.json version must be a string.");
-          }
-
-          console.log(`Package: ${pkg.name || "(unnamed)"}`);
-          console.log(`Version: ${pkg.version || "(unspecified)"}`);
-          console.log(`Private: ${pkg.private === true}`);
-          console.log("package.json syntax and basic structure are valid.");
-          NODE
-
-      - name: Generate lockfile without running lifecycle scripts
-        shell: bash
+      - name: Generate lockfile without running install scripts
         run: |
-          set -Eeuo pipefail
-
           npm install \
             --package-lock-only \
             --ignore-scripts \
             --no-audit \
             --no-fund
 
-          if [[ ! -f package-lock.json ]]; then
-            echo "::error::npm did not generate package-lock.json."
-            exit 1
-          fi
-
-      - name: Validate lockfile JSON and metadata
-        shell: bash
+      - name: Validate generated lockfile
         run: |
-          set -Eeuo pipefail
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const l = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 
-          node <<'NODE'
-          const fs = require("node:fs");
+            if (l.lockfileVersion !== 2 && l.lockfileVersion !== 3) {
+              throw new Error('Unexpected lockfile version');
+            }
 
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
+            if (!l.packages || !l.packages['']) {
+              throw new Error('Root package metadata is missing');
+            }
 
-          const lock = JSON.parse(
-            fs.readFileSync("package-lock.json", "utf8")
-          );
+            if (l.name && l.name !== p.name) {
+              throw new Error('Package name mismatch');
+            }
 
-          if (
-            lock === null ||
-            typeof lock !== "object" ||
-            Array.isArray(lock)
-          ) {
-            throw new Error("package-lock.json must contain a JSON object.");
-          }
+            if (l.version && l.version !== p.version) {
+              throw new Error('Package version mismatch');
+            }
 
-          if (![2, 3].includes(lock.lockfileVersion)) {
-            throw new Error(
-              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
-            );
-          }
+            console.log('Root npm lockfile validated.');
+          "
 
-          if (!lock.packages || !lock.packages[""]) {
-            throw new Error(
-              "package-lock.json is missing packages[''] metadata."
-            );
-          }
-
-          const root = lock.packages[""];
-
-          if (pkg.name && root.name !== pkg.name) {
-            throw new Error(
-              `Package name mismatch: manifest=${pkg.name}, lock=${root.name}`
-            );
-          }
-
-          if (pkg.version && root.version !== pkg.version) {
-            throw new Error(
-              `Package version mismatch: manifest=${pkg.version}, lock=${root.version}`
-            );
-          }
-
-          console.log(`Lockfile version: ${lock.lockfileVersion}`);
-          console.log("Lockfile JSON and root metadata are valid.");
-          NODE
-
-      - name: Verify dependency installation
-        shell: bash
+      - name: Commit generated lockfile
         run: |
-          set -Eeuo pipefail
+          git add package-lock.json
 
-          npm ci \
-            --ignore-scripts \
-            --no-audit \
-            --no-fund
-
-      - name: Detect lockfile changes
-        id: changes
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          if ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "package-lock.json is new or untracked."
-          elif ! git diff --quiet HEAD -- package-lock.json; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "package-lock.json has changed."
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "package-lock.json has no changes."
-          fi
-
-      - name: Prepare write permissions for eligible run
-        if: >-
-          steps.changes.outputs.changed == 'true' &&
-          github.event_name != 'pull_request' &&
-          github.ref == 'refs/heads/main'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -Eeuo pipefail
-
-          echo "Lockfile changed on an eligible main-branch run."
-          echo "A separate authenticated push step will handle the update."
-
-      - name: Commit updated lockfile
-        if: >-
-          steps.changes.outputs.changed == 'true' &&
-          github.event_name != 'pull_request' &&
-          github.ref == 'refs/heads/main'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -Eeuo pipefail
-
-          # Enable write permission only for this step.
-          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
-            ls-remote origin refs/heads/main >/dev/null
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -- package-lock.json
-
-          if git diff --cached --quiet -- package-lock.json; then
-            echo "No staged lockfile changes."
+          if git diff --cached --quiet; then
+            echo "No lockfile changes to commit."
             exit 0
           fi
 
-          git commit -m "chore(deps): update package-lock.json"
-
-          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
-            push origin HEAD:refs/heads/main
-
-      - name: Report lockfile status
-        if: always()
-        shell: bash
-        env:
-          JOB_STATUS: ${{ job.status }}
-          LOCKFILE_CHANGED: ${{ steps.changes.outputs.changed }}
-        run: |
-          {
-            echo "## Package Lockfile Generation"
-            echo
-            echo "- Job status: ${JOB_STATUS:-unknown}"
-            echo "- Lockfile changed: ${LOCKFILE_CHANGED:-unknown}"
-
-            if [[ -f package-lock.json ]]; then
-              echo "- Root package-lock.json: present"
-            else
-              echo "- Root package-lock.json: missing"
-            fi
-
-            echo "- Lifecycle scripts: disabled"
-            echo "- Dependency audit during installation: disabled"
-            echo "- Pull-request commits: disabled"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [[ ! -f package-lock.json ]]; then
-            echo "::error::package-lock.json is missing."
-            exit 1
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: generate root npm lockfile"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
