@@ -3,15 +3,15 @@
 /**
 
 * MedOrbits -- User API Routes
-* File: /api/routes/users.js
+* File: app.use("/api/users", require("./api/routes/users"));
 * Runtime: Node.js 20+
 * Framework: Express
 * Mount:
 * app.use("/api/users", require("./api/routes/users"));
 * Dependencies:
 * ../services/user-service
-* ../middlerware/authorization
-* ../middlerware/validation
+* ../middleware/authorization
+* ../middleware/validation
 * Security:
 * ●	Never trust client-supplied roles, permissions, ownership, or status.
 * ●	Never expose passwords, hashes, tokens, or internal security fields.
@@ -27,13 +27,13 @@ const userService = require("../services/user-service");
 const {
 authenticate,
 authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 
 const {
 validateBody,
 validateParams,
 validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 
 const router = express.Router();
 

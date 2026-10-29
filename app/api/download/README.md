@@ -2,33 +2,54 @@
 # MedOrbits Download API
 
 **File:** `app/api/download/README.md`  
-**Endpoint:** `/api/download`  
-**Runtime:** Node.js 20+  
-**Framework:** Next.js App Router  
-**Purpose:** Secure delivery of approved public PDF resources.
-
-—
+**Version:** 2.1.1  
+**Runtime:** Next.js App Router with Node.js
 
 ## 1. Overview
 
-The MedOrbits Download API allows visitors to download approved educational and career resources through a controlled server-side endpoint.
+The Download API serves approved files from a designated private directory. It validates filenames, restricts supported file types, checks resolved file paths, and returns downloads with security-oriented response headers.
 
-Features include:
+**Endpoint:** `GET /api/download?file=admission-guide.pdf`
 
-- Explicit resource allowlisting.
-- PDF-only downloads.
-- Resource ID validation.
-- Filesystem path traversal protection.
-- File-size limits.
-- Download-specific response headers.
-- `GET`, `HEAD`, and `OPTIONS` handlers.
-- Generic error messages that avoid exposing filesystem details.
+The route implementation must be saved as:
 
-The endpoint is intended for public resources such as admission guides, document checklists, career guides, and course catalogs.
+`app/api/download/route.js`
 
-**Security boundary:** This endpoint is designed for approved public documents. It is not an authentication or authorization system for confidential files, student records, application documents, or identity documents.
+Next.js App Router does not recognize `routes.js` as a route handler filename.
 
-## 2. Directory Structure
+## 2. Supported methods
+
+| Method | Behavior |
+|—|—|
+| `GET` | Validates and downloads an allowed file |
+| `POST` | Returns `405 Method Not Allowed` |
+| `PUT` | Returns `405 Method Not Allowed` |
+| `PATCH` | Returns `405 Method Not Allowed` |
+| `DELETE` | Returns `405 Method Not Allowed` |
+
+## 3. Configuration
+
+Configure these environment variables in your deployment environment:
+
+```dotenv
+DOWNLOAD_ROOT=/absolute/path/to/private-downloads
+DOWNLOAD_ALLOWLIST=admission-guide.pdf,course-catalog.pdf
+ALLOWED_ORIGINS=https://your-domain.example,https://www.your-domain.example
+```
+
+| Variable | Required | Purpose |
+|—|—|—|
+| `DOWNLOAD_ROOT` | Optional | Directory containing downloadable files |
+| `DOWNLOAD_ALLOWLIST` | Strongly recommended | Comma-separated filenames permitted for download |
+| `ALLOWED_ORIGINS` | Optional | Allowed browser origins |
+
+If `DOWNLOAD_ROOT` is omitted, the implementation uses the `private-downloads` directory beneath the process working directory.
+
+**Production requirement:** Configure an explicit allowlist and verify that the directory persists across deployments if files must remain available.
+
+Do not store credentials or private environment files in Git.
+
+## 4. Directory structure
 
 ```text
 app/
@@ -37,295 +58,104 @@ app/
         ├── route.js
         └── README.md
 
-public/
-└── downloads/
-    ├── mbbs-admission-guide.pdf
-    ├── neet-ug-document-checklist.pdf
-    ├── career-guide.pdf
-    └── course-catalog.pdf
+private-downloads/
+├── admission-guide.pdf
+└── course-catalog.pdf
 ```
 
-The PDF files must exist in the configured download directory before they can be downloaded.
+Keep downloadable files outside the public static directory, such as `public/`, when access restrictions are required.
 
-Only place resources intended for public access in this directory.
+The directory must exist on the deployed server. Serverless platforms may have read-only or ephemeral filesystems; use an appropriate private object-storage service if persistent storage is unavailable.
 
-## 3. Available Endpoints
-
-| Method | Endpoint | Purpose |
-|—|—|—|
-| `GET` | `/api/download?id=mbbs-admission-guide` | Download an approved PDF |
-| `HEAD` | `/api/download?id=mbbs-admission-guide` | Check resource availability and metadata |
-| `OPTIONS` | `/api/download` | Advertise supported methods |
-
-### Supported resource IDs
-
-The current `RESOURCE_MANIFEST` in `route.js` defines these identifiers:
-
-| Resource ID | Expected filename |
-|—|—|
-| `mbbs-admission-guide` | `mbbs-admission-guide.pdf` |
-| `neet-ug-checklist` | `neet-ug-document-checklist.pdf` |
-| `career-guide` | `career-guide.pdf` |
-| `course-catalog` | `course-catalog.pdf` |
-
-The manifest is the authoritative list of downloadable resources. Adding a PDF to the directory alone does not make it downloadable.
-
-## 4. Request Examples
-
-Download the MBBS admission guide:
+## 5. Request example
 
 ```bash
-curl -fL \
-  “http://localhost:3000/api/download?id=mbbs-admission-guide” \
-  -o MedOrbits-MBBS-Admission-Guide.pdf
+curl -fS \
+  —output admission-guide.pdf \
+  —get \
+  —data-urlencode “file=admission-guide.pdf” \
+  https://your-domain.example/api/download
 ```
 
-Download the NEET UG checklist:
+For local development:
 
 ```bash
-curl -fL \
-  “http://localhost:3000/api/download?id=neet-ug-checklist” \
-  -o MedOrbits-NEET-UG-Document-Checklist.pdf
+curl -i \
+  —get \
+  —data-urlencode “file=admission-guide.pdf” \
+  http://localhost:3000/api/download
 ```
 
-Check availability without downloading the file:
+The requested filename must match the configured allowlist entry exactly when an allowlist is configured.
 
-```bash
-curl -I \
-  “http://localhost:3000/api/download?id=career-guide”
-```
-
-In production, replace `http://localhost:3000` with the deployed MedOrbits domain.
-
-## 5. Response Behavior
-
-### Successful download
-
-A successful request returns HTTP `200 OK`, the PDF body, and headers such as:
-
-```http
-Content-Type: application/pdf
-Content-Disposition: attachment; filename=“MedOrbits-MBBS-Admission-Guide.pdf”
-Content-Length: 123456
-Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0
-X-Content-Type-Options: nosniff
-```
-
-The content length above is illustrative.
-
-### Error responses
+## 6. Response behavior
 
 | Status | Meaning |
 |—|—|
-| `200` | File successfully served or HEAD metadata returned |
-| `204` | OPTIONS response |
-| `400` | Missing or invalid resource ID |
-| `404` | Resource is unknown or unavailable on disk |
-| `503` | Resource exceeds configured limits or cannot be served under the current implementation |
-| `500` | Unexpected download-processing failure |
-
-For GET requests, errors are returned as JSON.
-
-Example:
-
-```json
-{
-  “success”: false,
-  “error”: “resource_not_found”,
-  “message”: “The requested resource was not found.”
-}
-```
-
-The implementation intentionally avoids exposing internal filesystem paths and operating-system error messages.
-
-## 6. Environment Configuration
-
-The endpoint supports the following optional variables:
-
-```dotenv
-DOWNLOADS_DIRECTORY=public/downloads
-DOWNLOAD_MAX_FILE_BYTES=52428800
-```
-
-| Variable | Default | Description |
-|—|—|—|
-| `DOWNLOADS_DIRECTORY` | `public/downloads` | Directory containing approved downloadable files |
-| `DOWNLOAD_MAX_FILE_BYTES` | `52428800` | Maximum permitted file size in bytes |
-
-The configured file-size limit is capped at 200 MB by the current handler.
-
-For example, `52428800` bytes equals 50 MiB.
-
-Configure these variables in `.env.local` for development or in your hosting provider’s environment settings for production.
-
-Do not put private credentials in this file.
-
-## 7. Adding a New Resource
-
-Follow these steps whenever a new public PDF needs to be published.
-
-### Step 1: Add the PDF
-
-Place the approved document in the configured directory:
-
-```text
-public/downloads/scholarship-guide.pdf
-```
-
-### Step 2: Register the resource
-
-Add a corresponding entry to `RESOURCE_MANIFEST` in `app/api/download/route.js`:
-
-```javascript
-‘scholarship-guide’: Object.freeze({
-  file: ‘scholarship-guide.pdf’,
-  filename: ‘MedOrbits-Scholarship-Guide.pdf’,
-  contentType: ‘application/pdf’,
-}),
-```
-
-Use a unique, lowercase resource ID containing letters, numbers, and hyphens.
-
-### Step 3: Test the endpoint
-
-```bash
-curl -fL \
-  “http://localhost:3000/api/download?id=scholarship-guide” \
-  -o MedOrbits-Scholarship-Guide.pdf
-```
-
-Confirm that the downloaded PDF opens correctly and contains the intended document.
-
-### Step 4: Update the documentation
-
-Update the supported resource list in this README and any relevant website catalog or resource page.
-
-## 8. Security Requirements
-
-### Resource allowlisting
-
-Never use the user-supplied resource ID directly as a filesystem path.
-
-Resolve the identifier through the fixed manifest and serve only registered entries.
-
-### Path traversal prevention
-
-Reject malformed resource IDs and ensure resolved files remain within the configured download directory.
-
-The manifest should contain simple filenames, not arbitrary relative or absolute paths.
-
-### Public versus confidential documents
-
-Do not store the following in the public download directory:
-
-- Student application records.
-- Government identity documents.
-- Passport scans.
-- Private admission letters.
-- Financial documents.
-- Internal reports.
-- Confidential employer or recruitment records.
-
-Confidential documents require a separate authenticated endpoint with explicit authorization, access auditing, and appropriate storage controls.
-
-### File validation
-
-Before publishing a resource:
-
-1. Verify that the file is an approved PDF.
-2. Confirm that its size is within the configured limit.
-3. Check the document for unintended personal information.
-4. Ensure the filename and download label are appropriate.
-5. Confirm that the resource is authorized for public distribution.
-
-The current endpoint validates the manifest’s expected extension and content type, but it does not fully parse or verify PDF structure. Validate documents during the publishing workflow.
-
-### Rate limiting
-
-The current handler does not implement rate limiting. Consider edge-level or distributed rate limiting to protect against abusive download traffic.
-
-For large files, use streaming or object storage rather than buffering the entire file in application memory.
-
-## 9. Frontend Integration
-
-A basic HTML download link can point directly to the endpoint:
-
-```html
-<a
-  href=“/api/download?id=mbbs-admission-guide”
-  download
->
-  Download MBBS Admission Guide
-</a>
-```
-
-For a resource catalog, ensure the frontend uses only IDs registered in the server-side manifest.
-
-Never allow a client-side form to supply an arbitrary filesystem path or storage key.
-
-## 10. Testing Checklist
-
-Before deploying a new resource or changing the endpoint, verify:
-
-- [ ] Every registered resource downloads successfully.
-- [ ] Unknown resource IDs return `404`.
-- [ ] Missing resource IDs return `400`.
-- [ ] Malformed IDs are rejected.
-- [ ] Path traversal attempts cannot access unrelated files.
-- [ ] Unregistered files cannot be downloaded.
-- [ ] Empty or oversized files are not served.
-- [ ] Response headers contain the expected PDF content type.
-- [ ] Content disposition uses a safe filename.
-- [ ] HEAD requests do not return a file body.
-- [ ] OPTIONS advertises supported methods.
-- [ ] Errors do not disclose internal paths.
-- [ ] Production builds include the configured resource files.
-- [ ] Large downloads remain within hosting memory and execution limits.
-
-Example negative test requests:
-
-```bash
-curl -i “http://localhost:3000/api/download”
-curl -i “http://localhost:3000/api/download?id=unknown-resource”
-curl -i “http://localhost:3000/api/download?id=../../.env”
-curl -i “http://localhost:3000/api/download?id=mbbs%2Fguide”
-```
-
-These requests should not expose environment files or unrelated filesystem content.
-
-## 11. Deployment Considerations
-
-Before deployment:
-
-- Confirm that the hosting platform packages the download directory.
-- Verify that the runtime can read the PDF files.
-- Configure the maximum file size appropriately.
-- Test the deployed URL, not just the local development server.
-- Confirm that caching behavior meets the intended privacy and distribution requirements.
-- Monitor request volume, errors, and download performance.
-- Avoid logging document contents or sensitive query parameters.
-
-On serverless or container-based hosting, local files may be read-only or may not persist across deployments. Treat bundled public resources as deployment assets, not as a writable document repository.
-
-If resources need frequent updates, consider object storage with an explicit publishing process.
-
-## 12. Known Limitations
-
-The current route:
-
-- Serves only resources registered in a hard-coded manifest.
-- Supports PDF resources only.
-- Does not authenticate users.
-- Does not track downloads in a database.
-- Does not implement rate limiting.
-- Buffers each file into memory before returning the response.
-- Does not provide a private-document access workflow.
-- Does not fully validate PDF contents.
-
-These limitations should be addressed before using this endpoint for sensitive documents or high-volume downloads.
-
-—
-
-**Maintainer:** MedOrbits Engineering  
-**Component:** Resource Download API  
-**Related implementation:** `app/api/download/route.js`
+| `200` | File successfully returned |
+| `400` | Missing or invalid filename |
+| `403` | Browser origin rejected |
+| `404` | File is missing or not permitted by the allowlist |
+| `405` | Unsupported HTTP method |
+| `413` | File exceeds the configured size limit |
+| `415` | File extension is not supported |
+| `500` | Unexpected server-side failure |
+
+The current implementation supports these extensions:
+
+- PDF
+- PNG, JPG, JPEG, WebP
+- CSV, TXT, JSON
+- DOCX and XLSX
+
+The extension-to-content-type mapping is an application policy, not a verification that a file’s actual contents match its extension.
+
+## 7. Security controls
+
+The implementation provides the following baseline protections:
+
+- Filename validation and rejection of path separators.
+- Path resolution and symbolic-link escape checks.
+- Optional filename allowlisting.
+- A maximum file size of 25 MiB.
+- Explicit content types and `X-Content-Type-Options: nosniff`.
+- `Content-Disposition: attachment` to encourage downloads.
+- `Cache-Control: private, no-store` to discourage caching.
+- Server-side logging without returning raw filesystem errors.
+
+### Required production hardening
+
+**This sample does not authenticate the requester.** The origin allowlist is not authentication or authorization, and requests without an `Origin` header are accepted by the sample’s origin check.
+
+Before serving confidential documents:
+
+1. Authenticate the user with the application’s established authentication mechanism.
+2. Authorize access to the specific requested file for that user.
+3. Apply rate limits and request monitoring.
+4. Avoid exposing predictable private filenames.
+5. Consider signed, short-lived download URLs or an authorized object-storage download flow.
+6. Audit access to sensitive documents without logging document contents or secrets.
+7. Ensure uploaded or externally sourced files cannot overwrite trusted files.
+
+For highly sensitive documents, use a dedicated document service rather than relying on filename checks alone.
+
+## 8. Testing checklist
+
+- [ ] Valid allowlisted PDF returns `200`.
+- [ ] Missing filename returns `400`.
+- [ ] Path traversal attempts are rejected.
+- [ ] Symbolic links escaping the download directory are rejected.
+- [ ] Unlisted filenames return `404`.
+- [ ] Unsupported extensions return `415`.
+- [ ] Oversized files return `413`.
+- [ ] Disallowed browser origins return `403`.
+- [ ] Unsupported methods return `405`.
+- [ ] Missing files do not expose filesystem paths.
+- [ ] Private files cannot be accessed without authorization.
+- [ ] Production deployment can access the configured storage directory.
+
+## 9. Operational notes
+
+Use the project’s existing logging, monitoring, and deployment conventions. Keep private downloads separate from public website assets, and verify file permissions and storage persistence in the production environment.
+
+Syntax validation alone does not confirm that file access, authorization, or storage behavior works correctly on the deployed platform.

@@ -33,43 +33,43 @@ The following structure reflects the files identified during MedOrbits developme
 api/
 └── schemas/
     ├── README.md
-    ├── career.shema.json
-    ├── colleges.shema.json
-    ├── common.shema.json
-    ├── document.shema.json
-    ├── jobs.shema.json
-    ├── live-notifications.shema.json
-    ├── notification.shema.json
-    ├── pagination.shema.json
+    ├── career.schema.json
+    ├── colleges.schema.json
+    ├── common.schema.json
+    ├── document.schema.json
+    ├── jobs.schema.json
+    ├── live-notifications.schema.json
+    ├── notification.schema.json
+    ├── pagination.schema.json
     ├── application.schema.json
     ├── job.schema.json
     └── user.schema.json
 
 The listed filenames do not guarantee that each file has valid content or compiles successfully.
 
-Other schemas, such as application.shema.json, may exist or be added later. Check the repository before creating duplicate contracts.
+Other schemas, such as application.schema.json, may exist or be added later. Check the repository before creating duplicate contracts.
 
 Schema responsibilities
 
 File	Intended responsibility
 application.schema.json	Application submissions and education/admission application data
-application.shema.json	Alternative application schema filename, if retained
+application.schema.json	Alternative application schema filename, if retained
 job.schema.json	Job-posting data using the singular naming convention
-jobs.shema.json	Job listings, employment information, and recruitment opportunities
+jobs.schema.json	Job listings, employment information, and recruitment opportunities
 user.schema.json	Core user and account data
-common.shema.json	Shared identifiers, pagination metadata, errors, and common definitions
-document.shema.json	Document metadata, verification, and storage references
-notification.shema.json	Notifications, delivery metadata, and recipient-facing messages
-live-notifications.shema.json	Live notification event payloads, if implemented
-pagination.shema.json	Pagination, sorting, searching, and filtering parameters
-career.shema.json	Career resources and career-related data, if implemented
-colleges.shema.json	College and institution data, if implemented
+common.schema.json	Shared identifiers, pagination metadata, errors, and common definitions
+document.schema.json	Document metadata, verification, and storage references
+notification.schema.json	Notifications, delivery metadata, and recipient-facing messages
+live-notifications.schema.json	Live notification event payloads, if implemented
+pagination.schema.json	Pagination, sorting, searching, and filtering parameters
+career.schema.json	Career resources and career-related data, if implemented
+colleges.schema.json	College and institution data, if implemented
 
 These descriptions document intended responsibilities, not verified implementation status.
 
 3. Filename and reference conventions
 
-The repository currently uses both .shema.json and .schema.json naming conventions.
+The repository currently uses both .schema.json and .schema.json naming conventions.
 
 The conventional spelling is .schema.json. However, renaming existing files without updating imports and references can break the application.
 
@@ -84,7 +84,7 @@ Until the repository is standardized:
 Example reference:
 
 {
-  “$ref”: “./common.shema.json#/$defs/identifier”
+  “$ref”: “./common.schema.json#/$defs/identifier”
 }
 
 The referenced file must exist at the resolved location and contain the requested definition.
@@ -157,7 +157,7 @@ The service layer must validate cross-field business rules, including budget ran
 Files:
 
 * /api/schemas/job.schema.json
-* /api/schemas/jobs.shema.json
+* /api/schemas/jobs.schema.json
 
 The singular and plural filenames must not be assumed to be interchangeable.
 
@@ -199,7 +199,7 @@ Sensitive fields, including password hashes, authentication secrets, private ver
 
 8. Common schema
 
-File: /api/schemas/common.shema.json
+File: /api/schemas/common.schema.json
 
 The common schema provides reusable definitions for shared API structures.
 
@@ -223,7 +223,7 @@ When using a local $ref, confirm that the validator can resolve the referenced f
 
 9. Document schema
 
-File: /api/schemas/document.shema.json
+File: /api/schemas/document.schema.json
 
 The document schema describes metadata associated with securely uploaded files.
 
@@ -257,8 +257,8 @@ Do not expose private storage keys as public download URLs.
 
 Files:
 
-* /api/schemas/notification.shema.json
-* /api/schemas/live-notifications.shema.json
+* /api/schemas/notification.schema.json
+* /api/schemas/live-notifications.schema.json
 
 The standard notification schema may define notification content, priority, status, actions, delivery metadata, and related resource references.
 
@@ -272,7 +272,7 @@ Authorize notification creation and broadcasts. Validate action URLs and reject 
 
 11. Pagination schema
 
-File: /api/schemas/pagination.shema.json
+File: /api/schemas/pagination.schema.json
 
 The pagination schema defines accepted parameters for listing endpoints.
 
@@ -411,7 +411,7 @@ module.exports = validateApplicationPayload;
 Integration notes
 
 * This example assumes CommonJS and that the schema file is in the same directory as the validator module.
-* If middleware resides in /api/middlerware/, resolve schema paths relative to the actual directory structure.
+* If middleware resides in /api/middleware/, resolve schema paths relative to the actual directory structure.
 * Use the exact filename present in the repository.
 * Compile schemas once during initialization or through a controlled cache.
 * Use a dedicated validator instance for Draft 2020-12.
@@ -561,15 +561,15 @@ Do not create duplicate schemas without documenting which contract is canonical 
 19. Related project files
 
 File	Responsibility
-/api/middlerware/validation.js	Request-validation integration
-/api/middlerware/error-handler.js	Centralized error handling
+/api/middleware/validation.js	Request-validation integration
+/api/middleware/error-handler.js	Centralized error handling
 /api/routes/	API route definitions
 /api/services/application-service.js	Application business logic
 /api/services/audit-service.js	Audit operations
 /api/openapi.yaml	API documentation
 /api/worker.js	Background processing
 
-The directory spelling middlerware is retained to match the supplied project structure. Verify the repository before renaming it or changing imports.
+The directory spelling middleware is retained to match the supplied project structure. Verify the repository before renaming it or changing imports.
 
 20. Official references
 

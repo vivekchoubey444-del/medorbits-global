@@ -3,14 +3,14 @@
 /**
 
 * MedOrbits -- Documents API Routes
-* File: /api/routes/documents.js
+* File: app.use("/api/documents", require("./api/routes/documents"));
 * Runtime: Node.js 20+
 * Framework: Express
 * Mount:
 * app.use("/api/documents", require("./api/routes/documents"));
 * Dependencies:
-* ../middlerware/authorization
-* ../middlerware/validation
+* ../middleware/authorization
+* ../middleware/validation
 * ../services/documents-service
 * Security:
 * ●	Ownership and resource authorization are enforced by the service.
@@ -30,13 +30,13 @@ const documentsService = require("../services/documents-service");
 const {
 authenticate,
 authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 
 const {
 validateBody,
 validateParams,
 validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 
 /* ––––––––––––––––––––––––––––––––––––– /
 / Configuration                                                              /

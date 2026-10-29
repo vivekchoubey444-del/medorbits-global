@@ -3,15 +3,15 @@
 /**
 
 * MedOrbits -- Admissions API Routes
-* File: /api/routes/admissions.js
+* File: app.use("/api/admissions", require("./api/routes/admissions"));
 * Runtime: Node.js 20+
 * Framework: Express
 * Mount:
 * app.use("/api/admissions", require("./api/routes/admissions"));
 * Dependencies:
 * ../services/admissions-service
-* ../middlerware/authorization
-* ../middlerware/validation
+* ../middleware/authorization
+* ../middleware/validation
 * Security:
 * ●	Applicant ownership is derived from req.user by the service.
 * ●	Client input cannot set applicantId, reviewerId, status, or audit fields.
@@ -30,13 +30,13 @@ const admissionsService = require("../services/admissions-service");
 const {
 authenticate,
 authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 
 const {
 validateBody,
 validateParams,
 validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 
 /* ––––––––––––––––––––––––––––––––––––– /
 / Configuration                                                              /

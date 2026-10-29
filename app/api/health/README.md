@@ -2,339 +2,118 @@
 # MedOrbits Health API
 
 **File:** `app/api/health/README.md`  
-**Endpoint:** `/api/health`  
-**Runtime:** Node.js 20+  
-**Framework:** Next.js App Router  
-**Purpose:** Application liveness and optional database readiness monitoring.
+**Version:** 2.1.1  
+**Runtime:** Next.js App Router with Node.js
 
-—
+## 1. Purpose
 
-## 1. Overview
+The Health API provides a lightweight endpoint for monitoring application availability. Monitoring systems, deployment platforms, and uptime checks can use it to verify that the route is responding.
 
-The MedOrbits Health API provides a lightweight endpoint for monitoring application availability and deployment health.
+**Endpoint:** `GET /api/health`
 
-It supports:
+Recommended implementation path: `app/api/health/route.js`
 
-- Application liveness checks.
-- Optional PostgreSQL readiness checks.
-- HTTP status codes suitable for monitoring systems.
-- Cache-disabled health responses.
-- Safe error handling without exposing credentials or database connection details.
-- `GET`, `HEAD`, and `OPTIONS` methods.
+## 2. Supported methods
 
-The endpoint is intended for deployment health checks, uptime monitoring, and operational diagnostics.
-
-## 2. Directory Structure
-
-```text
-app/
-└── api/
-    └── health/
-        ├── route.js
-        └── README.md
-```
-
-## 3. Available Endpoints
-
-| Method | Endpoint | Purpose |
-|—|—|—|
-| `GET` | `/api/health` | Application liveness check |
-| `GET` | `/api/health?check=live` | Explicit liveness check |
-| `GET` | `/api/health?check=readiness` | Optional dependency readiness check |
-| `HEAD` | `/api/health` | Status and headers without a response body |
-| `OPTIONS` | `/api/health` | Advertises supported HTTP methods |
-
-Unsupported `check` query values return `400 Bad Request`.
-
-## 4. Liveness Check
-
-Request:
-
-```http
-GET /api/health
-```
-
-Example response:
-
-```json
-{
-  “success”: true,
-  “status”: “ok”,
-  “service”: “medorbits-api”,
-  “timestamp”: “2026-10-25T12:00:00.000Z”,
-  “uptimeSeconds”: 120,
-  “checks”: {
-    “application”: “ok”
-  }
-}
-```
-
-The timestamp and uptime above are illustrative.
-
-A successful liveness check indicates that the route handler is executing. It does not prove that PostgreSQL, WhatsApp, or other external dependencies are available.
-
-## 5. Readiness Check
-
-Request:
-
-```http
-GET /api/health?check=readiness
-```
-
-The handler checks PostgreSQL only when the following environment variable is enabled:
-
-```dotenv
-HEALTH_CHECK_DATABASE=true
-```
-
-When database checking is disabled, the response reports:
-
-```json
-{
-  “success”: true,
-  “status”: “ok”,
-  “checks”: {
-    “application”: “ok”,
-    “database”: “not_checked”
-  },
-  “readiness”: “ok”
-}
-```
-
-When database checking is enabled and the connection succeeds:
-
-```json
-{
-  “success”: true,
-  “status”: “ok”,
-  “checks”: {
-    “application”: “ok”,
-    “database”: “ok”
-  },
-  “readiness”: “ready”
-}
-```
-
-When the database check fails:
-
-```json
-{
-  “success”: false,
-  “status”: “degraded”,
-  “checks”: {
-    “application”: “ok”,
-    “database”: “error”
-  },
-  “readiness”: “not_ready”
-}
-```
-
-A failed readiness check returns HTTP `503 Service Unavailable`.
-
-The exact response may contain additional fields, such as a timestamp, uptime, or request ID.
-
-## 6. Environment Variables
-
-Configure environment variables in the local development environment or deployment provider.
-
-| Variable | Required | Description |
-|—|—|—|
-| `DATABASE_URL` | Conditional | PostgreSQL connection string |
-| `HEALTH_CHECK_DATABASE` | No | Set to `true` to enable database checks |
-| `HEALTH_CHECK_TIMEOUT_MS` | No | Database connection/query timeout, capped at 10,000 ms |
-| `DATABASE_SSL` | No | Set to `true` to enable the handler’s configured TLS option |
-
-Example:
-
-```dotenv
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
-HEALTH_CHECK_DATABASE=true
-HEALTH_CHECK_TIMEOUT_MS=3000
-DATABASE_SSL=true
-```
-
-Replace the placeholder connection details with credentials from your database provider. Do not commit real secrets to source control.
-
-**Database driver:** The readiness check dynamically imports `pg`. Install it if it is not already a project dependency:
-
-```bash
-npm install pg
-```
-
-### Database TLS considerations
-
-The route’s current implementation enables TLS with certificate verification when `DATABASE_SSL=true`. Confirm that this configuration matches your PostgreSQL provider. Do not disable certificate verification as a workaround for certificate errors in production.
-
-## 7. HTTP Status Codes
-
-| Status | Meaning |
+| Method | Behavior |
 |—|—|
-| `200 OK` | Application is live or readiness checks passed |
-| `204 No Content` | OPTIONS preflight response |
-| `400 Bad Request` | Unsupported health-check mode |
-| `503 Service Unavailable` | Enabled readiness check failed |
+| `GET` | Returns the health status |
+| `HEAD` | Optional; implement if required by the monitoring platform |
+| Other methods | Return `405 Method Not Allowed` |
 
-The `HEAD` handler currently returns `200` without executing the database readiness check. Use the `GET` readiness endpoint when dependency availability must be verified.
+## 3. Example request
 
-## 8. Security and Privacy
-
-Health endpoints should disclose only the minimum information needed by monitoring infrastructure.
-
-The implementation is designed to:
-
-- Avoid returning database connection strings.
-- Avoid exposing database exception messages.
-- Avoid returning access tokens or other secrets.
-- Disable response caching.
-- Limit the length of the optional `x-request-id` response value.
-- Avoid performing external dependency checks during ordinary liveness requests.
-
-### Production recommendations
-
-1. Restrict detailed readiness checks to trusted infrastructure where practical.
-2. Use network controls, gateway rules, or authentication if health diagnostics must be private.
-3. Do not include environment variables, stack traces, SQL details, internal IP addresses, or credentials in health responses.
-4. Monitor repeated `503` responses.
-5. Configure monitoring timeouts appropriate to the deployment environment.
-6. Keep liveness checks lightweight to avoid unnecessary database load.
-7. Ensure the hosting platform’s health-check path matches the deployed route.
-
-**Important:** A request ID supplied by the client is not proof of identity. The current handler echoes a truncated request ID but does not authenticate it.
-
-## 9. Deployment Configuration
-
-For deployment platforms such as Render or other Node.js hosting providers, configure the health-check path as:
-
-```text
-/api/health
-```
-
-Use the liveness endpoint for process availability checks.
-
-Use the readiness endpoint only when you want database availability to influence readiness decisions and have enabled the database check.
-
-### Deployment checklist
-
-- [ ] `app/api/health/route.js` exists and is committed.
-- [ ] The application builds successfully.
-- [ ] `DATABASE_URL` is configured if PostgreSQL checks are enabled.
-- [ ] The `pg` package is installed if database checks are enabled.
-- [ ] Database TLS settings match the provider.
-- [ ] The hosting provider points to `/api/health`.
-- [ ] The route returns `200` after deployment.
-- [ ] The readiness route returns `503` when a required database check fails.
-- [ ] Health responses do not disclose secrets.
-- [ ] Monitoring alerts are configured for persistent failures.
-
-## 10. Local Testing
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-Test liveness:
+Local development:
 
 ```bash
 curl -i http://localhost:3000/api/health
 ```
 
-Test explicit liveness:
+Production:
 
 ```bash
-curl -i “http://localhost:3000/api/health?check=live”
+curl -i https://your-domain.example/api/health
 ```
 
-Test readiness:
+## 4. Example response
+
+A basic liveness endpoint can return:
+
+```json
+{
+  “status”: “ok”,
+  “service”: “medorbits-api”
+}
+```
+
+Expected HTTP status: `200 OK`.
+
+The exact response depends on the implementation in `route.js`. Do not assume database connectivity or other dependencies are checked unless the handler explicitly performs those checks.
+
+## 5. Health-check types
+
+### Liveness
+
+Indicates whether the application process can respond to requests.
+
+- Should be fast and lightweight.
+- Should not depend on every external service being available.
+- Can be used to detect an unresponsive application instance.
+
+### Readiness
+
+Indicates whether the application is ready to serve normal traffic.
+
+- May verify essential dependencies, such as database connectivity.
+- Should return a failure status when a required dependency is unavailable.
+- Should not expose credentials, SQL details, internal hostnames, or stack traces.
+
+For production deployments, consider separate endpoints:
+
+- `/api/health` — liveness.
+- `/api/health/ready` — readiness and required dependency checks.
+
+Implement separate handlers only if they fit the application’s existing architecture and deployment requirements.
+
+## 6. Security and operational guidance
+
+- Return only the minimum status information required by monitoring.
+- Do not include environment variables, secrets, database connection strings, or stack traces.
+- Avoid expensive database queries or external API calls on every liveness request.
+- Use short timeouts for readiness checks.
+- Apply appropriate network access controls if dependency details could be sensitive.
+- Ensure the monitoring platform checks the expected HTTP status code.
+- Configure alerts for sustained failures rather than relying on a single failed request.
+
+A public liveness endpoint may be appropriate. A readiness endpoint that reveals dependency details may need additional restrictions.
+
+## 7. Monitoring example
+
+A basic availability check can use:
 
 ```bash
-curl -i “http://localhost:3000/api/health?check=readiness”
+curl —fail —silent —show-error \
+  —max-time 5 \
+  https://your-domain.example/api/health
 ```
 
-Test an unsupported mode:
+A non-zero exit code indicates a failed request or an HTTP error response.
 
-```bash
-curl -i “http://localhost:3000/api/health?check=invalid”
-```
+For scheduled monitoring, configure the hosting platform or monitoring service to check the endpoint at a suitable interval and alert on repeated failures.
 
-Test the HEAD response:
+## 8. Validation checklist
 
-```bash
-curl -I http://localhost:3000/api/health
-```
+- [ ] `GET /api/health` returns the expected status code.
+- [ ] The response is valid JSON if JSON is the documented format.
+- [ ] The handler responds within the monitoring timeout.
+- [ ] No secrets or internal diagnostic details are exposed.
+- [ ] Liveness does not fail merely because an optional dependency is unavailable.
+- [ ] Readiness checks required dependencies when implemented.
+- [ ] Unsupported HTTP methods return the documented behavior.
+- [ ] The endpoint works in the actual deployment environment.
 
-Test OPTIONS:
+## 9. Limitations
 
-```bash
-curl -i -X OPTIONS http://localhost:3000/api/health
-```
+A successful health response proves only what the handler actually checks. A basic `200 OK` response does not establish that PostgreSQL, authentication, payment processing, email delivery, or other application features are working.
 
-### Expected outcomes
-
-- Liveness: `200 OK`.
-- Readiness with database checking disabled: `200 OK`.
-- Readiness with database checking enabled and a healthy database: `200 OK`.
-- Readiness with database checking enabled and a failed database check: `503 Service Unavailable`.
-- Unsupported mode: `400 Bad Request`.
-- HEAD: `200 OK` with no response body.
-- OPTIONS: `204 No Content`.
-
-## 11. Troubleshooting
-
-### The endpoint returns 404
-
-Verify that the file is located at `app/api/health/route.js`, that the application is running the expected build, and that the URL is `/api/health`.
-
-### Readiness returns 503
-
-Check the server-side logs and verify:
-
-- `DATABASE_URL` is correct.
-- The database is reachable from the deployed application.
-- The database user has permission to connect and execute `SELECT 1`.
-- TLS configuration matches the database provider.
-- The timeout is sufficient for the deployment environment.
-
-The API intentionally returns a generic database error instead of exposing connection details.
-
-### Database checking fails because `pg` is missing
-
-Install the package and redeploy:
-
-```bash
-npm install pg
-```
-
-### The hosting platform reports a failed health check
-
-Confirm that the deployment is listening on the configured port and that `/api/health` is reachable through the deployed service. Inspect server logs and platform health-check settings.
-
-## 12. Operational Limitations
-
-- This endpoint does not authenticate monitoring requests by itself.
-- It does not check WhatsApp availability.
-- It does not prove that lead submissions or contact notifications are functioning end to end.
-- Database readiness is disabled unless explicitly enabled.
-- A successful health response does not guarantee that all application features are operational.
-- The handler opens a database connection for each enabled readiness check; high-frequency monitoring may require connection pooling or a dedicated monitoring strategy.
-- A health check should not be used as a substitute for application metrics, error monitoring, database monitoring, or synthetic end-to-end tests.
-
-## 13. Recommended Future Enhancements
-
-As the MedOrbits backend grows, consider adding:
-
-- A separate internal diagnostics endpoint.
-- Structured metrics and uptime monitoring.
-- A dedicated readiness policy for required dependencies.
-- Rate limiting for public diagnostic endpoints where appropriate.
-- Integration tests for liveness, readiness, and database failure.
-- Alerts for sustained service degradation.
-
-Keep public health responses minimal and place sensitive operational diagnostics behind appropriate access controls.
-
-—
-
-**Maintainer:** MedOrbits Engineering  
-**Component:** Health API  
-**Last reviewed:** 25 October 2026
+Test the health route and its monitoring integration in the deployed environment before relying on it for operational alerts.

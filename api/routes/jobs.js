@@ -3,14 +3,14 @@
 /**
 
 * MedOrbits -- Jobs API Routes
-* File: /api/routes/jobs.js
+* File: app.use("/api/jobs", require("./api/routes/jobs"));
 * Runtime: Node.js 20+
 * Framework: Express
 * Mount:
 * app.use("/api/jobs", require("./api/routes/jobs"));
 * Required integrations:
-* ../middlerware/authorization
-* ../middlerware/validation
+* ../middleware/authorization
+* ../middleware/validation
 * ../services/jobs-service
 * Required authorization middleware:
 * authenticate
@@ -49,13 +49,13 @@ const jobsService = require("../services/jobs-service");
 const {
 authenticate,
 authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 
 const {
 validateBody,
 validateParams,
 validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 
 /* ––––––––––––––––––––––––––––––––––––– /
 / Constants                                                                  /

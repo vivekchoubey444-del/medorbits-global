@@ -3,15 +3,15 @@
 /**
 
 * MedOrbits -- Support API Routes
-* File: /api/routes/support.js
+* File: app.use("/api/support", require("./api/routes/support"));
 * Runtime: Node.js 20+
 * Framework: Express
 * Mount:
 * app.use("/api/support", require("./api/routes/support"));
 * Dependencies:
 * ../services/support-service
-* ../middlerware/authorization
-* ../middlerware/validation
+* ../middleware/authorization
+* ../middleware/validation
 * Security requirements:
 * ●	Service methods enforce ticket ownership and agent permissions.
 * ●	Public users cannot assign internal status or priority.
@@ -29,13 +29,13 @@ const supportService = require("../services/support-service");
 const {
 authenticate,
 authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 
 const {
 validateBody,
 validateParams,
 validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 
 /* ––––––––––––––––––––––––––––––––––––– /
 / Configuration                                                              /

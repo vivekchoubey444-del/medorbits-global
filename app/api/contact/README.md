@@ -2,353 +2,165 @@
 # MedOrbits Contact API
 
 **File:** `app/api/contact/README.md`  
-**Endpoint:** `/api/contact`  
-**Framework:** Next.js App Router  
-**Runtime:** Node.js  
-**Purpose:** Validate website contact enquiries and notify the MedOrbits administrator through the WhatsApp Cloud API with a PDF attachment.
+**Runtime:** Next.js App Router with Node.js  
+**Version:** 2.1.1
 
-## 1. Overview
+## Overview
 
-The Contact API accepts enquiries from the MedOrbits website, validates submitted fields and consent, optionally verifies Cloudflare Turnstile, generates a PDF, uploads it to WhatsApp, and sends an approved document-header template.
+The Contact API accepts contact enquiries, validates the submitted fields, and stores accepted submissions in PostgreSQL.
 
-The API does not persist enquiries in a database. If the WhatsApp notification fails, this implementation does not guarantee that the enquiry can be recovered.
+**Endpoint:** `/api/contact`
 
-## 2. File structure
+| Method | Purpose |
+|—|—|
+| `POST` | Validate and submit a contact enquiry |
+| `GET` | Return `405 Method Not Allowed` |
+| `PUT` | Return `405 Method Not Allowed` |
+| `PATCH` | Return `405 Method Not Allowed` |
+| `DELETE` | Return `405 Method Not Allowed` |
 
-```text
-medorbits/
-└── app/
-    └── api/
-        ├── contact/
-        │   ├── route.js
-        │   └── README.md
-        └── lead/
-            ├── route.js
-            ├── route.test.js
-            └── README.md
+## Request format
+
+Send a JSON object with `Content-Type: application/json`.
+
+```json
+{
+  “name”: “Example User”,
+  “email”: “user@example.com”,
+  “subject”: “Admission enquiry”,
+  “message”: “Please provide information about your services.”,
+  “website”: “”
+}
 ```
 
-The contact route must export `POST` and `OPTIONS` handlers from `route.js`.
+The `website` field is an optional honeypot field. Legitimate users should leave it empty.
 
-Official reference: [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers).
+### Validation rules
 
-## 3. Environment variables
+| Field | Requirement |
+|—|—|
+| `name` | Required; maximum 120 characters |
+| `email` | Required; maximum 254 characters; basic email-format validation |
+| `subject` | Required; maximum 180 characters |
+| `message` | Required; maximum 5,000 characters |
+| Request body | Maximum 16 KiB |
 
-Configure these variables in `.env.local` for local development and in the hosting provider’s environment settings for production.
+Fields are trimmed before storage. Email addresses are converted to lowercase.
 
-| Variable | Required | Description |
-|—|—|—|
-| `WHATSAPP_ACCESS_TOKEN` | Yes | Server-side Meta WhatsApp access token |
-| `WHATSAPP_PHONE_NUMBER_ID` | Yes | Meta-issued sender phone-number ID |
-| `ADMIN_WHATSAPP` | Yes | Administrator’s WhatsApp number with country code |
-| `WHATSAPP_TEMPLATE_NAME` | Yes | Approved WhatsApp template name |
-| `WHATSAPP_GRAPH_VERSION` | Yes | Supported Meta Graph API version |
-| `WHATSAPP_TEMPLATE_LANGUAGE` | No | Template language code; defaults to `en` |
-| `ALLOWED_ORIGINS` | No | Comma-separated exact website origins |
-| `MAX_BODY_BYTES` | No | Request-size limit; defaults to 12,000 bytes |
-| `TURNSTILE_SECRET_KEY` | No | Cloudflare Turnstile server-side secret |
+## Responses
 
-Example `.env.example` entries:
+### `201 Created`
+
+The enquiry was accepted and stored, or the honeypot response was returned.
+
+```json
+{
+  “success”: true,
+  “message”: “Your contact request has been received.”,
+  “id”: “123”
+}
+```
+
+The `id` is returned for successfully stored enquiries. Honeypot submissions do not create a database record.
+
+### Error responses
+
+| Status | Meaning |
+|—|—|
+| `400` | Invalid JSON or missing/invalid fields |
+| `403` | Browser origin rejected by the configured allowlist |
+| `405` | Unsupported HTTP method |
+| `413` | Request body exceeds the size limit |
+| `415` | Request content type is not JSON |
+| `503` | Database configuration or submission failure |
+
+Responses use `Cache-Control: no-store`.
+
+## Environment configuration
+
+Configure these variables in the deployment environment:
 
 ```dotenv
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
-ADMIN_WHATSAPP=
-WHATSAPP_TEMPLATE_NAME=
-WHATSAPP_TEMPLATE_LANGUAGE=en
-WHATSAPP_GRAPH_VERSION=
-ALLOWED_ORIGINS=https://medorbits.in,https://www.medorbits.in
-MAX_BODY_BYTES=12000
-TURNSTILE_SECRET_KEY=
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
+ALLOWED_ORIGINS=https://your-domain.example,https://www.your-domain.example
 ```
 
-Security requirements:
+- `DATABASE_URL` must point to the intended PostgreSQL database.
+- `ALLOWED_ORIGINS` is a comma-separated list of allowed browser origins.
+- Do not commit credentials or real `.env` files to Git.
+- Use a restricted database account with only the permissions required by the application.
 
-- Never commit real credentials to Git.
-- Never expose server secrets through `NEXT_PUBLIC_` variables.
-- Use a supported Graph API version.
-- Rotate credentials if they are accidentally exposed.
-- Keep production and test credentials separate.
+When `ALLOWED_ORIGINS` is empty, the current route does not enforce an origin allowlist. Origin checks are not a replacement for authentication, rate limiting, or abuse prevention.
 
-## 4. Contact request format
+## Database setup
 
-Send a `POST` request to `/api/contact` with the `Content-Type: application/json` header.
+The route expects a `contact_messages` table.
 
-Example request:
+```sql
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    subject VARCHAR(180) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-```json
-{
-  “name”: “Example Applicant”,
-  “email”: “applicant@example.com”,
-  “phone”: “9876543210”,
-  “subject”: “Admission enquiry”,
-  “message”: “Please contact me about admission guidance.”,
-  “consent”: true,
-  “website”: “”,
-  “pageUrl”: “https://medorbits.in/contact.html”
-}
+CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at
+    ON contact_messages (created_at DESC);
 ```
 
-### Required fields
+Apply this SQL through the project’s database migration process where one exists. Avoid maintaining a separate schema definition that conflicts with existing migrations.
 
-| Field | Validation |
-|—|—|
-| `name` | At least two characters after sanitization |
-| `subject` | Must not be empty |
-| `message` | At least five characters after sanitization |
-| `consent` | Must be the boolean `true` |
-| `email` or `phone` | At least one valid contact method is required |
-| `email` | Valid email format when supplied |
-| `phone` | 7–15 digits when phone validation is required |
-| `pageUrl` | Must resolve to an allowlisted origin when supplied |
+## Dependencies
 
-The `website` field is a honeypot. Keep it empty in legitimate submissions.
-
-The optional `turnstileToken` field must contain a token generated by the configured Cloudflare Turnstile widget whenever Turnstile verification is enabled.
-
-## 5. Frontend integration
-
-Example:
-
-```javascript
-async function submitContactForm(formData) {
-  const response = await fetch(“/api/contact”, {
-    method: “POST”,
-    headers: {
-      “Content-Type”: “application/json”
-    },
-    body: JSON.stringify({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      subject: formData.subject,
-      message: formData.message,
-      consent: formData.consent,
-      website: “”,
-      pageUrl: window.location.href,
-      turnstileToken: formData.turnstileToken || undefined
-    })
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.error || “Contact submission failed”);
-  }
-
-  return result;
-}
-```
-
-The frontend must display success only after the server returns a successful response. It should display a useful validation or retry message when the request fails.
-
-The honeypot should be visually hidden from users but remain available in the submitted payload. Do not rely on it as the only anti-spam measure.
-
-## 6. WhatsApp notification flow
-
-The handler performs these operations:
-
-1. Validate the request body and required fields.
-2. Check the consent flag.
-3. Validate the request origin when an `Origin` header is supplied.
-4. Validate the supplied page URL.
-5. Verify Turnstile when configured.
-6. Generate a PDF containing the enquiry details.
-7. Upload the PDF to the WhatsApp Cloud API media endpoint.
-8. Send the approved document-header template to the configured administrator.
-9. Return the provider’s message ID when Meta accepts the message.
-
-The notification PDF includes the name, contact details, subject, message, page URL, timestamp, and reference.
-
-The PDF contains personal information. Limit access to the receiving WhatsApp account and its devices.
-
-## 7. WhatsApp template requirements
-
-The implementation reuses the WhatsApp template configuration used by the MedOrbits Lead API.
-
-The approved template must contain:
-
-- A document header.
-- Four body text parameters.
-- A supported language.
-- A name matching `WHATSAPP_TEMPLATE_NAME`.
-
-Parameter mapping:
-
-| Parameter | Value |
-|—|—|
-| `{{1}}` | `Contact enquiry` |
-| `{{2}}` | Contact name |
-| `{{3}}` | Phone and/or email |
-| `{{4}}` | Subject, message, and page URL |
-
-The template name and language must match the approved template in Meta’s WhatsApp Manager. Confirm the currently supported API version, permissions, template requirements, and media constraints in Meta’s official documentation before deployment.
-
-## 8. API responses
-
-### Success
-
-HTTP `202 Accepted`:
-
-```json
-{
-  “ok”: true,
-  “accepted”: true,
-  “whatsappAcceptedByMeta”: true,
-  “reference”: “wamid.example”,
-  “note”: “Meta accepted the message; handset delivery is not confirmed.”
-}
-```
-
-This confirms Meta accepted the message. It does not confirm delivery to the administrator’s handset.
-
-### Validation failure
-
-HTTP `400 Bad Request`:
-
-```json
-{
-  “ok”: false,
-  “error”: “consent_required”
-}
-```
-
-### Origin rejection
-
-HTTP `403 Forbidden`:
-
-```json
-{
-  “ok”: false,
-  “error”: “origin_not_allowed”
-}
-```
-
-### Configuration failure
-
-HTTP `503 Service Unavailable`:
-
-```json
-{
-  “ok”: false,
-  “error”: “notification_service_not_configured”
-}
-```
-
-### Notification failure
-
-HTTP `502 Bad Gateway`:
-
-```json
-{
-  “ok”: false,
-  “accepted”: false,
-  “error”: “whatsapp_document_send_failed”
-}
-```
-
-The server must never expose access tokens, raw provider payloads, or complete submitted personal information in public error responses.
-
-## 9. Security controls
-
-The handler implements or should maintain:
-
-- JSON request validation.
-- Request-size limits.
-- Input sanitization and field-length limits.
-- Contact-field validation.
-- Explicit consent validation.
-- Exact-origin allowlisting.
-- Allowlisted page URL validation.
-- Honeypot processing.
-- Optional server-side Turnstile verification.
-- External request timeouts.
-- Non-cacheable responses.
-- Minimal error logging.
-- Server-side credential storage.
-
-### Additional production controls
-
-Origin validation is not authentication. Requests without an `Origin` header may still reach the endpoint.
-
-Configure Cloudflare WAF rate limiting or equivalent server-side abuse protection. Add durable storage and idempotency controls if the contact form is business-critical.
-
-Do not trust arbitrary forwarded-IP headers unless your hosting environment controls and sanitizes them.
-
-## 10. Testing
-
-Create a corresponding test file, for example:
-
-```text
-app/api/contact/route.test.js
-```
-
-Use Vitest with mocked `fetch` responses to avoid sending real WhatsApp messages.
-
-Recommended test cases:
-
-- Valid contact submission.
-- Missing consent.
-- Missing name, subject, or message.
-- Invalid email.
-- Invalid phone number.
-- Missing both email and phone.
-- Invalid JSON.
-- Unsupported content type.
-- Oversized request body.
-- Disallowed origin.
-- Invalid page URL.
-- Missing WhatsApp configuration.
-- Failed Turnstile verification.
-- Failed PDF media upload.
-- Failed WhatsApp template send.
-- Provider timeout.
-- Response headers and error redaction.
-
-Run the tests:
+The route uses the `pg` PostgreSQL client.
 
 ```bash
-npx vitest run app/api/contact/route.test.js
+npm install pg
 ```
 
-Run the full suite:
+Ensure the installed version is compatible with the project’s Node.js runtime and lockfile.
+
+## Local testing
+
+Start the Next.js application:
 
 ```bash
-npx vitest run
+npm run dev
 ```
 
-## 11. Deployment checklist
+Submit a test enquiry:
 
-- [ ] Confirm `app/api/contact/route.js` exists.
-- [ ] Confirm the deployment uses the Node.js runtime.
-- [ ] Configure all required WhatsApp environment variables.
-- [ ] Set `ALLOWED_ORIGINS` to the exact production origins.
-- [ ] Confirm the approved template’s header and parameter mapping.
-- [ ] Configure Turnstile if enabled.
-- [ ] Configure WAF rate limiting.
-- [ ] Run the contact API tests.
-- [ ] Run the production build.
-- [ ] Submit a controlled test enquiry.
-- [ ] Verify actual WhatsApp delivery separately.
-- [ ] Ensure personal information and secrets are not logged.
+```bash
+curl -i -X POST http://localhost:3000/api/contact \
+  -H ‘Content-Type: application/json’ \
+  -d ‘{
+    “name”: “Example User”,
+    “email”: “user@example.com”,
+    “subject”: “Test enquiry”,
+    “message”: “Testing the contact endpoint.”,
+    “website”: “”
+  }’
+```
 
-## 12. Limitations and future improvements
+Verify that the request returns `201 Created` and that exactly one corresponding row appears in `contact_messages`.
 
-This endpoint does not save contact submissions to a database. If notification delivery fails, the contact enquiry may be lost.
+Also test malformed JSON, missing fields, invalid email, oversized payloads, disallowed origins, database unavailability, and unsupported methods.
 
-For production reliability, consider implementing:
+## Security and operational notes
 
-- Durable lead storage.
-- A background notification queue.
-- Idempotency keys.
-- Bounded retries with backoff.
-- Delivery-status webhooks.
-- An administrator dashboard.
-- Data-retention and deletion policies.
-- Access controls and audit logs.
+- The route uses parameterized SQL queries to avoid SQL injection through submitted values.
+- Database error details are logged server-side and should never be returned to clients.
+- Configure rate limiting at the application, reverse-proxy, or hosting layer.
+- Consider a CAPTCHA or equivalent abuse control for publicly accessible forms.
+- Validate and escape user-provided content when displaying stored enquiries in administrative interfaces.
+- Restrict database access to authorized personnel and establish an appropriate retention policy.
+- Do not expose stored contact submissions through a public read endpoint.
+- Configure monitoring and alerting for repeated database failures and abuse.
 
-A provider timeout does not necessarily mean a message was rejected. Retry logic should account for the possibility that Meta accepted a message before the connection timed out.
+## Limitations
 
-—
+This route does not implement email notifications, administrative listing, authentication, CAPTCHA verification, or built-in rate limiting. Those features require separate, deliberately configured components.
 
-**Status:** Documentation for `app/api/contact/route.js`. Verify the deployed handler and environment configuration before treating all optional security controls as active.
+Successful syntax validation alone does not prove that the database, deployment environment, or production integrations work correctly.

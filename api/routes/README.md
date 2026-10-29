@@ -32,7 +32,7 @@ api/
 │   ├── jobs.js
 │   ├── support.js
 │   └── users.js
-├── middlerware/
+├── middleware/
 │   ├── authorization.js
 │   ├── error-handler.js
 │   ├── rate-limit.js
@@ -49,7 +49,7 @@ api/
 ├── worker.js
 └── README.md
 
-This is a reference structure, not a guarantee that every file exists. Preserve existing repository files and use the established middlerware directory name unless the project is deliberately migrated.
+This is a reference structure, not a guarantee that every file exists. Preserve existing repository files and use the established middleware directory name unless the project is deliberately migrated.
 
 3. Router conventions
 
@@ -320,7 +320,7 @@ Apply status codes consistently with the documented API contract.
 
 Use:
 
-/api/middlerware/error-handler.js
+/api/middleware/error-handler.js
 
 The centralized handler should:
 

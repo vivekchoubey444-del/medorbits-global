@@ -30,12 +30,12 @@ const documentsService = require("../services/documents-service");
 const {
   authenticate,
   authorize
-} = require("../middlerware/authorization");
+} = require("../middleware/authorization");
 const {
   validateBody,
   validateParams,
   validateQuery
-} = require("../middlerware/validation");
+} = require("../middleware/validation");
 const router = express.Router();
 const DOCUMENT_ID_PATTERN = "^[A-Za-z0-9_-]{1,100}$";
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;

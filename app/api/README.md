@@ -1,475 +1,311 @@
 
-# MedOrbits API Documentation
+# MedOrbits API
 
-**Project:** MedOrbits — Education, Admissions, Careers & Recruitment  
-**Website:** https://www.medorbits.in/  
-**Directory:** `app/api/`  
-**Runtime:** Node.js 20+  
+**Directory:** `/app/api/`  
 **Framework:** Next.js App Router  
-**Status:** API architecture and implementation guide
-
-—
+**Runtime:** Node.js for database-dependent handlers  
+**Primary database:** PostgreSQL  
+**Purpose:** Central documentation for MedOrbits API routes, request validation, integrations, security, and testing.
 
 ## 1. Overview
 
-The `app/api/` directory contains server-side API endpoints for the MedOrbits website. These endpoints handle enquiries, lead submissions, contact forms, and integrations with external services.
+The `/app/api/` directory contains server-side API endpoints used by the MedOrbits website and its associated services.
 
-API handlers must validate incoming requests, protect sensitive configuration, return consistent responses, and avoid exposing personal information or internal errors.
+The API may support:
 
-### Core principles
+- Contact form submissions
+- Education and admission enquiries
+- Payment processing and verification
+- Secure document downloads
+- Health and service availability checks
+- Future integrations with colleges, courses, and consultancy services
 
-- Validate every request on the server.
-- Keep API keys and secrets in environment variables.
-- Use HTTPS in production.
-- Apply rate limiting and abuse protection.
-- Use consistent JSON response structures.
-- Log operational events without recording unnecessary personal data.
-- Never trust client-side validation alone.
-- Test success paths, validation failures, and provider failures.
+Each endpoint must validate incoming requests, handle errors safely, and return consistent HTTP responses.
 
-—
-
-## 2. Directory Structure
+## 2. Directory structure
 
 ```text
-app/
-└── api/
-    ├── README.md
-    │
-    ├── lead/
-    │   ├── route.js
-    │   ├── route.test.js
-    │   └── README.md
-    │
-    └── contact/
-        ├── route.js
-        ├── route.test.js
-        └── README.md
+app/api/
+├── README.md
+├── contact/
+│   ├── route.js
+│   └── README.md
+├── download/
+│   ├── route.js
+│   └── README.md
+├── health/
+│   ├── route.js
+│   └── README.md
+├── lead/
+│   ├── route.js
+│   ├── route.test.js
+│   └── README.md
+└── payment/
+    ├── route.js
+    └── README.md
 ```
 
-This is the documented structure for the endpoints covered here. Add additional routes only when their implementation and requirements are defined.
+This is the intended structure, not a guarantee that every listed file already exists. Add optional route handlers and tests only when their implementations are available.
 
-Each endpoint directory should contain its own route handler, focused tests, and endpoint-specific documentation when appropriate.
+**Next.js convention:** Use `route.js` for App Router handlers. A file named `routes.js` does not automatically register an API endpoint.
 
-—
+## 3. Endpoint inventory
 
-## 3. Available Endpoints
-
-| Endpoint | Method | Purpose |
+| Endpoint | Purpose | Expected method |
 |—|—|—|
-| `/api/lead` | `POST` | Submit a lead or request a resource download |
-| `/api/lead` | `OPTIONS` | Handle supported cross-origin preflight requests |
-| `/api/contact` | `POST` | Submit a general contact enquiry |
-| `/api/contact` | `OPTIONS` | Handle supported cross-origin preflight requests |
+| `/api/health` | Service health check | `GET` |
+| `/api/contact` | Submit a contact enquiry | `POST` |
+| `/api/lead` | Submit a course or admission enquiry | `POST` |
+| `/api/payment` | Initiate a payment | `POST` |
+| `/api/download` | Retrieve an approved downloadable file | `GET` |
 
-The methods and payloads documented here must match the actual deployed route handlers.
+The endpoint inventory must be updated whenever routes are added, renamed, or removed.
 
-### Lead endpoint
+Payment verification, webhooks, and payment status endpoints should be documented separately once implemented.
 
-File: `app/api/lead/route.js`
+## 4. Common response conventions
 
-Supports lead submissions and resource-download requests. The handler may generate a PDF and forward the relevant information through the configured WhatsApp Business integration.
+Use JSON responses for API requests unless the endpoint intentionally returns a file or another content type.
 
-Typical lead fields:
-
-```json
-{
-  “eventType”: “lead”,
-  “name”: “Example Applicant”,
-  “phone”: “9876543210”,
-  “email”: “applicant@example.com”,
-  “interest”: “MBBS Admission”,
-  “message”: “I would like admission guidance.”,
-  “consent”: true,
-  “website”: “”,
-  “pageUrl”: “https://www.medorbits.in/“
-}
-```
-
-For a resource download, use the `download` event type and provide the resource identifier expected by the handler.
-
-### Contact endpoint
-
-File: `app/api/contact/route.js`
-
-Handles general website contact enquiries.
-
-Typical payload:
-
-```json
-{
-  “name”: “Example Applicant”,
-  “email”: “applicant@example.com”,
-  “phone”: “9876543210”,
-  “subject”: “Admission enquiry”,
-  “message”: “Please contact me about admissions.”,
-  “consent”: true,
-  “website”: “”,
-  “pageUrl”: “https://www.medorbits.in/contact.html”
-}
-```
-
-Optional anti-bot fields may be included when Turnstile protection is configured.
-
-**Important:** The payload examples are illustrative. Always verify field requirements against the current handler and its tests before connecting a frontend form.
-
-—
-
-## 4. Environment Configuration
-
-Create or update the root `.env.example` file. Do not commit real credentials.
-
-```dotenv
-# Application
-NODE_ENV=development
-APP_BASE_URL=http://localhost:3000
-
-# Cross-origin access
-ALLOWED_ORIGINS=http://localhost:3000,https://www.medorbits.in,https://medorbits.in
-
-# WhatsApp Business Cloud API
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
-ADMIN_WHATSAPP=
-WHATSAPP_TEMPLATE_NAME=
-WHATSAPP_TEMPLATE_LANGUAGE=en
-WHATSAPP_GRAPH_VERSION=
-
-# Optional bot protection
-TURNSTILE_SECRET_KEY=
-
-# Request controls
-MAX_BODY_BYTES=20000
-MAX_MESSAGE_LENGTH=5000
-```
-
-Use the exact environment variable names expected by the route handlers.
-
-### Environment rules
-
-1. Store production secrets in the hosting provider’s environment settings.
-2. Never expose private keys through `NEXT_PUBLIC_*` variables.
-3. Never commit `.env`, `.env.local`, or production credentials.
-4. Rotate any credential that has been exposed.
-5. Validate required environment variables during deployment or endpoint execution.
-6. Keep development and production credentials separate.
-7. Configure a currently supported WhatsApp Graph API version.
-
-—
-
-## 5. Request and Response Standards
-
-API routes should use JSON for request and response bodies unless a documented integration requires another content type.
-
-### Successful response
+Example successful response:
 
 ```json
 {
   “success”: true,
-  “message”: “Your request has been received.”
+  “message”: “Request completed successfully.”
 }
 ```
 
-### Validation failure
+Example validation error:
 
 ```json
 {
   “success”: false,
-  “error”: “invalid_request”,
-  “message”: “Please check the submitted information.”
+  “error”: “Invalid request.”
 }
 ```
 
-### Service failure
+Do not expose database errors, stack traces, internal paths, secrets, or provider credentials to clients.
 
-```json
-{
-  “success”: false,
-  “error”: “service_unavailable”,
-  “message”: “We could not process your request right now.”
-}
-```
+### Recommended HTTP status codes
 
-These are recommended response conventions, not a guarantee that every existing route currently returns these exact fields.
-
-### HTTP status codes
-
-| Status | Meaning |
+| Status | Usage |
 |—|—|
-| `200` | Request processed successfully |
-| `201` | Resource created successfully, where applicable |
-| `400` | Invalid JSON or request data |
+| `200` | Request completed successfully |
+| `201` | Resource created |
+| `400` | Invalid request data |
 | `401` | Authentication required |
-| `403` | Request rejected by an access or security rule |
-| `404` | Endpoint or resource not found |
+| `403` | Request not permitted |
+| `404` | Resource not found |
 | `405` | HTTP method not supported |
+| `409` | Resource conflict |
 | `413` | Request body too large |
-| `415` | Unsupported content type |
-| `422` | Valid JSON with unacceptable field values |
+| `415` | Unsupported media type |
 | `429` | Rate limit exceeded |
 | `500` | Unexpected server error |
-| `502` | Upstream provider returned an invalid response |
-| `503` | Required service is unavailable |
+| `503` | Required service unavailable |
 
-Use status codes consistently with each endpoint’s actual behavior.
+Use only the statuses appropriate to each route’s actual behavior.
 
-—
+## 5. Environment configuration
 
-## 6. Security Requirements
+API routes may depend on database connections, payment gateways, and trusted website origins.
 
-### Input validation
+Example `.env.example` entries:
 
-- Validate field types, lengths, and formats.
-- Normalize phone numbers before sending them to an external provider.
-- Reject invalid or unexpected event types.
-- Validate URLs before accepting them for logging or processing.
-- Treat hidden honeypot fields as one layer of spam prevention, not as authentication.
-- Require explicit consent where the form’s purpose requires it.
-
-### Request-body limits
-
-Enforce request-size limits before reading an unrestricted body into memory. Checking the size only after `request.text()` has completed does not prevent oversized-body resource consumption.
-
-Use hosting-level request limits or a bounded streaming reader when the runtime and framework permit it.
-
-### Origin and CORS
-
-- Maintain an explicit allowlist for trusted website origins.
-- Return appropriate CORS headers for allowed origins.
-- Reject disallowed browser origins where applicable.
-- Do not treat the `Origin` header as authentication; non-browser clients can forge or omit it.
-- Do not use wildcard origins with credentialed requests.
-
-CORS is a browser access policy, not a replacement for authorization or abuse protection.
-
-### Rate limiting and spam protection
-
-Production deployments should implement distributed rate limiting where necessary, ideally using a shared store or gateway rather than in-memory counters in serverless instances.
-
-Consider:
-
-- IP-based and endpoint-based limits.
-- Turnstile verification.
-- Request timeouts.
-- Retry controls for external services.
-- Abuse monitoring and alerting.
-- Idempotency for operations that could be repeated.
-
-Do not trust forwarded IP headers unless they are set by a trusted proxy.
-
-### Personal information
-
-Contact and lead forms may contain personal information. Apply data minimization, access controls, retention limits, and appropriate privacy notices. Avoid logging full messages, phone numbers, email addresses, access tokens, or generated documents unless there is a justified and protected operational need.
-
-—
-
-## 7. WhatsApp Integration
-
-The lead and contact routes may use the WhatsApp Business Cloud API to forward enquiries.
-
-Typical workflow:
-
-1. Validate the incoming request.
-2. Verify consent and configured anti-bot controls.
-3. Validate the required server-side configuration.
-4. Generate the required document, if applicable.
-5. Upload the document through the WhatsApp media endpoint.
-6. Send the approved WhatsApp message template.
-7. Return an appropriate API response.
-
-### Template requirements
-
-- Use an approved WhatsApp template when required by WhatsApp’s messaging rules.
-- Match template parameter order and types exactly.
-- Verify the recipient’s WhatsApp number format.
-- Handle provider errors and timeouts.
-- Avoid returning access tokens or internal provider responses to the browser.
-- Do not report successful delivery merely because a request was accepted by an upstream API.
-
-### Reliability warning
-
-Sending a WhatsApp message is not equivalent to durably storing a lead. If the business requires reliable lead retention, implement persistent database storage and preferably a durable queue with retry and idempotency controls.
-
-The currently documented handlers should not be assumed to provide durable lead storage unless that functionality has been implemented and verified.
-
-—
-
-## 8. Testing
-
-The project uses Vitest for automated tests.
-
-Install the test dependencies if they are not already present:
-
-```bash
-npm install —save-dev vitest @vitest/coverage-v8
+```dotenv
+NODE_ENV=development
+DATABASE_URL=
+ALLOWED_ORIGINS=http://localhost:3000
+DOWNLOAD_ROOT=private-downloads
+DOWNLOAD_ALLOWLIST=
 ```
 
-Recommended `package.json` scripts:
+Payment-specific variables must be documented in `payment/README.md` and included in the root environment template only when the corresponding integration is implemented.
 
-```json
-{
-  “scripts”: {
-    “test”: “vitest run”,
-    “test:watch”: “vitest”,
-    “test:coverage”: “vitest run —coverage”,
-    “test:lead”: “vitest run app/api/lead/route.test.js”,
-    “test:contact”: “vitest run app/api/contact/route.test.js”
-  }
-}
-```
+### Configuration rules
 
-Merge these scripts into the existing `package.json`; do not replace unrelated scripts or dependencies.
+- Keep real credentials in environment variables or a secret manager.
+- Never commit `.env` files containing real credentials.
+- Validate required configuration at runtime or during application startup.
+- Use secure database settings in production.
+- Do not assume a configured environment variable means the associated service is working.
+- Document all environment variables and their expected formats.
 
-### Run the tests
+## 6. Database conventions
+
+The API uses PostgreSQL for persistent records where configured.
+
+Recommended practices:
+
+- Use parameterized queries.
+- Apply version-controlled database migrations.
+- Add appropriate indexes and uniqueness constraints.
+- Validate data before database insertion.
+- Use transactions for operations that must succeed or fail together.
+- Set connection and query timeouts.
+- Avoid creating a new connection pool for every request.
+- Handle unavailable database connections without exposing internal errors.
+
+Document table definitions and migrations alongside the relevant feature or in the repository’s database directory.
+
+## 7. Request validation
+
+Every endpoint must validate incoming requests on the server.
+
+Validation should include, where relevant:
+
+- Supported HTTP method
+- Content type
+- Request body size
+- JSON syntax
+- Expected object structure
+- Required fields and data types
+- String length and format
+- Numeric ranges
+- Identifiers and ownership
+- Allowed values and state transitions
+
+Do not rely exclusively on browser-side validation.
+
+Normalize user input where appropriate, but do not silently transform invalid input in ways that change its intended meaning.
+
+## 8. Security requirements
+
+### General API security
+
+- Use HTTPS in production.
+- Apply least-privilege database credentials.
+- Validate all untrusted input.
+- Use parameterized database queries.
+- Add rate limiting and abuse protection to public endpoints.
+- Apply authentication and authorization to private operations.
+- Avoid exposing personally identifiable information in logs.
+- Return generic public error messages.
+- Maintain audit logs for sensitive operations where appropriate.
+
+### Cross-origin requests
+
+Configure a strict origin allowlist when browser-based cross-origin access is required.
+
+CORS and `Origin` validation are not authentication. Requests can be made by scripts and other HTTP clients without a browser’s cross-origin restrictions.
+
+### File downloads
+
+- Resolve requested files within an approved storage directory.
+- Reject path traversal and unexpected filenames.
+- Use an explicit file allowlist where practical.
+- Enforce file-size limits.
+- Require authentication or signed access where files are private.
+- Do not assume a hard-to-guess URL is secure.
+
+### Payments
+
+- Determine prices on the server.
+- Verify transactions through the selected payment provider.
+- Validate provider signatures and webhooks.
+- Handle repeated events idempotently.
+- Never trust client-submitted payment status.
+- Never store CVVs, PINs, or raw payment-card credentials.
+
+## 9. Privacy and data retention
+
+Contact forms and lead submissions may contain personal information.
+
+The API should:
+
+- Collect only information needed for the stated purpose.
+- Display appropriate privacy notices and consent language.
+- Restrict access to submitted enquiries.
+- Define data-retention and deletion procedures.
+- Protect backups and production logs.
+- Avoid sending personal data to third parties without an appropriate legal basis.
+
+## 10. Testing
+
+Run the test scripts configured in the root `package.json`.
+
+Example commands, depending on repository configuration:
 
 ```bash
-# Run all tests
 npm test
-
-# Test lead submissions
-npm run test:lead
-
-# Test contact submissions
-npm run test:contact
-
-# Generate coverage reports
-npm run test:coverage
+npm run lint
+npm run build
 ```
 
-### Required test coverage
+For each route, test:
 
-Each endpoint should test:
+- Valid requests
+- Missing and malformed fields
+- Unsupported methods
+- Invalid content types
+- Oversized request bodies
+- Unauthorized requests
+- Database and third-party service failures
+- Unexpected exceptions
+- Appropriate response status codes
+- Protection against duplicate operations
 
-- Valid requests.
-- Malformed JSON.
-- Missing required fields.
-- Invalid field formats.
-- Oversized request bodies.
-- Unsupported content types and methods.
-- Invalid origins where origin checks apply.
-- Missing configuration.
-- Honeypot spam submissions.
-- Turnstile rejection and provider failures.
-- WhatsApp upload and send failures.
-- Network errors and timeouts.
-- Safe error responses.
-- Correct HTTP status codes.
-- No secret leakage in response bodies or logs.
+Use mocked services for isolated unit tests and a dedicated test database for integration tests. Never run destructive integration tests against production data.
 
-Mock external HTTP requests in automated tests. Tests must not send real WhatsApp messages or use production credentials.
+## 11. Local development
 
-—
-
-## 9. Local Development
-
-Install dependencies:
+From the repository root:
 
 ```bash
 npm install
 ```
 
-Configure local environment variables in `.env.local`, then start the development server:
+Create a local `.env` file using `.env.example` as a reference. Configure only the services required for the routes you intend to test.
+
+Start the application using the script defined in `package.json`, commonly:
 
 ```bash
 npm run dev
 ```
 
-Test the contact endpoint with a sample request:
+Test the health endpoint if it exists:
 
 ```bash
-curl -X POST http://localhost:3000/api/contact \
-  -H “Content-Type: application/json” \
-  -d ‘{
-    “name”: “Example Applicant”,
-    “email”: “applicant@example.com”,
-    “phone”: “9876543210”,
-    “subject”: “Admission enquiry”,
-    “message”: “Please contact me about admissions.”,
-    “consent”: true,
-    “website”: “”,
-    “pageUrl”: “http://localhost:3000/contact.html”
-  }’
+curl -i http://localhost:3000/api/health
 ```
 
-The request must satisfy the currently configured origin and validation rules. Adjust the test URL to match the local configuration.
+Test other endpoints according to their individual README files.
 
-Use mock integrations or test credentials while developing.
+## 12. Deployment checklist
 
-—
+- [ ] All required route handlers exist.
+- [ ] Route filenames follow Next.js App Router conventions.
+- [ ] Environment variables are configured in the deployment platform.
+- [ ] Database migrations have been applied.
+- [ ] Secrets are not committed to source control.
+- [ ] Public endpoints have suitable rate limiting.
+- [ ] Private operations enforce authentication and authorization.
+- [ ] Payment verification and download access controls are implemented where required.
+- [ ] Unit and integration tests pass.
+- [ ] Production build succeeds.
+- [ ] Logs and monitoring are configured.
+- [ ] API documentation matches the deployed implementation.
 
-## 10. Production Deployment Checklist
+## 13. Monitoring and maintenance
 
-Before deployment:
+Monitor API error rates, response times, database availability, failed payment verification, and suspicious request patterns.
 
-- [ ] All required environment variables are configured.
-- [ ] No secrets are committed to Git.
-- [ ] All automated tests pass.
-- [ ] WhatsApp template names and parameters are verified.
-- [ ] The Graph API version is supported.
-- [ ] CORS and origin allowlists are correct.
-- [ ] Request-body limits are enforced before unrestricted buffering.
-- [ ] Distributed rate limiting is configured where needed.
-- [ ] Bot protection is configured if required.
-- [ ] Provider requests have appropriate timeouts.
-- [ ] Personal information is handled according to the privacy policy.
-- [ ] Errors do not reveal internal implementation details.
-- [ ] Monitoring and operational alerts are configured.
-- [ ] Durable storage and retry behavior are implemented if lead loss is unacceptable.
-- [ ] Production smoke tests are completed without exposing real customer information.
+Use structured logs with request IDs where practical. Never log passwords, API secrets, payment credentials, or unnecessary personal information.
 
-—
+Review dependencies and security advisories regularly. Keep route-level README files, tests, schemas, environment templates, and this document synchronized with the actual implementation.
 
-## 11. Troubleshooting
+## 14. Contribution rules
 
-### `500 Internal Server Error`
+When adding an endpoint:
 
-Check the server logs for missing environment variables, PDF generation failures, unexpected exceptions, or upstream provider errors. Do not expose stack traces to public clients.
+1. Create the route in the appropriate directory.
+2. Implement server-side validation and safe error handling.
+3. Add authentication and authorization where required.
+4. Add unit or integration tests.
+5. Document request and response formats.
+6. Update the endpoint inventory in this README.
+7. Update `.env.example` for any new configuration.
+8. Run the repository’s available checks before submitting changes.
 
-### WhatsApp message not received
-
-Verify the access token, phone-number ID, recipient format, approved template, template language, parameter order, and upstream API response.
-
-### `403 Forbidden`
-
-Check origin restrictions, configured allowlists, Turnstile validation, and other endpoint security rules.
-
-### `413 Payload Too Large`
-
-Reduce the request size or review the configured body limit. Enforce limits before buffering the entire request body.
-
-### Tests fail locally
-
-Verify Node.js compatibility, installed dependencies, Vitest configuration, environment stubs, and mocked fetch responses. Ensure test requests match the actual route contract.
-
-—
-
-## 12. API Development Standards
-
-New endpoints should:
-
-1. Use the Next.js App Router route-handler convention.
-2. Declare the intended runtime explicitly when required.
-3. Export only supported HTTP method handlers.
-4. Validate request bodies before business processing.
-5. Keep reusable business logic separate as the API grows.
-6. Use stable error codes and safe public messages.
-7. Add automated tests for both success and failure cases.
-8. Document required environment variables and request schemas.
-9. Avoid hard-coded credentials, secrets, and production URLs.
-10. Include security, privacy, and operational considerations in code review.
-
-—
-
-## 13. Reference Documentation
-
-- Next.js Route Handlers: https://nextjs.org/docs/app/building-your-application/routing/route-handlers
-- Next.js Environment Variables: https://nextjs.org/docs/app/guides/environment-variables
-- Vitest: https://vitest.dev/guide/
-- WhatsApp Cloud API: https://developers.facebook.com/docs/whatsapp/cloud-api/
-- Cloudflare Turnstile: https://developers.cloudflare.com/turnstile/
-
-—
-
-**Maintainer:** MedOrbits Engineering  
-**Directory owner:** `app/api/`  
-**Review requirement:** Update this document whenever API routes, request contracts, environment variables, or security controls change.
+**Maintenance principle:** Documentation describes intended and verified behavior; it must not claim that an endpoint, security control, integration, or test exists until the corresponding implementation has been confirmed.
