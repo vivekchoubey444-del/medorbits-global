@@ -3,9 +3,7 @@
 'use strict';
 
 /**
- * MedOrbits -- Package Lock Repair Utility
- * File: tools/repair-package-lock.cjs
- * Requires: Node.js >= 22 and npm >= 10
+ * MedOrbits package-lock repair utility.
  *
  * Usage:
  *   node tools/repair-package-lock.cjs
@@ -18,104 +16,77 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const VALID_OPTIONS = new Set(['--check', '--local-agent']);
+const args = process.argv.slice(2);
+const allowed = new Set(['--check', '--local-agent']);
 
-function fail(message, code = 1) {
+for (const arg of args) {
+  if (!allowed.has(arg)) {
+    console.error(`Unknown argument: ${arg}`);
+    process.exit(2);
+  }
+}
+
+const checkOnly = args.includes('--check');
+const localAgent = args.includes('--local-agent');
+
+const root = path.resolve(__dirname, '..');
+const directory = localAgent
+  ? path.join(root, 'local-agent')
+  : root;
+
+const manifestPath = path.join(directory, 'package.json');
+const lockPath = path.join(directory, 'package-lock.json');
+
+function fail(message) {
   console.error(`ERROR: ${message}`);
-  process.exitCode = code;
-  throw new Error('MEDORBITS_REPAIR_STOP');
+  process.exit(1);
 }
 
-function parseOptions() {
-  const options = process.argv.slice(2);
-
-  for (const option of options) {
-    if (!VALID_OPTIONS.has(option)) {
-      console.error(
-        'Usage: node tools/repair-package-lock.cjs ' +
-        '[--check] [--local-agent]'
-      );
-      fail(`Unknown option: ${option}`, 2);
-    }
-  }
-
-  return {
-    checkOnly: options.includes('--check'),
-    localAgent: options.includes('--local-agent')
-  };
-}
-
-function readJson(filePath) {
-  let source;
+function readJson(file) {
+  let content;
 
   try {
-    source = fs.readFileSync(filePath, 'utf8');
+    content = fs.readFileSync(file, 'utf8');
   } catch (error) {
-    fail(`Cannot read ${filePath}: ${error.message}`);
+    fail(`Cannot read ${file}: ${error.message}`);
   }
 
   try {
-    return JSON.parse(source);
+    return JSON.parse(content);
   } catch (error) {
-    fail(`Invalid JSON in ${filePath}: ${error.message}`);
+    fail(`Invalid JSON in ${file}: ${error.message}`);
   }
 }
 
-function validateManifest(manifest, filePath) {
-  if (
-    !manifest ||
-    typeof manifest !== 'object' ||
-    Array.isArray(manifest)
-  ) {
-    fail(`${filePath} must contain a JSON object.`);
-  }
-
-  if (
-    typeof manifest.name !== 'string' ||
-    manifest.name.trim() === ''
-  ) {
-    fail(`${filePath} must contain a non-empty "name" string.`);
-  }
-
-  if (
-    manifest.version !== undefined &&
-    typeof manifest.version !== 'string'
-  ) {
-    fail(`${filePath}: "version" must be a string.`);
-  }
+if (!fs.existsSync(manifestPath)) {
+  fail(`package.json not found: ${manifestPath}`);
 }
 
-function validateLock(manifest, lock, lockPath) {
-  if (
-    !lock ||
-    typeof lock !== 'object' ||
-    Array.isArray(lock)
-  ) {
-    fail(`${lockPath} must contain a JSON object.`);
+const manifest = readJson(manifestPath);
+
+if (
+  !manifest ||
+  typeof manifest !== 'object' ||
+  Array.isArray(manifest) ||
+  typeof manifest.name !== 'string' ||
+  !manifest.name.trim()
+) {
+  fail('package.json must contain a non-empty string "name".');
+}
+
+console.log(`Package: ${manifest.name}`);
+console.log(`Directory: ${directory}`);
+
+if (checkOnly) {
+  if (!fs.existsSync(lockPath)) {
+    fail(`package-lock.json not found: ${lockPath}`);
   }
 
-  if (lock.lockfileVersion !== 3) {
-    fail(
-      `${lockPath}: expected lockfileVersion 3; ` +
-      `found ${lock.lockfileVersion}.`
-    );
-  }
-
-  if (!lock.packages || typeof lock.packages !== 'object') {
-    fail(`${lockPath} is missing its "packages" object.`);
-  }
-
-  const rootPackage = lock.packages[''];
-
-  if (!rootPackage || typeof rootPackage !== 'object') {
-    fail(`${lockPath} is missing packages[""] root metadata.`);
-  }
+  const lock = readJson(lockPath);
+  const rootPackage = lock.packages && lock.packages[''];
 
   if (lock.name !== manifest.name) {
-    fail(
-      `Lockfile name "${lock.name}" does not match ` +
-      `package name "${manifest.name}".`
-    );
+    fail('Lockfile name does not match package.json.');
   }
 
   if (
@@ -125,132 +96,102 @@ function validateLock(manifest, lock, lockPath) {
     fail('Lockfile version does not match package.json.');
   }
 
-  if (rootPackage.name !== manifest.name) {
-    fail('Lockfile root package name does not match package.json.');
-  }
-
   if (
-    manifest.version !== undefined &&
-    rootPackage.version !== manifest.version
+    lock.lockfileVersion !== 3 ||
+    !lock.packages ||
+    typeof lock.packages !== 'object' ||
+    !rootPackage
   ) {
-    fail('Lockfile root package version does not match package.json.');
+    fail('Lockfile is missing required npm lockfile v3 metadata.');
   }
 
-  console.log('PASS: package manifest and lockfile metadata match.');
-}
-
-function execute(command, args, cwd) {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    windowsHide: true
-  });
-
-  if (result.error) {
-    fail(`Could not execute ${command}: ${result.error.message}`);
-  }
-
-  if (result.status !== 0) {
-    fail(`${command} exited with status ${result.status ?? 'unknown'}.`);
-  }
-}
-
-function main() {
-  const options = parseOptions();
-  const repositoryRoot = path.resolve(__dirname, '..');
-
-  const packageDirectory = options.localAgent
-    ? path.join(repositoryRoot, 'local-agent')
-    : repositoryRoot;
-
-  const manifestPath = path.join(packageDirectory, 'package.json');
-  const lockPath = path.join(packageDirectory, 'package-lock.json');
-
-  console.log('MedOrbits Package Lock Repair');
-  console.log(`Repository: ${repositoryRoot}`);
-  console.log(`Package directory: ${packageDirectory}`);
-
-  if (!fs.existsSync(manifestPath)) {
-    fail(`Missing package.json: ${manifestPath}`);
-  }
-
-  const manifest = readJson(manifestPath);
-  validateManifest(manifest, manifestPath);
-
-  console.log(`Package name: ${manifest.name}`);
-
-  if (options.checkOnly) {
-    if (!fs.existsSync(lockPath)) {
-      fail(`Missing package-lock.json: ${lockPath}`);
+  for (const key of ['name', 'version']) {
+    if (
+      manifest[key] !== undefined &&
+      rootPackage[key] !== undefined &&
+      manifest[key] !== rootPackage[key]
+    ) {
+      fail(`Lockfile root package ${key} does not match package.json.`);
     }
-
-    const lock = readJson(lockPath);
-    validateLock(manifest, lock, lockPath);
-    return;
   }
 
-  const nodeMajor = Number(process.versions.node.split('.')[0]);
+  console.log('PASS: package.json and package-lock.json are consistent.');
+  process.exit(0);
+}
 
-  if (nodeMajor < 22) {
-    fail(`Node.js >= 22 required; found ${process.versions.node}.`);
-  }
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-  const npmCommand = process.platform === 'win32'
-    ? 'npm.cmd'
-    : 'npm';
+const version = spawnSync(npm, ['--version'], {
+  cwd: directory,
+  encoding: 'utf8',
+  shell: process.platform === 'win32'
+});
 
-  const npmVersion = spawnSync(npmCommand, ['--version'], {
-    cwd: packageDirectory,
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-    windowsHide: true
-  });
-
-  if (npmVersion.error || npmVersion.status !== 0) {
-    fail('npm is unavailable. Install npm >= 10.');
-  }
-
-  const npmVersionText = String(npmVersion.stdout || '').trim();
-  const npmMajor = Number(npmVersionText.split('.')[0]);
-
-  if (!Number.isFinite(npmMajor) || npmMajor < 10) {
-    fail(`npm >= 10 required; found ${npmVersionText || 'unknown'}.`);
-  }
-
-  console.log(`Node.js: ${process.versions.node}`);
-  console.log(`npm: ${npmVersionText}`);
-  console.log('Generating lockfile from package.json...');
-
-  execute(
-    npmCommand,
-    [
-      'install',
-      '--package-lock-only',
-      '--ignore-scripts',
-      '--no-audit',
-      '--no-fund'
-    ],
-    packageDirectory
+if (version.error || version.status !== 0) {
+  fail(
+    `Unable to execute npm: ${
+      version.error ? version.error.message : version.stderr
+    }`
   );
-
-  if (!fs.existsSync(lockPath)) {
-    fail('npm did not create package-lock.json.');
-  }
-
-  const generatedLock = readJson(lockPath);
-  validateLock(manifest, generatedLock, lockPath);
-
-  console.log('SUCCESS: package-lock.json generated and validated.');
-  console.log('Review the changes before committing.');
 }
 
-try {
-  main();
-} catch (error) {
-  if (error.message !== 'MEDORBITS_REPAIR_STOP') {
-    console.error(`Unexpected error: ${error.stack || error.message}`);
-    process.exitCode = 1;
+console.log(`npm version: ${version.stdout.trim()}`);
+console.log('Generating the lockfile from package.json...');
+
+const result = spawnSync(
+  npm,
+  [
+    'install',
+    '--package-lock-only',
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund'
+  ],
+  {
+    cwd: directory,
+    stdio: 'inherit',
+    shell: process.platform === 'win32'
+  }
+);
+
+if (result.error) {
+  fail(`npm execution failed: ${result.error.message}`);
+}
+
+if (result.status !== 0) {
+  fail(`npm exited with code ${result.status ?? 'unknown'}.`);
+}
+
+if (!fs.existsSync(lockPath)) {
+  fail('npm did not create package-lock.json.');
+}
+
+const lock = readJson(lockPath);
+const rootPackage = lock.packages && lock.packages[''];
+
+if (
+  lock.name !== manifest.name ||
+  (
+    manifest.version !== undefined &&
+    lock.version !== manifest.version
+  ) ||
+  lock.lockfileVersion !== 3 ||
+  !lock.packages ||
+  typeof lock.packages !== 'object' ||
+  !rootPackage
+) {
+  fail('Generated lockfile failed validation.');
+}
+
+for (const key of ['name', 'version']) {
+  if (
+    manifest[key] !== undefined &&
+    rootPackage[key] !== undefined &&
+    manifest[key] !== rootPackage[key]
+  ) {
+    fail(`Generated lockfile root package ${key} does not match package.json.`);
   }
 }
+
+console.log('SUCCESS: package-lock.json generated and validated.');
+console.log('Review your Git changes before committing.');
