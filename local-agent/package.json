@@ -1,46 +1,25 @@
 
 {
   "name": "medorbits-local-agent",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Safe local repository inspection, validation, and controlled scaffolding utilities for MedOrbits.",
+  "description": "Local automation, repository validation, security checks, and maintenance utilities for MedOrbits.",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "start:server": "node src/server.js",
-    "dev": "node --watch src/index.js",
-    "check": "npm run lint && npm run test",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "check": "npm run check:json && npm run check:javascript",
+    "check:json": "node scripts/validate-json.js",
+    "check:javascript": "node --check src/index.js",
     "test": "node --test",
-    "test:python": "python -m unittest discover -s src/tests -p 'test_*.py'",
-    "check:python": "python -m compileall -q src tools agent.py",
-    "check:json": "node -e \"const fs=require('node:fs');for(const f of ['package.json','config/spec.json']){if(fs.existsSync(f)){JSON.parse(fs.readFileSync(f,'utf8'));console.log('Valid:',f)}}\"",
-    "validate:repo": "python tools/validate_repository.py .",
-    "audit:repo": "python tools/security_audit.py .",
-    "catalog:repo": "python tools/file_catalog.py .",
-    "agent:status": "python agent.py status",
-    "agent:validate": "python agent.py validate",
-    "agent:inventory": "python agent.py inventory",
-    "clean:python": "python -c \"import pathlib,shutil; [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__') if p.is_dir()]\""
+    "lockfile:generate": "npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
+    "lockfile:validate": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));const l=JSON.parse(fs.readFileSync('package-lock.json','utf8'));if(l.name!==p.name||l.version!==p.version)process.exit(1);console.log('Lockfile metadata validated')\""
   },
   "dependencies": {},
-  "devDependencies": {
-    "@eslint/js": "^9.39.0",
-    "eslint": "^9.39.0"
-  },
-  "overrides": {},
-  "keywords": [
-    "medorbits",
-    "local-agent",
-    "repository-validation",
-    "safe-scaffolding",
-    "security-audit"
-  ]
+  "devDependencies": {}
 }
