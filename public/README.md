@@ -206,7 +206,7 @@ Confirm that:
 - File paths map to the correct deployment root.
 - No unintended directory listings or source files are exposed.
 
-If Express serves these files, review the static middleware configuration in `server.js`, `src/app.js`, or the actual application entry point. Confirm middleware order and route precedence against the deployed application.
+If Express serves these files, review the static middleware configuration in `server.mjs`, `src/app.js`, or the actual application entry point. Confirm middleware order and route precedence against the deployed application.
 
 Do not expose source files, environment files, private uploads, configuration files, or unintended directory listings.
 
