@@ -1,0 +1,175 @@
+File: .github/workflows/tests.yml
+
+name: MedOrbits Tests
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  unit-and-integration-tests:
+    name: Unit and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      # 1. CHECKOUT
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # 2. SET UP NODE.JS
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      # 3. VERIFY REQUIRED PROJECT FILES
+      - name: Verify project structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in package.json package-lock.json server.js; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required file is missing: $file"
+              exit 1
+            fi
+          done
+          for directory in scripts tests src; do
+            if [[ ! -d "$directory" ]]; then
+              echo "::warning::Directory not found: $directory"
+            fi
+          done
+          node --version
+          npm --version
+      # 4. VALIDATE PACKAGE METADATA
+      - name: Validate package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+          const lock = JSON.parse(
+            fs.readFileSync('package-lock.json', 'utf8')
+          );
+          if (!pkg.name) {
+            throw new Error('package.json must define a package name.');
+          }
+          if (!lock.packages || !lock.packages['']) {
+            throw new Error(
+              'package-lock.json is missing its root package entry.'
+            );
+          }
+          const root = lock.packages[''];
+          if (pkg.name !== root.name) {
+            throw new Error(
+              'package.json and package-lock.json names do not match.'
+            );
+          }
+          if (
+            pkg.version &&
+            root.version &&
+            pkg.version !== root.version
+          ) {
+            throw new Error(
+              'package.json and package-lock.json versions do not match.'
+            );
+          }
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error(
+              `Unsupported package-lock.json lockfileVersion: ${lock.lockfileVersion}`
+            );
+          }
+          const requiredScripts = [
+            'start',
+            'test',
+            'check:json',
+            'check:data',
+            'lint',
+            'format:check',
+            'test:ci'
+          ];
+          const missing = requiredScripts.filter(
+            (name) => typeof pkg.scripts?.[name] !== 'string'
+          );
+          if (missing.length > 0) {
+            throw new Error(
+              `Missing npm scripts: ${missing.join(', ')}`
+            );
+          }
+          console.log(
+            `Validated ${pkg.name}@${pkg.version ?? 'unversioned'}`
+          );
+          NODE
+      # 5. INSTALL LOCKED DEPENDENCIES
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        env:
+          CI: "true"
+      # 6. VALIDATE JSON
+      - name: Validate JSON files
+        run: npm run check:json
+      # 7. VALIDATE APPLICATION DATA
+      - name: Validate application data
+        run: npm run check:data
+      # 8. CHECK JAVASCRIPT SYNTAX
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check server.js
+          for directory in src scripts tests; do
+            if [[ ! -d "$directory" ]]; then
+              continue
+            fi
+            while IFS= read -r -d '' file; do
+              echo "Checking syntax: $file"
+              node --check "$file"
+            done < <(
+              find "$directory" \
+                -type f \
+                \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
+                -not -path '*/node_modules/*' \
+                -print0
+            )
+          done
+      # 9. CHECK FORMATTING
+      - name: Check code formatting
+        run: npm run format:check
+      # 10. RUN ESLINT
+      - name: Run ESLint
+        run: npm run lint
+      # 11. RUN UNIT AND INTEGRATION TESTS
+      - name: Run unit and integration tests
+        env:
+          CI: "true"
+          NODE_ENV: test
+        run: npm run test:ci
+      # 12. UPLOAD COVERAGE AND TEST REPORTS
+      - name: Upload test coverage and results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: medorbits-test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            coverage/
+            test-results/
+            junit.xml
+          if-no-files-found: ignore
+          retention-days: 14
+          compression-level: 6

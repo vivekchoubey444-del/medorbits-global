@@ -1,0 +1,217 @@
+File: .github/workflows/lockfile-override.yml
+
+name: MedOrbits Lockfile Override
+on:
+  workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: "Commit and push a validated package-lock.json update"
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - package.json
+      - .github/workflows/lockfile-override.yml
+permissions:
+  contents: read
+concurrency:
+  group: medorbits-lockfile-override-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  override:
+    name: Generate and validate npm lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      lockfile_changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify required files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f package.json ]]; then
+            echo "::error::package.json was not found."
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require("node:fs");
+          let pkg;
+          try {
+            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          } catch (error) {
+            console.error(`::error::Invalid package.json: ${error.message}`);
+            process.exit(1);
+          }
+          if (
+            typeof pkg.name !== "string" ||
+            !pkg.name.trim() ||
+            typeof pkg.version !== "string" ||
+            !pkg.version.trim()
+          ) {
+            console.error("::error::package.json must declare name and version.");
+            process.exit(1);
+          }
+          console.log(`Validated package: ${pkg.name}@${pkg.version}`);
+          NODE
+      - name: Generate lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund
+      - name: Validate package-lock.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -s package-lock.json ]]; then
+            echo "::error::package-lock.json is missing or empty."
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("Invalid or missing lockfileVersion.");
+          }
+          if (lock.lockfileVersion < 2 || lock.lockfileVersion > 3) {
+            throw new Error(
+              `Unexpected lockfileVersion: ${lock.lockfileVersion}`
+            );
+          }
+          if (lock.name && lock.name !== pkg.name) {
+            throw new Error("Package name mismatch.");
+          }
+          if (lock.version && lock.version !== pkg.version) {
+            throw new Error("Package version mismatch.");
+          }
+          if (!lock.packages || typeof lock.packages !== "object") {
+            throw new Error("Lockfile is missing the packages object.");
+          }
+          const root = lock.packages[""];
+          if (!root) {
+            throw new Error("Lockfile is missing root package metadata.");
+          }
+          if (
+            root.name && root.name !== pkg.name ||
+            root.version && root.version !== pkg.version
+          ) {
+            throw new Error("Root package metadata does not match package.json.");
+          }
+          console.log("package-lock.json structure validated.");
+          console.log(`Lockfile version: ${lock.lockfileVersion}`);
+          NODE
+      - name: Check reproducible installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          echo "The package manifest and lockfile are compatible."
+      - name: Detect lockfile changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No package-lock.json changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "A package-lock.json update is available."
+            git diff --stat -- package-lock.json
+          fi
+      - name: Upload updated lockfile for review
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: medorbits-updated-package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+  commit:
+    name: Commit approved lockfile update
+    needs: override
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' &&
+        inputs.commit_changes == true &&
+        needs.override.outputs.lockfile_changed == 'true'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Regenerate and validate lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile update
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$TARGET_BRANCH" != "main" && "$TARGET_BRANCH" != "master" ]]; then
+            echo "::error::Lockfile commits are allowed only on main or master."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "No lockfile changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: repair npm lockfile"
+          git push origin "HEAD:${TARGET_BRANCH}"
+
+How to use it
+
+1. Save the file at .github/workflows/lockfile-override.yml.
+2. Push a package.json change to main or master, or run the workflow manually.
+3. Review the generated medorbits-updated-package-lock artifact.
+4. For a manual run, set Commit and push a validated package-lock.json update to true only when you want the workflow to push the regenerated lockfile.
+
+Important safeguards
+
+* Automatic runs validate and upload the updated lockfile but do not push commits.
+* Manual commit mode requires explicit opt-in.
+* The commit job regenerates the lockfile from the checked-out branch before committing, so it does not blindly commit an artifact generated by a different run.
+* npm ci verifies manifest/lockfile compatibility without running dependency lifecycle scripts.
+* Protect main and master with branch rules. If direct pushes are prohibited, use a pull-request-based update workflow instead.
+
+Note: The commit job uses a write-enabled GitHub token. Repository rules or organization policies may still reject the push; that is intentional when branch protection requires review.

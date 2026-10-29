@@ -1,0 +1,244 @@
+File: .github/workflows/security.yml
+
+name: MedOrbits Security
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  schedule:
+    # Every Monday at 04:00 UTC.
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: medorbits-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  # =========================================================
+  # 1. VALIDATE JSON CONFIGURATION
+  # =========================================================
+  validate-json:
+    name: Validate JSON configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Validate tracked JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          failures=0
+          while IFS= read -r -d '' file; do
+            echo "Validating: $file"
+            if node -e '
+              const fs = require("node:fs");
+              const file = process.argv[1];
+              try {
+                JSON.parse(fs.readFileSync(file, "utf8"));
+              } catch (error) {
+                console.error(`${file}: ${error.message}`);
+                process.exit(1);
+              }
+            ' "$file"; then
+              count=$((count + 1))
+            else
+              failures=$((failures + 1))
+            fi
+          done < <(git ls-files -z -- '*.json')
+          echo "Valid JSON files: $count"
+          if [[ "$failures" -gt 0 ]]; then
+            echo "::error::$failures JSON file(s) failed validation."
+            exit 1
+          fi
+          echo "JSON validation completed successfully."
+  # =========================================================
+  # 2. AUDIT NPM DEPENDENCIES
+  # =========================================================
+  dependency-audit:
+    name: Audit npm dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Verify npm manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in package.json package-lock.json; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Required file is missing or empty: $file"
+              exit 1
+            fi
+          done
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          if (!Number.isInteger(lock.lockfileVersion)) {
+            throw new Error("package-lock.json has an invalid lockfileVersion.");
+          }
+          if (
+            (lock.name && lock.name !== pkg.name) ||
+            (lock.version && lock.version !== pkg.version)
+          ) {
+            throw new Error("package.json and package-lock.json metadata differ.");
+          }
+          console.log(`Validated npm metadata for ${pkg.name || "unnamed package"}.`);
+          NODE
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+        env:
+          CI: "true"
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
+  # =========================================================
+  # 3. CODEQL STATIC ANALYSIS
+  # =========================================================
+  codeql:
+    name: CodeQL JavaScript and TypeScript analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+      - name: Analyze code
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"
+  # =========================================================
+  # 4. GITLEAKS SECRET SCANNING
+  # =========================================================
+  secret-scan:
+    name: Gitleaks secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan for exposed secrets
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # =========================================================
+  # 5. SECURITY GATE
+  # =========================================================
+  security-gate:
+    name: Security checks summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - validate-json
+      - dependency-audit
+      - codeql
+      - secret-scan
+    if: always()
+    permissions:
+      contents: read
+    steps:
+      - name: Verify all security jobs passed
+        shell: bash
+        env:
+          JSON_RESULT: ${{ needs.validate-json.result }}
+          AUDIT_RESULT: ${{ needs.dependency-audit.result }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+          SECRETS_RESULT: ${{ needs.secret-scan.result }}
+        run: |
+          set -euo pipefail
+          failed=0
+          for result in \
+            "JSON validation:$JSON_RESULT" \
+            "Dependency audit:$AUDIT_RESULT" \
+            "CodeQL analysis:$CODEQL_RESULT" \
+            "Secret scanning:$SECRETS_RESULT"
+          do
+            name="${result%%:*}"
+            status="${result#*:}"
+            echo "$name: $status"
+            if [[ "$status" != "success" ]]; then
+              echo "::error::$name did not succeed."
+              failed=1
+            fi
+          done
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::MedOrbits security gate failed."
+            exit 1
+          fi
+          echo "All MedOrbits security checks passed."
+
+Final configuration checklist
+
+{@body const tasks = [
+"Save the workflow as .github/workflows/security.yml.",
+"Confirm main, master, and develop are the intended active branches.",
+"Enable GitHub code scanning and the dependency graph where available.",
+"Confirm package.json and package-lock.json are committed and synchronized.",
+"Verify that the Gitleaks action’s licensing requirements are satisfied.",
+"Run the workflow manually and review every job’s output.",
+"Require the Security checks summary status check in branch protection.",
+"Keep the existing CI, dependency-review, and secret-scan workflows only if their separate coverage is intentional."
+]}
+{@body const [checked, setChecked] = DIL.useState([])}
+Security rollout
+{checked.length}/{tasks.length} complete
+<box background="surface-inverted" height="5px" radius="full" width={${checked.length / tasks.length * 100}%} />
+{#each tasks as task, i}
+<checkbox key={task} checked={checked.includes(i)} onChange={value => setChecked(old => value ? […old, i] : old.filter(n => n !== i))}>{task}
+{/each}
+Important operational notes
+
+* CodeQL: The workflow uses CodeQL action v4 with security-extended queries. Confirm your repository and plan support CodeQL code scanning.
+* Dependency auditing: The production audit and full audit are deliberately separate. Both use a high-severity threshold; development dependency findings are included in the full audit.
+* Install scripts: npm ci --ignore-scripts reduces execution of third-party lifecycle scripts during this audit job. If a dependency requires lifecycle scripts for correct installation, assess that requirement before changing the setting.
+* Secret scanning: Full-history checkout improves historical coverage, but Gitleaks cannot revoke a credential. Revoke or rotate any confirmed exposed secret immediately.
+* Duplicate workflows: You already have separate CI, CodeQL, and secret-scanning workflows. Running them here as well may increase runtime and duplicate alerts. Decide whether this file should be the consolidated security workflow or whether you prefer to retain separate workflows.
+* Action pinning: Major-version references such as @v7 and @v4 are convenient to maintain, but they are not immutable. For a stricter supply-chain policy, pin actions to reviewed full commit SHAs.
+
+Recommended merge protection: Configure Security checks summary as a required status check. The summary job fails if any required security job fails or is skipped, so it provides a single security gate for pull requests.

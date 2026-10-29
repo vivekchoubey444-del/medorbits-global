@@ -1,0 +1,139 @@
+File: .github/workflows/publish-package.yml
+
+name: MedOrbits Node.js Package
+on:
+  release:
+    types:
+      - published
+permissions:
+  contents: read
+concurrency:
+  group: medorbits-npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    name: Validate and test package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Verify release metadata
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          test -f package.json || {
+            echo "::error::package.json is missing."
+            exit 1
+          }
+          test -f package-lock.json || {
+            echo "::error::package-lock.json is missing."
+            exit 1
+          }
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const tag = process.env.RELEASE_TAG;
+          if (!pkg.name || !pkg.version) {
+            throw new Error("package.json must declare name and version.");
+          }
+          if (tag !== `v${pkg.version}` && tag !== pkg.version) {
+            throw new Error(
+              `Release tag "${tag}" does not match package version "${pkg.version}".`
+            );
+          }
+          if (pkg.private === true) {
+            throw new Error("Cannot publish a package marked private.");
+          }
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
+          console.log(`Release tag: ${tag}`);
+          NODE
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+            npm test
+          else
+            echo "::error::No test script is configured. Configure tests before publishing."
+            exit 1
+          fi
+      - name: Validate package contents
+        run: npm pack --dry-run
+  publish:
+    name: Publish to npm registry
+    needs:
+      - validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: npm-production
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout verified release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Set up Node.js and npm registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org/"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify package version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const tag = process.env.RELEASE_TAG;
+          if (tag !== `v${pkg.version}` && tag !== pkg.version) {
+            throw new Error("Release tag and package version do not match.");
+          }
+          if (pkg.private === true) {
+            throw new Error("Private packages cannot be published.");
+          }
+          console.log(`Ready to publish ${pkg.name}@${pkg.version}`);
+          NODE
+      - name: Publish package
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+Required setup
+
+1. Add an NPM_TOKEN repository or environment secret containing an npm publishing token with the minimum required permissions.
+2. Create the npm-production environment under Settings → Environments. Add required reviewers if publication needs approval.
+3. Confirm the name, version, and private fields in package.json.
+4. Ensure the release tag matches the package version, for example v1.2.0 for version 1.2.0.
+5. Configure a working npm test script. This workflow intentionally fails when no test script exists.
+
+Important notes
+
+* This publishes to npmjs.com, not GitHub Packages.
+* --access public is appropriate for public npm packages, particularly scoped packages. Remove it or change the publishing configuration if the package is intended to be private.
+* npm publish will fail if the same package version is already published. This is safer than silently attempting to overwrite it.
+* GitHub Actions major-version references such as actions/checkout@v4 should be reviewed and updated periodically; pin full commit SHAs if your supply-chain policy requires immutable action references.
+* The workflow is designed for publishing a package, not deploying the MedOrbits website itself.
