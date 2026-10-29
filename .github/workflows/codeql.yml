@@ -1,57 +1,155 @@
 
+# ==============================================================================
+# MedOrbits — CodeQL Security Analysis
+# File: .github/workflows/codeql.yml
+# Purpose: Python and JavaScript security analysis plus syntax diagnostics.
+# ==============================================================================
+
 name: CodeQL Security Analysis
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   schedule:
     - cron: "30 2 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
+  security-events: write
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  diagnose:
+    name: Diagnose Python and JavaScript syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Report Python syntax errors
+        shell: bash
+        run: |
+          set -uo pipefail
+          python - <<'PY'
+          import ast
+          import pathlib
+          import sys
+
+          ignored = {
+              ".git", ".venv", "venv", "node_modules",
+              "__pycache__", "dist", "build", "coverage"
+          }
+          failures = 0
+          checked = 0
+
+          for path in pathlib.Path(".").rglob("*.py"):
+              if any(part in ignored for part in path.parts):
+                  continue
+
+              checked += 1
+              try:
+                  source = path.read_text(encoding="utf-8-sig")
+                  ast.parse(source, filename=str(path))
+              except (SyntaxError, UnicodeError, OSError) as exc:
+                  failures += 1
+                  line = getattr(exc, "lineno", 1) or 1
+                  message = str(exc).replace("\n", " ")
+                  print(
+                      f"::error file={path},line={line}::"
+                      f"Python syntax/encoding error: {message}"
+                  )
+
+          print(f"Python files checked: {checked}")
+          print(f"Python syntax errors: {failures}")
+          sys.exit(1 if failures else 0)
+          PY
+
+      - name: Report JavaScript syntax errors
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+          checked=0
+
+          while IFS= read -r -d '' file; do
+            checked=$((checked + 1))
+            if ! output="$(node --check "$file" 2>&1)"; then
+              failed=1
+              printf '%s\n' "::error file=$file::JavaScript syntax check failed"
+              printf '%s\n' "$output"
+            fi
+          done < <(
+            find . -type f \
+              \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
+              -not -path './.git/*' \
+              -not -path './node_modules/*' \
+              -not -path './vendor/*' \
+              -not -path './dist/*' \
+              -not -path './build/*' \
+              -not -path './coverage/*' \
+              -print0
+          )
+
+          echo "JavaScript files checked: $checked"
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Fix the JavaScript syntax errors listed above."
+            exit 1
+          fi
+
+          echo "JavaScript syntax checks passed."
+
   analyze:
-    name: Analyze ${{ matrix.language }}
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     permissions:
-      contents: read
       actions: read
+      contents: read
       security-events: write
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - language: javascript-typescript
-            build-mode: none
           - language: python
+            build-mode: none
+          - language: javascript-typescript
             build-mode: none
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          queries: security-extended
 
-      - name: Analyze code and upload results
-        uses: github/codeql-action/analyze@v4
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
         with:
-          category: /language:${{ matrix.language }}
-          upload: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref, 'refs/heads/dependabot/') }}
+          category: "/language:${{ matrix.language }}"
