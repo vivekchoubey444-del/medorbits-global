@@ -19,7 +19,7 @@ concurrency:
 jobs:
   validate-json:
     name: Validate tracked JSON files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -31,8 +31,19 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Check JavaScript syntax
-        run: node --check tools/compatible-share.js
+      - name: Verify project files
+        run: |
+          test -f package.json
+          test -f tools/compatible-share.js
+          test -f scripts/check-json.mjs
 
-      - name: Validate tracked JSON files
+      - name: Validate JavaScript syntax
+        run: |
+          node --check tools/compatible-share.js
+          node --check scripts/check-json.mjs
+
+      - name: Validate tracked JSON syntax
         run: node tools/compatible-share.js
+
+      - name: Validate project JSON configuration
+        run: npm run check:json

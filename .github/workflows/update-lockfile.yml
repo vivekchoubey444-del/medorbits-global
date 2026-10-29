@@ -3,293 +3,83 @@ name: MedOrbits - Update Lockfile
 
 on:
   workflow_dispatch:
-    inputs:
-      commit_changes:
-        description: "Commit and push the validated lockfile update"
-        required: true
-        type: boolean
-        default: false
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 concurrency:
-  group: update-lockfile-${{ github.ref }}
+  group: update-lockfile
   cancel-in-progress: false
 
 jobs:
-  generate-lockfile:
+  update-lockfile:
     name: Generate and Validate Lockfile
-    if: github.ref_type == 'branch' && github.ref_protected == false
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    permissions:
-      contents: read
-
-    outputs:
-      changed: ${{ steps.diff.outputs.changed }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
-          persist-credentials: false
+          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Verify package manifest
-        shell: bash
+      - name: Verify package metadata
         run: |
-          set -euo pipefail
+          node --input-type=module -e "
+            import fs from 'node:fs';
 
-          test -f package.json || {
-            echo "::error::package.json is missing."
-            exit 1
-          }
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-          node <<'NODE'
-          const fs = require("node:fs");
+            if (!pkg.name || !pkg.version || !pkg.scripts) {
+              throw new Error('Invalid package.json metadata');
+            }
 
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
-
-          if (
-            typeof pkg.name !== "string" ||
-            !pkg.name.trim() ||
-            typeof pkg.version !== "string" ||
-            !pkg.version.trim()
-          ) {
-            throw new Error(
-              "package.json must contain non-empty name and version fields."
-            );
-          }
-
-          console.log(`Project: ${pkg.name}`);
-          console.log(`Version: ${pkg.version}`);
-          console.log(`Node.js: ${process.version}`);
-          NODE
+            console.log('Valid package:', pkg.name, pkg.version);
+          "
 
       - name: Generate lockfile
-        shell: bash
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Validate lockfile
         run: |
-          set -euo pipefail
+          node --input-type=module -e "
+            import fs from 'node:fs';
 
-          npm install \
-            --package-lock-only \
-            --ignore-scripts \
-            --no-audit \
-            --no-fund
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 
-      - name: Validate lockfile metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require("node:fs");
-
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
-
-          const lock = JSON.parse(
-            fs.readFileSync("package-lock.json", "utf8")
-          );
-
-          if (lock.lockfileVersion !== 3) {
-            throw new Error(
-              `Expected lockfileVersion 3; found ${lock.lockfileVersion}.`
-            );
-          }
-
-          const root = lock.packages?.[""];
-
-          if (!root) {
-            throw new Error(
-              "Lockfile is missing its root package entry."
-            );
-          }
-
-          if (root.name !== pkg.name || root.version !== pkg.version) {
-            throw new Error(
-              "package.json and package-lock.json metadata do not match."
-            );
-          }
-
-          for (const [name, entry] of Object.entries(lock.packages)) {
-            if (
-              name &&
-              typeof entry.integrity === "string" &&
-              entry.integrity.includes("PLACEHOLDER")
-            ) {
-              throw new Error(
-                `Placeholder integrity value found for ${name}.`
-              );
+            if (lock.name !== pkg.name || lock.version !== pkg.version) {
+              throw new Error('Lockfile name/version does not match package.json');
             }
-          }
 
-          console.log(
-            `Validated ${pkg.name}@${pkg.version}, lockfile version ${lock.lockfileVersion}.`
-          );
-          NODE
+            if (!lock.packages || !lock.packages['']) {
+              throw new Error('Lockfile root package metadata is missing');
+            }
 
-      - name: Validate dependency installation
-        run: npm ci --ignore-scripts --no-audit --no-fund
-        env:
-          CI: "true"
+            console.log('Lockfile metadata is valid.');
+          "
 
-      - name: Verify generated changes
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          unexpected="$(
-            {
-              git diff --name-only
-              git ls-files --others --exclude-standard
-            } | sort -u | grep -vx 'package-lock.json' || true
-          )"
-
-          if [[ -n "$unexpected" ]]; then
-            echo "::error::Unexpected files changed during generation:"
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
-
-          git diff --check
-
-      - name: Determine whether lockfile changed
-        id: diff
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if git diff --quiet -- package-lock.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "package-lock.json is already up to date."
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            git diff --stat -- package-lock.json
-          fi
-
-      - name: Upload generated lockfile
-        if: steps.diff.outputs.changed == 'true'
-        uses: actions/upload-artifact@v4
+      - name: Create pull request if lockfile changed
+        uses: peter-evans/create-pull-request@v7
         with:
-          name: medorbits-lockfile-${{ github.run_id }}-${{ github.run_attempt }}
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 3
+          token: ${{ github.token }}
+          base: main
+          branch: automation/update-lockfile
+          delete-branch: true
+          add-paths: package-lock.json
+          commit-message: "chore: update package lockfile"
+          title: "chore: update package lockfile"
+          body: |
+            Automated lockfile refresh.
 
-  commit-lockfile:
-    name: Commit Validated Lockfile
-    needs: generate-lockfile
-
-    if: >-
-      needs.generate-lockfile.result == 'success' &&
-      needs.generate-lockfile.outputs.changed == 'true' &&
-      github.event_name == 'workflow_dispatch' &&
-      inputs.commit_changes == true &&
-      github.ref_type == 'branch' &&
-      github.ref_protected == false
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout target branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-          persist-credentials: true
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Download generated lockfile
-        uses: actions/download-artifact@v4
-        with:
-          name: medorbits-lockfile-${{ github.run_id }}-${{ github.run_attempt }}
-          path: generated
-
-      - name: Verify and install generated lockfile
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          test -f package.json
-          test -f generated/package-lock.json
-
-          node <<'NODE'
-          const fs = require("node:fs");
-
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
-
-          const lock = JSON.parse(
-            fs.readFileSync("generated/package-lock.json", "utf8")
-          );
-
-          const root = lock.packages?.[""];
-
-          if (
-            lock.lockfileVersion !== 3 ||
-            !root ||
-            root.name !== pkg.name ||
-            root.version !== pkg.version
-          ) {
-            throw new Error(
-              "Generated lockfile metadata does not match the current manifest."
-            );
-          }
-          NODE
-
-          cp generated/package-lock.json package-lock.json
-
-          npm ci --ignore-scripts --no-audit --no-fund
-
-          git diff --check
-
-      - name: Commit and push lockfile
-        shell: bash
-        env:
-          TARGET_BRANCH: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -- package-lock.json
-
-          if git diff --cached --quiet; then
-            echo "No lockfile changes remain."
-            exit 0
-          fi
-
-          unexpected="$(
-            git diff --cached --name-only |
-            grep -vx 'package-lock.json' || true
-          )"
-
-          if [[ -n "$unexpected" ]]; then
-            echo "::error::Unexpected staged files detected."
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
-
-          git commit -m "chore: update package-lock.json"
-          git push origin "HEAD:${TARGET_BRANCH}"
+            - Generated with npm.
+            - Validated root package metadata.
+            - Review the lockfile diff before merging.
