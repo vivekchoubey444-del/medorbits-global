@@ -1,0 +1,204 @@
+
+name: MedOrbits Repository Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate repository files
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate JSON, JSONC-free JSON files
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+          errors = []
+
+          for path in Path(".").rglob("*.json"):
+              if any(part in ignored for part in path.parts):
+                  continue
+              try:
+                  with path.open(encoding="utf-8") as file:
+                      json.load(file)
+              except Exception as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+
+          print("JSON validation passed.")
+          PY
+
+      - name: Install validation dependencies
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Validate YAML
+        shell: bash
+        run: |
+          python - <<'PY'
+          import sys
+          import yaml
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+          errors = []
+
+          for pattern in ("*.yml", "*.yaml"):
+              for path in Path(".").rglob(pattern):
+                  if any(part in ignored for part in path.parts):
+                      continue
+                  try:
+                      with path.open(encoding="utf-8") as file:
+                          list(yaml.safe_load_all(file))
+                  except Exception as exc:
+                      errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+
+          print("YAML syntax validation passed.")
+          PY
+
+      - name: Validate TOML
+        shell: bash
+        run: |
+          python - <<'PY'
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+          errors = []
+
+          for path in Path(".").rglob("*.toml"):
+              if any(part in ignored for part in path.parts):
+                  continue
+              try:
+                  with path.open("rb") as file:
+                      tomllib.load(file)
+              except Exception as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+
+          print("TOML syntax validation passed.")
+          PY
+
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ast
+          import sys
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+          errors = []
+
+          for path in Path(".").rglob("*.py"):
+              if any(part in ignored for part in path.parts):
+                  continue
+              try:
+                  ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+              except Exception as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+
+          print("Python syntax validation passed.")
+          PY
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          node --version
+          python - <<'PY' > /tmp/javascript-files.txt
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+
+          for path in Path(".").rglob("*.js"):
+              if not any(part in ignored for part in path.parts):
+                  print(path.as_posix())
+          PY
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            echo "Checking $file"
+            node --check "$file"
+          done < /tmp/javascript-files.txt
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          python - <<'PY' > /tmp/shell-files.txt
+          from pathlib import Path
+
+          ignored = {
+              ".git", "node_modules", ".venv", "venv",
+              "dist", "build", ".next", "coverage"
+          }
+
+          for path in Path(".").rglob("*.sh"):
+              if not any(part in ignored for part in path.parts):
+                  print(path.as_posix())
+          PY
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            echo "Checking $file"
+            bash -n "$file"
+          done < /tmp/shell-files.txt
+
+      - name: Validation summary
+        if: always()
+        run: echo "Repository validation job finished with status ${{ job.status }}."
