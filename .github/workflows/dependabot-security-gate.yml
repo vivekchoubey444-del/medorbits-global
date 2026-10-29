@@ -2,14 +2,14 @@
 # ==============================================================================
 # MedOrbits -- Dependabot Security Gate
 # File: .github/workflows/dependabot-security-gate.yml
-# Release: 2.1.1
+# Release: 2.1.2
 #
 # Purpose:
-#   Validate Dependabot pull request metadata and summarize dependency changes.
+#   Verify Dependabot pull-request metadata and summarize changed files.
 #
 # Security:
 #   - Read-only GitHub API access.
-#   - Never checks out or executes pull request code.
+#   - Never checks out or executes pull-request code.
 #   - Never approves, merges, comments on, or modifies pull requests.
 #   - Accepts only Dependabot-authored, open PRs targeting main or develop.
 # ==============================================================================
@@ -166,9 +166,11 @@ jobs:
 
           response="$RUNNER_TEMP/dependabot-changed-files.json"
 
-          gh api --paginate \
+          # --paginate retrieves all available pages.
+          # --slurp combines page responses into a JSON array.
+          gh api --paginate --slurp \
             "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
-            --slurp > "$response"
+            > "$response"
 
           python - "$response" >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
@@ -184,6 +186,7 @@ jobs:
               "yarn.lock",
               "pnpm-lock.yaml",
               "requirements.txt",
+              "requirements-dev.txt",
               "pyproject.toml",
               "poetry.lock",
               "uv.lock",
@@ -202,24 +205,25 @@ jobs:
           try:
               pages = json.loads(source.read_text(encoding="utf-8"))
           except (OSError, json.JSONDecodeError) as exc:
-              raise SystemExit(f"Could not parse GitHub file metadata: {exc}")
+              raise SystemExit(
+                  f"Could not parse GitHub file metadata: {exc}"
+              )
 
           if not isinstance(pages, list):
               raise SystemExit("Unexpected GitHub API response.")
 
           records = []
           for page in pages:
-              if isinstance(page, list):
-                  records.extend(page)
-              else:
+              if not isinstance(page, list):
                   raise SystemExit("Unexpected changed-file page.")
+              records.extend(page)
 
           if not records:
               raise SystemExit("No changed-file metadata was returned.")
 
-          dependency_count = 0
           additions = 0
           deletions = 0
+          dependency_count = 0
 
           print("### Changed Files")
           print()
@@ -235,10 +239,20 @@ jobs:
                   raise SystemExit("Changed-file record has no filename.")
 
               status = str(record.get("status", "unknown"))
-              added = int(record.get("additions", 0))
-              removed = int(record.get("deletions", 0))
-              basename = path.rsplit("/", 1)[-1].lower()
+              added = record.get("additions", 0)
+              removed = record.get("deletions", 0)
 
+              if (
+                  not isinstance(added, int)
+                  or isinstance(added, bool)
+                  or not isinstance(removed, int)
+                  or isinstance(removed, bool)
+                  or added < 0
+                  or removed < 0
+              ):
+                  raise SystemExit(f"Invalid line counts for {path}")
+
+              basename = path.rsplit("/", 1)[-1].lower()
               category = (
                   "Dependency"
                   if basename in dependency_names
@@ -251,7 +265,14 @@ jobs:
               additions += added
               deletions += removed
 
-              safe_path = path.replace("|", "\\|").replace("\n", " ")
+              # Escape Markdown table separators and line breaks.
+              safe_path = (
+                  path.replace("\\", "\\\\")
+                  .replace("|", "\\|")
+                  .replace("\r", " ")
+                  .replace("\n", " ")
+              )
+
               print(
                   f"| {category} | `{safe_path}` | {status} "
                   f"| {added} | {removed} |"
@@ -265,8 +286,11 @@ jobs:
           print(f"- Lines added: {additions}")
           print(f"- Lines deleted: {deletions}")
           print()
-          print("> File classification is informational. It does not prove that")
-          print("> dependencies are vulnerability-free or that changes are safe.")
+          print(
+              "> File classification is informational. It does not prove "
+              "that dependencies are vulnerability-free or that changes "
+              "are safe."
+          )
           PY
 
       - name: Publish security gate result

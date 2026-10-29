@@ -1,26 +1,25 @@
 
+# ==============================================================================
 # MedOrbits -- Dependabot Review
-# Release: 2.1.1
-# Read-only review; never approves, merges, comments, or modifies the repository.
+# File: .github/workflows/dependabot-review.yml
+# Release: 2.1.2
+#
+# Read-only metadata review.
+# Never checks out or executes pull-request code.
+# Never approves, merges, comments on, or modifies pull requests.
+# ==============================================================================
 
 name: Dependabot Review
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-      - edited
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
 
   workflow_dispatch:
     inputs:
       pull_request_number:
-        description: "Open Dependabot pull request number to review"
+        description: "Open Dependabot pull request number"
         required: true
         type: number
 
@@ -46,6 +45,8 @@ jobs:
       pr_number: ${{ steps.context.outputs.pr_number }}
       base_branch: ${{ steps.metadata.outputs.base_branch }}
       draft: ${{ steps.metadata.outputs.draft }}
+      file_count: ${{ steps.files.outputs.file_count }}
+      dependency_count: ${{ steps.files.outputs.dependency_count }}
 
     steps:
       - name: Resolve pull request number
@@ -54,8 +55,8 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
           EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
         run: |
           set -Eeuo pipefail
 
@@ -89,7 +90,6 @@ jobs:
           set -Eeuo pipefail
 
           response="$RUNNER_TEMP/dependabot-pr.json"
-
           gh api "repos/$REPOSITORY/pulls/$PR_NUMBER" > "$response"
 
           author="$(jq -r '.user.login // ""' "$response")"
@@ -142,8 +142,8 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Inspect changed files
-        id: changed_files
+      - name: Retrieve changed-file metadata
+        id: retrieve
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -152,104 +152,151 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          output="$RUNNER_TEMP/changed-files.jsonl"
+          response="$RUNNER_TEMP/dependabot-changed-files.json"
 
-          gh api --paginate \
+          gh api --paginate --slurp \
             "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
-            --jq '.[] | {
-              filename: .filename,
-              status: .status,
-              additions: .additions,
-              deletions: .deletions,
-              changes: .changes
-            } | @json' > "$output"
+            > "$response"
 
-          if [[ ! -s "$output" ]]; then
-            echo "::error::GitHub returned no changed-file metadata."
+          if [[ ! -s "$response" ]]; then
+            echo "::error::GitHub returned an empty changed-file response."
             exit 1
           fi
 
-          python - "$output" <<'PY'
+          echo "response=$response" >> "$GITHUB_OUTPUT"
+
+      - name: Validate and summarize changed files
+        id: files
+        shell: bash
+        env:
+          RESPONSE_FILE: ${{ steps.retrieve.outputs.response }}
+          GITHUB_STEP_SUMMARY: ${{ github.step_summary }}
+          GITHUB_OUTPUT: ${{ github.output }}
+        run: |
+          set -Eeuo pipefail
+
+          python - <<'PY'
           import json
           import os
           import pathlib
           import sys
 
-          filename = pathlib.Path(sys.argv[1])
+          source = pathlib.Path(os.environ["RESPONSE_FILE"])
+
           dependency_names = {
               "package.json", "package-lock.json", "npm-shrinkwrap.json",
               "yarn.lock", "pnpm-lock.yaml", "requirements.txt",
-              "pyproject.toml", "poetry.lock", "uv.lock",
-              "pipfile", "pipfile.lock", "cargo.toml", "cargo.lock",
-              "go.mod", "go.sum", "gemfile", "gemfile.lock",
-              "composer.json", "composer.lock",
+              "requirements-dev.txt", "pyproject.toml", "poetry.lock",
+              "uv.lock", "pipfile", "pipfile.lock", "cargo.toml",
+              "cargo.lock", "go.mod", "go.sum", "gemfile",
+              "gemfile.lock", "composer.json", "composer.lock",
           }
 
+          try:
+              pages = json.loads(source.read_text(encoding="utf-8"))
+          except (OSError, json.JSONDecodeError) as exc:
+              raise SystemExit(f"Invalid GitHub API JSON: {exc}")
+
+          if not isinstance(pages, list):
+              raise SystemExit("Unexpected GitHub API response.")
+
           records = []
-          with filename.open(encoding="utf-8") as stream:
-              for line_number, line in enumerate(stream, 1):
-                  line = line.strip()
-                  if not line:
-                      continue
-                  try:
-                      record = json.loads(line)
-                  except json.JSONDecodeError as exc:
-                      raise SystemExit(
-                          f"Invalid changed-file JSON at line {line_number}: {exc}"
-                      )
-                  if not isinstance(record, dict):
-                      raise SystemExit("Unexpected changed-file record.")
-                  records.append(record)
+          for page in pages:
+              if not isinstance(page, list):
+                  raise SystemExit("Unexpected changed-file page.")
+              records.extend(page)
 
           if not records:
-              raise SystemExit("No changed-file records were parsed.")
+              raise SystemExit("No changed-file metadata was returned.")
 
-          dependency_count = 0
           additions = 0
           deletions = 0
-
-          print(f"Changed files: {len(records)}")
+          dependency_count = 0
+          rows = []
 
           for record in records:
-              path = str(record.get("filename", ""))
-              status = str(record.get("status", "unknown"))
-              added = int(record.get("additions", 0))
-              removed = int(record.get("deletions", 0))
-              name = path.rsplit("/", 1)[-1].lower()
+              if not isinstance(record, dict):
+                  raise SystemExit("Invalid changed-file record.")
+
+              path = record.get("filename")
+              status = record.get("status", "unknown")
+              added = record.get("additions", 0)
+              removed = record.get("deletions", 0)
+
+              if not isinstance(path, str) or not path:
+                  raise SystemExit("Changed-file record has no filename.")
+
+              if not isinstance(status, str):
+                  raise SystemExit(f"Invalid status for {path}")
+
+              if (
+                  not isinstance(added, int) or isinstance(added, bool)
+                  or not isinstance(removed, int) or isinstance(removed, bool)
+                  or added < 0 or removed < 0
+              ):
+                  raise SystemExit(f"Invalid line counts for {path}")
+
+              category = (
+                  "Dependency"
+                  if path.rsplit("/", 1)[-1].lower() in dependency_names
+                  else "Other"
+              )
+
+              if category == "Dependency":
+                  dependency_count += 1
 
               additions += added
               deletions += removed
 
-              category = (
-                  "dependency"
-                  if name in dependency_names
-                  else "other"
+              # Prevent filenames from injecting Markdown table rows.
+              safe_path = (
+                  path.replace("\\", "\\\\")
+                  .replace("|", "\\|")
+                  .replace("\r", " ")
+                  .replace("\n", " ")
+                  .replace("`", "\\`")
               )
 
-              if category == "dependency":
-                  dependency_count += 1
-
-              print(
-                  f"- [{category}] {path} "
-                  f"({status}; +{added} -{removed})"
+              rows.append(
+                  f"| {category} | `{safe_path}` | {status} "
+                  f"| {added} | {removed} |"
               )
 
-          print(f"Dependency-related files: {dependency_count}")
-          print(f"Total additions: {additions}")
-          print(f"Total deletions: {deletions}")
+          summary = [
+              "## Dependabot Change Review",
+              "",
+              "| Category | File | Status | Added | Deleted |",
+              "|---|---|---|---:|---:|",
+              *rows,
+              "",
+              "### Statistics",
+              "",
+              f"- Changed files: {len(records)}",
+              f"- Dependency-related files: {dependency_count}",
+              f"- Lines added: {additions}",
+              f"- Lines deleted: {deletions}",
+              "",
+              "> This report classifies filenames and summarizes GitHub metadata. "
+              "It does not establish that changes are safe or dependencies are "
+              "free from vulnerabilities.",
+              "",
+          ]
 
-          with open(
-              os.environ["GITHUB_OUTPUT"],
-              "a",
-              encoding="utf-8"
-          ) as output:
-              output.write(f"file_count={len(records)}\n")
-              output.write(f"dependency_count={dependency_count}\n")
-              output.write(f"additions={additions}\n")
-              output.write(f"deletions={deletions}\n")
+          with pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as file:
+              file.write("\n".join(summary))
+
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open(
+              "a", encoding="utf-8"
+          ) as file:
+              file.write(f"file_count={len(records)}\n")
+              file.write(f"dependency_count={dependency_count}\n")
+              file.write(f"additions={additions}\n")
+              file.write(f"deletions={deletions}\n")
           PY
 
-      - name: Publish review summary
+      - name: Publish review outcome
         if: always()
         shell: bash
         env:
@@ -257,15 +304,14 @@ jobs:
           JOB_RESULT: ${{ job.status }}
           BASE_BRANCH: ${{ steps.metadata.outputs.base_branch }}
           DRAFT_STATUS: ${{ steps.metadata.outputs.draft }}
-          FILE_COUNT: ${{ steps.changed_files.outputs.file_count }}
-          DEPENDENCY_COUNT: ${{ steps.changed_files.outputs.dependency_count }}
-          ADDITIONS: ${{ steps.changed_files.outputs.additions }}
-          DELETIONS: ${{ steps.changed_files.outputs.deletions }}
+          FILE_COUNT: ${{ steps.files.outputs.file_count }}
+          DEPENDENCY_COUNT: ${{ steps.files.outputs.dependency_count }}
         run: |
           set -Eeuo pipefail
 
           {
-            echo "## MedOrbits Dependabot Review"
+            echo
+            echo "### Review Outcome"
             echo
             echo "- Pull request: #${PR_NUMBER:-unavailable}"
             echo "- Target branch: ${BASE_BRANCH:-not verified}"
@@ -273,18 +319,10 @@ jobs:
             echo "- Workflow result: $JOB_RESULT"
             echo "- Changed files: ${FILE_COUNT:-not available}"
             echo "- Dependency-related files: ${DEPENDENCY_COUNT:-not available}"
-            echo "- Lines added: ${ADDITIONS:-not available}"
-            echo "- Lines deleted: ${DELETIONS:-not available}"
+            echo "- Pull request code executed: No"
+            echo "- Repository checkout performed: No"
+            echo "- Automated approval or merge: No"
+            echo "- PR comments or repository modifications: No"
             echo
-            echo "### Actions"
-            echo "- Automated approval: No"
-            echo "- Automatic merge: No"
-            echo "- PR comments: No"
-            echo "- Repository modifications: No"
-            echo "- Pull request branch code executed: No"
-            echo
-            echo "### Review note"
-            echo "This workflow reports pull request metadata and file-change statistics."
-            echo "It does not establish that dependencies are safe or proposed code is correct."
             echo "Review advisories, release notes, lockfile changes, and required CI checks before merging."
           } >> "$GITHUB_STEP_SUMMARY"

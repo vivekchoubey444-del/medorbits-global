@@ -1,6 +1,4 @@
 
-# File: .github/workflows/dependency-review.yml
-
 name: MedOrbits Dependency Review
 
 on:
@@ -34,11 +32,12 @@ concurrency:
 
 jobs:
   dependency-review:
-    name: Review dependency changes
+    name: Review Dependency Changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Restrict PR comments and write permissions to same-repository PRs.
+    # Restrict this job to same-repository PRs because it requests
+    # pull-request write permission for the optional review comment.
     if: >-
       ${{
         github.event.pull_request.head.repo.full_name == github.repository
@@ -50,24 +49,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "22"
 
       - name: Review dependency changes
-        uses: actions/dependency-review-action@v5
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
-          # Avoid comment failures for Dependabot's read-only token.
+          # Dependabot PRs may not be able to publish review comments.
           comment-summary-in-pr: ${{ github.actor == 'dependabot[bot]' && 'never' || 'always' }}
 
-          # Block newly introduced dependencies with these licenses.
+          # Deny these licenses for newly introduced dependencies.
           deny-licenses: >-
             GPL-3.0,
             GPL-3.0-only,
@@ -76,5 +75,5 @@ jobs:
             AGPL-3.0-only,
             AGPL-3.0-or-later
 
-          # Fail if dependency metadata cannot be evaluated reliably.
+          # Check runtime dependency changes.
           fail-on-scopes: runtime

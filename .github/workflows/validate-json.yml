@@ -1,4 +1,19 @@
 
+# ==============================================================================
+# MedOrbits -- JSON Validation
+# File: .github/workflows/validate-json.yml
+# Release: 3.0.0
+#
+# Purpose:
+#   Validate tracked JSON files for syntax and strict JSON compliance.
+#
+# Security:
+#   - Read-only repository permissions.
+#   - No repository modifications.
+#   - No dependency installation required.
+#   - Duplicate keys and non-standard constants are rejected.
+# ==============================================================================
+
 name: Validate JSON Files
 
 on:
@@ -33,26 +48,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          check-latest: false
+
       - name: Validate tracked JSON files
+        id: json-validation
         shell: bash
         run: |
           set -Eeuo pipefail
 
           python <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from pathlib import Path
 
           ignored = {
-              ".git", "node_modules", "vendor",
-              "dist", "build", "coverage", ".venv", "venv"
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".venv",
+              "venv",
+              "__pycache__",
           }
 
           result = subprocess.run(
@@ -61,33 +94,47 @@ jobs:
               capture_output=True,
           )
 
+          # NUL-delimited paths safely support spaces and special characters.
           paths = [
-              Path(item.decode("utf-8", errors="replace"))
+              Path(os.fsdecode(item))
               for item in result.stdout.split(b"\0")
               if item
           ]
 
           checked = 0
+          skipped = 0
           failures = []
 
           def reject_duplicate_keys(pairs):
-              obj = {}
+              result = {}
+
               for key, value in pairs:
-                  if key in obj:
-                      raise ValueError(f"Duplicate JSON key: {key!r}")
-                  obj[key] = value
-              return obj
+                  if key in result:
+                      raise ValueError(
+                          f"Duplicate JSON key: {key!r}"
+                      )
+                  result[key] = value
+
+              return result
 
           def reject_nonstandard_constant(value):
               raise ValueError(
                   f"Non-standard JSON constant is not allowed: {value}"
               )
 
+          def annotation_path(path):
+              # GitHub workflow command paths must not contain newlines.
+              return path.as_posix().replace("%", "%25") \
+                  .replace("\r", "%0D").replace("\n", "%0A")
+
           for path in paths:
-              if not path.is_file():
+              if any(part in ignored for part in path.parts):
+                  skipped += 1
                   continue
 
-              if any(part in ignored for part in path.parts):
+              if not path.is_file():
+                  # A tracked file may be deleted in the current checkout.
+                  skipped += 1
                   continue
 
               try:
@@ -99,34 +146,59 @@ jobs:
                       )
 
                   checked += 1
+                  print(f"PASS: {path.as_posix()}")
 
-              except Exception as error:
-                  failures.append((path.as_posix(), str(error)))
+              except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as error:
+                  filename = path.as_posix()
+                  message = str(error).replace("\r", " ").replace("\n", " ")
+
+                  failures.append((filename, message))
+
                   print(
-                      f"::error file={path.as_posix()}::Invalid JSON."
+                      f"::error file={annotation_path(path)}::"
+                      f"JSON validation failed: {message}"
                   )
 
-          print(f"Validated {checked} tracked JSON file(s).")
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as summary:
+                  summary.write("## JSON Validation Results\n\n")
+                  summary.write(f"- Valid files: {checked}\n")
+                  summary.write(f"- Skipped files: {skipped}\n")
+                  summary.write(f"- Failed files: {len(failures)}\n")
+                  summary.write("- Duplicate-key detection: enabled\n")
+                  summary.write("- Non-standard constants: rejected\n\n")
+
+                  if failures:
+                      summary.write("### Validation errors\n\n")
+                      for filename, message in failures:
+                          summary.write(
+                              f"- `{filename}`: {message}\n"
+                          )
+
+          print()
+          print(f"Valid JSON files: {checked}")
+          print(f"Skipped files: {skipped}")
+          print(f"Failed files: {len(failures)}")
 
           if failures:
-              print("\nJSON validation errors:")
-              for filename, error in failures:
-                  print(f" - {filename}: {error}")
               sys.exit(1)
 
-          print("All tracked JSON files passed validation.")
+          print("All checked tracked JSON files passed validation.")
           PY
 
-      - name: Write validation summary
+      - name: Final validation summary
         if: always()
         env:
           STATUS: ${{ job.status }}
+        shell: bash
         run: |
           {
-            echo "## JSON Validation"
             echo
-            echo "- Result: $STATUS"
-            echo "- Syntax validation: enabled"
-            echo "- Duplicate-key detection: enabled"
-            echo "- Non-standard JSON constants: rejected"
+            echo "### Workflow Status"
+            echo
+            echo "- Result: ${STATUS:-unknown}"
+            echo "- Repository writes: disabled"
+            echo "- Dependency installation: not required"
           } >> "$GITHUB_STEP_SUMMARY"

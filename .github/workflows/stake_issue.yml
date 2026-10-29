@@ -43,7 +43,7 @@ jobs:
                 patterns: [
                   /\bbug\b/,
                   /\berror\b/,
-                  /\bcrash(?:es|ed)?\b/,
+                  /\bcrash(?:es|ed|ing)?\b/,
                   /\bnot working\b/,
                   /\bbroken\b/,
                   /\bregression\b/
@@ -75,7 +75,9 @@ jobs:
                   /\bvulnerability\b/,
                   /\bsecurity issue\b/,
                   /\bsecurity concern\b/,
-                  /\bunauthorized access\b/
+                  /\bunauthorized access\b/,
+                  /\bprivilege escalation\b/,
+                  /\bdata exposure\b/
                 ]
               },
               {
@@ -97,20 +99,67 @@ jobs:
               .map(rule => rule.label);
 
             if (selected.length === 0) {
-              core.info("No confident classification found; leaving labels unchanged.");
+              core.info(
+                "No classification keywords matched; existing labels remain unchanged."
+              );
               return;
             }
 
+            // Read current labels from the API rather than relying on
+            // the issue payload's potentially stale label list.
+            const { data: currentIssue } =
+              await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number
+              });
+
             const existing = new Set(
-              (issue.labels || []).map(label =>
+              currentIssue.labels.map(label =>
                 typeof label === "string" ? label : label.name
               )
             );
 
-            const missing = selected.filter(label => !existing.has(label));
+            const missing = selected.filter(
+              label => !existing.has(label)
+            );
 
             if (missing.length === 0) {
-              core.info("Applicable labels are already present.");
+              core.info("All applicable labels are already present.");
+              return;
+            }
+
+            // Verify that each target label exists. Avoid creating labels
+            // automatically, which could hide repository configuration errors.
+            const { data: repositoryLabels } =
+              await github.rest.issues.listLabelsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+
+            const available = new Set(
+              repositoryLabels.map(label => label.name)
+            );
+
+            const undefinedLabels = missing.filter(
+              label => !available.has(label)
+            );
+
+            if (undefinedLabels.length > 0) {
+              core.warning(
+                `Create these repository labels before using this workflow: ${
+                  undefinedLabels.join(", ")
+                }`
+              );
+            }
+
+            const validLabels = missing.filter(
+              label => available.has(label)
+            );
+
+            if (validLabels.length === 0) {
+              core.info("No applicable pre-existing labels are available.");
               return;
             }
 
@@ -118,7 +167,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              labels: missing
+              labels: validLabels
             });
 
-            core.info(`Added labels: ${missing.join(", ")}`);
+            core.info(`Added labels: ${validLabels.join(", ")}`);

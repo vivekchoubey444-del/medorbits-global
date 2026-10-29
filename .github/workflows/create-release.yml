@@ -82,7 +82,7 @@ jobs:
           const prerelease = process.env.PRERELEASE === "true";
 
           const semver =
-            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+            /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
           if (typeof version !== "string" || !semver.test(version)) {
             throw new Error(
@@ -98,9 +98,7 @@ jobs:
 
           fs.appendFileSync(
             process.env.GITHUB_OUTPUT,
-            `version=${version}\n` +
-            `tag=v${version}\n` +
-            `prerelease=${prerelease}\n`
+            `version=${version}\ntag=v${version}\nprerelease=${prerelease}\n`
           );
           NODE
 
@@ -113,8 +111,10 @@ jobs:
 
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
-          if git show-ref --verify --quiet "refs/tags/v${RELEASE_VERSION}"; then
-            echo "::error::The tag v${RELEASE_VERSION} already exists locally."
+          if git ls-remote --exit-code --tags origin \
+            "refs/tags/v${RELEASE_VERSION}" \
+            "refs/tags/v${RELEASE_VERSION}^{}" >/dev/null 2>&1; then
+            echo "::error::Remote tag v${RELEASE_VERSION} already exists."
             exit 1
           fi
 
@@ -132,12 +132,10 @@ jobs:
 
           node <<'NODE'
           const fs = require("node:fs");
+
           const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-          if (
-            pkg.version &&
-            pkg.version !== process.env.RELEASE_VERSION
-          ) {
+          if (pkg.version && pkg.version !== process.env.RELEASE_VERSION) {
             throw new Error(
               `Release version ${process.env.RELEASE_VERSION} does not match package.json version ${pkg.version}.`
             );
@@ -148,7 +146,7 @@ jobs:
           NODE
 
   publish:
-    name: Create GitHub Release
+    name: Create and Publish GitHub Release
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -178,7 +176,7 @@ jobs:
             exit 1
           fi
 
-      - name: Check remote tag availability
+      - name: Recheck remote tag availability
         env:
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
         shell: bash
@@ -192,12 +190,10 @@ jobs:
             exit 1
           fi
 
-      - name: Create draft release
+      - name: Check for an existing release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
-          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
-          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
@@ -208,6 +204,17 @@ jobs:
             echo "::error::A release for $RELEASE_TAG already exists."
             exit 1
           fi
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
           args=(
             "$RELEASE_TAG"
@@ -245,13 +252,38 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          gh release view "$RELEASE_TAG" \
-            --repo "$REPOSITORY" \
-            --json tagName,isDraft,isPrerelease
+          release_json="$(
+            gh release view "$RELEASE_TAG" \
+              --repo "$REPOSITORY" \
+              --json tagName,isDraft,isPrerelease
+          )"
+
+          printf '%s\n' "$release_json"
+
+          RELEASE_JSON="$release_json" EXPECTED_TAG="$RELEASE_TAG" \
+            EXPECTED_PRERELEASE="${{ needs.validate.outputs.prerelease }}" \
+            node <<'NODE'
+          const release = JSON.parse(process.env.RELEASE_JSON);
+
+          if (release.tagName !== process.env.EXPECTED_TAG) {
+            throw new Error("Published release tag does not match.");
+          }
+
+          if (release.isDraft) {
+            throw new Error("Release is still a draft.");
+          }
+
+          if (release.isPrerelease !== (process.env.EXPECTED_PRERELEASE === "true")) {
+            throw new Error("Published prerelease status does not match.");
+          }
+
+          console.log("Release publication verified.");
+          NODE
 
       - name: Release summary
-        if: success()
+        if: always()
         env:
+          STATUS: ${{ job.status }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
           RELEASE_SHA: ${{ needs.validate.outputs.sha }}
           PRERELEASE: ${{ needs.validate.outputs.prerelease }}
@@ -259,12 +291,15 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Release Published"
+            echo "## Release Workflow"
             echo
-            echo "- Repository: $REPOSITORY"
-            echo "- Tag: $RELEASE_TAG"
-            echo "- Commit: $RELEASE_SHA"
-            echo "- Prerelease: $PRERELEASE"
-            echo "- URL: https://github.com/$REPOSITORY/releases/tag/$RELEASE_TAG"
+            echo "- Status: ${STATUS}"
+            echo "- Repository: ${REPOSITORY}"
+            echo "- Tag: ${RELEASE_TAG:-not created}"
+            echo "- Commit: ${RELEASE_SHA:-not resolved}"
+            echo "- Prerelease: ${PRERELEASE:-unknown}"
+            if [[ -n "${RELEASE_TAG:-}" ]]; then
+              echo "- Release URL: https://github.com/${REPOSITORY}/releases/tag/${RELEASE_TAG}"
+            fi
             echo "- Automatic source edits: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

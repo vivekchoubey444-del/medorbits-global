@@ -1,4 +1,20 @@
 
+# ==============================================================================
+# MedOrbits -- Test Suite
+# File: .github/workflows/test-suite.yml
+# Release: 3.0.0
+#
+# Purpose:
+#   Validate the Node.js project, run configured tests, and check JavaScript
+#   syntax across tracked repository files.
+#
+# Security:
+#   - Read-only repository permissions.
+#   - Checkout credentials are not persisted.
+#   - npm lifecycle scripts are disabled during dependency installation.
+#   - No automatic commits, pushes, or merges.
+# ==============================================================================
+
 name: Test Suite
 
 on:
@@ -25,7 +41,10 @@ jobs:
   node-tests:
     name: Node.js Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -37,6 +56,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          check-latest: false
 
       - name: Validate package manifest
         id: project
@@ -46,104 +66,218 @@ jobs:
 
           if [[ ! -f package.json ]]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "No root package.json; Node.js tests skipped."
+            echo "::notice::No root package.json; npm tests will be skipped."
             exit 0
           fi
 
-          node -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-              throw new Error("package.json must contain a JSON object.");
-            }
-          '
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (
+            pkg.scripts !== undefined &&
+            (
+              pkg.scripts === null ||
+              typeof pkg.scripts !== "object" ||
+              Array.isArray(pkg.scripts)
+            )
+          ) {
+            throw new Error("package.json scripts must be an object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Test script: ${pkg.scripts?.test ? "configured" : "not configured"}`);
+          NODE
 
           echo "found=true" >> "$GITHUB_OUTPUT"
 
-      - name: Install dependencies
+      - name: Validate lockfile
         if: steps.project.outputs.found == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ -f npm-shrinkwrap.json || -f package-lock.json ]]; then
-            npm ci --ignore-scripts --no-audit --no-fund
+          if [[ -f npm-shrinkwrap.json ]]; then
+            echo "LOCKFILE=npm-shrinkwrap.json" >> "$GITHUB_ENV"
+          elif [[ -f package-lock.json ]]; then
+            echo "LOCKFILE=package-lock.json" >> "$GITHUB_ENV"
           else
-            echo "::warning::No npm lockfile found; using npm install."
-            npm install --ignore-scripts --no-audit --no-fund
+            echo "::error::A committed npm lockfile is required for reproducible CI."
+            exit 1
           fi
 
-      - name: Run tests when configured
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          const lock = JSON.parse(
+            fs.readFileSync(process.env.LOCKFILE, "utf8")
+          );
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error(
+              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
+            );
+          }
+
+          if (!lock.packages || !lock.packages[""]) {
+            throw new Error("Lockfile is missing packages[''] metadata.");
+          }
+
+          const root = lock.packages[""];
+
+          if (
+            pkg.name &&
+            (root.name || lock.name) !== pkg.name
+          ) {
+            throw new Error("Manifest and lockfile names differ.");
+          }
+
+          if (
+            pkg.version &&
+            (root.version || lock.version) !== pkg.version
+          ) {
+            throw new Error("Manifest and lockfile versions differ.");
+          }
+
+          console.log(`Lockfile validated: ${process.env.LOCKFILE}`);
+          NODE
+
+      - name: Install locked dependencies
         if: steps.project.outputs.found == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run configured npm tests
+        id: tests
+        if: steps.project.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e '
+            const pkg = require("./package.json");
+            process.exit(pkg.scripts?.test ? 0 : 1);
+          '; then
             npm test
+            echo "configured=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::No npm test script is configured."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No npm test script is configured; no unit tests were run."
           fi
 
-      - name: Check JavaScript syntax for tracked files
+      - name: Check tracked JavaScript syntax
+        id: javascript
         shell: bash
         run: |
           set -Eeuo pipefail
 
           python <<'PY'
+          import os
           import subprocess
           import sys
           from pathlib import Path
 
+          excluded = {
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".next",
+              ".venv",
+              "venv",
+              "__pycache__",
+          }
+
           result = subprocess.run(
-              ["git", "ls-files", "-z", "--", "*.js", "*.cjs", "*.mjs"],
+              ["git", "ls-files", "-z"],
               check=True,
               capture_output=True,
           )
 
-          files = [
-              item.decode("utf-8", errors="replace")
+          tracked = [
+              Path(os.fsdecode(item))
               for item in result.stdout.split(b"\0")
               if item
           ]
 
+          extensions = {".js", ".cjs", ".mjs"}
+
+          files = [
+              path for path in tracked
+              if path.suffix.lower() in extensions
+              and not any(part in excluded for part in path.parts)
+              and path.is_file()
+          ]
+
           failures = []
 
-          for name in files:
-              path = Path(name)
-
-              if not path.is_file():
-                  continue
-
+          for path in files:
               check = subprocess.run(
                   ["node", "--check", str(path)],
                   text=True,
                   capture_output=True,
               )
 
-              if check.returncode:
-                  failures.append(name)
-                  print(f"::error file={name}::JavaScript syntax check failed.")
+              if check.returncode != 0:
+                  failures.append(path.as_posix())
+
+                  print(
+                      f"::error file={path.as_posix()}::"
+                      "JavaScript syntax validation failed."
+                  )
+
                   if check.stderr:
                       print(check.stderr)
 
           print(f"Checked {len(files)} tracked JavaScript file(s).")
 
           if failures:
-              print("Files with syntax errors:", ", ".join(failures))
+              print("Files with syntax errors:")
+              print("\n".join(failures))
               sys.exit(1)
+
+          print("JavaScript syntax validation passed.")
           PY
 
       - name: Write test summary
         if: always()
         env:
           STATUS: ${{ job.status }}
+          TEST_CONFIGURED: ${{ steps.tests.outputs.configured }}
+          PROJECT_FOUND: ${{ steps.project.outputs.found }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
         run: |
           {
-            echo "## Test Suite"
+            echo "## MedOrbits Test Suite"
             echo
-            echo "- Result: $STATUS"
+            echo "- Result: ${STATUS:-unknown}"
+            echo "- Commit: ${COMMIT_SHA:-unknown}"
             echo "- Node.js: 22"
-            echo "- npm tests: executed when configured"
-            echo "- JavaScript syntax validation: enabled"
+            echo "- Root npm project: ${PROJECT_FOUND:-not checked}"
+            echo "- npm test configured: ${TEST_CONFIGURED:-not run}"
+            echo "- JavaScript syntax checks: enabled"
+            echo "- Repository write permission: disabled"
+            echo "- Automatic commits and pushes: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

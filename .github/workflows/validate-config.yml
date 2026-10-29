@@ -1,4 +1,19 @@
 
+# ==============================================================================
+# MedOrbits -- Configuration Validation
+# File: .github/workflows/validate-config.yml
+# Release: 3.0.0
+#
+# Purpose:
+#   Validate tracked configuration files and package metadata.
+#
+# Security:
+#   - Read-only repository permissions.
+#   - No repository modifications.
+#   - No application dependencies installed.
+#   - Duplicate JSON and YAML keys rejected.
+# ==============================================================================
+
 name: Validate Configuration
 
 on:
@@ -7,38 +22,36 @@ on:
       - main
       - develop
     paths:
-      - "*.json"
-      - "*.yml"
-      - "*.yaml"
-      - "*.toml"
-      - "*.ini"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.toml"
+      - "**/*.ini"
+      - "**/.npmrc"
+      - "**/.nvmrc"
+      - "**/package.json"
+      - "**/pyproject.toml"
+      - "**/requirements*.txt"
       - ".github/**"
       - "config/**"
-      - ".npmrc"
-      - ".nvmrc"
-      - "package.json"
-      - "pyproject.toml"
-      - "requirements*.txt"
-      - ".github/workflows/validate-config.yml"
 
   pull_request:
     branches:
       - main
       - develop
     paths:
-      - "*.json"
-      - "*.yml"
-      - "*.yaml"
-      - "*.toml"
-      - "*.ini"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.toml"
+      - "**/*.ini"
+      - "**/.npmrc"
+      - "**/.nvmrc"
+      - "**/package.json"
+      - "**/pyproject.toml"
+      - "**/requirements*.txt"
       - ".github/**"
       - "config/**"
-      - ".npmrc"
-      - ".nvmrc"
-      - "package.json"
-      - "pyproject.toml"
-      - "requirements*.txt"
-      - ".github/workflows/validate-config.yml"
 
   workflow_dispatch:
 
@@ -55,6 +68,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,14 +81,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          check-latest: false
 
-      - name: Install validators
+      - name: Install validation dependencies
+        shell: bash
         run: |
+          set -Eeuo pipefail
           python -m pip install --disable-pip-version-check \
-            "PyYAML>=6,<7" \
-            "tomli>=2,<3"
+            "PyYAML>=6,<7"
 
       - name: Validate tracked configuration files
+        id: validate-config
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -80,12 +99,86 @@ jobs:
           python <<'PY'
           import configparser
           import json
+          import os
           import subprocess
           import sys
           import tomllib
           from pathlib import Path
 
           import yaml
+
+          IGNORED = {
+              ".git",
+              "node_modules",
+              "vendor",
+              "dist",
+              "build",
+              "coverage",
+              ".venv",
+              "venv",
+              "__pycache__",
+          }
+
+          CONFIG_SUFFIXES = {
+              ".json", ".yaml", ".yml", ".toml", ".ini"
+          }
+
+          failures = []
+          checked = 0
+          skipped = 0
+
+          def reject_duplicate_json_keys(pairs):
+              result = {}
+
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"Duplicate JSON key: {key!r}")
+                  result[key] = value
+
+              return result
+
+          def reject_json_constant(value):
+              raise ValueError(
+                  f"Non-standard JSON constant: {value}"
+              )
+
+          class UniqueKeyLoader(yaml.SafeLoader):
+              pass
+
+          def construct_unique_mapping(loader, node, deep=False):
+              mapping = {}
+
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+
+                  try:
+                      duplicate = key in mapping
+                  except TypeError as error:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          "unhashable mapping key",
+                          key_node.start_mark,
+                      ) from error
+
+                  if duplicate:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          f"duplicate key {key!r}",
+                          key_node.start_mark,
+                      )
+
+                  mapping[key] = loader.construct_object(
+                      value_node, deep=deep
+                  )
+
+              return mapping
+
+          UniqueKeyLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              construct_unique_mapping,
+          )
 
           result = subprocess.run(
               ["git", "ls-files", "-z"],
@@ -94,103 +187,224 @@ jobs:
           )
 
           paths = [
-              Path(item.decode("utf-8", errors="replace"))
+              Path(os.fsdecode(item))
               for item in result.stdout.split(b"\0")
               if item
           ]
 
-          ignored = {
-              ".git", "node_modules", "vendor",
-              "dist", "build", "coverage", ".venv", "venv"
-          }
-
-          failures = []
-          checked = 0
-
           for path in paths:
-              if not path.is_file():
-                  continue
-
-              if any(part in ignored for part in path.parts):
+              if any(part in IGNORED for part in path.parts):
+                  skipped += 1
                   continue
 
               name = path.name.lower()
               suffix = path.suffix.lower()
 
-              if suffix not in {".json", ".yaml", ".yml", ".toml", ".ini"}:
+              is_npmrc = name == ".npmrc"
+              is_nvmrc = name == ".nvmrc"
+              is_requirements = (
+                  name.startswith("requirements") and suffix == ".txt"
+              )
+
+              if (
+                  suffix not in CONFIG_SUFFIXES
+                  and not is_npmrc
+                  and not is_nvmrc
+                  and not is_requirements
+              ):
                   continue
 
-              if name.endswith(".lock"):
+              if not path.is_file():
+                  # Deleted tracked files are not present in this checkout.
+                  skipped += 1
                   continue
+
+              filename = path.as_posix()
 
               try:
                   content = path.read_text(encoding="utf-8")
+
                   if suffix == ".json":
-                      json.loads(content)
+                      json.loads(
+                          content,
+                          object_pairs_hook=reject_duplicate_json_keys,
+                          parse_constant=reject_json_constant,
+                      )
+
                   elif suffix in {".yaml", ".yml"}:
-                      yaml.safe_load(content)
+                      # GitHub Actions workflow files are also parsed here.
+                      list(yaml.load_all(content, Loader=UniqueKeyLoader))
+
                   elif suffix == ".toml":
                       tomllib.loads(content)
+
                   elif suffix == ".ini":
-                      parser = configparser.ConfigParser()
+                      parser = configparser.ConfigParser(
+                          strict=True,
+                          interpolation=None,
+                      )
                       parser.read_string(content)
 
+                  elif is_npmrc:
+                      # Validate basic .npmrc syntax without interpreting
+                      # or printing credentials or token values.
+                      for number, line in enumerate(
+                          content.splitlines(), start=1
+                      ):
+                          stripped = line.strip()
+
+                          if not stripped or stripped.startswith(("#", ";")):
+                              continue
+
+                          if "=" not in stripped:
+                              raise ValueError(
+                                  f"Expected key=value syntax on line {number}."
+                              )
+
+                  elif is_nvmrc:
+                      if not content.strip():
+                          raise ValueError(".nvmrc must not be empty.")
+
+                  elif is_requirements:
+                      # Syntax-only baseline; pip requirements can contain
+                      # options, URLs, and editable references.
+                      for number, line in enumerate(
+                          content.splitlines(), start=1
+                      ):
+                          stripped = line.strip()
+
+                          if not stripped or stripped.startswith("#"):
+                              continue
+
+                          if "\x00" in stripped:
+                              raise ValueError(
+                                  f"NUL character on line {number}."
+                              )
+
                   checked += 1
+                  print(f"PASS: {filename}")
 
               except Exception as error:
-                  failures.append((path.as_posix(), str(error)))
-                  print(f"::error file={path.as_posix()}::Invalid configuration.")
+                  message = str(error).replace("\r", " ").replace("\n", " ")
+                  failures.append((filename, message))
 
-              if failures and failures[-1][0] == path.as_posix():
-                  print(f"Details: {failures[-1][1]}")
+                  safe_filename = (
+                      filename.replace("%", "%25")
+                      .replace("\r", "%0D")
+                      .replace("\n", "%0A")
+                  )
 
-          print(f"Validated {checked} configuration file(s).")
+                  print(
+                      f"::error file={safe_filename}::"
+                      "Configuration validation failed."
+                  )
+                  print(f"Details: {message}")
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as summary:
+                  summary.write("## Configuration Validation\n\n")
+                  summary.write(f"- Files checked: {checked}\n")
+                  summary.write(f"- Files skipped: {skipped}\n")
+                  summary.write(f"- Failures: {len(failures)}\n\n")
+
+                  if failures:
+                      summary.write("### Failures\n\n")
+                      for filename, message in failures:
+                          summary.write(
+                              f"- `{filename}`: {message}\n"
+                          )
+
+          print()
+          print(f"Configuration files checked: {checked}")
+          print(f"Files skipped: {skipped}")
+          print(f"Validation failures: {len(failures)}")
 
           if failures:
-              print("\nConfiguration validation failed:")
-              for filename, error in failures:
-                  print(f"- {filename}: {error}")
               sys.exit(1)
+
+          print("Configuration validation passed.")
           PY
 
-      - name: Validate package.json when present
+      - name: Validate root package.json
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ -f package.json ]]; then
-            node -e '
-              const fs = require("node:fs");
-              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-
-              if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-                throw new Error("package.json must contain a JSON object.");
-              }
-
-              if (pkg.scripts !== undefined &&
-                  (pkg.scripts === null ||
-                   typeof pkg.scripts !== "object" ||
-                   Array.isArray(pkg.scripts))) {
-                throw new Error("package.json scripts must be an object.");
-              }
-
-              console.log("package.json validation passed.");
-            '
-          else
-            echo "No root package.json; package-specific checks skipped."
+          if [[ ! -f package.json ]]; then
+            echo "No root package.json; npm-specific checks skipped."
+            exit 0
           fi
 
-      - name: Write validation summary
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
+            throw new Error(
+              "package.json must contain a JSON object."
+            );
+          }
+
+          for (const field of ["name", "version"]) {
+            if (
+              pkg[field] !== undefined &&
+              typeof pkg[field] !== "string"
+            ) {
+              throw new Error(`${field} must be a string.`);
+            }
+          }
+
+          if (
+            pkg.scripts !== undefined &&
+            (
+              pkg.scripts === null ||
+              typeof pkg.scripts !== "object" ||
+              Array.isArray(pkg.scripts)
+            )
+          ) {
+            throw new Error("package.json scripts must be an object.");
+          }
+
+          if (
+            pkg.engines !== undefined &&
+            (
+              pkg.engines === null ||
+              typeof pkg.engines !== "object" ||
+              Array.isArray(pkg.engines)
+            )
+          ) {
+            throw new Error("package.json engines must be an object.");
+          }
+
+          console.log("Root package.json validation passed.");
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          NODE
+
+      - name: Write final validation summary
         if: always()
         env:
           STATUS: ${{ job.status }}
+        shell: bash
         run: |
           {
-            echo "## Configuration Validation"
             echo
-            echo "- Result: $STATUS"
-            echo "- JSON: checked"
-            echo "- YAML: checked"
-            echo "- TOML: checked"
-            echo "- INI: checked"
+            echo "### Workflow Status"
+            echo
+            echo "- Result: ${STATUS:-unknown}"
+            echo "- JSON: strict syntax and duplicate-key checks"
+            echo "- YAML: parsing and duplicate-key checks"
+            echo "- TOML: syntax validation"
+            echo "- INI: strict parsing"
+            echo "- npm configuration: basic syntax validation"
+            echo "- Repository writes: disabled"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -13,6 +13,7 @@ on:
       - ".spectral.yaml"
       - ".spectral.yml"
       - ".spectral.json"
+      - ".spectral.yaml.json"
       - ".github/workflows/openapi-lint.yml"
 
   pull_request:
@@ -26,6 +27,7 @@ on:
       - ".spectral.yaml"
       - ".spectral.yml"
       - ".spectral.json"
+      - ".spectral.yaml.json"
       - ".github/workflows/openapi-lint.yml"
 
   workflow_dispatch:
@@ -60,12 +62,15 @@ jobs:
           node-version: "22"
 
       - name: Install validators
+        shell: bash
         run: |
+          set -Eeuo pipefail
+
           python -m pip install --disable-pip-version-check \
             "openapi-spec-validator>=0.7,<0.9" \
             "PyYAML>=6,<7"
 
-          npm install --global --ignore-scripts \
+          npm install --global --ignore-scripts --no-audit --no-fund \
             "@stoplight/spectral-cli@6"
 
       - name: Discover specification files
@@ -79,8 +84,8 @@ jobs:
           from pathlib import Path
 
           excluded = {
-              ".git", "node_modules", "vendor",
-              "dist", "build", "coverage", ".venv", "venv"
+              ".git", "node_modules", "vendor", "dist",
+              "build", "coverage", ".venv", "venv"
           }
 
           found = []
@@ -88,19 +93,26 @@ jobs:
           for path in Path(".").rglob("*"):
               if not path.is_file():
                   continue
+
               if any(part in excluded for part in path.parts):
                   continue
 
               name = path.name.lower()
-              if (
-                  name.startswith("openapi.")
-                  or name.startswith("swagger.")
+              suffix = path.suffix.lower()
+
+              is_candidate = (
+                  name in {
+                      "openapi.yaml", "openapi.yml", "openapi.json",
+                      "swagger.yaml", "swagger.yml", "swagger.json"
+                  }
                   or (
                       path.parts[0] == "api"
-                      and path.suffix.lower() in {".yaml", ".yml", ".json"}
+                      and suffix in {".yaml", ".yml", ".json"}
                       and ("openapi" in name or "swagger" in name)
                   )
-              ):
+              )
+
+              if is_candidate:
                   found.append(path.as_posix())
 
           found = sorted(set(found))
@@ -109,7 +121,9 @@ jobs:
           with open(output, "a", encoding="utf-8") as file:
               file.write(f"found={'true' if found else 'false'}\n")
 
-          Path(os.environ["RUNNER_TEMP"], "openapi-files.txt").write_text(
+          Path(
+              os.environ["RUNNER_TEMP"], "openapi-files.txt"
+          ).write_text(
               "\n".join(found) + ("\n" if found else ""),
               encoding="utf-8"
           )
@@ -127,6 +141,7 @@ jobs:
 
           python <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from pathlib import Path
@@ -134,17 +149,51 @@ jobs:
           import yaml
           from openapi_spec_validator import validate
 
-          list_file = Path(
-              __import__("os").environ["RUNNER_TEMP"],
-              "openapi-files.txt"
+          files_path = Path(
+              os.environ["RUNNER_TEMP"], "openapi-files.txt"
           )
+
           files = [
               Path(line.strip())
-              for line in list_file.read_text(encoding="utf-8").splitlines()
+              for line in files_path.read_text(
+                  encoding="utf-8"
+              ).splitlines()
               if line.strip()
           ]
 
           failures = []
+
+          def reject_duplicate_keys(loader, node, deep=False):
+              result = {}
+
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+
+                  try:
+                      duplicate = key in result
+                  except TypeError as error:
+                      raise ValueError(
+                          "YAML mapping contains an unhashable key."
+                      ) from error
+
+                  if duplicate:
+                      raise ValueError(
+                          f"Duplicate YAML key: {key!r}"
+                      )
+
+                  result[key] = loader.construct_object(
+                      value_node, deep=deep
+                  )
+
+              return result
+
+          class StrictLoader(yaml.SafeLoader):
+              pass
+
+          StrictLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              reject_duplicate_keys,
+          )
 
           for path in files:
               print(f"\nValidating {path}")
@@ -155,55 +204,78 @@ jobs:
                   if path.suffix.lower() == ".json":
                       document = json.loads(content)
                   else:
-                      document = yaml.safe_load(content)
+                      document = yaml.load(
+                          content,
+                          Loader=StrictLoader,
+                      )
 
                   if not isinstance(document, dict):
-                      raise ValueError("Specification root must be an object.")
+                      raise ValueError(
+                          "Specification root must be a YAML/JSON object."
+                      )
 
                   version = document.get("openapi")
                   swagger = document.get("swagger")
 
-                  if version is None:
-                      if swagger != "2.0":
+                  if version is not None:
+                      if not isinstance(version, str) or not version.startswith(
+                          ("3.0.", "3.1.", "3.2.")
+                      ):
                           raise ValueError(
-                              "Missing supported OpenAPI version or Swagger 2.0."
+                              f"Unsupported OpenAPI version: {version!r}"
                           )
-                  elif not str(version).startswith(("3.0.", "3.1.", "3.2.")):
-                      raise ValueError(f"Unsupported OpenAPI version: {version}")
+                  elif swagger != "2.0":
+                      raise ValueError(
+                          "Missing a supported OpenAPI version or Swagger 2.0."
+                      )
 
                   validate(document)
-                  print("PASS: structural validation")
+                  print("PASS: OpenAPI structural validation")
 
                   result = subprocess.run(
                       [
-                          "spectral", "lint",
-                          "--fail-severity", "error",
-                          str(path)
+                          "spectral",
+                          "lint",
+                          "--fail-severity",
+                          "error",
+                          str(path),
                       ],
                       text=True,
-                      capture_output=True
+                      capture_output=True,
+                      check=False,
                   )
 
                   if result.stdout:
                       print(result.stdout, end="")
+
                   if result.stderr:
-                      print(result.stderr, file=sys.stderr, end="")
+                      print(
+                          result.stderr,
+                          file=sys.stderr,
+                          end="",
+                      )
 
                   if result.returncode != 0:
                       raise ValueError(
-                          f"Spectral lint failed with exit code {result.returncode}."
+                          f"Spectral lint failed with exit code "
+                          f"{result.returncode}."
                       )
 
                   print("PASS: Spectral lint")
 
               except Exception as error:
                   failures.append(f"{path}: {error}")
-                  print(f"FAIL: {path}: {error}", file=sys.stderr)
+                  print(
+                      f"FAIL: {path}: {error}",
+                      file=sys.stderr,
+                  )
 
           if failures:
               print("\nValidation failures:", file=sys.stderr)
+
               for failure in failures:
                   print(f" - {failure}", file=sys.stderr)
+
               sys.exit(1)
 
           print(f"\nAll {len(files)} specification(s) passed.")
@@ -213,6 +285,11 @@ jobs:
         if: steps.discover.outputs.found == 'false'
         shell: bash
         run: |
-          echo "No OpenAPI or Swagger specification was discovered."
-          echo "Add an openapi.yaml, openapi.yml, openapi.json, or matching file under api/."
-          echo "No specification was available to validate."
+          {
+            echo "## OpenAPI Lint"
+            echo
+            echo "::notice::No OpenAPI or Swagger specification was discovered."
+            echo
+            echo "Add openapi.yaml, openapi.yml, openapi.json, swagger.yaml, swagger.yml, swagger.json, or a matching specification under api/."
+            echo "Validation was skipped because no candidate specification was found."
+          } >> "$GITHUB_STEP_SUMMARY"

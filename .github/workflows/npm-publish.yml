@@ -1,10 +1,4 @@
 
-# =============================================================================
-# MedOrbits -- Publish npm Package
-# File: /.github/workflows/publish-npm.yml
-# Node.js: 22
-# =============================================================================
-
 name: Publish npm Package
 
 on:
@@ -23,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: npm-publish-${{ github.ref }}
+  group: npm-publish-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -48,7 +42,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache: npm
 
-      - name: Validate package metadata
+      - name: Validate package metadata and lockfile
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -58,22 +52,42 @@ jobs:
             exit 1
           }
 
-          test -f package-lock.json || {
-            echo "::error::Commit package-lock.json for reproducible installs."
+          if [[ ! -f npm-shrinkwrap.json && ! -f package-lock.json ]]; then
+            echo "::error::Commit package-lock.json or npm-shrinkwrap.json."
             exit 1
-          }
+          fi
 
           node <<'NODE'
           const fs = require("node:fs");
 
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          let pkg;
+          let lock;
+
+          try {
+            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+            const lockPath = fs.existsSync("npm-shrinkwrap.json")
+              ? "npm-shrinkwrap.json"
+              : "package-lock.json";
+
+            lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+          } catch (error) {
+            console.error(`::error::Invalid package metadata: ${error.message}`);
+            process.exit(1);
+          }
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
 
           if (typeof pkg.name !== "string" || !pkg.name.trim()) {
             throw new Error("A valid package name is required.");
           }
 
-          if (typeof pkg.version !== "string" ||
-              !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(pkg.version)) {
+          if (
+            typeof pkg.version !== "string" ||
+            !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(pkg.version)
+          ) {
             throw new Error("package.json must contain a valid semantic version.");
           }
 
@@ -81,14 +95,41 @@ jobs:
             throw new Error("Cannot publish a package marked private.");
           }
 
-          if (pkg.publishConfig?.registry &&
-              pkg.publishConfig.registry !== "https://registry.npmjs.org/") {
+          const configuredRegistry = pkg.publishConfig?.registry;
+          if (
+            configuredRegistry &&
+            configuredRegistry.replace(/\/+$/, "") !==
+              "https://registry.npmjs.org"
+          ) {
             throw new Error("Unexpected publishConfig.registry.");
+          }
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error("Unsupported npm lockfile version.");
+          }
+
+          if (!lock.packages || typeof lock.packages !== "object") {
+            throw new Error("Lockfile is missing its packages object.");
+          }
+
+          const root = lock.packages[""];
+          if (!root || typeof root !== "object") {
+            throw new Error('Lockfile is missing packages[""].');
+          }
+
+          for (const key of ["name", "version"]) {
+            if (
+              pkg[key] !== undefined &&
+              root[key] !== undefined &&
+              pkg[key] !== root[key]
+            ) {
+              throw new Error(`package.json ${key} does not match the lockfile.`);
+            }
           }
 
           console.log(`Package: ${pkg.name}`);
           console.log(`Version: ${pkg.version}`);
-          console.log(`Private: ${pkg.private === true}`);
+          console.log(`Lockfile version: ${lock.lockfileVersion}`);
           NODE
 
       - name: Verify release tag matches package version
@@ -112,11 +153,10 @@ jobs:
       - name: Install dependencies from lockfile
         run: npm ci --no-audit --no-fund
 
-      - name: Validate npm package configuration
+      - name: Validate package configuration
         shell: bash
         run: |
           set -Eeuo pipefail
-
           npm pkg get name version private
           npm --version
           node --version
@@ -129,10 +169,11 @@ jobs:
           if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
             npm test
           else
-            echo "::warning::No test script is defined. Tests were skipped."
+            echo "::error::No test script is defined. Configure tests before publishing."
+            exit 1
           fi
 
-      - name: Run package build when configured
+      - name: Run package build
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -186,18 +227,21 @@ jobs:
 
           npm publish --ignore-scripts
 
-# =============================================================================
-# Setup:
-#
-# 1. Add NPM_TOKEN under GitHub repository Actions secrets.
-# 2. Commit package.json and package-lock.json.
-# 3. Ensure tests and any required build steps are configured.
-# 4. Run this workflow manually with dry_run=true.
-# 5. Publish a release whose tag matches package.json version.
-#
-# Security:
-# - Never print or commit npm authentication tokens.
-# - Review the package contents before publishing.
-# - --ignore-scripts prevents npm publish lifecycle scripts from running.
-# - Required build steps are run explicitly before packaging.
-# =============================================================================
+      - name: Write publishing summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        shell: bash
+        run: |
+          {
+            echo "## npm Package Publishing"
+            echo
+            echo "- Status: ${STATUS}"
+            echo "- Trigger: ${EVENT_NAME}"
+            echo "- Manual dry run: ${DRY_RUN:-not applicable}"
+            echo "- Node.js: 22"
+            echo "- Repository write permissions: disabled"
+            echo "- npm publish lifecycle scripts: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"

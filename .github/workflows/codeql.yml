@@ -1,83 +1,57 @@
 
-# ==============================================================================
-# MedOrbits -- CodeQL Security Analysis
-# File: .github/workflows/codeql.yml
-# Release: 2.2.0
-#
-# Purpose:
-#   Detect security vulnerabilities in JavaScript, TypeScript, and Python.
-#
-# Security:
-#   - Least-privilege GitHub Actions permissions.
-#   - Independent analysis jobs for each language.
-#   - Security-extended query suite.
-#   - No automatic merging, deployment, or source modification.
-# ==============================================================================
-
 name: CodeQL Security Analysis
 
 on:
   push:
-    branches:
-      - main
-      - develop
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
-      - develop
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-
+    branches: [main]
   schedule:
-    # Every Monday at 03:23 UTC.
-    - cron: "23 3 * * 1"
-
+    - cron: "30 2 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   analyze:
-    name: Analyze ${{ matrix.language }} for vulnerabilities
+    name: Analyze ${{ matrix.language }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     permissions:
-      actions: read
       contents: read
+      actions: read
       security-events: write
 
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - javascript-typescript
-          - python
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-          fetch-depth: 1
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: security-extended
 
-      - name: Perform CodeQL analysis
+      - name: Analyze code and upload results
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
-          upload: true
+          upload: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref, 'refs/heads/dependabot/') }}

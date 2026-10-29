@@ -1,20 +1,4 @@
 
-# ==============================================================================
-# MedOrbits -- Continuous Integration
-# File: .github/workflows/CI.yml
-# Release target: 2.0.0
-#
-# Purpose:
-#   Run available repository validation, tests, and security checks.
-#
-# Policy:
-#   - Least-privilege permissions.
-#   - No automatic merging or deployment.
-#   - Optional checks skip only when prerequisites are absent.
-#   - Executed checks must pass; genuine failures are not suppressed.
-#   - Source files remain unchanged.
-# ==============================================================================
-
 name: MedOrbits CI
 
 on:
@@ -37,7 +21,7 @@ concurrency:
 
 jobs:
   repository-validation:
-    name: Repository and configuration validation
+    name: Repository and Configuration Validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -53,7 +37,7 @@ jobs:
           python-version: "3.12"
           check-latest: false
 
-      - name: Install pinned YAML validator
+      - name: Install YAML validator
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -69,9 +53,9 @@ jobs:
           import sys
           import yaml
 
-          EXCLUDED_DIRS = {
+          EXCLUDED = {
               ".git", "node_modules", ".venv", "venv", "vendor",
-              "__pycache__", ".next", "dist", "build"
+              "__pycache__", ".next", "dist", "build", "coverage"
           }
 
           class UniqueKeyLoader(yaml.SafeLoader):
@@ -79,6 +63,7 @@ jobs:
 
           def construct_mapping(loader, node, deep=False):
               mapping = {}
+
               for key_node, value_node in node.value:
                   key = loader.construct_object(key_node, deep=deep)
 
@@ -88,7 +73,7 @@ jobs:
                       raise yaml.constructor.ConstructorError(
                           "while constructing a mapping",
                           node.start_mark,
-                          "found an unhashable mapping key",
+                          "unhashable mapping key",
                           key_node.start_mark,
                       )
 
@@ -115,78 +100,157 @@ jobs:
               path for path in Path(".").rglob("*")
               if path.is_file()
               and path.suffix.lower() in {".yml", ".yaml"}
-              and not any(part in EXCLUDED_DIRS for part in path.parts)
+              and not any(part in EXCLUDED for part in path.parts)
           )
 
-          if not files:
-              print("No YAML files found; validation skipped.")
-              sys.exit(0)
-
-          failed = False
+          errors = []
 
           for path in files:
               try:
-                  with path.open("r", encoding="utf-8-sig") as stream:
+                  with path.open(encoding="utf-8-sig") as stream:
                       list(yaml.load_all(stream, Loader=UniqueKeyLoader))
                   print(f"[PASS] {path}")
               except (OSError, UnicodeError, yaml.YAMLError) as exc:
-                  failed = True
-                  print(f"[FAIL] {path}: {exc}", file=sys.stderr)
+                  errors.append(f"{path}: {exc}")
 
-          print(f"YAML files checked: {len(files)}")
-
-          if failed:
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
-          print("All discovered YAML files passed validation.")
+          print(f"YAML validation passed: {len(files)} file(s).")
           PY
 
-      - name: Validate JSON syntax
+      - name: Validate JSON syntax and duplicate keys
         shell: bash
         run: |
           set -Eeuo pipefail
 
           python <<'PY'
-          from pathlib import Path
           import json
           import sys
+          from pathlib import Path
 
-          EXCLUDED_DIRS = {
+          EXCLUDED = {
               ".git", "node_modules", ".venv", "venv", "vendor",
-              "__pycache__", ".next", "dist", "build"
+              "__pycache__", ".next", "dist", "build", "coverage"
           }
+
+          def reject_duplicates(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"Duplicate JSON key: {key!r}")
+                  result[key] = value
+              return result
+
+          def reject_constant(value):
+              raise ValueError(f"Non-standard JSON constant: {value}")
 
           files = sorted(
               path for path in Path(".").rglob("*.json")
               if path.is_file()
-              and not any(part in EXCLUDED_DIRS for part in path.parts)
+              and not any(part in EXCLUDED for part in path.parts)
           )
 
-          if not files:
-              print("No JSON files found; validation skipped.")
-              sys.exit(0)
-
-          failed = False
+          errors = []
 
           for path in files:
               try:
-                  with path.open("r", encoding="utf-8-sig") as stream:
-                      json.load(stream)
+                  with path.open(encoding="utf-8-sig") as stream:
+                      json.load(
+                          stream,
+                          object_pairs_hook=reject_duplicates,
+                          parse_constant=reject_constant,
+                      )
                   print(f"[PASS] {path}")
-              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-                  failed = True
-                  print(f"[FAIL] {path}: {exc}", file=sys.stderr)
+              except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+                  errors.append(f"{path}: {exc}")
 
-          print(f"JSON files checked: {len(files)}")
-
-          if failed:
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
-          print("All discovered JSON files passed validation.")
+          print(f"JSON validation passed: {len(files)} file(s).")
+          PY
+
+      - name: Validate TOML syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          EXCLUDED = {
+              ".git", "node_modules", ".venv", "venv", "vendor",
+              "__pycache__", ".next", "dist", "build", "coverage"
+          }
+
+          errors = []
+          files = sorted(
+              path for path in Path(".").rglob("*.toml")
+              if path.is_file()
+              and not any(part in EXCLUDED for part in path.parts)
+          )
+
+          for path in files:
+              try:
+                  with path.open("rb") as stream:
+                      tomllib.load(stream)
+                  print(f"[PASS] {path}")
+              except (OSError, tomllib.TOMLDecodeError) as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
+              sys.exit(1)
+
+          print(f"TOML validation passed: {len(files)} file(s).")
+          PY
+
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
+          import ast
+          import sys
+          from pathlib import Path
+
+          EXCLUDED = {
+              ".git", "node_modules", ".venv", "venv", "vendor",
+              "__pycache__", ".next", "dist", "build", "coverage"
+          }
+
+          errors = []
+          files = sorted(
+              path for path in Path(".").rglob("*.py")
+              if path.is_file()
+              and not any(part in EXCLUDED for part in path.parts)
+          )
+
+          for path in files:
+              try:
+                  ast.parse(
+                      path.read_text(encoding="utf-8"),
+                      filename=str(path),
+                  )
+                  print(f"[PASS] {path}")
+              except (OSError, UnicodeError, SyntaxError, ValueError) as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Python syntax validation passed: {len(files)} file(s).")
           PY
 
   javascript-validation:
-    name: JavaScript and Node.js validation
+    name: JavaScript and Node.js Validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -213,8 +277,7 @@ jobs:
         if: steps.node-project.outputs.present == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+          node-version: "22"
           check-latest: false
 
       - name: Validate package manifest
@@ -222,24 +285,33 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          node --version
-          npm --version
-          node --input-type=commonjs -e '
-            const fs = require("node:fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-              throw new Error("package.json must contain a JSON object.");
-            }
+          node <<'JS'
+          const fs = require("node:fs");
 
-            if (pkg.scripts !== undefined &&
-                (!pkg.scripts || typeof pkg.scripts !== "object" ||
-                 Array.isArray(pkg.scripts))) {
-              throw new Error("package.json scripts must be an object.");
-            }
+          let pkg;
 
-            console.log("Root package.json is valid.");
-          '
+          try {
+            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          } catch (error) {
+            throw new Error(`Invalid package.json: ${error.message}`);
+          }
+
+          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (
+            pkg.scripts !== undefined &&
+            (!pkg.scripts || typeof pkg.scripts !== "object" ||
+             Array.isArray(pkg.scripts))
+          ) {
+            throw new Error("package.json scripts must be an object.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Node.js: ${process.version}`);
+          JS
 
       - name: Check lockfile prerequisites
         if: steps.node-project.outputs.present == 'true'
@@ -250,31 +322,66 @@ jobs:
 
           if [[ -f npm-shrinkwrap.json ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Using npm-shrinkwrap.json as the authoritative lockfile."
+            echo "Using npm-shrinkwrap.json."
           elif [[ -f package-lock.json ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
             echo "Using package-lock.json."
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No npm lockfile found. Dependency installation and npm scripts will be skipped."
+            echo "::warning::No npm lockfile found; dependency installation and npm scripts will be skipped."
           fi
 
-      - name: Validate npm lockfile consistency
+      - name: Validate lockfile consistency
         if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --dry-run
+
+          LOCKFILE="$(
+            if [[ -f npm-shrinkwrap.json ]]; then
+              printf '%s' npm-shrinkwrap.json
+            else
+              printf '%s' package-lock.json
+            fi
+          )"
+
+          LOCKFILE="$LOCKFILE" node <<'JS'
+          const fs = require("node:fs");
+
+          const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error("Unsupported npm lockfile version.");
+          }
+
+          if (!lock.packages || typeof lock.packages !== "object" ||
+              Array.isArray(lock.packages)) {
+            throw new Error("Lockfile is missing a valid packages object.");
+          }
+
+          const root = lock.packages[""];
+
+          if (!root || typeof root !== "object") {
+            throw new Error('Lockfile is missing packages[""].');
+          }
+
+          for (const key of ["name", "version"]) {
+            if (manifest[key] !== undefined &&
+                root[key] !== undefined &&
+                manifest[key] !== root[key]) {
+              throw new Error(`package.json ${key} does not match the lockfile.`);
+            }
+          }
+
+          console.log(`Validated ${process.env.LOCKFILE}.`);
+          JS
 
       - name: Install locked dependencies
         if: steps.node-project.outputs.present == 'true' && steps.lockfile.outputs.present == 'true'
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Check JavaScript syntax
-        if: steps.node-project.outputs.present == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -288,43 +395,28 @@ jobs:
             ".git", "node_modules", ".venv", "venv", "vendor",
             "__pycache__", ".next", "dist", "build", "coverage"
           ]);
-
           const extensions = new Set([".js", ".mjs", ".cjs"]);
           const files = [];
 
           function walk(directory) {
-            let entries;
-
-            try {
-              entries = fs.readdirSync(directory, { withFileTypes: true });
-            } catch (error) {
-              throw new Error(`Cannot read ${directory}: ${error.message}`);
-            }
-
-            for (const entry of entries) {
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
               if (entry.isSymbolicLink()) continue;
               if (entry.isDirectory() && excluded.has(entry.name)) continue;
 
-              const fullPath = path.join(directory, entry.name);
+              const file = path.join(directory, entry.name);
 
               if (entry.isDirectory()) {
-                walk(fullPath);
+                walk(file);
               } else if (
                 entry.isFile() &&
                 extensions.has(path.extname(entry.name).toLowerCase())
               ) {
-                files.push(fullPath);
+                files.push(file);
               }
             }
           }
 
           walk(".");
-
-          if (files.length === 0) {
-            console.log("No JavaScript source files found; syntax check skipped.");
-            process.exit(0);
-          }
-
           let failed = false;
 
           for (const file of files.sort()) {
@@ -337,12 +429,8 @@ jobs:
             if (result.error || result.status !== 0) {
               failed = true;
               console.error(`[FAIL] ${file}`);
-
-              if (result.stderr) {
-                console.error(result.stderr.trim());
-              } else if (result.error) {
-                console.error(result.error.message);
-              }
+              if (result.stderr) console.error(result.stderr.trim());
+              if (result.error) console.error(result.error.message);
             } else {
               console.log(`[PASS] ${file}`);
             }
@@ -378,10 +466,10 @@ jobs:
 
       - name: Report dependency manifest status
         if: always()
-        shell: bash
         env:
           PROJECT_PRESENT: ${{ steps.node-project.outputs.present }}
           LOCKFILE_PRESENT: ${{ steps.lockfile.outputs.present }}
+        shell: bash
         run: |
           set -Eeuo pipefail
 
@@ -394,7 +482,7 @@ jobs:
           fi
 
   shell-validation:
-    name: Shell script validation
+    name: Shell Script Validation
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -411,44 +499,35 @@ jobs:
 
           mapfile -d '' files < <(
             find . \
-              \( \
-                -type d \
-                \( \
-                  -name .git \
-                  -o -name node_modules \
-                  -o -name .venv \
-                  -o -name venv \
-                  -o -name vendor \
-                  -o -name __pycache__ \
-                  -o -name dist \
-                  -o -name build \
-                \) \
-                -prune \
-              \) \
-              -o \
-              \( -type f -name '*.sh' -print0 \)
+              \( -type d \( \
+                -name .git -o \
+                -name node_modules -o \
+                -name .venv -o \
+                -name venv -o \
+                -name vendor -o \
+                -name __pycache__ -o \
+                -name dist -o \
+                -name build \
+              \) -prune \) \
+              -o \( -type f -name '*.sh' -print0 \)
           )
 
-          if ((${#files[@]} == 0)); then
-            echo "No shell scripts found; validation skipped."
-          else
-            failed=0
+          failed=0
 
-            for file in "${files[@]}"; do
-              if bash -n "$file"; then
-                printf '[PASS] %s\n' "$file"
-              else
-                printf '::error file=%s::Shell syntax validation failed.\n' "$file"
-                failed=1
-              fi
-            done
-
-            if ((failed != 0)); then
-              exit 1
+          for file in "${files[@]}"; do
+            if bash -n "$file"; then
+              printf '[PASS] %s\n' "$file"
+            else
+              printf '::error file=%s::Shell syntax validation failed.\n' "$file"
+              failed=1
             fi
+          done
 
-            printf 'Validated %s shell script(s).\n' "${#files[@]}"
+          if ((failed)); then
+            exit 1
           fi
+
+          echo "Validated ${#files[@]} shell script(s)."
 
       - name: Test commit-message validator when available
         shell: bash
@@ -467,7 +546,7 @@ jobs:
           fi
 
   ci-summary:
-    name: CI summary
+    name: CI Summary
     runs-on: ubuntu-latest
     needs:
       - repository-validation

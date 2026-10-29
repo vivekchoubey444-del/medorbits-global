@@ -2,27 +2,28 @@
 # ==============================================================================
 # MedOrbits -- Production Deployment
 # File: .github/workflows/deploy.yml
-# Release target: 2.0.0
+# Release: 3.0.0
 #
 # Purpose:
-#   Validate the production application and trigger a Render deployment.
+#   Validate the production application and request a Render deployment.
 #
 # Security:
 #   - Read-only GitHub repository permissions.
 #   - Production environment protection.
 #   - Manual deployment requires explicit confirmation.
-#   - Render deployment hook stored in GitHub environment secrets.
-#   - No automatic commits, merges, or deployments from pull requests.
-#   - Detect deleted or emptied existing files before deployment.
+#   - Deployment hook stored in production environment secrets.
+#   - No deployments from pull requests.
+#   - No automatic commits, merges, or repository modifications.
+#   - No dependency or lockfile regeneration.
 #
-# IMPORTANT:
-#   A successful deploy-hook request does not prove application health.
+# Note:
+#   An accepted deployment request does not prove deployment completion
+#   or application health.
 # ==============================================================================
 
 name: Deploy MedOrbits
 
 on:
-  # Automatic production deployments are handled by deploy_production.yml.
   workflow_dispatch:
     inputs:
       confirm_deployment:
@@ -39,9 +40,9 @@ concurrency:
 
 jobs:
   pre-deploy:
-    name: Pre-deployment checks
+    name: Pre-deployment Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     permissions:
       contents: read
@@ -50,121 +51,176 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ github.sha }}
+          fetch-depth: 1
           persist-credentials: false
 
       - name: Verify deployment source and confirmation
         env:
+          REF: ${{ github.ref }}
           EVENT_NAME: ${{ github.event_name }}
-          REF_NAME: ${{ github.ref_name }}
           CONFIRMATION: ${{ inputs.confirm_deployment }}
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ "$REF_NAME" != "main" ]]; then
+          if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
+            echo "::error::Only manual deployment is permitted."
+            exit 1
+          fi
+
+          if [[ "$REF" != "refs/heads/main" ]]; then
             echo "::error::Production deployment is allowed only from main."
             exit 1
           fi
 
           if [[ "$CONFIRMATION" != "deploy" ]]; then
-            echo "::error::Manual deployment cancelled. Enter exactly 'deploy'."
+            echo "::error::Enter exactly 'deploy' to confirm deployment."
             exit 1
           fi
 
-          echo "Production deployment source validated."
+          echo "Deployment source and confirmation validated."
+
+      - name: Verify required files and lockfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          for file in package.json server.js; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Required file is missing or empty: $file"
+              exit 1
+            fi
+          done
+
+          if [[ -f npm-shrinkwrap.json ]]; then
+            echo "LOCKFILE=npm-shrinkwrap.json" >> "$GITHUB_ENV"
+          elif [[ -f package-lock.json ]]; then
+            echo "LOCKFILE=package-lock.json" >> "$GITHUB_ENV"
+          else
+            echo "::error::No root npm lockfile found."
+            exit 1
+          fi
+
+      - name: Validate package and lockfile metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
+
+          if (
+            pkg === null ||
+            typeof pkg !== "object" ||
+            Array.isArray(pkg)
+          ) {
+            throw new Error("package.json must contain a JSON object.");
+          }
+
+          if (
+            !pkg.scripts ||
+            typeof pkg.scripts !== "object" ||
+            Array.isArray(pkg.scripts)
+          ) {
+            throw new Error("package.json must define a scripts object.");
+          }
+
+          if (!pkg.scripts.test) {
+            throw new Error(
+              "A production test script is required in package.json."
+            );
+          }
+
+          if (
+            pkg.engines?.node &&
+            !pkg.engines.node.includes("22")
+          ) {
+            console.log(
+              `Notice: declared Node.js engine is ${pkg.engines.node}.`
+            );
+          }
+
+          const lock = JSON.parse(
+            fs.readFileSync(process.env.LOCKFILE, "utf8")
+          );
+
+          if (
+            lock === null ||
+            typeof lock !== "object" ||
+            Array.isArray(lock)
+          ) {
+            throw new Error("Lockfile must contain a JSON object.");
+          }
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error(
+              `Unsupported lockfileVersion: ${lock.lockfileVersion}`
+            );
+          }
+
+          const root = lock.packages?.[""];
+
+          if (!root) {
+            throw new Error("Lockfile is missing packages[''] metadata.");
+          }
+
+          if (
+            pkg.name &&
+            (root.name || lock.name) !== pkg.name
+          ) {
+            throw new Error("Manifest and lockfile package names differ.");
+          }
+
+          if (
+            pkg.version &&
+            (root.version || lock.version) !== pkg.version
+          ) {
+            throw new Error("Manifest and lockfile versions differ.");
+          }
+
+          console.log(`Package: ${pkg.name || "unnamed"}`);
+          console.log(`Version: ${pkg.version || "unspecified"}`);
+          console.log(`Lockfile: ${process.env.LOCKFILE}`);
+          console.log("Manifest and lockfile metadata validated.");
+          NODE
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           check-latest: false
-          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
-          cache-dependency-path: |
-            package-lock.json
-            npm-shrinkwrap.json
 
-      - name: Validate application configuration
+      - name: Check server JavaScript syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node --check server.js
+
+      - name: Install locked dependencies
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          if [[ ! -s package.json ]]; then
-            echo "::error::Root package.json is missing or empty."
-            exit 1
-          fi
+          npm ci --no-audit --no-fund
 
-          node - <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-
-          if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-            throw new Error("package.json must contain a JSON object.");
-          }
-
-          console.log(`Package: ${pkg.name || "unnamed"}`);
-          console.log(`Version: ${pkg.version || "unspecified"}`);
-          console.log(`Node requirement: ${pkg.engines?.node || "not specified"}`);
-          NODE
-
-          if [[ -f npm-shrinkwrap.json ]]; then
-            export LOCKFILE="npm-shrinkwrap.json"
-          elif [[ -f package-lock.json ]]; then
-            export LOCKFILE="package-lock.json"
-          else
-            echo "::error::A root npm lockfile is required."
-            exit 1
-          fi
-
-          node - <<'NODE'
-          const fs = require("node:fs");
-          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
-
-          if (!Number.isInteger(lock.lockfileVersion)) {
-            throw new Error("Invalid npm lockfile version.");
-          }
-
-          if (lock.name && pkg.name && lock.name !== pkg.name) {
-            throw new Error("package.json and lockfile names differ.");
-          }
-
-          if (lock.version && pkg.version && lock.version !== pkg.version) {
-            throw new Error("package.json and lockfile versions differ.");
-          }
-
-          console.log(`Validated ${process.env.LOCKFILE}.`);
-          NODE
-
-          if [[ ! -s server.js ]]; then
-            echo "::error::Expected server.js is missing or empty."
-            exit 1
-          fi
-
-          node --check server.js
-
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Check dependency tree
-        run: npm ls --depth=0
+      - name: Check installed dependency tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm ls --depth=0
 
       - name: Run production tests
         shell: bash
         run: |
           set -Eeuo pipefail
+          npm test
 
-          if node -e '
-            const pkg = require("./package.json");
-            process.exit(pkg.scripts?.test ? 0 : 1);
-          '; then
-            npm test
-          else
-            echo "::error::No npm test script is configured."
-            exit 1
-          fi
-
-      - name: Validate configured build
+      - name: Run production build
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -175,11 +231,29 @@ jobs:
           '; then
             npm run build
           else
-            echo "::notice::No build script is configured; skipping build."
+            echo "::notice::No build script is configured; build skipped."
           fi
 
+      - name: Summarize pre-deployment validation
+        if: success()
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          {
+            echo "## Production Pre-deployment Validation"
+            echo
+            echo "- Result: passed"
+            echo "- Source branch: main"
+            echo "- Commit: $COMMIT_SHA"
+            echo "- Manifest and lockfile: validated"
+            echo "- Dependency installation: passed"
+            echo "- Tests: passed"
+            echo "- Repository writes: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
-    name: Trigger Render production deployment
+    name: Request Render Production Deployment
     needs: pre-deploy
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -199,14 +273,16 @@ jobs:
           set -Eeuo pipefail
 
           if [[ -z "${RENDER_DEPLOY_HOOK:-}" ]]; then
-            echo "::error::Missing RENDER_DEPLOY_HOOK in the production environment secrets."
+            echo "::error::RENDER_DEPLOY_HOOK is missing from production secrets."
             exit 1
           fi
 
-          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://api\.render\.com/deploy/ ]]; then
-            echo "::error::The deployment hook must use the expected Render HTTPS endpoint."
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://api\.render\.com/deploy/[^[:space:]]+$ ]]; then
+            echo "::error::Render deployment hook URL is invalid."
             exit 1
           fi
+
+          echo "Render deployment hook format validated."
 
       - name: Trigger Render deployment
         env:
@@ -227,45 +303,47 @@ jobs:
               --request POST \
               --connect-timeout 10 \
               --max-time 30 \
+              --max-redirs 0 \
               "$RENDER_DEPLOY_HOOK"
           )"; then
-            echo "::error::Unable to contact the Render deployment endpoint."
+            echo "::error::Could not contact the Render deployment endpoint."
             exit 1
           fi
 
           if [[ ! "$http_code" =~ ^2[0-9][0-9]$ ]]; then
             echo "::error::Render returned HTTP $http_code."
-            echo "Response body withheld to avoid exposing deployment metadata."
+            echo "Response body withheld from workflow logs."
             exit 1
           fi
 
           {
             echo "## Render Production Deployment"
             echo
-            echo "- Request status: accepted"
+            echo "- Request: accepted"
             echo "- HTTP status: $http_code"
-            echo "- Provider: Render"
             echo "- Environment: production"
+            echo "- Provider: Render"
             echo
-            echo "The request was accepted; build completion and application health must still be verified."
+            echo "Acceptance does not confirm deployment completion or application health."
+            echo "Verify the deployment in the Render dashboard and check the live health endpoint."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Write deployment summary
+      - name: Report deployment workflow result
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
-          EVENT_NAME: ${{ github.event_name }}
           COMMIT_SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
         shell: bash
         run: |
           {
             echo
-            echo "### Deployment Workflow Result"
+            echo "### Deployment Request Result"
             echo
             echo "- Job result: $JOB_STATUS"
-            echo "- Trigger: $EVENT_NAME"
+            echo "- Source ref: $REF"
             echo "- Commit: $COMMIT_SHA"
             echo "- Automatic merge: disabled"
-            echo "- Git repository writes: disabled"
-            echo "- Application health verification: required"
+            echo "- Automatic repository writes: disabled"
+            echo "- Application health: must be verified separately"
           } >> "$GITHUB_STEP_SUMMARY"

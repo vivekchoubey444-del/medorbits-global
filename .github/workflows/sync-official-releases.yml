@@ -4,7 +4,6 @@ name: Sync Official Releases
 on:
   schedule:
     - cron: "0 6 * * 1"
-
   workflow_dispatch:
 
 permissions:
@@ -32,6 +31,7 @@ jobs:
           python-version: "3.12"
 
       - name: Check configured upstream releases
+        id: check
         env:
           GITHUB_TOKEN: ${{ github.token }}
         shell: bash
@@ -46,8 +46,6 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
 
-          # Replace these examples with the official repositories
-          # that MedOrbits intentionally depends on.
           repositories = [
               "nodejs/node",
               "npm/cli",
@@ -59,11 +57,7 @@ jobs:
           results = []
 
           for repository in repositories:
-              url = (
-                  "https://api.github.com/repos/"
-                  f"{repository}/releases/latest"
-              )
-
+              url = f"https://api.github.com/repos/{repository}/releases/latest"
               headers = {
                   "Accept": "application/vnd.github+json",
                   "User-Agent": "MedOrbits-Release-Monitor",
@@ -76,10 +70,7 @@ jobs:
               request = urllib.request.Request(url, headers=headers)
 
               try:
-                  with urllib.request.urlopen(
-                      request,
-                      timeout=20,
-                  ) as response:
+                  with urllib.request.urlopen(request, timeout=20) as response:
                       release = json.load(response)
 
                   results.append({
@@ -89,69 +80,67 @@ jobs:
                       "name": release.get("name"),
                       "published_at": release.get("published_at"),
                       "html_url": release.get("html_url"),
-                      "checked_at": datetime.now(
-                          timezone.utc
-                      ).isoformat(),
+                      "checked_at": datetime.now(timezone.utc).isoformat(),
                   })
 
-                  print(
-                      f"{repository}: "
-                      f"{release.get('tag_name', 'unknown')}"
-                  )
+                  print(f"OK: {repository} -> {release.get('tag_name', 'unknown')}")
 
               except urllib.error.HTTPError as error:
                   results.append({
                       "repository": repository,
                       "status": "error",
                       "http_status": error.code,
-                      "checked_at": datetime.now(
-                          timezone.utc
-                      ).isoformat(),
+                      "message": "GitHub API request failed",
+                      "checked_at": datetime.now(timezone.utc).isoformat(),
                   })
+                  print(f"::warning::{repository}: GitHub API returned HTTP {error.code}")
 
-                  print(
-                      f"Warning: {repository} returned HTTP "
-                      f"{error.code}."
-                  )
-
-              except (urllib.error.URLError, TimeoutError) as error:
+              except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
                   results.append({
                       "repository": repository,
                       "status": "error",
                       "message": str(error),
-                      "checked_at": datetime.now(
-                          timezone.utc
-                      ).isoformat(),
+                      "checked_at": datetime.now(timezone.utc).isoformat(),
                   })
+                  print(f"::warning::{repository}: {error}")
 
-                  print(
-                      f"Warning: unable to check {repository}: {error}"
-                  )
+          report = {
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "repositories_checked": len(repositories),
+              "successful_checks": sum(r["status"] == "success" for r in results),
+              "failed_checks": sum(r["status"] != "success" for r in results),
+              "results": results,
+          }
 
-          output = Path("release-monitor-report.json")
-          output.write_text(
-              json.dumps(
-                  {
-                      "generated_at": datetime.now(
-                          timezone.utc
-                      ).isoformat(),
-                      "repositories_checked": len(repositories),
-                      "results": results,
-                  },
-                  indent=2,
-              ) + "\n",
+          Path("release-monitor-report.json").write_text(
+              json.dumps(report, indent=2) + "\n",
               encoding="utf-8",
           )
 
-          failed = [
-              item for item in results
-              if item["status"] != "success"
-          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Official Release Monitor\n\n")
+              summary.write(f"- Generated: {report['generated_at']}\n")
+              summary.write(f"- Repositories checked: {report['repositories_checked']}\n")
+              summary.write(f"- Successful checks: {report['successful_checks']}\n")
+              summary.write(f"- Failed checks: {report['failed_checks']}\n\n")
+              summary.write("| Repository | Status | Latest release | Published |\n")
+              summary.write("|---|---|---|---|\n")
 
-          if failed:
-              print(
-                  f"::warning::{len(failed)} upstream release check(s) failed."
-              )
+              for result in results:
+                  repository = result["repository"]
+                  status = result["status"]
+                  tag = result.get("tag", "Unavailable")
+                  published = result.get("published_at", "Unavailable")
+                  url = result.get("html_url")
+
+                  if url and tag != "Unavailable":
+                      tag = f"[{tag}]({url})"
+
+                  summary.write(
+                      f"| `{repository}` | {status} | {tag} | {published} |\n"
+                  )
+
+          print(json.dumps(report, indent=2))
           PY
 
       - name: Upload release report
@@ -163,14 +152,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Write summary
+      - name: Write workflow policy summary
         if: always()
         run: |
           {
-            echo "## Official Release Monitor"
             echo
-            echo "- Report artifact: official-release-report-${{ github.run_number }}"
+            echo "### Workflow Policy"
+            echo
             echo "- Schedule: Mondays at 06:00 UTC"
             echo "- Automatic dependency updates: disabled"
             echo "- Automatic commits and pushes: disabled"
+            echo "- Report retention: 30 days"
           } >> "$GITHUB_STEP_SUMMARY"

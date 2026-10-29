@@ -11,14 +11,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: repository-validation-${{ github.workflow }}-${{ github.ref }}
+  group: repository-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
-    name: Validate repository files
+    name: Validate Repository Files
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -31,95 +31,168 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate JSON, JSONC-free JSON files
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install YAML validator
         shell: bash
         run: |
-          python - <<'PY'
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check "PyYAML>=6,<7"
+
+      - name: Validate JSON syntax and duplicate keys
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          python <<'PY'
           import json
           import sys
           from pathlib import Path
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
           errors = []
+
+          def reject_duplicates(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"Duplicate JSON key: {key!r}")
+                  result[key] = value
+              return result
+
+          def reject_constant(value):
+              raise ValueError(f"Non-standard JSON constant: {value}")
 
           for path in Path(".").rglob("*.json"):
               if any(part in ignored for part in path.parts):
                   continue
+
               try:
                   with path.open(encoding="utf-8") as file:
-                      json.load(file)
-              except Exception as exc:
+                      json.load(
+                          file,
+                          object_pairs_hook=reject_duplicates,
+                          parse_constant=reject_constant,
+                      )
+              except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
                   errors.append(f"{path}: {exc}")
 
           if errors:
-              print("\n".join(errors))
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
-          print("JSON validation passed.")
+          print("JSON syntax and duplicate-key validation passed.")
           PY
 
-      - name: Install validation dependencies
-        run: python -m pip install --disable-pip-version-check PyYAML
-
-      - name: Validate YAML
+      - name: Validate YAML syntax and duplicate keys
         shell: bash
         run: |
-          python - <<'PY'
+          set -Eeuo pipefail
+
+          python <<'PY'
           import sys
-          import yaml
           from pathlib import Path
+          import yaml
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
           errors = []
+
+          class UniqueKeyLoader(yaml.SafeLoader):
+              pass
+
+          def construct_mapping(loader, node, deep=False):
+              mapping = {}
+
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+
+                  try:
+                      duplicate = key in mapping
+                  except TypeError:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          "unhashable mapping key",
+                          key_node.start_mark,
+                      )
+
+                  if duplicate:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          f"duplicate key {key!r}",
+                          key_node.start_mark,
+                      )
+
+                  mapping[key] = loader.construct_object(
+                      value_node, deep=deep
+                  )
+
+              return mapping
+
+          UniqueKeyLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              construct_mapping,
+          )
 
           for pattern in ("*.yml", "*.yaml"):
               for path in Path(".").rglob(pattern):
                   if any(part in ignored for part in path.parts):
                       continue
+
                   try:
                       with path.open(encoding="utf-8") as file:
-                          list(yaml.safe_load_all(file))
-                  except Exception as exc:
+                          list(yaml.load_all(file, Loader=UniqueKeyLoader))
+                  except (OSError, UnicodeError, yaml.YAMLError) as exc:
                       errors.append(f"{path}: {exc}")
 
           if errors:
-              print("\n".join(errors))
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
-          print("YAML syntax validation passed.")
+          print("YAML syntax and duplicate-key validation passed.")
           PY
 
-      - name: Validate TOML
+      - name: Validate TOML syntax
         shell: bash
         run: |
-          python - <<'PY'
+          set -Eeuo pipefail
+
+          python <<'PY'
           import sys
           import tomllib
           from pathlib import Path
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
           errors = []
 
           for path in Path(".").rglob("*.toml"):
               if any(part in ignored for part in path.parts):
                   continue
+
               try:
                   with path.open("rb") as file:
                       tomllib.load(file)
-              except Exception as exc:
+              except (OSError, tomllib.TOMLDecodeError) as exc:
                   errors.append(f"{path}: {exc}")
 
           if errors:
-              print("\n".join(errors))
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
           print("TOML syntax validation passed.")
@@ -128,27 +201,34 @@ jobs:
       - name: Validate Python syntax
         shell: bash
         run: |
-          python - <<'PY'
+          set -Eeuo pipefail
+
+          python <<'PY'
           import ast
           import sys
           from pathlib import Path
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
           errors = []
 
           for path in Path(".").rglob("*.py"):
               if any(part in ignored for part in path.parts):
                   continue
+
               try:
-                  ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-              except Exception as exc:
+                  ast.parse(
+                      path.read_text(encoding="utf-8"),
+                      filename=str(path),
+                  )
+              except (OSError, UnicodeError, SyntaxError, ValueError) as exc:
                   errors.append(f"{path}: {exc}")
 
           if errors:
-              print("\n".join(errors))
+              print("\n".join(errors), file=sys.stderr)
               sys.exit(1)
 
           print("Python syntax validation passed.")
@@ -157,48 +237,81 @@ jobs:
       - name: Validate JavaScript syntax
         shell: bash
         run: |
-          node --version
-          python - <<'PY' > /tmp/javascript-files.txt
+          set -Eeuo pipefail
+
+          python <<'PY' > "$RUNNER_TEMP/javascript-files.txt"
           from pathlib import Path
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
 
-          for path in Path(".").rglob("*.js"):
-              if not any(part in ignored for part in path.parts):
-                  print(path.as_posix())
+          extensions = {".js", ".cjs", ".mjs"}
+
+          for path in sorted(Path(".").rglob("*")):
+              if not path.is_file() or path.suffix.lower() not in extensions:
+                  continue
+              if any(part in ignored for part in path.parts):
+                  continue
+              print(path.as_posix())
           PY
 
           while IFS= read -r file; do
-            [ -z "$file" ] && continue
+            [[ -z "$file" ]] && continue
             echo "Checking $file"
             node --check "$file"
-          done < /tmp/javascript-files.txt
+          done < "$RUNNER_TEMP/javascript-files.txt"
+
+          echo "JavaScript syntax validation passed."
 
       - name: Validate shell syntax
         shell: bash
         run: |
-          python - <<'PY' > /tmp/shell-files.txt
+          set -Eeuo pipefail
+
+          python <<'PY' > "$RUNNER_TEMP/shell-files.txt"
           from pathlib import Path
 
           ignored = {
               ".git", "node_modules", ".venv", "venv",
-              "dist", "build", ".next", "coverage"
+              "dist", "build", ".next", "coverage",
+              "__pycache__", ".pytest_cache"
           }
 
-          for path in Path(".").rglob("*.sh"):
-              if not any(part in ignored for part in path.parts):
-                  print(path.as_posix())
+          for path in sorted(Path(".").rglob("*.sh")):
+              if not path.is_file():
+                  continue
+              if any(part in ignored for part in path.parts):
+                  continue
+              print(path.as_posix())
           PY
 
           while IFS= read -r file; do
-            [ -z "$file" ] && continue
+            [[ -z "$file" ]] && continue
             echo "Checking $file"
             bash -n "$file"
-          done < /tmp/shell-files.txt
+          done < "$RUNNER_TEMP/shell-files.txt"
 
-      - name: Validation summary
+          echo "Shell syntax validation passed."
+
+      - name: Write validation summary
         if: always()
-        run: echo "Repository validation job finished with status ${{ job.status }}."
+        env:
+          STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## MedOrbits Repository Validation"
+            echo
+            echo "- Result: ${STATUS}"
+            echo "- JSON syntax and duplicate keys: checked"
+            echo "- YAML syntax and duplicate keys: checked"
+            echo "- TOML syntax: checked"
+            echo "- Python syntax: checked"
+            echo "- JavaScript syntax: checked"
+            echo "- Bash shell syntax: checked"
+            echo
+            echo "This workflow checks syntax, not application behavior or complete security."
+          } >> "$GITHUB_STEP_SUMMARY"

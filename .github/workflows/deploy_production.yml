@@ -1,20 +1,4 @@
 
-# ==============================================================================
-# MedOrbits -- Production Deployment
-# File: .github/workflows/deploy_production.yml
-# Release target: 2.0.0
-#
-# Purpose:
-#   Validate the production application and trigger a Render deployment.
-#
-# Policy:
-#   - Least-privilege GitHub permissions.
-#   - Manual deployment requires explicit confirmation.
-#   - Automatic deployment only for relevant changes on main.
-#   - No automatic merging or source modification.
-#   - A successful HTTP response confirms request acceptance only.
-# ==============================================================================
-
 name: Deploy Production
 
 on:
@@ -53,7 +37,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate production deployment
+    name: Validate Production Deployment
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -62,7 +46,7 @@ jobs:
 
     steps:
       - name: Check manual deployment confirmation
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: github.event_name == 'workflow_dispatch'
         env:
           CONFIRMATION: ${{ inputs.confirm_deployment }}
         shell: bash
@@ -85,10 +69,6 @@ jobs:
         with:
           node-version: "22"
           check-latest: false
-          cache: ${{ hashFiles('npm-shrinkwrap.json') != '' && 'npm' || (hashFiles('package-lock.json') != '' && 'npm' || '') }}
-          cache-dependency-path: |
-            package-lock.json
-            npm-shrinkwrap.json
 
       - name: Validate package manifest
         shell: bash
@@ -108,23 +88,24 @@ jobs:
           try {
             pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
           } catch (error) {
-            console.error(`Invalid package.json: ${error.message}`);
+            console.error(`::error::Invalid package.json: ${error.message}`);
             process.exit(1);
           }
 
           if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
-            console.error("package.json must contain a JSON object.");
-            process.exit(1);
+            throw new Error("package.json must contain a JSON object.");
           }
 
           if (typeof pkg.name !== "string" || !pkg.name.trim()) {
-            console.error("package.json must define a non-empty package name.");
-            process.exit(1);
+            throw new Error("package.json must define a package name.");
           }
 
           if (typeof pkg.version !== "string" || !pkg.version.trim()) {
-            console.error("package.json must define a non-empty version.");
-            process.exit(1);
+            throw new Error("package.json must define a version.");
+          }
+
+          if (pkg.private === true) {
+            console.log("Package is private; production deployment remains permitted.");
           }
 
           if (
@@ -133,8 +114,7 @@ jobs:
              typeof pkg.scripts !== "object" ||
              Array.isArray(pkg.scripts))
           ) {
-            console.error("package.json scripts must be an object.");
-            process.exit(1);
+            throw new Error("package.json scripts must be an object.");
           }
 
           console.log(`Package: ${pkg.name}`);
@@ -147,16 +127,48 @@ jobs:
           set -Eeuo pipefail
 
           if [[ -f npm-shrinkwrap.json ]]; then
-            echo "Using npm-shrinkwrap.json as the authoritative lockfile."
+            LOCKFILE="npm-shrinkwrap.json"
           elif [[ -f package-lock.json ]]; then
-            echo "Using package-lock.json."
+            LOCKFILE="package-lock.json"
           else
-            echo "::error::Neither package-lock.json nor npm-shrinkwrap.json exists."
-            echo "Production deployment requires a committed npm lockfile."
+            echo "::error::A committed package-lock.json or npm-shrinkwrap.json is required."
             exit 1
           fi
 
-          npm ci --ignore-scripts --no-audit --no-fund
+          LOCKFILE="$LOCKFILE" node <<'NODE'
+          const fs = require("node:fs");
+
+          const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const lock = JSON.parse(fs.readFileSync(process.env.LOCKFILE, "utf8"));
+
+          if (![2, 3].includes(lock.lockfileVersion)) {
+            throw new Error("Unsupported npm lockfile version.");
+          }
+
+          if (!lock.packages || typeof lock.packages !== "object") {
+            throw new Error("Lockfile is missing the packages object.");
+          }
+
+          const root = lock.packages[""];
+
+          if (!root || typeof root !== "object") {
+            throw new Error('Lockfile is missing packages[""].');
+          }
+
+          for (const key of ["name", "version"]) {
+            if (
+              manifest[key] !== undefined &&
+              root[key] !== undefined &&
+              manifest[key] !== root[key]
+            ) {
+              throw new Error(`package.json ${key} does not match the lockfile.`);
+            }
+          }
+
+          console.log(`Lockfile metadata validated: ${process.env.LOCKFILE}`);
+          NODE
+
+          npm ci --no-audit --no-fund
 
       - name: Check application entry point
         shell: bash
@@ -170,6 +182,44 @@ jobs:
 
           node --check server.js
 
+      - name: Check configured JavaScript files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const { execFileSync } = require("node:child_process");
+
+          const files = execFileSync(
+            "git",
+            ["ls-files", "-z"],
+            { encoding: "utf8" }
+          ).split("\0").filter(Boolean);
+
+          const ignored = new Set([
+            "node_modules", ".git", "dist", "build", "coverage"
+          ]);
+
+          const scripts = files.filter(file => {
+            const parts = file.split(/[\\/]/);
+            return (
+              !parts.some(part => ignored.has(part)) &&
+              [".js", ".cjs", ".mjs"].includes(path.extname(file).toLowerCase()) &&
+              fs.existsSync(file)
+            );
+          });
+
+          for (const file of scripts) {
+            execFileSync(process.execPath, ["--check", file], {
+              stdio: "inherit"
+            });
+          }
+
+          console.log(`Checked ${scripts.length} JavaScript file(s).`);
+          NODE
+
       - name: Run configured lint script
         shell: bash
         run: |
@@ -178,7 +228,7 @@ jobs:
           if node -e 'process.exit(require("./package.json").scripts?.lint ? 0 : 1)'; then
             npm run lint
           else
-            echo "No npm lint script configured; lint check skipped."
+            echo "::warning::No npm lint script configured; lint check skipped."
           fi
 
       - name: Run configured tests
@@ -189,13 +239,40 @@ jobs:
           if node -e 'process.exit(require("./package.json").scripts?.test ? 0 : 1)'; then
             npm test
           else
-            echo "No npm test script configured; test check skipped."
+            echo "::error::No npm test script configured. Configure tests before production deployment."
+            exit 1
           fi
 
+      - name: Run configured production build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if node -e 'process.exit(require("./package.json").scripts?.build ? 0 : 1)'; then
+            npm run build
+          else
+            echo "No build script configured; skipping build."
+          fi
+
+      - name: Write validation summary
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo "## Production Validation"
+            echo
+            echo "- Status: ${STATUS}"
+            echo "- Node.js: 22"
+            echo "- Lockfile validation: enabled"
+            echo "- JavaScript syntax checks: enabled"
+            echo "- Repository write permissions: disabled"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
-    name: Trigger Render production deployment
-    needs:
-      - validate
+    name: Trigger Render Production Deployment
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -218,14 +295,8 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https:// ]]; then
-            echo "::error::The Render deploy hook must use HTTPS."
-            exit 1
-          fi
-
-          if [[ "$RENDER_DEPLOY_HOOK" == *$'\n'* ||
-                "$RENDER_DEPLOY_HOOK" == *$'\r'* ]]; then
-            echo "::error::The Render deploy hook contains invalid line breaks."
+          if [[ ! "$RENDER_DEPLOY_HOOK" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error::The Render deploy hook must be a valid HTTPS URL without whitespace."
             exit 1
           fi
 
@@ -251,7 +322,7 @@ jobs:
               --retry 0 \
               "$RENDER_DEPLOY_HOOK"
           )"; then
-            echo "::error::Could not contact Render or complete the deployment request."
+            echo "::error::Unable to complete the Render deployment request."
             exit 1
           fi
 
@@ -264,7 +335,7 @@ jobs:
             echo "## Render Production Deployment"
             echo
             echo "- Request status: accepted"
-            echo "- HTTP status: $http_code"
+            echo "- HTTP status: ${http_code}"
             echo "- Environment: production"
             echo
             echo "Verify build completion and application health in Render."
