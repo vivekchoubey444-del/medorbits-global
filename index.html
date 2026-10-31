@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#041321">
-<meta name="description" content="Explore education, medical admissions, colleges, study abroad, career opportunities and consultancy services with MedOrbits.">
+<meta name="description" content="Explore education, medical admissions, colleges, study abroad, career opportunities, recruitment and AI-powered assistance with MedOrbits.">
 <meta name="author" content="MedOrbits">
 <meta name="robots" content="index,follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -18,51 +18,34 @@
 
 <style>
 :root{
-  --color-scheme:dark;
-  --bg:#041321;
-  --deep:#020b14;
-  --surface:#071d30;
-  --surface2:#0a3048;
-  --surface3:#10516b;
-  --teal:#63d8d5;
-  --mint:#b9fff5;
-  --gold:#e5c18a;
-  --blue:#168cff;
-  --blue2:#073b83;
-  --cyan:#75e9ff;
-  --violet:#8e7bff;
-  --text:#effaff;
-  --muted:#b5cad8;
-  --line:#63d8d559;
-  --serif:"Playfair Display",Georgia,serif;
-  --sans:"DM Sans",Arial,sans-serif;
+  color-scheme:dark;
+  --bg:#041321;--deep:#020b14;--surface:#071d30;--surface2:#0a3048;
+  --surface3:#10516b;--teal:#63d8d5;--mint:#b9fff5;--gold:#e5c18a;
+  --blue:#168cff;--blue2:#073b83;--cyan:#75e9ff;--violet:#8e7bff;
+  --text:#effaff;--muted:#b5cad8;--line:#63d8d559;
+  --serif:"Playfair Display",Georgia,serif;--sans:"DM Sans",Arial,sans-serif;
   --max:1180px;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:85px}
 body{
-  position:relative;isolation:isolate;
-  margin:0;min-height:100vh;overflow-x:hidden;
-  background:
-    radial-gradient(ellipse at 12% 10%,#104a8b55,transparent 35%),
-    radial-gradient(ellipse at 90% 35%,#087e9140,transparent 34%),
-    linear-gradient(145deg,#020b18,#062544 48%,#03101f);
-  background-attachment:fixed;color:var(--text);
-  font:400 13px/1.8 var(--sans);
+  position:relative;isolation:isolate;margin:0;min-height:100vh;overflow-x:hidden;
+  background:radial-gradient(ellipse at 12% 10%,#104a8b55,transparent 35%),
+  radial-gradient(ellipse at 90% 35%,#087e9140,transparent 34%),
+  linear-gradient(145deg,#020b18,#062544 48%,#03101f);
+  background-attachment:fixed;color:var(--text);font:400 13px/1.8 var(--sans);
   -webkit-font-smoothing:antialiased;
 }
 body::before{
   content:"";position:fixed;inset:-30%;z-index:-2;pointer-events:none;
-  background:
-    radial-gradient(ellipse at 15% 5%,rgba(40,127,255,.20),transparent 27%),
-    radial-gradient(ellipse at 80% 65%,rgba(53,240,223,.14),transparent 28%),
-    radial-gradient(ellipse at 50% 100%,rgba(216,189,131,.09),transparent 30%);
+  background:radial-gradient(ellipse at 15% 5%,rgba(40,127,255,.20),transparent 27%),
+  radial-gradient(ellipse at 80% 65%,rgba(53,240,223,.14),transparent 28%),
+  radial-gradient(ellipse at 50% 100%,rgba(216,189,131,.09),transparent 30%);
   animation:moAtmosphere 18s ease-in-out infinite alternate;
 }
 body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.13;
-  background-image:radial-gradient(#b9faff .7px,transparent .7px);
-  background-size:35px 35px;
+  background-image:radial-gradient(#b9faff .7px,transparent .7px);background-size:35px 35px;
   mask-image:linear-gradient(to bottom,black,transparent 85%);
 }
 img{display:block;max-width:100%}
@@ -71,7 +54,7 @@ button,input,select{font:inherit}
 button{cursor:pointer}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--mint);outline-offset:3px}
-::selection{background:var(--mint);color:#03111e}
+::selection{background:var(--mint);color:var(--deep)}
 .container{width:min(var(--max),calc(100% - 34px));margin-inline:auto}
 .serif{font-family:var(--serif)}
 .skip-link{position:fixed;z-index:20000;top:-70px;left:12px;padding:10px;background:var(--mint);color:var(--deep)}
@@ -98,9 +81,7 @@ button{cursor:pointer}
   background:radial-gradient(ellipse at 65% 35%,#147da066,transparent 48%),linear-gradient(135deg,#020b15,#082b43 55%,#041321);
   transition:opacity .4s,visibility .4s;
 }
-.intro::before,.intro::after{
-  position:absolute;width:min(80vw,700px);aspect-ratio:1;border:1px solid #63d8d52b;border-radius:50%;content:"";animation:ringIn 1.2s ease-out both
-}
+.intro::before,.intro::after{position:absolute;width:min(80vw,700px);aspect-ratio:1;border:1px solid #63d8d52b;border-radius:50%;content:"";animation:ringIn 1.2s ease-out both}
 .intro::after{width:min(62vw,540px);border-color:#e5c18a45;animation-delay:.08s}
 .intro.done{opacity:0;visibility:hidden;pointer-events:none}
 .intro-content{position:relative;z-index:1;display:flex;width:min(650px,calc(100% - 30px));flex-direction:column;align-items:center;text-align:center;animation:reveal .6s ease both}
@@ -117,7 +98,7 @@ button{cursor:pointer}
 
 /* HEADER */
 .topline{padding:6px 12px;border-bottom:1px solid var(--line);background:#020b14d9;color:var(--gold);font-size:9px;font-weight:800;letter-spacing:.08em;text-align:center;text-transform:uppercase}
-.site-header{position:sticky;top:0;z-index:1000;border-bottom:1px solid var(--line);background:#020b14eF;backdrop-filter:blur(18px)}
+.site-header{position:sticky;top:0;z-index:1000;border-bottom:1px solid var(--line);background:#020b14ef;backdrop-filter:blur(18px)}
 .site-header.scrolled{box-shadow:0 8px 26px #0005}
 .nav-wrap{position:relative;display:flex;min-height:70px;align-items:center;justify-content:space-between;gap:15px}
 .brand{display:inline-flex;flex-shrink:0;align-items:center;gap:9px}
@@ -134,6 +115,7 @@ button{cursor:pointer}
 .nav-group.open .dropdown,.nav-group:focus-within .dropdown{display:grid}
 .dropdown a{padding:8px 9px;border-radius:7px;color:#e0edf5;font-size:10px}
 .dropdown a:hover{background:#63d8d51a;color:var(--mint)}
+.nav-agent-link{color:var(--mint)!important;font-weight:800}
 .menu-toggle{display:none;min-height:40px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:#08283e;color:var(--mint)}
 
 /* ANNOUNCEMENTS */
@@ -147,21 +129,8 @@ button{cursor:pointer}
 
 /* HERO */
 .hero{position:relative;isolation:isolate;display:grid;min-height:540px;align-items:center;padding:54px 0;overflow:hidden;background:#031321}
-.hero::before{
-  position:absolute;z-index:-2;inset:0;
-  background:
-    linear-gradient(90deg,#020c17f5 0%,#031424df 48%,#04172770 100%),
-    linear-gradient(0deg,#041321dd,transparent 65%),
-    url("/assets/images/home/medorbits-hero.webp") center/cover no-repeat;
-  content:"";pointer-events:none;
-}
-.hero::after{
-  position:absolute;z-index:-1;inset:0;content:"";pointer-events:none;opacity:.85;
-  background:
-    radial-gradient(ellipse at 80% 35%,#168cff35,transparent 30%),
-    radial-gradient(ellipse at 70% 75%,#35f0df25,transparent 27%);
-  animation:heroGlow 8s ease-in-out infinite alternate;
-}
+.hero::before{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#020c17f5 0%,#031424df 48%,#04172770 100%),linear-gradient(0deg,#041321dd,transparent 65%),url("/assets/images/home/medorbits-hero.webp") center/cover no-repeat;content:"";pointer-events:none}
+.hero::after{position:absolute;z-index:-1;inset:0;content:"";pointer-events:none;opacity:.85;background:radial-gradient(ellipse at 80% 35%,#168cff35,transparent 30%),radial-gradient(ellipse at 70% 75%,#35f0df25,transparent 27%);animation:heroGlow 8s ease-in-out infinite alternate}
 .hero-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr);align-items:center;gap:38px}
 .hero-copy{max-width:710px}
 .hero h1{margin:18px 0;font:600 clamp(42px,6vw,70px)/1.08 var(--serif);letter-spacing:-.035em}
@@ -203,7 +172,7 @@ button{cursor:pointer}
 .search-grid input,.search-grid select,.directory-tools input,.directory-tools select{width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#031522;color:var(--text);font-size:11px}
 .search-grid input:focus,.search-grid select:focus,.directory-tools input:focus{border-color:var(--mint);box-shadow:0 0 0 3px #35f0df18}
 
-/* ALL CATALOGUE CARDS */
+/* CATALOGUE CARDS */
 .catalog-section{overflow:hidden}
 .catalog-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-3px 0 11px}
 .catalog-count{margin-right:auto;color:var(--muted);font-size:10px}
@@ -211,30 +180,12 @@ button{cursor:pointer}
 .slide-btn:hover{transform:scale(1.08);box-shadow:0 0 20px #35f0df35}
 .slide-btn:disabled{opacity:.35;cursor:not-allowed}
 .catalog-viewport{overflow:hidden}
-.catalog-track{
-  display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,1fr));
-  grid-auto-columns:calc((100% - 24px)/3);gap:12px;
-  overflow-x:auto;overflow-y:hidden;padding:3px 2px 12px;
-  scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#63d8d580 transparent;
-}
+.catalog-track{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-columns:calc((100% - 24px)/3);gap:12px;overflow-x:auto;overflow-y:hidden;padding:3px 2px 12px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#63d8d580 transparent}
 .catalog-track::-webkit-scrollbar{height:5px}
 .catalog-track::-webkit-scrollbar-thumb{border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--teal),var(--gold))}
-.catalog-card{
-  position:relative;display:flex;min-width:0;flex-direction:column;overflow:hidden;
-  border:1px solid #63d8d552;border-radius:15px;
-  background:linear-gradient(145deg,#0b4264,#082b48 48%,#061321 100%);
-  scroll-snap-align:start;box-shadow:0 8px 22px #0004;
-  transition:transform .3s,border-color .3s,box-shadow .3s;
-}
-.catalog-card::before,.info-card::before,.pathway::before,.release-card::before{
-  position:absolute;inset:0;z-index:1;content:"";pointer-events:none;opacity:0;
-  background:linear-gradient(115deg,transparent 15%,#75e9ff1c 45%,#ffd18a13 55%,transparent 80%);
-  transform:translateX(-100%);
-}
-.catalog-card:hover,.info-card:hover,.pathway:hover,.release-card:hover{
-  transform:translateY(-5px);border-color:#75e9ffad;
-  box-shadow:0 16px 40px #0005,0 0 22px #168cff25;
-}
+.catalog-card{position:relative;display:flex;min-width:0;flex-direction:column;overflow:hidden;border:1px solid #63d8d552;border-radius:15px;background:linear-gradient(145deg,#0b4264,#082b48 48%,#061321 100%);scroll-snap-align:start;box-shadow:0 8px 22px #0004;transition:transform .3s,border-color .3s,box-shadow .3s}
+.catalog-card::before,.info-card::before,.pathway::before,.release-card::before{position:absolute;inset:0;z-index:1;content:"";pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 15%,#75e9ff1c 45%,#ffd18a13 55%,transparent 80%);transform:translateX(-100%)}
+.catalog-card:hover,.info-card:hover,.pathway:hover,.release-card:hover{transform:translateY(-5px);border-color:#75e9ffad;box-shadow:0 16px 40px #0005,0 0 22px #168cff25}
 .catalog-card:hover::before,.info-card:hover::before,.pathway:hover::before,.release-card:hover::before{opacity:1;animation:cardShine 1s ease forwards}
 .catalog-photo-wrap{position:relative;overflow:hidden;background:linear-gradient(145deg,#12618a,#03111e)}
 .catalog-photo{width:100%;height:126px;object-fit:cover;filter:saturate(1.05) brightness(.84);transition:transform .5s,filter .5s}
@@ -250,29 +201,17 @@ button{cursor:pointer}
 
 /* INFORMATION CARDS */
 .json-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.info-card{
-  position:relative;display:flex;min-width:0;min-height:170px;flex-direction:column;
-  padding:16px;overflow:hidden;overflow-wrap:anywhere;
-  border:1px solid #63d8d54d;border-radius:15px;
-  background:radial-gradient(circle at 100% 0%,#168cff25,transparent 45%),linear-gradient(145deg,#0b4264,#08263f 52%,#03111e);
-  box-shadow:inset 0 1px #ffffff08;
-  transition:transform .3s,border-color .3s,box-shadow .3s;
-}
+.info-card{position:relative;display:flex;min-width:0;min-height:170px;flex-direction:column;padding:16px;overflow:hidden;overflow-wrap:anywhere;border:1px solid #63d8d54d;border-radius:15px;background:radial-gradient(circle at 100% 0%,#168cff25,transparent 45%),linear-gradient(145deg,#0b4264,#08263f 52%,#03111e);box-shadow:inset 0 1px #ffffff08;transition:transform .3s,border-color .3s,box-shadow .3s}
 .card-visual{display:grid;width:54px;height:54px;place-items:center;margin-bottom:11px;overflow:hidden;border:1px solid #75e9ff66;border-radius:14px;background:linear-gradient(145deg,#168cff35,#35f0df12,#ffd18a15);color:var(--mint);font-size:28px;box-shadow:0 0 22px #168cff15;transition:transform .4s,box-shadow .4s}
-.info-card:hover .card-visual{transform:translateY(-4px) rotate(-4deg);box-shadow:0 0 22px #35f0df30}
 .card-visual img{width:100%;height:100%;object-fit:cover}
+.info-card:hover .card-visual{transform:translateY(-4px) rotate(-4deg);box-shadow:0 0 22px #35f0df30}
 .info-card h3{margin:0 0 6px;font:600 17px/1.4 var(--serif)}
 .info-card p{margin:0;color:var(--muted);font-size:10px;line-height:1.8}
 .info-card a{display:inline-flex;min-height:34px;align-items:center;align-self:flex-start;margin-top:auto;padding-top:6px;color:var(--mint);font-size:10px;font-weight:800}
 
 /* PATHWAYS */
 .pathway-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.pathway{
-  position:relative;display:flex;min-width:0;min-height:175px;flex-direction:column;overflow:hidden;
-  border:1px solid #63d8d550;border-radius:14px;
-  background:linear-gradient(145deg,#0b4264,#07304b 48%,#03111e);
-  transition:transform .3s,border-color .3s,box-shadow .3s;
-}
+.pathway{position:relative;display:flex;min-width:0;min-height:175px;flex-direction:column;overflow:hidden;border:1px solid #63d8d550;border-radius:14px;background:linear-gradient(145deg,#0b4264,#07304b 48%,#03111e);transition:transform .3s,border-color .3s,box-shadow .3s}
 .pathway img{width:100%;height:105px;object-fit:cover;filter:brightness(.84) saturate(1.08);transition:transform .45s,filter .45s}
 .pathway:hover img{transform:scale(1.06);filter:brightness(1)}
 .pathway-content{position:relative;z-index:2;display:flex;flex:1;flex-direction:column;padding:10px}
@@ -284,12 +223,7 @@ button{cursor:pointer}
 /* RELEASE CARDS */
 .release-section{background:linear-gradient(145deg,#061e31bb,#03111ecc)}
 .release-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.release-card{
-  position:relative;display:flex;min-width:0;min-height:170px;flex-direction:column;gap:8px;
-  padding:15px;overflow:hidden;border:1px solid #63d8d550;border-radius:15px;
-  background:linear-gradient(145deg,#0b4264,#082b48 52%,#03111e);
-  transition:transform .3s,border-color .3s,box-shadow .3s;
-}
+.release-card{position:relative;display:flex;min-width:0;min-height:170px;flex-direction:column;gap:8px;padding:15px;overflow:hidden;border:1px solid #63d8d550;border-radius:15px;background:linear-gradient(145deg,#0b4264,#082b48 52%,#03111e);transition:transform .3s,border-color .3s,box-shadow .3s}
 .release-card__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .release-kind{display:flex;align-items:center;gap:8px;color:var(--mint);font-size:9px;font-weight:800;text-transform:uppercase}
 .release-kind::before{display:grid;width:34px;height:34px;place-items:center;border:1px solid var(--line);border-radius:10px;background:linear-gradient(145deg,#168cff24,#35f0df12);content:attr(data-symbol);font-size:17px}
@@ -301,13 +235,7 @@ button{cursor:pointer}
 .release-all{display:flex;justify-content:center;margin-top:18px}
 
 /* CTA */
-.cta-panel{
-  display:flex;align-items:center;justify-content:space-between;gap:22px;
-  padding:clamp(22px,4vw,40px);border:1px solid #63d8d56b;border-radius:18px;
-  background:radial-gradient(ellipse at 100% 0%,#168cff35,transparent 50%),radial-gradient(ellipse at 0% 100%,#35f0df18,transparent 40%),linear-gradient(135deg,#0b4264,#03111e);
-  background-size:180% 180%;animation:ctaGlow 12s ease-in-out infinite alternate;
-  box-shadow:0 18px 45px #0003;
-}
+.cta-panel{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:clamp(22px,4vw,40px);border:1px solid #63d8d56b;border-radius:18px;background:radial-gradient(ellipse at 100% 0%,#168cff35,transparent 50%),radial-gradient(ellipse at 0% 100%,#35f0df18,transparent 40%),linear-gradient(135deg,#0b4264,#03111e);background-size:180% 180%;animation:ctaGlow 12s ease-in-out infinite alternate;box-shadow:0 18px 45px #0003}
 .cta-panel h2{max-width:670px;margin:10px 0;font:600 clamp(26px,3.8vw,40px)/1.25 var(--serif)}
 .cta-panel p{max-width:620px;margin:0;color:var(--muted);font-size:11px}
 .contact-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -345,6 +273,7 @@ button{cursor:pointer}
 .footer-link-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px}
 .footer-links a{color:var(--muted);font-size:10px;overflow-wrap:anywhere}
 .footer-links a:hover{color:var(--mint)}
+.footer-agent-link{color:var(--mint)!important;font-weight:800}
 .socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
 .social{display:grid;width:34px;height:34px;place-items:center;border:1px solid var(--line);border-radius:50%;color:var(--mint);font-size:10px;font-weight:800;transition:transform .2s,background .2s}
 .social:hover{transform:translateY(-3px);background:#168cff2b}
@@ -356,6 +285,7 @@ button{cursor:pointer}
 .float-btn{display:grid;width:43px;height:43px;place-items:center;border:1px solid var(--line);border-radius:50%;background:linear-gradient(145deg,#12618a,#08283e);color:var(--mint);font-size:17px;box-shadow:0 12px 30px #0006;transition:transform .2s}
 .float-btn:hover{transform:translateY(-3px)}
 .float-btn.whatsapp{border-color:#3c8a67;background:#174d37;color:#fff}
+.float-btn.agent{border-color:#75e9ff99;background:linear-gradient(145deg,#12618a,#073b83);color:var(--mint)}
 
 /* ENQUIRY MODAL */
 .enquiry-modal{position:fixed;z-index:12000;inset:0;display:grid;place-items:center;padding:12px;background:#020a12dc;backdrop-filter:blur(7px)}
@@ -369,8 +299,6 @@ button{cursor:pointer}
 #enquiryFormFrame{display:block;width:100%;height:min(620px,68vh);min-height:330px;border:0;background:#061b2d}
 .mo-toast{position:fixed;z-index:16000;bottom:18px;left:50%;max-width:calc(100% - 30px);padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#0b3b55;color:var(--mint);box-shadow:0 12px 30px #0006;font-size:11px;opacity:0;transform:translate(-50%,8px);pointer-events:none;transition:opacity .18s,transform .18s}
 .mo-toast.show{opacity:1;transform:translate(-50%,0)}
-
-/* BACK TO TOP */
 #moBackToTop{position:fixed;right:68px;bottom:18px;z-index:850;display:grid;width:42px;height:42px;place-items:center;border:1px solid var(--line);border-radius:50%;background:#0b2941;color:var(--mint);font-size:20px;cursor:pointer;opacity:0;visibility:hidden;transform:translateY(10px);transition:.25s;box-shadow:0 8px 25px #0005}
 #moBackToTop.mo-visible{opacity:1;visibility:visible;transform:none}
 #moBackToTop:hover{background:#1267a5}
@@ -418,8 +346,7 @@ button{cursor:pointer}
   .topline{font-size:8px;letter-spacing:.03em}
   .nav-wrap{min-height:63px}
   .brand img{width:35px;height:35px}
-  .brand strong{font-size:11px}
-  .brand small{font-size:7px}
+  .brand strong{font-size:11px}.brand small{font-size:7px}
   .hero{padding:34px 0 26px}
   .hero h1{font-size:clamp(37px,10vw,51px)}
   .hero-copy>p{font-size:12px}
@@ -438,17 +365,13 @@ button{cursor:pointer}
   .json-section-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .info-card{min-height:165px;padding:11px}
   .card-visual{width:45px;height:45px;font-size:24px}
-  .info-card h3{font-size:15px}
-  .info-card p{font-size:10px}
+  .info-card h3{font-size:15px}.info-card p{font-size:10px}
   .pathway-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .pathway{min-height:160px}
-  .pathway img{height:95px}
-  .pathway strong{font-size:13px}
-  .pathway-content{padding:9px}
+  .pathway{min-height:160px}.pathway img{height:95px}
+  .pathway strong{font-size:13px}.pathway-content{padding:9px}
   .directory-tools{grid-template-columns:1fr}
   .directory-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .directory-group{padding:10px}
-  .directory-group h3{font-size:15px}
+  .directory-group{padding:10px}.directory-group h3{font-size:15px}
   .directory-links{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr;gap:20px}
   .footer-brand{grid-column:auto}
@@ -540,6 +463,7 @@ button{cursor:pointer}
         <a href="/pages/our-vision.html">🔭 Our vision</a><a href="/pages/our-team.html">👥 Our team</a>
         <a href="/pages/services.html">✨ Our services</a><a href="/pages/consultancy.html">🤝 Consultancy</a><a href="/pages/contact.html">✉️ Contact us</a>
       </div></div>
+      <a class="nav-agent-link" href="/local-agent/" aria-label="Open MedOrbits Local Agent">🤖 Local Agent</a>
       <a href="/support/index.html">Support</a><a href="/account/index.html">My account</a>
       <button class="btn" type="button" data-open-enquiry>Get guidance ↗</button>
     </nav>
@@ -557,9 +481,10 @@ button{cursor:pointer}
       <div class="hero-actions">
         <a class="btn" href="#courses">🎓 Explore education ↗</a>
         <a class="btn btn-outline" href="#careers">💼 Discover careers ↗</a>
+        <a class="btn btn-quiet" href="/local-agent/">🤖 Open Local Agent ↗</a>
         <button class="btn btn-quiet" type="button" data-open-enquiry data-interest="Personalised Guidance">🤝 Talk to MedOrbits ↗</button>
       </div>
-      <div class="hero-proof"><span>Education resources</span><span>Admission guidance</span><span>Career support</span></div>
+      <div class="hero-proof"><span>Education resources</span><span>Admission guidance</span><span>Career support</span><span>AI assistance</span></div>
     </div>
     <div class="hero-art">
       <img class="hero-feature-image" src="/assets/images/home/medorbits-hero.webp" alt="University campus representing education and global opportunities" width="720" height="520" fetchpriority="high">
@@ -628,6 +553,7 @@ button{cursor:pointer}
       <article class="info-card"><div class="card-visual">🩺</div><h3>Medical admissions</h3><p>Explore medical study information and admission resources.</p><a href="/education/medical/index.html">View medical resources ↗</a></article>
       <article class="info-card"><div class="card-visual">📄</div><h3>Document resources</h3><p>Find document-related information and check official requirements.</p><a href="/official-documents/index.html">Explore documents ↗</a></article>
       <article class="info-card"><div class="card-visual">🤝</div><h3>Consultancy services</h3><p>Send an enquiry about the support you need.</p><a href="/pages/consultancy.html">Explore consultancy ↗</a></article>
+      <article class="info-card"><div class="card-visual">🤖</div><h3>MedOrbits Local Agent</h3><p>Open the dedicated AI assistant portal for supported MedOrbits workflows and assistance.</p><a href="/local-agent/">Open Local Agent ↗</a></article>
     </div>
   </div>
 </section>
@@ -677,6 +603,7 @@ button{cursor:pointer}
       <article class="release-card"><div class="release-card__top"><span class="release-kind" data-symbol="📄">Documents</span><span class="release-date">Resources</span></div><h3>Official document resources</h3><p>Find document-related information and verify requirements with official authorities.</p><div class="release-card__footer"><span class="release-format">Resources</span><a class="release-link" href="/official-documents/index.html">Explore documents ↗</a></div></article>
       <article class="release-card"><div class="release-card__top"><span class="release-kind" data-symbol="🎓">Education</span><span class="release-date">Guides</span></div><h3>Education and admission guidance</h3><p>Explore course information and admission planning resources.</p><div class="release-card__footer"><span class="release-format">Guides</span><a class="release-link" href="/education/admissions/index.html">Read guides ↗</a></div></article>
       <article class="release-card"><div class="release-card__top"><span class="release-kind" data-symbol="💼">Careers</span><span class="release-date">Resources</span></div><h3>Career planning resources</h3><p>Discover job categories, application preparation and professional guidance.</p><div class="release-card__footer"><span class="release-format">Career</span><a class="release-link" href="/career/index.html">Explore careers ↗</a></div></article>
+      <article class="release-card"><div class="release-card__top"><span class="release-kind" data-symbol="🤖">AI Assistant</span><span class="release-date">Portal</span></div><h3>MedOrbits Local Agent</h3><p>Access the dedicated Local Agent portal from the MedOrbits website.</p><div class="release-card__footer"><span class="release-format">AI portal</span><a class="release-link" href="/local-agent/">Open Local Agent ↗</a></div></article>
     </div>
     <div class="release-all"><a class="btn btn-outline" href="/notifications.html">📢 Browse all updates ↗</a></div>
   </div>
@@ -704,6 +631,7 @@ button{cursor:pointer}
     <div class="faq-list">
       <details class="faq-item"><summary>🎓 How do I enquire about a course?</summary><p>Use an enquiry button to open the dedicated <a href="/pages/enquiry-cum-popup-form.html">MedOrbits enquiry page</a>.</p></details>
       <details class="faq-item"><summary>🌍 Can I explore study-abroad options?</summary><p>Yes. Browse the destination catalogue and review programme requirements and application information.</p></details>
+      <details class="faq-item"><summary>🤖 Where can I open the MedOrbits Local Agent?</summary><p>Use the <a href="/local-agent/">Local Agent portal</a>. Its availability depends on the portal and its required backend services being deployed.</p></details>
       <details class="faq-item"><summary>🛡️ Will admission, a job or a visa be guaranteed?</summary><p>No. Decisions depend on the relevant institutions, employers and authorities.</p></details>
       <details class="faq-item"><summary>✉️ How can I contact MedOrbits?</summary><p>Use the enquiry form, <a href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer">WhatsApp</a>, or email <a href="mailto:contact@medorbits.in">contact@medorbits.in</a>.</p></details>
     </div>
@@ -714,7 +642,7 @@ button{cursor:pointer}
   <div class="container">
     <div class="cta-panel">
       <div><span class="eyebrow">Your next step starts here</span><h2>Make your next decision with greater confidence.</h2><p>Tell us what you are exploring and review the resources available for your education or career journey.</p>
-        <div class="contact-strip"><a class="contact-chip" href="mailto:contact@medorbits.in">✉️ contact@medorbits.in</a><a class="contact-chip" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer">☏ WhatsApp MedOrbits</a></div>
+        <div class="contact-strip"><a class="contact-chip" href="mailto:contact@medorbits.in">✉️ contact@medorbits.in</a><a class="contact-chip" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer">☏ WhatsApp MedOrbits</a><a class="contact-chip" href="/local-agent/">🤖 Local Agent</a></div>
       </div>
       <button class="btn" type="button" data-open-enquiry data-interest="General Enquiry">✉️ Send an enquiry ↗</button>
     </div>
@@ -723,8 +651,8 @@ button{cursor:pointer}
 
 <section class="section directory-section" id="site-directory">
   <div class="container">
-    <div class="section-head"><div><span class="eyebrow">MedOrbits site directory</span><h2>All services, pages <span>and portals.</span></h2><div class="rule"></div></div><p>Search education, career, account, support, legal and administration routes.</p></div>
-    <div class="directory-tools"><input id="directorySearch" type="search" placeholder="Search pages, e.g. MBBS, jobs, privacy…" aria-label="Search all site pages"><select id="directoryGroup" aria-label="Filter page group"><option value="all">All page groups</option><option value="education">Education</option><option value="career">Career</option><option value="account">Student account</option><option value="support">Support</option><option value="legal">Legal</option><option value="about">About MedOrbits</option><option value="admin">Administration</option></select></div>
+    <div class="section-head"><div><span class="eyebrow">MedOrbits site directory</span><h2>All services, pages <span>and portals.</span></h2><div class="rule"></div></div><p>Search education, career, AI assistant, account, support, legal and administration routes.</p></div>
+    <div class="directory-tools"><input id="directorySearch" type="search" placeholder="Search pages, e.g. MBBS, jobs, Local Agent…" aria-label="Search all site pages"><select id="directoryGroup" aria-label="Filter page group"><option value="all">All page groups</option><option value="education">Education</option><option value="career">Career</option><option value="agent">AI &amp; Local Agent</option><option value="account">Student account</option><option value="support">Support</option><option value="legal">Legal</option><option value="about">About MedOrbits</option><option value="admin">Administration</option></select></div>
     <div class="directory-groups" id="directoryGroups"></div>
     <p class="directory-note">📌 Directory links work when their HTML files or server routes exist in the deployed repository. Listing a route does not create a missing page or activate backend services.</p>
   </div>
@@ -736,29 +664,45 @@ button{cursor:pointer}
     <div class="footer-grid">
       <div class="footer-brand">
         <a class="brand" href="/index.html" aria-label="MedOrbits home"><img src="/assets/images/logo/medorbits-logo.svg" alt="MedOrbits logo" width="40" height="40" loading="lazy"><span><strong>MEDORBITS</strong><small>Study · Career · Consultancy</small></span></a>
-        <p>A connected destination for education information, admission resources, career exploration and consultancy services.</p>
+        <p>A connected destination for education information, admission resources, career exploration, AI-assisted workflows and consultancy services.</p>
         <div class="contact-strip"><a class="contact-chip" href="mailto:contact@medorbits.in">✉️ contact@medorbits.in</a><a class="contact-chip" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer">☏ WhatsApp support</a></div>
         <div class="socials" aria-label="Social media links"><a class="social" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">ig</a><a class="social" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">f</a><a class="social" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a><a class="social" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a><a class="social" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">☏</a></div>
       </div>
+
       <div class="footer-links"><h2>🎓 Education &amp; resources</h2><div class="footer-link-grid">
         <a href="/education/index.html">Education hub</a><a href="/education/courses.html">Courses</a><a href="/education/medical/index.html">Medical admissions</a><a href="/education/study-india/index.html">Study in India</a><a href="/education/study-india/mbbs.html">MBBS</a><a href="/education/study-india/bds.html">BDS</a><a href="/education/study-abroad/index.html">Study abroad</a><a href="/education/scholarships.html">Scholarships</a><a href="/education/entrance-exams.html">Entrance exams</a><a href="/education/fee-comparison.html">Fee comparison</a><a href="/official-documents/index.html">Official documents</a><a href="/education/admissions/index.html">Admission guidance</a>
       </div></div>
+
       <div class="footer-links"><h2>💼 Careers &amp; services</h2><div class="footer-link-grid">
         <a href="/career/index.html">Career hub</a><a href="/career/jobs.html">Jobs</a><a href="/career/job-categories.html">Job categories</a><a href="/career/internships.html">Internships</a><a href="/career/resume-builder.html">Resume builder</a><a href="/career/career-guidance.html">Career guidance</a><a href="/career/application-preparation/index.html">Application preparation</a><a href="/career/recruitment-services.html">Recruitment</a><a href="/pages/services.html">Our services</a><a href="/pages/consultancy.html">Consultancy</a><a href="/pages/contact.html">Contact</a><a href="/pages/faq.html">FAQs</a>
       </div></div>
+
+      <div class="footer-links"><h2>🤖 AI &amp; Local Agent</h2><div class="footer-link-grid">
+        <a class="footer-agent-link" href="/local-agent/">Open Local Agent</a>
+        <a href="/local-agent/">Local Agent portal</a>
+        <a href="/support/index.html">Agent support</a>
+        <a href="/pages/contact.html">Contact MedOrbits</a>
+      </div></div>
+
       <div class="footer-links"><h2>👤 Account &amp; support</h2><div class="footer-link-grid">
         <a href="/account/index.html">My account</a><a href="/support/index.html">Support hub</a><a href="/support/help-centre.html">Help centre</a><a href="/pages/enquiry-cum-popup-form.html">Enquiry form</a><a href="/pages/sitemap.html">Sitemap</a><a href="/official-documents/index.html">Document resources</a>
       </div></div>
+
       <div class="footer-links"><h2>⚖️ Legal &amp; company</h2><div class="footer-link-grid">
         <a href="/pages/about.html">About us</a><a href="/pages/our-mission.html">Our mission</a><a href="/pages/our-vision.html">Our vision</a><a href="/pages/our-team.html">Our team</a><a href="/legal/privacy-policy.html">Privacy policy</a><a href="/legal/terms-and-conditions.html">Terms and conditions</a><a href="/legal/refund-policy.html">Refund policy</a><a href="/legal/disclaimer.html">Disclaimer</a><a href="/legal/data-retention-policy.html">Data retention</a><a href="/legal/independent-application-preparation.html">Application preparation policy</a>
       </div></div>
     </div>
+
     <p class="disclaimer"><strong>Important information:</strong> MedOrbits provides education and career information and consultancy services. Course details, eligibility, admissions, recognition, fees and deadlines can change. Verify important details with the relevant official authority or institution. MedOrbits does not guarantee admission, employment, examination results or visa outcomes. Review applicable service charges and terms before purchase.</p>
     <div class="footer-bottom"><span>© <span id="currentYear"></span> MedOrbits. All rights reserved.</span><strong>STUDY · WORK · GROW</strong><a href="mailto:contact@medorbits.in">contact@medorbits.in</a></div>
   </div>
 </footer>
 
-<div class="floating"><a class="float-btn whatsapp" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp MedOrbits">☏</a><button class="float-btn" type="button" data-open-enquiry aria-label="Open enquiry form">✉</button></div>
+<div class="floating">
+  <a class="float-btn agent" href="/local-agent/" aria-label="Open MedOrbits Local Agent">🤖</a>
+  <a class="float-btn whatsapp" href="https://wa.me/916205889064" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp MedOrbits">☏</a>
+  <button class="float-btn" type="button" data-open-enquiry aria-label="Open enquiry form">✉</button>
+</div>
 <button id="moBackToTop" type="button" aria-label="Back to top">↑</button>
 
 <div class="enquiry-modal" id="enquiryModal" hidden aria-hidden="true">
@@ -818,17 +762,14 @@ button{cursor:pointer}
   function setImageFallback(img) {
     if (img.dataset.fallbackApplied === "1") return;
     img.dataset.fallbackApplied = "1";
-
     const wrap = img.closest(".catalog-photo-wrap") || img.parentElement;
     const emoji = img.dataset.fallbackEmoji || "✨";
     img.remove();
-
     wrap.classList.add("image-fallback");
     wrap.style.minHeight = "126px";
     wrap.style.display = "grid";
     wrap.style.placeItems = "center";
     wrap.style.background = "radial-gradient(circle at 50% 35%,#10516b,#03111e)";
-
     const mark = document.createElement("span");
     mark.setAttribute("aria-hidden", "true");
     mark.textContent = emoji;
@@ -854,7 +795,6 @@ button{cursor:pointer}
         }
       });
     }, { threshold: 0.08, rootMargin: "0px 0px 35px 0px" });
-
     revealTargets.forEach(el => observer.observe(el));
   } else {
     revealTargets.forEach(el => el.classList.add("is-visible"));
@@ -882,7 +822,6 @@ button{cursor:pointer}
     mainNav.classList.remove("open");
     menuToggle.setAttribute("aria-expanded", "false");
     menuToggle.textContent = "☰ MENU";
-
     navGroups.forEach(group => {
       group.classList.remove("open");
       $(".nav-trigger", group).setAttribute("aria-expanded", "false");
@@ -898,16 +837,13 @@ button{cursor:pointer}
 
   navGroups.forEach(group => {
     const trigger = $(".nav-trigger", group);
-
     trigger.addEventListener("click", event => {
       event.stopPropagation();
       const shouldOpen = !group.classList.contains("open");
-
       navGroups.forEach(item => {
         item.classList.remove("open");
         $(".nav-trigger", item).setAttribute("aria-expanded", "false");
       });
-
       if (shouldOpen) {
         group.classList.add("open");
         trigger.setAttribute("aria-expanded", "true");
@@ -919,45 +855,38 @@ button{cursor:pointer}
 
   document.addEventListener("click", event => {
     if (!(event.target instanceof Element)) return;
-
     if (!event.target.closest(".nav-group")) {
       navGroups.forEach(group => {
         group.classList.remove("open");
         $(".nav-trigger", group).setAttribute("aria-expanded", "false");
       });
     }
-
     if (mainNav.classList.contains("open") &&
         !event.target.closest("#mainNav") &&
-        !event.target.closest("#menuToggle")) {
-      closeNav();
-    }
+        !event.target.closest("#menuToggle")) closeNav();
   });
 
   window.addEventListener("resize", () => {
     if (window.innerWidth > 1100) closeNav();
   });
 
-  /* CATALOGUE FILTERING */
+  /* CATALOGUE FILTERING AND SLIDERS */
   function updateSliderButtons(section) {
     const track = $(".catalog-track", section);
     const prev = $('[data-slide="prev"]', section);
     const next = $('[data-slide="next"]', section);
     if (!track) return;
-
     const maxScroll = track.scrollWidth - track.clientWidth;
     if (prev) prev.disabled = track.scrollLeft <= 2;
     if (next) next.disabled = maxScroll <= 2 || track.scrollLeft >= maxScroll - 3;
   }
 
-  /* AUTO-SLIDE WITH PAUSE ON HOVER, FOCUS AND TOUCH */
   const sliderTimers = new Map();
 
   $$("[data-catalog]").forEach(section => {
     const track = $(".catalog-track", section);
     const prev = $('[data-slide="prev"]', section);
     const next = $('[data-slide="next"]', section);
-
     if (!track) return;
 
     let paused = false;
@@ -966,7 +895,6 @@ button{cursor:pointer}
     function slideDistance() {
       const card = $(".catalog-card:not([hidden])", track);
       if (!card) return track.clientWidth * .8;
-
       const gap = parseFloat(getComputedStyle(track).columnGap) || 12;
       const columns = window.matchMedia("(max-width:560px)").matches ? 1 : 2;
       return (card.getBoundingClientRect().width + gap) * columns;
@@ -982,14 +910,10 @@ button{cursor:pointer}
     function advance() {
       if (paused || document.visibilityState !== "visible") return;
       if (track.scrollWidth <= track.clientWidth + 3) return;
-
       const maxScroll = track.scrollWidth - track.clientWidth;
-
       if (track.scrollLeft >= maxScroll - 4) {
         track.scrollTo({ left: 0, behavior: reducedMotion.matches ? "auto" : "smooth" });
-      } else {
-        move(1);
-      }
+      } else move(1);
     }
 
     function stop() {
@@ -1001,22 +925,14 @@ button{cursor:pointer}
     function start() {
       paused = false;
       clearInterval(sliderTimers.get(section));
-
-      if (!reducedMotion.matches) {
-        sliderTimers.set(section, window.setInterval(advance, 4200));
-      }
+      if (!reducedMotion.matches) sliderTimers.set(section, window.setInterval(advance, 4200));
     }
 
     prev?.addEventListener("click", () => {
-      stop();
-      move(-1);
-      restartTimer = window.setTimeout(start, 5000);
+      stop();move(-1);restartTimer = window.setTimeout(start, 5000);
     });
-
     next?.addEventListener("click", () => {
-      stop();
-      move(1);
-      restartTimer = window.setTimeout(start, 5000);
+      stop();move(1);restartTimer = window.setTimeout(start, 5000);
     });
 
     track.addEventListener("scroll", () => updateSliderButtons(section), { passive: true });
@@ -1030,7 +946,6 @@ button{cursor:pointer}
     section.addEventListener("touchend", () => {
       restartTimer = window.setTimeout(start, 4500);
     }, { passive: true });
-
     window.addEventListener("resize", () => updateSliderButtons(section));
     updateSliderButtons(section);
     start();
@@ -1042,7 +957,8 @@ button{cursor:pointer}
     } else {
       $$("[data-catalog]").forEach(section => {
         const track = $(".catalog-track", section);
-        if (track && !section.matches(":hover") && !section.contains(document.activeElement) && !reducedMotion.matches) {
+        if (track && !section.matches(":hover") &&
+            !section.contains(document.activeElement) && !reducedMotion.matches) {
           sliderTimers.set(section, window.setInterval(() => {
             const maxScroll = track.scrollWidth - track.clientWidth;
             if (maxScroll <= 3) return;
@@ -1070,26 +986,16 @@ button{cursor:pointer}
       $$(".catalog-card", section).forEach(card => {
         const text = ((card.dataset.searchable || "") + " " + card.innerText).toLowerCase();
         const matches = typeMatch && (!query || text.includes(query));
-
         card.hidden = !matches;
-        if (matches) {
-          matchesInSection++;
-          total++;
-        }
+        if (matches) { matchesInSection++;total++; }
       });
 
       section.hidden = !typeMatch;
-
       const empty = $(".catalog-empty", section);
       if (empty) empty.style.display = typeMatch && !matchesInSection ? "block" : "none";
-
       const count = $("[data-catalog-count]", section);
       if (count) count.textContent = `${matchesInSection} matching option${matchesInSection === 1 ? "" : "s"}`;
-
-      if (track) {
-        track.scrollLeft = 0;
-        updateSliderButtons(section);
-      }
+      if (track) { track.scrollLeft = 0;updateSliderButtons(section); }
     });
 
     $("#searchButton").textContent = total
@@ -1097,12 +1003,10 @@ button{cursor:pointer}
       : "No results found";
 
     const first = $$("[data-catalog]").find(section => !section.hidden);
-    if (first) {
-      first.scrollIntoView({
-        behavior: reducedMotion.matches ? "auto" : "smooth",
-        block: "start"
-      });
-    }
+    if (first) first.scrollIntoView({
+      behavior: reducedMotion.matches ? "auto" : "smooth",
+      block: "start"
+    });
   }
 
   $("#searchButton").addEventListener("click", searchCatalogues);
@@ -1127,7 +1031,6 @@ button{cursor:pointer}
 
   function openEnquiry() {
     if (popupOpen) return;
-
     popupOpen = true;
     lastFocused = document.activeElement;
     modal.hidden = false;
@@ -1137,29 +1040,23 @@ button{cursor:pointer}
     const url = new URL(frame.dataset.src || "/pages/enquiry-cum-popup-form.html", location.origin);
     const interest = storage.get("medorbits_selected_interest", "");
     if (interest) url.searchParams.set("interest", interest);
-
     const src = url.pathname + url.search;
     if (frame.getAttribute("src") !== src) frame.src = src;
-
     window.setTimeout(() => dialog.focus(), 25);
   }
 
   function closeEnquiry() {
     if (!popupOpen) return;
-
     popupOpen = false;
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
-
     if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
   }
 
   $$("[data-open-enquiry]").forEach(button => {
     button.addEventListener("click", () => {
-      if (button.dataset.interest) {
-        storage.set("medorbits_selected_interest", button.dataset.interest);
-      }
+      if (button.dataset.interest) storage.set("medorbits_selected_interest", button.dataset.interest);
       openEnquiry();
     });
   });
@@ -1168,30 +1065,21 @@ button{cursor:pointer}
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
-      finishIntro();
-      closeNav();
-      closeEnquiry();
+      finishIntro();closeNav();closeEnquiry();
     }
-
     if (event.key !== "Tab" || !popupOpen) return;
-
     const focusable = $$('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),iframe', dialog);
     if (!focusable.length) return;
-
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-
     if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
+      event.preventDefault();last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
+      event.preventDefault();first.focus();
     }
   });
 
   let toastTimeout;
-
   function showToast(message) {
     const toast = $("#moToast");
     toast.textContent = message;
@@ -1202,7 +1090,6 @@ button{cursor:pointer}
 
   window.addEventListener("message", event => {
     if (event.origin !== location.origin || !event.data || typeof event.data !== "object") return;
-
     if (event.data.type === "medorbits:enquiry-submitted") {
       closeEnquiry();
       showToast("Thank you. Your enquiry has been submitted.");
@@ -1227,6 +1114,12 @@ button{cursor:pointer}
       ["Job categories","/career/job-categories.html"],["Internships","/career/internships.html"],
       ["Resume builder","/career/resume-builder.html"],["Career guidance","/career/career-guidance.html"],
       ["Application preparation","/career/application-preparation/index.html"],["Recruitment services","/career/recruitment-services.html"]
+    ]},
+    {group:"agent",title:"🤖 AI & Local Agent",pages:[
+      ["MedOrbits Local Agent","/local-agent/"],
+      ["Open Local Agent portal","/local-agent/"],
+      ["Local Agent support","/support/index.html"],
+      ["Contact MedOrbits","/pages/contact.html"]
     ]},
     {group:"account",title:"👤 Student Account & Workspace",pages:[
       ["Account home","/account/index.html"],["Login","/account/login.html"],["Sign up","/account/signup.html"],
@@ -1296,14 +1189,13 @@ button{cursor:pointer}
       $$(".directory-link", group).forEach(link => {
         const match = groupMatch && (!query || link.dataset.search.includes(query));
         link.hidden = !match;
-        if (match) { visible++; count++; }
+        if (match) { visible++;count++; }
       });
 
       group.hidden = !groupMatch || visible === 0;
     });
 
     let empty = $("#directoryEmpty");
-
     if (!empty) {
       empty = document.createElement("p");
       empty.id = "directoryEmpty";
@@ -1311,7 +1203,6 @@ button{cursor:pointer}
       empty.textContent = "No matching pages found. Try a different search.";
       directoryGroups.after(empty);
     }
-
     empty.hidden = count > 0;
   }
 
@@ -1322,7 +1213,8 @@ button{cursor:pointer}
   const notices = [
     {text:"📢 Explore education, admission and career resources from MedOrbits.",href:"/education/index.html"},
     {text:"🎓 Research courses, entry requirements and study destinations.",href:"/education/study-abroad/index.html"},
-    {text:"💼 Explore job categories and career preparation resources.",href:"/career/index.html"}
+    {text:"💼 Explore job categories and career preparation resources.",href:"/career/index.html"},
+    {text:"🤖 Open the MedOrbits Local Agent portal.",href:"/local-agent/"}
   ];
 
   let noticeIndex = 0;
