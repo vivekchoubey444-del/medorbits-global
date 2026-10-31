@@ -1,704 +1,1052 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="MedOrbits Local Agent dashboard for repository auditing, validation, task planning, and local AI status.">
-  <meta name="application-name" content="MedOrbits Local Agent">
-  <meta name="robots" content="noindex, nofollow">
-  <title>MedOrbits Local Agent</title>
-  <link rel="stylesheet" href="/styles.css">
-  <script src="/app.js" defer></script>
-  <style>
-    /* Page-specific refinements; shared theme remains in /styles.css. */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101b20">
+<title>MedOrbits | Autonomous Local Agent</title>
 
-    .dashboard-brand-line {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-      color: var(--mo-gold);
-      font-size: .73rem;
-      font-weight: 800;
-      letter-spacing: .13em;
-      text-transform: uppercase;
-    }
+<style>
+:root {
+  --bg: #0b1217;
+  --panel: #111e25;
+  --panel2: #16262d;
+  --border: rgba(150,205,190,.14);
+  --green: #62e6b0;
+  --cyan: #58d9ed;
+  --gold: #d8b66a;
+  --red: #ff7474;
+  --text: #e6f0ec;
+  --muted: #81969a;
+}
 
-    .dashboard-brand-line::before {
-      width: 24px;
-      height: 1px;
-      background: var(--mo-gold);
-      content: "";
-    }
+* { box-sizing: border-box; }
 
-    .dashboard-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 24px;
-    }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at 50% 10%, #183b3a 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 90%, #182b38 0%, transparent 45%),
+    var(--bg);
+  font-family: Inter, system-ui, sans-serif;
+}
 
-    .dashboard-toolbar__title {
-      margin-bottom: 6px;
-    }
+button { font: inherit; }
 
-    .dashboard-toolbar__description {
-      margin-bottom: 0;
-      font-size: .88rem;
-    }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 17px 5%;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,17,22,.75);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(18px);
+}
 
-    .dashboard-toolbar__actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-    }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
 
-    .dashboard-panel {
-      display: grid;
-      gap: 28px;
-      min-width: 0;
-    }
+.brand-icon {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#204d43,#142d37);
+  color: var(--green);
+  font-size: 22px;
+}
 
-    .dashboard-panel > .section {
-      margin-bottom: 0;
-    }
+.brand small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-top: 3px;
+}
 
-    .dashboard-card-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      align-items: stretch;
-      gap: 18px;
-    }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: var(--muted);
+  font-size: 12px;
+}
 
-    .dashboard-card-grid > .card {
-      min-height: 190px;
-    }
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
+  margin-right: 6px;
+}
 
-    .dashboard-card-grid .metric-value {
-      margin-top: auto;
-      padding-top: 12px;
-    }
+main {
+  max-width: 1450px;
+  margin: auto;
+  padding: 28px 4%;
+}
 
-    .dashboard-card-grid .metric-label {
-      margin-top: 5px;
-    }
+.intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 25px;
+}
 
-    .dashboard-card-grid .card__header {
-      margin-bottom: 0;
-    }
+.eyebrow {
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: 3px;
+  font-weight: 800;
+}
 
-    .dashboard-section-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 17px;
-    }
+h1 {
+  font-size: clamp(24px,4vw,38px);
+  margin: 8px 0;
+}
 
-    .dashboard-section-head h2 {
-      margin-bottom: 5px;
-    }
+.subtitle {
+  color: var(--muted);
+  font-size: 13px;
+}
 
-    .dashboard-section-head p {
-      margin-bottom: 0;
-      font-size: .84rem;
-    }
+.mode {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 10px 15px;
+  border-radius: 30px;
+  color: var(--green);
+  font-size: 12px;
+}
 
-    .dashboard-action-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: stretch;
-      gap: 18px;
-    }
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0,1.35fr) minmax(300px,.85fr);
+  gap: 18px;
+}
 
-    .dashboard-action-grid .card {
-      min-height: 195px;
-    }
+.panel {
+  background: linear-gradient(145deg,rgba(24,42,49,.94),rgba(13,25,31,.96));
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  padding: 20px;
+  box-shadow: 0 15px 50px rgba(0,0,0,.18);
+}
 
-    .dashboard-action-grid .card__header {
-      flex: 1 1 auto;
-    }
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 750;
+}
 
-    .dashboard-action-grid .btn {
-      margin-top: 20px;
-    }
+.panel-title span:last-child {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
 
-    .dashboard-task-shell {
-      padding: 16px;
-    }
+/* ROBOT WORKSPACE */
 
-    .dashboard-task-shell [data-task-list] {
-      min-width: 0;
-    }
+.robot-panel {
+  min-height: 440px;
+  overflow: hidden;
+  position: relative;
+  text-align: center;
+}
 
-    .dashboard-task-shell .empty-state {
-      margin: 0;
-    }
+.robot-stage {
+  min-height: 290px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  isolation: isolate;
+}
 
-    .dashboard-form-card {
-      max-width: 900px;
-    }
+.orbit {
+  position: absolute;
+  width: 245px;
+  height: 245px;
+  border: 1px solid rgba(88,217,237,.19);
+  border-radius: 50%;
+  animation: rotate 14s linear infinite;
+}
 
-    .dashboard-form-card .form {
-      margin-top: 20px;
-    }
+.orbit:before,
+.orbit:after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--cyan);
+}
 
-    .dashboard-status-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 15px;
-      margin: 20px 0 0;
-    }
+.orbit:before { top: 20px; left: 38px; }
+.orbit:after { bottom: 25px; right: 30px; }
 
-    .dashboard-status-grid > div {
-      min-width: 0;
-      padding: 15px;
-      border: 1px solid var(--mo-border);
-      border-radius: 12px;
-      background: rgba(7, 17, 31, .36);
-    }
+.orbit-two {
+  width: 290px;
+  height: 290px;
+  border-style: dashed;
+  border-color: rgba(98,230,176,.15);
+  animation-direction: reverse;
+  animation-duration: 25s;
+}
 
-    .dashboard-status-grid dt {
-      margin-bottom: 6px;
-    }
+.robot {
+  position: relative;
+  z-index: 2;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px rgba(88,217,237,.22));
+}
 
-    .dashboard-status-grid dd {
-      margin: 0;
-      overflow-wrap: anywhere;
-    }
+.robot-head {
+  width: 145px;
+  height: 112px;
+  border-radius: 35px 35px 27px 27px;
+  background: linear-gradient(145deg,#d6e9e3,#688d8b);
+  border: 4px solid #a5d5c8;
+  box-shadow: inset -10px -12px 20px rgba(0,0,0,.25);
+  position: relative;
+}
 
-    .dashboard-footer-accent {
-      color: var(--mo-gold);
-    }
+.robot-face {
+  position: absolute;
+  inset: 20px 15px;
+  border-radius: 20px;
+  background: #102329;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
 
-    .nav-link[aria-current="page"] {
-      position: relative;
-    }
+.eye {
+  width: 17px;
+  height: 23px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 17px var(--cyan);
+  animation: blink 4s infinite;
+}
 
-    [data-panel]:not([hidden]) {
-      animation: dashboard-fade-in .3s ease both;
-    }
+.robot-ear {
+  position: absolute;
+  top: 35px;
+  width: 12px;
+  height: 35px;
+  background: var(--gold);
+  border-radius: 7px;
+}
 
-    @keyframes dashboard-fade-in {
-      from {
-        opacity: 0;
-        transform: translateY(7px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+.robot-ear.left { left: -14px; }
+.robot-ear.right { right: -14px; }
 
-    @media (max-width: 1050px) {
-      .dashboard-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
+.robot-neck {
+  height: 14px;
+  width: 37px;
+  margin: auto;
+  background: #8aada4;
+}
 
-    @media (max-width: 600px) {
-      .dashboard-toolbar {
-        align-items: stretch;
-        flex-direction: column;
-      }
+.robot-body {
+  width: 110px;
+  height: 78px;
+  margin: auto;
+  border-radius: 20px 20px 28px 28px;
+  background: linear-gradient(145deg,#b9d6cc,#466e6b);
+  position: relative;
+  border: 3px solid #9fc5b8;
+}
 
-      .dashboard-toolbar__actions {
-        justify-content: flex-start;
-      }
+.robot-core {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 20px var(--green);
+  position: absolute;
+  top: 22px;
+  left: 38px;
+  animation: pulse 1.5s infinite;
+}
 
-      .dashboard-card-grid,
-      .dashboard-action-grid,
-      .dashboard-status-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
+.robot-arms {
+  position: absolute;
+  width: 160px;
+  height: 35px;
+  top: 157px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: space-between;
+}
 
-      .dashboard-card-grid > .card,
-      .dashboard-action-grid .card {
-        min-height: 0;
-      }
+.arm {
+  width: 18px;
+  height: 67px;
+  border-radius: 20px;
+  background: linear-gradient(#b5d6ca,#537b77);
+  transform-origin: top;
+}
 
-      .dashboard-task-shell {
-        padding: 10px;
-      }
-    }
+.arm.left { animation: leftWork 1.2s infinite alternate; }
+.arm.right { animation: rightWork 1.2s infinite alternate; }
 
-    @media (prefers-reduced-motion: reduce) {
-      [data-panel]:not([hidden]) {
-        animation: none;
-      }
-    }
-  </style>
+.robot-shadow {
+  position: absolute;
+  width: 140px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(88,217,237,.12);
+  filter: blur(10px);
+  bottom: 10px;
+}
+
+.robot-caption {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 4px;
+}
+
+.robot-description {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.activity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  background: rgba(98,230,176,.08);
+  border: 1px solid rgba(98,230,176,.2);
+  color: var(--green);
+  border-radius: 30px;
+  padding: 8px 13px;
+  font-size: 11px;
+}
+
+@keyframes rotate { to { transform: rotate(360deg); } }
+@keyframes float { 50% { transform: translateY(-9px); } }
+@keyframes blink {
+  0%,46%,50%,100% { transform: scaleY(1); }
+  48% { transform: scaleY(.12); }
+}
+@keyframes pulse {
+  50% { opacity: .45; transform: scale(.85); }
+}
+@keyframes leftWork {
+  to { transform: rotate(35deg); }
+}
+@keyframes rightWork {
+  to { transform: rotate(-35deg); }
+}
+
+/* PROGRESS */
+
+.progress-wrap { margin-top: 20px; }
+
+.progress-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 9px;
+}
+
+.progress-heading span:last-child { color: var(--green); }
+
+.progress {
+  height: 7px;
+  border-radius: 10px;
+  background: #26373b;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 10px;
+  background: linear-gradient(90deg,var(--green),var(--cyan));
+  box-shadow: 0 0 12px rgba(98,230,176,.5);
+  transition: width .5s ease;
+}
+
+/* TASKS */
+
+.task-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.task {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255,255,255,.025);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.task.active {
+  border-color: rgba(88,217,237,.3);
+  background: rgba(88,217,237,.055);
+}
+
+.task-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #203b3e;
+  font-size: 16px;
+}
+
+.task-info { flex: 1; min-width: 0; }
+
+.task-info strong {
+  display: block;
+  font-size: 11px;
+}
+
+.task-info small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.task-state {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.task.done .task-state { color: var(--green); }
+.task.active .task-state { color: var(--cyan); }
+
+/* TERMINAL */
+
+.terminal {
+  margin-top: 18px;
+  background: #080f13;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.terminal-head {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.terminal-body {
+  height: 185px;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: ui-monospace,monospace;
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.log { color: #9cb3ae; overflow-wrap: anywhere; }
+.log.success { color: var(--green); }
+.log.info { color: var(--cyan); }
+.log.warning { color: var(--gold); }
+
+.prompt { color: var(--green); }
+
+/* METRICS */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.metric {
+  padding: 15px;
+  border: 1px solid var(--border);
+  background: rgba(18,34,41,.8);
+  border-radius: 14px;
+}
+
+.metric small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.metric strong {
+  display: block;
+  font-size: 23px;
+  margin-top: 8px;
+}
+
+.metric em {
+  font-size: 10px;
+  color: var(--green);
+  font-style: normal;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.btn {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 17px;
+  background: var(--panel2);
+  color: var(--text);
+  font-size: 11px;
+  transition: .2s;
+}
+
+.btn:hover { border-color: var(--green); transform: translateY(-2px); }
+
+.btn.primary {
+  color: #09251d;
+  background: var(--green);
+  border-color: var(--green);
+  font-weight: 800;
+}
+
+.btn.danger { color: var(--red); }
+
+footer {
+  padding: 25px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+@media(max-width:850px) {
+  .dashboard { grid-template-columns: 1fr; }
+}
+
+@media(max-width:550px) {
+  header { padding: 13px 4%; }
+  .header-right .environment { display: none; }
+  main { padding: 22px 4%; }
+  .panel { padding: 15px; }
+  .metrics { grid-template-columns: repeat(2,1fr); }
+  .robot-panel { min-height: 410px; }
+}
+</style>
 </head>
 
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
 
-  <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Main navigation">
-      <a class="brand" href="#overview" data-view="overview" aria-label="MedOrbits Local Agent home">
-        <span class="brand__mark" aria-hidden="true">M</span>
-        <span>
-          <span class="brand__name">MedOrbits</span>
-          <span class="brand__caption">Local Agent Workspace</span>
-        </span>
-      </a>
-
-      <nav class="nav-group" aria-label="Workspace">
-        <span class="nav-group__title">Workspace</span>
-
-        <a class="nav-link" href="#overview" data-view="overview" aria-current="page">
-          <span class="nav-link__icon" aria-hidden="true">⌂</span>
-          Overview
-        </a>
-
-        <a class="nav-link" href="#tasks" data-view="tasks">
-          <span class="nav-link__icon" aria-hidden="true">▤</span>
-          Tasks
-        </a>
-
-        <a class="nav-link" href="#activity" data-view="activity">
-          <span class="nav-link__icon" aria-hidden="true">◷</span>
-          Activity
-        </a>
-
-        <a class="nav-link" href="#health" data-view="health">
-          <span class="nav-link__icon" aria-hidden="true">✓</span>
-          Repository health
-        </a>
-      </nav>
-
-      <nav class="nav-group" aria-label="Tools">
-        <span class="nav-group__title">Tools</span>
-
-        <button class="nav-link" type="button" data-action="audit">
-          <span class="nav-link__icon" aria-hidden="true">⌕</span>
-          Repository audit
-        </button>
-
-        <button class="nav-link" type="button" data-action="check">
-          <span class="nav-link__icon" aria-hidden="true">◇</span>
-          Run health checks
-        </button>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="flex items-center gap-2">
-          <span class="badge badge--success">Safe mode</span>
-          <span class="muted">v<span data-app-version>1.0.0</span></span>
-        </div>
-        <p class="mt-4 mb-0">Local workspace · Read-only by default</p>
-      </div>
-    </aside>
-
-    <main class="app-main" id="main-content">
-      <div class="app-content">
-        <header class="dashboard-toolbar">
-          <div>
-            <div class="dashboard-brand-line">MedOrbits / Automation</div>
-            <h1 class="dashboard-toolbar__title">Local Agent Dashboard</h1>
-            <p class="dashboard-toolbar__description">
-              Monitor repository checks and manage approved tasks.
-            </p>
-          </div>
-
-          <div class="dashboard-toolbar__actions">
-            <span data-agent-status data-state="unknown">
-              <span data-agent-status-text>Connecting</span>
-            </span>
-            <button class="btn btn--secondary" type="button" data-action="refresh">
-              <span aria-hidden="true">↻</span>
-              Refresh
-            </button>
-          </div>
-        </header>
-
-        <div data-app-message hidden role="status" aria-live="polite"></div>
-
-        <div data-loading hidden role="status" aria-live="polite">
-          <span class="spinner" aria-hidden="true"></span>
-          Processing request…
-        </div>
-
-        <!-- Overview -->
-        <section class="view-panel dashboard-panel" data-panel="overview" aria-labelledby="overview-title">
-          <section class="hero">
-            <div class="hero__content">
-              <span class="eyebrow">Local-first workspace</span>
-              <h2 class="hero__title" id="overview-title">
-                Build with control.<br>
-                <span>Verify with confidence.</span>
-              </h2>
-              <p class="hero__description">
-                Inspect project health, review task progress, and coordinate
-                local automation with explicit safety boundaries.
-              </p>
-              <div class="hero__actions">
-                <button class="btn btn--primary" type="button" data-action="audit">
-                  <span aria-hidden="true">⌕</span>
-                  Audit repository
-                </button>
-                <button class="btn btn--gold" type="button" data-action="check">
-                  <span aria-hidden="true">✓</span>
-                  Run checks
-                </button>
-              </div>
-            </div>
-            <div class="hero__art" aria-hidden="true">M</div>
-          </section>
-
-          <section class="section" aria-labelledby="metrics-title">
-            <div class="dashboard-section-head">
-              <div>
-                <h2 id="metrics-title">Workspace overview</h2>
-                <p>Live values supplied by the local-agent API.</p>
-              </div>
-              <span class="badge badge--primary">Local dashboard</span>
-            </div>
-
-            <div class="dashboard-card-grid">
-              <article class="card">
-                <div class="card__header">
-                  <div>
-                    <p class="card__description">Agent status</p>
-                    <h3 class="card__title">Runtime</h3>
-                  </div>
-                  <span class="card__icon" aria-hidden="true">◉</span>
-                </div>
-                <p class="metric-value" data-agent-version>--</p>
-                <p class="metric-label">Reported agent version</p>
-              </article>
-
-              <article class="card">
-                <div class="card__header">
-                  <div>
-                    <p class="card__description">Current workload</p>
-                    <h3 class="card__title">Active tasks</h3>
-                  </div>
-                  <span class="card__icon" aria-hidden="true">▤</span>
-                </div>
-                <p class="metric-value" data-agent-active-tasks>0</p>
-                <p class="metric-label">Tasks currently running</p>
-              </article>
-
-              <article class="card">
-                <div class="card__header">
-                  <div>
-                    <p class="card__description">Execution mode</p>
-                    <h3 class="card__title">Safety</h3>
-                  </div>
-                  <span class="card__icon" aria-hidden="true">◇</span>
-                </div>
-                <p class="metric-value" data-agent-mode>Read-only</p>
-                <p class="metric-label">Agent-reported operating mode</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="section" aria-labelledby="quick-actions-title">
-            <div class="dashboard-section-head">
-              <div>
-                <h2 id="quick-actions-title">Quick actions</h2>
-                <p>Run a focused check before making repository changes.</p>
-              </div>
-            </div>
-
-            <div class="dashboard-action-grid">
-              <article class="card card--interactive">
-                <div class="card__header">
-                  <div>
-                    <h3 class="card__title">Repository audit</h3>
-                    <p class="card__description">
-                      Inspect inventory, references, and common security indicators.
-                    </p>
-                  </div>
-                  <span class="card__icon" aria-hidden="true">⌕</span>
-                </div>
-                <button class="btn btn--secondary btn--block" type="button" data-action="audit">
-                  Start audit
-                </button>
-              </article>
-
-              <article class="card card--interactive">
-                <div class="card__header">
-                  <div>
-                    <h3 class="card__title">Health checks</h3>
-                    <p class="card__description">
-                      Validate supported file syntax and repository structure.
-                    </p>
-                  </div>
-                  <span class="card__icon" aria-hidden="true">✓</span>
-                </div>
-                <button class="btn btn--secondary btn--block" type="button" data-action="check">
-                  Run checks
-                </button>
-              </article>
-            </div>
-          </section>
-
-          <section class="section" aria-labelledby="recent-tasks-title">
-            <div class="dashboard-section-head">
-              <div>
-                <h2 id="recent-tasks-title">Recent tasks</h2>
-                <p>Latest task records returned by the service.</p>
-              </div>
-              <button class="btn btn--secondary btn--small" type="button" data-view="tasks">
-                View all tasks
-              </button>
-            </div>
-
-            <div class="card dashboard-task-shell">
-              <div data-task-list aria-live="polite">
-                <p class="empty-state">Loading task records…</p>
-              </div>
-            </div>
-          </section>
-        </section>
-
-        <!-- Tasks -->
-        <section class="view-panel dashboard-panel" data-panel="tasks" aria-labelledby="tasks-title" hidden>
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">Task management</span>
-              <h2 id="tasks-title">Tasks</h2>
-              <p>Submit a task request for server-side validation and authorization.</p>
-            </div>
-          </div>
-
-          <section class="card section dashboard-form-card" aria-labelledby="submit-task-title">
-            <div class="card__header">
-              <div>
-                <h3 class="card__title" id="submit-task-title">New task request</h3>
-                <p class="card__description">
-                  Keep requests specific, bounded, and independently verifiable.
-                </p>
-              </div>
-              <span class="card__icon" aria-hidden="true">＋</span>
-            </div>
-
-            <form class="form" data-task-form>
-              <div class="form-group">
-                <label for="task-description">Task description</label>
-                <textarea
-                  id="task-description"
-                  name="task"
-                  maxlength="4000"
-                  required
-                  placeholder="Example: Audit the local-agent source files and report syntax errors."
-                  aria-describedby="task-help"
-                ></textarea>
-                <p class="form-help" id="task-help">
-                  Maximum 4,000 characters. The server must validate every operation independently.
-                </p>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-3">
-                <button class="btn btn--primary" type="submit">Submit task</button>
-                <span class="badge badge--success">Read-only request mode</span>
-              </div>
-            </form>
-          </section>
-
-          <section class="section" aria-labelledby="all-tasks-title">
-            <div class="section-heading">
-              <h2 id="all-tasks-title">Task queue</h2>
-              <button class="btn btn--secondary btn--small" type="button" data-action="refresh">
-                Refresh tasks
-              </button>
-            </div>
-            <div class="card dashboard-task-shell">
-              <div data-task-list aria-live="polite">
-                <p class="empty-state">No task records loaded.</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="card__header">
-              <div>
-                <h3 class="card__title">Cancellation</h3>
-                <p class="card__description">
-                  Request cancellation of active work. Cancellation does not undo completed changes.
-                </p>
-              </div>
-            </div>
-            <button class="btn btn--danger" type="button" data-action="cancel">
-              Request cancellation
-            </button>
-          </section>
-        </section>
-
-        <!-- Activity -->
-        <section class="view-panel dashboard-panel" data-panel="activity" aria-labelledby="activity-title" hidden>
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">Session activity</span>
-              <h2 id="activity-title">Activity log</h2>
-              <p>Dashboard-side messages from the current browser session.</p>
-            </div>
-            <button class="btn btn--secondary" type="button" data-action="refresh">
-              Refresh
-            </button>
-          </div>
-
-          <section class="card">
-            <div data-log-list aria-live="polite">
-              <p class="empty-state">No activity recorded yet.</p>
-            </div>
-          </section>
-
-          <p class="form-help">
-            This log is held in browser memory and is not a durable server audit log.
-          </p>
-        </section>
-
-        <!-- Health -->
-        <section class="view-panel dashboard-panel" data-panel="health" aria-labelledby="health-title" hidden>
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">Repository diagnostics</span>
-              <h2 id="health-title">Repository health</h2>
-              <p>Identify issues before making repository changes.</p>
-            </div>
-          </div>
-
-          <div class="dashboard-action-grid">
-            <article class="card">
-              <div class="card__header">
-                <div>
-                  <h3 class="card__title">Structural and security audit</h3>
-                  <p class="card__description">
-                    Check inventory limits, suspicious paths, and reference consistency.
-                  </p>
-                </div>
-                <span class="card__icon" aria-hidden="true">⌕</span>
-              </div>
-              <button class="btn btn--primary btn--block" type="button" data-action="audit">
-                Run repository audit
-              </button>
-            </article>
-
-            <article class="card">
-              <div class="card__header">
-                <div>
-                  <h3 class="card__title">Syntax and configuration</h3>
-                  <p class="card__description">
-                    Check supported syntax and common project configuration issues.
-                  </p>
-                </div>
-                <span class="card__icon" aria-hidden="true">✓</span>
-              </div>
-              <button class="btn btn--secondary btn--block" type="button" data-action="check">
-                Run health checks
-              </button>
-            </article>
-          </div>
-
-          <section class="card">
-            <h3 class="card__title">Current agent status</h3>
-            <dl class="dashboard-status-grid">
-              <div>
-                <dt class="metric-label">Status</dt>
-                <dd class="metric-label" data-agent-status-text>Connecting</dd>
-              </div>
-              <div>
-                <dt class="metric-label">Operating mode</dt>
-                <dd class="metric-label" data-agent-mode>Read-only</dd>
-              </div>
-              <div>
-                <dt class="metric-label">Active tasks</dt>
-                <dd class="metric-label" data-agent-active-tasks>0</dd>
-              </div>
-              <div>
-                <dt class="metric-label">Completed tasks</dt>
-                <dd class="metric-label" data-agent-completed-tasks>0</dd>
-              </div>
-              <div>
-                <dt class="metric-label">Last updated</dt>
-                <dd class="metric-label" data-agent-last-updated>--</dd>
-              </div>
-            </dl>
-          </section>
-        </section>
-
-        <footer class="app-footer">
-          <span>© <span id="footer-year">2026</span> MedOrbits · Local Agent</span>
-          <span><span class="dashboard-footer-accent">Local-first</span> · Explicit authorization · Safe defaults</span>
-        </footer>
-      </div>
-    </main>
+<header>
+  <div class="brand">
+    <div class="brand-icon">🤖</div>
+    <div>
+      MEDORBITS
+      <small>LOCAL AUTONOMOUS AGENT</small>
+    </div>
   </div>
 
-  <script>
-    (() => {
-      "use strict";
+  <div class="header-right">
+    <span class="environment">REPOSITORY OPERATIONS</span>
+    <span><i class="status-dot" id="statusDot"></i><span id="connection">READY</span></span>
+  </div>
+</header>
 
-      const year = document.getElementById("footer-year");
-      if (year) year.textContent = String(new Date().getFullYear());
+<main>
 
-      /*
-       * Accessible view switching.
-       * This is intentionally limited to navigation and does not execute tasks.
-       * Existing data-view attributes are retained for app.js compatibility.
-       */
-      const panels = [...document.querySelectorAll("[data-panel]")];
-      const viewControls = [...document.querySelectorAll("[data-view]")];
+  <section class="intro">
+    <div>
+      <div class="eyebrow">INTELLIGENT DEVELOPMENT SYSTEM</div>
+      <h1>Agent Command Centre</h1>
+      <div class="subtitle">Your repository assistant is ready to inspect, repair and improve your project.</div>
+    </div>
+    <div class="mode">◈ OFFLINE + ONLINE READY</div>
+  </section>
 
-      function showView(view, updateHash = true) {
-        const target = panels.find(panel => panel.dataset.panel === view);
-        if (!target) return;
+  <section class="dashboard">
 
-        for (const panel of panels) {
-          panel.hidden = panel !== target;
+    <div class="panel robot-panel">
+      <div class="panel-title">
+        <span>🤖 AI WORKER</span>
+        <span id="workerState">STANDBY</span>
+      </div>
+
+      <div class="robot-stage">
+        <div class="orbit"></div>
+        <div class="orbit orbit-two"></div>
+
+        <div class="robot">
+          <div class="robot-head">
+            <div class="robot-ear left"></div>
+            <div class="robot-ear right"></div>
+            <div class="robot-face">
+              <div class="eye"></div>
+              <div class="eye"></div>
+            </div>
+          </div>
+          <div class="robot-neck"></div>
+          <div class="robot-body">
+            <div class="robot-core"></div>
+          </div>
+          <div class="robot-arms">
+            <div class="arm left"></div>
+            <div class="arm right"></div>
+          </div>
+        </div>
+
+        <div class="robot-shadow"></div>
+      </div>
+
+      <div class="robot-caption" id="robotMessage">Hello! I am MedOrbits Agent.</div>
+      <div class="robot-description" id="robotDescription">
+        Waiting for your next repository instruction.
+      </div>
+
+      <div class="activity-chip">
+        <span class="status-dot"></span>
+        <span id="activity">Systems initialized</span>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-heading">
+          <span>WORK PROGRESS</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="progress">
+          <div class="progress-fill" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="startBtn">▶ Start Working</button>
+        <button class="btn" id="pauseBtn">Ⅱ Pause</button>
+        <button class="btn danger" id="stopBtn">■ Stop</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        <span>⚙ WORK PIPELINE</span>
+        <span id="taskCount">0 / 6</span>
+      </div>
+
+      <div class="task-list" id="taskList">
+
+        <div class="task" data-task="0">
+          <div class="task-icon">🔍</div>
+          <div class="task-info">
+            <strong>Repository scanning</strong>
+            <small>Inspect folders and source files</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+        <div class="task" data-task="1">
+          <div class="task-icon">🧠</div>
+          <div class="task-info">
+            <strong>Code analysis</strong>
+            <small>Identify issues and dependencies</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+        <div class="task" data-task="2">
+          <div class="task-icon">🛠️</div>
+          <div class="task-info">
+            <strong>Automatic repair planning</strong>
+            <small>Prepare safe repository changes</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+        <div class="task" data-task="3">
+          <div class="task-icon">💻</div>
+          <div class="task-info">
+            <strong>Code generation</strong>
+            <small>Create and upgrade project files</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+        <div class="task" data-task="4">
+          <div class="task-icon">🧪</div>
+          <div class="task-info">
+            <strong>Testing and validation</strong>
+            <small>Check syntax and run approved tests</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+        <div class="task" data-task="5">
+          <div class="task-icon">📦</div>
+          <div class="task-info">
+            <strong>Upgrade report</strong>
+            <small>Summarize verified changes</small>
+          </div>
+          <div class="task-state">WAITING</div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <section class="metrics">
+    <div class="metric">
+      <small>FILES SCANNED</small>
+      <strong id="filesMetric">0</strong>
+      <em>Repository scan</em>
+    </div>
+    <div class="metric">
+      <small>ISSUES FOUND</small>
+      <strong id="issuesMetric">0</strong>
+      <em>Pending verification</em>
+    </div>
+    <div class="metric">
+      <small>FILES UPDATED</small>
+      <strong id="updatedMetric">0</strong>
+      <em>Confirmed changes</em>
+    </div>
+    <div class="metric">
+      <small>TESTS PASSED</small>
+      <strong id="testsMetric">0</strong>
+      <em>Verified results</em>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:18px">
+    <div class="panel-title">
+      <span>⌨ LIVE AGENT TERMINAL</span>
+      <span id="terminalStatus">LOCAL CONSOLE</span>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-head">
+        <span>MEDORBITS / LOCAL_AGENT / EXECUTION LOG</span>
+        <span id="clock">--:--:--</span>
+      </div>
+      <div class="terminal-body" id="terminal">
+        <div class="log success">[SYSTEM] MedOrbits Agent interface initialized.</div>
+        <div class="log info">[SYSTEM] Waiting for backend connection.</div>
+        <div class="log">[READY] No repository operations have been started.</div>
+        <div class="log"><span class="prompt">agent@medorbits:~$</span> awaiting instruction_</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  MEDORBITS LOCAL AGENT · REPOSITORY INTELLIGENCE SYSTEM · v1.0
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+
+  const steps = [
+    {
+      title: "Scanning repository",
+      description: "Mapping files, folders and project structure.",
+      activity: "Inspecting repository",
+      logs: [
+        "Starting repository inspection...",
+        "Reading project structure...",
+        "Checking configured exclusions..."
+      ]
+    },
+    {
+      title: "Analysing source code",
+      description: "Examining supported languages and configuration files.",
+      activity: "Analysing code",
+      logs: [
+        "Inspecting Python and JavaScript files...",
+        "Checking JSON configurations...",
+        "Identifying potential code issues..."
+      ]
+    },
+    {
+      title: "Preparing repair plan",
+      description: "Organizing proposed changes for review.",
+      activity: "Building repair plan",
+      logs: [
+        "Preparing repository maintenance plan...",
+        "Checking target paths...",
+        "Validating proposed operations..."
+      ]
+    },
+    {
+      title: "Generating improvements",
+      description: "Preparing repository upgrades.",
+      activity: "Generating code",
+      logs: [
+        "Preparing approved source changes...",
+        "Checking file consistency...",
+        "Reviewing planned modifications..."
+      ]
+    },
+    {
+      title: "Running validation",
+      description: "Checking source syntax and test results.",
+      activity: "Testing project",
+      logs: [
+        "Running configured validation checks...",
+        "Reviewing test output...",
+        "Collecting verification results..."
+      ]
+    },
+    {
+      title: "Preparing final report",
+      description: "Collecting the results of verified operations.",
+      activity: "Generating report",
+      logs: [
+        "Compiling operation summary...",
+        "Recording verified results...",
+        "Preparing completion report..."
+      ]
+    }
+  ];
+
+  let current = 0;
+  let progress = 0;
+  let timer = null;
+  let paused = false;
+  let running = false;
+  let runId = 0;
+
+  function log(message, type = "") {
+    const terminal = $("terminal");
+    const line = document.createElement("div");
+    line.className = "log " + type;
+
+    const time = new Date().toLocaleTimeString();
+    line.textContent = `[${time}] ${message}`;
+
+    terminal.appendChild(line);
+
+    while (terminal.children.length > 100) {
+      terminal.removeChild(terminal.firstChild);
+    }
+
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function setProgress(value) {
+    progress = Math.max(0, Math.min(100, value));
+    $("progressBar").style.width = progress + "%";
+    $("progressText").textContent = Math.round(progress) + "%";
+  }
+
+  function setTaskState(index, state) {
+    const task = document.querySelector(`[data-task="${index}"]`);
+    if (!task) return;
+
+    task.classList.remove("active", "done");
+    if (state === "ACTIVE") task.classList.add("active");
+    if (state === "DONE") task.classList.add("done");
+
+    task.querySelector(".task-state").textContent = state;
+  }
+
+  function reset() {
+    current = 0;
+    setProgress(0);
+
+    steps.forEach((_, i) => setTaskState(i, "WAITING"));
+
+    $("taskCount").textContent = "0 / 6";
+    $("filesMetric").textContent = "0";
+    $("issuesMetric").textContent = "0";
+    $("updatedMetric").textContent = "0";
+    $("testsMetric").textContent = "0";
+  }
+
+  function activateStep(index) {
+    const step = steps[index];
+
+    $("robotMessage").textContent = step.title;
+    $("robotDescription").textContent = step.description;
+    $("activity").textContent = step.activity;
+    $("workerState").textContent = "WORKING";
+    $("connection").textContent = "ACTIVE";
+    $("terminalStatus").textContent = "SIMULATION MODE";
+
+    steps.forEach((_, i) => {
+      if (i < index) setTaskState(i, "DONE");
+      else if (i === index) setTaskState(i, "ACTIVE");
+      else setTaskState(i, "WAITING");
+    });
+
+    $("taskCount").textContent = `${index} / 6`;
+
+    step.logs.forEach((message, i) => {
+      setTimeout(() => {
+        if (running) log(message, i === 0 ? "info" : "");
+      }, i * 550);
+    });
+  }
+
+  function finish() {
+    clearInterval(timer);
+    running = false;
+    paused = false;
+
+    steps.forEach((_, i) => setTaskState(i, "DONE"));
+
+    setProgress(100);
+    $("taskCount").textContent = "6 / 6";
+    $("workerState").textContent = "IDLE";
+    $("connection").textContent = "READY";
+    $("activity").textContent = "Demo sequence complete";
+    $("robotMessage").textContent = "Work sequence completed!";
+    $("robotDescription").textContent =
+      "This was a demonstration. No repository files were changed.";
+    log("Demonstration finished. No real code modifications were performed.", "success");
+  }
+
+  function start() {
+    if (running && !paused) return;
+
+    if (progress >= 100) reset();
+
+    running = true;
+    paused = false;
+    const thisRun = ++runId;
+
+    $("statusDot").style.background = "var(--green)";
+    $("workerState").textContent = "WORKING";
+
+    log("Agent demonstration started.", "success");
+
+    if (current < steps.length) activateStep(current);
+
+    timer = setInterval(() => {
+      if (!running || paused || thisRun !== runId) return;
+
+      setProgress(progress + 2);
+
+      if (progress >= 100) {
+        current++;
+        if (current >= steps.length) {
+          finish();
+          return;
         }
 
-        for (const control of viewControls) {
-          const active = control.dataset.view === view;
-          if (active) {
-            control.setAttribute("aria-current", "page");
-            control.classList.add("is-active");
-          } else {
-            control.removeAttribute("aria-current");
-            control.classList.remove("is-active");
-          }
-        }
-
-        if (updateHash && window.location.hash !== `#${view}`) {
-          history.replaceState(null, "", `#${view}`);
-        }
+        setProgress(current / steps.length * 100);
+        activateStep(current);
       }
+    }, 150);
+  }
 
-      for (const control of viewControls) {
-        control.addEventListener("click", event => {
-          const view = control.dataset.view;
-          if (!view || !panels.some(panel => panel.dataset.panel === view)) return;
+  function pause() {
+    if (!running) return;
 
-          event.preventDefault();
-          showView(view);
-        });
+    paused = !paused;
+    $("workerState").textContent = paused ? "PAUSED" : "WORKING";
+    $("activity").textContent = paused ? "Operation paused" : steps[current]?.activity || "Working";
+
+    log(paused ? "Operation paused by user." : "Operation resumed.", "warning");
+  }
+
+  function stop() {
+    if (!running && progress === 0) return;
+
+    runId++;
+    clearInterval(timer);
+    running = false;
+    paused = false;
+
+    $("workerState").textContent = "STOPPED";
+    $("activity").textContent = "Stopped by user";
+    $("robotMessage").textContent = "Standing by.";
+    $("robotDescription").textContent = "Ready for another instruction.";
+    $("connection").textContent = "READY";
+
+    log("Demonstration stopped. No repository changes were made.", "warning");
+  }
+
+  $("startBtn").addEventListener("click", start);
+  $("pauseBtn").addEventListener("click", pause);
+  $("stopBtn").addEventListener("click", stop);
+
+  function clock() {
+    $("clock").textContent = new Date().toLocaleTimeString();
+  }
+
+  clock();
+  setInterval(clock, 1000);
+
+  // Optional integration interface for the Python agent.
+  // A backend may dispatch these events after actual operations.
+  window.MedOrbitsAgentUI = {
+    setStatus(message) {
+      $("activity").textContent = String(message);
+    },
+    setProgress(value) {
+      setProgress(Number(value));
+    },
+    setWorkerState(state) {
+      $("workerState").textContent = String(state).toUpperCase();
+    },
+    addLog(message, type = "") {
+      log(String(message), type);
+    },
+    updateMetric(name, value) {
+      const allowed = {
+        files: "filesMetric",
+        issues: "issuesMetric",
+        updated: "updatedMetric",
+        tests: "testsMetric"
+      };
+
+      if (allowed[name]) $(allowed[name]).textContent = String(value);
+    },
+    setTask(index, state) {
+      if (Number.isInteger(index) && index >= 0 && index < steps.length) {
+        setTaskState(index, String(state).toUpperCase());
       }
+    }
+  };
 
-      window.addEventListener("hashchange", () => {
-        const requested = window.location.hash.slice(1);
-        if (panels.some(panel => panel.dataset.panel === requested)) {
-          showView(requested, false);
-        }
-      });
+})();
+</script>
 
-      const initialView = window.location.hash.slice(1);
-      showView(
-        panels.some(panel => panel.dataset.panel === initialView)
-          ? initialView
-          : "overview",
-        false
-      );
-    })();
-  </script>
 </body>
 </html>
