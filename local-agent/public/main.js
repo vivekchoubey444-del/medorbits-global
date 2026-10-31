@@ -1,719 +1,101 @@
-
-/**
- * ============================================================
- * MedOrbits Local Agent -- Dashboard Controller
- * File: /local_agent/public/main.js
- * Version: 2.0.0
- *
- * Responsibilities:
- *  - Robot dashboard interactions
- *  - Live task progress and metrics
- *  - Terminal event rendering
- *  - Backend SSE integration
- *  - Start / pause / resume / stop controls
- *  - Connection and offline status
- *  - Safe event validation
- *
- * Security:
- *  - No API secrets in frontend code
- *  - No arbitrary command execution
- *  - No HTML injection from backend events
- *  - Actual completion requires backend confirmation
- * ============================================================
- */
-
-"use strict";
-
+'use strict';
 (() => {
-  const CONFIG = Object.freeze({
-    apiBase: window.MEDORBIT_AGENT_API_BASE || "/api/agent",
-    eventEndpoint: "/events",
-    reconnectDelay: 3000,
-    maxReconnectDelay: 30000,
-    maxTerminalLines: 150,
-    requestTimeout: 15000,
-    maxMessageLength: 2000
-  });
-
-  const TASKS = Object.freeze([
-    {
-      id: "scan",
-      label: "Repository scanning",
-      icon: "🔍"
-    },
-    {
-      id: "analysis",
-      label: "Code analysis",
-      icon: "🧠"
-    },
-    {
-      id: "planning",
-      label: "Repair planning",
-      icon: "🛠️"
-    },
-    {
-      id: "generation",
-      label: "Code generation",
-      icon: "💻"
-    },
-    {
-      id: "testing",
-      label: "Testing and validation",
-      icon: "🧪"
-    },
-    {
-      id: "report",
-      label: "Upgrade report",
-      icon: "📦"
-    }
-  ]);
-
-  const STATE = {
-    connected: false,
-    running: false,
-    paused: false,
-    stopped: false,
-    currentTask: null,
-    progress: 0,
-    tasks: {},
-    metrics: {
-      files: 0,
-      issues: 0,
-      updated: 0,
-      tests: 0
-    },
-    eventSource: null,
-    reconnectTimer: null,
-    reconnectAttempts: 0,
-    activeController: null
-  };
-
+  const API = '/api/agent';
   const $ = (id) => document.getElementById(id);
-
-  const ELEMENTS = {
-    start: $("startBtn"),
-    pause: $("pauseBtn"),
-    stop: $("stopBtn"),
-    workerState: $("workerState"),
-    connection: $("connection"),
-    activity: $("activity"),
-    robotMessage: $("robotMessage"),
-    robotDescription: $("robotDescription"),
-    progressBar: $("progressBar"),
-    progressText: $("progressText"),
-    taskCount: $("taskCount"),
-    terminal: $("terminal"),
-    terminalStatus: $("terminalStatus"),
-    statusDot: $("statusDot"),
-    files: $("filesMetric"),
-    issues: $("issuesMetric"),
-    updated: $("updatedMetric"),
-    tests: $("testsMetric")
-  };
-
-  function safeText(value, max = CONFIG.maxMessageLength) {
-    return String(value ?? "")
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
-      .slice(0, max);
-  }
-
-  function setText(element, value) {
-    if (element) {
-      element.textContent = safeText(value);
-    }
-  }
-
-  function log(message, type = "info") {
-    if (!ELEMENTS.terminal) return;
-
-    const allowedTypes = new Set([
-      "info",
-      "success",
-      "warning",
-      "error"
-    ]);
-
-    const line = document.createElement("div");
-    const timestamp = new Date().toLocaleTimeString();
-
-    line.className = "log " +
-      (allowedTypes.has(type) ? type : "info");
-
-    line.textContent =
-      `[${timestamp}] ${safeText(message)}`;
-
-    ELEMENTS.terminal.appendChild(line);
-
-    while (
-      ELEMENTS.terminal.children.length >
-      CONFIG.maxTerminalLines
-    ) {
-      ELEMENTS.terminal.removeChild(
-        ELEMENTS.terminal.firstChild
-      );
-    }
-
-    ELEMENTS.terminal.scrollTop =
-      ELEMENTS.terminal.scrollHeight;
-  }
-
-  function setConnection(connected) {
-    STATE.connected = Boolean(connected);
-
-    setText(
-      ELEMENTS.connection,
-      connected ? "CONNECTED" : "OFFLINE"
-    );
-
-    setText(
-      ELEMENTS.terminalStatus,
-      connected ? "BACKEND CONNECTED" : "LOCAL / OFFLINE"
-    );
-
-    if (ELEMENTS.statusDot) {
-      ELEMENTS.statusDot.style.background =
-        connected ? "var(--green)" : "var(--gold)";
-    }
-  }
-
-  function setWorkerState(state) {
-    const normalized = String(state).toUpperCase();
-
-    const allowed = [
-      "IDLE",
-      "WORKING",
-      "PAUSED",
-      "STOPPED",
-      "ERROR"
-    ];
-
-    if (!allowed.includes(normalized)) return;
-
-    setText(ELEMENTS.workerState, normalized);
-
-    STATE.running = normalized === "WORKING";
-    STATE.paused = normalized === "PAUSED";
-    STATE.stopped = normalized === "STOPPED";
-  }
-
-  function setProgress(value) {
-    const number = Number(value);
-
-    if (!Number.isFinite(number)) return;
-
-    STATE.progress = Math.max(
-      0,
-      Math.min(100, number)
-    );
-
-    if (ELEMENTS.progressBar) {
-      ELEMENTS.progressBar.style.width =
-        STATE.progress + "%";
-    }
-
-    setText(
-      ELEMENTS.progressText,
-      Math.round(STATE.progress) + "%"
-    );
-  }
-
-  function setTaskState(taskId, status) {
-    const taskIndex = TASKS.findIndex(
-      task => task.id === taskId
-    );
-
-    if (taskIndex === -1) return;
-
-    const normalized = String(status).toUpperCase();
-
-    const allowed = [
-      "WAITING",
-      "ACTIVE",
-      "DONE",
-      "FAILED",
-      "SKIPPED"
-    ];
-
-    if (!allowed.includes(normalized)) return;
-
-    STATE.tasks[taskId] = normalized;
-
-    const taskElement = document.querySelector(
-      `[data-task="${taskIndex}"]`
-    );
-
-    if (!taskElement) return;
-
-    taskElement.classList.remove(
-      "active",
-      "done",
-      "failed"
-    );
-
-    if (normalized === "ACTIVE") {
-      taskElement.classList.add("active");
-    }
-
-    if (normalized === "DONE") {
-      taskElement.classList.add("done");
-    }
-
-    if (normalized === "FAILED") {
-      taskElement.classList.add("failed");
-    }
-
-    const stateElement =
-      taskElement.querySelector(".task-state");
-
-    setText(stateElement, normalized);
-
-    updateTaskCount();
-  }
-
-  function updateTaskCount() {
-    const completed = TASKS.filter(
-      task => STATE.tasks[task.id] === "DONE"
-    ).length;
-
-    setText(
-      ELEMENTS.taskCount,
-      `${completed} / ${TASKS.length}`
-    );
-  }
-
-  function updateMetric(name, value) {
-    const mapping = {
-      files: ELEMENTS.files,
-      issues: ELEMENTS.issues,
-      updated: ELEMENTS.updated,
-      tests: ELEMENTS.tests
-    };
-
-    const target = mapping[name];
-    const number = Number(value);
-
-    if (
-      !target ||
-      !Number.isSafeInteger(number) ||
-      number < 0
-    ) return;
-
-    STATE.metrics[name] = number;
-    setText(target, number.toLocaleString());
-  }
-
-  function setActivity(message, description) {
-    setText(ELEMENTS.activity, message);
-
-    if (description !== undefined) {
-      setText(ELEMENTS.robotDescription, description);
-    }
-  }
-
-  function setRobotMessage(message) {
-    setText(ELEMENTS.robotMessage, message);
-  }
-
-  function resetTasks() {
-    STATE.tasks = {};
-
-    TASKS.forEach(task => {
-      setTaskState(task.id, "WAITING");
-    });
-
-    setProgress(0);
-  }
-
-  function apiUrl(path) {
-    const base = new URL(
-      CONFIG.apiBase,
-      window.location.origin
-    );
-
-    if (base.origin !== window.location.origin) {
-      throw new Error(
-        "Cross-origin API base is not permitted by this dashboard."
-      );
-    }
-
-    return new URL(path.replace(/^\/+/, ""), base).toString();
-  }
-
-  async function apiRequest(path, options = {}) {
+  const state = { tasks: [], config: null, status: null, filter: 'all', polling: false, toastTimer: null };
+  const escapeText = (value, max = 500) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, max);
+  const html = (value, max = 500) => escapeText(value, max).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+  const dateText = (value) => { if (!value) return '—'; const d = new Date(value); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString(); };
+  function toast(message, kind = 'info') { const el = $('toast'); el.textContent = escapeText(message, 240); el.dataset.kind = kind; el.classList.add('show'); clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => el.classList.remove('show'), 3600); }
+  async function request(path, options = {}) {
     const controller = new AbortController();
-
-    const timeout = setTimeout(
-      () => controller.abort(),
-      CONFIG.requestTimeout
-    );
-
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch(apiUrl(path), {
-        method: options.method || "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: {
-          "Accept": "application/json",
-          ...(options.body
-            ? { "Content-Type": "application/json" }
-            : {}),
-          ...(options.headers || {})
-        },
-        body: options.body
-          ? JSON.stringify(options.body)
-          : undefined,
-        signal: controller.signal
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Agent API returned HTTP ${response.status}`
-        );
-      }
-
-      const contentType =
-        response.headers.get("content-type") || "";
-
-      if (!contentType.includes("application/json")) {
-        throw new Error("Expected JSON API response.");
-      }
-
-      return await response.json();
-
-    } finally {
-      clearTimeout(timeout);
-    }
+      const response = await fetch(`${API}${path}`, { method: options.method || 'GET', credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) }, body: options.body ? JSON.stringify(options.body) : undefined, signal: controller.signal });
+      const type = response.headers.get('content-type') || '';
+      const payload = type.includes('application/json') ? await response.json() : {};
+      if (!response.ok) throw new Error(payload.error || payload.message || `API request failed (${response.status})`);
+      return payload;
+    } catch (error) { if (error.name === 'AbortError') throw new Error('The request timed out.'); throw error; }
+    finally { clearTimeout(timeout); }
   }
-
-  function validateEvent(event) {
-    if (!event || typeof event !== "object") {
-      return false;
-    }
-
-    if (typeof event.type !== "string") {
-      return false;
-    }
-
-    return event.type.length <= 80;
+  function setConnection(online, label) { const el = $('connection'); el.className = `connection ${online ? 'online' : 'offline'}`; el.querySelector('span').textContent = label || (online ? 'API connected' : 'API offline'); $('apiHealth').textContent = online ? 'Connected' : 'Unavailable'; }
+  function renderStatus(status) {
+    state.status = status || {};
+    const s = state.status;
+    $('repoName').textContent = `Repository: ${s.repository || 'not configured'}`;
+    $('modeLabel').textContent = `Mode: ${s.mode || 'unknown'}`;
+    $('runtimeLabel').textContent = `Node: ${s.nodeVersion || '—'}`;
+    $('activeMetric').textContent = Number(s.activeTasks || 0).toLocaleString();
+    $('completedMetric').textContent = Number(s.completedTasks || 0).toLocaleString();
+    $('failedMetric').textContent = Number(s.failedTasks || 0).toLocaleString();
+    $('totalMetric').textContent = Number(s.totalTasks || 0).toLocaleString();
+    $('repositoryHealth').textContent = s.repositoryConfigured ? (s.repository || 'Available') : 'Not found';
+    $('executionMode').textContent = s.readOnly ? 'Read-only' : 'Restricted';
+    $('pythonHealth').textContent = s.pythonExecutable || 'Not reported';
+    $('nodeHealth').textContent = s.nodeVersion || 'Not reported';
+    const pill = $('healthPill'); pill.textContent = s.status === 'online' ? 'Operational' : (s.status || 'Unavailable'); pill.className = `status-pill ${s.status === 'online' ? 'good' : 'pending'}`;
   }
-
-  function handleEvent(event) {
-    if (!validateEvent(event)) return;
-
-    switch (event.type) {
-      case "agent.connected":
-        setConnection(true);
-        log("Backend event stream connected.", "success");
-        break;
-
-      case "agent.started":
-        setWorkerState("WORKING");
-        setActivity("Agent started working");
-        setRobotMessage("Let's improve MedOrbits!");
-        log("Repository operation started.", "success");
-        break;
-
-      case "agent.paused":
-        setWorkerState("PAUSED");
-        setActivity("Agent operation paused");
-        log("Agent paused.", "warning");
-        break;
-
-      case "agent.resumed":
-        setWorkerState("WORKING");
-        setActivity("Agent resumed");
-        log("Agent resumed.", "success");
-        break;
-
-      case "agent.stopped":
-        setWorkerState("STOPPED");
-        setActivity("Agent stopped");
-        log("Agent stopped by request.", "warning");
-        break;
-
-      case "task.started":
-        if (typeof event.task_id === "string") {
-          STATE.currentTask = event.task_id;
-          setTaskState(event.task_id, "ACTIVE");
-        }
-
-        setActivity(event.message || "Working on task");
-        setRobotMessage(event.robot_message || "Working...");
-        log(event.message || "Task started.", "info");
-        break;
-
-      case "task.completed":
-        if (typeof event.task_id === "string") {
-          setTaskState(event.task_id, "DONE");
-        }
-
-        log(event.message || "Task completed.", "success");
-        break;
-
-      case "task.failed":
-        if (typeof event.task_id === "string") {
-          setTaskState(event.task_id, "FAILED");
-        }
-
-        log(event.message || "Task failed.", "error");
-        break;
-
-      case "agent.progress":
-        setProgress(event.progress);
-        break;
-
-      case "agent.metric":
-        if (
-          typeof event.name === "string" &&
-          Object.prototype.hasOwnProperty.call(
-            STATE.metrics,
-            event.name
-          )
-        ) {
-          updateMetric(event.name, event.value);
-        }
-        break;
-
-      case "agent.log":
-        log(event.message, event.level || "info");
-        break;
-
-      case "agent.completed":
-        // Completion must be emitted by the backend only after
-        // the actual requested work and verification have finished.
-        setWorkerState("IDLE");
-        setProgress(100);
-        setActivity("Backend confirmed completion");
-        setRobotMessage("Mission accomplished!");
-        log(
-          "Backend confirmed operation completion.",
-          "success"
-        );
-        break;
-
-      case "agent.error":
-        setWorkerState("ERROR");
-        setActivity("Agent encountered an error");
-        log(event.message || "Unknown backend error.", "error");
-        break;
-
-      default:
-        // Unknown event types are ignored.
-        break;
-    }
+  function renderConfig(config) {
+    state.config = config || {};
+    const caps = $('capabilities');
+    const features = state.config.features || {};
+    const rows = Object.entries(features).map(([key, enabled]) => `<div class="cap-row"><span>${html(key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()))}</span><b class="${enabled ? 'yes' : 'no'}">${enabled ? 'Enabled' : 'Disabled'}</b></div>`).join('');
+    caps.innerHTML = rows || '<p class="muted">No capability metadata returned.</p>';
   }
-
-  function disconnectEvents() {
-    if (STATE.eventSource) {
-      STATE.eventSource.close();
-      STATE.eventSource = null;
-    }
+  function statusBadge(status) { const value = String(status || 'unknown').toLowerCase(); return `<span class="task-status ${['completed','failed','cancelled','running','queued'].includes(value) ? value : 'unknown'}">${html(value)}</span>`; }
+  function renderTasks(tasks) {
+    state.tasks = Array.isArray(tasks) ? tasks : [];
+    const shown = state.filter === 'all' ? state.tasks : state.tasks.filter(t => t.status === state.filter);
+    $('historyCount').textContent = `${shown.length} task${shown.length === 1 ? '' : 's'}`;
+    const tbody = $('taskRows');
+    if (!shown.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No tasks in this view. Run an operation above to get started.</td></tr>'; return; }
+    tbody.innerHTML = shown.map(task => {
+      const cancellable = ['queued','running'].includes(task.status);
+      const result = task.message || (task.status === 'completed' ? 'Completed successfully' : 'Awaiting result');
+      return `<tr><td><b>${html(task.label || task.type)}</b><small>${html(task.description || '')}</small></td><td><code>${html(task.id, 80)}</code></td><td>${html(dateText(task.createdAt))}</td><td>${statusBadge(task.status)}</td><td class="result-cell">${html(result, 180)}</td><td><div class="row-actions"><button class="mini-button view-task" data-id="${html(task.id, 100)}" type="button">View</button>${cancellable ? `<button class="mini-button danger cancel-task" data-id="${html(task.id, 100)}" type="button">Cancel</button>` : ''}</div></td></tr>`;
+    }).join('');
+    tbody.querySelectorAll('.view-task').forEach(button => button.addEventListener('click', () => showTask(button.dataset.id)));
+    tbody.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', () => cancelTask(button.dataset.id)));
   }
-
-  function connectEvents() {
-    if (STATE.eventSource) return;
-
-    let endpoint;
-
+  async function refresh(silent = false) {
+    if (state.polling) return;
+    state.polling = true;
     try {
-      endpoint = apiUrl(CONFIG.eventEndpoint);
-    } catch (error) {
-      log(error.message, "error");
-      return;
-    }
-
-    if (!("EventSource" in window)) {
-      log("This browser does not support Server-Sent Events.", "warning");
-      return;
-    }
-
-    const source = new EventSource(endpoint, {
-      withCredentials: true
-    });
-
-    STATE.eventSource = source;
-
-    source.onopen = () => {
-      STATE.reconnectAttempts = 0;
-      setConnection(true);
-    };
-
-    source.onmessage = message => {
-      try {
-        handleEvent(JSON.parse(message.data));
-      } catch {
-        log("Ignored malformed backend event.", "warning");
-      }
-    };
-
-    source.onerror = () => {
-      setConnection(false);
-      disconnectEvents();
-
-      STATE.reconnectAttempts++;
-
-      const delay = Math.min(
-        CONFIG.maxReconnectDelay,
-        CONFIG.reconnectDelay *
-          Math.pow(1.5, STATE.reconnectAttempts - 1)
-      );
-
-      log(
-        `Backend connection lost. Reconnecting in ${Math.round(delay / 1000)} seconds.`,
-        "warning"
-      );
-
-      clearTimeout(STATE.reconnectTimer);
-
-      STATE.reconnectTimer = setTimeout(
-        connectEvents,
-        delay
-      );
-    };
+      const [status, tasks, config] = await Promise.all([request('/status'), request('/tasks'), state.config ? Promise.resolve(state.config) : request('/config')]);
+      renderStatus(status); renderTasks(tasks.tasks); renderConfig(config); setConnection(true);
+    } catch (error) { setConnection(false, 'API disconnected'); if (!silent) toast(error.message, 'error'); }
+    finally { state.polling = false; }
   }
-
-  async function startAgent() {
-    if (STATE.running) return;
-
-    if (!STATE.connected) {
-      log(
-        "Cannot start real work: backend is not connected.",
-        "warning"
-      );
-
-      setActivity(
-        "Backend connection required",
-        "Connect the Python agent backend to perform real repository operations."
-      );
-
-      return;
-    }
-
+  async function runTask(type, button) {
+    if (button) { button.disabled = true; button.dataset.original = button.textContent; button.textContent = 'Queueing…'; }
     try {
-      resetTasks();
-
-      setRobotMessage("Starting repository operations...");
-      setActivity("Sending start request");
-
-      const result = await apiRequest("/start", {
-        method: "POST",
-        body: {
-          requested_by: "dashboard",
-          operation: "repository_maintenance"
-        }
-      });
-
-      log(
-        result.message || "Start request accepted by backend.",
-        "success"
-      );
-
-    } catch (error) {
-      setWorkerState("ERROR");
-      log(`Start request failed: ${error.message}`, "error");
-    }
+      const result = await request('/tasks', { method: 'POST', body: { type, task: type, readOnly: true } });
+      toast(result.message || 'Task queued.', 'success'); await refresh(true);
+    } catch (error) { toast(error.message, 'error'); }
+    finally { if (button) { button.disabled = false; button.textContent = button.dataset.original || 'Run'; } }
   }
-
-  async function pauseAgent() {
-    if (!STATE.running) return;
-
-    try {
-      await apiRequest("/pause", {
-        method: "POST",
-        body: {}
-      });
-
-      log("Pause request sent.", "warning");
-
-    } catch (error) {
-      log(`Pause request failed: ${error.message}`, "error");
-    }
+  async function cancelTask(taskId) {
+    if (!window.confirm('Cancel this queued or running task?')) return;
+    try { const result = await request('/cancel', { method: 'POST', body: { taskId } }); toast(result.message || 'Cancellation requested.', 'success'); await refresh(true); }
+    catch (error) { toast(error.message, 'error'); }
   }
-
-  async function stopAgent() {
-    if (!STATE.running && !STATE.paused) return;
-
-    try {
-      await apiRequest("/stop", {
-        method: "POST",
-        body: {}
-      });
-
-      log("Stop request sent to backend.", "warning");
-
-    } catch (error) {
-      log(`Stop request failed: ${error.message}`, "error");
-    }
+  function showTask(id) {
+    const task = state.tasks.find(item => item.id === id); if (!task) return;
+    $('dialogTitle').textContent = task.label || task.type || 'Task details';
+    $('dialogMeta').textContent = `${task.id} · ${task.status} · Created ${dateText(task.createdAt)}${task.completedAt ? ` · Finished ${dateText(task.completedAt)}` : ''}`;
+    $('dialogOutput').textContent = [task.message || '', task.output || 'No output was returned by this task.', task.exitCode !== null && task.exitCode !== undefined ? `Exit code: ${task.exitCode}` : ''].filter(Boolean).join('\n\n');
+    const dialog = $('taskDialog'); if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
   }
-
-  function bindControls() {
-    ELEMENTS.start?.addEventListener(
-      "click",
-      startAgent
-    );
-
-    ELEMENTS.pause?.addEventListener(
-      "click",
-      pauseAgent
-    );
-
-    ELEMENTS.stop?.addEventListener(
-      "click",
-      stopAgent
-    );
+  function closeDialog() { const dialog = $('taskDialog'); if (dialog.open && dialog.close) dialog.close(); else dialog.removeAttribute('open'); }
+  function bind() {
+    document.querySelectorAll('.run-task').forEach(button => button.addEventListener('click', () => runTask(button.dataset.task, button)));
+    $('refreshBtn').addEventListener('click', () => refresh());
+    $('configBtn').addEventListener('click', () => { const el = $('capabilities'); el.hidden = !el.hidden; $('configBtn').textContent = el.hidden ? 'View enabled capabilities' : 'Hide enabled capabilities'; });
+    $('clearFilterBtn').addEventListener('click', () => { state.filter = 'all'; renderTasks(state.tasks); });
+    $('closeDialog').addEventListener('click', closeDialog); $('dialogDone').addEventListener('click', closeDialog);
+    $('copyOutput').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('dialogOutput').textContent); toast('Task output copied.', 'success'); } catch { toast('Clipboard access is unavailable in this browser.', 'error'); } });
+    $('taskDialog').addEventListener('click', event => { if (event.target === $('taskDialog')) closeDialog(); });
   }
-
-  function initialize() {
-    bindControls();
-
-    TASKS.forEach(task => {
-      STATE.tasks[task.id] = "WAITING";
-    });
-
-    setConnection(false);
-    setWorkerState("IDLE");
-    setProgress(0);
-
-    setRobotMessage("Hello! I am MedOrbits Agent.");
-    setActivity(
-      "Waiting for backend connection",
-      "The robot is ready. Connect the Python agent to start real work."
-    );
-
-    log("Dashboard controller initialized.", "success");
-    log("Waiting for Python backend event stream.", "info");
-
-    connectEvents();
-
-    window.addEventListener("beforeunload", () => {
-      disconnectEvents();
-      clearTimeout(STATE.reconnectTimer);
-      STATE.activeController?.abort();
-    });
-  }
-
-  // Public interface for optional backend adapters and debugging.
-  window.MedOrbitsAgentUI = Object.freeze({
-    handleEvent,
-    log,
-    setProgress,
-    setActivity,
-    setRobotMessage,
-    setTaskState,
-    updateMetric,
-    setWorkerState,
-    connectEvents,
-    disconnectEvents
-  });
-
-  if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      initialize,
-      { once: true }
-    );
-  } else {
-    initialize();
-  }
-
+  document.addEventListener('DOMContentLoaded', () => { bind(); refresh(); window.setInterval(() => refresh(true), 4000); });
 })();

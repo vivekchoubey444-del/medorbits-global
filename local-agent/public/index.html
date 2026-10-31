@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071827">
+  <meta name="description" content="MedOrbits Local Agent — secure, read-only repository diagnostics and maintenance dashboard.">
+  <title>MedOrbits Local Agent</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/main.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="MedOrbits Local Agent home">
+        <span class="brand-mark">M</span><span><strong>MedOrbits</strong><small>LOCAL AGENT</small></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <a class="nav-link active" href="#overview"><span>◫</span> Overview</a>
+      <a class="nav-link" href="#operations"><span>⌘</span> Operations</a>
+      <a class="nav-link" href="#history"><span>▤</span> Task history</a>
+      <a class="nav-link" href="#security"><span>◇</span> Security</a>
+      <div class="sidebar-note"><span class="pulse"></span><div><b>Safe mode enabled</b><small>Read-only diagnostics</small></div></div>
+      <div class="sidebar-foot">MEDORBITS · INTERNAL TOOL<br><span>Repository operations console</span></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div><div class="eyebrow">CONTROL CENTER / REPOSITORY</div><h1>Agent overview</h1></div>
+        <div class="top-actions"><span id="connection" class="connection offline"><i></i><span>Connecting…</span></span><button id="refreshBtn" class="button ghost" type="button">↻ Refresh</button></div>
+      </header>
+
+      <section class="hero-panel" id="overview">
+        <div class="hero-copy">
+          <div class="hero-kicker"><span class="live-dot"></span> LOCAL REPOSITORY AGENT</div>
+          <h2>Inspect. Validate.<br><em>Stay in control.</em></h2>
+          <p>Run approved repository checks from one dashboard. Every operation uses a fixed task allowlist; arbitrary shell commands and file mutation are disabled.</p>
+          <div class="hero-meta"><span id="repoName">Repository: detecting…</span><span id="modeLabel">Mode: read-only</span><span id="runtimeLabel">Runtime: —</span></div>
+        </div>
+        <div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="core">M<span>AI</span></div><b class="orbit-tag tag-one">SCAN</b><b class="orbit-tag tag-two">CHECK</b><b class="orbit-tag tag-three">AUDIT</b></div>
+      </section>
+
+      <section class="metric-grid" aria-label="Agent metrics">
+        <article class="metric-card"><span class="metric-icon">◉</span><span class="metric-label">Active tasks</span><strong id="activeMetric">—</strong><small>Currently running</small></article>
+        <article class="metric-card"><span class="metric-icon">✓</span><span class="metric-label">Completed</span><strong id="completedMetric">—</strong><small>Successful operations</small></article>
+        <article class="metric-card"><span class="metric-icon">!</span><span class="metric-label">Failed</span><strong id="failedMetric">—</strong><small>Require review</small></article>
+        <article class="metric-card"><span class="metric-icon">▦</span><span class="metric-label">Total tasks</span><strong id="totalMetric">—</strong><small>Session history</small></article>
+      </section>
+
+      <section class="content-grid" id="operations">
+        <div class="panel operations-panel">
+          <div class="panel-heading"><div><div class="eyebrow">APPROVED OPERATIONS</div><h3>Run a repository task</h3></div><span class="readonly-chip">READ ONLY</span></div>
+          <p class="panel-intro">Select one of the operations actually implemented by this server. Tasks are queued and executed with bounded concurrency and timeouts.</p>
+          <div class="operation-list">
+            <article class="operation-card"><div class="operation-icon blue">⌕</div><div class="operation-info"><h4>Repository validation</h4><p>Check expected structure, required files and repository rules.</p><small>tools/validate_repository.py</small></div><button class="button primary run-task" data-task="validate" type="button">Run validation <span>→</span></button></article>
+            <article class="operation-card"><div class="operation-icon gold">◇</div><div class="operation-info"><h4>Security audit</h4><p>Inspect repository files for common security and secret-handling risks.</p><small>tools/security_audit.py</small></div><button class="button primary run-task" data-task="audit" type="button">Run audit <span>→</span></button></article>
+            <article class="operation-card"><div class="operation-icon violet">{ }</div><div class="operation-info"><h4>Syntax check</h4><p>Run the configured syntax and static validation checks.</p><small>tools/syntax_check.py</small></div><button class="button primary run-task" data-task="check" type="button">Run check <span>→</span></button></article>
+            <article class="operation-card"><div class="operation-icon teal">▤</div><div class="operation-info"><h4>File catalog</h4><p>Build an inventory of repository files for inspection.</p><small>tools/file_catalog.py</small></div><button class="button primary run-task" data-task="catalog" type="button">Build catalog <span>→</span></button></article>
+          </div>
+          <div class="notice"><span>ⓘ</span><p><b>Execution boundary:</b> These tasks inspect and report. They do not rewrite files, install packages, deploy, push commits, or execute arbitrary commands.</p></div>
+        </div>
+
+        <div class="panel status-panel" id="security">
+          <div class="panel-heading"><div><div class="eyebrow">SYSTEM STATUS</div><h3>Runtime health</h3></div><span id="healthPill" class="status-pill pending">Checking</span></div>
+          <div class="health-row"><span>API connection</span><b id="apiHealth">Checking…</b></div>
+          <div class="health-row"><span>Repository path</span><b id="repositoryHealth">—</b></div>
+          <div class="health-row"><span>Execution mode</span><b id="executionMode">—</b></div>
+          <div class="health-row"><span>Python executable</span><b id="pythonHealth">—</b></div>
+          <div class="health-row"><span>Node runtime</span><b id="nodeHealth">—</b></div>
+          <div class="security-box"><div class="shield">✓</div><div><b>Protected execution</b><p>Fixed script allowlist · no shell interpolation · bounded request size · task timeout · loopback by default.</p></div></div>
+          <button id="configBtn" class="button secondary full" type="button">View enabled capabilities</button>
+          <div id="capabilities" class="capabilities" hidden></div>
+        </div>
+      </section>
+
+      <section class="panel history-panel" id="history">
+        <div class="panel-heading"><div><div class="eyebrow">ACTIVITY</div><h3>Recent task history</h3></div><div class="history-actions"><span id="historyCount">0 tasks</span><button id="clearFilterBtn" class="button text-button" type="button">Show all</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Task</th><th>Task ID</th><th>Created</th><th>Status</th><th>Result</th><th>Action</th></tr></thead><tbody id="taskRows"><tr><td colspan="6" class="empty-state">Waiting for the agent API…</td></tr></tbody></table></div>
+      </section>
+
+      <section class="bottom-grid">
+        <div class="panel"><div class="eyebrow">HOW IT WORKS</div><h3>Controlled task execution</h3><div class="steps"><div><b>01</b><span><strong>Choose</strong><small>Select an approved diagnostic operation.</small></span></div><div><b>02</b><span><strong>Queue</strong><small>The API validates the task type and queues it.</small></span></div><div><b>03</b><span><strong>Review</strong><small>Read the task result and inspect generated output.</small></span></div></div></div>
+        <div class="panel"><div class="eyebrow">OPERATOR NOTE</div><h3>Not an autonomous repair bot</h3><p class="muted">This release provides real backend-connected repository diagnostics. AI planning, automatic code generation, file repair, deployment and Git operations are not enabled by the current server.</p><span class="doc-link">See README.md in the project folder for setup details.</span></div>
+      </section>
+      <footer>© 2026 MedOrbits · Local Agent <span>Dashboard refreshes task state automatically.</span></footer>
+    </main>
+  </div>
+
+  <dialog id="taskDialog" class="dialog"><div class="dialog-head"><div><div class="eyebrow">TASK DETAILS</div><h3 id="dialogTitle">Task output</h3></div><button id="closeDialog" class="icon-button" type="button" aria-label="Close">×</button></div><div id="dialogMeta" class="dialog-meta"></div><pre id="dialogOutput" class="output-view">No output available.</pre><div class="dialog-actions"><button id="copyOutput" class="button secondary" type="button">Copy output</button><button id="dialogDone" class="button primary" type="button">Close</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -11,13 +11,14 @@
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node server.js",
     "check": "npm run check:json && npm run check:javascript",
     "check:json": "node scripts/validate-json.js",
     "check:javascript": "node scripts/check-javascript.js",
     "test": "node --test",
     "lockfile:generate": "npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
-    "lockfile:validate": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));const l=JSON.parse(fs.readFileSync('package-lock.json','utf8'));if(l.name!==p.name||l.version!==p.version)process.exit(1);console.log('Lockfile metadata validated')\""
+    "lockfile:validate": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));const l=JSON.parse(fs.readFileSync('package-lock.json','utf8'));if(l.name!==p.name||l.version!==p.version)process.exit(1);console.log('Lockfile metadata validated')\"",
+    "start:cli": "node src/index.js"
   },
   "dependencies": {},
   "devDependencies": {}

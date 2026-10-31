@@ -309,3 +309,28 @@ See [CHANGELOG.md](CHANGELOG.md) for recorded changes and known limitations.
 ## License
 
 This software is intended for the MedOrbits project. Refer to the project’s licensing and ownership terms before redistribution.
+
+## Dashboard and API (current implementation)
+
+The supported dashboard is served by `server.js` from `public/index.html`. Start it from this directory:
+
+```bash
+npm start
+```
+
+Then open `http://127.0.0.1:4173/`. The dashboard polls the implemented API endpoints (`/api/agent/status`, `/config`, `/tasks`) and submits only the four allowlisted read-only operations: `validate`, `audit`, `check`, and `catalog`. It can request cancellation of queued or running tasks and displays the backend-returned task output. It does not use Server-Sent Events.
+
+### Runtime requirements
+
+- Node.js 22 or newer and npm 10 or newer (as declared in `package.json`).
+- Python 3.10 or newer, plus any dependencies required by the selected Python utility scripts.
+- Run from the extracted `local-agent` directory. By default, the repository root is the parent directory (`MEDORBITS_REPO_ROOT` can override it).
+
+### Network safety
+
+The server binds to `127.0.0.1` by default. Keep it local unless you have placed it behind an authenticated reverse proxy and reviewed the deployment security. Binding to a non-loopback interface requires a strong `API_TOKEN` of at least 32 characters; this dashboard intentionally does not embed or collect that shared secret. Do not expose the raw API directly to the public internet.
+
+### Actual capability boundary
+
+This release performs repository validation, security audit, syntax checking, and file cataloguing through a fixed script allowlist. `MEDORBITS_READ_ONLY` defaults to `true`. The dashboard does not claim to perform AI planning, automatic code generation, file repair, package installation, deployment, Git push, or arbitrary shell execution. The older root-level demonstration screen has been replaced with the API-connected dashboard; opening `index.html` directly as a `file://` page is not supported—use `npm start`.
+

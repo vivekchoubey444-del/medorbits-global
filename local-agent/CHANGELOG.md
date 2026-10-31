@@ -103,3 +103,13 @@ Unreleased changes are listed first.
 Do not publish credentials, access tokens, private keys, or sensitive repository
 data in issues or changelog entries. Report security issues through the
 project’s designated private reporting channel.
+
+## Dashboard integration update — 2026-11-01
+
+- Replaced the simulated dashboard with a real API-connected dashboard served from `public/index.html`.
+- Added live polling for server status, configuration, and task history.
+- Connected the four server-allowlisted operations: repository validation, security audit, syntax check, and file catalog.
+- Added backend-confirmed task output inspection and cancellation controls.
+- Removed unsupported SSE/start/pause/stop assumptions from the dashboard.
+- Changed the default `npm start` entry point to `server.js`; retained the separate orchestration CLI as `npm run start:cli`.
+- Documented local-only defaults, runtime requirements, and public-exposure restrictions.
