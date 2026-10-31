@@ -1,0 +1,53 @@
+name: Deployment Issue
+description: Report build, hosting, CI/CD, or deployment failures.
+title: "[DEPLOYMENT]: "
+labels:
+  - deployment
+  - needs-triage
+
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Deployment platform
+      options:
+        - Render
+        - GoDaddy
+        - Cloudflare
+        - Vercel
+        - Netlify
+        - GitHub Actions
+        - Docker
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local
+        - Development
+        - Staging
+        - Production
+    validations:
+      required: true
+
+  - type: textarea
+    id: failure
+    attributes:
+      label: Deployment failure
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized build or deployment logs
+      render: shell
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: Troubleshooting already attempted

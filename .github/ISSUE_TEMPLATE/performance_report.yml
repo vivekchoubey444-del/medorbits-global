@@ -1,0 +1,57 @@
+name: Performance Issue
+description: Report slow loading, high resource usage, or performance regressions.
+title: "[PERFORMANCE]: "
+labels:
+  - performance
+  - needs-triage
+
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Website
+        - API
+        - Database
+        - Search
+        - Authentication
+        - Images / Assets
+        - PWA
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Page or endpoint
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Performance problem
+    validations:
+      required: true
+
+  - type: input
+    id: timing
+    attributes:
+      label: Observed response or loading time
+      placeholder: "Example: 5 seconds"
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Performance measurements
+      description: Remove personal and confidential information.
+      render: text

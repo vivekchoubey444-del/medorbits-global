@@ -1,258 +1,120 @@
-
-# =============================================================================
-# MedOrbits | Bug Report Issue Form
-#
-# File: .github/ISSUE_TEMPLATE/bug_report.yml
-# Release: 2.1.1
-#
-# Purpose:
-#   Collect reproducible bug reports and relevant diagnostic information.
-#
-# Security:
-#   - Public issues are not confidential.
-#   - Never request credentials, private records, or exploitable details.
-#   - Direct security vulnerabilities to the verified reporting channel in
-#     SECURITY.md.
-# =============================================================================
-
-name: "🐛 Bug Report"
-description: "Report a reproducible bug or unexpected behavior in MedOrbits."
-title: "[Bug]: "
+name: Bug Report
+description: Report a reproducible bug or unexpected behaviour in MedOrbits.
+title: "[BUG]: "
 labels:
   - bug
-  - triage
+  - needs-triage
 assignees: []
 
 body:
   - type: markdown
     attributes:
       value: |
-        # 🐛 MedOrbits Bug Report
-
-        Thank you for helping improve MedOrbits.
-
-        Before submitting, check existing issues for duplicates and report
-        one problem per issue. Include only information necessary to diagnose
-        the problem.
-
-        Remove personal, confidential, medical, financial, authentication,
-        and other sensitive information from screenshots, logs, and attachments.
-
-        **Security notice:** Public GitHub issues are not confidential.
-        Do not disclose exploitable vulnerabilities, credentials, access tokens,
-        or private user data. Follow the repository's `SECURITY.md` for its
-        designated private reporting process.
-
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: "✅ Pre-submission Checklist"
-      description: Confirm these items before submitting.
-      options:
-        - label: "I searched existing issues for a similar report."
-          required: true
-        - label: "I have provided reproduction steps to the best of my ability."
-          required: true
-        - label: "I removed passwords, tokens, personal data, and other secrets from the evidence."
-          required: true
+        Thank you for reporting a bug.
+        Please provide accurate details and avoid sharing passwords,
+        API keys, personal student information, or confidential records.
 
   - type: dropdown
-    id: area
+    id: component
     attributes:
-      label: "🧭 Affected Area"
-      description: Select the part of MedOrbits where the problem occurs.
+      label: Affected component
       options:
-        - Website or user interface
-        - Education and admissions
-        - College or university information
-        - Careers, jobs, or recruitment
-        - Account, login, or authentication
-        - Forms or document uploads
-        - Search or filtering
-        - API or backend
-        - Database or data integrity
-        - Payments or subscriptions
-        - Accessibility or localization
-        - Performance or availability
-        - Deployment or infrastructure
-        - Security concern (do not disclose vulnerabilities publicly)
+        - Website / Frontend
+        - Backend / API
+        - Authentication
+        - Student Portal
+        - College Directory
+        - Course Catalogue
+        - Admissions
+        - Scholarships
+        - Jobs / Careers
+        - Recruitment
+        - Consultancy
+        - Database
+        - PWA / Offline
+        - Admin Dashboard
         - Other
     validations:
       required: true
 
-  - type: dropdown
-    id: severity
+  - type: input
+    id: page
     attributes:
-      label: "🚦 Impact and Severity"
-      description: This is the reporter's initial assessment, not a confirmed severity rating.
-      options:
-        - Critical -- widespread outage or major data-integrity impact
-        - High -- major feature unavailable with no practical workaround
-        - Medium -- feature impaired but a workaround exists
-        - Low -- minor issue or cosmetic defect
-        - Not sure
+      label: Page, route, or API endpoint
+      placeholder: "/admissions/ or /api/v1/courses"
     validations:
       required: true
 
   - type: textarea
     id: summary
     attributes:
-      label: "📝 Bug Summary"
-      description: Describe what is broken and who or what is affected.
-      placeholder: "Provide a clear, concise description of the problem."
+      label: Bug description
+      description: Explain what happened.
     validations:
       required: true
 
   - type: textarea
     id: reproduction
     attributes:
-      label: "🔁 Steps to Reproduce"
-      description: List the steps needed to reproduce the problem. Do not include exploit instructions or private data.
+      label: Steps to reproduce
       placeholder: |
-        1. Open the affected page.
-        2. Select the relevant option.
-        3. Submit the form.
-        4. Observe the unexpected result.
+        1. Open the page.
+        2. Perform the action.
+        3. Observe the error.
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: "🎯 Expected Behavior"
-      description: Explain what you expected to happen.
-      placeholder: "Describe the correct behavior."
+      label: Expected behaviour
     validations:
       required: true
 
   - type: textarea
     id: actual
     attributes:
-      label: "⚠️ Actual Behavior"
-      description: Explain what happened instead, including any safe-to-share error message.
-      placeholder: "Describe the observed behavior or error."
+      label: Actual behaviour
     validations:
       required: true
 
   - type: dropdown
-    id: reproducibility
+    id: severity
     attributes:
-      label: "🔄 Reproducibility"
-      description: How consistently does the problem occur?
+      label: Severity
       options:
-        - Every time
-        - Frequently
-        - Occasionally
-        - Happened once
-        - Unable to determine
+        - Critical
+        - High
+        - Medium
+        - Low
     validations:
       required: true
 
   - type: input
-    id: page-url
-    attributes:
-      label: "🔗 Affected Page or Endpoint"
-      description: Provide a public URL or non-sensitive API route if applicable. Remove private query parameters, session identifiers, and access tokens.
-      placeholder: "https://medorbits.in/affected-page"
-
-  - type: input
-    id: app-version
-    attributes:
-      label: "🏷️ MedOrbits Version or Commit"
-      description: Provide the release version or Git commit hash if known.
-      placeholder: "Release version or commit SHA"
-
-  - type: dropdown
     id: environment
     attributes:
-      label: "🌐 Environment"
-      options:
-        - Production
-        - Preview or staging
-        - Local development
-        - CI or automated tests
-        - Other or unknown
-    validations:
-      required: true
-
-  - type: dropdown
-    id: device
-    attributes:
-      label: "📱 Device Type"
-      options:
-        - Desktop or laptop
-        - Mobile phone
-        - Tablet
-        - Server or CI runner
-        - Other
-        - Unknown
-    validations:
-      required: true
+      label: Environment
+      placeholder: "Production / Staging / Local"
 
   - type: input
-    id: operating-system
+    id: browser
     attributes:
-      label: "💻 Operating System"
-      description: Include the version if relevant and known.
-      placeholder: "e.g. iOS, Android, Windows, macOS, Linux"
-
-  - type: input
-    id: browser-runtime
-    attributes:
-      label: "🧩 Browser or Runtime"
-      description: Include the version when known.
-      placeholder: "e.g. Safari, Chrome, Node.js"
+      label: Browser and version
+      placeholder: "Chrome 130 / Safari 18"
 
   - type: textarea
     id: logs
     attributes:
-      label: "📋 Relevant Error Messages or Logs"
-      description: |
-        Paste only relevant, redacted error output.
+      label: Error logs
+      description: Remove secrets and personal information before sharing.
+      render: shell
 
-        Never include passwords, cookies, session identifiers, API keys,
-        authorization headers, private user records, or production secrets.
-        Do not include sensitive stack traces or exploitable security details
-        in a public issue.
-      render: text
-
-  - type: textarea
-    id: evidence
+  - type: checkboxes
+    id: confirmation
     attributes:
-      label: "🖼️ Screenshots or Additional Evidence"
-      description: |
-        Attach screenshots or describe other relevant evidence.
-
-        Redact personal information, confidential records, account details,
-        browser profile information, and secrets before uploading.
-        Do not attach private documents or sensitive production data.
-
-  - type: textarea
-    id: workaround
-    attributes:
-      label: "🩹 Workaround"
-      description: Explain any temporary workaround, or state that none is known.
-      placeholder: "Optional -- describe a temporary workaround."
-
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: "📚 Additional Context"
-      description: Include relevant non-sensitive details that do not fit elsewhere.
-      placeholder: "Optional -- include relevant technical context."
-
-  - type: markdown
-    attributes:
-      value: |
-        ---
-
-        ### 🔐 Security and Privacy Reminder
-
-        Do not report exploitable vulnerabilities, exposed credentials,
-        or private user data in a public issue.
-
-        Follow the repository's `SECURITY.md` for the designated private
-        reporting process. If no private reporting channel can be verified,
-        do not publish sensitive details while seeking clarification.
-
-        **Thank you for helping keep MedOrbits reliable, secure, and accessible.**
+      label: Submission checks
+      options:
+        - label: I have searched existing issues.
+          required: true
+        - label: I have removed confidential information.
+          required: true

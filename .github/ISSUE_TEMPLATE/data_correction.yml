@@ -1,0 +1,67 @@
+name: Public Data Correction
+description: Report inaccurate public course, college, admission, or career information.
+title: "[DATA]: "
+labels:
+  - data-quality
+  - needs-verification
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report only information intended for public display.
+        Never submit student records, identity documents, private
+        contact details, or confidential institutional data.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Data category
+      options:
+        - College
+        - University
+        - Course
+        - Admission
+        - Eligibility
+        - Fees
+        - Scholarship
+        - Entrance Examination
+        - Career / Job
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: record
+    attributes:
+      label: Public record or page URL
+    validations:
+      required: true
+
+  - type: textarea
+    id: incorrect
+    attributes:
+      label: Incorrect information
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: Proposed correction
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Official source URL
+      description: Prefer official institutional or government sources.
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: This report contains no private personal data.
+          required: true

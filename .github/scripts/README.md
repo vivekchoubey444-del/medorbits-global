@@ -1,291 +1,184 @@
 
-# 🛠️ MedOrbits — GitHub Scripts
+# MedOrbits GitHub Scripts
 
-**Project:** MedOrbits  
-**Release target:** `2.0.0`  
-**Directory:** `.github/scripts/`
+Repository maintenance, validation, security-checking, and reporting utilities used by MedOrbits automation workflows.
 
-This directory contains helper scripts for repository validation, commit-message enforcement, testing, and maintenance tasks used by MedOrbits.
+These scripts are designed to support the MedOrbits education and admissions platform while preserving existing website pages, filenames, navigation, styling, and application behavior.
 
-Scripts should be predictable, documented, secure, and safe to run locally or from GitHub Actions.
-
-—
-
-## 📁 Directory Structure
-
-The intended structure is:
+## 1. Directory Structure
 
 ```text
 .github/
 └── scripts/
     ├── README.md
-    ├── validate-commit-message.sh
-    └── test-validate-commit-message.sh
+    ├── check-env-example.py
+    ├── check-links.py
+    ├── check-secrets.py
+    ├── ci-summary.js
+    ├── dependency-report.js
+    ├── validate-json.py
+    └── validate-repository.py
 ```
 
-Keep this list synchronized with the files actually present in the repository.
+This is the expected structure for the scripts documented here. Keep the directory listing synchronized with the actual repository; do not create placeholder files solely to match this list.
 
-## 1. ✅ Available Scripts
+## 2. Requirements
 
-### `validate-commit-message.sh`
+- Python 3.10 or later is recommended.
+- Node.js 20 or later is required for the JavaScript reporting utilities.
+- Git is recommended for repository-aware checks.
+- Python validation utilities primarily use the standard library.
+- Node.js utilities may use installed project dependencies where specified.
 
-Validates commit messages against the commit conventions configured for MedOrbits.
+No script should install dependencies, deploy the application, modify production data, or rewrite source files unless that behavior is explicitly documented.
 
-**Expected responsibilities:**
+## 3. Available Scripts
 
-- Validate the commit header format.
-- Enforce approved Conventional Commit types.
-- Support optional scopes.
-- Check subject length and formatting.
-- Reject empty or malformed headers.
-- Reject prohibited merge, fixup, squash, and amend message patterns.
-- Provide usage information through `—help`.
-- Return an appropriate exit status.
-
-**Supported types:**
-
-`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `security`
-
-**Expected format:**
-
-```text
-type(scope): subject
-type: subject
-```
-
-Examples:
-
-```text
-feat(admissions): add college search
-fix(api): handle missing request body
-docs: update installation guide
-security(auth): validate authorization headers
-```
-
-**Usage:**
-
-The validator expects a path to a commit-message file as its first argument.
-
-```bash
-bash .github/scripts/validate-commit-message.sh /path/to/commit-message.txt
-```
-
-Display usage information:
-
-```bash
-bash .github/scripts/validate-commit-message.sh —help
-```
-
-Do not pass a commit-message string directly unless the validator is explicitly changed to support that interface.
-
-### `test-validate-commit-message.sh`
-
-Tests the commit-message validator using representative valid and invalid messages.
-
-The test suite creates temporary files, invokes the validator, reports individual results, and returns a failure status if any assertion fails.
-
-**Usage:**
-
-```bash
-bash .github/scripts/test-validate-commit-message.sh
-```
-
-Enable verbose output:
-
-```bash
-bash .github/scripts/test-validate-commit-message.sh —verbose
-```
-
-Display help:
-
-```bash
-bash .github/scripts/test-validate-commit-message.sh —help
-```
-
-**Environment variable:**
-
-| Variable | Purpose |
+| Script | Purpose |
 |—|—|
-| `VALIDATOR_PATH` | Optional path to `validate-commit-message.sh` |
+| `check-env-example.py` | Check `.env.example` and environment-variable references for common configuration inconsistencies. |
+| `check-links.py` | Detect broken local links and references in supported website and documentation files. |
+| `check-secrets.py` | Scan files for common patterns associated with accidentally exposed credentials. |
+| `ci-summary.js` | Generate a GitHub Actions job summary from available results. |
+| `dependency-report.js` | Generate a dependency inventory and optional audit report. |
+| `validate-json.py` | Validate JSON syntax, encoding, and duplicate object keys. |
+| `validate-repository.py` | Check repository structure, JSON and Python syntax, selected configuration files, and common hygiene issues. |
 
-Example:
+Script behavior depends on the implementation and supplied arguments. A successful check does not prove that the entire application is secure, accessible, or functionally correct.
 
-```bash
-VALIDATOR_PATH=“$PWD/.github/scripts/validate-commit-message.sh” \
-  bash .github/scripts/test-validate-commit-message.sh
-```
+## 4. Running the Validators
 
-The test suite should cover:
+Run commands from the repository root.
 
-- Valid Conventional Commit messages.
-- Invalid types and malformed headers.
-- Empty messages and missing subjects.
-- Subject-length limits.
-- Unsupported merge, fixup, squash, and amend patterns.
-- Help and verbose options.
-- Correct exit codes.
-- Temporary-file cleanup.
-
-Keep test expectations synchronized with the validator’s actual rules.
-
-—
-
-## 2. 🧪 Local Validation
-
-Run the following commands from the repository root.
-
-### Verify required files
+### Validate JSON files
 
 ```bash
-test -f .github/scripts/validate-commit-message.sh
-test -f .github/scripts/test-validate-commit-message.sh
-test -f .github/scripts/README.md
+python .github/scripts/validate-json.py —recursive —strict \
+  —exclude node_modules \
+  —exclude .git
 ```
 
-### Check Bash syntax
+### Validate repository structure and syntax
 
 ```bash
-bash -n .github/scripts/validate-commit-message.sh
-bash -n .github/scripts/test-validate-commit-message.sh
+python .github/scripts/validate-repository.py
 ```
 
-### Run the test suite
+For stricter checks and the optional secret scan:
 
 ```bash
-bash .github/scripts/test-validate-commit-message.sh
+python .github/scripts/validate-repository.py \
+  —strict \
+  —scan-secrets
 ```
 
-### Run with detailed output
+### Check environment configuration
 
 ```bash
-bash .github/scripts/test-validate-commit-message.sh —verbose
+python .github/scripts/check-env-example.py
 ```
 
-A successful syntax check confirms that Bash can parse the scripts. It does not prove that the validator behaves correctly. Run the test suite to check the documented behavior.
-
-Use `sh` only for scripts specifically written and tested for POSIX shell compatibility. These scripts use Bash features and should be executed with Bash.
-
-## 3. 📐 Development Standards
-
-When creating or modifying repository scripts:
-
-1. Use descriptive filenames and clear function names.
-2. Document arguments, environment variables, dependencies, and exit codes.
-3. Quote variable expansions and handle paths containing spaces safely.
-4. Use explicit error handling and meaningful failure messages.
-5. Avoid `eval` and unsafe execution of user-controlled input.
-6. Never print tokens, passwords, API keys, or other secrets.
-7. Avoid destructive Git commands and automatic history rewrites.
-8. Use temporary directories with cleanup traps for generated files.
-9. Keep scripts independent of production credentials where possible.
-10. Validate external input before using it.
-11. Keep test expectations aligned with actual implementation.
-12. Update this README whenever script behavior or usage changes.
-
-## 4. 🔐 Security Requirements
-
-Treat commit messages, filenames, environment variables, and other external input as untrusted.
-
-- Do not embed credentials in scripts.
-- Do not expose secrets in GitHub Actions logs.
-- Avoid running untrusted downloaded scripts.
-- Give workflow jobs only the permissions they require.
-- Review scripts before running those that modify repository state.
-- Ensure scripts fail clearly when required files or tools are missing.
-- Keep temporary test data isolated and clean it up after execution.
-- Do not treat commit-message validation as a substitute for code review or security scanning.
-
-Commit-message validation does not establish contributor identity, authorize repository access, or prevent someone from bypassing local hooks. Enforcement requires appropriate Git hooks, CI checks, and repository rules.
-
-## 5. ⚙️ GitHub Actions Integration
-
-Scripts may be called by workflows under `.github/workflows/`.
-
-When integrating a script:
-
-- Reference the correct repository-relative path.
-- Use a reasonable job timeout.
-- Preserve useful error output.
-- Avoid exposing secrets to untrusted pull-request code.
-- Verify workflow permissions and trigger conditions.
-- Pin third-party actions to reviewed versions or full commit SHAs where appropriate.
-- Test the workflow locally or in a controlled branch before making it a required status check.
-- Ensure the workflow validates the intended commit message, not merely an unrelated commit.
-
-For a workflow that validates a commit message, define explicitly whether the policy applies to pull-request titles, individual commits, merge commits, or all of these. They are different inputs and may require different validation logic.
-
-## 6. 🩹 Troubleshooting
-
-### Permission denied
-
-Run the script through Bash:
+### Check local links
 
 ```bash
-bash .github/scripts/test-validate-commit-message.sh
+python .github/scripts/check-links.py
 ```
 
-If executable permissions are required, set them deliberately:
+### Scan for potential secrets
 
 ```bash
-chmod +x .github/scripts/validate-commit-message.sh
-chmod +x .github/scripts/test-validate-commit-message.sh
+python .github/scripts/check-secrets.py
 ```
 
-### Syntax errors
-
-Run:
+### Generate a dependency report
 
 ```bash
-bash -n .github/scripts/validate-commit-message.sh
-bash -n .github/scripts/test-validate-commit-message.sh
+node .github/scripts/dependency-report.js
 ```
 
-### Tests fail
-
-1. Identify the failing test.
-2. Compare the expected behavior with the validator’s documented rules.
-3. Check whether the validator is being invoked with the correct file path.
-4. Run the test suite with `—verbose`.
-5. Correct the implementation or test expectation, then rerun the complete suite.
-
-Do not change tests merely to hide a genuine validator defect.
-
-### Validator not found
-
-Verify the exact path and filename:
+### Generate a CI summary
 
 ```bash
-ls -la .github/scripts/
+node .github/scripts/ci-summary.js
 ```
 
-If using `VALIDATOR_PATH`, confirm that it points to the intended validator file. GitHub Actions runners typically use Linux, where filenames are case-sensitive.
+Check each script’s `—help` output or source documentation before supplying optional arguments. Commands above assume the corresponding files exist and support the stated invocation.
 
-## 7. 📋 Contribution Checklist
+## 5. Integration with GitHub Actions
 
-Before committing script changes:
+Workflows belong in:
 
-- [ ] The script has a clear purpose and documented usage.
-- [ ] Bash syntax validation passes.
-- [ ] Relevant tests pass.
-- [ ] Error conditions and exit codes are handled correctly.
-- [ ] Paths and external inputs are handled safely.
-- [ ] No secrets or sensitive information are exposed.
-- [ ] No unintended repository changes occur.
-- [ ] Temporary files are cleaned up.
-- [ ] Related documentation is updated.
-- [ ] Any workflow integration has been reviewed.
+```text
+.github/workflows/
+```
 
-## 8. 📚 Official References
+A workflow may call these utilities during pull-request checks or pushes to the default branch.
 
-- [Bash Reference Manual](https://www.gnu.org/software/bash/manual/)
-- [Git documentation](https://git-scm.com/docs)
-- [GitHub Actions documentation](https://docs.github.com/en/actions)
-- [GitHub Actions security hardening](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions)
+Recommended validation order:
 
-—
+1. Check out the repository.
+2. Set up supported Python and Node.js versions.
+3. Install dependencies only when required by the selected checks.
+4. Run syntax, JSON, link, and configuration validation.
+5. Run automated tests.
+6. Run dependency and security checks.
+7. Upload useful reports as workflow artifacts when appropriate.
 
-### Maintenance Note
+Use explicit permissions and grant only the minimum permissions required. Do not expose secrets in logs or pass production credentials to untrusted pull-request code.
 
-This README documents the intended structure and operating conventions for MedOrbits `2.0.0`.
+## 6. Exit Codes and Reports
 
-It does **not** confirm that every listed file exists, that the tests pass, or that GitHub Actions enforcement is configured. Verify the repository contents and run the documented checks before relying on these controls.
+Python validation utilities should return:
+
+- `0` — validation passed.
+- `1` — validation errors were detected.
+- `2` — an invocation, configuration, or report-writing failure occurred, where implemented.
+
+JavaScript utilities may use different exit-code conventions. Check each script before relying on its exit status in a workflow.
+
+JSON reports and GitHub Actions summaries are optional outputs. Store generated reports in a designated output directory, and avoid committing transient reports unless they are intentionally maintained as project artifacts.
+
+## 7. Safety and Security
+
+- Never commit real API keys, database credentials, access tokens, private keys, or production `.env` files.
+- Keep `.env.example` limited to variable names and safe placeholder values.
+- Treat secret-scanner findings as leads for manual investigation; false positives are possible.
+- Rotate credentials immediately if they have been exposed.
+- Do not automatically apply dependency upgrades in production without review and testing.
+- Review third-party workflow actions and pin them to appropriate immutable references where practical.
+- Do not interpret a clean static scan as a security certification.
+
+## 8. Maintenance Rules
+
+When adding or changing a script:
+
+1. Use the naming and directory conventions already present in the repository.
+2. Document its purpose, prerequisites, supported arguments, and exit codes.
+3. Prefer read-only checks and clear error messages.
+4. Avoid hard-coded absolute paths, credentials, and machine-specific settings.
+5. Handle missing files and optional project components gracefully.
+6. Keep output suitable for both local use and automated CI logs.
+7. Add tests for important validation logic.
+8. Update this README when script names or behavior change.
+9. Preserve existing website functionality and project structure.
+10. Do not claim that a check has passed unless it has actually run successfully.
+
+## 9. Troubleshooting
+
+**Python cannot find a file:** Run commands from the repository root and confirm the exact path and filename.
+
+**A validator reports a missing file:** Confirm whether the file is required for this project configuration before creating it. Some checks intentionally report optional files.
+
+**JSON validation fails:** Inspect the reported line and column. Standard JSON does not support comments or trailing commas.
+
+**A link check fails:** Confirm the target exists, the path is relative to the correct file or configured base, and any fragment identifier matches the target.
+
+**A security scan reports a possible secret:** Inspect the matching line without copying the credential into logs or issue comments. Revoke exposed credentials when necessary.
+
+**A workflow fails:** Review its logs, required runtime versions, repository permissions, and expected paths.
+
+## 10. Scope
+
+These utilities support repository quality and maintenance. They do not replace application tests, accessibility testing, dependency review, deployment verification, database backup procedures, or a professional security assessment.
+
+Maintain this directory as a collection of small, predictable tools that help keep MedOrbits reliable without unexpectedly changing the application.

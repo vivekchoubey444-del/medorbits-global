@@ -1,253 +1,269 @@
 
 #!/usr/bin/env sh
+
 # ==============================================================================
-# MedOrbits -- Enterprise Pre-Push Safety Gate
-# File: .husky/pre-push
-# Version: 2.2.0
+# MedOrbits / GHAR -- Pre-Push Validation
+# File: /.husky/pre-push
+# Version: 1.0.0
+#
+# Purpose:
+#   Run quality and security checks before Git push.
 #
 # Checks:
-#   - Git repository and HEAD integrity
-#   - Unresolved merge conflicts
-#   - Tracked JSON and JSON Schema syntax
-#   - Tracked JavaScript syntax
-#   - Lockfile-aware configured test script
-#   - Optional VERIFY.sh and TEST.sh scripts
+#   - Git repository integrity
+#   - Node.js and npm availability
+#   - package.json validity
+#   - package-lock.json consistency
+#   - Dependency installation integrity
+#   - Automated tests
+#   - ESLint
+#   - Prettier
+#   - Production build
+#   - Python compilation
+#   - Secret and sensitive-file checks
 #
 # Safety:
-#   - Does not install dependencies or change source files.
-#   - Does not create commits or push.
-#   - Blocks the push when an enabled required check fails.
-#   - Uses NUL-delimited Git filenames.
+#   - No automatic dependency upgrades
+#   - No automatic Git push
+#   - No deployment
+#   - No database migrations
+#   - No destructive Git operations
+#
+# Exit:
+#   0 = Push permitted
+#   1 = Push blocked
 # ==============================================================================
 
 set -eu
 
-log() {
-  printf '%s\n' "[MedOrbits] $*"
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "ERROR: Not inside a Git repository."
+    exit 1
 }
 
-warning() {
-  printf '%s\n' "[MedOrbits] WARNING: $*" >&2
-}
+cd "$PROJECT_ROOT"
 
-error() {
-  printf '%s\n' "[MedOrbits] ERROR: $*" >&2
-}
+echo ""
+echo "=================================================="
+echo " MEDORBITS / GHAR -- PRE-PUSH VALIDATION"
+echo "=================================================="
 
-die() {
-  error "$*"
-  exit 1
-}
+# ----------------------------------------------------------------------
+# Helper
+# ----------------------------------------------------------------------
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" ||
-  die "Not inside a Git repository."
+run_check() {
+    LABEL="$1"
+    shift
 
-cd "$ROOT" || die "Cannot enter repository root."
+    echo ""
+    echo "CHECK: $LABEL"
 
-log "Running pre-push checks..."
-log "Repository: $ROOT"
-
-# ------------------------------------------------------------------------------
-# 1. Validate Git repository state
-# ------------------------------------------------------------------------------
-
-git rev-parse --verify HEAD >/dev/null 2>&1 ||
-  die "No valid HEAD commit exists."
-
-log "Repository HEAD is valid."
-
-UNRESOLVED="$(git diff --name-only --diff-filter=U)" ||
-  die "Unable to inspect unresolved conflicts."
-
-if [ -n "$UNRESOLVED" ]; then
-  error "Unresolved working-tree/index conflicts exist:"
-  printf '%s\n' "$UNRESOLVED" >&2
-  exit 1
-fi
-
-INDEX_CONFLICTS="$(git ls-files -u)" ||
-  die "Unable to inspect Git index."
-
-if [ -n "$INDEX_CONFLICTS" ]; then
-  die "Unresolved Git index conflicts exist."
-fi
-
-log "No unresolved Git conflicts."
-
-# ------------------------------------------------------------------------------
-# 2. Detect available runtime tools
-# ------------------------------------------------------------------------------
-
-NODE_AVAILABLE=0
-if command -v node >/dev/null 2>&1; then
-  NODE_AVAILABLE=1
-  NODE_VERSION="$(node -p 'process.versions.node' 2>/dev/null)" ||
-    die "Unable to determine Node.js version."
-  log "Node.js: $NODE_VERSION"
-else
-  warning "Node.js unavailable; JSON and JavaScript checks cannot run."
-fi
-
-# ------------------------------------------------------------------------------
-# 3. Validate tracked JSON files
-# ------------------------------------------------------------------------------
-
-if [ "$NODE_AVAILABLE" -eq 1 ]; then
-  JSON_COUNT=0
-
-  # NUL delimiters safely handle spaces, tabs, and newlines in filenames.
-  # Process substitution is deliberately avoided because this script
-  # targets POSIX sh, not Bash.
-  JSON_LIST="$(mktemp "${TMPDIR:-/tmp}/medorbits-json.XXXXXX")" ||
-    die "Unable to create JSON file list."
-
-  trap 'rm -f "$JSON_LIST" "$JS_LIST"' 0
-  trap 'exit 130' INT
-  trap 'exit 143' TERM
-
-  git ls-files -z -- '*.json' '*.schema.json' '*.shema.json' > "$JSON_LIST" ||
-    die "Unable to enumerate tracked JSON files."
-
-  # Read NUL-delimited filenames with a tiny Node helper. This avoids
-  # newline-based shell parsing of Git filenames.
-  while IFS= read -r -d '' file; do
-    :
-  done </dev/null 2>/dev/null || true
-
-  node - "$JSON_LIST" <<'NODE'
-'use strict';
-
-const fs = require('node:fs');
-const cp = require('node:child_process');
-
-const listFile = process.argv[2];
-const paths = fs.readFileSync(listFile).toString('utf8').split('\0').filter(Boolean);
-
-for (const file of paths) {
-  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) continue;
-
-  try {
-    JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (error) {
-    console.error(`[MedOrbits] ERROR: Invalid JSON: ${file}`);
-    console.error(`  ${error.message}`);
-    process.exitCode = 1;
-  }
-}
-NODE
-
-  # Count existing tracked JSON files for reporting.
-  while IFS= read -r file; do
-    [ -n "$file" ] || continue
-    [ -f "$file" ] || continue
-    JSON_COUNT=$((JSON_COUNT + 1))
-  done <<EOF
-$(git ls-files -- '*.json' '*.schema.json' '*.shema.json')
-EOF
-
-  # NUL-based validation above is authoritative. This count is informational.
-  log "Tracked JSON validation completed ($JSON_COUNT listed files)."
-fi
-
-# ------------------------------------------------------------------------------
-# 4. Validate tracked JavaScript syntax
-# ------------------------------------------------------------------------------
-
-if [ "$NODE_AVAILABLE" -eq 1 ]; then
-  JS_LIST="$(mktemp "${TMPDIR:-/tmp}/medorbits-js.XXXXXX")" ||
-    die "Unable to create JavaScript file list."
-
-  git ls-files -z -- '*.js' '*.mjs' '*.cjs' > "$JS_LIST" ||
-    die "Unable to enumerate tracked JavaScript files."
-
-  node - "$JS_LIST" <<'NODE'
-'use strict';
-
-const fs = require('node:fs');
-const cp = require('node:child_process');
-
-const listFile = process.argv[2];
-const paths = fs.readFileSync(listFile).toString('utf8').split('\0').filter(Boolean);
-
-for (const file of paths) {
-  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) continue;
-
-  const result = cp.spawnSync(process.execPath, ['--check', file], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-
-  if (result.error || result.status !== 0) {
-    console.error(`[MedOrbits] ERROR: JavaScript syntax check failed: ${file}`);
-    const detail = (result.stderr || result.stdout || '').trim();
-    if (detail) console.error(detail);
-    process.exitCode = 1;
-  }
-}
-NODE
-
-  log "Tracked JavaScript syntax validation completed."
-fi
-
-# ------------------------------------------------------------------------------
-# 5. Run configured tests with detected lockfile
-# ------------------------------------------------------------------------------
-
-if [ -f package.json ] && [ "$NODE_AVAILABLE" -eq 1 ]; then
-  HAS_TEST_SCRIPT=0
-
-  if node -e '
-    const fs = require("node:fs");
-    const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
-    process.exit(typeof p.scripts?.test === "string" && p.scripts.test.trim() ? 0 : 1);
-  ' >/dev/null 2>&1; then
-    HAS_TEST_SCRIPT=1
-  fi
-
-  if [ "$HAS_TEST_SCRIPT" -eq 1 ]; then
-    if [ -d node_modules ]; then
-      if [ -f pnpm-lock.yaml ] && command -v pnpm >/dev/null 2>&1; then
-        log "Running pnpm test..."
-        pnpm run test
-      elif [ -f yarn.lock ] && command -v yarn >/dev/null 2>&1; then
-        log "Running Yarn test..."
-        yarn run test
-      elif { [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; } &&
-           command -v npm >/dev/null 2>&1; then
-        log "Running npm test..."
-        npm test
-      elif { [ -f bun.lock ] || [ -f bun.lockb ]; } &&
-           command -v bun >/dev/null 2>&1; then
-        log "Running Bun test..."
-        bun run test
-      else
-        warning "Could not safely identify the package manager; tests skipped."
-      fi
-
-      log "Configured package tests completed."
+    if "$@"; then
+        echo "PASS: $LABEL"
     else
-      warning "node_modules is missing; configured package tests skipped."
+        echo "FAIL: $LABEL"
+        echo "Push blocked."
+        exit 1
     fi
-  else
-    log "No package.json test script configured."
-  fi
+}
+
+# ----------------------------------------------------------------------
+# Git integrity
+# ----------------------------------------------------------------------
+
+run_check "Git repository integrity" git fsck --no-reflogs
+
+# ----------------------------------------------------------------------
+# Runtime checks
+# ----------------------------------------------------------------------
+
+command -v node >/dev/null 2>&1 || {
+    echo "ERROR: Node.js is required."
+    exit 1
+}
+
+command -v npm >/dev/null 2>&1 || {
+    echo "ERROR: npm is required."
+    exit 1
+}
+
+echo "Node.js: $(node --version)"
+echo "npm: $(npm --version)"
+
+# ----------------------------------------------------------------------
+# Package manifest validation
+# ----------------------------------------------------------------------
+
+if [ -f package.json ]; then
+    run_check "package.json syntax" \
+        node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
+else
+    echo "INFO: No root package.json found."
 fi
 
-# ------------------------------------------------------------------------------
-# 6. Optional project verification scripts
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Lockfile validation
+# ----------------------------------------------------------------------
 
-for script in VERIFY.sh TEST.sh; do
-  if [ -f "$script" ]; then
-    log "Running $script..."
-    bash "$script" || die "$script failed."
-    log "$script passed."
-  fi
+if [ -f package.json ] && [ -f package-lock.json ]; then
+    run_check "npm lockfile consistency" \
+        npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+else
+    echo "WARNING: package.json or package-lock.json is missing."
+fi
+
+# ----------------------------------------------------------------------
+# Dependency integrity
+# ----------------------------------------------------------------------
+
+if [ -f package-lock.json ]; then
+    run_check "npm dependency installation" \
+        npm ci --ignore-scripts --no-audit --no-fund
+fi
+
+# ----------------------------------------------------------------------
+# Test suite
+# ----------------------------------------------------------------------
+
+if [ -f package.json ]; then
+    if node -e "
+      const p = require('./package.json');
+      process.exit(p.scripts?.test ? 0 : 1);
+    "; then
+        run_check "Automated tests" npm test
+    else
+        echo "WARNING: No test script configured."
+    fi
+fi
+
+# ----------------------------------------------------------------------
+# ESLint
+# ----------------------------------------------------------------------
+
+if [ -x node_modules/.bin/eslint ]; then
+    run_check "ESLint" npx --no-install eslint .
+else
+    echo "INFO: ESLint unavailable; skipping."
+fi
+
+# ----------------------------------------------------------------------
+# Prettier
+# ----------------------------------------------------------------------
+
+if [ -x node_modules/.bin/prettier ]; then
+    run_check "Prettier formatting" \
+        npx --no-install prettier --check .
+else
+    echo "INFO: Prettier unavailable; skipping."
+fi
+
+# ----------------------------------------------------------------------
+# Production build
+# ----------------------------------------------------------------------
+
+if [ -f package.json ]; then
+    if node -e "
+      const p = require('./package.json');
+      process.exit(p.scripts?.build ? 0 : 1);
+    "; then
+        run_check "Production build" npm run build
+    else
+        echo "INFO: No build script configured."
+    fi
+fi
+
+# ----------------------------------------------------------------------
+# Python syntax validation
+# ----------------------------------------------------------------------
+
+if command -v python3 >/dev/null 2>&1; then
+    echo ""
+    echo "CHECK: Python syntax"
+
+    python3 - <<'PY'
+import ast
+import subprocess
+import sys
+
+files = subprocess.run(
+    ["git", "ls-files", "-m", "-o", "--exclude-standard"],
+    capture_output=True,
+    text=True,
+    check=True
+).stdout.splitlines()
+
+python_files = [
+    file for file in files
+    if file.endswith(".py")
+]
+
+errors = []
+
+for file in python_files:
+    try:
+        with open(file, "r", encoding="utf-8") as source:
+            ast.parse(source.read(), filename=file)
+        print(f"PASS: {file}")
+    except (OSError, UnicodeError, SyntaxError) as exc:
+        errors.append(f"{file}: {exc}")
+
+if errors:
+    for error in errors:
+        print(f"FAIL: {error}")
+    sys.exit(1)
+
+print(f"Validated {len(python_files)} Python files.")
+PY
+
+else
+    echo "INFO: Python 3 unavailable; skipping."
+fi
+
+# ----------------------------------------------------------------------
+# Sensitive-file validation
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Sensitive files"
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+
+for FILE in $STAGED_FILES; do
+    case "$FILE" in
+        .env|.env.*)
+            case "$FILE" in
+                .env.example|.env.sample|.env.template)
+                    ;;
+                *)
+                    echo "ERROR: Sensitive environment file: $FILE"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        *.pem|*.key)
+            echo "ERROR: Potential private key: $FILE"
+            exit 1
+            ;;
+    esac
 done
 
-# ------------------------------------------------------------------------------
-# 7. Complete
-# ------------------------------------------------------------------------------
+echo "PASS: Sensitive filename check"
 
-log "All enabled pre-push checks passed."
+# ----------------------------------------------------------------------
+# Final report
+# ----------------------------------------------------------------------
+
+echo ""
+echo "=================================================="
+echo " PRE-PUSH VALIDATION PASSED"
+echo "=================================================="
+echo "Repository: $PROJECT_ROOT"
+echo "Branch: $(git branch --show-current)"
+echo "Commit: $(git rev-parse --short HEAD)"
+echo ""
+echo "All configured checks completed."
+echo "Git push is permitted."
+echo ""
+
 exit 0

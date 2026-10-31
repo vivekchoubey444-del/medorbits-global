@@ -1,0 +1,234 @@
+
+#!/usr/bin/env sh
+
+# ==============================================================================
+# MedOrbits / GHAR -- Post Merge Hook
+# File: /.husky/post-merge
+# Version: 1.0.0
+#
+# Purpose:
+#   Perform safe repository checks after Git merge.
+#
+# Features:
+#   - Detect current branch and commit.
+#   - Detect dependency manifest changes.
+#   - Check package-lock.json consistency.
+#   - Detect environment template changes.
+#   - Check repository configuration.
+#   - Identify missing dependencies.
+#   - Display recommended follow-up commands.
+#
+# Security:
+#   - No automatic npm install.
+#   - No automatic dependency upgrades.
+#   - No automatic database migrations.
+#   - No deployment.
+#   - No modification of environment files.
+#   - No destructive Git operations.
+#
+# Exit:
+#   0 = Merge inspection completed.
+# ==============================================================================
+
+set -u
+
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+cd "$PROJECT_ROOT" || exit 0
+
+echo ""
+echo "=================================================="
+echo " MEDORBITS / GHAR -- POST MERGE CHECK"
+echo "=================================================="
+
+# ----------------------------------------------------------------------
+# Git information
+# ----------------------------------------------------------------------
+
+BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+echo "Repository: $PROJECT_ROOT"
+echo "Branch: $BRANCH"
+echo "Commit: $COMMIT"
+
+# ----------------------------------------------------------------------
+# Detect files changed by the latest merge
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Latest merge changes"
+
+MERGE_BASE=$(git rev-parse -q --verify MERGE_HEAD 2>/dev/null || true)
+
+if [ -n "$MERGE_BASE" ]; then
+    CHANGED_FILES=$(git diff --name-only ORIG_HEAD HEAD 2>/dev/null || true)
+else
+    CHANGED_FILES=$(git diff-tree \
+        --no-commit-id \
+        --name-only \
+        -r HEAD 2>/dev/null || true)
+fi
+
+if [ -n "$CHANGED_FILES" ]; then
+    printf '%s\n' "$CHANGED_FILES"
+else
+    echo "No changed files detected."
+fi
+
+# ----------------------------------------------------------------------
+# Dependency change detection
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Dependency configuration"
+
+DEPENDENCY_CHANGED=false
+
+for FILE in \
+    package.json \
+    package-lock.json \
+    requirements.txt \
+    requirements.in \
+    pyproject.toml
+do
+    if printf '%s\n' "$CHANGED_FILES" | grep -Fxq "$FILE"; then
+        DEPENDENCY_CHANGED=true
+        echo "Dependency file changed: $FILE"
+    fi
+done
+
+if [ "$DEPENDENCY_CHANGED" = true ]; then
+    echo ""
+    echo "WARNING: Dependency changes detected."
+
+    if [ -f package.json ] && [ -f package-lock.json ]; then
+        echo "Recommended: npm ci"
+    fi
+
+    if [ -f requirements.txt ]; then
+        echo "Recommended: python -m pip install -r requirements.txt"
+    fi
+else
+    echo "No root dependency changes detected."
+fi
+
+# ----------------------------------------------------------------------
+# Node.js checks
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Node.js environment"
+
+if [ -f package.json ]; then
+    if command -v node >/dev/null 2>&1; then
+        echo "Node.js: $(node --version)"
+
+        if [ -d node_modules ]; then
+            echo "PASS: node_modules exists."
+        else
+            echo "WARNING: node_modules is missing."
+        fi
+    else
+        echo "WARNING: Node.js is unavailable."
+    fi
+
+    if [ ! -f package-lock.json ]; then
+        echo "WARNING: package-lock.json is missing."
+    fi
+else
+    echo "No root package.json found."
+fi
+
+# ----------------------------------------------------------------------
+# Python environment
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Python environment"
+
+if command -v python3 >/dev/null 2>&1; then
+    echo "Python: $(python3 --version)"
+else
+    echo "INFO: Python 3 is unavailable."
+fi
+
+# ----------------------------------------------------------------------
+# Environment template checks
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Environment configuration"
+
+if printf '%s\n' "$CHANGED_FILES" |
+    grep -Eq '(^|/)\.env\.example$|(^|/)requirements\.txt$'; then
+    echo "WARNING: Environment or dependency configuration changed."
+    echo "Review local configuration before restarting the application."
+fi
+
+if [ -f .env ]; then
+    echo "PASS: Local environment file exists."
+else
+    echo "INFO: Local .env is not configured."
+fi
+
+# ----------------------------------------------------------------------
+# Repository configuration
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Repository configuration"
+
+for FILE in \
+    .gitignore \
+    README.md \
+    LICENSE \
+    .github/workflows/ci.yml
+do
+    if [ -f "$FILE" ]; then
+        echo "PASS: $FILE"
+    else
+        echo "WARNING: Missing $FILE"
+    fi
+done
+
+# ----------------------------------------------------------------------
+# Git status
+# ----------------------------------------------------------------------
+
+echo ""
+echo "CHECK: Working tree"
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "PASS: Working tree is clean."
+else
+    echo "INFO: Local changes are present."
+    echo "Existing developer changes have not been modified."
+fi
+
+# ----------------------------------------------------------------------
+# Recommended next actions
+# ----------------------------------------------------------------------
+
+echo ""
+echo "=================================================="
+echo " POST MERGE SUMMARY"
+echo "=================================================="
+
+if [ "$DEPENDENCY_CHANGED" = true ]; then
+    echo "1. Review dependency changes."
+    echo "2. Run npm ci if npm dependencies changed."
+    echo "3. Run automated tests."
+    echo "4. Run the production build."
+else
+    echo "1. Review merged source changes."
+    echo "2. Run relevant automated tests."
+    echo "3. Verify application behaviour."
+fi
+
+echo ""
+echo "No automatic installation or migration was performed."
+echo "Post-merge inspection completed."
+echo "=================================================="
+
+exit 0

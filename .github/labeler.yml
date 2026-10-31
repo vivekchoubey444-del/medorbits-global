@@ -1,0 +1,349 @@
+# =============================================================================
+# MedOrbits | Automatic Pull Request Labeler
+# File: .github/labeler.yml
+# Version: 2.1.1
+#
+# Purpose:
+#   Automatically classify pull requests based on modified file paths.
+#
+# Compatibility:
+#   actions/labeler
+#
+# Workflow:
+#   .github/workflows/labeler.yml
+#
+# Notes:
+#   - Labels must exist in the GitHub repository.
+#   - Multiple labels may be applied to one pull request.
+#   - File patterns are repository-root relative.
+#   - Keep this file synchronized with the repository architecture.
+# =============================================================================
+# -----------------------------------------------------------------------------
+# 01. FRONTEND
+# Pages, layouts, styling, and user-facing functionality.
+# -----------------------------------------------------------------------------
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "index.html"
+          - "pages/**"
+          - "assets/css/**"
+          - "assets/js/**"
+          - "assets/images/**"
+          - "components/**"
+          - "layouts/**"
+# -----------------------------------------------------------------------------
+# 02. BACKEND
+# API, server, authentication, business logic, and integrations.
+# -----------------------------------------------------------------------------
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "server.js"
+          - "app.js"
+          - "server/**"
+          - "api/**"
+          - "src/controllers/**"
+          - "src/routes/**"
+          - "src/services/**"
+          - "src/models/**"
+          - "src/middleware/**"
+          - "src/config/**"
+# -----------------------------------------------------------------------------
+# 03. API
+# API endpoints, contracts, validation, and documentation.
+# -----------------------------------------------------------------------------
+api:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "api/**"
+          - "server/routes/**"
+          - "server/controllers/**"
+          - "server/schemas/**"
+          - "server/validators/**"
+          - "openapi/**"
+          - "swagger/**"
+# -----------------------------------------------------------------------------
+# 04. EDUCATION CONTENT
+# Courses, admissions, colleges, scholarships, and career information.
+# -----------------------------------------------------------------------------
+education-content:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "pages/education.html"
+          - "pages/admission-process.html"
+          - "pages/admissions/**"
+          - "pages/scholarships.html"
+          - "pages/study-abroad.html"
+          - "pages/careers.html"
+          - "pages/jobs.html"
+          - "pages/colleges/**"
+          - "pages/courses/**"
+# -----------------------------------------------------------------------------
+# 05. DATA & CATALOGUES
+# Structured education, institutional, and platform datasets.
+# -----------------------------------------------------------------------------
+data:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "data/**"
+          - "catalogs/**"
+          - "assets/data/**"
+          - "datasets/**"
+          - "server/data/**"
+# -----------------------------------------------------------------------------
+# 06. DATABASE
+# Database schemas, migrations, seeds, and persistence layers.
+# -----------------------------------------------------------------------------
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "database/**"
+          - "migrations/**"
+          - "seeds/**"
+          - "server/database/**"
+          - "server/migrations/**"
+          - "server/models/**"
+          - "**/*.sql"
+# -----------------------------------------------------------------------------
+# 07. PROGRESSIVE WEB APP
+# Installation, manifest, service worker, and offline functionality.
+# -----------------------------------------------------------------------------
+pwa:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "manifest.json"
+          - "manifest.webmanifest"
+          - "service-worker.js"
+          - "sw.js"
+          - "offline.html"
+          - "assets/images/icons/**"
+          - "assets/icons/**"
+          - "workbox-config.js"
+# -----------------------------------------------------------------------------
+# 08. TESTING & QUALITY ASSURANCE
+# Automated tests, fixtures, and quality checks.
+# -----------------------------------------------------------------------------
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+          - "test/**"
+          - "fixtures/**"
+          - "**/*.test.js"
+          - "**/*.spec.js"
+          - "**/*.test.ts"
+          - "**/*.spec.ts"
+          - "**/test_*.py"
+          - "**/*_test.py"
+          - "**/*_spec.py"
+# -----------------------------------------------------------------------------
+# 09. PYTHON TOOLING
+# Python validation, build, maintenance, and automation utilities.
+# -----------------------------------------------------------------------------
+python:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scripts/**/*.py"
+          - "tools/**/*.py"
+          - "requirements.txt"
+          - "requirements-*.txt"
+          - "pyproject.toml"
+          - "pytest.ini"
+          - "setup.cfg"
+          - "tox.ini"
+# -----------------------------------------------------------------------------
+# 10. DEPENDENCIES
+# JavaScript, Node.js, Python, and package manager manifests.
+# -----------------------------------------------------------------------------
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package.json"
+          - "package-lock.json"
+          - "npm-shrinkwrap.json"
+          - "pnpm-lock.yaml"
+          - "yarn.lock"
+          - "bun.lock"
+          - "bun.lockb"
+          - "server/package.json"
+          - "server/package-lock.json"
+          - "server/pnpm-lock.yaml"
+          - "server/yarn.lock"
+          - "requirements.txt"
+          - "requirements-*.txt"
+          - "pyproject.toml"
+          - "Pipfile"
+          - "Pipfile.lock"
+          - "poetry.lock"
+          - "uv.lock"
+# -----------------------------------------------------------------------------
+# 11. CONTINUOUS INTEGRATION
+# GitHub Actions, repository automation, and dependency automation.
+# -----------------------------------------------------------------------------
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/actions/**"
+          - ".github/dependabot.yml"
+          - ".github/renovate.json"
+          - ".github/labeler.yml"
+          - ".husky/**"
+# -----------------------------------------------------------------------------
+# 12. SECURITY
+# Security policies, permissions, middleware, and sensitive configuration.
+# -----------------------------------------------------------------------------
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "SECURITY.md"
+          - ".github/SECURITY.md"
+          - ".github/SECURITY*"
+          - ".github/CODEOWNERS"
+          - ".github/dependabot.yml"
+          - ".github/renovate.json"
+          - "server/middleware/**"
+          - "server/config/**"
+          - "security/**"
+          - "policies/security/**"
+# -----------------------------------------------------------------------------
+# 13. DOCUMENTATION
+# Technical documentation, guides, references, and project instructions.
+# -----------------------------------------------------------------------------
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+          - "README*"
+          - "CHANGELOG*"
+          - "CONTRIBUTING*"
+          - "LICENSE*"
+          - "NOTICE*"
+# -----------------------------------------------------------------------------
+# 14. GITHUB COMMUNITY
+# Issue templates, pull request templates, and contributor support.
+# -----------------------------------------------------------------------------
+github-community:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/ISSUE_TEMPLATE/**"
+          - ".github/PULL_REQUEST_TEMPLATE.md"
+          - ".github/SUPPORT.md"
+          - ".github/CONTRIBUTING.md"
+          - ".github/FUNDING.yml"
+# -----------------------------------------------------------------------------
+# 15. CONFIGURATION
+# Environment examples, formatting, linting, and application configuration.
+# -----------------------------------------------------------------------------
+configuration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".env.example"
+          - ".editorconfig"
+          - ".gitignore"
+          - ".gitattributes"
+          - ".npmrc"
+          - ".nvmrc"
+          - ".prettierrc*"
+          - ".prettierignore"
+          - ".eslintrc*"
+          - "eslint.config.*"
+          - "config/**"
+          - "server/config/**"
+          - "vite.config.*"
+          - "webpack.config.*"
+          - "tsconfig*.json"
+# -----------------------------------------------------------------------------
+# 16. DEPLOYMENT & INFRASTRUCTURE
+# Hosting, containers, reverse proxies, and deployment definitions.
+# -----------------------------------------------------------------------------
+deployment:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Dockerfile"
+          - "Dockerfile.*"
+          - "docker-compose.yml"
+          - "docker-compose.yaml"
+          - "compose.yml"
+          - "compose.yaml"
+          - "render.yaml"
+          - "vercel.json"
+          - "netlify.toml"
+          - "nginx.conf"
+          - "nginx/**"
+          - "infra/**"
+          - "infrastructure/**"
+          - "deploy/**"
+          - "terraform/**"
+          - "ansible/**"
+# -----------------------------------------------------------------------------
+# 17. ACCESSIBILITY
+# Inclusive design, assistive technology, and accessibility improvements.
+# -----------------------------------------------------------------------------
+accessibility:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "assets/css/**"
+          - "assets/js/**"
+          - "pages/**"
+          - "components/**"
+          - "accessibility/**"
+# -----------------------------------------------------------------------------
+# 18. LOCALIZATION
+# Language resources, translations, and internationalization.
+# -----------------------------------------------------------------------------
+localization:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "i18n/**"
+          - "locales/**"
+          - "translations/**"
+          - "assets/js/i18n.js"
+          - "data/languages.json"
+# -----------------------------------------------------------------------------
+# 19. PERFORMANCE
+# Optimization, caching, loading, and performance monitoring.
+# -----------------------------------------------------------------------------
+performance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "performance/**"
+          - "monitoring/**"
+          - "benchmarks/**"
+          - "lighthouse/**"
+          - "service-worker.js"
+          - "assets/js/**"
+          - "assets/css/**"
+# -----------------------------------------------------------------------------
+# 20. MONITORING & OBSERVABILITY
+# Logs, metrics, alerts, and operational health checks.
+# -----------------------------------------------------------------------------
+monitoring:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "monitoring/**"
+          - "observability/**"
+          - "logging/**"
+          - "metrics/**"
+          - "alerts/**"
+# -----------------------------------------------------------------------------
+# 21. PROJECT GOVERNANCE
+# Licensing, contribution rules, and repository-wide policies.
+# -----------------------------------------------------------------------------
+governance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "CODE_OF_CONDUCT.md"
+          - "CONTRIBUTING.md"
+          - "LICENSE"
+          - "NOTICE"
+          - ".github/CODEOWNERS"
+          - ".github/CONTRIBUTING.md"
+          - ".github/SUPPORT.md"
+          - ".github/FUNDING.yml"
+# -----------------------------------------------------------------------------
+# END OF FILE
+# MedOrbits | Pull Request Classification Rules
+# =============================================================================

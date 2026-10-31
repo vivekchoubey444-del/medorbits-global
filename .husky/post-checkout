@@ -1,0 +1,152 @@
+
+#!/usr/bin/env sh
+
+# ==============================================================================
+# MedOrbits / GHAR -- Post Checkout Hook
+# File: /.husky/post-checkout
+# Version: 1.0.0
+#
+# Purpose:
+#   Run lightweight repository checks after Git checkout.
+#
+# Features:
+#   - Detect current branch and commit.
+#   - Check Node.js and npm availability.
+#   - Detect missing node_modules.
+#   - Check package-lock.json consistency prerequisites.
+#   - Check environment template availability.
+#   - Report missing repository configuration.
+#
+# Safety:
+#   - No automatic dependency installation.
+#   - No database migrations.
+#   - No deployment.
+#   - No modification of tracked files.
+# ==============================================================================
+
+set -u
+
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+cd "$PROJECT_ROOT" || exit 0
+
+echo ""
+echo "=================================================="
+echo " MEDORBITS / GHAR -- POST CHECKOUT"
+echo "=================================================="
+
+# ----------------------------------------------------------------------
+# Git information
+# ----------------------------------------------------------------------
+
+BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+echo "Branch: $BRANCH"
+echo "Commit: $COMMIT"
+
+# ----------------------------------------------------------------------
+# Runtime checks
+# ----------------------------------------------------------------------
+
+if command -v node >/dev/null 2>&1; then
+    echo "PASS: Node.js $(node --version)"
+else
+    echo "WARNING: Node.js is not installed."
+fi
+
+if command -v npm >/dev/null 2>&1; then
+    echo "PASS: npm $(npm --version)"
+else
+    echo "WARNING: npm is not installed."
+fi
+
+if command -v python3 >/dev/null 2>&1; then
+    echo "PASS: Python $(python3 --version)"
+else
+    echo "WARNING: Python 3 is not installed."
+fi
+
+# ----------------------------------------------------------------------
+# Package configuration
+# ----------------------------------------------------------------------
+
+if [ -f package.json ]; then
+    echo "PASS: package.json found."
+
+    if [ -d node_modules ]; then
+        echo "PASS: node_modules directory exists."
+    else
+        echo "WARNING: node_modules is missing."
+        echo "Run npm ci when ready to install dependencies."
+    fi
+
+    if [ -f package-lock.json ]; then
+        echo "PASS: package-lock.json found."
+    else
+        echo "WARNING: package-lock.json is missing."
+    fi
+else
+    echo "INFO: No root package.json found."
+fi
+
+# ----------------------------------------------------------------------
+# Environment configuration
+# ----------------------------------------------------------------------
+
+if [ -f .env.example ]; then
+    echo "PASS: .env.example found."
+else
+    echo "INFO: .env.example not found."
+fi
+
+if [ -f .env ]; then
+    echo "PASS: Local .env file exists."
+else
+    echo "INFO: Local .env file is not configured."
+fi
+
+# ----------------------------------------------------------------------
+# Repository configuration
+# ----------------------------------------------------------------------
+
+for FILE in \
+    .gitignore \
+    README.md \
+    LICENSE \
+    .github/workflows/ci.yml
+do
+    if [ -f "$FILE" ]; then
+        echo "PASS: $FILE"
+    else
+        echo "WARNING: Missing $FILE"
+    fi
+done
+
+# ----------------------------------------------------------------------
+# Git working tree
+# ----------------------------------------------------------------------
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "PASS: Working tree is clean."
+else
+    echo "INFO: Working tree contains local changes."
+fi
+
+# ----------------------------------------------------------------------
+# Final report
+# ----------------------------------------------------------------------
+
+echo ""
+echo "=================================================="
+echo " POST CHECKOUT COMPLETED"
+echo "=================================================="
+echo "Repository: $PROJECT_ROOT"
+echo "Branch: $BRANCH"
+echo "Commit: $COMMIT"
+echo ""
+echo "No files were automatically modified."
+echo "Run the project validation commands when ready."
+echo ""
+
+exit 0

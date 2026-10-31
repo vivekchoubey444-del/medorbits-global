@@ -1,364 +1,184 @@
 
-# MedOrbits — GitHub Repository Configuration
+# MedOrbits GitHub Scripts
 
-**Project:** MedOrbits  
-**Release target:** `2.0.0`  
-**Directory:** `.github/`
+Repository maintenance, validation, security-checking, and reporting utilities used by MedOrbits automation workflows.
 
-## 1. Overview
+These scripts are designed to support the MedOrbits education and admissions platform while preserving existing website pages, filenames, navigation, styling, and application behavior.
 
-The `.github/` directory contains configuration and automation resources for maintaining the MedOrbits repository. These resources support issue management, contribution standards, automated validation, dependency updates, security checks, and code review.
-
-The presence of a configuration file does not guarantee that its workflow, policy, or GitHub setting is active. Verify the actual repository configuration and execution results before relying on any control.
-
-## 2. Directory Structure
-
-The following structure is a reference, not a guarantee that every file exists.
+## 1. Directory Structure
 
 ```text
 .github/
-├── README.md
-├── CODEOWNERS
-├── dependabot.yml
-├── pull_request_template.md
-├── SECURITY.md
-├── FUNDING.yml
-├── ISSUE_TEMPLATE/
-│   ├── README.md
-│   ├── config.yml
-│   ├── bug_report.yml
-│   ├── feature-request.yml
-│   └── security-report.yml
-├── scripts/
-│   ├── README.md
-│   ├── validate-commit-message.sh
-│   └── test-validate-commit-message.sh
-└── workflows/
-    ├── ci.yml
-    ├── security.yml
-    ├── secret-scan.yml
-    ├── dependency-review.yml
-    ├── codeql.yml
-    ├── deploy.yml
-    ├── generate-lockfile.yml
-    ├── publish-package.yml
-    └── sync-official-releases.yml
+└── scripts/
+    ├── README.md
+    ├── check-env-example.py
+    ├── check-links.py
+    ├── check-secrets.py
+    ├── ci-summary.js
+    ├── dependency-report.js
+    ├── validate-json.py
+    └── validate-repository.py
 ```
 
-Adjust this reference to match the actual repository. Do not create placeholder files solely to make the directory tree appear complete.
+This is the expected structure for the scripts documented here. Keep the directory listing synchronized with the actual repository; do not create placeholder files solely to match this list.
 
-## 3. Issue Templates
+## 2. Requirements
 
-**Directory:** `.github/ISSUE_TEMPLATE/`
+- Python 3.10 or later is recommended.
+- Node.js 20 or later is required for the JavaScript reporting utilities.
+- Git is recommended for repository-aware checks.
+- Python validation utilities primarily use the standard library.
+- Node.js utilities may use installed project dependencies where specified.
 
-Issue forms standardize incoming reports and help maintainers collect actionable information.
+No script should install dependencies, deploy the application, modify production data, or rewrite source files unless that behavior is explicitly documented.
 
-### 3.1 Bug Reports
+## 3. Available Scripts
 
-**File:** `ISSUE_TEMPLATE/bug_report.yml`
+| Script | Purpose |
+|—|—|
+| `check-env-example.py` | Check `.env.example` and environment-variable references for common configuration inconsistencies. |
+| `check-links.py` | Detect broken local links and references in supported website and documentation files. |
+| `check-secrets.py` | Scan files for common patterns associated with accidentally exposed credentials. |
+| `ci-summary.js` | Generate a GitHub Actions job summary from available results. |
+| `dependency-report.js` | Generate a dependency inventory and optional audit report. |
+| `validate-json.py` | Validate JSON syntax, encoding, and duplicate object keys. |
+| `validate-repository.py` | Check repository structure, JSON and Python syntax, selected configuration files, and common hygiene issues. |
 
-Use this form to report reproducible defects, including broken pages, API errors, form failures, incorrect behavior, performance problems, and compatibility issues.
+Script behavior depends on the implementation and supplied arguments. A successful check does not prove that the entire application is secure, accessible, or functionally correct.
 
-Reports should include:
+## 4. Running the Validators
 
-- Steps to reproduce the issue.
-- Expected and actual behavior.
-- Affected environment and version.
-- Relevant sanitized logs or screenshots.
-- Workarounds, if available.
+Run commands from the repository root.
 
-Remove passwords, access tokens, personal information, and other confidential details from submitted evidence.
+### Validate JSON files
 
-### 3.2 Feature Requests
+```bash
+python .github/scripts/validate-json.py —recursive —strict \
+  —exclude node_modules \
+  —exclude .git
+```
 
-**File:** `ISSUE_TEMPLATE/feature-request.yml`
+### Validate repository structure and syntax
 
-Use this form to propose new features or improvements.
+```bash
+python .github/scripts/validate-repository.py
+```
 
-Requests should describe the problem, intended users, proposed solution, relevant use cases, and measurable acceptance criteria.
+For stricter checks and the optional secret scan:
 
-### 3.3 Security Reports
+```bash
+python .github/scripts/validate-repository.py \
+  —strict \
+  —scan-secrets
+```
 
-**File:** `ISSUE_TEMPLATE/security-report.yml`
+### Check environment configuration
 
-Security reports require responsible disclosure. Public GitHub issues are not confidential.
+```bash
+python .github/scripts/check-env-example.py
+```
 
-- Do not publish credentials, access tokens, private user records, or sensitive exploit details.
-- Follow the verified private reporting process documented in `SECURITY.md`.
-- Do not request sensitive reproduction details in public comments.
-- Do not promise response times unless the published security policy defines them.
-- Verify that the private reporting method is configured and operational before directing researchers to it.
+### Check local links
 
-A security issue form does not make a report private.
+```bash
+python .github/scripts/check-links.py
+```
 
-### 3.4 Issue Configuration
+### Scan for potential secrets
 
-**File:** `ISSUE_TEMPLATE/config.yml`
+```bash
+python .github/scripts/check-secrets.py
+```
 
-This file controls whether blank issues are enabled and defines links to project resources.
+### Generate a dependency report
 
-Verify that every linked form and document exists. Filenames and URLs must match exactly, including underscores, hyphens, and letter casing where applicable.
+```bash
+node .github/scripts/dependency-report.js
+```
 
-## 4. CODEOWNERS
+### Generate a CI summary
 
-**File:** `.github/CODEOWNERS`
+```bash
+node .github/scripts/ci-summary.js
+```
 
-The intended default reviewer is `@vivekchoubey444-del`.
+Check each script’s `—help` output or source documentation before supplying optional arguments. Commands above assume the corresponding files exist and support the stated invocation.
 
-Specific ownership rules may cover sensitive areas, including authentication, APIs, database migrations, deployment configuration, security policies, and GitHub Actions workflows.
+## 5. Integration with GitHub Actions
 
-Important considerations:
-
-- CODEOWNERS assigns review responsibility; it does not grant repository permissions.
-- The designated account must have appropriate repository access.
-- Code-owner approval must be enabled through branch protection or repository rulesets if required before merging.
-- The matching code owner must be eligible to review the relevant pull request.
-- Later matching patterns can override earlier patterns.
-
-Verify that the CODEOWNERS file is committed to a GitHub-recognized location on the applicable base branch.
-
-## 5. GitHub Actions
-
-**Directory:** `.github/workflows/`
-
-Workflows can automate tasks such as:
-
-- Running tests and source validation.
-- Validating YAML, JSON, and configuration files.
-- Auditing dependencies.
-- Scanning for accidentally committed secrets.
-- Running static security analysis.
-- Publishing CI summaries.
-- Enforcing commit-message conventions.
-- Checking deployment readiness.
-- Generating lockfiles for review.
-- Synchronizing release-candidate data.
-- Publishing npm packages when explicitly configured.
-
-### 5.1 Workflow Security
-
-Apply the principle of least privilege:
-
-1. Grant only the permissions required by each job.
-2. Avoid exposing secrets to untrusted pull-request code.
-3. Review third-party actions and pin them to verified versions or immutable commit SHAs where appropriate.
-4. Keep dependency manifests and lockfiles consistent.
-5. Review failed workflow logs before merging.
-6. Never print credentials or sensitive environment values.
-7. Use reasonable job timeouts and explicit workflow triggers.
-8. Protect privileged workflows from untrusted input.
-9. Use concurrency controls where appropriate.
-10. Review permission changes before merging modifications to workflow files.
-
-A workflow file alone does not prove that checks are passing. Verify execution results in the repository’s Actions tab.
-
-### 5.2 Avoid Duplicate Security Checks
-
-If `security.yml`, `secret-scan.yml`, and `codeql.yml` run overlapping checks, decide whether that duplication is intentional.
-
-Maintain one clearly documented source of truth for required status checks. Remove redundant workflows only after verifying their triggers, permissions, and dependencies.
-
-### 5.3 Deployment Controls
-
-The deployment workflow may trigger Render deployments when the required CI conditions succeed.
-
-Before enabling production deployment:
-
-- Configure the `production` environment and required secrets.
-- Restrict deployment permissions.
-- Verify the selected commit SHA.
-- Review Render’s automatic-deployment configuration.
-- Test the workflow against staging before production.
-- Add a post-deployment health check against the real application endpoint.
-
-A successful deployment request does not independently prove that the public application is healthy.
-
-### 5.4 Release and Package Publishing
-
-The package-publishing workflow is intended for npm publication when the repository is configured as a publishable Node.js package.
-
-Before enabling it, verify that:
-
-- `package.json` contains the intended package name and version.
-- The release tag matches the package version.
-- Tests are configured and passing.
-- The package is not marked private.
-- The publishing credential or trusted-publishing configuration is valid.
-- Production publishing requires the intended approval controls.
-
-Do not enable package publishing merely because a workflow file exists. A website repository may not need an npm publishing workflow.
-
-## 6. Commit Message Validation
-
-**Scripts:**
-
-- `.github/scripts/validate-commit-message.sh`
-- `.github/scripts/test-validate-commit-message.sh`
-
-The validator enforces the commit-message format configured by the project. Supported types, optional scopes, breaking-change markers, and subject-length limits must match the actual script.
-
-Examples, subject to the validator’s supported types:
+Workflows belong in:
 
 ```text
-feat(admissions): improve course search
-fix(api): handle missing application ID
-docs: update deployment guide
-fix(auth): validate authorization headers
+.github/workflows/
 ```
 
-Run syntax checks and the test suite from the repository root:
+A workflow may call these utilities during pull-request checks or pushes to the default branch.
 
-```bash
-bash -n .github/scripts/validate-commit-message.sh
-bash -n .github/scripts/test-validate-commit-message.sh
-bash .github/scripts/test-validate-commit-message.sh
-```
+Recommended validation order:
 
-For detailed test output, use this command if the test script implements the `—verbose` option:
+1. Check out the repository.
+2. Set up supported Python and Node.js versions.
+3. Install dependencies only when required by the selected checks.
+4. Run syntax, JSON, link, and configuration validation.
+5. Run automated tests.
+6. Run dependency and security checks.
+7. Upload useful reports as workflow artifacts when appropriate.
 
-```bash
-bash .github/scripts/test-validate-commit-message.sh —verbose
-```
+Use explicit permissions and grant only the minimum permissions required. Do not expose secrets in logs or pass production credentials to untrusted pull-request code.
 
-Keep tests aligned with the validator’s actual behavior. Do not claim that tests pass until they have been executed successfully.
+## 6. Exit Codes and Reports
 
-The scripts do not enforce themselves. Automatic enforcement requires an appropriate Git hook or GitHub Actions integration. GitHub rulesets and branch protection may also be needed for broader merge requirements.
+Python validation utilities should return:
 
-## 7. Dependabot Configuration
+- `0` — validation passed.
+- `1` — validation errors were detected.
+- `2` — an invocation, configuration, or report-writing failure occurred, where implemented.
 
-**File:** `.github/dependabot.yml`
+JavaScript utilities may use different exit-code conventions. Check each script before relying on its exit status in a workflow.
 
-Dependabot may be configured to open scheduled dependency-update pull requests for supported ecosystems, including npm, GitHub Actions, and Docker.
+JSON reports and GitHub Actions summaries are optional outputs. Store generated reports in a designated output directory, and avoid committing transient reports unless they are intentionally maintained as project artifacts.
 
-The intended policy is:
+## 7. Safety and Security
 
-- Weekly scheduled updates.
-- A reasonable limit on open update pull requests.
-- Separate minor and patch update groups where supported.
-- Consistent dependency-related labels.
-- Human review before merging.
-- No automatic merge or deployment solely because an update was created.
+- Never commit real API keys, database credentials, access tokens, private keys, or production `.env` files.
+- Keep `.env.example` limited to variable names and safe placeholder values.
+- Treat secret-scanner findings as leads for manual investigation; false positives are possible.
+- Rotate credentials immediately if they have been exposed.
+- Do not automatically apply dependency upgrades in production without review and testing.
+- Review third-party workflow actions and pin them to appropriate immutable references where practical.
+- Do not interpret a clean static scan as a security certification.
 
-Validate the configuration against the dependency ecosystems and manifest files actually present in the repository.
+## 8. Maintenance Rules
 
-Dependabot configuration alone does not disable auto-merge configured elsewhere, require approvals, or prevent direct pushes. Enforce those requirements through repository settings, rulesets, and workflow permissions.
+When adding or changing a script:
 
-## 8. Pull Request Template
+1. Use the naming and directory conventions already present in the repository.
+2. Document its purpose, prerequisites, supported arguments, and exit codes.
+3. Prefer read-only checks and clear error messages.
+4. Avoid hard-coded absolute paths, credentials, and machine-specific settings.
+5. Handle missing files and optional project components gracefully.
+6. Keep output suitable for both local use and automated CI logs.
+7. Add tests for important validation logic.
+8. Update this README when script names or behavior change.
+9. Preserve existing website functionality and project structure.
+10. Do not claim that a check has passed unless it has actually run successfully.
 
-**File:** `.github/pull_request_template.md`
+## 9. Troubleshooting
 
-The pull request template should ask contributors to document:
+**Python cannot find a file:** Run commands from the repository root and confirm the exact path and filename.
 
-- Summary and related issues.
-- Change type and affected areas.
-- Implementation details.
-- Testing and validation results.
-- Security and privacy considerations.
-- Database and data-integrity impacts.
-- Configuration and dependency changes.
-- Accessibility and user-interface impacts.
-- Deployment and compatibility requirements.
-- Documentation changes.
-- Reviewer guidance and final checks.
+**A validator reports a missing file:** Confirm whether the file is required for this project configuration before creating it. Some checks intentionally report optional files.
 
-Contributors must report test results accurately and identify skipped or failing checks. The template documents expectations but does not enforce them.
+**JSON validation fails:** Inspect the reported line and column. Standard JSON does not support comments or trailing commas.
 
-## 9. Security and Privacy
+**A link check fails:** Confirm the target exists, the path is relative to the correct file or configured base, and any fragment identifier matches the target.
 
-**Policy:** `.github/SECURITY.md`
+**A security scan reports a possible secret:** Inspect the matching line without copying the credential into logs or issue comments. Revoke exposed credentials when necessary.
 
-All repository contributions should follow these principles:
+**A workflow fails:** Review its logs, required runtime versions, repository permissions, and expected paths.
 
-- Never commit real credentials or production secrets.
-- Store sensitive configuration in approved environment variables or a secrets manager.
-- Review authentication, authorization, file uploads, and data-access changes carefully.
-- Keep dependency manifests and lockfiles synchronized.
-- Restrict CI permissions and review third-party dependencies.
-- Remove sensitive data from logs, screenshots, and test fixtures.
-- Use private disclosure channels for confidential vulnerabilities.
-- Review changes to security workflows and repository configuration carefully.
-- Rotate credentials immediately if they are accidentally exposed.
-- Avoid including production data in test fixtures or examples.
+## 10. Scope
 
-Security scanners provide additional safeguards but cannot guarantee that software is secure.
+These utilities support repository quality and maintenance. They do not replace application tests, accessibility testing, dependency review, deployment verification, database backup procedures, or a professional security assessment.
 
-## 10. Funding Configuration
-
-**File:** `.github/FUNDING.yml`
-
-Funding links should only be enabled for accounts and pages verified to be controlled by MedOrbits.
-
-- Do not commit placeholder usernames as active funding entries.
-- Verify custom URLs before enabling them.
-- Remove outdated or unauthorized funding links.
-- Confirm that the destination is accessible and represents the intended project.
-
-The presence of `FUNDING.yml` does not prove that a funding account exists or that a donation page is operational.
-
-## 11. Contribution Standards
-
-Contributors should review the repository’s `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` before submitting changes.
-
-Expected practices include:
-
-1. Search for existing issues before opening a new one.
-2. Use the appropriate issue form.
-3. Keep pull requests focused and explain their purpose.
-4. Add or update tests for relevant behavior.
-5. Run applicable validation scripts.
-6. Avoid unrelated file changes and generated artifacts.
-7. Document breaking changes and migration requirements.
-8. Wait for required reviews and CI checks before merging.
-9. Resolve merge conflicts carefully and preserve unrelated changes.
-10. Review the final diff before committing.
-
-Never include passwords, tokens, private documents, or sensitive user records in public issues or pull requests.
-
-## 12. Validation Checklist
-
-Before merging changes to `.github/`, verify the following:
-
-- [ ] YAML files parse successfully.
-- [ ] Issue forms use supported GitHub field types.
-- [ ] Referenced templates and documents exist.
-- [ ] Contact links use the correct repository and branch.
-- [ ] CODEOWNERS is in a GitHub-recognized location.
-- [ ] The designated code owner has appropriate access.
-- [ ] Required code-owner reviews are configured if needed.
-- [ ] Workflow permissions follow least privilege.
-- [ ] Third-party actions have been reviewed.
-- [ ] Dependabot entries match actual dependency manifests.
-- [ ] Commit-message tests match the validator implementation.
-- [ ] The security policy identifies a working private reporting method.
-- [ ] No secrets or confidential data have been committed.
-- [ ] CI checks have been executed and reviewed.
-- [ ] Branch protection or rulesets enforce the intended merge policy.
-- [ ] Deployment and publishing credentials are stored securely.
-- [ ] Documentation accurately describes active controls.
-
-## 13. Maintenance
-
-Review the `.github/` directory whenever the repository structure, default branch, release process, security policy, or contribution workflow changes.
-
-Update stale links, remove obsolete configuration only after checking its dependencies, and verify that documentation accurately describes active controls.
-
-Before deleting or replacing files, inspect the current Git status and diff. Preserve unrelated changes and newly created files.
-
-Do not claim a workflow, policy, or security control is operational until its configuration and behavior have been verified.
-
-## 14. Official References
-
-- [GitHub issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
-- [GitHub CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)
-- [GitHub Actions](https://docs.github.com/en/actions)
-- [GitHub Actions security hardening](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions)
-- [GitHub Dependabot configuration](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file)
-- [GitHub security advisories](https://docs.github.com/en/code-security/security-advisories)
-
-—
-
-## Maintenance Note
-
-This document describes the intended configuration and recommended practices for MedOrbits `2.0.0`.
-
-It does **not** confirm that every listed file exists, that permissions are correct, that workflows pass, or that repository protections are enabled. Verify the actual files, GitHub settings, permissions, and workflow results before treating any control as operational.
+Maintain this directory as a collection of small, predictable tools that help keep MedOrbits reliable without unexpectedly changing the application.

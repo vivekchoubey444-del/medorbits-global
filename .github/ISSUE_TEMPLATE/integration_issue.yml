@@ -1,0 +1,56 @@
+name: Integration Issue
+description: Report problems with external services or platform integrations.
+title: "[INTEGRATION]: "
+labels:
+  - integration
+  - needs-triage
+
+body:
+  - type: dropdown
+    id: integration
+    attributes:
+      label: Integration
+      options:
+        - Payment Gateway
+        - Email Provider
+        - SMS Provider
+        - WhatsApp Provider
+        - AI Provider
+        - Maps
+        - Authentication Provider
+        - Analytics
+        - Cloud Storage
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local
+        - Development
+        - Staging
+        - Production
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Integration problem
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized error message
+      description: Never include API keys, tokens, passwords, or payment details.
+      render: text

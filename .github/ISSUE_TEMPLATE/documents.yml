@@ -1,0 +1,51 @@
+name: Documentation Improvement
+description: Report missing, incorrect, or unclear documentation.
+title: "[DOCS]: "
+labels:
+  - documentation
+  - needs-triage
+
+body:
+  - type: input
+    id: document
+    attributes:
+      label: Document or file path
+      placeholder: "docs/architecture/README.md"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Documentation issue
+      options:
+        - Missing documentation
+        - Incorrect information
+        - Outdated instructions
+        - Broken links
+        - Typographical error
+        - Unclear explanation
+        - Missing examples
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked whether this issue already exists.
+          required: true
