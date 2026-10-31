@@ -1,0 +1,85 @@
+
+# ==============================================================================
+# MedOrbits / GHAR -- Development Services
+# File: /.devcontainer/docker-compose.yml
+# ==============================================================================
+
+services:
+
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+
+    container_name: medorbits-development
+
+    init: true
+    command: sleep infinity
+
+    volumes:
+      - ..:/workspace:cached
+      - node_modules:/workspace/node_modules
+      - python_venv:/workspace/.venv
+
+    working_dir: /workspace
+
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: medorbits_dev
+      DATABASE_USER: medorbits
+      DATABASE_PASSWORD: ${DEV_DATABASE_PASSWORD:-development_only_change_me}
+
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+      - "5173:5173"
+      - "9229:9229"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - development
+
+  postgres:
+    image: postgres:16-bookworm
+
+    container_name: medorbits-postgres-dev
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: medorbits_dev
+      POSTGRES_USER: medorbits
+      POSTGRES_PASSWORD: ${DEV_DATABASE_PASSWORD:-development_only_change_me}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "127.0.0.1:5432:5432"
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U medorbits -d medorbits_dev
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+    networks:
+      - development
+
+volumes:
+  node_modules:
+  python_venv:
+  postgres_data:
+
+networks:
+  development:
+    driver: bridge
