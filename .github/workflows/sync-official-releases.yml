@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
@@ -43,7 +43,7 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload validated release data
         if: steps.changes.outputs.changed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: medorbits-official-release-candidates-${{ github.run_id }}-${{ github.run_attempt }}
           path: assets/data/news.json
@@ -177,7 +177,7 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -200,7 +200,7 @@ jobs:
           fi
 
       - name: Download validated release data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: medorbits-official-release-candidates-${{ github.run_id }}-${{ github.run_attempt }}
           path: generated
