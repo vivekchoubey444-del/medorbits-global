@@ -7,7 +7,8 @@
   "type": "module",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=10.8.2"
   },
   "packageManager": "npm@10.8.2",
   "scripts": {
@@ -31,6 +32,7 @@
     "check:json:api": "node scripts/check-json.mjs --root ./api",
     "check:json:all": "node scripts/check-json.mjs --include-hidden",
     "check:json:large": "node scripts/check-json.mjs --max-size 25",
+
     "check:data": "node tools/compatible-share.js",
 
     "check:python": "python -m pytest",
@@ -49,22 +51,22 @@
     "lint:python": "python -m ruff check .",
     "lint:python:fix": "python -m ruff check --fix .",
     "lint:python:diff": "python -m ruff check --diff .",
-
     "format:python": "python -m ruff format .",
     "format:python:check": "python -m ruff format --check .",
     "format:check": "npm run format:python:check",
-
     "typecheck:python": "python -m mypy .",
 
     "check:environment": "node --version && npm --version && python --version",
     "check:dependencies": "npm ls --depth=0",
     "check:dependencies:python": "python -m pip check",
-    "check:security:python": "python -m pip_audit",
-    "check:security": "npm audit --omit=dev && npm run check:security:python",
-    "ci": "npm run check:strict && npm run check:dependencies && npm run check:dependencies:python",
-    "ci:security": "npm audit && npm run check:security:python",
 
-    "check:quality": "python -m ruff check . && python -m ruff format --check ."
+    "check:security": "npm audit --omit=dev && npm run check:security:python",
+    "check:security:python": "python -m pip_audit",
+
+    "check:quality": "python -m ruff check . && python -m ruff format --check .",
+
+    "ci": "npm run check:strict && npm run check:dependencies && npm run check:dependencies:python",
+    "ci:security": "npm audit && npm run check:security:python"
   },
   "dependencies": {
     "compression": "^1.8.1",

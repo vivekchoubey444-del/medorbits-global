@@ -1,0 +1,198 @@
+
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "MedOrbits dependency automation and software supply-chain maintenance",
+
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":enablePreCommit"
+  ],
+
+  "timezone": "Asia/Kolkata",
+
+  "schedule": [
+    "0 3-5 * * 1"
+  ],
+
+  "updateNotScheduled": false,
+
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 8,
+  "branchConcurrentLimit": 10,
+
+  "rangeStrategy": "bump",
+  "rebaseWhen": "conflicted",
+
+  "labels": [
+    "dependencies",
+    "automated"
+  ],
+
+  "assigneesFromCodeOwners": true,
+
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "MedOrbits Dependency Dashboard",
+
+  "automerge": false,
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security",
+      "dependencies"
+    ],
+    "automerge": false,
+    "vulnerabilityFixStrategy": "lowest",
+    "prConcurrentLimit": 5,
+    "commitMessageSuffix": "[SECURITY]"
+  },
+
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 5am on monday"
+    ],
+    "recreateWhen": "always",
+    "labels": [
+      "dependencies",
+      "lockfile"
+    ],
+    "commitMessageAction": "refresh",
+    "commitMessageTopic": "dependency lock files"
+  },
+
+  "packageRules": [
+    {
+      "description": "Group root npm production dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "package.json"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "pinDigest",
+        "digest"
+      ],
+      "groupName": "MedOrbits production dependencies",
+      "addLabels": [
+        "javascript",
+        "production"
+      ]
+    },
+    {
+      "description": "Group root npm development dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "package.json"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "pinDigest",
+        "digest"
+      ],
+      "groupName": "MedOrbits development dependencies",
+      "addLabels": [
+        "javascript",
+        "development"
+      ]
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pinDigest"
+      ],
+      "groupName": "GitHub Actions",
+      "addLabels": [
+        "github-actions",
+        "ci"
+      ]
+    },
+    {
+      "description": "Group Python dependency updates",
+      "matchManagers": [
+        "pip_requirements",
+        "pep621",
+        "poetry",
+        "pipenv"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits Python dependencies",
+      "addLabels": [
+        "python",
+        "dependencies"
+      ]
+    },
+    {
+      "description": "Group Docker image updates",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pinDigest"
+      ],
+      "groupName": "MedOrbits Docker dependencies",
+      "addLabels": [
+        "docker",
+        "infrastructure"
+      ]
+    },
+    {
+      "description": "Keep major upgrades separate",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": null,
+      "addLabels": [
+        "breaking-change",
+        "review-required"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Never automatically merge lockfile maintenance",
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "dependencies",
+        "lockfile",
+        "review-required"
+      ]
+    }
+  ]
+}
