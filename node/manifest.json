@@ -1,0 +1,150 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifestVersion": "2.0.0",
+  "name": "MedOrbits Node Infrastructure",
+  "shortName": "MedOrbits Node",
+  "description": "Centralized Node.js runtime, diagnostics, validation, dependency management and infrastructure tooling for MedOrbits.",
+  "id": "medorbits-node-infrastructure",
+  "version": "2.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "copyright": "Copyright (c) 2026 MedOrbits. All rights reserved.",
+
+  "project": {
+    "name": "MedOrbits",
+    "type": "education-and-career-platform",
+    "environment": [
+      "development",
+      "testing",
+      "staging",
+      "production"
+    ],
+    "architecture": "modular",
+    "repositoryRoot": "..",
+    "moduleRoot": "."
+  },
+
+  "runtime": {
+    "platform": "node",
+    "minimumVersion": "20.0.0",
+    "recommendedVersion": "22",
+    "moduleSystem": "commonjs",
+    "packageManager": "npm",
+    "minimumNpmVersion": "10.0.0",
+    "strictEngines": true
+  },
+
+  "entrypoints": {
+    "controller": "node.js",
+    "documentation": "README.md",
+    "package": "package.json",
+    "configuration": "config/node.config.js",
+    "healthCheck": "scripts/health-check.js"
+  },
+
+  "directories": {
+    "config": "config/",
+    "scripts": "scripts/",
+    "runtime": "runtime/",
+    "middleware": "middleware/",
+    "utils": "utils/",
+    "tests": "tests/",
+    "reports": "reports/"
+  },
+
+  "capabilities": {
+    "runtimeValidation": true,
+    "environmentValidation": true,
+    "packageValidation": true,
+    "lockfileValidation": true,
+    "dependencyAudit": true,
+    "securityDiagnostics": true,
+    "healthMonitoring": true,
+    "repositoryInspection": true,
+    "errorReporting": true,
+    "automatedDeployment": false,
+    "automaticDependencyUpgrade": false,
+    "automaticDatabaseMigration": false
+  },
+
+  "validation": {
+    "nodeVersion": true,
+    "npmVersion": true,
+    "packageJson": true,
+    "packageLock": true,
+    "environmentFiles": true,
+    "gitRepository": true,
+    "requiredPaths": true,
+    "securityBaseline": true
+  },
+
+  "security": {
+    "secretsInSource": false,
+    "environmentBasedConfiguration": true,
+    "sensitiveLogs": false,
+    "automaticDestructiveOperations": false,
+    "backupBeforeModification": true,
+    "dependencyAuditRequired": true,
+    "productionDeploymentApproval": true
+  },
+
+  "files": {
+    "required": [
+      "node.js",
+      "package.json",
+      ".gitignore",
+      "README.md"
+    ],
+    "optional": [
+      ".nvmrc",
+      ".npmrc",
+      "manifest.json",
+      "package-lock.json"
+    ]
+  },
+
+  "reports": {
+    "format": [
+      "json",
+      "markdown"
+    ],
+    "directory": "reports/",
+    "healthReport": "node-health-report.json",
+    "diagnosticReport": "node-health-report.md",
+    "retainSensitiveData": false
+  },
+
+  "commands": {
+    "diagnostics": "node node.js",
+    "validation": "npm run validate",
+    "testing": "npm test",
+    "health": "npm run health",
+    "audit": "npm audit"
+  },
+
+  "compatibility": {
+    "operatingSystems": [
+      "linux",
+      "windows",
+      "macos"
+    ],
+    "ci": [
+      "github-actions"
+    ],
+    "hosting": [
+      "render",
+      "self-hosted"
+    ]
+  },
+
+  "maintenance": {
+    "dependencyManagement": "dependabot",
+    "updateFrequency": "weekly",
+    "majorUpdatesRequireReview": true,
+    "lockfileRequired": true,
+    "ciValidationRequired": true
+  },
+
+  "status": "active"
+}
