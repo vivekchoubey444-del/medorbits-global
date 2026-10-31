@@ -1,4 +1,25 @@
 
+# ==============================================================================
+# MedOrbits -- Continuous Integration & Quality Assurance
+# File: /.github/workflows/ci.yml
+# Version: 2.1.0
+#
+# Purpose:
+# - Validate repository configuration.
+# - Install reproducible dependencies.
+# - Check JavaScript syntax.
+# - Validate JSON and YAML files.
+# - Run lint, tests and production builds.
+# - Verify pull request readiness.
+#
+# Security:
+# - Read-only repository permissions.
+# - No automatic deployments.
+# - No automatic dependency upgrades.
+# - No secret exposure.
+# - No destructive operations.
+# ==============================================================================
+
 name: MedOrbits CI
 
 on:
@@ -7,11 +28,13 @@ on:
       - main
       - master
       - develop
+
   pull_request:
     branches:
       - main
       - master
       - develop
+
   workflow_dispatch:
 
 permissions:
@@ -22,16 +45,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  # ============================================================================
+  # 1. QUALITY ASSURANCE
+  # ============================================================================
+
   quality:
     name: Code Quality and Data Validation
+
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+
+    timeout-minutes: 25
 
     steps:
+
+      # ------------------------------------------------------------------------
+      # CHECKOUT
+      # ------------------------------------------------------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      # ------------------------------------------------------------------------
+      # NODE.JS
+      # ------------------------------------------------------------------------
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -39,6 +78,28 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: package-lock.json
+
+      - name: Verify runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --version
+          npm --version
+
+          node <<'NODE'
+          const major = Number(process.versions.node.split(".")[0]);
+
+          if (major < 20) {
+            throw new Error("Node.js >= 20 is required.");
+          }
+
+          console.log("Node.js runtime verified.");
+          NODE
+
+      # ------------------------------------------------------------------------
+      # PROJECT CONFIGURATION
+      # ------------------------------------------------------------------------
 
       - name: Verify project configuration
         shell: bash
@@ -58,46 +119,71 @@ jobs:
           node <<'NODE'
           const fs = require("node:fs");
 
-          let pkg;
+          const pkg = JSON.parse(
+            fs.readFileSync("package.json", "utf8")
+          );
 
-          try {
-            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-          } catch (error) {
-            console.error(`::error::Invalid package.json: ${error.message}`);
-            process.exit(1);
+          const lock = JSON.parse(
+            fs.readFileSync("package-lock.json", "utf8")
+          );
+
+          if (lock.name && pkg.name && lock.name !== pkg.name) {
+            throw new Error("Package and lockfile names do not match.");
+          }
+
+          if (lock.version && pkg.version && lock.version !== pkg.version) {
+            throw new Error("Package and lockfile versions do not match.");
           }
 
           if (!pkg.engines?.node) {
-            console.warn("::warning::No Node.js engine requirement is declared.");
+            console.warn(
+              "::warning::Node.js engine requirement is missing."
+            );
           }
 
-          console.log(`Project: ${pkg.name || "Unnamed project"}`);
-          console.log(`Node.js: ${process.version}`);
-          console.log(`npm: ${require("node:child_process")
-            .execSync("npm --version", { encoding: "utf8" })
-            .trim()}`);
+          console.log("Project:", pkg.name || "Unnamed");
+          console.log("Version:", pkg.version || "Unspecified");
+          console.log("Node.js:", process.version);
           NODE
+
+      # ------------------------------------------------------------------------
+      # DEPENDENCIES
+      # ------------------------------------------------------------------------
 
       - name: Install dependencies
         run: npm ci
         env:
           CI: "true"
 
+      - name: Verify dependency tree
+        run: npm ls --depth=0
+
+      # ------------------------------------------------------------------------
+      # JAVASCRIPT SYNTAX
+      # ------------------------------------------------------------------------
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
+
           count=0
 
           while IFS= read -r -d '' file; do
             echo "Checking: $file"
+
             node --check "$file"
+
             count=$((count + 1))
           done < <(
             git ls-files -z -- '*.js' '*.mjs' '*.cjs'
           )
 
-          echo "Checked $count tracked JavaScript file(s)."
+          echo "Validated $count JavaScript files."
+
+      # ------------------------------------------------------------------------
+      # JSON VALIDATION
+      # ------------------------------------------------------------------------
 
       - name: Validate JSON files
         shell: bash
@@ -110,7 +196,7 @@ jobs:
 
           const files = execFileSync(
             "git",
-            ["ls-files", "-z", "--", "*.json"],
+            ["ls-files", "-z", "--", "*.json", "*.webmanifest"],
             { encoding: "utf8" }
           ).split("\0").filter(Boolean);
 
@@ -126,13 +212,16 @@ jobs:
             }
           }
 
-          console.log(`Checked ${files.length} tracked JSON file(s).`);
+          console.log(`Checked ${files.length} JSON files.`);
 
-          if (failures) {
-            console.error(`${failures} JSON file(s) failed validation.`);
+          if (failures > 0) {
             process.exitCode = 1;
           }
           NODE
+
+      # ------------------------------------------------------------------------
+      # YAML VALIDATION
+      # ------------------------------------------------------------------------
 
       - name: Validate YAML files
         shell: bash
@@ -149,7 +238,7 @@ jobs:
             YAML = require("yaml");
           } catch {
             console.error(
-              "::error::YAML validation requires the 'yaml' package. Add it to devDependencies."
+              "::error::Install yaml as a development dependency."
             );
             process.exit(1);
           }
@@ -165,29 +254,34 @@ jobs:
           for (const file of files) {
             try {
               const source = fs.readFileSync(file, "utf8");
+
               const document = YAML.parseDocument(source, {
                 uniqueKeys: true,
                 strict: true
               });
 
-              if (document.errors.length) {
+              if (document.errors.length > 0) {
                 throw document.errors[0];
               }
 
               console.log(`PASS ${file}`);
+
             } catch (error) {
               failures++;
               console.error(`FAIL ${file}: ${error.message}`);
             }
           }
 
-          console.log(`Checked ${files.length} tracked YAML file(s).`);
+          console.log(`Checked ${files.length} YAML files.`);
 
-          if (failures) {
-            console.error(`${failures} YAML file(s) failed validation.`);
+          if (failures > 0) {
             process.exitCode = 1;
           }
           NODE
+
+      # ------------------------------------------------------------------------
+      # LINT
+      # ------------------------------------------------------------------------
 
       - name: Run lint checks
         shell: bash
@@ -197,8 +291,12 @@ jobs:
           if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
             npm run lint
           else
-            echo "::notice::No lint script configured; lint checks skipped."
+            echo "::notice::Lint script not configured."
           fi
+
+      # ------------------------------------------------------------------------
+      # TESTS
+      # ------------------------------------------------------------------------
 
       - name: Run automated tests
         shell: bash
@@ -208,8 +306,12 @@ jobs:
           if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
             npm test
           else
-            echo "::warning::No test script configured."
+            echo "::warning::Test script not configured."
           fi
+
+      # ------------------------------------------------------------------------
+      # BUILD
+      # ------------------------------------------------------------------------
 
       - name: Run production build
         shell: bash
@@ -219,23 +321,91 @@ jobs:
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
             npm run build
           else
-            echo "::notice::No build script configured; build skipped."
+            echo "::notice::Build script not configured."
           fi
+
+      # ------------------------------------------------------------------------
+      # FINAL VERIFICATION
+      # ------------------------------------------------------------------------
+
+      - name: Final repository verification
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git diff --check
+
+          echo "MedOrbits CI validation completed."
+
+  # ============================================================================
+  # 2. PULL REQUEST READINESS
+  # ============================================================================
 
   pull-request-check:
     name: Pull Request Readiness
+
     runs-on: ubuntu-latest
+
     timeout-minutes: 5
+
     needs:
       - quality
+
     if: github.event_name == 'pull_request'
+
     permissions:
       contents: read
 
     steps:
-      - name: Confirm quality checks completed
+
+      - name: Confirm quality checks
         shell: bash
         run: |
           set -euo pipefail
-          echo "MedOrbits CI quality checks completed successfully."
-          echo "The pull request is ready for the next review stage."
+
+          echo "===================================="
+          echo "MedOrbits Pull Request Validation"
+          echo "===================================="
+
+          echo "Quality checks: PASSED"
+          echo "Repository validation: PASSED"
+          echo "Dependency installation: PASSED"
+
+          echo "Ready for human review."
+
+  # ============================================================================
+  # 3. FINAL WORKFLOW SUMMARY
+  # ============================================================================
+
+  ci-summary:
+    name: CI Execution Summary
+
+    runs-on: ubuntu-latest
+
+    needs:
+      - quality
+
+    if: always()
+
+    permissions:
+      contents: read
+
+    steps:
+
+      - name: Report CI result
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+        shell: bash
+        run: |
+          echo "===================================="
+          echo "MedOrbits CI Summary"
+          echo "===================================="
+
+          echo "Quality: $QUALITY_RESULT"
+
+          if [ "$QUALITY_RESULT" != "success" ]; then
+            echo "::error::MedOrbits CI failed."
+            exit 1
+          fi
+
+          echo "STATUS: SUCCESS"
