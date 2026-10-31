@@ -1,4 +1,18 @@
 
+# ============================================================
+# MEDORBITS -- CODEQL SECURITY ANALYSIS
+# File: /.github/workflows/codeql.yml
+#
+# Purpose:
+#   - Static Application Security Testing (SAST)
+#   - JavaScript and TypeScript vulnerability detection
+#   - Repository and JSON validation
+#   - Dependency installation and test execution
+#   - GitHub Security Dashboard integration
+#
+# Runtime: Node.js 26
+# ============================================================
+
 name: MedOrbits CodeQL Security Analysis
 
 on:
@@ -7,13 +21,16 @@ on:
       - main
       - master
       - develop
+
   pull_request:
     branches:
       - main
       - master
       - develop
+
   schedule:
     - cron: "23 3 * * 1"
+
   workflow_dispatch:
 
 permissions:
@@ -24,14 +41,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  # ==========================================================
+  # 1. REPOSITORY VALIDATION
+  # ==========================================================
+
   validate:
     name: Repository and Data Validation
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     permissions:
       contents: read
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -40,7 +64,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "26"
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -65,26 +89,36 @@ jobs:
           let pkg;
 
           try {
-            pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg = JSON.parse(
+              fs.readFileSync("package.json", "utf8")
+            );
           } catch (error) {
-            console.error(`::error::Invalid package.json: ${error.message}`);
+            console.error(
+              `::error::Invalid package.json: ${error.message}`
+            );
             process.exit(1);
           }
 
-          console.log(`Project: ${pkg.name || "Unnamed project"}`);
+          console.log(`Project: ${pkg.name || "MedOrbits"}`);
+          console.log(`Version: ${pkg.version || "Not specified"}`);
           console.log(`Node.js: ${process.version}`);
 
           if (pkg.engines?.node) {
-            console.log(`Required Node.js: ${pkg.engines.node}`);
-          } else {
-            console.warn("::warning::No Node.js engine requirement is declared.");
+            console.log(
+              `Required Node.js: ${pkg.engines.node}`
+            );
           }
           NODE
+
+      # ------------------------------------------------------
+      # JAVASCRIPT SYNTAX
+      # ------------------------------------------------------
 
       - name: Validate tracked JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
+
           count=0
 
           while IFS= read -r -d '' file; do
@@ -96,6 +130,10 @@ jobs:
           )
 
           echo "Checked $count JavaScript file(s)."
+
+      # ------------------------------------------------------
+      # JSON VALIDATION
+      # ------------------------------------------------------
 
       - name: Validate tracked JSON files
         shell: bash
@@ -120,38 +158,60 @@ jobs:
               console.log(`PASS ${file}`);
             } catch (error) {
               failures++;
-              console.error(`FAIL ${file}: ${error.message}`);
+              console.error(
+                `FAIL ${file}: ${error.message}`
+              );
             }
           }
 
-          console.log(`Checked ${files.length} JSON file(s).`);
+          console.log(
+            `Checked ${files.length} JSON file(s).`
+          );
 
           if (failures > 0) {
-            console.error(`${failures} JSON file(s) failed validation.`);
             process.exitCode = 1;
           }
           NODE
+
+      # ------------------------------------------------------
+      # DEPENDENCY INSTALLATION
+      # ------------------------------------------------------
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
         env:
           CI: "true"
 
+      # ------------------------------------------------------
+      # AUTOMATED TESTING
+      # ------------------------------------------------------
+
       - name: Run automated tests when configured
         shell: bash
         run: |
           set -euo pipefail
 
-          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+          if node -e "
+            process.exit(
+              require('./package.json').scripts?.test ? 0 : 1
+            )
+          "; then
             npm test
           else
-            echo "::notice::No test script is configured; tests skipped."
+            echo "::notice::No test script configured."
           fi
+
+  # ==========================================================
+  # 2. CODEQL STATIC SECURITY ANALYSIS
+  # ==========================================================
 
   analyze:
     name: CodeQL JavaScript and TypeScript Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    needs:
+      - validate
 
     permissions:
       actions: read
@@ -159,10 +219,15 @@ jobs:
       security-events: write
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      # ------------------------------------------------------
+      # INITIALIZE CODEQL
+      # ------------------------------------------------------
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -170,7 +235,25 @@ jobs:
           languages: javascript-typescript
           queries: security-extended
 
+      # ------------------------------------------------------
+      # ANALYZE SOURCE CODE
+      # ------------------------------------------------------
+
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
+
+      # ------------------------------------------------------
+      # COMPLETION
+      # ------------------------------------------------------
+
+      - name: Security analysis summary
+        if: success()
+        run: |
+          echo "MedOrbits CodeQL analysis completed."
+          echo "Review findings in GitHub Security."
+
+# ============================================================
+# END OF MEDORBITS CODEQL WORKFLOW
+# ============================================================

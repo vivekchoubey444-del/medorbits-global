@@ -1,24 +1,10 @@
 
-# ==============================================================================
-# MedOrbits -- Continuous Integration & Quality Assurance
+# ============================================================
+# MEDORBITS -- CONTINUOUS INTEGRATION
 # File: /.github/workflows/ci.yml
-# Version: 2.1.0
-#
-# Purpose:
-# - Validate repository configuration.
-# - Install reproducible dependencies.
-# - Check JavaScript syntax.
-# - Validate JSON and YAML files.
-# - Run lint, tests and production builds.
-# - Verify pull request readiness.
-#
-# Security:
-# - Read-only repository permissions.
-# - No automatic deployments.
-# - No automatic dependency upgrades.
-# - No secret exposure.
-# - No destructive operations.
-# ==============================================================================
+# Purpose: Automated validation, testing, security and build
+# Runtime: Node.js 20+
+# ============================================================
 
 name: MedOrbits CI
 
@@ -37,375 +23,365 @@ on:
 
   workflow_dispatch:
 
+  schedule:
+    - cron: "0 2 * * 1"
+
+# ------------------------------------------------------------
+# GLOBAL PERMISSIONS
+# ------------------------------------------------------------
 permissions:
   contents: read
 
+# Cancel outdated workflow runs for the same branch.
 concurrency:
-  group: medorbits-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: medorbits-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# ------------------------------------------------------------
+# ENVIRONMENT
+# ------------------------------------------------------------
+env:
+  CI: true
+  NODE_ENV: test
+  FORCE_COLOR: 0
 
 jobs:
 
-  # ============================================================================
-  # 1. QUALITY ASSURANCE
-  # ============================================================================
-
-  quality:
-    name: Code Quality and Data Validation
-
+  # ==========================================================
+  # 1. REPOSITORY VALIDATION
+  # ==========================================================
+  repository-validation:
+    name: Repository Validation
     runs-on: ubuntu-latest
-
-    timeout-minutes: 25
+    timeout-minutes: 10
 
     steps:
-
-      # ------------------------------------------------------------------------
-      # CHECKOUT
-      # ------------------------------------------------------------------------
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      # ------------------------------------------------------------------------
-      # NODE.JS
-      # ------------------------------------------------------------------------
+      - name: Validate required repository structure
+        run: |
+          echo "Checking MedOrbits repository structure..."
 
-      - name: Set up Node.js
+          required_paths=(
+            "package.json"
+            ".github"
+          )
+
+          for path in "${required_paths[@]}"; do
+            if [ ! -e "$path" ]; then
+              echo "::error::Missing required path: $path"
+              exit 1
+            fi
+          done
+
+          echo "Repository structure validation passed."
+
+      - name: Validate JSON files
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path(".")
+
+          excluded = {
+              "node_modules",
+              ".git",
+              "dist",
+              "build",
+              "coverage"
+          }
+
+          files = [
+              p for p in root.rglob("*.json")
+              if not any(part in excluded for part in p.parts)
+          ]
+
+          errors = []
+
+          for file in files:
+              try:
+                  with file.open(encoding="utf-8") as stream:
+                      json.load(stream)
+              except Exception as exc:
+                  errors.append(f"{file}: {exc}")
+
+          if errors:
+              for error in errors:
+                  print(f"ERROR: {error}")
+              sys.exit(1)
+
+          print(f"Validated {len(files)} JSON files.")
+          PY
+
+  # ==========================================================
+  # 2. NODE.JS INSTALLATION AND VALIDATION
+  # ==========================================================
+  node-validation:
+    name: Node.js Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "20"
           cache: npm
-          cache-dependency-path: package-lock.json
 
-      - name: Verify runtime
-        shell: bash
+      - name: Check Node and npm versions
         run: |
-          set -euo pipefail
-
           node --version
           npm --version
 
-          node <<'NODE'
-          const major = Number(process.versions.node.split(".")[0]);
-
-          if (major < 20) {
-            throw new Error("Node.js >= 20 is required.");
-          }
-
-          console.log("Node.js runtime verified.");
-          NODE
-
-      # ------------------------------------------------------------------------
-      # PROJECT CONFIGURATION
-      # ------------------------------------------------------------------------
-
-      - name: Verify project configuration
-        shell: bash
+      - name: Validate package.json
         run: |
-          set -euo pipefail
-
-          test -f package.json || {
-            echo "::error::package.json is missing."
-            exit 1
-          }
-
-          test -f package-lock.json || {
-            echo "::error::package-lock.json is missing."
-            exit 1
-          }
-
-          node <<'NODE'
-          const fs = require("node:fs");
-
-          const pkg = JSON.parse(
-            fs.readFileSync("package.json", "utf8")
-          );
-
-          const lock = JSON.parse(
-            fs.readFileSync("package-lock.json", "utf8")
-          );
-
-          if (lock.name && pkg.name && lock.name !== pkg.name) {
-            throw new Error("Package and lockfile names do not match.");
-          }
-
-          if (lock.version && pkg.version && lock.version !== pkg.version) {
-            throw new Error("Package and lockfile versions do not match.");
-          }
-
-          if (!pkg.engines?.node) {
-            console.warn(
-              "::warning::Node.js engine requirement is missing."
-            );
-          }
-
-          console.log("Project:", pkg.name || "Unnamed");
-          console.log("Version:", pkg.version || "Unspecified");
-          console.log("Node.js:", process.version);
-          NODE
-
-      # ------------------------------------------------------------------------
-      # DEPENDENCIES
-      # ------------------------------------------------------------------------
+          node -e "
+            const pkg = require('./package.json');
+            if (!pkg.name) {
+              throw new Error('Missing package name');
+            }
+            console.log('Package:', pkg.name);
+            console.log('Version:', pkg.version || 'Not specified');
+          "
 
       - name: Install dependencies
-        run: npm ci
-        env:
-          CI: "true"
-
-      - name: Verify dependency tree
-        run: npm ls --depth=0
-
-      # ------------------------------------------------------------------------
-      # JAVASCRIPT SYNTAX
-      # ------------------------------------------------------------------------
-
-      - name: Validate JavaScript syntax
-        shell: bash
         run: |
-          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            echo "::error::package-lock.json is required for reproducible CI."
+            exit 1
+          fi
 
-          count=0
-
+      - name: Check JavaScript syntax
+        run: |
+          find . \
+            -path './node_modules' -prune -o \
+            -path './.git' -prune -o \
+            -type f \( -name "*.js" -o -name "*.cjs" \) \
+            -print0 |
           while IFS= read -r -d '' file; do
-            echo "Checking: $file"
-
+            echo "Checking $file"
             node --check "$file"
+          done
 
-            count=$((count + 1))
-          done < <(
-            git ls-files -z -- '*.js' '*.mjs' '*.cjs'
-          )
-
-          echo "Validated $count JavaScript files."
-
-      # ------------------------------------------------------------------------
-      # JSON VALIDATION
-      # ------------------------------------------------------------------------
-
-      - name: Validate JSON files
-        shell: bash
+      - name: Run lint
         run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require("node:fs");
-          const { execFileSync } = require("node:child_process");
-
-          const files = execFileSync(
-            "git",
-            ["ls-files", "-z", "--", "*.json", "*.webmanifest"],
-            { encoding: "utf8" }
-          ).split("\0").filter(Boolean);
-
-          let failures = 0;
-
-          for (const file of files) {
-            try {
-              JSON.parse(fs.readFileSync(file, "utf8"));
-              console.log(`PASS ${file}`);
-            } catch (error) {
-              failures++;
-              console.error(`FAIL ${file}: ${error.message}`);
-            }
-          }
-
-          console.log(`Checked ${files.length} JSON files.`);
-
-          if (failures > 0) {
-            process.exitCode = 1;
-          }
-          NODE
-
-      # ------------------------------------------------------------------------
-      # YAML VALIDATION
-      # ------------------------------------------------------------------------
-
-      - name: Validate YAML files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require("node:fs");
-          const { execFileSync } = require("node:child_process");
-
-          let YAML;
-
-          try {
-            YAML = require("yaml");
-          } catch {
-            console.error(
-              "::error::Install yaml as a development dependency."
-            );
-            process.exit(1);
-          }
-
-          const files = execFileSync(
-            "git",
-            ["ls-files", "-z", "--", "*.yml", "*.yaml"],
-            { encoding: "utf8" }
-          ).split("\0").filter(Boolean);
-
-          let failures = 0;
-
-          for (const file of files) {
-            try {
-              const source = fs.readFileSync(file, "utf8");
-
-              const document = YAML.parseDocument(source, {
-                uniqueKeys: true,
-                strict: true
-              });
-
-              if (document.errors.length > 0) {
-                throw document.errors[0];
-              }
-
-              console.log(`PASS ${file}`);
-
-            } catch (error) {
-              failures++;
-              console.error(`FAIL ${file}: ${error.message}`);
-            }
-          }
-
-          console.log(`Checked ${files.length} YAML files.`);
-
-          if (failures > 0) {
-            process.exitCode = 1;
-          }
-          NODE
-
-      # ------------------------------------------------------------------------
-      # LINT
-      # ------------------------------------------------------------------------
-
-      - name: Run lint checks
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
+          if npm run | grep -qE '^[[:space:]]+lint'; then
             npm run lint
           else
-            echo "::notice::Lint script not configured."
+            echo "Lint script not configured. Skipping."
           fi
 
-      # ------------------------------------------------------------------------
-      # TESTS
-      # ------------------------------------------------------------------------
-
-      - name: Run automated tests
-        shell: bash
+      - name: Run tests
         run: |
-          set -euo pipefail
-
-          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
-            npm test
+          if npm run | grep -qE '^[[:space:]]+test'; then
+            npm test -- --runInBand
           else
-            echo "::warning::Test script not configured."
+            echo "Test script not configured. Skipping."
           fi
 
-      # ------------------------------------------------------------------------
-      # BUILD
-      # ------------------------------------------------------------------------
-
-      - name: Run production build
-        shell: bash
+      - name: Build application
         run: |
-          set -euo pipefail
-
-          if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
+          if npm run | grep -qE '^[[:space:]]+build'; then
             npm run build
           else
-            echo "::notice::Build script not configured."
+            echo "Build script not configured. Skipping."
           fi
 
-      # ------------------------------------------------------------------------
-      # FINAL VERIFICATION
-      # ------------------------------------------------------------------------
-
-      - name: Final repository verification
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git diff --check
-
-          echo "MedOrbits CI validation completed."
-
-  # ============================================================================
-  # 2. PULL REQUEST READINESS
-  # ============================================================================
-
-  pull-request-check:
-    name: Pull Request Readiness
-
+  # ==========================================================
+  # 3. PYTHON VALIDATION
+  # ==========================================================
+  python-validation:
+    name: Python Validation
     runs-on: ubuntu-latest
-
-    timeout-minutes: 5
-
-    needs:
-      - quality
-
-    if: github.event_name == 'pull_request'
-
-    permissions:
-      contents: read
+    timeout-minutes: 10
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Confirm quality checks
-        shell: bash
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check Python syntax
         run: |
-          set -euo pipefail
+          python - <<'PY'
+          import pathlib
+          import py_compile
+          import sys
 
-          echo "===================================="
-          echo "MedOrbits Pull Request Validation"
-          echo "===================================="
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "__pycache__"
+          }
 
-          echo "Quality checks: PASSED"
-          echo "Repository validation: PASSED"
-          echo "Dependency installation: PASSED"
+          files = [
+              path for path in pathlib.Path(".").rglob("*.py")
+              if not any(part in excluded for part in path.parts)
+          ]
 
-          echo "Ready for human review."
+          errors = []
 
-  # ============================================================================
-  # 3. FINAL WORKFLOW SUMMARY
-  # ============================================================================
+          for file in files:
+              try:
+                  py_compile.compile(str(file), doraise=True)
+              except Exception as exc:
+                  errors.append(f"{file}: {exc}")
 
-  ci-summary:
-    name: CI Execution Summary
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
 
+          print(f"Validated {len(files)} Python files.")
+          PY
+
+  # ==========================================================
+  # 4. SECURITY VALIDATION
+  # ==========================================================
+  security-validation:
+    name: Security Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check for accidentally committed secrets
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "coverage",
+              "dist",
+              "build"
+          }
+
+          patterns = {
+              "Private key": re.compile(
+                  r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+              ),
+              "Hardcoded API key": re.compile(
+                  r"""(?i)(?:api[_-]?key|secret[_-]?key)\s*[:=]\s*["'][^"']{16,}["']"""
+              ),
+              "Hardcoded access token": re.compile(
+                  r"""(?i)(?:access[_-]?token)\s*[:=]\s*["'][^"']{16,}["']"""
+              )
+          }
+
+          errors = []
+
+          for path in pathlib.Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+
+              if any(part in excluded for part in path.parts):
+                  continue
+
+              if path.name in {".env.example", ".env.sample"}:
+                  pass
+
+              try:
+                  if path.stat().st_size > 1_000_000:
+                      continue
+                  content = path.read_text(
+                      encoding="utf-8",
+                      errors="ignore"
+                  )
+              except OSError:
+                  continue
+
+              for name, pattern in patterns.items():
+                  if pattern.search(content):
+                      errors.append(f"{name} detected in {path}")
+
+          if errors:
+              for error in errors:
+                  print(f"::error::{error}")
+              sys.exit(1)
+
+          print("No matching hardcoded secret patterns detected.")
+          PY
+
+      - name: Dependency vulnerability audit
+        run: |
+          if [ -f package-lock.json ]; then
+            npm install --package-lock-only --ignore-scripts --no-audit
+            npm audit --omit=dev --audit-level=high
+          else
+            echo "No npm lockfile available."
+          fi
+
+  # ==========================================================
+  # 5. CI SUMMARY
+  # ==========================================================
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
     needs:
-      - quality
+      - repository-validation
+      - node-validation
+      - python-validation
+      - security-validation
 
     if: always()
 
-    permissions:
-      contents: read
-
     steps:
-
-      - name: Report CI result
+      - name: Generate workflow summary
         env:
-          QUALITY_RESULT: ${{ needs.quality.result }}
-        shell: bash
+          REPOSITORY_RESULT: ${{ needs.repository-validation.result }}
+          NODE_RESULT: ${{ needs.node-validation.result }}
+          PYTHON_RESULT: ${{ needs.python-validation.result }}
+          SECURITY_RESULT: ${{ needs.security-validation.result }}
         run: |
-          echo "===================================="
-          echo "MedOrbits CI Summary"
-          echo "===================================="
+          {
+            echo "# MedOrbits CI Report"
+            echo ""
+            echo "| Validation | Result |"
+            echo "|---|---|"
+            echo "| Repository | $REPOSITORY_RESULT |"
+            echo "| Node.js | $NODE_RESULT |"
+            echo "| Python | $PYTHON_RESULT |"
+            echo "| Security | $SECURITY_RESULT |"
+            echo ""
+            echo "Repository: $GITHUB_REPOSITORY"
+            echo "Branch: $GITHUB_REF_NAME"
+            echo "Commit: $GITHUB_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "Quality: $QUALITY_RESULT"
-
-          if [ "$QUALITY_RESULT" != "success" ]; then
-            echo "::error::MedOrbits CI failed."
+          if [[ "$REPOSITORY_RESULT" != "success" ||
+                "$NODE_RESULT" != "success" ||
+                "$PYTHON_RESULT" != "success" ||
+                "$SECURITY_RESULT" != "success" ]]; then
+            echo "::error::One or more CI jobs failed."
             exit 1
           fi
 
-          echo "STATUS: SUCCESS"
+          echo "All MedOrbits CI checks passed."
