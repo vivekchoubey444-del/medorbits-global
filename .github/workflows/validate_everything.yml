@@ -1,0 +1,632 @@
+
+name: Validate Everything
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - "release/**"
+
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - "release/**"
+
+  workflow_dispatch:
+
+  schedule:
+    - cron: "30 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-everything-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  repository-validation:
+    name: Repository Structure and Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Validate required root files
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "README.md"
+            "LICENSE"
+            "NOTICE"
+            "VERSION"
+            "package.json"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error file=$file::Required root file is missing."
+              exit 1
+            fi
+          done
+
+          echo "Required root files are present."
+
+      - name: Validate repository JSON files
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "__pycache__",
+              "dist",
+              "build",
+              "coverage",
+          }
+
+          checked = 0
+          failures = []
+
+          for path in Path(".").rglob("*.json"):
+              if any(part in excluded for part in path.parts):
+                  continue
+
+              if path.is_symlink():
+                  continue
+
+              checked += 1
+
+              try:
+                  with path.open("r", encoding="utf-8") as file:
+                      json.load(file)
+              except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                  failures.append((path, error))
+
+          for path, error in failures:
+              print(f"FAIL: {path}: {error}", file=sys.stderr)
+
+          print(f"JSON files checked: {checked}")
+          print(f"JSON failures: {len(failures)}")
+
+          sys.exit(bool(failures))
+          PY
+
+      - name: Validate Git whitespace
+        run: |
+          set -euo pipefail
+          git diff --check
+
+      - name: Validate Python source syntax
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import ast
+          import sys
+          from pathlib import Path
+
+          excluded = {
+              ".git",
+              "node_modules",
+              ".venv",
+              "venv",
+              "__pycache__",
+              "dist",
+              "build",
+          }
+
+          checked = 0
+          failures = []
+
+          for path in Path(".").rglob("*.py"):
+              if any(part in excluded for part in path.parts):
+                  continue
+
+              if path.is_symlink():
+                  continue
+
+              checked += 1
+
+              try:
+                  source = path.read_text(encoding="utf-8")
+                  ast.parse(source, filename=str(path))
+              except (OSError, UnicodeError, SyntaxError) as error:
+                  failures.append((path, error))
+
+          for path, error in failures:
+              print(f"FAIL: {path}: {error}", file=sys.stderr)
+
+          print(f"Python files checked: {checked}")
+          print(f"Python syntax failures: {len(failures)}")
+
+          sys.exit(bool(failures))
+          PY
+
+  node-validation:
+    name: Node.js Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Validate Node.js runtime
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          node -e "if (Number(process.versions.node.split('.')[0]) < 22) process.exit(1)"
+
+      - name: Install root dependencies
+        if: ${{ hashFiles('package-lock.json') != '' }}
+        run: npm ci
+
+      - name: Validate root package metadata
+        run: |
+          set -euo pipefail
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+
+          if (!pkg.name) {
+            throw new Error('package.json is missing name.');
+          }
+
+          if (!pkg.version) {
+            throw new Error('package.json is missing version.');
+          }
+
+          if (!pkg.scripts || typeof pkg.scripts !== 'object') {
+            throw new Error('package.json scripts must be an object.');
+          }
+
+          console.log(`Package: ${pkg.name}`);
+          console.log(`Version: ${pkg.version}`);
+          NODE
+
+      - name: Validate root JavaScript syntax
+        run: |
+          set -euo pipefail
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+
+          const excluded = new Set([
+            '.git',
+            'node_modules',
+            '.venv',
+            'venv',
+            'dist',
+            'build',
+            'coverage',
+            '.next',
+            '.nuxt'
+          ]);
+
+          let checked = 0;
+          let failures = 0;
+
+          function walk(directory) {
+            for (const entry of fs.readdirSync(directory, {
+              withFileTypes: true
+            })) {
+              const file = path.join(directory, entry.name);
+
+              if (entry.isSymbolicLink()) continue;
+
+              if (entry.isDirectory()) {
+                if (!excluded.has(entry.name)) {
+                  walk(file);
+                }
+                continue;
+              }
+
+              if (
+                !entry.isFile() ||
+                !['.js', '.cjs', '.mjs'].includes(path.extname(file))
+              ) {
+                continue;
+              }
+
+              checked++;
+
+              const result = spawnSync(
+                process.execPath,
+                ['--check', file],
+                {
+                  encoding: 'utf8',
+                  timeout: 30000
+                }
+              );
+
+              if (result.error || result.status !== 0) {
+                failures++;
+
+                console.error(`FAIL: ${file}`);
+                console.error(
+                  result.stderr ||
+                  result.error?.message ||
+                  `Node exited with status ${result.status}`
+                );
+              }
+            }
+          }
+
+          walk('.');
+
+          console.log(`JavaScript files checked: ${checked}`);
+          console.log(`JavaScript failures: ${failures}`);
+
+          process.exitCode = failures ? 1 : 0;
+          NODE
+
+      - name: Run root npm checks
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          set -euo pipefail
+
+          node - <<'NODE'
+          const pkg = require('./package.json');
+
+          console.log(JSON.stringify(pkg.scripts || {}, null, 2));
+          NODE
+
+          if npm run | grep -qE '(^|[[:space:]])check([[:space:]]|$)'; then
+            npm run check
+          else
+            echo "No root check script configured; syntax validation completed."
+          fi
+
+      - name: Check root lockfile consistency
+        if: ${{ hashFiles('package-lock.json') != '' }}
+        run: npm ls --depth=0
+
+  api-validation:
+    name: MedOrbits API Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: api
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check API directory
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "API package.json not found. Skipping API job."
+            exit 0
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install API dependencies
+        run: |
+          set -euo pipefail
+
+          if [[ -f package-lock.json ]]; then
+            npm ci
+          else
+            echo "::error::api/package-lock.json is required for reproducible CI installation."
+            exit 1
+          fi
+
+      - name: Validate API package metadata
+        run: |
+          set -euo pipefail
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+
+          const pkg = JSON.parse(
+            fs.readFileSync('package.json', 'utf8')
+          );
+
+          if (!pkg.name || !pkg.version) {
+            throw new Error('API package metadata is incomplete.');
+          }
+
+          if (!pkg.scripts?.check) {
+            throw new Error('API package must define scripts.check.');
+          }
+
+          console.log(`${pkg.name}@${pkg.version}`);
+          NODE
+
+      - name: Run API validation
+        run: npm run check
+
+      - name: Verify API dependency tree
+        run: npm ls --depth=0
+
+  python-validation:
+    name: Python Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff pytest
+
+      - name: Install Python project dependencies
+        run: |
+          set -euo pipefail
+
+          if [[ -f requirements.txt ]]; then
+            python -m pip install -r requirements.txt
+          fi
+
+          if [[ -f requirements-dev.txt ]]; then
+            python -m pip install -r requirements-dev.txt
+          fi
+
+          if [[ -f pyproject.toml ]]; then
+            python -m pip install -e ".[dev]" || {
+              echo "::warning::Optional [dev] installation failed; verify pyproject.toml extras."
+            }
+          fi
+
+      - name: Run Ruff lint
+        run: |
+          if [[ -f ruff.toml || -f .ruff.toml || -f pyproject.toml ]]; then
+            ruff check .
+          else
+            echo "No Ruff configuration found; using default Ruff rules."
+            ruff check .
+          fi
+
+      - name: Run Ruff format check
+        run: ruff format --check .
+
+      - name: Run pytest
+        run: |
+          if [[ -d python/tests ]]; then
+            pytest
+          elif [[ -d tests ]]; then
+            pytest
+          else
+            echo "No Python test directory found."
+          fi
+
+  security-validation:
+    name: Dependency and Secret Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check tracked secret-like files
+        run: |
+          set -euo pipefail
+
+          if git ls-files | grep -Ei '(^|/)(\.env|id_rsa|id_ed25519|credentials\.json|service-account\.json)$' | grep -vE '(^|/)\.env\.example$|(^|/)\.env\.test\.example$'; then
+            echo "::error::Potential secret-bearing files are tracked. Review the list."
+            exit 1
+          fi
+
+          echo "No obvious secret-like filenames detected."
+
+      - name: Check for private key material
+        run: |
+          set -euo pipefail
+
+          if git grep -n -I -E \
+            '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' \
+            -- ':!*.lock' ':!*.md' ':!LICENSE' ':!NOTICE'; then
+            echo "::error::Potential private key material found in tracked files."
+            exit 1
+          fi
+
+          echo "No private key markers found."
+
+      - name: Check dependency manifests
+        run: |
+          set -euo pipefail
+
+          if [[ -f package-lock.json ]]; then
+            npm audit --package-lock-only --audit-level=high
+          fi
+
+          if [[ -f api/package-lock.json ]]; then
+            npm audit --prefix api --package-lock-only --audit-level=high
+          fi
+
+  workflow-validation:
+    name: GitHub Workflow Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install YAML parser
+        run: python -m pip install PyYAML
+
+      - name: Validate YAML syntax
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          directories = [
+              Path(".github/workflows"),
+          ]
+
+          files = []
+
+          for directory in directories:
+              if directory.exists():
+                  files.extend(directory.glob("*.yml"))
+                  files.extend(directory.glob("*.yaml"))
+
+          failures = []
+
+          for path in sorted(set(files)):
+              try:
+                  with path.open(encoding="utf-8") as stream:
+                      yaml.safe_load(stream)
+              except (OSError, yaml.YAMLError) as error:
+                  failures.append((path, error))
+
+          for path, error in failures:
+              print(f"FAIL: {path}: {error}", file=sys.stderr)
+
+          print(f"Workflow YAML files checked: {len(files)}")
+          print(f"Failures: {len(failures)}")
+
+          sys.exit(bool(failures))
+          PY
+
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - repository-validation
+      - node-validation
+      - api-validation
+      - python-validation
+      - security-validation
+      - workflow-validation
+
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Report validation status
+        env:
+          REPOSITORY_RESULT: ${{ needs.repository-validation.result }}
+          NODE_RESULT: ${{ needs.node-validation.result }}
+          API_RESULT: ${{ needs.api-validation.result }}
+          PYTHON_RESULT: ${{ needs.python-validation.result }}
+          SECURITY_RESULT: ${{ needs.security-validation.result }}
+          WORKFLOW_RESULT: ${{ needs.workflow-validation.result }}
+        run: |
+          set -euo pipefail
+
+          echo "======================================"
+          echo " MedOrbits Validation Summary"
+          echo "======================================"
+
+          failed=0
+
+          report() {
+            local name="$1"
+            local result="$2"
+
+            printf '%-25s %s\n' "$name" "$result"
+
+            if [[ "$result" != "success" ]]; then
+              failed=1
+            fi
+          }
+
+          report "Repository validation" "$REPOSITORY_RESULT"
+          report "Node.js validation" "$NODE_RESULT"
+          report "API validation" "$API_RESULT"
+          report "Python validation" "$PYTHON_RESULT"
+          report "Security validation" "$SECURITY_RESULT"
+          report "Workflow validation" "$WORKFLOW_RESULT"
+
+          echo "======================================"
+
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::One or more validation jobs failed."
+            exit 1
+          fi
+
+          echo "All validation jobs passed."
