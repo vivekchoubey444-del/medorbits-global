@@ -1,31 +1,38 @@
 {
   "name": "medorbits-mobile",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "description": "Capacitor mobile application shell for the MedOrbits education platform",
+  "type": "module",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "validate:contracts": "node scripts/validate-contracts.js",
-    "check:environment": "node scripts/check-environment.js"
+    "stage:web": "node scripts/stage-web.mjs",
+    "stage:check": "node scripts/check-stage.mjs",
+    "config:check": "node scripts/check-config.mjs",
+    "cap:sync": "cap sync",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "android:open": "cap open android",
+    "ios:open": "cap open ios",
+    "android:build": "cap build android",
+    "ios:build": "cap build ios",
+    "doctor": "node scripts/doctor.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run config:check && npm test && npm run stage:check"
   },
   "dependencies": {
-    "expo": "~54.0.0",
-    "expo-router": "~6.0.0",
-    "expo-status-bar": "~3.0.0",
-    "react": "19.1.0",
-    "react-native": "0.81.0"
+    "@capacitor/android": "^7.4.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/browser": "^7.0.0",
+    "@capacitor/core": "^7.4.0",
+    "@capacitor/ios": "^7.4.0",
+    "@capacitor/network": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/react": "~19.1.0",
-    "eslint": "^9.0.0",
-    "jest": "^30.0.0",
-    "typescript": "~5.9.0"
+    "@capacitor/cli": "^7.4.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
