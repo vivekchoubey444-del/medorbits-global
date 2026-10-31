@@ -1,7 +1,8 @@
 
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "MedOrbits dependency automation and supply-chain maintenance",
+  "description": "MedOrbits dependency automation and software supply-chain maintenance",
+
   "extends": [
     "config:recommended",
     ":dependencyDashboard",
@@ -9,25 +10,38 @@
     ":separateMajorReleases",
     ":enablePreCommit"
   ],
+
   "timezone": "Asia/Kolkata",
+
   "schedule": [
-    "* 3-5 * * 1"
+    "0 3-5 * * 1"
   ],
+
+  "updateNotScheduled": false,
+
   "prHourlyLimit": 2,
   "prConcurrentLimit": 8,
   "branchConcurrentLimit": 10,
+
   "rangeStrategy": "bump",
   "rebaseWhen": "conflicted",
+
   "labels": [
     "dependencies",
     "automated"
   ],
+
   "assigneesFromCodeOwners": true,
+
   "commitMessagePrefix": "chore(deps):",
   "commitMessageAction": "update",
   "commitMessageTopic": "{{depName}}",
+
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "MedOrbits Dependency Dashboard",
+
+  "automerge": false,
+
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": [
@@ -40,30 +54,38 @@
     "prConcurrentLimit": 5,
     "commitMessageSuffix": "[SECURITY]"
   },
+
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
-      "* 4-5 * * 1"
+      "before 5am on monday"
     ],
-    "automerge": false,
+    "recreateWhen": "always",
     "labels": [
       "dependencies",
       "lockfile"
-    ]
+    ],
+    "commitMessageAction": "refresh",
+    "commitMessageTopic": "dependency lock files"
   },
+
   "packageRules": [
+
     {
-      "description": "Group non-major root npm production updates",
+      "description": "Group non-major root npm production dependencies",
+
       "matchManagers": [
         "npm"
       ],
+
       "matchFileNames": [
-        "package.json",
-        "package-lock.json"
+        "package.json"
       ],
+
       "matchDepTypes": [
         "dependencies"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -71,24 +93,30 @@
         "pinDigest",
         "digest"
       ],
+
       "groupName": "root npm production dependencies",
+
       "addLabels": [
         "javascript",
         "production"
       ]
     },
+
     {
-      "description": "Group non-major root npm development updates",
+      "description": "Group non-major root npm development dependencies",
+
       "matchManagers": [
         "npm"
       ],
+
       "matchFileNames": [
-        "package.json",
-        "package-lock.json"
+        "package.json"
       ],
+
       "matchDepTypes": [
         "devDependencies"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -96,24 +124,30 @@
         "pinDigest",
         "digest"
       ],
+
       "groupName": "root npm development dependencies",
+
       "addLabels": [
         "javascript",
         "development"
       ]
     },
+
     {
-      "description": "Group non-major backend npm production updates",
+      "description": "Group non-major backend npm production dependencies",
+
       "matchManagers": [
         "npm"
       ],
+
       "matchFileNames": [
-        "server/package.json",
-        "server/package-lock.json"
+        "server/package.json"
       ],
+
       "matchDepTypes": [
         "dependencies"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -121,24 +155,30 @@
         "pinDigest",
         "digest"
       ],
+
       "groupName": "backend npm production dependencies",
+
       "addLabels": [
         "backend",
         "production"
       ]
     },
+
     {
-      "description": "Group non-major backend npm development updates",
+      "description": "Group non-major backend npm development dependencies",
+
       "matchManagers": [
         "npm"
       ],
+
       "matchFileNames": [
-        "server/package.json",
-        "server/package-lock.json"
+        "server/package.json"
       ],
+
       "matchDepTypes": [
         "devDependencies"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -146,31 +186,40 @@
         "pinDigest",
         "digest"
       ],
+
       "groupName": "backend npm development dependencies",
+
       "addLabels": [
         "backend",
         "development"
       ]
     },
+
     {
       "description": "Group GitHub Actions updates",
+
       "matchManagers": [
         "github-actions"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
         "digest",
         "pinDigest"
       ],
+
       "groupName": "GitHub Actions",
+
       "addLabels": [
         "github-actions",
         "ci"
       ]
     },
+
     {
       "description": "Group Python dependency updates",
+
       "matchManagers": [
         "pip_requirements",
         "pep621",
@@ -179,59 +228,74 @@
         "pip_setup",
         "setup-cfg"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch"
       ],
+
       "groupName": "Python dependencies",
+
       "addLabels": [
-        "python"
+        "python",
+        "dependencies"
       ]
     },
+
     {
-      "description": "Group Dockerfile and Docker Compose image updates",
+      "description": "Group Docker and Docker Compose image updates",
+
       "matchManagers": [
         "dockerfile",
         "docker-compose"
       ],
+
       "matchUpdateTypes": [
         "minor",
         "patch",
         "digest",
         "pinDigest"
       ],
+
       "groupName": "Docker dependencies",
+
       "addLabels": [
-        "docker"
+        "docker",
+        "infrastructure"
       ]
     },
+
     {
-      "description": "Keep major updates separate for careful review",
+      "description": "Keep major dependency updates separate",
+
       "matchUpdateTypes": [
         "major"
       ],
+
       "groupName": null,
+
       "addLabels": [
         "breaking-change",
         "review-required"
       ],
+
       "automerge": false
     },
+
     {
-      "description": "Never automatically merge dependency updates",
-      "matchManagers": [
-        "npm",
-        "github-actions",
-        "pip_requirements",
-        "pep621",
-        "poetry",
-        "pipenv",
-        "pip_setup",
-        "setup-cfg",
-        "dockerfile",
-        "docker-compose"
+      "description": "Never automatically merge lockfile maintenance",
+
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
       ],
-      "automerge": false
+
+      "automerge": false,
+
+      "addLabels": [
+        "dependencies",
+        "lockfile",
+        "review-required"
+      ]
     }
   ]
 }

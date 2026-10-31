@@ -1,49 +1,158 @@
 
 # MedOrbits Security Policy
 
-## Supported Versions
+**Version:** 1.0  
+**Effective Date:** 1 November 2026  
+**Copyright © 2026 MedOrbits. All rights reserved.**
 
-Security fixes are prioritized for the latest maintained version of MedOrbits.
+—
 
-Older versions may not receive security updates. Users should upgrade to the latest maintained version whenever possible.
+## 1. Introduction
 
-## Reporting a Vulnerability
+MedOrbits takes the security of its software, infrastructure,
+applications and user information seriously.
 
-Please do not disclose exploitable vulnerabilities, credentials, API keys, personal information, or security-sensitive logs in public issues, discussions, or pull requests.
+We appreciate responsible security researchers and contributors
+who help identify and report security vulnerabilities.
 
-Report suspected vulnerabilities through GitHub’s **private vulnerability reporting** feature, if enabled for this repository.
+This policy explains supported versions, reporting procedures
+and responsible disclosure expectations.
 
-If private vulnerability reporting is unavailable, contact the repository maintainers through an established private communication channel. Do not publish sensitive exploit details while seeking a reporting channel.
+## 2. Supported Versions
 
-### Information to Include
+Security updates are prioritized for:
 
-When reporting a vulnerability, provide as much of the following information as safely possible:
+| Version | Security Support |
+|—|—|
+| Latest stable release | Supported |
+| Previous stable release | Evaluated individually |
+| Development versions | Best effort |
+| Archived releases | Not guaranteed |
 
-- **Summary:** A clear description of the suspected vulnerability.
-- **Affected component:** The affected file, service, endpoint, dependency, or version.
-- **Reproduction steps:** Minimal steps to reproduce the issue in an authorized test environment.
-- **Security impact:** Potential confidentiality, integrity, or availability consequences.
-- **Evidence:** Sanitized logs, screenshots, or proof-of-concept details that do not expose real user data or secrets.
-- **Suggested mitigation:** Any known workaround or remediation, if available.
+Users should upgrade to the latest stable release whenever possible.
 
-Never include real passwords, access tokens, API keys, private user data, or production credentials in a report. Replace sensitive values with clearly marked placeholders.
+## 3. Reporting a Vulnerability
 
-## Responsible Disclosure
+**Do not report security vulnerabilities through public GitHub issues,
+pull requests, discussions or social media.**
 
-- Test only systems you own or are explicitly authorized to assess.
-- Avoid accessing, modifying, or deleting other users’ data.
-- Do not perform denial-of-service testing or other disruptive actions against production systems.
-- Give maintainers a reasonable opportunity to investigate and address a reported issue before public disclosure.
-- Coordinate public disclosure with maintainers where practical, taking applicable legal and safety considerations into account.
+Use GitHub’s private vulnerability reporting facility:
 
-## Handling and Remediation
+1. Open the MedOrbits repository.
+2. Navigate to the Security tab.
+3. Select Advisories.
+4. Choose Report a vulnerability.
+5. Submit the report privately.
 
-Maintainers should assess reported vulnerabilities, determine affected components, prioritize remediation according to severity and impact, and communicate relevant fixes or mitigations when appropriate.
+If private vulnerability reporting is unavailable, contact the
+repository’s verified security contact through an official channel.
 
-Any exposed credential should be revoked or rotated promptly. Removing a secret from the latest commit alone does not invalidate it.
+Do not send credentials, production database records or
+unnecessary personal information.
 
-## Scope
+## 4. Information to Include
 
-This policy applies to security vulnerabilities affecting the MedOrbits repository, its maintained application code, configuration, and associated services.
+Where possible, provide:
 
-Do not assume that third-party services or infrastructure are covered by this policy. Report issues affecting those systems to their respective owners under their applicable security policies.
+- Vulnerability title and category.
+- Affected application component.
+- Affected version or commit.
+- Security impact and potential consequences.
+- Reproduction steps in a controlled environment.
+- Proof of concept that does not access real user data.
+- Suggested mitigation, if known.
+
+Never include actual passwords, API keys, access tokens,
+private keys or personal user records.
+
+## 5. Scope
+
+Potentially reportable security issues include:
+
+- Authentication and authorization weaknesses.
+- SQL injection and command injection.
+- Cross-site scripting (XSS).
+- Cross-site request forgery (CSRF).
+- Server-side request forgery (SSRF).
+- Insecure direct object references (IDOR).
+- Sensitive information disclosure.
+- Insecure file uploads.
+- Session management vulnerabilities.
+- Payment and transaction security flaws.
+- API access-control weaknesses.
+- Dependency vulnerabilities affecting MedOrbits.
+- Security misconfiguration.
+- Remote code execution.
+
+## 6. Responsible Disclosure
+
+Security researchers are expected to:
+
+- Avoid accessing or modifying other users’ data.
+- Avoid service disruption and denial-of-service testing.
+- Avoid destructive testing against production systems.
+- Avoid social engineering and phishing.
+- Avoid persistence or unauthorized access.
+- Keep vulnerability details private until coordinated disclosure.
+- Stop testing and report immediately if sensitive data is exposed.
+
+## 7. Response and Remediation
+
+MedOrbits aims to:
+
+1. Acknowledge a valid report within five business days.
+2. Review the reported vulnerability.
+3. Assess severity and affected components.
+4. Coordinate remediation with the reporter.
+5. Release fixes or mitigation guidance.
+6. Coordinate public disclosure when appropriate.
+
+Response times are targets, not guaranteed service-level commitments.
+
+## 8. Severity Assessment
+
+| Severity | Description |
+|—|—|
+| Critical | Remote compromise, major data exposure or equivalent impact |
+| High | Significant unauthorized access or security compromise |
+| Medium | Limited security impact requiring remediation |
+| Low | Minor weakness with limited practical impact |
+
+Final severity depends on exploitability, affected assets and
+potential impact.
+
+## 9. Security Updates
+
+Security fixes may be distributed through:
+
+- Application releases.
+- Dependency updates.
+- Infrastructure configuration changes.
+- Emergency patches.
+- Security advisories.
+
+Users should install security updates promptly.
+
+## 10. Safe Harbor
+
+MedOrbits will consider security research conducted in good faith
+and in accordance with this policy.
+
+This statement does not authorize unlawful access, disruption,
+data extraction or activities outside the research scope.
+
+## 11. Contact
+
+Use the repository’s private vulnerability reporting feature
+as the preferred reporting channel.
+
+For general security questions, use the official MedOrbits
+website or verified repository contact information.
+
+—
+
+**MedOrbits Engineering**
+
+Security | Privacy | Reliability
+
+Copyright © 2026 MedOrbits. All rights reserved.

@@ -1,184 +1,494 @@
 
-# MedOrbits GitHub Scripts
+# MedOrbits — GitHub Automation Scripts
 
-Repository maintenance, validation, security-checking, and reporting utilities used by MedOrbits automation workflows.
+**Version:** 2.1.3  
+**Directory:** `.github/scripts/`  
+**Maintainer:** MedOrbits Engineering  
+**Runtime:** Python 3.10+ and Node.js 20+
 
-These scripts are designed to support the MedOrbits education and admissions platform while preserving existing website pages, filenames, navigation, styling, and application behavior.
+—
 
-## 1. Directory Structure
+## 1. Overview
+
+This directory contains repository maintenance, validation, security and reporting scripts used by the MedOrbits GitHub automation system.
+
+The scripts support:
+
+- Repository structure validation.
+- Environment configuration validation.
+- Secret detection.
+- Broken-link detection.
+- JSON syntax validation.
+- Dependency reporting.
+- CI summary generation.
+- Automated commit-message validation.
+
+These utilities are designed to work locally and within GitHub Actions.
+
+## 2. Directory Structure
 
 ```text
 .github/
-└── scripts/
-    ├── README.md
-    ├── check-env-example.py
-    ├── check-links.py
-    ├── check-secrets.py
-    ├── ci-summary.js
-    ├── dependency-report.js
-    ├── validate-json.py
-    └── validate-repository.py
+├── scripts/
+│   ├── README.md
+│   ├── check-env-example.py
+│   ├── check-links.py
+│   ├── check-secrets.py
+│   ├── ci-summary.js
+│   ├── dependency-report.js
+│   ├── test-validate-commit-message.sh
+│   ├── validate-commit-message.sh
+│   ├── validate-json.py
+│   └── validate-repository.py
+│
+└── workflows/
+    ├── ci.yml
+    ├── codeql.yml
+    └── ...
 ```
 
-This is the expected structure for the scripts documented here. Keep the directory listing synchronized with the actual repository; do not create placeholder files solely to match this list.
+## 3. Requirements
 
-## 2. Requirements
+### Python
 
-- Python 3.10 or later is recommended.
-- Node.js 20 or later is required for the JavaScript reporting utilities.
-- Git is recommended for repository-aware checks.
-- Python validation utilities primarily use the standard library.
-- Node.js utilities may use installed project dependencies where specified.
+Recommended Python version:
 
-No script should install dependencies, deploy the application, modify production data, or rewrite source files unless that behavior is explicitly documented.
+```text
+Python >= 3.10
+```
 
-## 3. Available Scripts
-
-| Script | Purpose |
-|—|—|
-| `check-env-example.py` | Check `.env.example` and environment-variable references for common configuration inconsistencies. |
-| `check-links.py` | Detect broken local links and references in supported website and documentation files. |
-| `check-secrets.py` | Scan files for common patterns associated with accidentally exposed credentials. |
-| `ci-summary.js` | Generate a GitHub Actions job summary from available results. |
-| `dependency-report.js` | Generate a dependency inventory and optional audit report. |
-| `validate-json.py` | Validate JSON syntax, encoding, and duplicate object keys. |
-| `validate-repository.py` | Check repository structure, JSON and Python syntax, selected configuration files, and common hygiene issues. |
-
-Script behavior depends on the implementation and supplied arguments. A successful check does not prove that the entire application is secure, accessible, or functionally correct.
-
-## 4. Running the Validators
-
-Run commands from the repository root.
-
-### Validate JSON files
+Check installation:
 
 ```bash
-python .github/scripts/validate-json.py —recursive —strict \
-  —exclude node_modules \
-  —exclude .git
+python —version
 ```
 
-### Validate repository structure and syntax
+### Node.js
+
+Recommended Node.js version:
+
+```text
+Node.js >= 20
+```
+
+Check installation:
 
 ```bash
-python .github/scripts/validate-repository.py
+node —version
+npm —version
 ```
 
-For stricter checks and the optional secret scan:
+### Git
+
+Git must be installed for scripts that inspect tracked repository files.
 
 ```bash
-python .github/scripts/validate-repository.py \
-  —strict \
-  —scan-secrets
+git —version
 ```
 
-### Check environment configuration
+## 4. Script Reference
 
-```bash
-python .github/scripts/check-env-example.py
+| Script | Purpose | Runtime |
+|—|—|—|
+| `check-secrets.py` | Detect potential exposed credentials | Python |
+| `check-env-example.py` | Validate environment example files | Python |
+| `check-links.py` | Detect broken local links | Python |
+| `validate-json.py` | Validate repository JSON files | Python |
+| `validate-repository.py` | Validate repository structure | Python |
+| `dependency-report.js` | Generate dependency reports | Node.js |
+| `ci-summary.js` | Generate CI summaries | Node.js |
+| `validate-commit-message.sh` | Validate commit headers | Bash |
+| `test-validate-commit-message.sh` | Test commit-message validation | Bash |
+
+## 5. Secret Scanner
+
+File:
+
+```text
+.github/scripts/check-secrets.py
 ```
 
-### Check local links
-
-```bash
-python .github/scripts/check-links.py
-```
-
-### Scan for potential secrets
+Run:
 
 ```bash
 python .github/scripts/check-secrets.py
 ```
 
-### Generate a dependency report
+Scan tracked and untracked eligible files:
+
+```bash
+python .github/scripts/check-secrets.py —all-files
+```
+
+Enable strict mode:
+
+```bash
+python .github/scripts/check-secrets.py —strict
+```
+
+The scanner reports file locations and secret categories without printing matched credential values.
+
+**Security note:** Pattern matching cannot guarantee detection of every credential. Use GitHub Secret Scanning and push protection as additional security controls.
+
+## 6. Environment Example Validation
+
+File:
+
+```text
+.github/scripts/check-env-example.py
+```
+
+Default validation:
+
+```bash
+python .github/scripts/check-env-example.py
+```
+
+Strict validation:
+
+```bash
+python .github/scripts/check-env-example.py —strict
+```
+
+Validate a specific example file:
+
+```bash
+python .github/scripts/check-env-example.py —file .env.example
+```
+
+Environment examples should contain placeholders rather than actual credentials.
+
+Never commit production `.env` files.
+
+## 7. Link Validation
+
+File:
+
+```text
+.github/scripts/check-links.py
+```
+
+Validate tracked Markdown and HTML files:
+
+```bash
+python .github/scripts/check-links.py
+```
+
+Include untracked files:
+
+```bash
+python .github/scripts/check-links.py —all-files
+```
+
+The validator checks common Markdown and HTML local references.
+
+External URL reachability is not guaranteed.
+
+## 8. JSON Validation
+
+File:
+
+```text
+.github/scripts/validate-json.py
+```
+
+Validate JSON files in the repository root:
+
+```bash
+python .github/scripts/validate-json.py
+```
+
+Recursive validation:
+
+```bash
+python .github/scripts/validate-json.py —recursive
+```
+
+Strict validation:
+
+```bash
+python .github/scripts/validate-json.py —recursive —strict
+```
+
+Validate a specific data directory:
+
+```bash
+python .github/scripts/validate-json.py \
+  —directory assets/data \
+  —recursive
+```
+
+This script checks JSON syntax, duplicate keys and non-standard constants.
+
+Application-specific JSON schema validation must be configured separately.
+
+## 9. Repository Validation
+
+File:
+
+```text
+.github/scripts/validate-repository.py
+```
+
+Standard validation:
+
+```bash
+python .github/scripts/validate-repository.py
+```
+
+GitHub configuration validation:
+
+```bash
+python .github/scripts/validate-repository.py \
+  —profile github
+```
+
+Strict validation:
+
+```bash
+python .github/scripts/validate-repository.py \
+  —strict
+```
+
+The validator checks required files, directories, Git metadata and package configuration.
+
+Adjust its required paths to match the actual repository architecture.
+
+## 10. Dependency Report
+
+File:
+
+```text
+.github/scripts/dependency-report.js
+```
+
+Generate a console report:
 
 ```bash
 node .github/scripts/dependency-report.js
 ```
 
-### Generate a CI summary
+Generate JSON:
 
 ```bash
-node .github/scripts/ci-summary.js
+node .github/scripts/dependency-report.js —json
 ```
 
-Check each script’s `—help` output or source documentation before supplying optional arguments. Commands above assume the corresponding files exist and support the stated invocation.
+Generate Markdown:
 
-## 5. Integration with GitHub Actions
+```bash
+node .github/scripts/dependency-report.js —markdown
+```
 
-Workflows belong in:
+Save JSON:
+
+```bash
+node .github/scripts/dependency-report.js \
+  —json \
+  —output reports/dependencies.json
+```
+
+Save Markdown:
+
+```bash
+node .github/scripts/dependency-report.js \
+  —markdown \
+  —output reports/dependencies.md
+```
+
+The report summarizes declared dependencies and checks selected package and lockfile metadata.
+
+It does not replace vulnerability scanning.
+
+## 11. CI Summary
+
+File:
 
 ```text
-.github/workflows/
+.github/scripts/ci-summary.js
 ```
 
-A workflow may call these utilities during pull-request checks or pushes to the default branch.
+Generate a local summary:
 
-Recommended validation order:
+```bash
+node .github/scripts/ci-summary.js \
+  —no-github-summary
+```
 
-1. Check out the repository.
-2. Set up supported Python and Node.js versions.
-3. Install dependencies only when required by the selected checks.
-4. Run syntax, JSON, link, and configuration validation.
-5. Run automated tests.
-6. Run dependency and security checks.
-7. Upload useful reports as workflow artifacts when appropriate.
+Generate JSON:
 
-Use explicit permissions and grant only the minimum permissions required. Do not expose secrets in logs or pass production credentials to untrusted pull-request code.
+```bash
+node .github/scripts/ci-summary.js \
+  —json \
+  —no-github-summary
+```
 
-## 6. Exit Codes and Reports
+Simulate successful CI jobs:
 
-Python validation utilities should return:
+```bash
+REPOSITORY_RESULT=success \
+NODE_RESULT=success \
+PYTHON_RESULT=success \
+SECURITY_RESULT=success \
+node .github/scripts/ci-summary.js \
+  —no-github-summary
+```
 
-- `0` — validation passed.
-- `1` — validation errors were detected.
-- `2` — an invocation, configuration, or report-writing failure occurred, where implemented.
+Inside GitHub Actions, the script can write to the file specified by:
 
-JavaScript utilities may use different exit-code conventions. Check each script before relying on its exit status in a workflow.
+```text
+GITHUB_STEP_SUMMARY
+```
 
-JSON reports and GitHub Actions summaries are optional outputs. Store generated reports in a designated output directory, and avoid committing transient reports unless they are intentionally maintained as project artifacts.
+## 12. Commit Message Validation
 
-## 7. Safety and Security
+File:
 
-- Never commit real API keys, database credentials, access tokens, private keys, or production `.env` files.
-- Keep `.env.example` limited to variable names and safe placeholder values.
-- Treat secret-scanner findings as leads for manual investigation; false positives are possible.
-- Rotate credentials immediately if they have been exposed.
-- Do not automatically apply dependency upgrades in production without review and testing.
-- Review third-party workflow actions and pin them to appropriate immutable references where practical.
-- Do not interpret a clean static scan as a security certification.
+```text
+.github/scripts/validate-commit-message.sh
+```
 
-## 8. Maintenance Rules
+Validate a commit-message file:
 
-When adding or changing a script:
+```bash
+bash .github/scripts/validate-commit-message.sh \
+  .git/COMMIT_EDITMSG
+```
 
-1. Use the naming and directory conventions already present in the repository.
-2. Document its purpose, prerequisites, supported arguments, and exit codes.
-3. Prefer read-only checks and clear error messages.
-4. Avoid hard-coded absolute paths, credentials, and machine-specific settings.
-5. Handle missing files and optional project components gracefully.
-6. Keep output suitable for both local use and automated CI logs.
-7. Add tests for important validation logic.
-8. Update this README when script names or behavior change.
-9. Preserve existing website functionality and project structure.
-10. Do not claim that a check has passed unless it has actually run successfully.
+Display help:
 
-## 9. Troubleshooting
+```bash
+bash .github/scripts/validate-commit-message.sh —help
+```
 
-**Python cannot find a file:** Run commands from the repository root and confirm the exact path and filename.
+### Supported commit types
 
-**A validator reports a missing file:** Confirm whether the file is required for this project configuration before creating it. Some checks intentionally report optional files.
+| Type | Purpose |
+|—|—|
+| `feat` | New functionality |
+| `fix` | Bug fixes |
+| `docs` | Documentation |
+| `style` | Formatting and styling |
+| `refactor` | Code restructuring |
+| `perf` | Performance improvements |
+| `test` | Testing |
+| `build` | Build configuration |
+| `ci` | CI/CD changes |
+| `chore` | Maintenance |
+| `revert` | Reverting changes |
+| `security` | Security improvements |
 
-**JSON validation fails:** Inspect the reported line and column. Standard JSON does not support comments or trailing commas.
+### Valid examples
 
-**A link check fails:** Confirm the target exists, the path is relative to the correct file or configured base, and any fragment identifier matches the target.
+```text
+feat(auth): add login validation
+fix(api): handle missing response
+docs: update installation guide
+security(auth): strengthen token validation
+```
 
-**A security scan reports a possible secret:** Inspect the matching line without copying the credential into logs or issue comments. Revoke exposed credentials when necessary.
+### Invalid examples
 
-**A workflow fails:** Review its logs, required runtime versions, repository permissions, and expected paths.
+```text
+Add login page
+feat:add login page
+Feat: add login page
+feat: .add login page
+```
 
-## 10. Scope
+## 13. Commit Message Tests
 
-These utilities support repository quality and maintenance. They do not replace application tests, accessibility testing, dependency review, deployment verification, database backup procedures, or a professional security assessment.
+File:
 
-Maintain this directory as a collection of small, predictable tools that help keep MedOrbits reliable without unexpectedly changing the application.
+```text
+.github/scripts/test-validate-commit-message.sh
+```
+
+Run:
+
+```bash
+bash .github/scripts/test-validate-commit-message.sh
+```
+
+The test suite validates accepted and rejected commit-message formats.
+
+## 14. Complete Local Validation
+
+Run these commands from the repository root:
+
+```bash
+# Python compilation
+python -m compileall -q .github/scripts
+
+# Python validators
+python .github/scripts/check-secrets.py
+python .github/scripts/check-env-example.py
+python .github/scripts/check-links.py
+python .github/scripts/validate-json.py —recursive
+python .github/scripts/validate-repository.py
+
+# JavaScript syntax
+node —check .github/scripts/dependency-report.js
+node —check .github/scripts/ci-summary.js
+
+# Shell syntax
+bash -n .github/scripts/validate-commit-message.sh
+bash -n .github/scripts/test-validate-commit-message.sh
+
+# Commit-message tests
+bash .github/scripts/test-validate-commit-message.sh
+```
+
+Some checks require Git metadata, repository files or configured environment examples.
+
+Run them from a complete Git checkout.
+
+## 15. Exit Code Reference
+
+| Exit code | Meaning |
+|—|—|
+| `0` | Validation successful |
+| `1` | Validation failure or detected issue |
+| `2` | Execution, configuration or usage error |
+
+## 16. Security Guidelines
+
+1. Never commit production environment files.
+2. Never hardcode API keys or passwords.
+3. Use GitHub Actions secrets for CI credentials.
+4. Keep dependency lockfiles committed.
+5. Review dependency updates before merging.
+6. Enable GitHub Secret Scanning.
+7. Enable push protection.
+8. Review CodeQL findings.
+9. Protect production deployment branches.
+10. Avoid printing credentials in CI logs.
+
+## 17. Maintenance Policy
+
+When modifying a script:
+
+- Preserve its documented command-line interface unless intentionally versioned.
+- Validate Python and JavaScript syntax.
+- Test expected success and failure conditions.
+- Update this README when commands change.
+- Keep CI execution deterministic.
+- Avoid destructive repository operations.
+- Do not introduce hardcoded credentials.
+
+## 18. Version History
+
+| Version | Description |
+|—|—|
+| 2.1.3 | Repository validation and automation improvements |
+| 2.1.2 | Security and dependency reporting improvements |
+| 2.1.1 | CI validation improvements |
+| 2.1.0 | Expanded GitHub automation tooling |
+
+—
+
+**MedOrbits Engineering**
+
+Repository automation and validation infrastructure.
+
+Copyright © 2026 MedOrbits. All rights reserved.

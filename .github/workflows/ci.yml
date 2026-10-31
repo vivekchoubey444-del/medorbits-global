@@ -1,9 +1,9 @@
 
 # ============================================================
 # MEDORBITS -- CONTINUOUS INTEGRATION
-# File: /.github/workflows/ci.yml
-# Purpose: Automated validation, testing, security and build
-# Runtime: Node.js 20+
+# File: .github/workflows/ci.yml
+# Purpose: Repository validation, tests, security and reporting
+# Runtime: Node.js 20+ | Python 3.10+ | Bash
 # ============================================================
 
 name: MedOrbits CI
@@ -26,238 +26,26 @@ on:
   schedule:
     - cron: "0 2 * * 1"
 
-# ------------------------------------------------------------
-# GLOBAL PERMISSIONS
-# ------------------------------------------------------------
 permissions:
   contents: read
 
-# Cancel outdated workflow runs for the same branch.
 concurrency:
   group: medorbits-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# ------------------------------------------------------------
-# ENVIRONMENT
-# ------------------------------------------------------------
 env:
-  CI: true
+  CI: "true"
   NODE_ENV: test
-  FORCE_COLOR: 0
+  FORCE_COLOR: "0"
 
 jobs:
 
   # ==========================================================
   # 1. REPOSITORY VALIDATION
   # ==========================================================
+
   repository-validation:
     name: Repository Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Validate required repository structure
-        run: |
-          echo "Checking MedOrbits repository structure..."
-
-          required_paths=(
-            "package.json"
-            ".github"
-          )
-
-          for path in "${required_paths[@]}"; do
-            if [ ! -e "$path" ]; then
-              echo "::error::Missing required path: $path"
-              exit 1
-            fi
-          done
-
-          echo "Repository structure validation passed."
-
-      - name: Validate JSON files
-        run: |
-          python3 - <<'PY'
-          import json
-          import pathlib
-          import sys
-
-          root = pathlib.Path(".")
-
-          excluded = {
-              "node_modules",
-              ".git",
-              "dist",
-              "build",
-              "coverage"
-          }
-
-          files = [
-              p for p in root.rglob("*.json")
-              if not any(part in excluded for part in p.parts)
-          ]
-
-          errors = []
-
-          for file in files:
-              try:
-                  with file.open(encoding="utf-8") as stream:
-                      json.load(stream)
-              except Exception as exc:
-                  errors.append(f"{file}: {exc}")
-
-          if errors:
-              for error in errors:
-                  print(f"ERROR: {error}")
-              sys.exit(1)
-
-          print(f"Validated {len(files)} JSON files.")
-          PY
-
-  # ==========================================================
-  # 2. NODE.JS INSTALLATION AND VALIDATION
-  # ==========================================================
-  node-validation:
-    name: Node.js Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-
-      - name: Check Node and npm versions
-        run: |
-          node --version
-          npm --version
-
-      - name: Validate package.json
-        run: |
-          node -e "
-            const pkg = require('./package.json');
-            if (!pkg.name) {
-              throw new Error('Missing package name');
-            }
-            console.log('Package:', pkg.name);
-            console.log('Version:', pkg.version || 'Not specified');
-          "
-
-      - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            echo "::error::package-lock.json is required for reproducible CI."
-            exit 1
-          fi
-
-      - name: Check JavaScript syntax
-        run: |
-          find . \
-            -path './node_modules' -prune -o \
-            -path './.git' -prune -o \
-            -type f \( -name "*.js" -o -name "*.cjs" \) \
-            -print0 |
-          while IFS= read -r -d '' file; do
-            echo "Checking $file"
-            node --check "$file"
-          done
-
-      - name: Run lint
-        run: |
-          if npm run | grep -qE '^[[:space:]]+lint'; then
-            npm run lint
-          else
-            echo "Lint script not configured. Skipping."
-          fi
-
-      - name: Run tests
-        run: |
-          if npm run | grep -qE '^[[:space:]]+test'; then
-            npm test -- --runInBand
-          else
-            echo "Test script not configured. Skipping."
-          fi
-
-      - name: Build application
-        run: |
-          if npm run | grep -qE '^[[:space:]]+build'; then
-            npm run build
-          else
-            echo "Build script not configured. Skipping."
-          fi
-
-  # ==========================================================
-  # 3. PYTHON VALIDATION
-  # ==========================================================
-  python-validation:
-    name: Python Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Check Python syntax
-        run: |
-          python - <<'PY'
-          import pathlib
-          import py_compile
-          import sys
-
-          excluded = {
-              ".git",
-              "node_modules",
-              ".venv",
-              "venv",
-              "__pycache__"
-          }
-
-          files = [
-              path for path in pathlib.Path(".").rglob("*.py")
-              if not any(part in excluded for part in path.parts)
-          ]
-
-          errors = []
-
-          for file in files:
-              try:
-                  py_compile.compile(str(file), doraise=True)
-              except Exception as exc:
-                  errors.append(f"{file}: {exc}")
-
-          if errors:
-              print("\n".join(errors))
-              sys.exit(1)
-
-          print(f"Validated {len(files)} Python files.")
-          PY
-
-  # ==========================================================
-  # 4. SECURITY VALIDATION
-  # ==========================================================
-  security-validation:
-    name: Security Validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -267,84 +55,233 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check for accidentally committed secrets
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify required repository files
+        shell: bash
         run: |
-          python3 - <<'PY'
-          import pathlib
-          import re
-          import sys
+          set -euo pipefail
 
-          excluded = {
-              ".git",
-              "node_modules",
-              ".venv",
-              "venv",
-              "coverage",
-              "dist",
-              "build"
-          }
+          required_paths=(
+            "package.json"
+            "package-lock.json"
+            ".github/workflows"
+            ".github/scripts"
+          )
 
-          patterns = {
-              "Private key": re.compile(
-                  r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
-              ),
-              "Hardcoded API key": re.compile(
-                  r"""(?i)(?:api[_-]?key|secret[_-]?key)\s*[:=]\s*["'][^"']{16,}["']"""
-              ),
-              "Hardcoded access token": re.compile(
-                  r"""(?i)(?:access[_-]?token)\s*[:=]\s*["'][^"']{16,}["']"""
-              )
-          }
+          for path in "${required_paths[@]}"; do
+            if [[ ! -e "$path" ]]; then
+              echo "::error::Required path is missing: $path"
+              exit 1
+            fi
+          done
 
-          errors = []
+          echo "Required repository paths verified."
 
-          for path in pathlib.Path(".").rglob("*"):
-              if not path.is_file():
-                  continue
-
-              if any(part in excluded for part in path.parts):
-                  continue
-
-              if path.name in {".env.example", ".env.sample"}:
-                  pass
-
-              try:
-                  if path.stat().st_size > 1_000_000:
-                      continue
-                  content = path.read_text(
-                      encoding="utf-8",
-                      errors="ignore"
-                  )
-              except OSError:
-                  continue
-
-              for name, pattern in patterns.items():
-                  if pattern.search(content):
-                      errors.append(f"{name} detected in {path}")
-
-          if errors:
-              for error in errors:
-                  print(f"::error::{error}")
-              sys.exit(1)
-
-          print("No matching hardcoded secret patterns detected.")
-          PY
-
-      - name: Dependency vulnerability audit
+      - name: Validate repository structure
         run: |
-          if [ -f package-lock.json ]; then
-            npm install --package-lock-only --ignore-scripts --no-audit
-            npm audit --omit=dev --audit-level=high
+          python .github/scripts/validate-repository.py
+
+      - name: Validate JSON files
+        run: |
+          python .github/scripts/validate-json.py --recursive
+
+      - name: Validate environment example
+        run: |
+          python .github/scripts/check-env-example.py
+
+      - name: Validate local links
+        run: |
+          python .github/scripts/check-links.py
+
+      - name: Test commit message validator
+        shell: bash
+        run: |
+          bash .github/scripts/test-validate-commit-message.sh
+
+  # ==========================================================
+  # 2. NODE.JS VALIDATION
+  # ==========================================================
+
+  node-validation:
+    name: Node.js Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Verify runtime
+        run: |
+          node --version
+          npm --version
+
+      - name: Validate package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node -e "
+            const pkg = require('./package.json');
+
+            if (!pkg.name) {
+              throw new Error('package.json must define a package name');
+            }
+
+            console.log('Package:', pkg.name);
+            console.log('Version:', pkg.version || 'Not specified');
+            console.log('Node requirement:', pkg.engines?.node || 'Not specified');
+          "
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r -d '' file; do
+            echo "Checking: $file"
+            node --check "$file"
+          done < <(
+            find . \
+              -type d \( \
+                -name node_modules -o \
+                -name .git -o \
+                -name .next -o \
+                -name dist -o \
+                -name build -o \
+                -name coverage \
+              \) -prune -o \
+              -type f \( \
+                -name "*.js" -o \
+                -name "*.cjs" -o \
+                -name "*.mjs" \
+              \) -print0
+          )
+
+      - name: Validate CI JavaScript scripts
+        run: |
+          node --check .github/scripts/dependency-report.js
+          node --check .github/scripts/ci-summary.js
+
+      - name: Run lint
+        run: npm run lint --if-present
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Build application
+        run: npm run build --if-present
+
+  # ==========================================================
+  # 3. PYTHON VALIDATION
+  # ==========================================================
+
+  python-validation:
+    name: Python Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python scripts
+        run: |
+          python -m compileall -q .github/scripts
+
+      - name: Validate Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r -d '' file; do
+            echo "Checking: $file"
+            python -m py_compile "$file"
+          done < <(
+            find . \
+              -type d \( \
+                -name .git -o \
+                -name node_modules -o \
+                -name .venv -o \
+                -name venv -o \
+                -name __pycache__ \
+              \) -prune -o \
+              -type f -name "*.py" -print0
+          )
+
+          echo "Python syntax validation completed."
+
+  # ==========================================================
+  # 4. SECURITY VALIDATION
+  # ==========================================================
+
+  security-validation:
+    name: Security Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Scan repository for potential secrets
+        run: |
+          python .github/scripts/check-secrets.py
+
+      - name: Audit npm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f package-lock.json ]]; then
+            npm audit --audit-level=high
           else
-            echo "No npm lockfile available."
+            echo "::error::package-lock.json is required for dependency auditing."
+            exit 1
           fi
+
+      - name: Check dependency report script
+        run: |
+          node .github/scripts/dependency-report.js
 
   # ==========================================================
   # 5. CI SUMMARY
   # ==========================================================
+
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     needs:
       - repository-validation
       - node-validation
@@ -354,34 +291,31 @@ jobs:
     if: always()
 
     steps:
-      - name: Generate workflow summary
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate CI report
         env:
           REPOSITORY_RESULT: ${{ needs.repository-validation.result }}
           NODE_RESULT: ${{ needs.node-validation.result }}
           PYTHON_RESULT: ${{ needs.python-validation.result }}
           SECURITY_RESULT: ${{ needs.security-validation.result }}
         run: |
-          {
-            echo "# MedOrbits CI Report"
-            echo ""
-            echo "| Validation | Result |"
-            echo "|---|---|"
-            echo "| Repository | $REPOSITORY_RESULT |"
-            echo "| Node.js | $NODE_RESULT |"
-            echo "| Python | $PYTHON_RESULT |"
-            echo "| Security | $SECURITY_RESULT |"
-            echo ""
-            echo "Repository: $GITHUB_REPOSITORY"
-            echo "Branch: $GITHUB_REF_NAME"
-            echo "Commit: $GITHUB_SHA"
-          } >> "$GITHUB_STEP_SUMMARY"
+          node .github/scripts/ci-summary.js
 
-          if [[ "$REPOSITORY_RESULT" != "success" ||
-                "$NODE_RESULT" != "success" ||
-                "$PYTHON_RESULT" != "success" ||
-                "$SECURITY_RESULT" != "success" ]]; then
-            echo "::error::One or more CI jobs failed."
-            exit 1
-          fi
-
-          echo "All MedOrbits CI checks passed."
+      - name: Enforce CI result
+        if: |
+          needs.repository-validation.result != 'success' ||
+          needs.node-validation.result != 'success' ||
+          needs.python-validation.result != 'success' ||
+          needs.security-validation.result != 'success'
+        run: |
+          echo "::error::One or more MedOrbits CI jobs failed."
+          exit 1

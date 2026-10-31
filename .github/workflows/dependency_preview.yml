@@ -1,0 +1,103 @@
+
+# ============================================================
+# MEDORBITS -- DEPENDENCY PREVIEW
+# File: .github/workflows/dependency_preview.yml
+# Purpose: Generate dependency reports for proposed changes
+# Runtime: Node.js 20+
+# ============================================================
+
+name: MedOrbits Dependency Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - ".github/scripts/dependency-report.js"
+      - ".github/workflows/dependency_preview.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: medorbits-dependency-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  dependency-preview:
+    name: Generate Dependency Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f package.json ]]; then
+            echo "::error::package.json is missing."
+            exit 1
+          fi
+
+          if [[ ! -f package-lock.json ]]; then
+            echo "::error::package-lock.json is missing."
+            exit 1
+          fi
+
+          node -e "
+            const fs = require('node:fs');
+
+            JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+
+            console.log('Dependency manifests are valid JSON.');
+          "
+
+      - name: Verify dependency report script
+        run: |
+          node --check .github/scripts/dependency-report.js
+
+      - name: Create report directory
+        run: |
+          mkdir -p reports
+
+      - name: Generate dependency report
+        run: |
+          node .github/scripts/dependency-report.js \
+            --markdown \
+            --output reports/dependency-preview.md
+
+      - name: Generate machine-readable report
+        run: |
+          node .github/scripts/dependency-report.js \
+            --json \
+            --output reports/dependency-preview.json
+
+      - name: Upload dependency preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: medorbits-dependency-preview
+          path: reports/
+          if-no-files-found: error
+          retention-days: 14

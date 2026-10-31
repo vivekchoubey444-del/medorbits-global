@@ -1,148 +1,57 @@
 
 # ============================================================
 # MEDORBITS -- DEPENDABOT CONFIGURATION
-# File: /.github/dependabot.yml
-# Purpose: Automated dependency updates and security maintenance
+# File: .github/dependabot.yml
 # ============================================================
 
 version: 2
 
 updates:
-
-  # ----------------------------------------------------------
-  # 1. ROOT NPM DEPENDENCIES
-  # ----------------------------------------------------------
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
+      interval: weekly
+      day: monday
+      time: "03:00"
       timezone: "Asia/Kolkata"
 
     open-pull-requests-limit: 10
-
-    versioning-strategy: "increase"
-
-    labels:
-      - "dependencies"
-      - "npm"
-      - "automated"
-
-    commit-message:
-      prefix: "deps"
-      include: "scope"
 
     groups:
       production-dependencies:
-        dependency-type: "production"
+        dependency-type: production
         update-types:
-          - "minor"
-          - "patch"
+          - minor
+          - patch
 
       development-dependencies:
-        dependency-type: "development"
+        dependency-type: development
         update-types:
-          - "minor"
-          - "patch"
-
-    ignore:
-      # Avoid automatic major-version upgrades.
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  # ----------------------------------------------------------
-  # 2. GITHUB ACTIONS
-  # ----------------------------------------------------------
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:30"
-      timezone: "Asia/Kolkata"
-
-    open-pull-requests-limit: 10
+          - minor
+          - patch
 
     labels:
-      - "dependencies"
-      - "github-actions"
-      - "ci-cd"
+      - dependencies
+      - automated
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+      timezone: "Asia/Kolkata"
+
+    open-pull-requests-limit: 5
+
+    labels:
+      - github-actions
+      - dependencies
 
     commit-message:
       prefix: "ci"
       include: "scope"
-
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-
-  # ----------------------------------------------------------
-  # 3. PYTHON DEPENDENCIES
-  # ----------------------------------------------------------
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "04:00"
-      timezone: "Asia/Kolkata"
-
-    open-pull-requests-limit: 5
-
-    labels:
-      - "dependencies"
-      - "python"
-
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-
-  # ----------------------------------------------------------
-  # 4. DOCKER DEPENDENCIES
-  # ----------------------------------------------------------
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "wednesday"
-      time: "04:00"
-      timezone: "Asia/Kolkata"
-
-    open-pull-requests-limit: 5
-
-    labels:
-      - "dependencies"
-      - "docker"
-      - "infrastructure"
-
-    commit-message:
-      prefix: "docker"
-      include: "scope"
-
-  # ----------------------------------------------------------
-  # 5. DOCKER COMPOSE
-  # ----------------------------------------------------------
-  - package-ecosystem: "docker-compose"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "wednesday"
-      time: "04:30"
-      timezone: "Asia/Kolkata"
-
-    open-pull-requests-limit: 5
-
-    labels:
-      - "dependencies"
-      - "docker-compose"
-
-    commit-message:
-      prefix: "docker"
-      include: "scope"
-
-# ============================================================
-# END OF CONFIGURATION
-# ============================================================

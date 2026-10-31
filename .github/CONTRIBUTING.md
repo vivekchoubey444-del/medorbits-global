@@ -1,296 +1,568 @@
 
 # MedOrbits — Contribution Guidelines
 
-Thank you for contributing to **MedOrbits**, an education and career guidance platform covering courses, colleges, medical admissions, scholarships, study abroad, and employment opportunities.
+**Version:** 1.0.0  
+**Effective Date:** 1 November 2026  
+**Project:** MedOrbits  
+**Copyright © 2026 MedOrbits. All rights reserved.**
 
-These guidelines help maintain code quality, accessibility, security, compatibility, and consistency across the repository.
+—
 
-## 1. Before You Contribute
+## 1. Welcome
 
-Before creating a change:
+Thank you for your interest in contributing to MedOrbits.
 
-- Review the root `README.md` and relevant project documentation.
-- Search existing issues and pull requests for related work.
-- For significant changes, open an issue or discussion before implementation.
-- Confirm that your proposed change fits the scope of MedOrbits.
-- Never include passwords, API keys, private documents, personal records, or production credentials.
+MedOrbits is an integrated education, admissions, career guidance,
+recruitment and technology platform.
 
-For bugs, use the GitHub **Bug Report** form.
+We welcome contributions that improve:
 
-For new functionality, use the **Feature Request** form.
+- Education and learning services.
+- MBBS, BDS and AYUSH admissions information.
+- Colleges and university information.
+- Entrance examination resources.
+- Scholarships and financial assistance.
+- Jobs and recruitment services.
+- Career guidance and professional development.
+- Frontend and backend functionality.
+- APIs and integrations.
+- Security and privacy.
+- Accessibility and performance.
+- Documentation and infrastructure.
 
-For security vulnerabilities, follow the private reporting instructions in `SECURITY.md` or the repository’s Security tab. Do not publish exploitable vulnerability details in a public issue.
+All contributions must follow these guidelines.
 
-## 2. Repository Structure
+## 2. Before Contributing
 
-Follow the existing directory organization. Common areas include:
+Before making changes:
 
-| Path | Responsibility |
-| — | — |
-| `index.html` | Main website entry point |
-| `pages/` | Public website pages |
-| `assets/css/` | Stylesheets and design systems |
-| `assets/js/` | Frontend behavior and utilities |
-| `assets/images/` | Images, icons, and visual assets |
-| `data/` | JSON catalogs and structured content |
-| `server/` | Backend API and server-side modules |
-| `scripts/` | Validation, maintenance, and build utilities |
-| `tests/` | Automated tests |
-| `.github/` | Issue forms, workflows, and repository policies |
-| `docs/` | Technical and user documentation |
+1. Read this document.
+2. Review the repository README.
+3. Check existing issues and pull requests.
+4. Identify the relevant application module.
+5. Confirm that your proposed change is within project scope.
+6. Avoid duplicating existing functionality.
 
-This is a reference, not permission to reorganize existing files arbitrarily. Follow the actual repository structure and established import paths.
+For major architectural changes, open an issue or discussion
+before starting implementation.
 
-## 3. Preserve Existing Website Behavior
+## 3. Repository Access
 
-Unless a change explicitly requires otherwise:
+Contributors should use their own GitHub accounts.
 
-- Preserve existing page structures, filenames, navigation, and working functionality.
-- Do not replace established pages with generic templates.
-- Do not force a fixed card layout or redesign unrelated sections.
-- Maintain existing branding, typography, and color schemes.
-- Use page-specific styling when required instead of introducing conflicting global rules.
-- Preserve working internal links, forms, search, filters, and responsive behavior.
-- Avoid unnecessary dependencies and duplicate implementations.
-- Do not remove existing features without documenting the reason and scope.
+Never share:
 
-For visual changes, check mobile, tablet, and desktop layouts.
+- GitHub passwords.
+- Personal access tokens.
+- SSH private keys.
+- API credentials.
+- Production database credentials.
+- Deployment secrets.
 
-## 4. HTML, CSS, and JavaScript Standards
+Use GitHub’s authorized contribution mechanisms.
 
-### HTML
+## 4. Development Requirements
 
-- Use semantic HTML5 elements.
-- Include appropriate metadata, page titles, and viewport configuration.
-- Use meaningful headings in a logical hierarchy.
-- Provide accessible labels for form controls.
-- Add useful alternative text to informative images.
-- Avoid duplicate IDs and broken internal links.
-- Escape or safely render untrusted user-provided content.
+Recommended development environment:
 
-### CSS
+| Requirement | Recommended Version |
+|—|—|
+| Node.js | 20 or later |
+| npm | Version compatible with Node.js |
+| Python | 3.10 or later |
+| Git | Latest stable |
+| Operating System | Windows, macOS or Linux |
 
-- Follow the existing design tokens and stylesheet conventions.
-- Avoid unnecessary global selectors and `!important` declarations.
-- Keep layouts responsive and prevent horizontal overflow.
-- Preserve readable contrast, visible focus indicators, and reduced-motion support.
-- Avoid inline styles when an existing stylesheet or component pattern is appropriate.
-
-### JavaScript
-
-- Follow the existing module system and coding conventions.
-- Use descriptive names and small, maintainable functions.
-- Handle expected errors and invalid inputs.
-- Avoid polluting the global namespace.
-- Do not use `eval()` or construct executable code from untrusted input.
-- Do not expose secrets in client-side JavaScript.
-- Clean up event listeners and other resources where appropriate.
-
-## 5. JSON Catalogs and Data Integrity
-
-When editing files under `data/`:
-
-- Keep JSON syntactically valid.
-- Preserve established field names and record structures unless a schema change is intentional.
-- Use consistent IDs and prevent duplicate identifiers.
-- Verify references between related catalogs, such as courses, colleges, universities, fees, and scholarships.
-- Use valid URLs and accurate, traceable information.
-- Distinguish verified information from estimates or unconfirmed details.
-- Include source and update-date metadata where the existing schema supports it.
-- Do not fabricate admission dates, fees, accreditation details, rankings, eligibility requirements, or scholarship availability.
-
-If a schema changes, update dependent code, validation rules, documentation, and tests together.
-
-## 6. Backend and API Changes
-
-For backend work:
-
-- Follow the existing server architecture and route conventions.
-- Validate all incoming data on the server.
-- Apply authentication and authorization checks where required.
-- Use parameterized database queries or the project’s established safe database abstraction.
-- Avoid returning internal stack traces or sensitive configuration to clients.
-- Apply appropriate request-size limits, rate limits, and security headers.
-- Use environment variables for secrets and deployment-specific configuration.
-- Update API documentation and tests when endpoints or response formats change.
-
-Never commit a real `.env` file, database password, private key, access token, or production user data.
-
-## 7. PWA and Offline Support
-
-For changes to the web app manifest, service worker, caching, or offline pages:
-
-- Preserve the existing public URL structure.
-- Ensure manifest and icon paths point to real files.
-- Keep the service worker’s cache version and precache list consistent.
-- Avoid caching authenticated pages, private user data, or sensitive API responses.
-- Provide a useful offline fallback where appropriate.
-- Verify that updated assets can be loaded after deployment.
-- Do not cache responses marked `no-store` or other responses prohibited by the application’s caching policy.
-
-Do not claim that a feature works offline unless its required resources and behavior have been tested offline.
-
-## 8. Accessibility and Localization
-
-Contributions should:
-
-- Support keyboard navigation and visible focus.
-- Use accessible names and labels for interactive controls.
-- Avoid communicating information through color alone.
-- Respect reduced-motion preferences.
-- Preserve existing translation keys and localization conventions.
-- Avoid hard-coding user-facing text when the relevant translation system is already in use.
-- Ensure text remains readable at different screen sizes and zoom levels.
-
-## 9. Security and Privacy
-
-All contributions must follow these principles:
-
-- Collect only the personal information needed for the intended purpose.
-- Never log passwords, authentication tokens, payment credentials, or sensitive documents.
-- Avoid exposing personal information in public URLs, analytics, error messages, or logs.
-- Do not weaken authentication, authorization, validation, or security controls to make tests pass.
-- Review dependency changes for compatibility and known vulnerabilities.
-- Do not add tracking, external scripts, or data-sharing integrations without appropriate justification and review.
-- Use synthetic data in tests and examples.
-
-If you accidentally expose a secret, revoke or rotate it immediately. Removing it from a later commit does not guarantee that it has disappeared from Git history.
-
-## 10. Python Utilities and Automation
-
-For Python scripts:
-
-- Prefer the standard library when practical.
-- Keep scripts compatible with the Python version documented by the project.
-- Use clear error messages and appropriate exit codes.
-- Avoid destructive operations unless explicitly required and safely guarded.
-- Do not overwrite user files or rewrite repository content unexpectedly.
-- Make automated fixes deterministic and reviewable.
-- Add tests for important validation and transformation logic.
-
-Automation must not silently delete project files, force-push changes, or deploy to production without explicit authorization.
-
-## 11. Dependencies
-
-Before adding or upgrading a dependency:
-
-- Check whether an existing dependency already provides the required capability.
-- Confirm compatibility with the supported Node.js or Python version.
-- Prefer maintained packages from trustworthy sources.
-- Update the appropriate manifest and lockfile together.
-- Explain material dependency changes in the pull request.
-- Review relevant security advisories and license compatibility.
-
-Do not commit generated dependency directories such as `node_modules/` or virtual environments.
-
-## 12. Testing and Validation
-
-Run the relevant checks for the areas you changed. Where available, use the repository’s existing scripts:
+Check installed versions:
 
 ```bash
-npm run validate:python
-npm run validate:catalogs
-npm run validate:integrity
-npm run validate:html
-npm run validate:links
-npm run validate:i18n
-npm run validate:pwa
-npm test
+node —version
+npm —version
+python —version
+git —version
 ```
 
-These commands are examples based on the project’s configured scripts. Check the root `package.json` and the applicable script files before relying on a command; not every repository version will contain every script.
+Use the versions and package manager specified by the actual
+repository configuration when they differ from these recommendations.
 
-For backend changes, also run the relevant API and integration tests.
+## 5. Setting Up the Project
 
-For frontend changes, inspect the affected pages and browser console.
+Clone the repository:
 
-For data changes, verify JSON syntax, schemas, and cross-catalog references.
-
-Report checks that could not be completed. Never claim a test passed if it was not run successfully.
-
-## 13. Branch and Commit Conventions
-
-Use descriptive branch names, for example:
-
-- `feature/course-filters`
-- `fix/mobile-navigation`
-- `docs/api-setup`
-- `test/catalog-validation`
-- `security/redact-error-logs`
-
-Use clear commit messages, for example:
-
-```text
-feat: add course filtering
-fix: correct scholarship catalog links
-docs: clarify local development setup
-test: validate college identifiers
-security: redact sensitive API errors
+```bash
+git clone https://github.com/vivekchoubey444-del/MedOrbits.git
 ```
 
-These prefixes are recommended conventions; follow any stricter commit rules enforced by repository automation.
+Enter the project directory:
 
-Keep commits focused and avoid including unrelated formatting or generated-file changes.
+```bash
+cd MedOrbits
+```
 
-## 14. Pull Request Requirements
+Install locked dependencies:
 
-A pull request should include:
+```bash
+npm ci
+```
 
-1. A concise description of the change.
-2. The problem being solved and its expected benefit.
-3. Relevant issue references, where applicable.
-4. A summary of important implementation decisions.
-5. Testing and validation results.
-6. Screenshots for meaningful visual changes.
-7. Data migrations, schema changes, or deployment considerations, if applicable.
-8. Any known limitations or follow-up work.
+Create a local environment file if the project provides
+an environment example:
+
+```bash
+cp .env.example .env
+```
+
+On Windows Command Prompt:
+
+```cmd
+copy .env.example .env
+```
+
+Configure only the environment variables required for local
+development.
+
+Never copy production credentials into a development environment.
+
+Start the application using the scripts defined in `package.json`.
+
+For example, if available:
+
+```bash
+npm run dev
+```
+
+Do not assume a script exists unless it is defined in the project.
+
+## 6. Branching Strategy
+
+Do not commit directly to protected production branches.
+
+Create a dedicated branch for each contribution.
+
+Recommended branch naming:
+
+| Change | Branch Prefix |
+|—|—|
+| New feature | `feature/` |
+| Bug fix | `fix/` |
+| Documentation | `docs/` |
+| Security | `security/` |
+| Refactoring | `refactor/` |
+| Performance | `perf/` |
+| Maintenance | `chore/` |
+| Testing | `test/` |
+
+Examples:
+
+```bash
+git checkout -b feature/student-dashboard
+```
+
+```bash
+git checkout -b fix/admission-search
+```
+
+```bash
+git checkout -b docs/api-documentation
+```
+
+Keep each branch focused on one logical change.
+
+## 7. Coding Standards
+
+### General
+
+- Write clear and maintainable code.
+- Use descriptive variable and function names.
+- Avoid unnecessary duplication.
+- Prefer modular architecture.
+- Preserve existing application conventions.
+- Remove temporary debugging statements.
+- Handle errors explicitly.
+- Avoid unnecessary dependencies.
+- Keep changes focused and reviewable.
+
+### JavaScript and TypeScript
+
+- Use strict mode where applicable.
+- Prefer `const` for values that are not reassigned.
+- Use `let` only when reassignment is required.
+- Avoid unnecessary global variables.
+- Validate external input.
+- Use asynchronous error handling.
+- Avoid exposing internal errors or secrets to users.
+- Keep API and business logic separated.
+
+### Python
+
+- Follow PEP 8 conventions.
+- Use meaningful function and variable names.
+- Add type annotations where useful.
+- Handle exceptions appropriately.
+- Avoid hardcoded paths and credentials.
+
+### HTML and CSS
+
+- Use semantic HTML.
+- Maintain accessible markup.
+- Support responsive layouts.
+- Preserve existing design-system conventions.
+- Avoid unnecessary inline styles.
+- Ensure sufficient text contrast.
+- Avoid breaking existing page navigation.
+
+### JSON
+
+- Use valid JSON syntax.
+- Avoid duplicate object keys.
+- Maintain consistent naming conventions.
+- Preserve established data structures.
+- Validate JSON before submission.
+
+## 8. Frontend Contributions
+
+Frontend changes should:
+
+- Preserve existing page structures unless the change requires otherwise.
+- Maintain responsive behavior.
+- Support mobile and desktop layouts.
+- Use accessible labels and controls.
+- Avoid broken navigation.
+- Optimize images and assets.
+- Avoid unnecessary JavaScript dependencies.
+- Maintain consistent design-system usage.
+
+Test the affected pages before submitting.
+
+## 9. Backend and API Contributions
+
+Backend changes should:
+
+- Follow the existing controller, service and route architecture.
+- Validate request parameters.
+- Enforce authentication where required.
+- Enforce authorization independently of authentication.
+- Validate uploaded files.
+- Use parameterized database queries.
+- Handle database errors safely.
+- Avoid returning internal stack traces.
+- Apply appropriate rate limits.
+- Document API behavior when it changes.
+
+Never trust client-side validation as the only security control.
+
+## 10. Database Changes
+
+For database-related contributions:
+
+- Include migration scripts when required.
+- Avoid destructive changes without a migration plan.
+- Preserve existing data where possible.
+- Document schema changes.
+- Consider backward compatibility.
+- Test migration and rollback procedures.
+- Never commit real production database records.
+
+Do not run migrations against production without authorization.
+
+## 11. Education and Admissions Data
+
+Contributions involving admissions, educational institutions,
+examinations, fees or scholarships must prioritize accuracy.
+
+Contributors should:
+
+- Use reliable and authoritative sources.
+- Include relevant source references.
+- Identify the academic year.
+- Distinguish official information from estimates.
+- Clearly indicate when information requires verification.
+- Avoid presenting outdated cutoffs or fee structures as current.
+- Avoid guaranteeing admission or employment outcomes.
+
+For regulated admissions information, prioritize the relevant
+official government, university, examination or regulatory source.
+
+## 12. Jobs and Recruitment
+
+Contributions involving employment and recruitment must:
+
+- Present job eligibility accurately.
+- Identify relevant application deadlines.
+- Avoid fabricated job vacancies.
+- Avoid misleading salary claims.
+- Respect candidate privacy.
+- Avoid exposing applicant documents or personal information.
+- Clearly distinguish verified opportunities from unverified listings.
+
+## 13. Security Requirements
+
+Security is mandatory for every contribution.
+
+Never commit:
+
+- `.env` files containing real credentials.
+- API keys.
+- Access tokens.
+- Passwords.
+- Private keys.
+- Production database dumps.
+- Sensitive personal records.
 
 Before submitting:
 
-- Review your complete diff.
-- Remove temporary files, debugging output, secrets, and unrelated changes.
-- Confirm that links and affected pages still work.
-- Update documentation and tests where necessary.
-- Resolve merge conflicts without discarding unrelated work.
+- Validate authentication and authorization.
+- Check input validation.
+- Review file upload handling.
+- Review API access controls.
+- Check dependency changes.
+- Remove sensitive logging.
+- Consider common web vulnerabilities.
 
-Do not merge your own pull request if repository protection rules require approval.
+For security vulnerabilities, follow `SECURITY.md`.
 
-## 15. Documentation
+Do not disclose vulnerabilities through public issues.
 
-Update relevant documentation when a change affects:
+## 14. Testing Requirements
 
-- Installation or development setup.
-- Environment variables or configuration.
-- Public routes or API contracts.
-- Data schemas or catalog formats.
-- PWA behavior or caching.
-- Security requirements.
-- Build, validation, or deployment procedures.
+Run relevant checks before submitting.
 
-Use relative links for files within the repository when practical.
+Example repository validation:
 
-## 16. Review and Maintainer Decisions
+```bash
+python .github/scripts/validate-repository.py
+```
 
-Maintainers may request changes, additional tests, clarification, or a narrower scope.
+JSON validation:
 
-A contribution may be declined if it introduces security or privacy risks, breaks existing behavior, duplicates existing functionality, lacks sufficient justification, or falls outside the project’s scope.
+```bash
+python .github/scripts/validate-json.py —recursive
+```
 
-Submitting a contribution does not guarantee acceptance or a particular release date.
+Environment example validation:
 
-## 17. License and Attribution
+```bash
+python .github/scripts/check-env-example.py
+```
 
-By submitting a contribution, you confirm that you have the right to contribute the material and that you have reviewed the repository’s license and applicable contribution terms.
+Secret scanning:
 
-Do not submit copied content, images, datasets, or code without the necessary rights and attribution.
+```bash
+python .github/scripts/check-secrets.py
+```
 
-## 18. Questions
+Link validation:
 
-For general questions, use the repository’s Discussions feature if enabled.
+```bash
+python .github/scripts/check-links.py
+```
 
-For reproducible defects, open a bug report.
+JavaScript syntax checks:
 
-For proposed improvements, open a feature request.
+```bash
+node —check .github/scripts/dependency-report.js
+node —check .github/scripts/ci-summary.js
+```
 
-For security concerns, use the private reporting channel described in `SECURITY.md`.
+Shell syntax checks:
 
-Thank you for helping make MedOrbits more reliable, accessible, secure, and useful.
+```bash
+bash -n .github/scripts/validate-commit-message.sh
+```
+
+Commit-message tests:
+
+```bash
+bash .github/scripts/test-validate-commit-message.sh
+```
+
+Run the relevant application tests as defined in `package.json`.
+
+Report any checks that could not be executed.
+
+Do not claim that tests passed unless they were actually run.
+
+## 15. Commit Message Convention
+
+MedOrbits uses Conventional Commit-style messages.
+
+Format:
+
+```text
+type(scope): description
+```
+
+Examples:
+
+```text
+feat(auth): add student registration
+fix(api): handle missing response
+docs(readme): update installation guide
+security(auth): improve token validation
+test(api): add admission endpoint tests
+refactor(database): simplify query service
+perf(search): optimize college lookup
+chore(deps): update npm dependencies
+```
+
+Supported types:
+
+- `feat`
+- `fix`
+- `docs`
+- `style`
+- `refactor`
+- `perf`
+- `test`
+- `build`
+- `ci`
+- `chore`
+- `revert`
+- `security`
+
+Keep commit subjects clear and concise.
+
+## 16. Pull Request Requirements
+
+Submit contributions through pull requests.
+
+A pull request should:
+
+1. Explain the problem being solved.
+2. Describe the implementation.
+3. Reference related issues.
+4. Include testing details.
+5. Identify breaking changes.
+6. Document migration requirements.
+7. Identify deployment implications.
+8. Include screenshots for relevant UI changes.
+9. Disclose security implications.
+
+Use the repository pull-request template.
+
+Do not combine unrelated changes in one pull request.
+
+## 17. Code Review
+
+Contributors should:
+
+- Respond constructively to review comments.
+- Explain implementation decisions.
+- Address requested changes.
+- Keep pull requests updated.
+- Resolve conflicts carefully.
+- Avoid force-pushing shared branches without coordination.
+
+Approval and merging remain subject to repository permissions
+and branch protection rules.
+
+## 18. Dependencies
+
+When adding or updating dependencies:
+
+- Explain why the dependency is necessary.
+- Prefer maintained packages.
+- Review licenses and security advisories.
+- Avoid unnecessary package duplication.
+- Update `package.json`.
+- Update `package-lock.json` when applicable.
+- Verify installation using `npm ci`.
+
+Do not introduce packages with known critical vulnerabilities
+without an approved mitigation.
+
+## 19. Documentation
+
+Update documentation when changing:
+
+- Installation procedures.
+- Environment variables.
+- APIs.
+- Database schemas.
+- Configuration.
+- Application behavior.
+- Deployment procedures.
+- Security controls.
+
+Documentation must match the actual implementation.
+
+## 20. Prohibited Contributions
+
+The following are not acceptable:
+
+- Malicious code.
+- Credential harvesting.
+- Unauthorized access functionality.
+- Hidden data collection.
+- Malware or spyware.
+- Deliberate security weaknesses.
+- Fabricated admissions or job information.
+- Copyright-infringing material.
+- Unnecessary collection of personal information.
+- Deliberately destructive scripts.
+
+## 21. Licensing and Intellectual Property
+
+Contributions are subject to the repository’s applicable
+license and contribution requirements.
+
+Contributors must:
+
+- Have the right to submit contributed code.
+- Respect third-party licenses.
+- Avoid copying proprietary code without authorization.
+- Identify third-party assets and dependencies.
+- Avoid submitting confidential material.
+
+Submission of a pull request does not automatically transfer
+ownership of unrelated intellectual property.
+
+## 22. Reporting Problems
+
+Use the appropriate GitHub issue template:
+
+- Bug Report
+- Feature Request
+- Question / Technical Support
+- Documentation Improvement
+
+For security vulnerabilities, use the private reporting
+process described in `SECURITY.md`.
+
+## 23. Final Checklist
+
+Before submitting your pull request:
+
+- [ ] I reviewed these contribution guidelines.
+- [ ] I used an appropriate branch.
+- [ ] I followed the repository coding conventions.
+- [ ] I tested the affected functionality.
+- [ ] I validated relevant JSON and configuration files.
+- [ ] I did not commit credentials or private information.
+- [ ] I updated relevant documentation.
+- [ ] I used a valid commit message.
+- [ ] I completed the pull-request template.
+- [ ] I disclosed breaking changes and deployment requirements.
+
+—
+
+## 24. Contact and Governance
+
+Contribution review, approval and merging are managed through
+the repository’s authorized maintainers.
+
+Official repository:
+
+https://github.com/vivekchoubey444-del/MedOrbits
+
+Official website:
+
+https://medorbits.in
+
+—
+
+**MedOrbits Engineering**
+
+Education | Admissions | Careers | Recruitment | Technology
+
+Copyright © 2026 MedOrbits. All rights reserved.

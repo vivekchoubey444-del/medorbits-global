@@ -3,7 +3,7 @@
 # ==============================================================================
 # MedOrbits -- Commit Message Validator
 # File: .github/scripts/validate-commit-message.sh
-# Release: 2.1.2
+# Release: 2.1.3
 # Bash: 4+
 #
 # Format:
@@ -43,14 +43,17 @@ Supported types:
 
 Rules:
   - Type must be lowercase and supported.
-  - Scope is optional; allowed characters are letters, digits, dots,
-    underscores, hyphens, and slashes.
+  - Scope is optional.
+  - Scope allows letters, digits, dots, underscores, hyphens and slashes.
   - Exactly one space must follow the header colon.
-  - Subject must be non-empty, have no leading/trailing whitespace,
-    contain at least one letter or digit, and be at most 100 characters.
-  - Merge, fixup, squash, and amend headers are rejected.
-  - The first line is the header; subsequent lines may contain a body/footer.
-  - The input must be a readable regular file.
+  - Subject must begin with a letter or digit.
+  - Subject must be non-empty.
+  - Subject must not contain leading or trailing whitespace.
+  - Subject maximum length is 100 characters.
+  - Merge, fixup, squash and amend headers are rejected.
+  - The first line is the header.
+  - Subsequent lines may contain a commit body or footer.
+  - Input must be a readable regular file.
 
 Exit codes:
   0  Valid commit message
@@ -69,7 +72,12 @@ usage_error() {
     exit 2
 }
 
-if (($# == 1)) && [[ "$1" == "--help" || "$1" == "-h" ]]; then
+# ----------------------------------------------------------------
+# ARGUMENT VALIDATION
+# ----------------------------------------------------------------
+
+if (($# == 1)) &&
+   [[ "$1" == "--help" || "$1" == "-h" ]]; then
     usage
     exit 0
 fi
@@ -89,13 +97,19 @@ readonly MESSAGE_FILE="$1"
 command -v awk >/dev/null 2>&1 ||
     usage_error "Required command 'awk' is unavailable."
 
-# Read the first line without command substitution so trailing whitespace
-# and carriage returns remain visible to the validator.
+command -v sed >/dev/null 2>&1 ||
+    usage_error "Required command 'sed' is unavailable."
+
+# ----------------------------------------------------------------
+# READ COMMIT HEADER
+# ----------------------------------------------------------------
+
 RAW_HEADER=""
+
 if IFS= read -r RAW_HEADER < "$MESSAGE_FILE"; then
     :
 else
-    # A final line without a newline is still a valid input line.
+    # Accept a final line without a newline.
     :
 fi
 
@@ -116,20 +130,34 @@ if [[ "$HEADER" =~ [[:space:]]$ ]]; then
     fail "Header must not end with whitespace."
 fi
 
+# ----------------------------------------------------------------
+# REJECT SPECIAL COMMIT HEADERS
+# ----------------------------------------------------------------
+
 case "$HEADER" in
     "Merge "*)
-        fail "Merge commit messages are not accepted by this policy."
+        fail "Merge commit messages are not accepted."
         ;;
+
     "fixup! "*|"squash! "*|"amend! "*)
-        fail "Fixup, squash, and amend messages are not accepted."
+        fail "Fixup, squash and amend messages are not accepted."
         ;;
 esac
+
+# ----------------------------------------------------------------
+# CONFLICT MARKER VALIDATION
+# ----------------------------------------------------------------
 
 if [[ "$HEADER" == *"<<<<<<<"* ||
       "$HEADER" == *">>>>>>>"* ||
       "$HEADER" == *"======="* ]]; then
+
     fail "Header contains a possible conflict marker."
 fi
+
+# ----------------------------------------------------------------
+# CONVENTIONAL COMMIT HEADER VALIDATION
+# ----------------------------------------------------------------
 
 HEADER_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|security)(\([A-Za-z0-9._/-]+\))?: [^[:space:]].*$'
 
@@ -137,8 +165,10 @@ if [[ ! "$HEADER" =~ $HEADER_REGEX ]]; then
     fail "Expected 'type(scope): subject' or 'type: subject' with a supported lowercase type."
 fi
 
-# Remove the type and optional scope, rather than splitting at the first
-# colon. This preserves colons that legitimately occur in the subject.
+# ----------------------------------------------------------------
+# EXTRACT SUBJECT
+# ----------------------------------------------------------------
+
 SUBJECT="$(
     printf '%s\n' "$HEADER" |
         sed -E 's/^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|security)(\([A-Za-z0-9._/-]+\))?: //'
@@ -147,12 +177,34 @@ SUBJECT="$(
 [[ -n "$SUBJECT" ]] ||
     fail "Subject must not be empty."
 
+# ----------------------------------------------------------------
+# SUBJECT VALIDATION
+# ----------------------------------------------------------------
+
+if [[ "$SUBJECT" =~ ^[[:space:]] ]]; then
+    fail "Subject must not start with whitespace."
+fi
+
 if [[ "$SUBJECT" =~ [[:space:]]$ ]]; then
     fail "Subject must not end with whitespace."
 fi
 
+# Require the first character to be a letter or digit.
+if [[ ! "$SUBJECT" =~ ^[[:alnum:]] ]]; then
+    fail "Subject must begin with a letter or digit."
+fi
+
+if [[ ! "$SUBJECT" =~ [[:alnum:]] ]]; then
+    fail "Subject must contain at least one letter or digit."
+fi
+
+# ----------------------------------------------------------------
+# SUBJECT LENGTH
+# ----------------------------------------------------------------
+
 SUBJECT_LENGTH="$(
-    LC_ALL=C awk -v text="$SUBJECT" 'BEGIN { print length(text) }'
+    LC_ALL=C awk -v text="$SUBJECT" \
+        'BEGIN { print length(text) }'
 )"
 
 if [[ ! "$SUBJECT_LENGTH" =~ ^[0-9]+$ ]]; then
@@ -163,9 +215,10 @@ if (( SUBJECT_LENGTH > MAX_SUBJECT_LENGTH )); then
     fail "Subject is ${SUBJECT_LENGTH} characters; maximum is ${MAX_SUBJECT_LENGTH}."
 fi
 
-if [[ ! "$SUBJECT" =~ [[:alnum:]] ]]; then
-    fail "Subject must contain at least one letter or digit."
-fi
+# ----------------------------------------------------------------
+# SUCCESS
+# ----------------------------------------------------------------
 
 printf '[COMMIT-MSG] VALID: %s\n' "$HEADER"
+
 exit 0

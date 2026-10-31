@@ -1,1009 +1,528 @@
+
 #!/usr/bin/env node
 "use strict";
 
 /**
- * MedOrbits -- CI Summary Generator
+ * ============================================================================
+ * MEDORBITS -- CI SUMMARY GENERATOR
  * File: .github/scripts/ci-summary.js
- * Version: 2.0.0
+ * Version: 2.1.3
  *
  * Purpose:
- *   Generate a Markdown summary for GitHub Actions workflow runs.
+ *   Generate a structured Continuous Integration summary for GitHub Actions.
  *
  * Features:
- *   - GitHub Actions step summary integration.
- *   - Local Markdown report generation.
- *   - Optional JSON results input.
- *   - Test, validation, security and build summaries.
- *   - Workflow and Git metadata.
- *   - Markdown injection protection.
- *   - Input validation and bounded JSON reading.
- *   - Safe-integer validation for test counts.
- *   - Non-zero exit codes for failed checks.
- *   - Node.js built-in modules only.
- *
- * Requirements:
- *   Node.js >= 20
+ *   - CI job result reporting
+ *   - GitHub Actions step summary integration
+ *   - Environment metadata
+ *   - Workflow status evaluation
+ *   - Markdown report generation
+ *   - JSON report generation
+ *   - Safe handling of missing environment variables
+ *   - Local execution support
  *
  * Usage:
  *   node .github/scripts/ci-summary.js
- *   node .github/scripts/ci-summary.js --output ci-summary.md
- *   node .github/scripts/ci-summary.js --results artifacts/ci-results.json
- *   node .github/scripts/ci-summary.js --results artifacts/ci-results.json --strict
- *
- * Optional JSON input:
- * {
- *   "status": "success",
- *   "tests": {
- *     "passed": 42,
- *     "failed": 0,
- *     "skipped": 2
- *   },
- *   "checks": [
- *     {
- *       "name": "HTML validation",
- *       "status": "success"
- *     },
- *     {
- *       "name": "Link validation",
- *       "status": "success"
- *     }
- *   ],
- *   "security": {
- *     "status": "success",
- *     "findings": 0
- *   },
- *   "build": {
- *     "status": "success"
- *   },
- *   "notes": [
- *     "No deployment was performed."
- *   ]
- * }
+ *   node .github/scripts/ci-summary.js --json
+ *   node .github/scripts/ci-summary.js --output reports/ci-summary.md
  *
  * Exit codes:
- *   0 = Summary generated; no failure detected.
- *   1 = CI failure detected.
- *   2 = Invalid arguments, input or output error.
+ *   0 = All required jobs passed
+ *   1 = One or more jobs failed
+ *   2 = Execution or configuration error
+ * ============================================================================
  */
 
 const fs = require("node:fs");
 const path = require("node:path");
-const process = require("node:process");
 
-const TOOL_NAME = "MedOrbits CI Summary Generator";
-const TOOL_VERSION = "2.0.0";
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
 
-const MAX_INPUT_BYTES = 5 * 1024 * 1024;
-const MAX_TEXT_LENGTH = 2000;
-const MAX_CHECKS = 200;
-const MAX_NOTES = 50;
+const VERSION = "2.1.3";
 
-const STATUS = Object.freeze({
-  SUCCESS: "success",
-  FAILURE: "failure",
-  CANCELLED: "cancelled",
-  SKIPPED: "skipped",
-  WARNING: "warning",
-  UNKNOWN: "unknown",
-});
+const ROOT = path.resolve(__dirname, "../..");
 
-const STATUS_SYMBOL = Object.freeze({
-  success: "✅",
-  failure: "❌",
-  cancelled: "⏹️",
-  skipped: "⏭️",
-  warning: "⚠️",
-  unknown: "ℹ️",
-});
-
-const VALID_STATUSES = new Set(
-  Object.values(STATUS),
+const DEFAULT_OUTPUT = path.join(
+  ROOT,
+  "ci-summary.md"
 );
 
-const STATUS_ALIASES = Object.freeze({
-  passed: STATUS.SUCCESS,
-  pass: STATUS.SUCCESS,
-  ok: STATUS.SUCCESS,
-  successful: STATUS.SUCCESS,
-  succeeded: STATUS.SUCCESS,
+// ============================================================================
+// UTILITIES
+// ============================================================================
 
-  failed: STATUS.FAILURE,
-  fail: STATUS.FAILURE,
-  error: STATUS.FAILURE,
-  errored: STATUS.FAILURE,
-
-  canceled: STATUS.CANCELLED,
-  cancelled: STATUS.CANCELLED,
-
-  skipped: STATUS.SKIPPED,
-  warning: STATUS.WARNING,
-  warn: STATUS.WARNING,
-
-  pending: STATUS.UNKNOWN,
-  running: STATUS.UNKNOWN,
-  unknown: STATUS.UNKNOWN,
-});
-
-
-/* ============================================================
-   ARGUMENTS
-============================================================ */
-
-function parseArguments(argv) {
-  const options = {
-    output: null,
-    results: null,
-    title: "MedOrbits CI Summary",
-    strict: false,
-    help: false,
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-
-    if (argument === "--help" || argument === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (argument === "--strict") {
-      options.strict = true;
-      continue;
-    }
-
-    if (
-      argument === "--output" ||
-      argument === "--results" ||
-      argument === "--title"
-    ) {
-      const value = argv[index + 1];
-
-      if (
-        !value ||
-        value.startsWith("--")
-      ) {
-        throw new Error(
-          `Missing value for ${argument}.`,
-        );
-      }
-
-      if (argument === "--output") {
-        options.output = value;
-      }
-
-      if (argument === "--results") {
-        options.results = value;
-      }
-
-      if (argument === "--title") {
-        options.title = value;
-      }
-
-      index += 1;
-      continue;
-    }
-
-    throw new Error(
-      `Unknown argument: ${argument}`,
-    );
-  }
-
-  return options;
+function log(message) {
+  process.stdout.write(`[MedOrbits CI] ${message}\n`);
 }
 
-
-function printHelp() {
-  process.stdout.write(
-    [
-      TOOL_NAME,
-      `Version: ${TOOL_VERSION}`,
-      "",
-      "Usage:",
-      "  node .github/scripts/ci-summary.js [options]",
-      "",
-      "Options:",
-      "  --output <file>    Write summary to a Markdown file.",
-      "  --results <file>   Read optional JSON results.",
-      "  --title <text>     Set the report title.",
-      "  --strict           Fail when the overall status is unknown.",
-      "  --help             Display this help message.",
-      "",
-      "Examples:",
-      "  node .github/scripts/ci-summary.js",
-      "  node .github/scripts/ci-summary.js --output ci-summary.md",
-      "  node .github/scripts/ci-summary.js --results ci-results.json",
-      "  node .github/scripts/ci-summary.js --results ci-results.json --strict",
-      "",
-    ].join("\n"),
-  );
+function logError(message) {
+  process.stderr.write(`[ERROR] ${message}\n`);
 }
 
+function getEnv(name, fallback = "Not available") {
+  const value = process.env[name];
 
-/* ============================================================
-   NORMALIZATION AND SANITIZATION
-============================================================ */
+  return value && value.trim()
+    ? value.trim()
+    : fallback;
+}
 
 function normalizeStatus(value) {
-  if (typeof value !== "string") {
-    return STATUS.UNKNOWN;
-  }
+  const allowed = new Set([
+    "success",
+    "failure",
+    "cancelled",
+    "skipped",
+    "neutral",
+    "unknown"
+  ]);
 
-  const normalized = value.trim().toLowerCase();
-
-  const status =
-    STATUS_ALIASES[normalized] || normalized;
-
-  return VALID_STATUSES.has(status)
-    ? status
-    : STATUS.UNKNOWN;
-}
-
-
-function safeText(value, fallback = "Not provided") {
-  if (typeof value !== "string") {
-    return fallback;
-  }
-
-  const cleaned = value
-    .replace(
-      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,
-      "",
-    )
+  const normalized = String(value || "unknown")
     .trim()
-    .slice(0, MAX_TEXT_LENGTH);
+    .toLowerCase();
 
-  return cleaned || fallback;
+  return allowed.has(normalized)
+    ? normalized
+    : "unknown";
 }
 
-
-function markdownText(value, fallback = "--") {
-  return safeText(
-    String(value ?? ""),
-    fallback,
-  )
+function escapeMarkdown(value) {
+  return String(value)
     .replace(/\\/g, "\\\\")
-    .replace(/([`*_{}\[\]()#+.!|>~-])/g, "\\$1")
+    .replace(/\|/g, "\\|")
     .replace(/\r?\n/g, " ");
 }
 
+// ============================================================================
+// CI JOB COLLECTION
+// ============================================================================
 
-function markdownCell(value) {
-  return safeText(
-    String(value ?? ""),
-    "--",
-  )
-    .replace(/\\/g, "\\\\")
-    .replace(/\|/g, "\\|")
-    .replace(/`/g, "\\`")
-    .replace(/\r?\n/g, " ")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-
-function statusLabel(value) {
-  const status = normalizeStatus(value);
-
-  return `${STATUS_SYMBOL[status]} ${status}`;
-}
-
-
-function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value)
-  );
-}
-
-
-/* ============================================================
-   JSON INPUT
-============================================================ */
-
-function readJsonFile(filename) {
-  if (!filename) {
-    return {};
-  }
-
-  const resolved = path.resolve(filename);
-
-  let stat;
-
-  try {
-    stat = fs.lstatSync(resolved);
-  } catch (error) {
-    throw new Error(
-      `Cannot access results file: ${error.message}`,
-    );
-  }
-
-  if (stat.isSymbolicLink()) {
-    throw new Error(
-      "Results file must not be a symbolic link.",
-    );
-  }
-
-  if (!stat.isFile()) {
-    throw new Error(
-      "Results path must point to a regular file.",
-    );
-  }
-
-  if (stat.size > MAX_INPUT_BYTES) {
-    throw new Error(
-      `Results JSON exceeds the ${MAX_INPUT_BYTES} byte limit.`,
-    );
-  }
-
-  let content;
-
-  try {
-    content = fs.readFileSync(resolved, "utf8");
-  } catch (error) {
-    throw new Error(
-      `Cannot read results file: ${error.message}`,
-    );
-  }
-
-  if (!content.trim()) {
-    throw new Error(
-      "Results JSON file is empty.",
-    );
-  }
-
-  if (content.charCodeAt(0) === 0xFEFF) {
-    throw new Error(
-      "Results JSON contains a UTF-8 BOM.",
-    );
-  }
-
-  let parsed;
-
-  try {
-    parsed = JSON.parse(content);
-  } catch (error) {
-    throw new Error(
-      `Invalid results JSON: ${error.message}`,
-    );
-  }
-
-  if (!isPlainObject(parsed)) {
-    throw new Error(
-      "The JSON root must be an object.",
-    );
-  }
-
-  return parsed;
-}
-
-
-/* ============================================================
-   VALIDATION
-============================================================ */
-
-function validateCount(value, fieldName) {
-  if (value === undefined || value === null) {
-    return 0;
-  }
-
-  if (
-    !Number.isSafeInteger(value) ||
-    value < 0
-  ) {
-    throw new Error(
-      `Invalid count "${fieldName}": expected a non-negative safe integer.`,
-    );
-  }
-
-  return value;
-}
-
-
-function buildTestSummary(tests) {
-  if (
-    tests === undefined ||
-    tests === null
-  ) {
-    return {
-      available: false,
-      passed: 0,
-      failed: 0,
-      skipped: 0,
-      total: 0,
-    };
-  }
-
-  if (!isPlainObject(tests)) {
-    throw new Error(
-      '"tests" must be a JSON object.',
-    );
-  }
-
-  const passed = validateCount(
-    tests.passed,
-    "tests.passed",
-  );
-
-  const failed = validateCount(
-    tests.failed,
-    "tests.failed",
-  );
-
-  const skipped = validateCount(
-    tests.skipped,
-    "tests.skipped",
-  );
-
-  const total = passed + failed + skipped;
-
-  if (!Number.isSafeInteger(total)) {
-    throw new Error(
-      "Combined test total exceeds the safe integer limit.",
-    );
-  }
-
-  return {
-    available: true,
-    passed,
-    failed,
-    skipped,
-    total,
-  };
-}
-
-
-function normalizeChecks(checks) {
-  if (
-    checks === undefined ||
-    checks === null
-  ) {
-    return [];
-  }
-
-  if (!Array.isArray(checks)) {
-    throw new Error(
-      '"checks" must be an array.',
-    );
-  }
-
-  if (checks.length > MAX_CHECKS) {
-    throw new Error(
-      `Too many checks. Maximum allowed: ${MAX_CHECKS}.`,
-    );
-  }
-
-  return checks.map((check, index) => {
-    if (!isPlainObject(check)) {
-      throw new Error(
-        `Invalid check entry at index ${index}.`,
-      );
+function collectJobs() {
+  const definitions = [
+    {
+      id: "repository",
+      label: "Repository Validation",
+      env: "REPOSITORY_RESULT"
+    },
+    {
+      id: "node",
+      label: "Node.js Validation",
+      env: "NODE_RESULT"
+    },
+    {
+      id: "python",
+      label: "Python Validation",
+      env: "PYTHON_RESULT"
+    },
+    {
+      id: "security",
+      label: "Security Validation",
+      env: "SECURITY_RESULT"
     }
+  ];
 
-    return {
-      name: safeText(
-        check.name,
-        `Check ${index + 1}`,
-      ),
-
-      status: normalizeStatus(
-        check.status,
-      ),
-
-      details: safeText(
-        check.details,
-        "",
-      ),
-    };
-  });
+  return definitions.map((definition) => ({
+    id: definition.id,
+    label: definition.label,
+    status: normalizeStatus(
+      process.env[definition.env]
+    )
+  }));
 }
 
+// ============================================================================
+// STATUS EVALUATION
+// ============================================================================
 
-function normalizeNotes(notes) {
-  if (
-    notes === undefined ||
-    notes === null
+function evaluateJobs(jobs) {
+  const passed = jobs.filter(
+    (job) => job.status === "success"
+  );
+
+  const failed = jobs.filter(
+    (job) => job.status === "failure"
+  );
+
+  const cancelled = jobs.filter(
+    (job) => job.status === "cancelled"
+  );
+
+  const skipped = jobs.filter(
+    (job) => job.status === "skipped"
+  );
+
+  const unknown = jobs.filter(
+    (job) => job.status === "unknown"
+  );
+
+  const allPassed =
+    jobs.length > 0 &&
+    passed.length === jobs.length;
+
+  let overall = "failure";
+
+  if (allPassed) {
+    overall = "success";
+  } else if (cancelled.length > 0) {
+    overall = "cancelled";
+  } else if (
+    failed.length === 0 &&
+    unknown.length === 0 &&
+    skipped.length > 0
   ) {
-    return [];
-  }
-
-  if (!Array.isArray(notes)) {
-    throw new Error(
-      '"notes" must be an array.',
-    );
-  }
-
-  return notes
-    .filter((note) => typeof note === "string")
-    .map((note) => safeText(note, ""))
-    .filter(Boolean)
-    .slice(0, MAX_NOTES);
-}
-
-
-function normalizeSecurity(security) {
-  if (
-    security === undefined ||
-    security === null
-  ) {
-    return null;
-  }
-
-  if (!isPlainObject(security)) {
-    throw new Error(
-      '"security" must be a JSON object.',
-    );
+    overall = "incomplete";
   }
 
   return {
-    status: normalizeStatus(security.status),
-
-    findings: validateCount(
-      security.findings,
-      "security.findings",
-    ),
+    overall,
+    total: jobs.length,
+    passed: passed.length,
+    failed: failed.length,
+    cancelled: cancelled.length,
+    skipped: skipped.length,
+    unknown: unknown.length
   };
 }
 
+// ============================================================================
+// REPORT METADATA
+// ============================================================================
 
-function normalizeBuild(build) {
-  if (
-    build === undefined ||
-    build === null
-  ) {
-    return null;
-  }
+function collectMetadata() {
+  return {
+    project: "MedOrbits",
+    generator: "MedOrbits CI Summary Generator",
+    version: VERSION,
 
-  if (!isPlainObject(build)) {
-    throw new Error(
-      '"build" must be a JSON object.',
-    );
-  }
+    repository: getEnv("GITHUB_REPOSITORY"),
+    branch: getEnv("GITHUB_REF_NAME"),
+    commit: getEnv("GITHUB_SHA"),
+    workflow: getEnv("GITHUB_WORKFLOW"),
+    runId: getEnv("GITHUB_RUN_ID"),
+    runNumber: getEnv("GITHUB_RUN_NUMBER"),
+    actor: getEnv("GITHUB_ACTOR"),
+
+    event: getEnv("GITHUB_EVENT_NAME"),
+    runner: getEnv("RUNNER_OS", process.platform),
+
+    nodeVersion: process.version,
+    generatedAt: new Date().toISOString()
+  };
+}
+
+// ============================================================================
+// REPORT MODEL
+// ============================================================================
+
+function createReport() {
+  const jobs = collectJobs();
+
+  const summary = evaluateJobs(jobs);
+
+  const metadata = collectMetadata();
 
   return {
-    status: normalizeStatus(build.status),
-
-    details: safeText(
-      build.details,
-      "",
-    ),
+    metadata,
+    summary,
+    jobs,
+    status: summary.overall
   };
 }
 
+// ============================================================================
+// MARKDOWN GENERATION
+// ============================================================================
 
-/* ============================================================
-   OVERALL STATUS
-============================================================ */
-
-function deriveOverallStatus(
-  data,
-  tests,
-  checks,
-  security,
-  build,
-) {
-  const explicit = normalizeStatus(data.status);
-
-  /*
-   * A detected failure must never be overridden
-   * by an explicit success status.
-   */
-
-  if (
-    tests.failed > 0 ||
-    checks.some(
-      (check) => check.status === STATUS.FAILURE,
-    ) ||
-    (security && (
-      security.status === STATUS.FAILURE ||
-      security.findings > 0
-    )) ||
-    (build && build.status === STATUS.FAILURE)
-  ) {
-    return STATUS.FAILURE;
-  }
-
-  if (explicit === STATUS.FAILURE) {
-    return STATUS.FAILURE;
-  }
-
-  if (explicit === STATUS.CANCELLED) {
-    return STATUS.CANCELLED;
-  }
-
-  if (explicit === STATUS.SKIPPED) {
-    return STATUS.SKIPPED;
-  }
-
-  if (explicit === STATUS.WARNING) {
-    return STATUS.WARNING;
-  }
-
-  if (
-    checks.some(
-      (check) => check.status === STATUS.WARNING,
-    ) ||
-    (security && security.status === STATUS.WARNING) ||
-    (build && build.status === STATUS.WARNING)
-  ) {
-    return STATUS.WARNING;
-  }
-
-  if (
-    explicit === STATUS.UNKNOWN ||
-    checks.some(
-      (check) => check.status === STATUS.UNKNOWN,
-    ) ||
-    (security && security.status === STATUS.UNKNOWN) ||
-    (build && build.status === STATUS.UNKNOWN)
-  ) {
-    return STATUS.UNKNOWN;
-  }
-
-  return STATUS.SUCCESS;
-}
-
-
-/* ============================================================
-   WORKFLOW METADATA
-============================================================ */
-
-function getMetadata() {
-  return {
-    workflow: safeText(
-      process.env.GITHUB_WORKFLOW,
-      "Local execution",
-    ),
-
-    repository: safeText(
-      process.env.GITHUB_REPOSITORY,
-      "Local repository",
-    ),
-
-    branch: safeText(
-      process.env.GITHUB_REF_NAME,
-      "N/A",
-    ),
-
-    commit: safeText(
-      process.env.GITHUB_SHA,
-      "N/A",
-    ),
-
-    runNumber: safeText(
-      process.env.GITHUB_RUN_NUMBER,
-      "N/A",
-    ),
-
-    runAttempt: safeText(
-      process.env.GITHUB_RUN_ATTEMPT,
-      "N/A",
-    ),
-
-    actor: safeText(
-      process.env.GITHUB_ACTOR,
-      "N/A",
-    ),
-
-    event: safeText(
-      process.env.GITHUB_EVENT_NAME,
-      "N/A",
-    ),
+function statusLabel(status) {
+  const labels = {
+    success: "PASSED",
+    failure: "FAILED",
+    cancelled: "CANCELLED",
+    skipped: "SKIPPED",
+    neutral: "NEUTRAL",
+    unknown: "UNKNOWN",
+    incomplete: "INCOMPLETE"
   };
+
+  return labels[status] || "UNKNOWN";
 }
 
-
-/* ============================================================
-   MARKDOWN GENERATION
-============================================================ */
-
-function buildSummary(data, options) {
-  const tests = buildTestSummary(data.tests);
-
-  const checks = normalizeChecks(
-    data.checks,
-  );
-
-  const notes = normalizeNotes(
-    data.notes,
-  );
-
-  const security = normalizeSecurity(
-    data.security,
-  );
-
-  const build = normalizeBuild(
-    data.build,
-  );
-
-  const overallStatus = deriveOverallStatus(
-    data,
-    tests,
-    checks,
-    security,
-    build,
-  );
-
-  const metadata = getMetadata();
-
-  const generatedAt = new Date().toISOString();
-
-  const title = markdownText(
-    options.title,
-    "MedOrbits CI Summary",
-  );
+function createMarkdown(report) {
+  const metadata = report.metadata;
+  const summary = report.summary;
 
   const lines = [
-    `# ${title}`,
+    "# MedOrbits -- CI Report",
     "",
-    `**Overall status:** ${statusLabel(overallStatus)}`,
+    `**Overall Status:** ${statusLabel(report.status)}`,
     "",
     "## Workflow Information",
     "",
     "| Field | Value |",
     "|---|---|",
-    `| Repository | ${markdownCell(metadata.repository)} |`,
-    `| Workflow | ${markdownCell(metadata.workflow)} |`,
-    `| Branch or ref | ${markdownCell(metadata.branch)} |`,
-    `| Commit | ${markdownCell(metadata.commit)} |`,
-    `| Run number | ${markdownCell(metadata.runNumber)} |`,
-    `| Run attempt | ${markdownCell(metadata.runAttempt)} |`,
-    `| Actor | ${markdownCell(metadata.actor)} |`,
-    `| Event | ${markdownCell(metadata.event)} |`,
-    `| Generated at (UTC) | ${generatedAt} |`,
+    `| Project | ${escapeMarkdown(metadata.project)} |`,
+    `| Repository | ${escapeMarkdown(metadata.repository)} |`,
+    `| Branch | ${escapeMarkdown(metadata.branch)} |`,
+    `| Commit | ${escapeMarkdown(metadata.commit)} |`,
+    `| Workflow | ${escapeMarkdown(metadata.workflow)} |`,
+    `| Run ID | ${escapeMarkdown(metadata.runId)} |`,
+    `| Event | ${escapeMarkdown(metadata.event)} |`,
+    `| Runner | ${escapeMarkdown(metadata.runner)} |`,
+    `| Node.js | ${escapeMarkdown(metadata.nodeVersion)} |`,
+    `| Generated | ${escapeMarkdown(metadata.generatedAt)} |`,
     "",
-    "## Test Results",
+    "## Job Results",
     "",
+    "| Job | Status |",
+    "|---|---|"
   ];
 
-  if (tests.available) {
+  for (const job of report.jobs) {
     lines.push(
-      "| Passed | Failed | Skipped | Total |",
-      "|---:|---:|---:|---:|",
-      `| ${tests.passed} | ${tests.failed} | ${tests.skipped} | ${tests.total} |`,
-      "",
-    );
-  } else {
-    lines.push(
-      "Test counts were not provided.",
-      "",
+      `| ${escapeMarkdown(job.label)} | ${statusLabel(job.status)} |`
     );
   }
 
   lines.push(
-    "## Validation Checks",
     "",
-  );
-
-  if (checks.length > 0) {
-    lines.push(
-      "| Check | Status | Details |",
-      "|---|---|---|",
-    );
-
-    for (const check of checks) {
-      lines.push(
-        `| ${markdownCell(check.name)} | ${markdownCell(statusLabel(check.status))} | ${markdownCell(check.details || "--")} |`,
-      );
-    }
-
-    lines.push("");
-  } else {
-    lines.push(
-      "No individual validation checks were provided.",
-      "",
-    );
-  }
-
-  if (build) {
-    lines.push(
-      "## Build Results",
-      "",
-      `- **Status:** ${statusLabel(build.status)}`,
-    );
-
-    if (build.details) {
-      lines.push(
-        `- **Details:** ${markdownCell(build.details)}`,
-      );
-    }
-
-    lines.push("");
-  }
-
-  if (security) {
-    lines.push(
-      "## Security Review",
-      "",
-      `- **Status:** ${statusLabel(security.status)}`,
-      `- **Reported findings:** ${security.findings}`,
-      "",
-    );
-  }
-
-  if (notes.length > 0) {
-    lines.push(
-      "## Notes",
-      "",
-    );
-
-    for (const note of notes) {
-      lines.push(
-        `- ${markdownCell(note)}`,
-      );
-    }
-
-    lines.push("");
-  }
-
-  lines.push(
+    "## Summary Statistics",
+    "",
+    "| Metric | Count |",
+    "|---|---:|",
+    `| Total jobs | ${summary.total} |`,
+    `| Passed | ${summary.passed} |`,
+    `| Failed | ${summary.failed} |`,
+    `| Cancelled | ${summary.cancelled} |`,
+    `| Skipped | ${summary.skipped} |`,
+    `| Unknown | ${summary.unknown} |`,
+    "",
     "---",
     "",
-    `_Generated automatically by ${TOOL_NAME} v${TOOL_VERSION}._`,
-    "",
+    "Generated automatically by MedOrbits CI."
   );
 
-  return {
-    markdown: lines.join("\n"),
-    overallStatus,
-    tests,
-    checks,
-    security,
-    build,
-    metadata,
-    generatedAt,
-  };
+  return lines.join("\n") + "\n";
 }
 
+// ============================================================================
+// OUTPUT HANDLING
+// ============================================================================
 
-/* ============================================================
-   OUTPUT
-============================================================ */
+function writeOutput(outputPath, content) {
+  const absolutePath = path.resolve(ROOT, outputPath);
 
-function assertDifferentPaths(inputPath, outputPath) {
-  if (!inputPath || !outputPath) {
-    return;
-  }
+  const relativePath = path.relative(ROOT, absolutePath);
 
-  const input = path.resolve(inputPath);
-  const output = path.resolve(outputPath);
-
-  if (input === output) {
+  if (
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  ) {
     throw new Error(
-      "Output path must not overwrite the results input file.",
+      "Output path must remain inside the repository."
     );
   }
+
+  fs.mkdirSync(path.dirname(absolutePath), {
+    recursive: true
+  });
+
+  fs.writeFileSync(absolutePath, content, {
+    encoding: "utf8",
+    flag: "w"
+  });
+
+  log(`Report saved: ${relativePath}`);
 }
 
+// ============================================================================
+// GITHUB ACTIONS INTEGRATION
+// ============================================================================
 
-function writeSummary(markdown, options) {
+function writeGitHubSummary(content) {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
-  if (options.output) {
-    const outputPath = path.resolve(
-      options.output,
-    );
-
-    fs.mkdirSync(
-      path.dirname(outputPath),
-      { recursive: true },
-    );
-
-    fs.writeFileSync(
-      outputPath,
-      markdown,
-      {
-        encoding: "utf8",
-        flag: "w",
-      },
-    );
-
-    process.stdout.write(
-      `CI summary written to ${outputPath}\n`,
-    );
-
-    return;
+  if (!summaryPath) {
+    log("GitHub step summary is unavailable; local execution detected.");
+    return false;
   }
 
-  if (summaryPath) {
-    const stat = fs.lstatSync(summaryPath);
+  fs.appendFileSync(summaryPath, content, {
+    encoding: "utf8"
+  });
 
-    if (stat.isSymbolicLink() || !stat.isFile()) {
-      throw new Error(
-        "GITHUB_STEP_SUMMARY must point to a regular file.",
-      );
-    }
+  log("GitHub Actions step summary updated.");
 
-    fs.appendFileSync(
-      summaryPath,
-      `${markdown}\n`,
-      "utf8",
-    );
-
-    process.stdout.write(
-      "CI summary appended to GITHUB_STEP_SUMMARY.\n",
-    );
-
-    return;
-  }
-
-  process.stdout.write(markdown);
+  return true;
 }
 
+// ============================================================================
+// CLI
+// ============================================================================
 
-/* ============================================================
-   MAIN
-============================================================ */
+function parseArguments(argv) {
+  const options = {
+    format: "markdown",
+    output: null,
+    githubSummary: true,
+    help: false,
+    version: false
+  };
+
+  for (let i = 0; i < argv.length; i++) {
+    const argument = argv[i];
+
+    switch (argument) {
+      case "--json":
+        options.format = "json";
+        break;
+
+      case "--markdown":
+        options.format = "markdown";
+        break;
+
+      case "--output":
+        if (!argv[i + 1]) {
+          throw new Error("--output requires a file path.");
+        }
+
+        options.output = argv[++i];
+        break;
+
+      case "--no-github-summary":
+        options.githubSummary = false;
+        break;
+
+      case "--help":
+      case "-h":
+        options.help = true;
+        break;
+
+      case "--version":
+        options.version = true;
+        break;
+
+      default:
+        throw new Error(`Unknown argument: ${argument}`);
+    }
+  }
+
+  return options;
+}
+
+function printHelp() {
+  process.stdout.write(`
+MedOrbits CI Summary Generator
+
+Usage:
+  node .github/scripts/ci-summary.js [options]
+
+Options:
+  --json                 Generate JSON report
+  --markdown             Generate Markdown report
+  --output FILE          Save report to a file
+  --no-github-summary    Disable GitHub step summary
+  --version              Display version
+  --help                 Display help
+
+Environment variables:
+  REPOSITORY_RESULT
+  NODE_RESULT
+  PYTHON_RESULT
+  SECURITY_RESULT
+  GITHUB_REPOSITORY
+  GITHUB_REF_NAME
+  GITHUB_SHA
+  GITHUB_WORKFLOW
+  GITHUB_RUN_ID
+  GITHUB_RUN_NUMBER
+  GITHUB_EVENT_NAME
+  GITHUB_STEP_SUMMARY
+`);
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
 
 function main() {
-  let options;
-
   try {
-    options = parseArguments(
-      process.argv.slice(2),
+    const options = parseArguments(
+      process.argv.slice(2)
     );
 
-  } catch (error) {
-    process.stderr.write(
-      `Argument error: ${error.message}\n`,
-    );
-
-    return 2;
-  }
-
-  if (options.help) {
-    printHelp();
-    return 0;
-  }
-
-  try {
-    assertDifferentPaths(
-      options.results,
-      options.output,
-    );
-
-    const data = readJsonFile(
-      options.results,
-    );
-
-    const summary = buildSummary(
-      data,
-      options,
-    );
-
-    writeSummary(
-      summary.markdown,
-      options,
-    );
-
-    if (
-      summary.overallStatus === STATUS.FAILURE ||
-      summary.tests.failed > 0
-    ) {
-      return 1;
+    if (options.help) {
+      printHelp();
+      return 0;
     }
 
-    if (
-      options.strict &&
-      summary.overallStatus === STATUS.UNKNOWN
-    ) {
-      process.stderr.write(
-        "Strict mode: overall CI status is unknown.\n",
-      );
-
-      return 1;
+    if (options.version) {
+      log(`Version ${VERSION}`);
+      return 0;
     }
 
-    return 0;
+    log("Generating CI report.");
 
-  } catch (error) {
-    process.stderr.write(
-      `CI summary error: ${error.message}\n`,
-    );
+    const report = createReport();
 
+    const markdown = createMarkdown(report);
+
+    if (options.githubSummary) {
+      writeGitHubSummary(markdown);
+    }
+
+    if (options.format === "json") {
+      const json = JSON.stringify(report, null, 2) + "\n";
+
+      if (options.output) {
+        writeOutput(options.output, json);
+      } else {
+        process.stdout.write(json);
+      }
+    } else {
+      if (options.output) {
+        writeOutput(options.output, markdown);
+      } else if (!options.githubSummary) {
+        process.stdout.write(markdown);
+      }
+    }
+
+    log(`Overall status: ${report.status}`);
+
+    if (report.status === "success") {
+      log("All CI jobs passed.");
+      return 0;
+    }
+
+    logError("One or more CI jobs did not pass.");
+
+    return 1;
+
+  } catch (err) {
+    logError(err.message);
     return 2;
   }
 }
 
+// ============================================================================
+// ENTRY POINT
+// ============================================================================
 
-process.exitCode = main();
+if (require.main === module) {
+  process.exitCode = main();
+}
+
+module.exports = {
+  collectJobs,
+  collectMetadata,
+  createMarkdown,
+  createReport,
+  evaluateJobs,
+  normalizeStatus
+};
+
+// ============================================================================
+// END OF MEDORBITS CI SUMMARY GENERATOR
+// ============================================================================

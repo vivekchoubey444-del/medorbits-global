@@ -1,78 +1,289 @@
-name: Feature Request
-description: Suggest a new feature or improvement for MedOrbits.
+
+# ============================================================
+# MEDORBITS -- FEATURE REQUEST FORM
+# File: .github/ISSUE_TEMPLATE/feature_request.yml
+# Purpose: Collect and evaluate new feature proposals
+# ============================================================
+
+name: "Feature Request"
+description: "Propose a new feature or improvement for MedOrbits."
 title: "[FEATURE]: "
 labels:
   - enhancement
   - needs-triage
+
 assignees: []
 
 body:
+
+  # ----------------------------------------------------------
+  # INTRODUCTION
+  # ----------------------------------------------------------
+
   - type: markdown
     attributes:
       value: |
-        Suggest a feature that improves education, admissions,
-        career services, recruitment, or the MedOrbits platform.
+        ## MedOrbits Feature Proposal
+
+        We welcome ideas that improve education, admissions,
+        career services, recruitment and technology.
+
+        Before submitting:
+        - Search existing issues for similar proposals.
+        - Describe the problem your idea solves.
+        - Do not include confidential or personal information.
+
+  # ----------------------------------------------------------
+  # FEATURE TITLE
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: Describe your proposed feature.
+      placeholder: Explain your idea in a few sentences.
+    validations:
+      required: true
+
+  # ----------------------------------------------------------
+  # CATEGORY
+  # ----------------------------------------------------------
 
   - type: dropdown
     id: category
     attributes:
-      label: Feature category
+      label: Feature Category
+      description: Select the primary area affected.
       options:
-        - Education
-        - Admissions
-        - College / University Directory
-        - Student Dashboard
-        - Scholarships
-        - Study Abroad
-        - Jobs / Careers
-        - Recruitment
-        - Consultancy
-        - AI Integration
-        - Search
-        - Accessibility
-        - Security
-        - Performance
-        - Administration
+        - Education and Learning
+        - MBBS Admissions
+        - BDS and Dental Admissions
+        - BAMS / BUMS / AYUSH
+        - Colleges and Universities
+        - Entrance Examinations
+        - Scholarships and Financial Aid
+        - International Education
+        - Jobs and Recruitment
+        - Career Guidance
+        - Student Services
+        - User Accounts and Dashboard
+        - Search and Discovery
+        - AI and Automation
+        - Payments and Subscriptions
+        - Documents and Verification
+        - API and Integrations
+        - PWA and Offline Experience
+        - Mobile Application
+        - UI and Accessibility
+        - Performance and Scalability
+        - Security and Privacy
+        - Administration and Analytics
+        - Infrastructure and DevOps
         - Other
     validations:
       required: true
 
+  # ----------------------------------------------------------
+  # PROBLEM STATEMENT
+  # ----------------------------------------------------------
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem or opportunity
-      description: What user problem should this feature solve?
+      label: Problem Statement
+      description: What problem or limitation does this feature address?
+      placeholder: |
+        Explain the current problem and who is affected.
     validations:
       required: true
+
+  # ----------------------------------------------------------
+  # PROPOSED SOLUTION
+  # ----------------------------------------------------------
 
   - type: textarea
     id: solution
     attributes:
-      label: Proposed solution
+      label: Proposed Solution
+      description: Explain how you think the feature should work.
+      placeholder: Describe the proposed functionality.
     validations:
       required: true
 
+  # ----------------------------------------------------------
+  # USER BENEFIT
+  # ----------------------------------------------------------
+
   - type: textarea
-    id: alternatives
+    id: benefits
     attributes:
-      label: Alternatives considered
+      label: Expected Benefits
+      description: Who benefits and how?
+      placeholder: Explain the expected user or business value.
+    validations:
+      required: true
+
+  # ----------------------------------------------------------
+  # TARGET USERS
+  # ----------------------------------------------------------
+
+  - type: checkboxes
+    id: users
+    attributes:
+      label: Target Users
+      description: Select all relevant user groups.
+      options:
+        - label: Students
+        - label: Parents and Guardians
+        - label: Educational Institutions
+        - label: Colleges and Universities
+        - label: Job Seekers
+        - label: Employers and Recruiters
+        - label: Consultants and Counsellors
+        - label: Administrators
+        - label: General Visitors
+
+  # ----------------------------------------------------------
+  # PRIORITY
+  # ----------------------------------------------------------
 
   - type: dropdown
     id: priority
     attributes:
-      label: Suggested priority
+      label: Suggested Priority
+      description: How important is this feature?
       options:
-        - Critical
-        - High
-        - Medium
-        - Low
+        - Critical -- Required for essential platform operations
+        - High -- Significant user or business value
+        - Medium -- Useful improvement
+        - Low -- Optional enhancement
     validations:
       required: true
+
+  # ----------------------------------------------------------
+  # IMPLEMENTATION SCOPE
+  # ----------------------------------------------------------
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Expected Implementation Areas
+      description: Select all areas that may require changes.
+      options:
+        - label: Frontend
+        - label: Backend
+        - label: API
+        - label: Database
+        - label: Authentication
+        - label: Payment Gateway
+        - label: AI Integration
+        - label: External Integrations
+        - label: Mobile Application
+        - label: PWA
+        - label: Offline Functionality
+        - label: Infrastructure
+        - label: Documentation
+
+  # ----------------------------------------------------------
+  # USER EXPERIENCE
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: user-flow
+    attributes:
+      label: Proposed User Flow
+      description: Explain how users would interact with this feature.
+      placeholder: |
+        1. User opens the relevant section.
+        2. User selects the feature.
+        3. System processes the request.
+        4. User receives the result.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # DESIGN REFERENCES
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Design References and Examples
+      description: Add relevant links, screenshots or examples.
+      placeholder: Provide reference links or design descriptions.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # ALTERNATIVES
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Are there other ways to solve this problem?
+      placeholder: Describe alternative solutions.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # TECHNICAL CONSIDERATIONS
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Considerations
+      description: Mention relevant APIs, integrations, dependencies or constraints.
+      placeholder: |
+        Describe any known technical requirements.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # SUCCESS CRITERIA
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know the feature is complete?
+      placeholder: |
+        - [ ] Expected functionality works.
+        - [ ] Relevant tests pass.
+        - [ ] Documentation is updated.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # ADDITIONAL INFORMATION
+  # ----------------------------------------------------------
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Include any other relevant details.
+    validations:
+      required: false
+
+  # ----------------------------------------------------------
+  # CONFIRMATION
+  # ----------------------------------------------------------
 
   - type: checkboxes
     id: confirmation
     attributes:
-      label: Submission checks
+      label: Submission Checklist
       options:
-        - label: I have checked for similar feature requests.
+        - label: I searched for similar existing feature requests.
+          required: true
+        - label: I explained the problem and proposed solution.
+          required: true
+        - label: I have not included passwords, API keys or private information.
+          required: true
+        - label: I understand that this proposal requires review and is not a commitment to implementation.
           required: true

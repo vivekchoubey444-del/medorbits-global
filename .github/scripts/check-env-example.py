@@ -1,231 +1,341 @@
+
 #!/usr/bin/env python3
 “””
-MedOrbits — Environment Example Validator
+===============================================================================
+MEDORBITS — ENVIRONMENT EXAMPLE VALIDATOR
 File: .github/scripts/check-env-example.py
-Version: 2.1.1
+Version: 2.1.3
 
 Purpose:
-    Validate .env.example against environment-variable references found in
-    application code and supported configuration files.
+    Validate environment example files and ensure that required configuration
+    variables are documented without exposing real credentials.
 
-Checks:
-    - .env.example exists and is readable.
-    - Environment variable assignments use valid syntax.
-    - Duplicate environment variable declarations are detected.
-    - Environment-variable references are discovered in supported files.
-    - Undeclared variables are reported.
-    - Suspicious hard-coded secrets are flagged without displaying values.
-    - Common secret-bearing files are checked for Git tracking.
-    - File values are never printed in diagnostics.
+Features:
+    - Detect missing .env.example files
+    - Validate environment variable names
+    - Detect duplicate variable declarations
+    - Detect empty or undocumented values
+    - Detect accidentally committed credentials
+    - Support required-variable definitions
+    - Ignore safe placeholder values
+    - Generate CI-friendly validation results
 
 Usage:
     python .github/scripts/check-env-example.py
-    python .github/scripts/check-env-example.py —root .
     python .github/scripts/check-env-example.py —strict
-    python .github/scripts/check-env-example.py —no-git-check
+    python .github/scripts/check-env-example.py —file .env.example
+    python .github/scripts/check-env-example.py —help
 
 Exit codes:
-    0: Validation passed.
-    1: Validation errors found.
-    2: Invalid arguments or execution failure.
-
-Dependencies:
-    Python standard library only.
+    0 = Validation passed
+    1 = Validation errors detected
+    2 = Execution or configuration error
+===============================================================================
 “””
 
 from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
-ENV_FILENAME = “.env.example”
+VERSION = “2.1.3”
 
-MAX_SOURCE_FILE_SIZE = 2 * 1024 * 1024
+ROOT = Path(__file__).resolve().parents[2]
 
-IGNORED_DIRS = {
-    “.git”,
-    “.hg”,
-    “.svn”,
-    “.next”,
-    “.nuxt”,
-    “.turbo”,
-    “.vercel”,
-    “.cache”,
-    “.pytest_cache”,
-    “.mypy_cache”,
-    “.ruff_cache”,
-    “__pycache__”,
-    “node_modules”,
-    “vendor”,
-    “dist”,
-    “build”,
-    “coverage”,
-    “.venv”,
-    “venv”,
-}
+DEFAULT_ENV_FILE = ROOT / “.env.example”
 
-SOURCE_SUFFIXES = {
-    “.js”,
-    “.mjs”,
-    “.cjs”,
-    “.ts”,
-    “.tsx”,
-    “.jsx”,
-    “.py”,
-    “.json”,
-    “.yml”,
-    “.yaml”,
-    “.sh”,
-    “.toml”,
-    “.conf”,
-}
-
-ENV_KEY_RE = re.compile(
+ENV_NAME_PATTERN = re.compile(
     r”^[A-Za-z_][A-Za-z0-9_]*$”
 )
 
-ENV_ASSIGNMENT_RE = re.compile(
-    r”^\s*(?:export\s+)?”
-    r”([A-Za-z_][A-Za-z0-9_]*)”
-    r”\s*=\s*(.*?)\s*$”
-)
+PLACEHOLDERS = {
+    “”,
+    “your_value”,
+    “your_value_here”,
+    “your_api_key”,
+    “your_api_key_here”,
+    “your_secret”,
+    “your_secret_here”,
+    “change_me”,
+    “changeme”,
+    “replace_me”,
+    “replace_this”,
+    “example”,
+    “placeholder”,
+    “xxxxxxxx”,
+    “redacted”,
+    “none”,
+    “null”,
+    “undefined”,
+}
 
-SECRET_KEY_RE = re.compile(
-    r”(?:^|_)”
-    r”(?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY|PRIVATE_KEY|”
-    r”CLIENT_SECRET|ACCESS_KEY|AUTH_KEY)”
-    r”(?:_|$)”,
-    re.IGNORECASE,
-)
-
-PLACEHOLDER_RE = re.compile(
-    r”^(?:”
-    r”$|”
-    r”change[_ -]?me|”
-    r”replace[_ -]?me|”
-    r”your[_ -].*|”
-    r”<.*>|”
-    r”\$\{[^}]+\}|”
-    r”\{\{.*\}\}|”
-    r”example(?:[_ -].*)?|”
-    r”placeholder|”
-    r”not[_ -]?set|”
-    r”todo|”
-    r”none|”
-    r”null”
-    r”)$”,
-    re.IGNORECASE,
-)
-
-
-# =============================================================================
-# ENVIRONMENT VARIABLE REFERENCE PATTERNS
-# =============================================================================
-
-REFERENCE_PATTERNS = [
-    # Node.js
-    re.compile(
-        r”\bprocess\.env\.([A-Za-z_][A-Za-z0-9_]*)”
-    ),
-
-    re.compile(
-        r”\bprocess\.env\[\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]\s*\]”
-    ),
-
-    # Vite and modern frontend tooling
-    re.compile(
-        r”\bimport\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)”
-    ),
-
-    # Python
-    re.compile(
-        r”\bos\.environ\.get\(\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]”
-    ),
-
-    re.compile(
-        r”\bos\.environ\[\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]\s*\]”
-    ),
-
-    re.compile(
-        r”\bos\.getenv\(\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]”
-    ),
-
-    # Generic configuration access
-    re.compile(
-        r”\benv\.get\(\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]”
-    ),
-
-    re.compile(
-        r”\bgetenv\(\s*[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]”
-    ),
-
-    re.compile(
-        r”\bprocess\.env\[[‘\”]([A-Za-z_][A-Za-z0-9_]*)[‘\”]\]”
-    ),
-]
-
-
-# =============================================================================
-# PLATFORM-PROVIDED VARIABLES
-# =============================================================================
-
-COMMON_EXTERNAL_VARIABLES = {
-    “CI”,
-    “HOME”,
-    “HOSTNAME”,
+# Add or remove names according to the actual MedOrbits application.
+REQUIRED_VARIABLES = {
     “NODE_ENV”,
-    “NODE_OPTIONS”,
-    “PATH”,
     “PORT”,
-    “PWD”,
-    “SHELL”,
-    “TEMP”,
-    “TMP”,
-    “TMPDIR”,
-    “USER”,
-
-    # Vercel
-    “VERCEL”,
-    “VERCEL_ENV”,
-    “VERCEL_URL”,
-
-    # Render
-    “RENDER”,
-    “RENDER_EXTERNAL_HOSTNAME”,
-    “RENDER_INSTANCE_ID”,
-    “RENDER_SERVICE_ID”,
-    “RENDER_SERVICE_NAME”,
-
-    # GitHub Actions
-    “GITHUB_ACTIONS”,
-    “GITHUB_REF”,
-    “GITHUB_SHA”,
-    “GITHUB_REPOSITORY”,
-    “GITHUB_WORKSPACE”,
-    “GITHUB_TOKEN”,
+    “SESSION_SECRET”,
+    “DATABASE_URL”,
 }
 
 
 # =============================================================================
-# DATA STRUCTURES
+# DATA MODEL
 # =============================================================================
 
-@dataclass(frozen=True)
-class Finding:
-    severity: str
-    location: str
-    message: str
+class ValidationResult:
+    “””Collect environment validation results.”””
+
+    def __init__(self) -> None:
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+        self.valid_variables: list[str] = []
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+    def error(self, message: str) -> None:
+        self.errors.append(message)
+
+    def warning(self, message: str) -> None:
+        self.warnings.append(message)
+
+
+# =============================================================================
+# ENVIRONMENT FILE PARSING
+# =============================================================================
+
+def is_placeholder(value: str) -> bool:
+    “””Return True when a value is an example placeholder.”””
+
+    normalized = value.strip().strip(“’\””).lower()
+
+    if normalized in PLACEHOLDERS:
+        return True
+
+    if normalized.startswith(
+        (
+            “your_”,
+            “replace_”,
+            “example_”,
+            “placeholder_”,
+        )
+    ):
+        return True
+
+    if re.fullmatch(r”[xX*._-]+”, normalized):
+        return True
+
+    return False
+
+
+def parse_env_line(
+    line: str,
+    line_number: int,
+) -> tuple[str, str] | None:
+    “””Parse a basic KEY=value environment declaration.”””
+
+    stripped = line.strip()
+
+    if not stripped or stripped.startswith(“#”):
+        return None
+
+    if stripped.startswith(“export “):
+        stripped = stripped[len(“export “):].strip()
+
+    if “=“ not in stripped:
+        return None
+
+    name, value = stripped.split(“=“, 1)
+
+    name = name.strip()
+    value = value.strip()
+
+    if not ENV_NAME_PATTERN.fullmatch(name):
+        raise ValueError(
+            f”Line {line_number}: invalid variable name.”
+        )
+
+    # Remove inline comments only when preceded by whitespace.
+    value = re.sub(r”\s+#.*$”, “”, value).strip()
+
+    # Remove matching outer quotes.
+    if (
+        len(value) >= 2
+        and value[0] == value[-1]
+        and value[0] in {“’”, ‘”’}
+    ):
+        value = value[1:-1]
+
+    return name, value
+
+
+# =============================================================================
+# FILE VALIDATION
+# =============================================================================
+
+def validate_env_file(
+    env_file: Path,
+    strict: bool = False,
+) -> ValidationResult:
+    “””Validate an environment example file.”””
+
+    result = ValidationResult()
+
+    if not env_file.exists():
+        result.error(
+            f”Environment example file does not exist: {env_file}”
+        )
+        return result
+
+    if not env_file.is_file():
+        result.error(
+            f”Environment path is not a regular file: {env_file}”
+        )
+        return result
+
+    if not env_file.is_relative_to(ROOT):
+        result.error(
+            “Environment file must be located inside the repository.”
+        )
+        return result
+
+    try:
+        content = env_file.read_text(encoding=“utf-8”)
+
+    except OSError as exc:
+        result.error(
+            f”Unable to read environment file: {exc}”
+        )
+        return result
+
+    variables: dict[str, int] = {}
+
+    for line_number, line in enumerate(
+        content.splitlines(),
+        start=1,
+    ):
+
+        try:
+            parsed = parse_env_line(line, line_number)
+
+        except ValueError as exc:
+            result.error(str(exc))
+            continue
+
+        if parsed is None:
+            if line.strip() and not line.lstrip().startswith(“#”):
+                result.warning(
+                    f”Line {line_number}: unrecognized declaration.”
+                )
+            continue
+
+        name, value = parsed
+
+        # ——————————————————
+        # DUPLICATE VARIABLES
+        # ——————————————————
+
+        if name in variables:
+            result.error(
+                f”Line {line_number}: duplicate variable {name}; “
+                f”first declared on line {variables[name]}.”
+            )
+            continue
+
+        variables[name] = line_number
+
+        # ——————————————————
+        # EMPTY VALUES
+        # ——————————————————
+
+        if not value:
+            result.warning(
+                f”Line {line_number}: {name} has an empty example value.”
+            )
+
+        # ——————————————————
+        # PLACEHOLDER VALIDATION
+        # ——————————————————
+
+        elif not is_placeholder(value):
+            if strict:
+                result.error(
+                    f”Line {line_number}: {name} contains a “
+                    “non-placeholder value. Review for exposed credentials.”
+                )
+            else:
+                result.warning(
+                    f”Line {line_number}: {name} contains a “
+                    “non-placeholder value. Review manually.”
+                )
+
+        result.valid_variables.append(name)
+
+    # ———————————————————
+    # REQUIRED VARIABLES
+    # ———————————————————
+
+    missing = REQUIRED_VARIABLES - set(variables)
+
+    for name in sorted(missing):
+        result.error(
+            f”Required environment variable is missing: {name}”
+        )
+
+    return result
+
+
+# =============================================================================
+# REPORTING
+# =============================================================================
+
+def print_report(
+    result: ValidationResult,
+    env_file: Path,
+) -> None:
+    “””Display validation results.”””
+
+    print()
+    print(“=“ * 72)
+    print(“MEDORBITS ENVIRONMENT EXAMPLE VALIDATION”)
+    print(“=“ * 72)
+
+    print(f”File: {env_file}”)
+    print(f”Variables checked: {len(result.valid_variables)}”)
+
+    if result.warnings:
+        print()
+        print(“WARNINGS:”)
+
+        for warning in result.warnings:
+            print(f”[WARNING] {warning}”)
+
+    if result.errors:
+        print()
+        print(“ERRORS:”)
+
+        for error in result.errors:
+            print(f”[ERROR] {error}”)
+
+    print()
+
+    if result.passed:
+        print(“[SUCCESS] Environment example validation passed.”)
+    else:
+        print(
+            f”[FAILED] {len(result.errors)} validation error(s) found.”
+        )
+
+    print(“=“ * 72)
 
 
 # =============================================================================
@@ -233,509 +343,74 @@ class Finding:
 # =============================================================================
 
 def parse_args() -> argparse.Namespace:
+    “””Parse command-line arguments.”””
+
     parser = argparse.ArgumentParser(
-        description=(
-            “Validate MedOrbits environment example configuration.”
-        )
+        description=“MedOrbits environment example validator.”
     )
 
     parser.add_argument(
-        “—root”,
+        “—file”,
         type=Path,
-        default=Path.cwd(),
-        help=“Repository root directory.”,
+        default=DEFAULT_ENV_FILE,
+        help=“Environment example file to validate.”,
     )
 
     parser.add_argument(
         “—strict”,
         action=“store_true”,
-        help=“Treat undeclared environment references as errors.”,
+        help=“Reject non-placeholder values.”,
     )
 
     parser.add_argument(
-        “—no-git-check”,
-        action=“store_true”,
-        help=“Skip Git secret-file tracking checks.”,
+        “—version”,
+        action=“version”,
+        version=f”MedOrbits Env Validator {VERSION}”,
     )
 
     return parser.parse_args()
 
 
 # =============================================================================
-# FILE UTILITIES
-# =============================================================================
-
-def is_ignored(path: Path) -> bool:
-    return any(
-        part in IGNORED_DIRS
-        for part in path.parts
-    )
-
-
-def relative_path(path: Path, root: Path) -> str:
-    try:
-        return path.relative_to(root).as_posix()
-    except ValueError:
-        return path.as_posix()
-
-
-def read_text_safely(path: Path) -> str | None:
-    try:
-        if path.stat().st_size > MAX_SOURCE_FILE_SIZE:
-            return None
-
-        return path.read_text(
-            encoding=“utf-8-sig”
-        )
-
-    except (OSError, UnicodeError):
-        return None
-
-
-# =============================================================================
-# ENVIRONMENT FILE VALIDATION
-# =============================================================================
-
-def parse_env_file(
-    path: Path,
-    root: Path,
-    findings: list[Finding],
-) -> set[str]:
-
-    declared: set[str] = set()
-    seen: set[str] = set()
-
-    display_path = relative_path(path, root)
-
-    content = read_text_safely(path)
-
-    if content is None:
-        findings.append(
-            Finding(
-                “ERROR”,
-                display_path,
-                “File could not be read as UTF-8 or exceeds the size limit.”,
-            )
-        )
-
-        return declared
-
-    for line_number, raw_line in enumerate(
-        content.splitlines(),
-        start=1,
-    ):
-
-        stripped = raw_line.strip()
-
-        if not stripped or stripped.startswith(“#”):
-            continue
-
-        match = ENV_ASSIGNMENT_RE.match(raw_line)
-
-        if not match:
-            findings.append(
-                Finding(
-                    “ERROR”,
-                    f”{display_path}:{line_number}”,
-                    “Malformed environment assignment.”,
-                )
-            )
-
-            continue
-
-        key, value = match.groups()
-
-        if not ENV_KEY_RE.fullmatch(key):
-            findings.append(
-                Finding(
-                    “ERROR”,
-                    f”{display_path}:{line_number}”,
-                    “Invalid environment variable name.”,
-                )
-            )
-
-            continue
-
-        if key in seen:
-            findings.append(
-                Finding(
-                    “ERROR”,
-                    f”{display_path}:{line_number}”,
-                    f”Duplicate environment variable declaration: {key}.”,
-                )
-            )
-
-        seen.add(key)
-        declared.add(key)
-
-        # Normalize the value without printing it.
-        normalized_value = value.strip()
-
-        # Remove comments only when separated by whitespace.
-        normalized_value = re.sub(
-            r”\s+#.*$”,
-            “”,
-            normalized_value,
-        ).strip()
-
-        if normalized_value.startswith(“#”):
-            normalized_value = “”
-
-        # Check for suspicious hard-coded secrets.
-        if SECRET_KEY_RE.search(key):
-
-            candidate = normalized_value.strip().strip(“’\””)
-
-            if (
-                candidate
-                and not PLACEHOLDER_RE.fullmatch(candidate)
-            ):
-                findings.append(
-                    Finding(
-                        “ERROR”,
-                        f”{display_path}:{line_number}”,
-                        (
-                            f”Possible hard-coded secret in variable {key}. “
-                            “Use a clearly documented placeholder.”
-                        ),
-                    )
-                )
-
-    return declared
-
-
-# =============================================================================
-# SOURCE FILE DISCOVERY
-# =============================================================================
-
-def discover_source_files(
-    root: Path,
-    env_path: Path,
-) -> Iterable[Path]:
-
-    for path in root.rglob(“*”):
-
-        try:
-            if not path.is_file():
-                continue
-
-            relative = path.relative_to(root)
-
-            if is_ignored(relative):
-                continue
-
-            if path.resolve() == env_path.resolve():
-                continue
-
-            if path.name.startswith(“.env”):
-                continue
-
-            if path.suffix.lower() not in SOURCE_SUFFIXES:
-                continue
-
-            if path.stat().st_size > MAX_SOURCE_FILE_SIZE:
-                continue
-
-            yield path
-
-        except (OSError, ValueError):
-            continue
-
-
-# =============================================================================
-# ENVIRONMENT REFERENCE DISCOVERY
-# =============================================================================
-
-def discover_references(
-    root: Path,
-    env_path: Path,
-) -> dict[str, set[str]]:
-
-    references: dict[str, set[str]] = {}
-
-    for path in discover_source_files(root, env_path):
-
-        content = read_text_safely(path)
-
-        if content is None:
-            continue
-
-        display_path = relative_path(path, root)
-
-        for pattern in REFERENCE_PATTERNS:
-
-            for match in pattern.finditer(content):
-
-                name = match.group(1)
-
-                references.setdefault(
-                    name,
-                    set(),
-                ).add(display_path)
-
-    return references
-
-
-# =============================================================================
-# GIT SECRET FILE TRACKING CHECK
-# =============================================================================
-
-def check_git_tracking(
-    root: Path,
-    findings: list[Finding],
-) -> None:
-
-    protected_names = {
-        “.env”,
-        “.env.local”,
-        “.env.production”,
-        “.env.development”,
-        “.env.staging”,
-        “.env.test”,
-        “id_rsa”,
-        “id_ed25519”,
-        “credentials.json”,
-        “service-account.json”,
-    }
-
-    try:
-        result = subprocess.run(
-            [
-                “git”,
-                “-C”,
-                str(root),
-                “ls-files”,
-                “-z”,
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            encoding=“utf-8”,
-            errors=“replace”,
-            timeout=10,
-        )
-
-    except (OSError, subprocess.SubprocessError):
-
-        findings.append(
-            Finding(
-                “WARNING”,
-                “.git”,
-                “Git tracking check could not be completed.”,
-            )
-        )
-
-        return
-
-    if result.returncode != 0:
-
-        findings.append(
-            Finding(
-                “WARNING”,
-                “.git”,
-                “Git working tree unavailable; tracking check skipped.”,
-            )
-        )
-
-        return
-
-    tracked_files = [
-        item
-        for item in result.stdout.split(“\0”)
-        if item
-    ]
-
-    for filename in tracked_files:
-
-        path = Path(filename)
-        name = path.name
-
-        is_env_file = (
-            name.startswith(“.env”)
-            and name != “.env.example”
-        )
-
-        is_known_secret_file = (
-            name in protected_names
-        )
-
-        if is_env_file or is_known_secret_file:
-
-            findings.append(
-                Finding(
-                    “ERROR”,
-                    filename,
-                    (
-                        “Potentially sensitive configuration file is tracked “
-                        “by Git. Review the file and remove exposed credentials “
-                        “from repository history when necessary.”
-                    ),
-                )
-            )
-
-
-# =============================================================================
-# MAIN VALIDATION
+# MAIN
 # =============================================================================
 
 def main() -> int:
+    “””Run environment example validation.”””
 
     args = parse_args()
 
-    root = args.root.resolve()
+    env_file = args.file
 
-    if not root.exists() or not root.is_dir():
+    if not env_file.is_absolute():
+        env_file = ROOT / env_file
 
-        print(
-            f”ERROR: Repository root is not a directory: {root}”
-        )
+    env_file = env_file.resolve()
 
-        return 2
+    print(f”[INFO] MedOrbits Env Validator {VERSION}”)
+    print(f”[INFO] Strict mode: {args.strict}”)
 
-    findings: list[Finding] = []
-
-    env_path = root / ENV_FILENAME
-
-    # Validate .env.example.
-    if not env_path.is_file():
-
-        findings.append(
-            Finding(
-                “ERROR”,
-                ENV_FILENAME,
-                “Required environment example file is missing.”,
-            )
-        )
-
-        declared: set[str] = set()
-
-    else:
-
-        declared = parse_env_file(
-            env_path,
-            root,
-            findings,
-        )
-
-    # Discover source-code environment references.
-    references = discover_references(
-        root,
-        env_path,
+    result = validate_env_file(
+        env_file=env_file,
+        strict=args.strict,
     )
 
-    ignored_external = (
-        COMMON_EXTERNAL_VARIABLES | declared
-    )
+    print_report(result, env_file)
 
-    # Identify undeclared environment variables.
-    for name, source_paths in sorted(references.items()):
+    return 0 if result.passed else 1
 
-        if name in ignored_external:
-            continue
-
-        severity = (
-            “ERROR”
-            if args.strict
-            else “WARNING”
-        )
-
-        locations = “, “.join(
-            sorted(source_paths)[:3]
-        )
-
-        findings.append(
-            Finding(
-                severity,
-                locations,
-                (
-                    f”Environment variable {name} is referenced “
-                    f”but not declared in {ENV_FILENAME}.”
-                ),
-            )
-        )
-
-    # Check tracked secret-bearing files.
-    if not args.no_git_check:
-
-        check_git_tracking(
-            root,
-            findings,
-        )
-
-    # Generate diagnostics.
-    errors = [
-        item
-        for item in findings
-        if item.severity == “ERROR”
-    ]
-
-    warnings = [
-        item
-        for item in findings
-        if item.severity == “WARNING”
-    ]
-
-    for finding in sorted(
-        findings,
-        key=lambda item: (
-            item.severity != “ERROR”,
-            item.location,
-            item.message,
-        ),
-    ):
-
-        print(
-            f”{finding.severity}: “
-            f”{finding.location}: “
-            f”{finding.message}”
-        )
-
-    print()
-
-    print(
-        “Environment validation summary: “
-        f”{len(errors)} error(s), “
-        f”{len(warnings)} warning(s).”
-    )
-
-    if errors:
-        print(“Environment example validation failed.”)
-        return 1
-
-    if args.strict and warnings:
-        print(“Strict validation failed.”)
-        return 1
-
-    print(“Environment example validation passed.”)
-
-    return 0
-
-
-# =============================================================================
-# ENTRY POINT
-# =============================================================================
 
 if __name__ == “__main__”:
-
     try:
         raise SystemExit(main())
 
     except KeyboardInterrupt:
-
         print(
-            “\nERROR: Validation interrupted.”,
+            “\n[ERROR] Validation interrupted.”,
             file=sys.stderr,
         )
-
         raise SystemExit(2)
 
-    except Exception:
-
-        # Avoid displaying potentially sensitive file contents or
-        # environment values in unexpected exception diagnostics.
-        print(
-            “ERROR: Unexpected validator execution failure.”,
-            file=sys.stderr,
-        )
-
-        raise SystemExit(2)
+# =============================================================================
+# END OF MEDORBITS ENVIRONMENT VALIDATOR
+# =============================================================================
