@@ -1,8 +1,9 @@
 
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/application-fixture.schema.json",
   "title": "MedOrbits Application Fixture",
-  "description": "Validates synthetic MedOrbits application fixtures used for development and automated testing. Does not validate real admission decisions.",
+  "description": "Validates synthetic MedOrbits application fixtures for development and automated testing. This schema does not validate real admission decisions or establish applicant eligibility.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -51,30 +52,46 @@
         },
         "userEmail": {
           "type": "string",
-          "format": "email"
+          "format": "email",
+          "maxLength": 254
         },
         "applicationNumber": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 100
         },
         "courseSlug": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 150
         },
         "collegeSlug": {
-          "type": ["string", "null"],
-          "minLength": 1
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 150
         },
         "applicantName": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 150
         },
         "applicantEmail": {
           "type": "string",
-          "format": "email"
+          "format": "email",
+          "maxLength": 254
         },
         "applicantPhone": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 30
         },
         "status": {
           "type": "string",
@@ -89,10 +106,14 @@
           ]
         },
         "notes": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 2000
         },
         "submittedAt": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "documents": {
@@ -117,11 +138,13 @@
       "properties": {
         "documentId": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 100
         },
         "documentType": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 100
         },
         "status": {
           "type": "string",
@@ -140,10 +163,12 @@
     },
     "metadata": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "required": [
         "source",
-        "testCase"
+        "testCase",
+        "synthetic",
+        "verified"
       ],
       "properties": {
         "source": {
@@ -151,7 +176,8 @@
         },
         "testCase": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 150
         },
         "synthetic": {
           "const": true

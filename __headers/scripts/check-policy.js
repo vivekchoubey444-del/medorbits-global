@@ -1,24 +1,71 @@
-'use strict';
 
-const fs = require('node:fs');
-const path = require('node:path');
+"use strict";
 
-const policyPath = path.join(__dirname, '..', 'policy', 'security-headers.json');
-const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
-const required = [
-  'X-Content-Type-Options',
-  'Referrer-Policy',
-  'X-Frame-Options',
-  'Permissions-Policy'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.resolve(__dirname, "..");
+
+const REQUIRED_FILES = [
+  "package.json",
+  "vercel/headers.fragment.json",
+  "vercel/vercel.config.json",
+  "vercel/security-policy.json",
+  "vercel/validate-headers.js",
+  "vercel/deployment-checklist.md"
 ];
-const missing = required.filter((name) => !policy.headers[name]);
-const problems = [];
-if (missing.length) problems.push(`Missing baseline headers: ${missing.join(', ')}`);
-if (policy.headers['Access-Control-Allow-Origin'] === '*') {
-  problems.push('Do not put wildcard CORS in the security header policy.');
+
+let errors = 0;
+
+function checkFile(relativePath) {
+  const fullPath = path.join(ROOT, relativePath);
+
+  if (!fs.existsSync(fullPath)) {
+    console.error(`[MISSING] ${relativePath}`);
+    errors++;
+    return false;
+  }
+
+  console.log(`[FOUND] ${relativePath}`);
+  return true;
 }
-if (problems.length) {
-  console.error(problems.join('\n'));
-  process.exit(1);
+
+function checkJson(relativePath) {
+  const fullPath = path.join(ROOT, relativePath);
+
+  if (!fs.existsSync(fullPath)) return;
+
+  try {
+    JSON.parse(fs.readFileSync(fullPath, "utf8"));
+    console.log(`[VALID JSON] ${relativePath}`);
+  } catch (error) {
+    console.error(`[INVALID JSON] ${relativePath}: ${error.message}`);
+    errors++;
+  }
 }
-console.log('MedOrbits header policy baseline is structurally valid.');
+
+function main() {
+  console.log("\nMedOrbits Headers Policy Check\n");
+
+  for (const file of REQUIRED_FILES) {
+    checkFile(file);
+  }
+
+  checkJson("package.json");
+  checkJson("vercel/headers.fragment.json");
+  checkJson("vercel/vercel.config.json");
+  checkJson("vercel/security-policy.json");
+
+  console.log("\n--------------------------------");
+  console.log(`Errors: ${errors}`);
+  console.log("--------------------------------");
+
+  if (errors > 0) {
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log("MedOrbits header policy checks passed.");
+}
+
+main();

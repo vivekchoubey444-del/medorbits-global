@@ -14,7 +14,7 @@
   "timezone": "Asia/Kolkata",
 
   "schedule": [
-    "0 3-5 * * 1"
+    "after 3am and before 6am on monday"
   ],
 
   "updateNotScheduled": false,
@@ -33,7 +33,8 @@
 
   "assigneesFromCodeOwners": true,
 
-  "commitMessagePrefix": "chore(deps):",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
   "commitMessageAction": "update",
   "commitMessageTopic": "{{depName}}",
 
@@ -41,6 +42,7 @@
   "dependencyDashboardTitle": "MedOrbits Dependency Dashboard",
 
   "automerge": false,
+  "platformAutomerge": false,
 
   "vulnerabilityAlerts": {
     "enabled": true,
@@ -48,7 +50,6 @@
       "security",
       "dependencies"
     ],
-    "assignees": [],
     "automerge": false,
     "vulnerabilityFixStrategy": "lowest",
     "prConcurrentLimit": 5,
@@ -63,29 +64,26 @@
     "recreateWhen": "always",
     "labels": [
       "dependencies",
-      "lockfile"
+      "lockfile",
+      "review-required"
     ],
     "commitMessageAction": "refresh",
-    "commitMessageTopic": "dependency lock files"
+    "commitMessageTopic": "dependency lock files",
+    "automerge": false
   },
 
   "packageRules": [
-
     {
-      "description": "Group non-major root npm production dependencies",
-
+      "description": "Group root npm production dependencies",
       "matchManagers": [
         "npm"
       ],
-
       "matchFileNames": [
         "package.json"
       ],
-
       "matchDepTypes": [
         "dependencies"
       ],
-
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -93,30 +91,24 @@
         "pinDigest",
         "digest"
       ],
-
-      "groupName": "root npm production dependencies",
-
+      "groupName": "MedOrbits production dependencies",
       "addLabels": [
         "javascript",
         "production"
-      ]
+      ],
+      "automerge": false
     },
-
     {
-      "description": "Group non-major root npm development dependencies",
-
+      "description": "Group root npm development dependencies",
       "matchManagers": [
         "npm"
       ],
-
       "matchFileNames": [
         "package.json"
       ],
-
       "matchDepTypes": [
         "devDependencies"
       ],
-
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -124,178 +116,92 @@
         "pinDigest",
         "digest"
       ],
-
-      "groupName": "root npm development dependencies",
-
+      "groupName": "MedOrbits development dependencies",
       "addLabels": [
         "javascript",
         "development"
-      ]
+      ],
+      "automerge": false
     },
-
-    {
-      "description": "Group non-major backend npm production dependencies",
-
-      "matchManagers": [
-        "npm"
-      ],
-
-      "matchFileNames": [
-        "server/package.json"
-      ],
-
-      "matchDepTypes": [
-        "dependencies"
-      ],
-
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "pinDigest",
-        "digest"
-      ],
-
-      "groupName": "backend npm production dependencies",
-
-      "addLabels": [
-        "backend",
-        "production"
-      ]
-    },
-
-    {
-      "description": "Group non-major backend npm development dependencies",
-
-      "matchManagers": [
-        "npm"
-      ],
-
-      "matchFileNames": [
-        "server/package.json"
-      ],
-
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "pinDigest",
-        "digest"
-      ],
-
-      "groupName": "backend npm development dependencies",
-
-      "addLabels": [
-        "backend",
-        "development"
-      ]
-    },
-
     {
       "description": "Group GitHub Actions updates",
-
       "matchManagers": [
         "github-actions"
       ],
-
       "matchUpdateTypes": [
         "minor",
         "patch",
         "digest",
         "pinDigest"
       ],
-
-      "groupName": "GitHub Actions",
-
+      "groupName": "MedOrbits GitHub Actions",
       "addLabels": [
         "github-actions",
         "ci"
-      ]
+      ],
+      "automerge": false
     },
-
     {
       "description": "Group Python dependency updates",
-
       "matchManagers": [
         "pip_requirements",
         "pep621",
         "poetry",
-        "pipenv",
-        "pip_setup",
-        "setup-cfg"
+        "pipenv"
       ],
-
       "matchUpdateTypes": [
         "minor",
         "patch"
       ],
-
-      "groupName": "Python dependencies",
-
+      "groupName": "MedOrbits Python dependencies",
       "addLabels": [
         "python",
         "dependencies"
-      ]
+      ],
+      "automerge": false
     },
-
     {
-      "description": "Group Docker and Docker Compose image updates",
-
+      "description": "Group Docker image updates",
       "matchManagers": [
         "dockerfile",
         "docker-compose"
       ],
-
       "matchUpdateTypes": [
         "minor",
         "patch",
         "digest",
         "pinDigest"
       ],
-
-      "groupName": "Docker dependencies",
-
+      "groupName": "MedOrbits Docker dependencies",
       "addLabels": [
         "docker",
         "infrastructure"
-      ]
+      ],
+      "automerge": false
     },
-
     {
-      "description": "Keep major dependency updates separate",
-
+      "description": "Keep major upgrades separate for manual review",
       "matchUpdateTypes": [
         "major"
       ],
-
       "groupName": null,
-
       "addLabels": [
         "breaking-change",
         "review-required"
       ],
-
       "automerge": false
     },
-
     {
-      "description": "Never automatically merge lockfile maintenance",
-
+      "description": "Require manual review for lockfile maintenance",
       "matchUpdateTypes": [
         "lockFileMaintenance"
       ],
-
-      "automerge": false,
-
       "addLabels": [
         "dependencies",
         "lockfile",
         "review-required"
-      ]
+      ],
+      "automerge": false
     }
   ]
 }

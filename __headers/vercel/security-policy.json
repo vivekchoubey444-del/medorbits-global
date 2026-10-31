@@ -1,0 +1,47 @@
+{
+  "project": "MedOrbits",
+  "configurationVersion": "1.0.0",
+  "provider": "Vercel",
+  "configurationSource": "__headers/vercel/headers.fragment.json",
+  "deploymentTarget": "root vercel.json",
+  "headers": {
+    "X-Content-Type-Options": {
+      "value": "nosniff",
+      "purpose": "Prevent MIME type sniffing"
+    },
+    "Referrer-Policy": {
+      "value": "strict-origin-when-cross-origin",
+      "purpose": "Limit referrer information sent to other origins"
+    },
+    "X-Frame-Options": {
+      "value": "SAMEORIGIN",
+      "purpose": "Restrict framing to same-origin pages",
+      "review": "Check iframe-based forms and integrations"
+    },
+    "Permissions-Policy": {
+      "value": "camera=(), microphone=(), geolocation=()",
+      "purpose": "Disable browser features not currently required",
+      "review": "Update only if a feature requires a permission"
+    },
+    "Cross-Origin-Opener-Policy": {
+      "value": "same-origin",
+      "purpose": "Isolate the browsing context",
+      "review": "Test OAuth, payment and popup workflows"
+    }
+  },
+  "intentionallyOmitted": {
+    "Content-Security-Policy": "Requires an application-specific source inventory and testing",
+    "Strict-Transport-Security": "Enable only after confirming HTTPS coverage for all affected hosts",
+    "Cross-Origin-Resource-Policy": "Set according to actual cross-origin asset requirements"
+  },
+  "cache": {
+    "assets": "public, max-age=604800",
+    "html": "no-cache, must-revalidate",
+    "personalizedResponses": "Do not use public shared caching"
+  },
+  "automation": {
+    "deploy": false,
+    "modifyDns": false,
+    "modifyProviderSettings": false
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MedOrbits HTTP Header Policy",
+  "type": "object",
+  "required": [
+    "policyId",
+    "project",
+    "version",
+    "status",
+    "headers",
+    "deployment"
+  ],
+  "properties": {
+    "policyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project": {
+      "const": "MedOrbits"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "baseline",
+        "approved",
+        "retired"
+      ]
+    },
+    "lastReviewed": {
+      "type": "string",
+      "format": "date"
+    },
+    "headers": {
+      "type": "object"
+    },
+    "deployment": {
+      "type": "object",
+      "required": [
+        "previewRequired",
+        "liveHeaderVerificationRequired"
+      ],
+      "properties": {
+        "previewRequired": {
+          "type": "boolean"
+        },
+        "liveHeaderVerificationRequired": {
+          "type": "boolean"
+        },
+        "automaticProviderMutation": {
+          "type": "boolean"
+        },
+        "automaticDeployment": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

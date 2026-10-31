@@ -1,0 +1,51 @@
+{
+  "project": "MedOrbits",
+  "provider": "Netlify",
+  "version": "1.0.0",
+  "configuration": {
+    "toml": "Merge [[headers]] rules into root netlify.toml",
+    "staticHeaders": "Publish a reviewed _headers file in the deploy directory",
+    "automaticDeployment": false,
+    "automaticProviderMutation": false
+  },
+  "headers": {
+    "X-Content-Type-Options": {
+      "status": "required",
+      "value": "nosniff",
+      "purpose": "Prevent MIME type sniffing"
+    },
+    "Referrer-Policy": {
+      "status": "required",
+      "value": "strict-origin-when-cross-origin",
+      "purpose": "Limit referrer information across origins"
+    },
+    "X-Frame-Options": {
+      "status": "conditional",
+      "value": "SAMEORIGIN",
+      "purpose": "Restrict framing",
+      "review": "Test iframe and embedded integrations"
+    },
+    "Permissions-Policy": {
+      "status": "required",
+      "value": "camera=(), microphone=(), geolocation=()",
+      "purpose": "Disable unused browser capabilities"
+    },
+    "Content-Security-Policy": {
+      "status": "required-after-inventory",
+      "value": null,
+      "purpose": "Restrict permitted content sources",
+      "review": "Inventory scripts, styles, fonts, images, APIs and frames; test report-only first"
+    },
+    "Strict-Transport-Security": {
+      "status": "conditional",
+      "value": null,
+      "purpose": "Enforce HTTPS in browsers",
+      "review": "Enable only after HTTPS coverage is confirmed for all affected hostnames"
+    }
+  },
+  "cache": {
+    "assets": "public, max-age=604800",
+    "html": "no-cache, must-revalidate",
+    "personalizedResponses": "private, no-store"
+  }
+}

@@ -1,14 +1,41 @@
 
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "manifestVersion": "3.0.0",
   "project": "MedOrbits",
+  "description": "Repository architecture, runtime, validation, security and release manifest.",
+  "manifestType": "project-manifest",
+  "manifestFormat": "json",
+  "manifestPath": "/project.manifest.json",
+  "lastUpdated": "2026-11-01",
+
   "package": {
     "name": "medorbits",
     "version": "3.0.0",
     "type": "all-in-one-repository-starter",
     "status": "starter-scaffold",
-    "license": "UNLICENSED"
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "supplementaryNotice": "NOTICE"
   },
+
+  "release": {
+    "version": "3.0.0",
+    "versioningScheme": "semver",
+    "releaseChannel": "development",
+    "releaseStatus": "pre-release",
+    "tagPrefix": "v",
+    "tagType": "annotated",
+    "automaticCommit": false,
+    "automaticPush": false,
+    "automaticDeployment": false,
+    "cleanWorkingTreeRequired": true,
+    "existingTagsMustNotBeOverwritten": true,
+    "productionReadinessMustBeVerifiedSeparately": true,
+    "releaseUtility": "RELEASE.sh",
+    "pushUtility": "PUSH.sh"
+  },
+
   "runtime": {
     "platform": "Node.js",
     "minimumNodeVersion": "22.0.0",
@@ -23,7 +50,23 @@
     "nodeVersionFile": ".nvmrc",
     "environmentTemplate": ".env.example",
     "testEnvironmentTemplate": ".env.test.example",
-    "moduleSystem": "esm",
+    "moduleSystem": "must-be-verified",
+    "moduleSystemPolicy": {
+      "packageTypeMustMatchSourceModules": true,
+      "esmAndCommonjsInteroperabilityMustBeDocumented": true,
+      "serverEntryPointMustMatchModuleSystem": true,
+      "noImplicitModuleSystemConversion": true
+    },
+
+    "python": {
+      "minimumVersion": "3.12",
+      "versionTarget": "py312",
+      "packageManager": "pip",
+      "testRunner": "pytest",
+      "lintTool": "ruff",
+      "typeChecker": "mypy"
+    },
+
     "entryPoints": {
       "server": {
         "path": "server.js",
@@ -44,6 +87,7 @@
         "required": false
       }
     },
+
     "startupPolicy": {
       "singleDocumentedProductionCommand": true,
       "entryPointMustBeVerified": true,
@@ -58,30 +102,41 @@
       "gracefulShutdownMustBeImplemented": true,
       "healthChecksMustReflectApplicationReadiness": true
     },
+
     "verification": {
       "checkNodeVersion": "node --version",
       "checkNpmVersion": "npm --version",
+      "checkPythonVersion": "python --version",
       "installDependencies": "npm ci",
-      "validate": "npm run validate",
-      "runTests": "npm test",
-      "checkDependencies": "npm run check:dependencies",
+      "validate": "make validate",
+      "runTests": "make test",
+      "checkDependencies": "make check-dependencies",
       "productionStart": "npm start"
     }
   },
+
   "repository": {
     "root": ".",
+
     "configuration": {
+      "projectManifest": "project.manifest.json",
+      "versionManifest": "VERSION",
       "packageManifest": "package.json",
       "packageLock": "package-lock.json",
       "gitAttributes": ".gitattributes",
       "gitIgnore": ".gitignore",
+      "npmIgnore": ".npmignore",
+      "prettierIgnore": ".prettierignore",
       "editorConfig": ".editorconfig",
       "prettierConfig": ".prettierrc.json",
       "pytestConfig": "pytest.ini",
       "pythonLintConfig": "ruff.toml",
+      "vitestConfig": "vitest.config.js",
+      "makefile": "Makefile",
       "environmentTemplate": ".env.example",
       "testEnvironmentTemplate": ".env.test.example"
     },
+
     "documentation": {
       "readme": "README.md",
       "productionGuide": "README-PRODUCTION.md",
@@ -90,24 +145,34 @@
       "contributing": "CONTRIBUTING.md",
       "codeOfConduct": "CODE_OF_CONDUCT.md",
       "security": "SECURITY.md",
-      "support": "SUPPORT.md"
+      "support": "SUPPORT.md",
+      "license": "LICENSE",
+      "notice": "NOTICE"
     },
+
     "scripts": {
       "jsonValidator": "scripts/check-json.mjs",
       "releaseUtility": "RELEASE.sh",
-      "pushUtility": "PUSH.sh"
+      "pushUtility": "PUSH.sh",
+      "verificationUtility": "VERIFY.sh",
+      "schemaUtility": "SCHEMA-CHECK.sh",
+      "securityUtility": "SECURITY.sh"
     },
+
     "directories": {
       "api": "api",
       "assets": "assets",
       "documentation": "docs",
       "infrastructure": "infrastructure",
       "python": "python",
+      "pythonTests": "python/tests",
       "scripts": "scripts",
       "source": "src",
-      "tests": "tests",
-      "tools": "tools"
+      "nodeTests": "tests",
+      "tools": "tools",
+      "publicDocuments": "assets/documents"
     },
+
     "fileStatusPolicy": {
       "allowedValues": [
         "planned",
@@ -118,24 +183,31 @@
       ],
       "requireEvidenceForVerifiedStatus": true,
       "missingRequiredFilesMustFailValidation": true,
-      "plannedFilesMustNotBeReportedAsImplemented": true
+      "plannedFilesMustNotBeReportedAsImplemented": true,
+      "implementedFilesMustNotAutomaticallyBeReportedAsVerified": true,
+      "verificationEvidenceMustIncludeDate": true,
+      "verificationEvidenceMustIdentifyTheCheck": true
     }
   },
+
   "validation": {
     "commands": {
-      "syntax": "npm run check:syntax",
-      "json": "npm run check:json",
-      "strictJson": "npm run check:json:strict",
-      "pythonTests": "npm run check:python",
-      "pythonLint": "npm run lint:python",
-      "pythonFormat": "npm run format:python:check",
-      "pythonTypes": "npm run typecheck:python",
-      "all": "npm run validate",
-      "strict": "npm run validate:strict",
-      "dependencies": "npm run check:dependencies",
-      "pythonDependencies": "npm run check:dependencies:python",
-      "pythonSecurity": "npm run check:security:python"
+      "syntax": "make check-syntax",
+      "json": "make check-json",
+      "strictJson": "make check-json-strict",
+      "pythonTests": "make test",
+      "pythonLint": "make lint-python",
+      "pythonFormat": "make format-check",
+      "pythonTypes": "make typecheck-python",
+      "all": "make validate",
+      "strict": "make validate-strict",
+      "dependencies": "make check-dependencies",
+      "pythonDependencies": "make check-python-dependencies",
+      "pythonSecurity": "make audit-python",
+      "npmSecurity": "make audit-npm",
+      "releaseValidation": "make release-validate"
     },
+
     "policy": {
       "commandsMustExistBeforeDocumentation": true,
       "missingRequiredScriptsFailValidation": true,
@@ -143,19 +215,35 @@
       "generatedFilesMustBeHandledExplicitly": true,
       "validationMustNotDeleteUserData": true,
       "networkChecksMustBeExplicit": true,
-      "productionServicesMustNotBeUsedForDestructiveTests": true
+      "productionServicesMustNotBeUsedForDestructiveTests": true,
+      "skippedChecksMustNotBeReportedAsPassed": true,
+      "validationEvidenceMustBeRecordedForVerifiedStatus": true
     }
   },
+
   "testing": {
     "node": {
       "runner": "node:test",
       "status": "optional",
+      "testDirectory": "tests",
+      "configuration": "package.json",
+      "environment": "node"
+    },
+
+    "vitest": {
+      "runner": "vitest",
+      "configuration": "vitest.config.js",
+      "status": "optional",
+      "coverageProvider": "v8",
+      "coverageEnabledByDefault": false,
       "testDirectory": "tests"
     },
+
     "python": {
       "runner": "pytest",
       "configuration": "pytest.ini",
-      "testDirectory": "tests",
+      "testDirectory": "python/tests",
+      "pythonMinimumVersion": "3.12",
       "markers": [
         "unit",
         "integration",
@@ -163,22 +251,34 @@
         "security",
         "regression",
         "slow",
-        "network",
+        "external",
         "database",
         "smoke",
         "asyncio",
         "serial",
-        "destructive"
+        "destructive",
+        "api",
+        "contract",
+        "performance",
+        "migration",
+        "concurrency",
+        "validation",
+        "auth",
+        "authorization"
       ]
     },
+
     "policy": {
       "isolatedTestDatabase": true,
       "syntheticTestData": true,
       "externalSideEffectsDisabledByDefault": true,
       "destructiveTestsRequireExplicitSafetyChecks": true,
-      "productionCredentialsForbidden": true
+      "productionCredentialsForbidden": true,
+      "productionDatabaseMustNeverBeUsedForDestructiveTests": true,
+      "testArtifactsMustBeSeparatedFromProductionData": true
     }
   },
+
   "database": {
     "primaryEngine": "postgresql",
     "driverPackage": "pg",
@@ -189,8 +289,11 @@
     "automaticProductionSeeding": false,
     "isolatedTestDatabaseRequired": true,
     "backupRestoreTestingRequired": true,
+    "connectionPoolingMustBeReviewed": true,
+    "databaseCredentialsMustComeFromEnvironment": true,
     "status": "must-be-verified"
   },
+
   "api": {
     "documentation": "docs/api/openapi.yaml",
     "specificationVersion": "must-be-verified",
@@ -198,8 +301,12 @@
     "authenticationRequirements": "must-be-verified",
     "authorizationRequirements": "must-be-verified",
     "requestResponseSchemas": "must-be-verified",
+    "rateLimitingRequirements": "must-be-verified",
+    "errorResponseContract": "must-be-verified",
+    "paginationContract": "must-be-verified",
     "status": "starter-contract"
   },
+
   "security": {
     "secretFilesMustNotBeCommitted": true,
     "environmentTemplatesMustContainNoRealCredentials": true,
@@ -210,9 +317,14 @@
     "productionDatabaseIsolationRequired": true,
     "httpsRequiredInProduction": true,
     "paymentSecurityRequiredWhenPaymentsAreImplemented": true,
+    "csrfProtectionRequiredWhereApplicable": true,
+    "secureCookieConfigurationRequiredInProduction": true,
+    "inputValidationRequired": true,
+    "securityHeadersMustBeReviewed": true,
     "incidentResponseDocumentation": "infrastructure/incident-response/README.md",
     "status": "not-certified"
   },
+
   "deployment": {
     "provider": "must-be-verified",
     "productionCommand": "npm start",
@@ -225,18 +337,20 @@
     "automaticDeploymentByReleaseUtilities": false,
     "status": "must-be-verified"
   },
-  "release": {
-    "tagPrefix": "v",
-    "tagType": "annotated",
-    "automaticCommit": false,
-    "automaticPush": false,
-    "automaticDeployment": false,
-    "cleanWorkingTreeRequired": true,
-    "existingTagsMustNotBeOverwritten": true,
-    "releaseUtility": "RELEASE.sh",
-    "pushUtility": "PUSH.sh",
-    "productionReadinessMustBeVerifiedSeparately": true
+
+  "releasePolicy": {
+    "previewBeforeExecution": true,
+    "explicitApprovalRequiredForTagCreation": true,
+    "explicitApprovalRequiredForRemotePush": true,
+    "explicitApprovalRequiredForDeployment": true,
+    "forcePushForbiddenByDefault": true,
+    "destructiveGitOperationsForbiddenByDefault": true,
+    "releaseArtifactMustBeReviewed": true,
+    "releaseNotesRequired": true,
+    "migrationInstructionsRequiredWhenApplicable": true,
+    "rollbackPlanRequiredForProduction": true
   },
+
   "publicDocuments": {
     "directory": "assets/documents",
     "manifestFiles": [
@@ -247,8 +361,10 @@
     "publicationRequiresSourceVerification": true,
     "publicationRequiresPathVerification": true,
     "privateApplicantDocumentsMustNotBePublic": true,
+    "personalInformationMustBeReviewedBeforePublication": true,
     "status": "draft-metadata"
   },
+
   "limitations": {
     "productionApplicationVerified": false,
     "allDocumentedRoutesVerified": false,
@@ -256,6 +372,8 @@
     "regulatoryComplianceCertified": false,
     "productionDeploymentVerified": false,
     "backupRestorationVerified": false,
-    "admissionsDataAccuracyGuaranteed": false
+    "admissionsDataAccuracyGuaranteed": false,
+    "thirdPartyLicenseAuditCompleted": false,
+    "apiContractFullyVerified": false
   }
 }

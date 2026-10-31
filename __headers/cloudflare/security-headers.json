@@ -1,0 +1,166 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "MedOrbits Cloudflare Security Headers",
+  "version": "1.0.0",
+  "status": "template",
+  "provider": "cloudflare",
+  "managed_by": "Cloudflare Dashboard - Rules - Transform Rules - Modify Response Header",
+  "description": "Security response-header policy reference for MedOrbits. Review and deploy through Cloudflare after validating application compatibility.",
+  "scope": {
+    "hostnames": [
+      "medorbits.in",
+      "www.medorbits.in"
+    ],
+    "paths": [
+      "/*"
+    ],
+    "exclude_paths": [
+      "/api/*",
+      "/webhooks/*"
+    ],
+    "notes": [
+      "Confirm whether API and webhook responses require separate header policies.",
+      "Do not apply this policy to unrelated hostnames.",
+      "Review all subdomains before enabling HSTS."
+    ]
+  },
+  "headers": {
+    "X-Content-Type-Options": {
+      "enabled": true,
+      "operation": "set",
+      "value": "nosniff",
+      "purpose": "Prevent MIME-type sniffing."
+    },
+    "X-Frame-Options": {
+      "enabled": true,
+      "operation": "set",
+      "value": "SAMEORIGIN",
+      "purpose": "Restrict framing to the same origin.",
+      "review": "Check authentication, payment, and embedded application workflows."
+    },
+    "Referrer-Policy": {
+      "enabled": true,
+      "operation": "set",
+      "value": "strict-origin-when-cross-origin",
+      "purpose": "Limit referrer information sent to other origins."
+    },
+    "Permissions-Policy": {
+      "enabled": true,
+      "operation": "set",
+      "value": "camera=(), microphone=(), geolocation=()",
+      "purpose": "Disable browser capabilities not required by the application.",
+      "review": "Update if a legitimate feature requires camera, microphone, or location access."
+    },
+    "Strict-Transport-Security": {
+      "enabled": false,
+      "operation": "set",
+      "value": "max-age=31536000",
+      "purpose": "Require HTTPS for future visits.",
+      "enable_only_after_review": true,
+      "include_subdomains": false,
+      "preload": false,
+      "requirements": [
+        "Confirm HTTPS works on every hostname in scope.",
+        "Confirm certificate renewal and redirect configuration.",
+        "Review every subdomain before enabling includeSubDomains.",
+        "Do not submit the domain for preload without a separate review."
+      ]
+    },
+    "Content-Security-Policy": {
+      "enabled": false,
+      "mode": "report-only-first",
+      "purpose": "Reduce cross-site scripting and content injection risks.",
+      "initial_policy": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests",
+      "deployment_notes": [
+        "Inventory scripts, styles, fonts, images, APIs, payment providers, analytics, and embedded content.",
+        "Test a tailored Content-Security-Policy-Report-Only policy first.",
+        "Add only verified external origins.",
+        "Do not enable enforcement until browser reports and application workflows have been reviewed."
+      ]
+    },
+    "Cross-Origin-Opener-Policy": {
+      "enabled": false,
+      "operation": "set",
+      "value": "same-origin",
+      "review": "Test OAuth, payment redirects, popups, and third-party integrations before enabling."
+    },
+    "Cross-Origin-Resource-Policy": {
+      "enabled": false,
+      "operation": "set",
+      "value": "same-origin",
+      "review": "Review cross-origin image, font, and resource delivery before enabling."
+    }
+  },
+  "cloudflare_configuration": {
+    "configuration_method": "response_header_transform_rule",
+    "dashboard_location": "Rules > Transform Rules > Modify Response Header",
+    "recommended_actions": [
+      "Set the selected response headers to their approved values.",
+      "Scope each rule to the intended hostname and path.",
+      "Check origin response headers before adding duplicate values.",
+      "Keep API CORS configuration at the application or API layer."
+    ],
+    "deployment_mode": "manual_review_and_deployment",
+    "automatic_deployment": false
+  },
+  "cors": {
+    "managed_by": "application_or_api_origin",
+    "cloudflare_managed": false,
+    "notes": [
+      "CORS is not a substitute for security response headers.",
+      "Do not use Access-Control-Allow-Origin: * for credentialed requests.",
+      "Allow only approved application origins.",
+      "Validate preflight OPTIONS requests."
+    ]
+  },
+  "cache_safety": {
+    "managed_separately": true,
+    "never_publicly_cache": [
+      "/account/*",
+      "/dashboard/*",
+      "/admin/*",
+      "/api/*",
+      "/applications/*",
+      "/documents/*",
+      "/payments/*"
+    ],
+    "notes": [
+      "Use appropriate private or no-store caching for sensitive and personalized responses.",
+      "Do not assume a security-header rule provides cache protection.",
+      "Review Cloudflare Cache Rules independently."
+    ]
+  },
+  "verification": {
+    "required": true,
+    "checks": [
+      "Verify headers on the production hostname.",
+      "Check HTTP-to-HTTPS redirects.",
+      "Check for duplicate or conflicting origin and edge headers.",
+      "Test login, registration, dashboards, forms, file uploads, and API requests.",
+      "Test payment, OAuth, analytics, and embedded integrations.",
+      "Review browser console errors and CSP reports before enforcement."
+    ],
+    "example_commands": [
+      "curl -sSI https://medorbits.in/",
+      "curl -sSI https://www.medorbits.in/",
+      "curl -sSI https://medorbits.in/robots.txt"
+    ]
+  },
+  "rollback": {
+    "required_before_deployment": true,
+    "procedure": [
+      "Record the existing Cloudflare rule configuration.",
+      "Disable the newly introduced rule if it causes application failures.",
+      "Restore previously approved header values.",
+      "Retest affected routes and integrations.",
+      "Document the rollback and the reason for it."
+    ]
+  },
+  "related_files": [
+    "../README.md",
+    "../policy/policy.json",
+    "../policy/header-matrix.json",
+    "../policy/exceptions.json"
+  ]
+}

@@ -1,17 +1,26 @@
-# Header Policy
+# MedOrbits HTTP Header Policy
 
-## Baseline headers
+Path: `__headers/policy/`
 
-- `X-Content-Type-Options: nosniff` prevents MIME sniffing.
-- `Referrer-Policy: strict-origin-when-cross-origin` limits referrer leakage.
-- `X-Frame-Options: DENY` provides legacy clickjacking protection. If MedOrbits must be embedded by a trusted partner, replace this with a deliberate CSP `frame-ancestors` policy.
-- `Permissions-Policy` disables browser features not required by the current application. Adjust only when a verified feature needs access.
-- `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` can affect OAuth popups, cross-origin assets, and integrations; test before enforcing globally.
+This directory defines provider-neutral HTTP security-header requirements.
+It is documentation and policy data; it does not automatically configure
+Cloudflare, Vercel or Nginx.
 
-## Content Security Policy
+## Files
+- `policy.json`: machine-readable baseline policy.
+- `header-matrix.json`: provider configuration guidance.
+- `exceptions.json`: approved exception register (initially empty).
+- `policy.schema.json`: JSON Schema for policy validation.
+- `review-checklist.md`: release and review checklist.
 
-CSP must reflect actual production dependencies. Inventory script, style, image, font, connect, frame, worker, and form-action origins. Prefer nonces or hashes over `unsafe-inline`; never add `unsafe-eval` without a documented requirement. Use Report-Only first.
+## Important
+CSP must be tailored to the real application and tested before enforcement.
+Enable HSTS only after confirming HTTPS for every affected hostname.
+Do not publicly cache personalized, authenticated or sensitive responses.
+Review iframe, OAuth, payment and popup flows before enabling isolation
+or framing restrictions.
 
-## HSTS
-
-Only send HSTS over HTTPS. Do not add `includeSubDomains` until all subdomains are HTTPS-ready. Do not request browser preload until the organization accepts the operational consequences and meets preload requirements.
+Validate JSON syntax from repository root:
+```bash
+node -e "for (const f of ['__headers/policy/policy.json','__headers/policy/header-matrix.json','__headers/policy/exceptions.json','__headers/policy/policy.schema.json']) JSON.parse(require('node:fs').readFileSync(f,'utf8')); console.log('Policy JSON valid')"
+```

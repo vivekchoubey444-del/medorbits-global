@@ -1,0 +1,94 @@
+
+{
+  "name": "MedOrbits Cloudflare Response Header Rules",
+  "version": "1.0.0",
+  "provider": "cloudflare",
+  "deployment": {
+    "method": "manual",
+    "dashboard": "Rules > Transform Rules > Modify Response Header",
+    "automatic_deployment": false,
+    "environment": "production",
+    "hostname": "medorbits.in"
+  },
+  "rules": [
+    {
+      "name": "MEDORBITS-SECURITY-NOSNIFF",
+      "description": "Prevent MIME-type sniffing.",
+      "enabled": true,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "X-Content-Type-Options",
+      "value": "nosniff"
+    },
+    {
+      "name": "MEDORBITS-SECURITY-FRAME-OPTIONS",
+      "description": "Restrict framing to the same origin.",
+      "enabled": true,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "X-Frame-Options",
+      "value": "SAMEORIGIN"
+    },
+    {
+      "name": "MEDORBITS-SECURITY-REFERRER",
+      "description": "Limit cross-origin referrer information.",
+      "enabled": true,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "Referrer-Policy",
+      "value": "strict-origin-when-cross-origin"
+    },
+    {
+      "name": "MEDORBITS-SECURITY-PERMISSIONS",
+      "description": "Disable unused browser capabilities.",
+      "enabled": true,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "Permissions-Policy",
+      "value": "camera=(), microphone=(), geolocation=()"
+    },
+    {
+      "name": "MEDORBITS-SECURITY-HSTS",
+      "description": "Enable HSTS only after HTTPS and subdomain review.",
+      "enabled": false,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "Strict-Transport-Security",
+      "value": "max-age=31536000",
+      "approval_required": true
+    },
+    {
+      "name": "MEDORBITS-CSP-REPORT-ONLY",
+      "description": "Initial CSP monitoring policy. Validate application dependencies before deployment.",
+      "enabled": false,
+      "expression": "(http.host eq \"medorbits.in\" or http.host eq \"www.medorbits.in\")",
+      "operation": "set",
+      "header": "Content-Security-Policy-Report-Only",
+      "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'",
+      "approval_required": true,
+      "review_required": [
+        "External scripts",
+        "Stylesheets and fonts",
+        "Images and media",
+        "API endpoints",
+        "Payment integrations",
+        "Authentication and OAuth",
+        "Analytics and embedded content"
+      ]
+    }
+  ],
+  "deployment_checks": [
+    "Confirm hostname expressions match the intended production domains.",
+    "Check existing origin headers to avoid duplicate or conflicting values.",
+    "Test the website and API after each rule is enabled.",
+    "Keep HSTS disabled until HTTPS coverage is verified.",
+    "Test CSP in report-only mode before enforcing it.",
+    "Keep CORS configuration at the application or API layer.",
+    "Maintain a rollback record before production changes."
+  ],
+  "important": [
+    "This is a project configuration reference, not Cloudflare's API import format.",
+    "Create each rule manually in the Cloudflare dashboard or convert it using a separately validated API workflow.",
+    "Do not deploy all rules blindly."
+  ]
+}

@@ -1,10 +1,10 @@
-Create /.prettierignore for MedOrbits. This excludes generated files, dependencies, build outputs, private runtime data, and large datasets from automatic formatting while preserving maintained source code and public assets.
 
 # =============================================================================
 # MedOrbits -- Prettier Ignore Policy
 # File: /.prettierignore
 # Policy version: 1.0.0
 # =============================================================================
+
 # Dependencies and package-manager artifacts
 node_modules/
 vendor/
@@ -14,6 +14,7 @@ vendor/
 .pnpm-store/
 .yarn/
 bower_components/
+
 # Build output and generated bundles
 dist/
 build/
@@ -31,18 +32,21 @@ coverage/
 .vite/
 .esbuild/
 storybook-static/
+
 # Minified and bundled assets
 *.min.js
 *.min.css
 *.bundle.js
 *.chunk.js
 *.map
+
 # Generated documentation and API clients
 docs/generated/
 generated/
 api/generated/
 openapi.generated.*
 swagger.generated.*
+
 # Logs and temporary runtime files
 logs/
 *.log
@@ -54,6 +58,7 @@ pnpm-debug.log*
 *.swp
 *.swo
 *~
+
 # Environment files and secrets
 .env
 .env.*
@@ -66,6 +71,7 @@ credentials/
 *.key
 *.p12
 *.pfx
+
 # Local databases and runtime state
 *.sqlite
 *.sqlite3
@@ -75,6 +81,7 @@ storage/private/
 uploads/
 tmp/
 temp/
+
 # Test artifacts and reports
 test-results/
 playwright-report/
@@ -82,6 +89,7 @@ blob-report/
 junit.xml
 report.xml
 reports/generated/
+
 # Python environments and generated artifacts
 .venv/
 venv/
@@ -92,7 +100,8 @@ __pycache__/
 .ruff_cache/
 .tox/
 htmlcov/
-# Machine-learning outputs
+
+# Machine-learning outputs and large model files
 artifacts/
 checkpoints/
 models/
@@ -100,13 +109,15 @@ models/
 *.pt
 *.pth
 *.safetensors
+
 # Operating system and editor state
 .DS_Store
 Thumbs.db
 Desktop.ini
 .idea/
+
+# Ignore VS Code workspace state, but preserve shared examples
 .vscode/
-# Preserve selected shared VS Code configuration from the broad ignore above
 !.vscode/
 .vscode/*
 !.vscode/README.md
@@ -114,9 +125,11 @@ Desktop.ini
 !.vscode/settings.example.json
 !.vscode/launch.example.json
 !.vscode/tasks.example.json
+
 # Git metadata
 .git/
 .git-*
+
 # Large archives and binary exports
 *.zip
 *.7z
@@ -126,28 +139,30 @@ Desktop.ini
 *.tgz
 *.bak
 *.backup
-# Generated frontend assets -- preserve maintained public assets
+
+# Generated frontend assets
 public/build/
 public/dist/
 public/assets/generated/
+
 # Generated data exports
 exports/generated/
 data/exports/
 *.generated.json
-# Do not format lockfiles or dependency snapshots
+
+# Dependency lockfiles and snapshots
 package-lock.json
 npm-shrinkwrap.json
 yarn.lock
 pnpm-lock.yaml
-# Preserve maintained source, configuration, documentation, and public assets.
-# Add a path here only when it is genuinely generated or should not be formatted.
+
 # =============================================================================
-
-Validate
-
-npx prettier --check .
-git status --short
-git diff --check
-git diff -- .prettierignore
-
-Important: .prettierignore controls formatting, not Git tracking or secret protection. The .vscode/ exceptions preserve the example files listed above, but adjust them if your repository uses a different set of shared configuration files. Avoid ignoring entire source directories such as api/, assets/, or education/, because they contain maintained MedOrbits code and content.
+# POLICY NOTES
+#
+# - Do not ignore maintained source directories such as api/, assets/,
+#   education/, config/, services/, or controllers/.
+# - Keep public assets eligible for formatting unless they are generated.
+# - Add exclusions only for generated, private, temporary, or binary content.
+# - This file controls Prettier only; it does not control Git tracking,
+#   deployment uploads, access permissions, or secret protection.
+# =============================================================================

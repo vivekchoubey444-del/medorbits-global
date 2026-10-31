@@ -1,9 +1,17 @@
+
 {
   "name": "medorbits-headers",
   "version": "1.0.0",
   "private": true,
-  "description": "MedOrbits HTTP security header policy and deployment templates",
+  "description": "MedOrbits HTTP security header policy, validation and deployment templates",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "check": "node scripts/check-policy.js"
+    "check": "node scripts/check-policy.js",
+    "validate": "node vercel/validate-headers.js",
+    "check:csp": "node scripts/check-csp.js",
+    "check:live": "node scripts/check-live-headers.js",
+    "check:all": "npm run check && npm run validate && npm run check:csp"
   }
 }

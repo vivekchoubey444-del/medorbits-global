@@ -1,18 +1,18 @@
 
-# ============================================================
+# =============================================================================
 # MedOrbits -- Ruff Configuration
-# File: ruff.toml
-# Release target: 2.0.0
+# File: /ruff.toml
+# Release target: 2.0.1
 # Python: 3.11+
 #
 # Purpose:
 #   Python linting, import sorting, security checks,
-#   modernization, and code formatting.
+#   modernization and code formatting.
 #
 # Policy:
 #   Lint and format checks must not modify files unless
 #   an explicit formatting or autofix command is executed.
-# ============================================================
+# =============================================================================
 
 # Python language version targeted by the project.
 target-version = "py311"
@@ -33,7 +33,7 @@ line-length = 100
 # Indentation.
 indent-width = 4
 
-# Generated, external, and environment directories.
+# Generated, external and environment directories.
 extend-exclude = [
     ".git",
     ".agent-backup",
@@ -60,9 +60,9 @@ extend-exclude = [
     "third_party",
 ]
 
-# ------------------------------------------------------------
-# Linter
-# ------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# LINTER
+# -----------------------------------------------------------------------------
 
 [lint]
 
@@ -91,12 +91,15 @@ select = [
     "PERF",
 ]
 
-# Long lines are handled by the configured formatter and review.
+# Long lines are handled by formatting and code review.
 ignore = [
     "E501",
 ]
 
-# Permit selected development and test conventions.
+# -----------------------------------------------------------------------------
+# PER-FILE RULE EXCEPTIONS
+# -----------------------------------------------------------------------------
+
 [lint.per-file-ignores]
 
 # Public package exports and initialization side effects.
@@ -104,7 +107,7 @@ ignore = [
     "F401",
 ]
 
-# Assertions are appropriate in tests.
+# Assertions are appropriate in test code.
 "tests/**/*.py" = [
     "S101",
 ]
@@ -118,12 +121,12 @@ ignore = [
     "S101",
 ]
 
-# Test fixtures sometimes need temporary directories and subprocesses.
-# Keep other security checks enabled; test assertions are allowed above.
+# Keep security checks enabled for test code except for explicitly
+# permitted assertion usage. Add further exceptions only with justification.
 
-# ------------------------------------------------------------
-# Import sorting
-# ------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# IMPORT SORTING
+# -----------------------------------------------------------------------------
 
 [lint.isort]
 
@@ -136,9 +139,9 @@ force-sort-within-sections = true
 force-single-line = false
 split-on-trailing-comma = true
 
-# ------------------------------------------------------------
-# Formatter
-# ------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# FORMATTER
+# -----------------------------------------------------------------------------
 
 [format]
 
@@ -148,5 +151,9 @@ line-ending = "lf"
 docstring-code-format = true
 skip-magic-trailing-comma = false
 
-# Preserve existing source layout during ordinary checks.
 # Ruff format --check verifies formatting without rewriting files.
+# Ruff format modifies files only when explicitly invoked without --check.
+
+# =============================================================================
+# END OF CONFIGURATION
+# =============================================================================

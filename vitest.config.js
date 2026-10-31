@@ -1,7 +1,8 @@
+
 /**
  * MedOrbits -- Vitest Configuration
  * File: /vitest.config.js
- * Policy version: 2.0.0
+ * Policy version: 2.1.0
  *
  * Requirements:
  *   Node.js >= 20
@@ -30,8 +31,6 @@ import { dirname, resolve } from "node:path";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 
-const sourceExtensions = "{js,mjs,cjs,ts,mts,cts}";
-
 const excludedPaths = [
   "**/node_modules/**",
   "**/dist/**",
@@ -39,30 +38,31 @@ const excludedPaths = [
   "**/coverage/**",
   "**/.git/**",
   "**/.next/**",
+  "**/.nuxt/**",
   "**/.cache/**",
+  "**/.turbo/**",
   "**/storage/**",
   "**/vendor/**",
-  "**/fixtures/**",
+  "**/generated/**",
   "**/*.d.ts",
 ];
 
 const testPatterns = [
-  `tests/**/*.{test,spec}.${sourceExtensions}`,
-  `api/**/*.{test,spec}.${sourceExtensions}`,
-  `scripts/**/*.{test,spec}.${sourceExtensions}`,
-  `tools/**/*.{test,spec}.${sourceExtensions}`,
+  "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
+  "api/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
+  "scripts/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
+  "tools/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}",
 ];
 
 const coveragePatterns = [
-  `api/**/*.${sourceExtensions}`,
-  `scripts/**/*.${sourceExtensions}`,
-  `tools/**/*.${sourceExtensions}`,
+  "api/**/*.{js,mjs,cjs,ts,mts,cts}",
+  "scripts/**/*.{js,mjs,cjs,ts,mts,cts}",
+  "tools/**/*.{js,mjs,cjs,ts,mts,cts}",
 ];
 
 export default defineConfig({
   root: rootDir,
 
-  // Keep aliases consistent between tests and application modules.
   resolve: {
     alias: {
       "@": resolve(rootDir, "api"),
@@ -75,16 +75,13 @@ export default defineConfig({
   test: {
     name: "medorbits",
 
-    // Repository tools and backend modules run in Node.js.
     environment: "node",
-
-    // Tests must import Vitest APIs explicitly.
     globals: false,
 
     include: testPatterns,
     exclude: excludedPaths,
 
-    // Isolation and mock lifecycle.
+    // Test isolation and mock lifecycle.
     isolate: true,
     clearMocks: true,
     mockReset: true,
@@ -95,12 +92,11 @@ export default defineConfig({
     hookTimeout: 10_000,
     teardownTimeout: 10_000,
 
-    // Parallel execution. Set fileParallelism=false if tests share
-    // mutable files, databases, ports, or other process-wide resources.
+    // Parallel execution.
     fileParallelism: true,
     maxWorkers: "50%",
 
-    // Stable default test environment.
+    // Predictable test environment.
     env: {
       NODE_ENV: "test",
     },
@@ -108,10 +104,10 @@ export default defineConfig({
     // Do not automatically retry flaky tests.
     retry: 0,
 
-    // Keep output concise while preserving failure details.
+    // Default test reporting.
     reporters: ["default"],
 
-    // Coverage is enabled explicitly with `--coverage`.
+    // Coverage is enabled explicitly with --coverage.
     coverage: {
       provider: "v8",
       enabled: false,
@@ -134,15 +130,14 @@ export default defineConfig({
         "**/*.config.*",
         "**/index.{js,mjs,cjs,ts,mts,cts}",
         "**/types/**",
+        "**/fixtures/**",
         "**/*.d.ts",
       ],
 
-      // Establish a trustworthy baseline before adding thresholds.
-      // When ready, configure lines/functions/branches/statements thresholds.
+      // Introduce thresholds after establishing a measured baseline.
       thresholds: undefined,
 
-      // Fail coverage runs if a source file is not exercised only when
-      // explicitly enabled after the project has a stable coverage baseline.
+      // Do not require untested files to be included by default.
       all: false,
     },
   },

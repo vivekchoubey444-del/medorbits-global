@@ -1,8 +1,9 @@
 
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medorbits.in/schemas/college-fixture.schema.json",
   "title": "MedOrbits College Fixture",
-  "description": "Validates synthetic MedOrbits college fixtures for development and automated testing.",
+  "description": "Validates synthetic MedOrbits college fixtures for development and automated testing. Does not verify real institutions, accreditation, fees, rankings, or admission eligibility.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +16,8 @@
     },
     "description": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 1000
     },
     "colleges": {
       "type": "array",
@@ -38,29 +40,75 @@
       ],
       "properties": {
         "id": {
-          "type": ["string", "integer"]
+          "type": [
+            "string",
+            "integer"
+          ],
+          "minimum": 1
         },
         "slug": {
           "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
           "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         },
         "name": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 250
         },
         "type": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 100
         },
         "location": {
           "oneOf": [
             {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 300
             },
             {
               "type": "object",
-              "additionalProperties": true
+              "minProperties": 1,
+              "additionalProperties": true,
+              "properties": {
+                "address": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "city": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "district": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "state": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "country": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "pincode": {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "latitude": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "longitude": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                }
+              }
             }
           ]
         },
@@ -73,18 +121,30 @@
       "type": "object",
       "additionalProperties": true,
       "required": [
+        "source",
         "synthetic",
         "verified"
       ],
       "properties": {
         "source": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
         },
         "synthetic": {
           "const": true
         },
         "verified": {
           "const": false
+        },
+        "testCase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

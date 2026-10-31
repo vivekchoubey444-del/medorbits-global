@@ -1,0 +1,72 @@
+{
+  "policyId": "MEDORBITS-HTTP-HEADERS-001",
+  "project": "MedOrbits",
+  "version": "1.0.0",
+  "status": "baseline",
+  "lastReviewed": "2026-11-01",
+  "scope": [
+    "public-website",
+    "static-assets",
+    "application-pages",
+    "api-responses"
+  ],
+  "headers": {
+    "X-Content-Type-Options": {
+      "status": "required",
+      "recommendedValue": "nosniff",
+      "purpose": "Prevent MIME type sniffing."
+    },
+    "Referrer-Policy": {
+      "status": "required",
+      "recommendedValue": "strict-origin-when-cross-origin",
+      "purpose": "Limit referrer information sent to other origins."
+    },
+    "X-Frame-Options": {
+      "status": "conditional",
+      "recommendedValue": "SAMEORIGIN",
+      "purpose": "Reduce clickjacking risk.",
+      "review": "Check iframe, payment and embedded service requirements."
+    },
+    "Content-Security-Policy": {
+      "status": "required-after-inventory",
+      "recommendedValue": null,
+      "purpose": "Restrict permitted content sources.",
+      "review": "Inventory scripts, styles, APIs, fonts, images and frames; test report-only first."
+    },
+    "Strict-Transport-Security": {
+      "status": "conditional",
+      "recommendedValue": "max-age=31536000",
+      "purpose": "Require HTTPS after successful rollout.",
+      "review": "Do not enable until all affected hostnames support HTTPS; review includeSubDomains and preload separately."
+    },
+    "Permissions-Policy": {
+      "status": "required",
+      "recommendedValue": "camera=(), microphone=(), geolocation=()",
+      "purpose": "Disable browser capabilities not currently required."
+    },
+    "Cross-Origin-Opener-Policy": {
+      "status": "conditional",
+      "recommendedValue": "same-origin",
+      "purpose": "Isolate browsing contexts.",
+      "review": "Test OAuth, payments, popups and identity providers."
+    },
+    "Cross-Origin-Resource-Policy": {
+      "status": "conditional",
+      "recommendedValue": "same-site",
+      "purpose": "Control cross-origin resource loading.",
+      "review": "Check CDN and cross-origin asset requirements."
+    }
+  },
+  "caching": {
+    "html": "no-cache, must-revalidate",
+    "publicStaticAssets": "public, max-age=604800",
+    "fingerprintedStaticAssets": "public, max-age=31536000, immutable",
+    "personalizedOrAuthenticatedResponses": "private, no-store"
+  },
+  "deployment": {
+    "previewRequired": true,
+    "liveHeaderVerificationRequired": true,
+    "automaticProviderMutation": false,
+    "automaticDeployment": false
+  }
+}

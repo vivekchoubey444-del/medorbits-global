@@ -1,354 +1,260 @@
-MedOrbits OpenAPI Documentation
 
-1. Purpose
+# MedOrbits OpenAI Integration
 
-The openai/ directory contains the OpenAPI specification and related documentation for the MedOrbits platform API.
+Official OpenAI API specification and integration resources for the MedOrbits platform.
 
-Its purpose is to provide a consistent, machine-readable description of API endpoints, request parameters, request bodies, response schemas, authentication requirements, and error responses.
+**Project:** MedOrbits  
+**Directory:** `/openai/`  
+**Specification:** `openapi.yaml`  
+**API Provider:** OpenAI  
+**Architecture:** Server-side API integration  
+**Status:** Documentation and integration setup
 
-The specification can support:
+—
 
-* API documentation and discovery.
-* Frontend and backend integration.
-* Contract testing.
-* Client SDK generation.
-* Request and response validation.
-* API review and maintenance.
-* Integration planning for education, admissions, careers, and recruitment services.
+## 1. Purpose
 
-Important: An OpenAPI specification describes an API contract. It does not implement endpoints or prove that the corresponding backend functionality exists.
+The `/openai/` directory maintains the OpenAI API specification and supporting integration resources used by MedOrbits.
 
-2. Directory Structure
+It provides a structured foundation for:
 
-openai/
+- AI-powered educational assistance.
+- College and course information assistance.
+- Admission guidance workflows.
+- Document assistance and summarization.
+- Career guidance.
+- AI-powered search and discovery.
+- Administrative automation.
+- Internal AI services.
+
+OpenAI integration must operate through secure backend services.
+
+## 2. Directory structure
+
+```text
+/openai/
+│
 ├── README.md
-└── openapi.yaml
-
-File responsibilities
-
-File	Purpose
-README.md	Documents the specification, validation, security, and maintenance process.
-openapi.yaml	Defines the OpenAPI document and proposed API contracts.
-
-Add additional specifications only when there is a clear requirement for versioning, separate services, or independently maintained API contracts.
-
-3. Specification Format
-
-The API specification uses OpenAPI 3.1.1 and YAML.
-
-The specification should define:
-
-* API title and version.
-* API server URLs.
-* Resource tags.
-* Paths and HTTP methods.
-* Operation identifiers.
-* Parameters and request bodies.
-* Response status codes.
-* Reusable schemas.
-* Authentication schemes.
-* Error response formats.
-
-Use reusable component definitions to avoid duplicating common schemas, parameters, and response structures.
-
-Keep descriptions accurate and concise.
-
-4. Intended API Domains
-
-The initial specification may describe the following domains, subject to verification against the actual backend:
-
-System
-
-* Application health.
-* Service availability.
-* Dependency status, where implemented.
-
-Authentication
-
-* Login.
-* Logout.
-* Session or token handling.
-
-Users
-
-* Current-user profile.
-* Authorized profile information.
-
-Colleges
-
-* College discovery.
-* Search and filtering.
-* College details.
-
-Courses
-
-* Course discovery.
-* Course categories.
-* Education information.
-
-Jobs
-
-* Job listings.
-* Location and employment-type filters.
-* Career opportunities.
-
-Applications
-
-* Application submission.
-* Application listing.
-* Application status.
-
-Notifications
-
-* Notification listing.
-* Read and unread status.
-
-These domains are proposed API groupings. Only endpoints supported by the actual server should be described as implemented.
-
-5. Backend Compatibility
-
-The OpenAPI contract must remain consistent with the existing MedOrbits Express application.
-
-Before adding or changing an operation:
-
-1. Inspect the actual route declarations.
-2. Verify the route’s HTTP method and URL.
-3. Inspect its controller and middleware.
-4. Confirm authentication and authorization requirements.
-5. Verify request validation.
-6. Confirm the actual response structure and status codes.
-7. Check whether pagination, filtering, and error handling are implemented.
-8. Update the specification to match verified behavior.
-
-Do not modify backend routes merely to make them match a speculative API contract.
-
-If an endpoint is planned but not implemented, clearly label it as proposed in the relevant documentation or tracking system.
-
-6. API Design Conventions
-
-Use consistent API conventions across resources.
-
-HTTP methods
-
-* GET — retrieve resources.
-* POST — create a resource or perform an explicitly defined operation.
-* PUT — replace a resource when supported.
-* PATCH — partially update a resource when supported.
-* DELETE — remove a resource only where deletion is explicitly supported and authorized.
-
-Do not document methods that the backend does not implement.
-
-Responses
-
-Use appropriate HTTP status codes.
-
-Common examples include:
-
-* 200 — successful request.
-* 201 — resource created.
-* 204 — successful request with no response body.
-* 400 — invalid request.
-* 401 — authentication required or invalid.
-* 403 — access forbidden.
-* 404 — resource not found or unavailable to the requester.
-* 409 — conflicting operation.
-* 422 — semantic validation failure, if adopted by the backend.
-* 429 — rate limit exceeded.
-* 500 — unexpected server failure.
-* 503 — service unavailable.
-
-The actual status codes must match the implementation.
-
-Naming
-
-* Use descriptive, stable operation IDs.
-* Use consistent resource naming.
-* Prefer reusable schemas.
-* Apply consistent pagination conventions.
-* Document optional and required fields accurately.
-* Set reasonable maximum lengths and numeric limits.
-* Avoid exposing internal database structures unnecessarily.
-
-7. Authentication and Authorization
-
-Document the authentication mechanism actually implemented by the application.
-
-If bearer-token authentication is used, specify the relevant security scheme and apply it to protected operations.
-
-If cookie-based sessions are used, document the appropriate cookie security scheme instead.
-
-Requirements:
-
-* Public endpoints must be explicitly identified.
-* Protected operations must declare their authentication requirements.
-* Authorization must be enforced by backend middleware and controllers.
-* User-owned resources must be checked against the authenticated user’s permissions.
-* Administrative operations must require appropriate privileges.
-* Authentication tokens and credentials must never be included in examples.
-* Do not treat the OpenAPI document as an authorization mechanism.
-
-A documented security scheme does not implement authentication.
-
-8. Validation and Error Handling
-
-Define request and response schemas that match the server’s actual behavior.
-
-Where appropriate, validate:
-
-* Required fields.
-* Data types.
-* String lengths.
-* Numeric bounds.
-* Enumerated values.
-* Date and time formats.
-* Pagination parameters.
-* Identifiers and path parameters.
-* Unexpected additional properties.
-
-Error responses should use a consistent structure where the backend supports it.
-
-Do not expose:
-
-* Stack traces.
-* Secret values.
-* Database credentials.
-* Internal filesystem paths.
-* Sensitive request bodies.
-* Private user documents.
-
-Document only fields that the API actually returns.
-
-9. Security and Privacy
-
-* Do not place real API keys or credentials in this directory.
-* Do not include production tokens in examples.
-* Do not publish sensitive server addresses or internal infrastructure details unnecessarily.
-* Avoid exposing private user information through response schemas.
-* Restrict access to protected resources.
-* Apply rate limiting and request validation where appropriate.
-* Keep authentication and authorization enforcement on the server.
-* Review upload and document endpoints carefully before documenting them.
-* Use HTTPS for deployed production APIs.
-* Avoid including sensitive values in URLs, examples, or error messages.
-
-OpenAPI documents can be public, so treat their contents as potentially visible outside the development team.
-
-10. Validation Workflow
-
-Validate openapi.yaml with a compatible OpenAPI 3.1 validator before merging changes.
-
-A possible workflow using a locally installed Redocly CLI is:
-
-npx —no-install @redocly/cli lint openai/openapi.yaml
-
-This command requires the CLI to already be available in the project’s local dependencies. It may fail if the package is not installed or configured.
-
-Do not automatically install packages or execute remote package code merely to validate the specification.
-
-Validation should check:
-
-* YAML syntax.
-* OpenAPI document structure.
-* Reference resolution.
-* Schema consistency.
-* Operation identifiers.
-* Parameter definitions.
-* Response definitions.
-* Security declarations.
-* Duplicate or inconsistent definitions.
-
-A syntactically valid document may still describe endpoints that do not exist.
-
-11. Testing Strategy
-
-Where the necessary implementation and tooling exist, use separate validation layers.
-
-Specification validation
-
-Confirm that the YAML parses and conforms to the declared OpenAPI version.
-
-Contract testing
-
-Compare documented requests and responses with the actual backend.
-
-Integration testing
-
-Test relevant endpoints against a controlled test environment.
-
-Security testing
-
-Verify authentication, authorization, input validation, rate limiting, and sensitive-data handling.
-
-Compatibility testing
-
-Check that changes do not unexpectedly break existing clients or integrations.
-
-Record skipped checks and environmental limitations. Do not describe an unexecuted validation as passing.
-
-12. Versioning and Change Management
-
-Maintain the specification alongside the implementation.
-
-When the API changes:
-
-1. Identify the affected operations.
-2. Inspect the existing server behavior.
-3. Update the specification.
-4. Validate the YAML and references.
-5. Run relevant contract or integration tests.
-6. Review authentication and privacy implications.
-7. Document breaking changes.
-8. Update the API version according to the project’s versioning policy.
-
-Do not increment versions automatically for every documentation edit. Follow a defined policy for additive, corrective, and breaking changes.
-
-Avoid removing documented operations until their compatibility impact has been reviewed.
-
-13. Continuous Integration
-
-A future CI workflow may validate the specification on pull requests.
-
-It should:
-
-* Run a local or pinned validator.
-* Fail on invalid YAML or unresolved references.
-* Report validation errors clearly.
-* Avoid installing unreviewed dependencies during validation.
-* Avoid exposing secrets in logs.
-* Avoid modifying the specification during the validation step.
-
-Do not advertise a CI validation workflow until the workflow exists and has been tested.
-
-14. Known Limitations
-
-This directory describes the intended API contract and its maintenance process.
-
-Potential limitations include:
-
-* Proposed endpoints may not exist in the current backend.
-* Response schemas may require adjustment after inspecting controllers.
-* Authentication schemes may differ from the current implementation.
-* Static validation does not prove runtime behavior.
-* Contract validation requires a compatible validator.
-* API compatibility depends on coordinated frontend and backend changes.
-
-Keep these limitations visible until the relevant functionality is verified.
-
-15. Maintenance Checklist
-
-Before considering an API specification update complete:
-
-* [ ]	Confirm the actual route and controller.
-* [ ]	Verify request and response schemas.
-* [ ]	Check authentication and authorization.
-* [ ]	Validate YAML syntax.
-* [ ]	Validate OpenAPI structure and references.
-* [ ]	Run relevant tests when available.
-* [ ]	Check for accidental secret exposure.
-* [ ]	Review compatibility implications.
-* [ ]	Update this README if the workflow changes.
-* [ ]	Report which checks actually passed.
-
-16. Core Principle
-
-Document the API that exists, clearly label the API that is planned, and verify every contract change against the real implementation.
+├── openapi.yaml
+│
+├── package.json
+│
+├── config/
+│   ├── openai.config.js
+│   └── environment.config.js
+│
+├── clients/
+│   └── openai.client.js
+│
+├── services/
+│   ├── ai-assistant.service.js
+│   ├── education.service.js
+│   ├── admission-guidance.service.js
+│   ├── document-analysis.service.js
+│   └── career-guidance.service.js
+│
+├── middleware/
+│   ├── ai-auth.middleware.js
+│   ├── ai-rate-limit.middleware.js
+│   └── ai-validation.middleware.js
+│
+├── schemas/
+│   ├── chat-request.schema.json
+│   ├── document-analysis.schema.json
+│   └── education-query.schema.json
+│
+├── validators/
+│   └── openai-response.validator.js
+│
+├── scripts/
+│   ├── download-openapi.js
+│   ├── validate-openapi.js
+│   └── check-api-version.js
+│
+├── tests/
+│   ├── openai-client.test.js
+│   ├── ai-assistant.test.js
+│   └── api-security.test.js
+│
+└── docs/
+    ├── integration-guide.md
+    ├── security-guide.md
+    ├── model-configuration.md
+    └── troubleshooting.md
+```
+
+Create supporting files as their corresponding features are implemented.
+
+## 3. Official OpenAPI specification
+
+Primary file:
+
+`/openai/openapi.yaml`
+
+Official repository:
+
+https://github.com/openai/openai-openapi
+
+The specification describes the published OpenAI API contract.
+
+It should be treated as an upstream reference rather than a custom MedOrbits API definition.
+
+### Update specification
+
+```bash
+curl -fL \
+  https://raw.githubusercontent.com/openai/openai-openapi/main/openapi.yaml \
+  -o openai/openapi.yaml
+```
+
+Review upstream changes before committing an update.
+
+## 4. Environment configuration
+
+Configure the following variables in the backend environment:
+
+```env
+OPENAI_API_KEY=
+OPENAI_MODEL=
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_TIMEOUT_MS=60000
+OPENAI_MAX_RETRIES=2
+OPENAI_ENABLED=true
+```
+
+Do not commit real credentials.
+
+Keep `.env` files excluded from Git.
+
+Use your deployment provider’s secure environment-variable manager.
+
+## 5. Integration architecture
+
+```text
+MedOrbits Frontend
+        |
+        v
+MedOrbits Backend API
+        |
+        v
+Authentication Middleware
+        |
+        v
+Rate Limiting
+        |
+        v
+Request Validation
+        |
+        v
+OpenAI Client
+        |
+        v
+OpenAI API
+        |
+        v
+Response Validation
+        |
+        v
+MedOrbits Frontend
+```
+
+The frontend must never communicate with OpenAI using a publicly exposed API key.
+
+## 6. MedOrbits AI modules
+
+| Module | Responsibility |
+|—|—|
+| AI Assistant | General educational assistance |
+| Education Service | Course and education information |
+| Admission Guidance | Admission process assistance |
+| Document Analysis | Supported document summarization |
+| Career Guidance | Career and employment information |
+
+AI-generated responses must not be presented as official admission decisions, verified college records, legal advice, or guaranteed employment outcomes.
+
+## 7. Security requirements
+
+- Keep API credentials server-side.
+- Validate all incoming requests.
+- Apply authentication and rate limits.
+- Set request and response size limits.
+- Handle API errors without exposing secrets.
+- Avoid logging personal documents or sensitive user information unnecessarily.
+- Apply appropriate data-retention controls.
+- Validate structured AI responses before using them.
+- Do not trust model output as executable instructions.
+- Restrict tools and external actions through explicit authorization.
+
+## 8. Error handling
+
+The integration should handle:
+
+- Authentication failures.
+- Invalid requests.
+- Rate-limit responses.
+- Insufficient quota.
+- Network timeouts.
+- Upstream service errors.
+- Invalid or incomplete model responses.
+
+Never expose internal stack traces, API keys, or provider credentials to users.
+
+## 9. Testing requirements
+
+Before production deployment, test:
+
+- API authentication.
+- Configuration validation.
+- Request validation.
+- Rate limiting.
+- Timeout handling.
+- Retry behavior.
+- Invalid API credentials.
+- Upstream service failures.
+- Response validation.
+- Logging and secret redaction.
+
+Use mocked API responses for automated tests wherever possible.
+
+## 10. Specification maintenance
+
+The upstream OpenAPI specification may change.
+
+When updating:
+
+1. Download the official specification.
+2. Validate its YAML syntax.
+3. Review upstream changes.
+4. Check compatibility with the installed SDK.
+5. Update integration tests where required.
+6. Commit the reviewed version.
+
+Do not assume every endpoint in the specification is enabled for every account or applicable to every model.
+
+## 11. Deployment requirements
+
+- Node.js backend.
+- Secure environment variables.
+- HTTPS.
+- Server-side API integration.
+- Request validation.
+- Rate limiting.
+- Monitoring and error handling.
+
+Do not deploy API secrets in static website assets, browser JavaScript, public JSON files, or GitHub repositories.
+
+## 12. Official resources
+
+- OpenAI API documentation: https://platform.openai.com/docs
+- OpenAI API reference: https://platform.openai.com/docs/api-reference
+- OpenAI API keys: https://platform.openai.com/api-keys
+- OpenAI OpenAPI repository: https://github.com/openai/openai-openapi
+- OpenAI developer platform: https://platform.openai.com/
+
+—
+
+**Maintainer:** MedOrbits  
+**Website:** https://medorbits.in  
+**Directory:** `/openai/`  
+**Integration policy:** Server-side only  
+**Production status:** Requires configuration, testing, and approval.

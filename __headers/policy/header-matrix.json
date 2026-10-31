@@ -1,0 +1,31 @@
+{
+  "project": "MedOrbits",
+  "providers": {
+    "cloudflare-pages": {
+      "configuration": "_headers file in published output directory",
+      "notes": [
+        "Not loaded from __headers/policy.",
+        "Worker-generated responses may need Worker code changes."
+      ]
+    },
+    "vercel": {
+      "configuration": "Root vercel.json headers array",
+      "notes": [
+        "Merge reviewed rules into root vercel.json.",
+        "Do not overwrite existing rewrites or redirects."
+      ]
+    },
+    "nginx": {
+      "configuration": "Active Nginx server/location configuration",
+      "notes": [
+        "Review add_header inheritance.",
+        "Run nginx -t before reload."
+      ]
+    }
+  },
+  "verification": {
+    "method": "Inspect actual HTTP response headers",
+    "example": "curl -sSI https://medorbits.in/",
+    "previewFirst": true
+  }
+}

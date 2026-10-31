@@ -1,0 +1,31 @@
+# MedOrbits — Netlify headers reference
+#
+# IMPORTANT:
+# Netlify reads netlify.toml from the site's base directory.
+# This file is a reference template inside __headers/netlify/.
+# Merge the [[headers]] blocks into the actual root netlify.toml.
+# Preserve existing build, redirect, function and plugin settings.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+# Add Content-Security-Policy only after an application-specific
+# source inventory and preview testing.
+#
+# Add Strict-Transport-Security only after confirming HTTPS coverage
+# for every hostname that the policy would affect.
