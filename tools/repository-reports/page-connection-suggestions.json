@@ -1,9 +1,568 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "NOT_VERIFIED",
-  "suggestions": [],
-  "limitations": [
-    "HTML pages and website folder structure were not included in the archive."
-  ]
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Page Connection Suggestions",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Intelligent analysis of website page relationships, navigation connectivity, user journeys, missing links, orphaned pages, and internal linking opportunities."
+  },
+  "repository": {
+    "root": ".",
+    "websiteRoot": "public",
+    "pageExtensions": [
+      ".html",
+      ".htm",
+      ".php"
+    ],
+    "assetDirectories": [
+      "public/assets",
+      "assets"
+    ],
+    "navigationSources": [
+      "header",
+      "footer",
+      "sidebar",
+      "mobile-navigation",
+      "breadcrumb",
+      "contextual-links",
+      "related-content"
+    ]
+  },
+  "summary": {
+    "totalPages": 0,
+    "connectedPages": 0,
+    "orphanedPages": 0,
+    "partiallyConnectedPages": 0,
+    "unreachablePages": 0,
+    "missingNavigationLinks": 0,
+    "brokenInternalLinks": 0,
+    "missingBreadcrumbs": 0,
+    "missingFooterLinks": 0,
+    "missingRelatedContent": 0,
+    "suggestionsGenerated": 0,
+    "approvedSuggestions": 0,
+    "rejectedSuggestions": 0,
+    "unverifiedSuggestions": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "pageCategories": [
+    "homepage",
+    "education",
+    "admissions",
+    "courses",
+    "colleges",
+    "universities",
+    "entrance-exams",
+    "scholarships",
+    "study-abroad",
+    "career-guidance",
+    "jobs",
+    "recruitment",
+    "employers",
+    "applications",
+    "documents",
+    "student-services",
+    "consultancy",
+    "about",
+    "contact",
+    "support",
+    "legal",
+    "authentication",
+    "user-dashboard",
+    "admin-dashboard",
+    "other"
+  ],
+  "connectionTypes": [
+    "primary-navigation",
+    "footer-navigation",
+    "breadcrumb",
+    "contextual-link",
+    "related-content",
+    "call-to-action",
+    "form-submission",
+    "authentication-flow",
+    "application-flow",
+    "external-reference",
+    "search-result",
+    "dashboard-navigation"
+  ],
+  "scanConfiguration": {
+    "enabled": true,
+    "recursive": true,
+    "includeHidden": false,
+    "followSymbolicLinks": false,
+    "scanHtmlLinks": true,
+    "scanJavaScriptNavigation": true,
+    "scanCssNavigation": false,
+    "scanHeaderNavigation": true,
+    "scanFooterNavigation": true,
+    "scanMobileNavigation": true,
+    "scanBreadcrumbs": true,
+    "scanContextualLinks": true,
+    "scanForms": true,
+    "scanButtons": true,
+    "scanDynamicRoutes": true,
+    "scanInternalAnchors": true,
+    "scanExternalLinks": false,
+    "detectOrphanedPages": true,
+    "detectCircularNavigation": true,
+    "detectDeadEndPages": true,
+    "detectDuplicateNavigation": true,
+    "detectInconsistentNavigation": true,
+    "detectMissingRelatedContent": true,
+    "maximumFileSizeMB": 25,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      "coverage",
+      "dist",
+      "build"
+    ]
+  },
+  "pageSchema": {
+    "required": [
+      "pageId",
+      "path",
+      "category",
+      "status"
+    ],
+    "properties": {
+      "pageId": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string"
+      },
+      "title": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "category": {
+        "type": "string",
+        "enum": [
+          "homepage",
+          "education",
+          "admissions",
+          "courses",
+          "colleges",
+          "universities",
+          "entrance-exams",
+          "scholarships",
+          "study-abroad",
+          "career-guidance",
+          "jobs",
+          "recruitment",
+          "employers",
+          "applications",
+          "documents",
+          "student-services",
+          "consultancy",
+          "about",
+          "contact",
+          "support",
+          "legal",
+          "authentication",
+          "user-dashboard",
+          "admin-dashboard",
+          "other"
+        ]
+      },
+      "parentPage": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "incomingConnections": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "outgoingConnections": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "isOrphaned": {
+        "type": "boolean"
+      },
+      "hasBreadcrumb": {
+        "type": "boolean"
+      },
+      "hasHeaderNavigation": {
+        "type": "boolean"
+      },
+      "hasFooterNavigation": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "unverified",
+          "missing",
+          "disabled",
+          "excluded"
+        ]
+      }
+    }
+  },
+  "pages": [],
+  "connectionSchema": {
+    "required": [
+      "connectionId",
+      "sourcePage",
+      "targetPage",
+      "connectionType",
+      "status"
+    ],
+    "properties": {
+      "connectionId": {
+        "type": "string"
+      },
+      "sourcePage": {
+        "type": "string"
+      },
+      "targetPage": {
+        "type": "string"
+      },
+      "connectionType": {
+        "type": "string",
+        "enum": [
+          "primary-navigation",
+          "footer-navigation",
+          "breadcrumb",
+          "contextual-link",
+          "related-content",
+          "call-to-action",
+          "form-submission",
+          "authentication-flow",
+          "application-flow",
+          "external-reference",
+          "search-result",
+          "dashboard-navigation"
+        ]
+      },
+      "label": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "sourceElement": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "sourceLine": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "broken",
+          "suggested",
+          "unverified",
+          "rejected"
+        ]
+      }
+    }
+  },
+  "connectionGraph": {
+    "directed": true,
+    "includeIncomingEdges": true,
+    "includeOutgoingEdges": true,
+    "detectOrphanedNodes": true,
+    "detectDeadEnds": true,
+    "detectUnreachableNodes": true,
+    "detectNavigationCycles": true,
+    "nodes": [],
+    "edges": []
+  },
+  "suggestionSchema": {
+    "required": [
+      "suggestionId",
+      "sourcePage",
+      "targetPage",
+      "connectionType",
+      "priority",
+      "status"
+    ],
+    "properties": {
+      "suggestionId": {
+        "type": "string"
+      },
+      "sourcePage": {
+        "type": "string"
+      },
+      "targetPage": {
+        "type": "string"
+      },
+      "connectionType": {
+        "type": "string",
+        "enum": [
+          "primary-navigation",
+          "footer-navigation",
+          "breadcrumb",
+          "contextual-link",
+          "related-content",
+          "call-to-action",
+          "form-submission",
+          "authentication-flow",
+          "application-flow",
+          "external-reference",
+          "search-result",
+          "dashboard-navigation"
+        ]
+      },
+      "suggestedLabel": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "priority": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "implemented",
+          "unverified"
+        ]
+      },
+      "requiresApproval": {
+        "type": "boolean"
+      },
+      "implementationNotes": {
+        "type": "string"
+      }
+    }
+  },
+  "suggestionRules": [
+    {
+      "id": "PAGE-001",
+      "name": "Orphaned page detection",
+      "description": "Suggest relevant incoming links for pages with no incoming internal navigation connections.",
+      "priority": "high"
+    },
+    {
+      "id": "PAGE-002",
+      "name": "Missing breadcrumb",
+      "description": "Suggest breadcrumbs for nested pages where a logical parent exists.",
+      "priority": "medium"
+    },
+    {
+      "id": "PAGE-003",
+      "name": "Education to admission connection",
+      "description": "Connect relevant course and college information pages to their corresponding admission guidance.",
+      "priority": "high"
+    },
+    {
+      "id": "PAGE-004",
+      "name": "Admission to application connection",
+      "description": "Suggest application guidance and application-form links from relevant admission pages.",
+      "priority": "high"
+    },
+    {
+      "id": "PAGE-005",
+      "name": "Career to recruitment connection",
+      "description": "Connect career guidance and job information to relevant recruitment services.",
+      "priority": "medium"
+    },
+    {
+      "id": "PAGE-006",
+      "name": "Missing support connection",
+      "description": "Suggest relevant support and contact links on pages where users may need assistance.",
+      "priority": "medium"
+    },
+    {
+      "id": "PAGE-007",
+      "name": "Dead-end page detection",
+      "description": "Identify pages without meaningful outgoing navigation or next-step actions.",
+      "priority": "high"
+    },
+    {
+      "id": "PAGE-008",
+      "name": "Broken internal destination",
+      "description": "Identify internal links whose target pages or anchor destinations do not exist.",
+      "priority": "critical"
+    },
+    {
+      "id": "PAGE-009",
+      "name": "Inconsistent navigation",
+      "description": "Identify inconsistent navigation labels and missing shared navigation elements.",
+      "priority": "medium"
+    },
+    {
+      "id": "PAGE-010",
+      "name": "Related content recommendations",
+      "description": "Suggest contextually relevant links based on page category and content.",
+      "priority": "low"
+    }
+  ],
+  "userJourneys": [
+    {
+      "journeyId": "JOURNEY-001",
+      "name": "Student education discovery",
+      "steps": [
+        "homepage",
+        "education",
+        "courses",
+        "colleges",
+        "admissions",
+        "applications",
+        "contact"
+      ],
+      "status": "suggested"
+    },
+    {
+      "journeyId": "JOURNEY-002",
+      "name": "MBBS admission guidance",
+      "steps": [
+        "homepage",
+        "education",
+        "entrance-exams",
+        "colleges",
+        "admissions",
+        "applications",
+        "documents"
+      ],
+      "status": "suggested"
+    },
+    {
+      "journeyId": "JOURNEY-003",
+      "name": "Study abroad guidance",
+      "steps": [
+        "homepage",
+        "study-abroad",
+        "courses",
+        "applications",
+        "documents",
+        "contact"
+      ],
+      "status": "suggested"
+    },
+    {
+      "journeyId": "JOURNEY-004",
+      "name": "Career and recruitment",
+      "steps": [
+        "homepage",
+        "career-guidance",
+        "jobs",
+        "recruitment",
+        "applications",
+        "user-dashboard"
+      ],
+      "status": "suggested"
+    },
+    {
+      "journeyId": "JOURNEY-005",
+      "name": "Employer recruitment",
+      "steps": [
+        "homepage",
+        "employers",
+        "recruitment",
+        "applications",
+        "contact"
+      ],
+      "status": "suggested"
+    }
+  ],
+  "navigationStandards": {
+    "preserveExistingPageStructure": true,
+    "preserveExistingFilenames": true,
+    "preserveExistingContent": true,
+    "preserveExistingColors": true,
+    "preserveExistingNavigation": true,
+    "recommendOnlyRelevantConnections": true,
+    "avoidForcedGridLayouts": true,
+    "avoidDuplicateNavigationItems": true,
+    "requireAccessibleLinkLabels": true,
+    "requireKeyboardAccessibleNavigation": true,
+    "requireMobileNavigationCompatibility": true,
+    "requireResponsiveBreadcrumbs": true,
+    "requireMeaningfulAnchorText": true
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "preserveExistingFindings": true,
+    "stablePageIds": true,
+    "stableConnectionIds": true,
+    "stableSuggestionIds": true,
+    "deduplicateSuggestions": true,
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/page-connection-suggestions.csv",
+    "jsonOutput": "tools/repository-reports/page-connection-suggestions.json",
+    "markdownOutput": "tools/repository-reports/page-connection-suggestions.md",
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "implementationPolicy": {
+    "automaticLinkInsertion": false,
+    "automaticNavigationChanges": false,
+    "automaticPageCreation": false,
+    "automaticPageDeletion": false,
+    "automaticContentRewriting": false,
+    "automaticFilenameChanges": false,
+    "requireHumanApproval": true,
+    "requireGitDiffReview": true,
+    "requirePostImplementationScan": true,
+    "preserveExistingPageDesign": true
+  },
+  "outputs": {
+    "json": "tools/repository-reports/page-connection-suggestions.json",
+    "csv": "tools/repository-reports/page-connection-suggestions.csv",
+    "markdown": "tools/repository-reports/page-connection-suggestions.md",
+    "graph": "tools/repository-reports/page-connection-graph.dot"
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "pagesScanned": 0,
+    "connectionsDiscovered": 0,
+    "suggestionsGenerated": 0,
+    "warnings": [
+      "This is an initial configuration template, not a verified page connection map.",
+      "An empty pages array does not prove that the website has no pages.",
+      "Suggested journeys are architectural recommendations, not verified live navigation flows.",
+      "All destination paths must be checked against actual website files or registered routes.",
+      "Do not automatically insert links without checking page context and existing navigation.",
+      "Dynamic routes and JavaScript-generated navigation require separate analysis.",
+      "External links should not be classified as broken when external checking is disabled."
+    ]
+  }
 }

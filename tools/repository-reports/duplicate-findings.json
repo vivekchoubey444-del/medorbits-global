@@ -1,7 +1,337 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "PASS",
-  "total_groups": 0,
-  "findings": []
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Duplicate Findings Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Repository-wide inventory of duplicate files, code blocks, declarations, dependencies, configuration entries, data records, and assets."
+  },
+  "summary": {
+    "filesScanned": 0,
+    "totalFindings": 0,
+    "duplicateFiles": 0,
+    "duplicateCodeBlocks": 0,
+    "duplicateDependencies": 0,
+    "duplicateConfigurations": 0,
+    "duplicateJsonRecords": 0,
+    "duplicateAssets": 0,
+    "duplicateDeclarations": 0,
+    "verifiedFindings": 0,
+    "unverifiedFindings": 0,
+    "ignoredFindings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "scanConfiguration": {
+    "repositoryRoot": ".",
+    "recursive": true,
+    "includeHidden": true,
+    "followSymbolicLinks": false,
+    "caseSensitive": true,
+    "normalizeLineEndings": true,
+    "ignoreWhitespaceForCodeComparison": false,
+    "detectExactDuplicates": true,
+    "detectNearDuplicates": true,
+    "detectSemanticDuplicates": false,
+    "detectDuplicateFileNames": true,
+    "detectDuplicateFileContents": true,
+    "detectDuplicateCodeBlocks": true,
+    "detectDuplicateDependencies": true,
+    "detectDuplicateConfigurations": true,
+    "detectDuplicateJsonRecords": true,
+    "detectDuplicateAssets": true,
+    "detectDuplicateDeclarations": true,
+    "minimumDuplicateLines": 8,
+    "minimumSimilarityPercent": 90,
+    "maximumFileSizeMB": 25,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      "coverage",
+      "dist",
+      "build"
+    ],
+    "ignorePatterns": [
+      "*.min.js",
+      "*.map",
+      "*.lock",
+      "*.log"
+    ],
+    "hashAlgorithm": "sha256"
+  },
+  "duplicateTypes": [
+    "exact-file",
+    "similar-file",
+    "duplicate-code-block",
+    "duplicate-function",
+    "duplicate-class",
+    "duplicate-declaration",
+    "duplicate-dependency",
+    "duplicate-configuration",
+    "duplicate-json-record",
+    "duplicate-asset",
+    "duplicate-route",
+    "duplicate-api-endpoint",
+    "duplicate-documentation",
+    "duplicate-unknown"
+  ],
+  "severityLevels": {
+    "critical": {
+      "priority": 1,
+      "description": "Duplicates that may cause security vulnerabilities, conflicting authentication logic, or critical runtime failures."
+    },
+    "high": {
+      "priority": 2,
+      "description": "Duplicates that may cause inconsistent business logic, conflicting routes, or configuration errors."
+    },
+    "medium": {
+      "priority": 3,
+      "description": "Repeated modules, functions, dependencies, or data structures that increase maintenance complexity."
+    },
+    "low": {
+      "priority": 4,
+      "description": "Harmless repetition, documentation duplication, or intentionally repeated assets."
+    }
+  },
+  "statusDefinitions": {
+    "open": "Duplicate finding requires investigation.",
+    "confirmed": "The duplicated content has been manually verified.",
+    "resolved": "The duplicate has been consolidated or otherwise addressed.",
+    "ignored": "Duplication is intentional and has a documented justification.",
+    "false-positive": "The finding is not a genuine duplicate.",
+    "unverified": "The finding has not yet been reviewed."
+  },
+  "findings": [],
+  "findingSchema": {
+    "required": [
+      "findingId",
+      "duplicateType",
+      "severity",
+      "status",
+      "instances"
+    ],
+    "properties": {
+      "findingId": {
+        "type": "string",
+        "description": "Unique and stable duplicate finding identifier."
+      },
+      "duplicateType": {
+        "type": "string",
+        "enum": [
+          "exact-file",
+          "similar-file",
+          "duplicate-code-block",
+          "duplicate-function",
+          "duplicate-class",
+          "duplicate-declaration",
+          "duplicate-dependency",
+          "duplicate-configuration",
+          "duplicate-json-record",
+          "duplicate-asset",
+          "duplicate-route",
+          "duplicate-api-endpoint",
+          "duplicate-documentation",
+          "duplicate-unknown"
+        ]
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "confirmed",
+          "resolved",
+          "ignored",
+          "false-positive",
+          "unverified"
+        ]
+      },
+      "instances": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "required": [
+            "file",
+            "type"
+          ],
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "lineStart": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "lineEnd": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "type": {
+              "type": "string"
+            },
+            "contentHash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "preview": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "similarityPercent": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "minimum": 0,
+        "maximum": 100
+      },
+      "hashAlgorithm": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "firstDetected": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastChecked": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolvedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolution": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "ignoreReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "analysis": {
+    "duplicateGroups": [],
+    "duplicateFileNames": [],
+    "duplicateHashes": [],
+    "similarCodeGroups": [],
+    "duplicateFunctions": [],
+    "duplicateClasses": [],
+    "duplicateRoutes": [],
+    "duplicateDependencies": [],
+    "duplicateJsonKeys": [],
+    "duplicateRecords": [],
+    "conflictingConfigurations": [],
+    "unusedDuplicates": []
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "preserveExistingFindings": true,
+    "stableFindingIds": true,
+    "deduplicateFindings": true,
+    "includeBinaryFiles": false,
+    "includeGeneratedFiles": false,
+    "includeLockfiles": false,
+    "includeNodeModules": false,
+    "includeVirtualEnvironments": false,
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/duplicate-findings.csv",
+    "jsonOutput": "tools/repository-reports/duplicate-findings.json",
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "repairPolicy": {
+    "automaticRepair": false,
+    "automaticDeletion": false,
+    "automaticOverwrite": false,
+    "automaticFileMerging": false,
+    "automaticDependencyRemoval": false,
+    "automaticRouteRemoval": false,
+    "requireHumanReview": true,
+    "requireGitDiffReview": true,
+    "requireBackupBeforeApprovedRepair": true,
+    "requirePostRepairValidation": true,
+    "preserveOriginalContentUntilVerified": true
+  },
+  "outputs": {
+    "json": "tools/repository-reports/duplicate-findings.json",
+    "csv": "tools/repository-reports/duplicate-findings.csv",
+    "markdown": "tools/repository-reports/duplicate-summary.md"
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "filesScanned": 0,
+    "findingsGenerated": 0,
+    "warnings": [
+      "This is an initial report template, not a verified duplicate scan.",
+      "An empty findings array does not prove the repository contains no duplicates.",
+      "Identical file names do not necessarily indicate duplicate content.",
+      "Similar code may implement intentionally different business rules.",
+      "Generated files, translations, and localized content require special handling.",
+      "Never automatically remove a duplicate without checking imports, routes, references, and runtime usage."
+    ]
+  }
 }

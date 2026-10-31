@@ -1,319 +1,387 @@
+
 {
-  "generated_at": "2026-10-28T23:18:27.119741+00:00",
-  "scope": "uploaded tools.zip archive plus generated report JSON",
-  "status": "PASS",
-  "checks": [
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "reportType": "repository-parse-warnings",
+  "reportVersion": "1.0.0",
+  "project": "MedOrbits",
+  "reportPath": "/tools/repository-reports/parse-warnings.json",
+  "description": "Repository-wide parsing, syntax, formatting, and configuration warnings.",
+  "metadata": {
+    "status": "not-scanned",
+    "generatedAt": null,
+    "lastScannedAt": null,
+    "scannerVersion": "1.0.0",
+    "verifiedAgainstRepository": false,
+    "readOnly": true,
+    "notes": [
+      "This file is a report template, not evidence that the repository has been scanned.",
+      "Empty findings do not mean that the repository is free of parsing errors.",
+      "Warnings must be generated from actual file contents."
+    ]
+  },
+  "summary": {
+    "filesScanned": 0,
+    "filesSkipped": 0,
+    "filesWithWarnings": 0,
+    "totalWarnings": 0,
+    "errors": 0,
+    "warnings": 0,
+    "informational": 0,
+    "unsupportedFiles": 0,
+    "parseFailures": 0,
+    "configurationFailures": 0,
+    "autofixCandidates": 0,
+    "autofixed": 0,
+    "remaining": 0
+  },
+  "severityLevels": {
+    "critical": {
+      "description": "Parsing failure that can prevent application startup, execution, or deployment."
+    },
+    "high": {
+      "description": "Invalid or incompatible configuration that can break an important workflow."
+    },
+    "medium": {
+      "description": "Potential parsing, compatibility, or validation issue requiring review."
+    },
+    "low": {
+      "description": "Non-blocking formatting or consistency issue."
+    },
+    "info": {
+      "description": "Informational observation that does not indicate a confirmed defect."
+    }
+  },
+  "supportedFileTypes": [
     {
-      "path": "APPLY.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".json",
+      "parser": "JSON parser",
+      "checks": [
+        "valid JSON syntax",
+        "duplicate object keys",
+        "invalid trailing commas",
+        "invalid escape sequences",
+        "unexpected data types"
+      ]
     },
     {
-      "path": "ENFORCE.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".js",
+      "parser": "Node.js syntax checker",
+      "checks": [
+        "JavaScript syntax",
+        "module syntax",
+        "unsupported language features",
+        "invalid imports"
+      ]
     },
     {
-      "path": "FIX_GIT_BOT.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".mjs",
+      "parser": "Node.js syntax checker",
+      "checks": [
+        "ES module syntax",
+        "invalid imports",
+        "top-level syntax errors"
+      ]
     },
     {
-      "path": "INSTALL.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".cjs",
+      "parser": "Node.js syntax checker",
+      "checks": [
+        "CommonJS syntax",
+        "invalid require statements",
+        "top-level syntax errors"
+      ]
     },
     {
-      "path": "RUN.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".ts",
+      "parser": "TypeScript compiler",
+      "checks": [
+        "TypeScript syntax",
+        "type declaration syntax",
+        "module resolution"
+      ]
     },
     {
-      "path": "START.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".tsx",
+      "parser": "TypeScript compiler",
+      "checks": [
+        "TypeScript syntax",
+        "JSX syntax",
+        "type declaration syntax"
+      ]
     },
     {
-      "path": "TEST.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".py",
+      "parser": "Python AST parser",
+      "checks": [
+        "Python syntax",
+        "indentation",
+        "invalid expressions",
+        "invalid imports"
+      ]
     },
     {
-      "path": "UPDATE.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".html",
+      "parser": "HTML validator",
+      "checks": [
+        "malformed markup",
+        "unclosed elements",
+        "invalid nesting",
+        "invalid attributes"
+      ]
     },
     {
-      "path": "build_education_repository.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".css",
+      "parser": "CSS parser",
+      "checks": [
+        "invalid declarations",
+        "unclosed blocks",
+        "invalid selectors",
+        "malformed at-rules"
+      ]
     },
     {
-      "path": "compatible-share.js",
-      "check": "javascript-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".yml",
+      "parser": "YAML parser",
+      "checks": [
+        "indentation",
+        "invalid mappings",
+        "invalid sequences",
+        "duplicate keys"
+      ]
     },
     {
-      "path": "complete_repozitory.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".yaml",
+      "parser": "YAML parser",
+      "checks": [
+        "indentation",
+        "invalid mappings",
+        "invalid sequences",
+        "duplicate keys"
+      ]
     },
     {
-      "path": "continuous_runner.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".toml",
+      "parser": "TOML parser",
+      "checks": [
+        "invalid tables",
+        "invalid key-value pairs",
+        "invalid strings",
+        "duplicate keys"
+      ]
     },
     {
-      "path": "duplicate_auditor.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".sh",
+      "parser": "Bash syntax checker",
+      "checks": [
+        "shell syntax",
+        "unclosed quotes",
+        "invalid conditional expressions",
+        "unclosed blocks"
+      ]
     },
     {
-      "path": "enhance_catalogs.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".xml",
+      "parser": "XML parser",
+      "checks": [
+        "malformed XML",
+        "unclosed elements",
+        "invalid attributes",
+        "invalid nesting"
+      ]
     },
     {
-      "path": "enviroment-audit.js",
-      "check": "javascript-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "free_promotion.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "medorbits_repo_toolkit.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "meta_ad_creator.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "real_data_importer_and_exporter.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/api-routes.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/broken-references.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/conflict-markers.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/dependency-edges.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/duplicate-findings.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/file-inventory.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/folder-index-map.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/page-connection-suggestions.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/parse-warnings.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/references.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/repair-manifest.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/sensitive-file-review.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/summary.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/unresolved-references-2.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository-reports/unresolved-references.json",
-      "check": "json-parse",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_autofill.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_completer.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_connector.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_connector_extra.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_guard.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "repository_manager.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "silent-wrapler.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "silent-wrapper.sh",
-      "check": "bash-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "sync_pages_from_reference.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
-    },
-    {
-      "path": "tool_factory.py",
-      "check": "python-syntax",
-      "exit_code": 0,
-      "status": "PASS",
-      "message": ""
+      "extension": ".md",
+      "parser": "Markdown validator",
+      "checks": [
+        "malformed front matter",
+        "broken code fences",
+        "invalid embedded metadata"
+      ]
     }
   ],
-  "findings": [],
-  "limitations": [
-    "Static syntax and JSON parsing do not establish runtime correctness or full-repository link integrity."
-  ]
+  "scanConfiguration": {
+    "rootDirectory": ".",
+    "recursive": true,
+    "followSymbolicLinks": false,
+    "includeHiddenFiles": true,
+    "includeExtensions": [
+      ".json",
+      ".js",
+      ".mjs",
+      ".cjs",
+      ".ts",
+      ".tsx",
+      ".py",
+      ".html",
+      ".css",
+      ".yml",
+      ".yaml",
+      ".toml",
+      ".sh",
+      ".xml",
+      ".md"
+    ],
+    "excludeDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      "coverage",
+      "dist",
+      "build",
+      ".next",
+      ".cache"
+    ],
+    "excludePatterns": [
+      "*.min.js",
+      "*.min.css",
+      "*.map",
+      "*.lock",
+      "*.log",
+      "*.generated.*"
+    ],
+    "maximumFileSizeBytes": 5242880,
+    "checkDuplicateKeys": true,
+    "checkEncoding": true,
+    "checkLineEndings": true,
+    "checkTrailingWhitespace": true,
+    "checkFinalNewline": true,
+    "checkUnexpectedByteOrderMark": true,
+    "strictMode": false,
+    "failOnWarnings": false,
+    "failOnErrors": true
+  },
+  "warningCategories": [
+    "syntax-error",
+    "parse-error",
+    "invalid-encoding",
+    "duplicate-key",
+    "invalid-configuration",
+    "invalid-module-syntax",
+    "invalid-import-syntax",
+    "invalid-indentation",
+    "malformed-markup",
+    "invalid-css",
+    "invalid-yaml",
+    "invalid-toml",
+    "invalid-shell-syntax",
+    "broken-front-matter",
+    "trailing-whitespace",
+    "missing-final-newline",
+    "unexpected-bom",
+    "unsupported-syntax",
+    "parser-unavailable",
+    "file-too-large",
+    "unknown"
+  ],
+  "warnings": [],
+  "errors": [],
+  "filesSkipped": [],
+  "autofixCandidates": [],
+  "autofixPolicy": {
+    "enabled": false,
+    "automaticExecutionAllowed": false,
+    "requireBackup": true,
+    "requireExplicitApproval": true,
+    "preserveOriginalEncoding": true,
+    "preserveLineEndings": true,
+    "preserveFilePermissions": true,
+    "neverModify": [
+      ".env",
+      ".env.*",
+      "*.lock",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "*.pem",
+      "*.key",
+      "*.crt",
+      "*.p12",
+      "*.pfx",
+      "*.db",
+      "*.sqlite",
+      "*.sqlite3",
+      "*.min.js",
+      "*.min.css"
+    ],
+    "allowedOperations": [
+      "suggest-correction",
+      "generate-patch",
+      "validate-corrected-copy"
+    ],
+    "forbiddenOperations": [
+      "blind-replacement",
+      "automatic-file-deletion",
+      "automatic-file-renaming",
+      "credential-modification",
+      "lockfile-regeneration-without-approval",
+      "unreviewed-source-overwrite"
+    ]
+  },
+  "validationTools": {
+    "javascript": {
+      "command": "node --check",
+      "required": false
+    },
+    "typescript": {
+      "command": "npx tsc --noEmit",
+      "required": false
+    },
+    "python": {
+      "command": "python -m compileall -q",
+      "required": false
+    },
+    "json": {
+      "command": "python -m json.tool",
+      "required": true
+    },
+    "yaml": {
+      "command": "yamllint",
+      "required": false
+    },
+    "shell": {
+      "command": "bash -n",
+      "required": false
+    },
+    "html": {
+      "command": "html-validate",
+      "required": false
+    },
+    "css": {
+      "command": "stylelint",
+      "required": false
+    }
+  },
+  "integration": {
+    "consumedBy": [
+      "/tools/repository-reports/summary.json",
+      "/tools/repository-reports/file-inventory.json",
+      "/tools/repository-reports/unresolved-references.json"
+    ],
+    "relatedReports": [
+      "/tools/repository-reports/broken-references.json",
+      "/tools/repository-reports/conflict-markers.json",
+      "/tools/repository-reports/duplicate-findings.json"
+    ],
+    "updateSummaryAfterScan": true,
+    "preserveHistoricalResults": true
+  },
+  "outputs": {
+    "jsonReport": "/tools/repository-reports/parse-warnings.json",
+    "csvReport": "/tools/repository-reports/parse-warnings.csv",
+    "logFile": "/tools/repository-reports/logs/parse-warnings.log",
+    "patchDirectory": "/tools/repository-reports/patches/parse-warnings"
+  },
+  "exitPolicy": {
+    "success": 0,
+    "warningsFound": 0,
+    "parseErrorsFound": 1,
+    "scannerFailure": 2,
+    "strictModeWarnings": 3,
+    "forceMode": "Continue scanning after individual file failures, but preserve non-zero final status when errors remain."
+  }
 }

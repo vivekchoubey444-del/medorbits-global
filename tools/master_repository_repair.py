@@ -1,20 +1,47 @@
 
 #!/usr/bin/env python3
-"""
-MedOrbits Master Repository Auditor
-===================================
+“””
+MEDORBITS - MASTER REPOSITORY AUDITOR
 File: tools/master_repository_repair.py
+Version: 1.1.0
 
-Audits an existing repository and generates machine-readable reports.
-Repairs are deliberately limited to verified, safe changes. Source files,
-credentials, caches, databases, and existing reports are never bulk-deleted.
+Purpose:
+    Comprehensive read-only repository audit and reporting.
 
-Usage:
-    python tools/master_repository_repair.py
-    python tools/master_repository_repair.py --root /path/to/repository
-    python tools/master_repository_repair.py --check-only
-    python tools/master_repository_repair.py --dry-run
-"""
+Checks:
+    - Recursive file inventory and SHA-256 hashes.
+    - Python, JavaScript and shell syntax.
+    - JSON and JSONC syntax.
+    - YAML, TOML and XML parsing.
+    - HTML structure and duplicate IDs.
+    - CSS delimiter consistency.
+    - Local HTML, CSS and JavaScript references.
+    - Git conflict markers.
+    - Duplicate file content.
+    - package.json structure.
+    - Sensitive-looking filenames.
+    - API route discovery.
+    - Folder index mapping.
+    - Optional npm dependency inspection.
+
+Reports:
+    repository-reports/
+
+Safety:
+    - Does not modify source files.
+    - Does not delete files.
+    - Does not install dependencies.
+    - Does not execute application code.
+    - Does not deploy or run migrations.
+    - Replaces only its own named report files.
+    - Does not include file contents or credentials in reports.
+
+Requirements:
+    Python >= 3.10
+    Node.js optional
+    Bash optional
+    PyYAML optional
+“””
 
 from __future__ import annotations
 
@@ -30,34 +57,70 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import xml.etree.ElementTree as ET
+
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlsplit
 
-VERSION = "1.0.0"
+
+VERSION = “1.1.0”
 
 SKIP_DIRS = {
-    ".git", ".venv", "venv", "node_modules", "__pycache__",
-    ".pytest_cache", ".mypy_cache", ".ruff_cache", ".next",
-    "dist", "build", "coverage", ".idea", ".vscode",
+    “.git”, “.venv”, “venv”, “node_modules”,
+    “__pycache__”, “.pytest_cache”, “.mypy_cache”,
+    “.ruff_cache”, “.next”, “.nuxt”, “.cache”,
+    “dist”, “build”, “coverage”, “.idea”, “.vscode”,
+    “.repair-backups”, “.turbo”, “vendor”, “target”,
 }
 
 SENSITIVE_NAMES = {
-    ".env", ".env.local", ".env.production", "id_rsa",
-    "id_ed25519", "credentials.json", "service-account.json",
+    “.env”, “.env.local”, “.env.production”,
+    “id_rsa”, “id_ed25519”,
+    “credentials.json”, “service-account.json”,
 }
 
 SOURCE_EXTENSIONS = {
-    ".py", ".sh", ".bash", ".js", ".mjs", ".cjs",
-    ".json", ".yaml", ".yml", ".toml", ".xml",
-    ".html", ".htm", ".css", ".sql", ".md",
+    “.py”, “.sh”, “.bash”, “.js”, “.mjs”, “.cjs”,
+    “.jsx”, “.ts”, “.tsx”, “.json”, “.jsonc”,
+    “.yaml”, “.yml”, “.toml”, “.xml”,
+    “.html”, “.htm”, “.css”, “.scss”, “.sass”,
+    “.sql”, “.md”, “.txt”, “.svg”, “.webmanifest”,
 }
+
+MAX_FILE_SIZE = 20 * 1024 * 1024
+MAX_REPORT_SIZE = 50 * 1024 * 1024
+
+REPORT_DIRECTORY = “repository-reports”
+
 
 def now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
 
-def run(command: list[str], cwd: Path, timeout: int = 120) -> dict[str, Any]:
-    """Run a check without hiding its exit status."""
+
+def relative(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def is_inside(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def run_command(
+    command: list[str],
+    cwd: Path,
+    timeout: int = 120,
+) -> dict[str, Any]:
+    “””Execute a validation command without a shell.”””
     try:
         result = subprocess.run(
             command,
@@ -68,598 +131,987 @@ def run(command: list[str], cwd: Path, timeout: int = 120) -> dict[str, Any]:
             timeout=timeout,
             check=False,
         )
+
         return {
-            "command": command,
-            "status": "PASS" if result.returncode == 0 else "FAIL",
-            "exit_code": result.returncode,
-            "output": result.stdout[-12000:],
+            “command”: command,
+            “status”: “PASS” if result.returncode == 0 else “FAIL”,
+            “exit_code”: result.returncode,
+            “output”: result.stdout[-12000:],
         }
+
     except FileNotFoundError:
         return {
-            "command": command,
-            "status": "SKIP",
-            "exit_code": None,
-            "output": "Executable is unavailable.",
+            “command”: command,
+            “status”: “SKIP”,
+            “exit_code”: None,
+            “output”: “Executable is unavailable.”,
         }
-    except subprocess.TimeoutExpired as exc:
+
+    except subprocess.TimeoutExpired:
         return {
-            "command": command,
-            "status": "FAIL",
-            "exit_code": 124,
-            "output": str(exc),
+            “command”: command,
+            “status”: “FAIL”,
+            “exit_code”: 124,
+            “output”: f”Command exceeded {timeout} seconds.”,
         }
+
 
 def find_root(start: Path) -> Path:
-    """Prefer Git's actual root; otherwise use the script's project parent."""
-    result = run(["git", "rev-parse", "--show-toplevel"], start)
-    if result["status"] == "PASS":
-        return Path(result["output"].strip()).resolve()
+    “””Find Git root, falling back to the supplied directory.”””
+    if not start.is_dir():
+        raise ValueError(f”Repository directory does not exist: {start}”)
+
+    if shutil.which(“git”):
+        result = run_command(
+            [“git”, “rev-parse”, “—show-toplevel”],
+            start,
+            timeout=10,
+        )
+
+        if result[“status”] == “PASS”:
+            candidate = Path(result[“output”].strip()).resolve()
+
+            if candidate.is_dir():
+                return candidate
+
     return start.resolve()
 
-def safe_relative(path: Path, root: Path) -> str:
-    try:
-        return path.relative_to(root).as_posix()
-    except ValueError:
-        return path.name
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+
+    with path.open(“rb”) as stream:
+        for chunk in iter(
+            lambda: stream.read(1024 * 1024),
+            b””,
+        ):
             digest.update(chunk)
+
     return digest.hexdigest()
 
-def inventory(root: Path) -> tuple[list[dict], list[Path]]:
-    records: list[dict] = []
+
+def inventory(
+    root: Path,
+) -> tuple[list[dict[str, Any]], list[Path]]:
+    records: list[dict[str, Any]] = []
     files: list[Path] = []
 
-    for current, dirs, names in os.walk(root, followlinks=False):
+    for current, dirs, names in os.walk(
+        root,
+        topdown=True,
+        followlinks=False,
+    ):
         base = Path(current)
+
         dirs[:] = sorted(
-            d for d in dirs
-            if d not in SKIP_DIRS and not (base / d).is_symlink()
+            name
+            for name in dirs
+            if name not in SKIP_DIRS
+            and not (base / name).is_symlink()
         )
 
         for name in sorted(names):
             path = base / name
+
             try:
-                stat = path.lstat()
-                rel = safe_relative(path, root)
-                record = {
-                    "path": rel,
-                    "type": "symlink" if path.is_symlink() else "file",
-                    "size_bytes": stat.st_size,
-                    "extension": path.suffix.lower(),
-                    "hidden": any(part.startswith(".") for part in path.parts),
-                    "sensitive_name": name.lower() in SENSITIVE_NAMES,
+                info = path.lstat()
+                rel = relative(path, root)
+                is_link = path.is_symlink()
+
+                record: dict[str, Any] = {
+                    “path”: rel,
+                    “type”: “symlink” if is_link else “file”,
+                    “size_bytes”: info.st_size,
+                    “extension”: path.suffix.lower(),
+                    “hidden”: any(
+                        part.startswith(“.”)
+                        for part in Path(rel).parts
+                    ),
+                    “sensitive_name”: name.lower() in SENSITIVE_NAMES,
                 }
-                if path.is_file() and not path.is_symlink():
-                    record["sha256"] = sha256_file(path)
+
+                if is_link:
+                    record[“status”] = “SKIPPED_SYMLINK”
+
+                elif path.is_file():
+                    if info.st_size <= MAX_FILE_SIZE:
+                        record[“sha256”] = sha256_file(path)
+                    else:
+                        record[“status”] = “HASH_SKIPPED_SIZE_LIMIT”
+
                     files.append(path)
+
                 records.append(record)
+
             except OSError as exc:
                 records.append({
-                    "path": safe_relative(path, root),
-                    "type": "unknown",
-                    "status": "WARN",
-                    "error": str(exc),
+                    “path”: relative(path, root),
+                    “type”: “unknown”,
+                    “status”: “WARN”,
+                    “error”: str(exc),
                 })
 
     return records, files
 
-def write_json(path: Path, data: Any) -> None:
-    """Atomically replace only the named report, never a source file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(data, stream, indent=2, ensure_ascii=False)
-            stream.write("\n")
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
-
-def write_csv(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    columns = sorted({key for row in rows for key in row})
-    with path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=columns or ["status"])
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({
-                key: json.dumps(value, ensure_ascii=False)
-                if isinstance(value, (dict, list)) else value
-                for key, value in row.items()
-            })
 
 def read_text(path: Path) -> str | None:
     try:
-        return path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+        if path.is_symlink() or path.stat().st_size > MAX_FILE_SIZE:
+            return None
+
+        return path.read_text(encoding=“utf-8-sig”)
+
+    except (OSError, UnicodeError):
         return None
 
-def check_json(path: Path) -> dict | None:
-    content = read_text(path)
-    if content is None:
-        return None
-    try:
-        json.loads(content)
-        return None
-    except json.JSONDecodeError as exc:
-        return {
-            "path": path.as_posix(),
-            "status": "FAIL",
-            "line": exc.lineno,
-            "column": exc.colno,
-            "message": exc.msg,
-        }
 
-def classify_text_files(root: Path, files: list[Path]) -> dict[str, list[dict]]:
-    parse_errors: list[dict] = []
-    conflicts: list[dict] = []
-    warnings: list[dict] = []
-    broken_refs: list[dict] = []
-    routes: list[dict] = []
-    page_map: list[dict] = []
-    duplicates: list[dict] = []
+class HTMLInspector(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.ids: set[str] = set()
+        self.duplicates: set[str] = set()
+        self.references: list[str] = []
+        self.missing_alt = 0
 
-    content_cache: dict[Path, str] = {}
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        self.process(tag, attrs)
+
+    def handle_startendtag(self, tag: str, attrs: list) -> None:
+        self.process(tag, attrs)
+
+    def process(self, tag: str, attrs: list) -> None:
+        values = dict(attrs)
+
+        identifier = values.get(“id”)
+
+        if identifier:
+            if identifier in self.ids:
+                self.duplicates.add(identifier)
+            self.ids.add(identifier)
+
+        if tag.lower() == “img” and “alt” not in values:
+            self.missing_alt += 1
+
+        for attribute in (
+            “href”, “src”, “poster”, “action”,
+            “data-src”, “data-href”,
+        ):
+            value = values.get(attribute)
+
+            if value:
+                self.references.append(value)
+
+        srcset = values.get(“srcset”, “”)
+
+        for item in srcset.split(“,”):
+            parts = item.strip().split()
+
+            if parts:
+                self.references.append(parts[0])
+
+
+def validate_css(content: str) -> list[str]:
+    errors: list[str] = []
+    stack: list[tuple[str, int]] = []
+
+    pairs = {
+        “}”: “{“,
+        “)”: “(“,
+        “]”: “[“,
+    }
+
+    quote: str | None = None
+    escaped = False
+    comment = False
+    index = 0
+
+    while index < len(content):
+        char = content[index]
+        following = (
+            content[index + 1]
+            if index + 1 < len(content)
+            else “”
+        )
+
+        if comment:
+            if char == “*” and following == “/“:
+                comment = False
+                index += 2
+                continue
+
+            index += 1
+            continue
+
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == “\\”:
+                escaped = True
+            elif char == quote:
+                quote = None
+
+            index += 1
+            continue
+
+        if char == “/“ and following == “*”:
+            comment = True
+            index += 2
+            continue
+
+        if char in {“’”, ‘”’}:
+            quote = char
+            index += 1
+            continue
+
+        if char in “{([“:
+            stack.append((char, index))
+
+        elif char in “})]”:
+            if not stack or stack[-1][0] != pairs[char]:
+                errors.append(
+                    f”Unexpected closing delimiter {char} at offset {index}.”
+                )
+                return errors
+
+            stack.pop()
+
+        index += 1
+
+    if comment:
+        errors.append(“Unterminated CSS comment.”)
+
+    if quote:
+        errors.append(“Unterminated CSS string.”)
+
+    if stack:
+        errors.append(
+            f”Unclosed delimiter {stack[-1][0]} at offset {stack[-1][1]}.”
+        )
+
+    return errors
+
+
+def resolve_reference(
+    source: Path,
+    reference: str,
+    root: Path,
+) -> Path | None:
+    reference = reference.strip()
+
+    if not reference or reference.startswith(“//“):
+        return None
+
+    parsed = urlsplit(reference)
+
+    if parsed.scheme.lower() in {
+        “http”, “https”, “mailto”, “tel”,
+        “data”, “javascript”, “blob”, “ftp”,
+    }:
+        return None
+
+    raw_path = unquote(parsed.path)
+
+    if not raw_path:
+        return source
+
+    target = (
+        root / raw_path.lstrip(“/“)
+        if raw_path.startswith(“/“)
+        else source.parent / raw_path
+    )
+
+    target = Path(os.path.abspath(target))
+
+    if not is_inside(target, root):
+        return None
+
+    return target
+
+
+def classify_files(
+    root: Path,
+    files: list[Path],
+) -> dict[str, list[dict[str, Any]]]:
+    findings: dict[str, list[dict[str, Any]]] = {
+        “parse_errors”: [],
+        “warnings”: [],
+        “conflict_markers”: [],
+        “broken_references”: [],
+        “duplicate_ids”: [],
+        “missing_alt”: [],
+        “api_routes”: [],
+        “folder_index_map”: [],
+        “duplicate_files”: [],
+    }
+
+    digest_map: dict[str, list[str]] = {}
 
     for path in files:
-        rel = safe_relative(path, root)
+        rel = relative(path, root)
         ext = path.suffix.lower()
 
         if ext not in SOURCE_EXTENSIONS:
             continue
 
-        text = read_text(path)
-        if text is None:
-            warnings.append({
-                "path": rel,
-                "status": "WARN",
-                "message": "Unreadable or non-UTF-8 text file; not parsed.",
+        content = read_text(path)
+
+        if content is None:
+            findings[“warnings”].append({
+                “path”: rel,
+                “status”: “SKIP”,
+                “message”: “Unreadable, binary, or oversized file.”,
             })
             continue
 
-        content_cache[path] = text
-
-        if ext == ".json":
-            finding = check_json(path)
-            if finding:
-                finding["path"] = rel
-                parse_errors.append(finding)
-
-        elif ext == ".toml":
+        # JSON and JSONC.
+        if ext == “.json” or ext == “.webmanifest”:
             try:
-                import tomllib
-                tomllib.loads(text)
-            except ImportError:
-                warnings.append({
-                    "path": rel,
-                    "status": "SKIP",
-                    "message": "tomllib unavailable; requires Python 3.11+.",
-                })
-            except Exception as exc:
-                parse_errors.append({
-                    "path": rel, "status": "FAIL", "message": str(exc),
+                json.loads(content)
+            except json.JSONDecodeError as exc:
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “line”: exc.lineno,
+                    “column”: exc.colno,
+                    “message”: exc.msg,
                 })
 
-        elif ext == ".xml":
-            try:
-                ET.fromstring(text)
-            except ET.ParseError as exc:
-                parse_errors.append({
-                    "path": rel, "status": "FAIL", "message": str(exc),
-                })
+        # JSONC is not strict JSON. Report it instead of silently treating it
+        # as valid JSON.
+        elif ext == “.jsonc”:
+            findings[“warnings”].append({
+                “path”: rel,
+                “status”: “REVIEW”,
+                “message”: “JSONC requires a JSONC-aware parser.”,
+            })
 
-        elif ext in {".py"}:
+        elif ext == “.py”:
             try:
-                ast.parse(text, filename=rel)
+                ast.parse(content, filename=rel)
             except SyntaxError as exc:
-                parse_errors.append({
-                    "path": rel, "status": "FAIL",
-                    "line": exc.lineno, "message": exc.msg,
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “line”: exc.lineno,
+                    “message”: exc.msg,
+                })
+
+        elif ext == “.toml”:
+            try:
+                tomllib.loads(content)
+            except tomllib.TOMLDecodeError as exc:
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “message”: str(exc),
+                })
+
+        elif ext == “.xml”:
+            try:
+                ET.fromstring(content)
+            except ET.ParseError as exc:
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “message”: str(exc),
+                })
+
+        elif ext in {“.css”, “.scss”, “.sass”}:
+            for error in validate_css(content):
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “message”: error,
                 })
 
         for match in re.finditer(
-            r"^(?:<<<<<<< .+|=======|>>>>>>> .+)$",
-            text,
+            r”^(?:<<<<<<< .+|=======|>>>>>>> .+)$”,
+            content,
             re.MULTILINE,
         ):
-            conflicts.append({
-                "path": rel,
-                "line": text.count("\n", 0, match.start()) + 1,
-                "marker": match.group(0),
-                "status": "FAIL",
+            findings[“conflict_markers”].append({
+                “path”: rel,
+                “line”: content.count(“\n”, 0, match.start()) + 1,
+                “marker”: match.group(0),
+                “status”: “FAIL”,
             })
 
-        if path.name.lower() == "index.html":
-            page_map.append({
-                "directory": safe_relative(path.parent, root) or ".",
-                "index": rel,
-                "status": "FOUND",
+        if path.name.lower() == “index.html”:
+            findings[“folder_index_map”].append({
+                “directory”: relative(path.parent, root) or “.”,
+                “index”: rel,
+                “status”: “FOUND”,
             })
 
-        if ext in {".html", ".htm"}:
-            for match in re.finditer(
-                r"""(?:href|src|poster)\s*=\s*["']([^"'#]+)["']""",
-                text,
-                re.IGNORECASE,
-            ):
-                target = match.group(1).strip()
-                if (
-                    not target
-                    or target.startswith(("http://", "https://", "mailto:",
-                                          "tel:", "data:", "javascript:"))
-                    or target.startswith("//")
-                ):
-                    continue
+        if ext in {“.html”, “.htm”, “.svg”, “.xml”}:
+            inspector = HTMLInspector()
 
-                # Ignore query strings, preserve URL path semantics.
-                target_path = target.split("?", 1)[0]
-                if not target_path:
-                    continue
+            try:
+                inspector.feed(content)
+                inspector.close()
 
-                # Root-relative web URLs are resolved from repository root
-                # as a useful static approximation; deployment routing can
-                # differ and must be reviewed separately.
-                if target_path.startswith("/"):
-                    candidate = root / target_path.lstrip("/")
-                else:
-                    candidate = path.parent / target_path
-
-                candidate = Path(os.path.normpath(str(candidate)))
-                if not candidate.exists():
-                    broken_refs.append({
-                        "source": rel,
-                        "target": target,
-                        "status": "WARN",
-                        "message": "Local reference not found; runtime routing may differ.",
+                for identifier in sorted(inspector.duplicates):
+                    findings[“duplicate_ids”].append({
+                        “path”: rel,
+                        “id”: identifier,
+                        “status”: “WARN”,
                     })
 
-        if ext in {".js", ".mjs", ".cjs"}:
-            for match in re.finditer(
-                r"""(?:from\s*|import\s*\(|require\s*\()\s*["']([^"']+)["']""",
-                text,
-            ):
-                target = match.group(1)
-                if not target.startswith("."):
-                    continue
-                candidate = path.parent / target
-                possibilities = [
-                    candidate,
-                    candidate.with_suffix(".js"),
-                    candidate.with_suffix(".mjs"),
-                    candidate.with_suffix(".cjs"),
-                    candidate / "index.js",
-                    candidate / "index.mjs",
-                ]
-                if not any(item.exists() for item in possibilities):
-                    broken_refs.append({
-                        "source": rel,
-                        "target": target,
-                        "status": "WARN",
-                        "message": "Relative JavaScript import not found.",
+                if inspector.missing_alt:
+                    findings[“missing_alt”].append({
+                        “path”: rel,
+                        “count”: inspector.missing_alt,
+                        “status”: “WARN”,
                     })
 
-        if path.name in {"server.js", "app.js"}:
-            for match in re.finditer(
-                r"""(?:app|router)\.(?:get|post|put|patch|delete|use)\s*\(\s*["'`]([^"'`]+)""",
-                text,
-            ):
-                routes.append({
-                    "source": rel,
-                    "route": match.group(1),
-                    "status": "FOUND",
+                for reference in inspector.references:
+                    target = resolve_reference(path, reference, root)
+
+                    if target is None:
+                        continue
+
+                    parsed = urlsplit(reference)
+                    if parsed.fragment and target == path:
+                        if parsed.fragment not in inspector.ids:
+                            findings[“broken_references”].append({
+                                “source”: rel,
+                                “target”: reference,
+                                “status”: “WARN”,
+                                “message”: “Missing same-page fragment.”,
+                            })
+                        continue
+
+                    if not target.exists():
+                        findings[“broken_references”].append({
+                            “source”: rel,
+                            “target”: reference,
+                            “status”: “WARN”,
+                            “message”: “Local reference not found.”,
+                        })
+
+            except Exception as exc:
+                findings[“parse_errors”].append({
+                    “path”: rel,
+                    “status”: “FAIL”,
+                    “message”: f”HTML parsing error: {exc}”,
                 })
 
-    # Detect byte-identical source files without deleting or merging them.
-    digest_map: dict[str, list[str]] = {}
-    for path in files:
-        if path.suffix.lower() not in SOURCE_EXTENSIONS:
-            continue
-        try:
-            digest_map.setdefault(sha256_file(path), []).append(
-                safe_relative(path, root)
+        if ext in {“.css”, “.scss”, “.sass”}:
+            pattern = re.compile(
+                r”””url\(\s*([‘”]?)(.*?)\1\s*\)”””,
+                re.IGNORECASE | re.DOTALL,
             )
+
+            for match in pattern.finditer(content):
+                reference = match.group(2).strip()
+
+                if not reference:
+                    continue
+
+                target = resolve_reference(path, reference, root)
+
+                if target is not None and not target.exists():
+                    findings[“broken_references”].append({
+                        “source”: rel,
+                        “target”: reference,
+                        “status”: “WARN”,
+                        “message”: “CSS local asset not found.”,
+                    })
+
+        if ext in {“.js”, “.mjs”, “.cjs”}:
+            pattern = re.compile(
+                r”””(?:from\s*|import\s*\(|require\s*\()\s*[“’]([^”’]+)[“’]”””
+            )
+
+            for match in pattern.finditer(content):
+                target_name = match.group(1)
+
+                if not target_name.startswith(“.”):
+                    continue
+
+                candidate = path.parent / target_name
+
+                possibilities = [
+                    candidate,
+                    candidate.with_suffix(“.js”),
+                    candidate.with_suffix(“.mjs”),
+                    candidate.with_suffix(“.cjs”),
+                    candidate / “index.js”,
+                    candidate / “index.mjs”,
+                ]
+
+                if not any(item.exists() for item in possibilities):
+                    findings[“broken_references”].append({
+                        “source”: rel,
+                        “target”: target_name,
+                        “status”: “WARN”,
+                        “message”: “Relative JavaScript import not found.”,
+                    })
+
+        if path.name in {“server.js”, “app.js”}:
+            route_pattern = re.compile(
+                r”””(?:app|router)\.(?:get|post|put|patch|delete|use)\s*\(\s*[“’`]([^”’`]+)”””
+            )
+
+            for match in route_pattern.finditer(content):
+                findings[“api_routes”].append({
+                    “source”: rel,
+                    “route”: match.group(1),
+                    “status”: “FOUND”,
+                })
+
+        # Duplicate content detection. Only hashes and paths are reported.
+        try:
+            digest = sha256_file(path)
+            digest_map.setdefault(digest, []).append(rel)
         except OSError:
-            continue
+            pass
 
     for digest, paths in digest_map.items():
         if len(paths) > 1:
-            duplicates.append({
-                "sha256": digest,
-                "paths": paths,
-                "status": "REVIEW",
-                "message": "Identical file contents; determine whether duplication is intentional.",
+            findings[“duplicate_files”].append({
+                “sha256”: digest,
+                “paths”: paths,
+                “status”: “REVIEW”,
             })
 
-    return {
-        "parse_warnings": parse_errors + warnings,
-        "conflict_markers": conflicts,
-        "broken_references": broken_refs,
-        "api_routes": routes,
-        "folder_index_map": page_map,
-        "duplicate_findings": duplicates,
-    }
+    return findings
 
-def check_commands(root: Path, files: list[Path]) -> list[dict]:
-    results: list[dict] = []
-    python_files = [p for p in files if p.suffix.lower() == ".py"]
-    shell_files = [
-        p for p in files if p.suffix.lower() in {".sh", ".bash"}
-    ]
-    js_files = [
-        p for p in files
-        if p.suffix.lower() in {".js", ".mjs", ".cjs"}
-    ]
 
-    # compile() checks Python syntax without generating __pycache__.
-    for path in python_files:
-        try:
-            source = path.read_bytes()
-            compile(source, str(path), "exec")
-            results.append({
-                "path": safe_relative(path, root),
-                "check": "python-syntax",
-                "status": "PASS",
-                "exit_code": 0,
-            })
-        except (SyntaxError, UnicodeDecodeError, OSError, ValueError) as exc:
-            results.append({
-                "path": safe_relative(path, root),
-                "check": "python-syntax",
-                "status": "FAIL",
-                "exit_code": 1,
-                "message": str(exc),
-            })
+def check_commands(root: Path, files: list[Path]) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
 
-    for path in shell_files:
-        result = run(["bash", "-n", str(path)], root)
-        result["path"] = safe_relative(path, root)
-        result["check"] = "bash-syntax"
-        results.append(result)
+    for path in files:
+        ext = path.suffix.lower()
+        rel = relative(path, root)
 
-    for path in js_files:
-        if shutil.which("node") is None:
-            results.append({
-                "path": safe_relative(path, root),
-                "check": "javascript-syntax",
-                "status": "SKIP",
-                "exit_code": None,
-                "message": "Node.js is unavailable.",
-            })
-            continue
+        if ext == “.py”:
+            try:
+                compile(path.read_bytes(), str(path), “exec”)
+                results.append({
+                    “path”: rel,
+                    “check”: “python-syntax”,
+                    “status”: “PASS”,
+                    “exit_code”: 0,
+                })
+            except (SyntaxError, UnicodeError, OSError, ValueError) as exc:
+                results.append({
+                    “path”: rel,
+                    “check”: “python-syntax”,
+                    “status”: “FAIL”,
+                    “exit_code”: 1,
+                    “message”: str(exc),
+                })
 
-        result = run(["node", "--check", str(path)], root)
-        result["path"] = safe_relative(path, root)
-        result["check"] = "javascript-syntax"
-        results.append(result)
+        elif ext in {“.sh”, “.bash”}:
+            result = run_command([“bash”, “-n”, str(path)], root)
+            result[“path”] = rel
+            result[“check”] = “bash-syntax”
+            results.append(result)
+
+        elif ext in {“.js”, “.mjs”, “.cjs”}:
+            if not shutil.which(“node”):
+                results.append({
+                    “path”: rel,
+                    “check”: “javascript-syntax”,
+                    “status”: “SKIP”,
+                    “exit_code”: None,
+                })
+            else:
+                result = run_command([“node”, “—check”, str(path)], root)
+                result[“path”] = rel
+                result[“check”] = “javascript-syntax”
+                results.append(result)
 
     return results
 
-def git_status(root: Path) -> dict:
-    if not shutil.which("git"):
-        return {"status": "SKIP", "message": "Git unavailable."}
 
-    result = run(["git", "status", "--short", "--branch"], root)
+def check_package(root: Path) -> list[dict[str, Any]]:
+    path = root / “package.json”
+
+    if not path.is_file():
+        return []
+
+    try:
+        data = json.loads(path.read_text(encoding=“utf-8-sig”))
+
+        if not isinstance(data, dict):
+            raise ValueError(“package.json root must be an object.”)
+
+        for key in (“scripts”, “dependencies”, “devDependencies”, “engines”):
+            if key in data and not isinstance(data[key], dict):
+                raise ValueError(f”package.json {key} must be an object.”)
+
+        return [{
+            “path”: “package.json”,
+            “check”: “package-json”,
+            “status”: “PASS”,
+        }]
+
+    except (OSError, UnicodeError, ValueError) as exc:
+        return [{
+            “path”: “package.json”,
+            “check”: “package-json”,
+            “status”: “FAIL”,
+            “message”: str(exc),
+        }]
+
+
+def check_yaml(root: Path, files: list[Path]) -> list[dict[str, Any]]:
+    yaml_files = [
+        path for path in files
+        if path.suffix.lower() in {“.yaml”, “.yml”}
+    ]
+
+    if not yaml_files:
+        return []
+
+    try:
+        import yaml
+    except ImportError:
+        return [{
+            “check”: “yaml”,
+            “status”: “SKIP”,
+            “message”: “PyYAML is not installed.”,
+        }]
+
+    class UniqueKeyLoader(yaml.SafeLoader):
+        pass
+
+    def construct_mapping(loader, node, deep=False):
+        loader.flatten_mapping(node)
+        mapping = {}
+
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+
+            try:
+                duplicate = key in mapping
+            except TypeError as exc:
+                raise yaml.YAMLError(“Unhashable YAML mapping key.”) from exc
+
+            if duplicate:
+                raise yaml.YAMLError(f”Duplicate YAML key: {key!r}”)
+
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+
+        return mapping
+
+    UniqueKeyLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping,
+    )
+
+    results = []
+
+    for path in yaml_files:
+        try:
+            content = path.read_text(encoding=“utf-8-sig”)
+            list(yaml.load_all(content, Loader=UniqueKeyLoader))
+
+            results.append({
+                “path”: relative(path, root),
+                “check”: “yaml”,
+                “status”: “PASS”,
+            })
+
+        except (OSError, UnicodeError, yaml.YAMLError, ValueError) as exc:
+            results.append({
+                “path”: relative(path, root),
+                “check”: “yaml”,
+                “status”: “FAIL”,
+                “message”: str(exc),
+            })
+
+    return results
+
+
+def git_status(root: Path) -> dict[str, Any]:
+    if not shutil.which(“git”):
+        return {“status”: “SKIP”, “message”: “Git unavailable.”}
+
+    result = run_command(
+        [“git”, “status”, “—short”, “—branch”],
+        root,
+        timeout=15,
+    )
+
     return {
-        "status": result["status"],
-        "exit_code": result["exit_code"],
-        "output": result["output"],
+        “status”: result[“status”],
+        “exit_code”: result[“exit_code”],
+        “output”: result[“output”],
     }
+
+
+def safe_report_directory(root: Path) -> Path:
+    report_dir = root / REPORT_DIRECTORY
+
+    if report_dir.is_symlink():
+        raise RuntimeError(“Report directory must not be a symlink.”)
+
+    report_dir.mkdir(exist_ok=True)
+
+    if not report_dir.is_dir() or report_dir.is_symlink():
+        raise RuntimeError(“Unsafe report directory.”)
+
+    return report_dir.resolve(strict=True)
+
+
+def atomic_write(path: Path, content: str) -> None:
+    “””Atomically replace one generated report.”””
+    if path.is_symlink():
+        raise RuntimeError(f”Refusing report symlink: {path}”)
+
+    data = content.encode(“utf-8”)
+
+    if len(data) > MAX_REPORT_SIZE:
+        raise RuntimeError(f”Report exceeds size limit: {path.name}”)
+
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f”.{path.name}.”,
+        suffix=“.tmp”,
+        dir=path.parent,
+    )
+
+    temporary = Path(temporary_name)
+
+    try:
+        with os.fdopen(fd, “wb”) as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+        if path.is_symlink():
+            raise RuntimeError(f”Report became a symlink: {path}”)
+
+        os.replace(temporary, path)
+
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def write_json(path: Path, data: Any) -> None:
+    atomic_write(
+        path,
+        json.dumps(data, indent=2, ensure_ascii=False) + “\n”,
+    )
+
+
+def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    columns = sorted({
+        key
+        for row in rows
+        for key in row
+    })
+
+    from io import StringIO
+
+    buffer = StringIO(newline=“”)
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=columns or [“status”],
+        extrasaction=“ignore”,
+    )
+
+    writer.writeheader()
+
+    for row in rows:
+        writer.writerow({
+            key: json.dumps(value, ensure_ascii=False)
+            if isinstance(value, (dict, list))
+            else value
+            for key, value in row.items()
+        })
+
+    atomic_write(path, buffer.getvalue())
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, help="Repository root.")
-    parser.add_argument("--check-only", action="store_true",
-                        help="Alias for a read-only audit.")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Audit only; never repair source files.")
+
+    parser.add_argument(
+        “—root”,
+        type=Path,
+        help=“Repository root directory.”,
+    )
+
+    parser.add_argument(
+        “—check-only”,
+        action=“store_true”,
+        help=“Perform an audit without writing reports.”,
+    )
+
+    parser.add_argument(
+        “—dry-run”,
+        action=“store_true”,
+        help=“Alias for —check-only.”,
+    )
+
+    parser.add_argument(
+        “—dependencies”,
+        action=“store_true”,
+        help=“Inspect installed npm dependencies.”,
+    )
+
     args = parser.parse_args()
 
-    script_root = Path(__file__).resolve().parent.parent
-    root = find_root(args.root.resolve() if args.root else script_root)
+    try:
+        start = (
+            args.root.expanduser().resolve()
+            if args.root
+            else Path(__file__).resolve().parent.parent
+        )
 
-    if not root.is_dir():
-        print(f"ERROR: Repository root does not exist: {root}", file=sys.stderr)
+        root = find_root(start)
+
+        print(“=“ * 58)
+        print(“ MEDORBITS MASTER REPOSITORY AUDITOR”)
+        print(“=“ * 58)
+        print(f”Version: {VERSION}”)
+        print(f”Repository: {root}”)
+        print(f”Started: {now()}”)
+
+        records, files = inventory(root)
+
+        findings = classify_files(root, files)
+        commands = check_commands(root, files)
+        commands.extend(check_package(root))
+        commands.extend(check_yaml(root, files))
+
+        if args.dependencies:
+            if shutil.which(“npm”):
+                commands.append(
+                    run_command([“npm”, “ls”, “—depth=0”], root)
+                )
+            else:
+                commands.append({
+                    “check”: “npm-dependencies”,
+                    “status”: “SKIP”,
+                    “message”: “npm unavailable.”,
+                })
+
+        sensitive = [
+            {
+                “path”: item[“path”],
+                “status”: “REVIEW”,
+                “message”: “Sensitive-looking filename; contents were not recorded.”,
+            }
+            for item in records
+            if item.get(“sensitive_name”)
+        ]
+
+        failures = (
+            sum(1 for item in commands if item.get(“status”) == “FAIL”)
+            + len(findings[“parse_errors”])
+            + len(findings[“conflict_markers”])
+        )
+
+        warnings = (
+            len(findings[“warnings”])
+            + len(findings[“broken_references”])
+            + len(findings[“duplicate_ids”])
+            + len(findings[“missing_alt”])
+            + len(findings[“duplicate_files”])
+            + len(sensitive)
+        )
+
+        summary = {
+            “version”: VERSION,
+            “generated_at”: now(),
+            “repository_root”: str(root),
+            “git_status”: git_status(root),
+            “files_inventoried”: len(records),
+            “validation”: {
+                “total”: len(commands),
+                “passed”: sum(
+                    1 for item in commands
+                    if item.get(“status”) == “PASS”
+                ),
+                “failed”: sum(
+                    1 for item in commands
+                    if item.get(“status”) == “FAIL”
+                ),
+                “skipped”: sum(
+                    1 for item in commands
+                    if item.get(“status”) == “SKIP”
+                ),
+            },
+            “parse_errors”: len(findings[“parse_errors”]),
+            “conflict_markers”: len(findings[“conflict_markers”]),
+            “broken_reference_candidates”: len(findings[“broken_references”]),
+            “warnings”: warnings,
+            “failures”: failures,
+            “status”: “FAIL” if failures else (
+                “PASS_WITH_WARNINGS” if warnings else “PASS”
+            ),
+            “source_files_modified”: False,
+            “deployment_performed”: False,
+            “database_migrations_performed”: False,
+        }
+
+        print(f”\nFiles inventoried: {len(records)}”)
+        print(f”Validation checks: {summary[‘validation’]}”)
+        print(f”Parse errors: {len(findings[‘parse_errors’])}”)
+        print(f”Conflict markers: {len(findings[‘conflict_markers’])}”)
+        print(f”Broken references: {len(findings[‘broken_references’])}”)
+        print(f”Warnings: {warnings}”)
+        print(f”Failures: {failures}”)
+
+        if args.check_only or args.dry_run:
+            print(“\nCHECK-ONLY: No reports or source files were written.”)
+        else:
+            report_dir = safe_report_directory(root)
+
+            reports = {
+                “summary.json”: summary,
+                “file-inventory.json”: {
+                    “generated_at”: now(),
+                    “files”: records,
+                },
+                “validation-results.json”: {
+                    “generated_at”: now(),
+                    “checks”: commands,
+                },
+                “parse-errors.json”: findings[“parse_errors”],
+                “broken-references.json”: findings[“broken_references”],
+                “conflict-markers.json”: findings[“conflict_markers”],
+                “duplicate-ids.json”: findings[“duplicate_ids”],
+                “missing-alt.json”: findings[“missing_alt”],
+                “duplicate-files.json”: findings[“duplicate_files”],
+                “api-routes.json”: findings[“api_routes”],
+                “folder-index-map.json”: findings[“folder_index_map”],
+                “sensitive-file-review.json”: {
+                    “note”: “Names and paths only; file contents are not included.”,
+                    “findings”: sensitive,
+                },
+            }
+
+            for name, data in reports.items():
+                write_json(report_dir / name, data)
+
+            write_csv(
+                report_dir / “file-inventory.csv”,
+                records,
+            )
+
+            write_csv(
+                report_dir / “broken-references.csv”,
+                findings[“broken_references”],
+            )
+
+            print(f”\nReports written to: {report_dir}”)
+
+        print(f”\nAUDIT STATUS: {summary[‘status’]}”)
+        print(“Source files modified: NO”)
+        print(“Deployment: NO”)
+        print(“Database migrations: NO”)
+
+        return 1 if failures else 0
+
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f”ERROR: {exc}”, file=sys.stderr)
         return 2
 
-    # Exclude reports from the scan only if they are generated artifacts;
-    # they remain on disk and are not deleted.
-    report_dir = root / "repository-reports"
-    report_dir.mkdir(parents=True, exist_ok=True)
 
-    stamp = now()
-    print(f"MedOrbits audit {VERSION}")
-    print(f"Repository: {root}")
-    print(f"Started: {stamp}")
-    print("Mode: read-only source audit; source files will not be rewritten.")
-
-    git = git_status(root)
-    records, files = inventory(root)
-    findings = classify_text_files(root, files)
-    commands = check_commands(root, files)
-
-    # Never include file contents or secret values in reports.
-    sensitive = [
-        {
-            "path": row["path"],
-            "status": "REVIEW",
-            "message": "Sensitive-looking filename; contents were not recorded.",
-        }
-        for row in records if row.get("sensitive_name")
-    ]
-
-    edges: list[dict] = []
-    for item in findings["broken_references"]:
-        edges.append({
-            "source": item.get("source"),
-            "target": item.get("target"),
-            "edge_type": "unresolved-local-reference",
-            "status": item.get("status", "WARN"),
-        })
-
-    suggestions: list[dict] = []
-    for item in findings["broken_references"]:
-        suggestions.append({
-            "source": item.get("source"),
-            "target": item.get("target"),
-            "suggestion": "Verify deployment base path, case, and target existence before changing.",
-            "status": "REVIEW",
-        })
-
-    # Repair manifest records what this auditor did and did not change.
-    manifest = {
-        "version": VERSION,
-        "generated_at": now(),
-        "repository_root": str(root),
-        "mode": "read-only-audit",
-        "source_files_modified": [],
-        "files_created": [],
-        "reports_written": [],
-        "repairs_applied": [],
-        "limitations": [
-            "This script does not automatically repair source files.",
-            "Static HTML reference checks may flag server-side routes or deployment base paths.",
-            "JavaScript route/controller relationships require framework-aware validation.",
-            "Ignored files are inventoried if present, except excluded generated directories.",
-            "Ignored files not present in the working tree cannot be inspected.",
-            "Git tracked-file status is reported separately from filesystem inventory.",
-        ],
-    }
-
-    reports = {
-        "file-inventory.json": {
-            "generated_at": stamp, "status": "PASS", "files": records,
-        },
-        "broken-references.json": {
-            "generated_at": stamp,
-            "status": "WARN" if findings["broken_references"] else "PASS",
-            "findings": findings["broken_references"],
-        },
-        "unresolved-references.json": {
-            "generated_at": stamp,
-            "status": "PENDING_REVIEW" if findings["broken_references"] else "PASS",
-            "is_template": False,
-            "findings": findings["broken_references"],
-            "note": "Generated from this scan; inspect warnings for runtime routing false positives.",
-        },
-        "dependency-edges.json": {
-            "generated_at": stamp, "status": "PASS", "edges": edges,
-        },
-        "api-routes.json": {
-            "generated_at": stamp, "status": "PARTIAL",
-            "routes": findings["api_routes"],
-            "note": "Static extraction only; not a complete router/controller consistency proof.",
-        },
-        "conflict-markers.json": {
-            "generated_at": stamp,
-            "status": "FAIL" if findings["conflict_markers"] else "PASS",
-            "findings": findings["conflict_markers"],
-        },
-        "parse-warnings.json": {
-            "generated_at": stamp,
-            "status": "FAIL" if any(
-                x.get("status") == "FAIL"
-                for x in findings["parse_warnings"]
-            ) else "PASS",
-            "findings": findings["parse_warnings"],
-        },
-        "page-connection-suggestions.json": {
-            "generated_at": stamp, "status": "REVIEW_REQUIRED",
-            "suggestions": suggestions,
-        },
-        "duplicate-findings.json": {
-            "generated_at": stamp,
-            "status": "REVIEW_REQUIRED" if findings["duplicate_findings"] else "PASS",
-            "findings": findings["duplicate_findings"],
-        },
-        "folder-index-map.json": {
-            "generated_at": stamp, "status": "PARTIAL",
-            "indexes": findings["folder_index_map"],
-            "note": "Only existing index.html files are mapped; public/private folder classification requires review.",
-        },
-        "repair-manifest.json": manifest,
-    }
-
-    inventory_csv = [
-        {k: v for k, v in item.items() if not isinstance(v, (list, dict))}
-        for item in records
-    ]
-    reference_csv = findings["broken_references"]
-    edges_csv = edges
-
-    for name, data in reports.items():
-        target = report_dir / name
-        write_json(target, data)
-        manifest["reports_written"].append(target.relative_to(root).as_posix())
-
-    write_csv(report_dir / "file-inventory.csv", inventory_csv)
-    write_csv(report_dir / "broken-references.csv", reference_csv)
-    write_csv(report_dir / "dependency-edges.csv", edges_csv)
-
-    # Include report files in the manifest after creation, then rewrite it.
-    manifest["reports_written"].extend([
-        "repository-reports/file-inventory.csv",
-        "repository-reports/broken-references.csv",
-        "repository-reports/dependency-edges.csv",
-    ])
-    write_json(report_dir / "repair-manifest.json", manifest)
-
-    failures = sum(1 for x in commands if x.get("status") == "FAIL")
-    failures += len(findings["parse_warnings"]) - sum(
-        1 for x in findings["parse_warnings"] if x.get("status") != "FAIL"
-    )
-    failures += len(findings["conflict_markers"])
-
-    summary = {
-        "version": VERSION,
-        "generated_at": now(),
-        "repository_root": str(root),
-        "git_status": git,
-        "files_inventoried": len(records),
-        "python_shell_javascript_checks": {
-            "total": len(commands),
-            "pass": sum(1 for x in commands if x.get("status") == "PASS"),
-            "fail": sum(1 for x in commands if x.get("status") == "FAIL"),
-            "skip": sum(1 for x in commands if x.get("status") == "SKIP"),
-        },
-        "parse_findings": len(findings["parse_warnings"]),
-        "conflict_markers": len(findings["conflict_markers"]),
-        "broken_reference_candidates": len(findings["broken_references"]),
-        "duplicate_file_groups": len(findings["duplicate_findings"]),
-        "sensitive_filename_reviews": len(sensitive),
-        "status": "FAIL" if failures else "REVIEW_REQUIRED",
-        "limitations": [
-            "No source repairs were applied.",
-            "No tests, builds, database migrations, or deployments were executed.",
-            "A static scan is not proof of runtime correctness.",
-        ],
-    }
-
-    write_json(report_dir / "summary.json", summary)
-    write_json(report_dir / "sensitive-file-review.json", {
-        "generated_at": now(),
-        "status": "REVIEW_REQUIRED" if sensitive else "PASS",
-        "findings": sensitive,
-        "note": "Only names and paths are included; file contents are never copied.",
-    })
-
-    print(f"Inventory: {len(records)} files")
-    print(f"Syntax checks: {summary['python_shell_javascript_checks']}")
-    print(f"Broken-reference candidates: {len(findings['broken_references'])}")
-    print(f"Conflict markers: {len(findings['conflict_markers'])}")
-    print(f"Reports: {report_dir}")
-    print(f"Summary status: {summary['status']}")
-    print("Source repairs: none; review findings before applying modifications.")
-
-    return 1 if failures else 0
-
-if __name__ == "__main__":
+if __name__ == “__main__”:
     raise SystemExit(main())

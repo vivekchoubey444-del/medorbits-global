@@ -1,9 +1,286 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "NOT_VERIFIED",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits API Route Inventory",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "description": "Machine-readable inventory of API endpoints, HTTP methods, authentication requirements, permissions, controllers, and middleware.",
+    "status": "baseline",
+    "environment": "all"
+  },
+  "summary": {
+    "totalRoutes": 0,
+    "verifiedRoutes": 0,
+    "unverifiedRoutes": 0,
+    "deprecatedRoutes": 0,
+    "publicRoutes": 0,
+    "authenticatedRoutes": 0,
+    "adminRoutes": 0
+  },
+  "basePaths": {
+    "api": "/api",
+    "health": "/health"
+  },
+  "authentication": {
+    "strategy": "project-defined",
+    "defaultRequired": true,
+    "supportedMethods": [
+      "session",
+      "bearer-token",
+      "api-key"
+    ],
+    "authorizationHeader": "Authorization",
+    "bearerPrefix": "Bearer",
+    "notes": "Confirm supported authentication mechanisms against the actual MedOrbits authentication middleware."
+  },
   "routes": [],
-  "limitations": [
-    "Server route declarations were not available in this tools-only archive."
-  ]
+  "routeGroups": [
+    {
+      "name": "authentication",
+      "basePath": "/api/auth",
+      "routerFile": "routes/auth.routes.js",
+      "controllerDirectory": "controllers/auth",
+      "description": "Registration, login, logout, session management, and password recovery."
+    },
+    {
+      "name": "users",
+      "basePath": "/api/users",
+      "routerFile": "routes/user.routes.js",
+      "controllerDirectory": "controllers/users",
+      "description": "User profiles, account information, and user management."
+    },
+    {
+      "name": "properties",
+      "basePath": "/api/properties",
+      "routerFile": "routes/property.routes.js",
+      "controllerDirectory": "controllers/properties",
+      "description": "Property-related routes, if enabled in this application."
+    },
+    {
+      "name": "search",
+      "basePath": "/api/search",
+      "routerFile": "routes/search.routes.js",
+      "controllerDirectory": "controllers/search",
+      "description": "Search and discovery endpoints."
+    },
+    {
+      "name": "applications",
+      "basePath": "/api/applications",
+      "routerFile": "routes/application.routes.js",
+      "controllerDirectory": "controllers/applications",
+      "description": "Education, admission, recruitment, and application workflows."
+    },
+    {
+      "name": "documents",
+      "basePath": "/api/documents",
+      "routerFile": "routes/document.routes.js",
+      "controllerDirectory": "controllers/documents",
+      "description": "Document uploads, verification, access, and retrieval."
+    },
+    {
+      "name": "courses",
+      "basePath": "/api/courses",
+      "routerFile": null,
+      "controllerDirectory": null,
+      "description": "Course catalogue and course information. Register only when implemented."
+    },
+    {
+      "name": "colleges",
+      "basePath": "/api/colleges",
+      "routerFile": null,
+      "controllerDirectory": null,
+      "description": "College information and admission listings. Register only when implemented."
+    },
+    {
+      "name": "careers",
+      "basePath": "/api/careers",
+      "routerFile": null,
+      "controllerDirectory": null,
+      "description": "Career guidance, jobs, recruitment, and placement services. Register only when implemented."
+    },
+    {
+      "name": "admin",
+      "basePath": "/api/admin",
+      "routerFile": null,
+      "controllerDirectory": null,
+      "description": "Restricted administrative operations. Register only when implemented."
+    }
+  ],
+  "routeSchema": {
+    "required": [
+      "id",
+      "group",
+      "method",
+      "path",
+      "authentication",
+      "status"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique stable route identifier."
+      },
+      "group": {
+        "type": "string"
+      },
+      "method": {
+        "type": "string",
+        "enum": [
+          "GET",
+          "POST",
+          "PUT",
+          "PATCH",
+          "DELETE",
+          "OPTIONS",
+          "HEAD"
+        ]
+      },
+      "path": {
+        "type": "string",
+        "description": "Route path relative to its API group."
+      },
+      "fullPath": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "authentication": {
+        "type": "string",
+        "enum": [
+          "public",
+          "authenticated",
+          "admin",
+          "service",
+          "unknown"
+        ]
+      },
+      "permissions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "middleware": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "controller": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "handler": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "rateLimit": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "requestContentType": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "responseContentType": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "unverified",
+          "deprecated",
+          "disabled"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  },
+  "securityChecks": [
+    {
+      "id": "AUTH-001",
+      "name": "Authentication enforcement",
+      "description": "Verify protected routes require authentication.",
+      "severity": "critical"
+    },
+    {
+      "id": "AUTH-002",
+      "name": "Authorization enforcement",
+      "description": "Verify administrative and role-specific permissions.",
+      "severity": "critical"
+    },
+    {
+      "id": "AUTH-003",
+      "name": "Rate limiting",
+      "description": "Verify sensitive endpoints have appropriate rate limits.",
+      "severity": "high"
+    },
+    {
+      "id": "AUTH-004",
+      "name": "Input validation",
+      "description": "Verify request parameters, body, and query values are validated.",
+      "severity": "high"
+    },
+    {
+      "id": "AUTH-005",
+      "name": "Document access control",
+      "description": "Verify uploaded documents cannot be accessed by unauthorized users.",
+      "severity": "critical"
+    },
+    {
+      "id": "AUTH-006",
+      "name": "Sensitive response filtering",
+      "description": "Verify passwords, tokens, secrets, and private document data are never exposed.",
+      "severity": "critical"
+    },
+    {
+      "id": "AUTH-007",
+      "name": "HTTP method restrictions",
+      "description": "Verify each endpoint permits only intended HTTP methods.",
+      "severity": "medium"
+    },
+    {
+      "id": "AUTH-008",
+      "name": "Error handling",
+      "description": "Verify errors do not disclose internal stack traces or infrastructure details.",
+      "severity": "high"
+    }
+  ],
+  "generation": {
+    "automatic": false,
+    "sourceOfTruth": "Registered Express routers and route definitions",
+    "includeUnregisteredGroups": false,
+    "includeDisabledRoutes": true,
+    "includeMiddleware": true,
+    "includeControllerReferences": true,
+    "overwriteExisting": false
+  },
+  "integrity": {
+    "verifiedAgainstSource": false,
+    "verificationTimestamp": null,
+    "sourceFiles": [],
+    "warnings": [
+      "This is an initial inventory template, not a verified list of live endpoints.",
+      "Do not treat placeholder route groups as registered API endpoints.",
+      "Populate route entries from actual router registrations before publishing API documentation."
+    ]
+  }
 }

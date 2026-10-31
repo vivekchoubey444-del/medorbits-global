@@ -1,18 +1,342 @@
+
 {
-  "reportVersion": "1.0.0",
-  "reportType": "unresolved-references",
-  "status": "pending_scan",
-  "generatedAt": null,
-  "summary": {
-    "unresolved": null,
-    "note": "Count is unknown until an actual scan completes."
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Extended Unresolved References Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "reportId": "UNRESOLVED-EXT-001",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "reportType": "supplementary",
+    "primaryReport": "tools/repository-reports/unresolved-references.json",
+    "description": "Extended tracking of indirect, dynamic, cross-module, conditional, environment-dependent, and runtime-generated references that cannot be conclusively resolved."
   },
-  "references": [],
-  "limitations": [
-    "This file is a pending report template, not a completed repository scan.",
-    "No findings or counts are asserted until a real scan runs.",
-    "Populate references and counts only from verified scan results."
+  "summary": {
+    "totalFindings": 0,
+    "directReferences": 0,
+    "indirectReferences": 0,
+    "dynamicReferences": 0,
+    "conditionalReferences": 0,
+    "runtimeReferences": 0,
+    "crossModuleReferences": 0,
+    "environmentDependentReferences": 0,
+    "unverifiedReferences": 0,
+    "blockedReferences": 0,
+    "resolvedReferences": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "analysisConfiguration": {
+    "repositoryRoot": ".",
+    "recursive": true,
+    "includeHidden": true,
+    "followSymbolicLinks": false,
+    "analyzeDynamicImports": true,
+    "analyzeConditionalImports": true,
+    "analyzeRuntimePaths": true,
+    "analyzeEnvironmentDependentPaths": true,
+    "analyzeCrossModuleReferences": true,
+    "analyzeTemplateReferences": true,
+    "analyzeGeneratedReferences": true,
+    "analyzeRouteRegistrations": true,
+    "analyzeDatabaseReferences": true,
+    "analyzePluginReferences": true,
+    "analyzeWorkflowReferences": true,
+    "checkExternalResources": false,
+    "maximumFileSizeMB": 25,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      "coverage",
+      "dist",
+      "build"
+    ]
+  },
+  "referenceCategories": [
+    "dynamic-import",
+    "conditional-import",
+    "runtime-generated-path",
+    "environment-dependent-path",
+    "cross-module-reference",
+    "template-reference",
+    "generated-file-reference",
+    "route-registration",
+    "database-migration-reference",
+    "database-model-reference",
+    "plugin-registration",
+    "workflow-dependency",
+    "external-integration",
+    "feature-flag-reference",
+    "localization-reference",
+    "asset-manifest-reference",
+    "service-discovery-reference",
+    "unknown"
   ],
-  "is_template": true,
-  "scan_status": "PENDING_SCAN"
+  "severityLevels": {
+    "critical": {
+      "priority": 1,
+      "description": "Unresolved references that may prevent application startup, compromise security controls, or expose sensitive information."
+    },
+    "high": {
+      "priority": 2,
+      "description": "Unresolved references affecting core application workflows, APIs, database operations, or critical integrations."
+    },
+    "medium": {
+      "priority": 3,
+      "description": "Unresolved references affecting conditional features, supporting modules, or secondary workflows."
+    },
+    "low": {
+      "priority": 4,
+      "description": "Nonessential references requiring documentation or future investigation."
+    }
+  },
+  "findings": [],
+  "findingSchema": {
+    "required": [
+      "findingId",
+      "category",
+      "sourceFile",
+      "referenceExpression",
+      "severity",
+      "status"
+    ],
+    "properties": {
+      "findingId": {
+        "type": "string"
+      },
+      "primaryFindingId": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Corresponding finding ID in unresolved-references.json, when applicable."
+      },
+      "category": {
+        "type": "string",
+        "enum": [
+          "dynamic-import",
+          "conditional-import",
+          "runtime-generated-path",
+          "environment-dependent-path",
+          "cross-module-reference",
+          "template-reference",
+          "generated-file-reference",
+          "route-registration",
+          "database-migration-reference",
+          "database-model-reference",
+          "plugin-registration",
+          "workflow-dependency",
+          "external-integration",
+          "feature-flag-reference",
+          "localization-reference",
+          "asset-manifest-reference",
+          "service-discovery-reference",
+          "unknown"
+        ]
+      },
+      "sourceFile": {
+        "type": "string"
+      },
+      "sourceLine": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "referenceExpression": {
+        "type": "string",
+        "description": "Original import, expression, path, identifier, or registration reference."
+      },
+      "expectedTarget": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "candidateTargets": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "resolutionConfidence": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "minimum": 0,
+        "maximum": 1
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "resolved",
+          "unverified",
+          "blocked",
+          "ignored",
+          "false-positive"
+        ]
+      },
+      "environment": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "conditions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dependencies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "errorCode": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "firstDetected": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastChecked": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolvedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolution": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "investigation": {
+    "enabled": true,
+    "requireSourceInspection": true,
+    "requireTargetVerification": true,
+    "requireDependencyAnalysis": true,
+    "requireEnvironmentAnalysis": true,
+    "requireRuntimeEvidence": true,
+    "allowHeuristicResolution": true,
+    "heuristicResolutionRequiresReview": true,
+    "automaticallyMarkResolved": false,
+    "investigationResults": []
+  },
+  "analysis": {
+    "dynamicImports": [],
+    "conditionalReferences": [],
+    "environmentDependentReferences": [],
+    "runtimeGeneratedPaths": [],
+    "crossModuleDependencies": [],
+    "unregisteredRoutes": [],
+    "unresolvedDatabaseObjects": [],
+    "missingPluginRegistrations": [],
+    "unresolvedWorkflowDependencies": [],
+    "missingLocalizationKeys": [],
+    "missingAssetManifestEntries": [],
+    "unresolvedFeatureFlags": [],
+    "externalServiceReferences": []
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "preserveExistingFindings": true,
+    "stableFindingIds": true,
+    "deduplicate": true,
+    "includeGeneratedFiles": true,
+    "includeBinaryFiles": false,
+    "requirePrimaryReport": true,
+    "primaryReport": "tools/repository-reports/unresolved-references.json",
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/unresolved-references-2.csv",
+    "jsonOutput": "tools/repository-reports/unresolved-references-2.json",
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "repairPolicy": {
+    "automaticRepair": false,
+    "automaticImportRewriting": false,
+    "automaticPathCorrection": false,
+    "automaticFileCreation": false,
+    "automaticFileDeletion": false,
+    "automaticConfigurationChanges": false,
+    "automaticEnvironmentValueGeneration": false,
+    "automaticDatabaseMigration": false,
+    "requireHumanApproval": true,
+    "requireBackupBeforeApprovedRepair": true,
+    "requireGitDiffReview": true,
+    "requirePostRepairVerification": true
+  },
+  "outputs": {
+    "primaryReport": "tools/repository-reports/unresolved-references.json",
+    "extendedReport": "tools/repository-reports/unresolved-references-2.json",
+    "csv": "tools/repository-reports/unresolved-references-2.csv",
+    "markdown": "tools/repository-reports/unresolved-references-2.md"
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "sourceFilesScanned": 0,
+    "findingsAnalyzed": 0,
+    "warnings": [
+      "This is a supplementary report template, not a verified scan result.",
+      "Do not duplicate primary findings unless additional investigation provides useful information.",
+      "Dynamic references may require runtime execution to establish their actual targets.",
+      "Candidate targets are suggestions, not confirmed resolutions.",
+      "Environment variable names may be inspected without accessing or exposing secret values.",
+      "Offline execution must not classify inaccessible external services as broken.",
+      "Only verified findings may be marked resolved."
+    ]
+  }
 }

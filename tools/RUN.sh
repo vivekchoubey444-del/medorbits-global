@@ -1,31 +1,37 @@
 
 #!/usr/bin/env bash
-# ============================================================
+# ==============================================================================
 # MEDORBITS -- FORCE EXECUTION & REPOSITORY CONTROL RUNNER
-# File: /tools/RUN.sh
+# File: tools/RUN.sh
+# Version: 2.0.0
 #
 # Supports:
 #   - Online and offline execution
 #   - Force/continue-on-error execution
-#   - Repository validation
-#   - Python and Node.js checks
-#   - Safe automatic formatting and lint repairs
-#   - Dependency installation and security auditing
+#   - Repository and environment inspection
+#   - Python and Node.js validation
+#   - Explicit safe repair operations
+#   - Explicit dependency installation
+#   - Optional security auditing
 #   - Meta Ad Creator integration
 #
 # SAFETY:
-#   - Does not delete repository files.
+#   - Does not delete repository source files.
 #   - Does not reset Git history.
-#   - Does not overwrite arbitrary files.
+#   - Does not commit or push.
+#   - Does not deploy.
 #   - Does not publish advertisements.
-#   - Does not deploy automatically.
-# ============================================================
+#   - Dependency installation requires explicit --install.
+#   - Repair commands are delegated to configured npm scripts.
+# ==============================================================================
 
 set -Eeuo pipefail
 IFS=$'\n\t'
+umask 077
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
+readonly VERSION="2.0.0"
+readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 
 COMMAND="help"
 FORCE=false
@@ -37,323 +43,375 @@ AUDIT=false
 PASSED=0
 FAILED=0
 SKIPPED=0
+HALT=false
 
 declare -a RESULTS=()
 
+# ------------------------------------------------------------------------------
+# OUTPUT
+# ------------------------------------------------------------------------------
+
 log() {
-  printf '\033[1;34m[INFO]\033[0m %s\n' "$*"
+    printf '\033[1;34m[INFO]\033[0m %s\n' "$*"
 }
 
 success() {
-  printf '\033[1;32m[PASS]\033[0m %s\n' "$*"
+    printf '\033[1;32m[PASS]\033[0m %s\n' "$*"
 }
 
 warn() {
-  printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2
+    printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2
 }
 
 error() {
-  printf '\033[1;31m[FAIL]\033[0m %s\n' "$*" >&2
+    printf '\033[1;31m[FAIL]\033[0m %s\n' "$*" >&2
 }
 
 die() {
-  error "$*"
-  exit 1
+    error "$*"
+    exit 2
 }
 
 has() {
-  command -v "$1" >/dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
 }
 
+# ------------------------------------------------------------------------------
+# HELP
+# ------------------------------------------------------------------------------
+
 usage() {
-  cat <<'HELP'
-MedOrbits Force Execution Runner
+    cat <<'HELP'
+MedOrbits Repository Control Runner v2.0.0
 
 Usage:
-  bash tools/RUN.sh [OPTIONS] COMMAND
+  bash tools/RUN.sh [OPTIONS] COMMAND [ARGUMENTS]
 
-Execution options:
-  --force             Continue after individual failures
-  --offline           Disable network-dependent operations
-  --online            Allow network-dependent operations
-  --repair            Enable safe automatic code repairs
-  --install           Install project dependencies
-  --audit             Run dependency security audits
-  --help              Show this help
+OPTIONS:
+  --force             Continue after individual failures.
+  --offline           Disable network-dependent operations.
+  --online            Permit network-dependent operations.
+  --repair            Enable configured repair steps during "all".
+  --install           Install dependencies during "all".
+  --audit             Run dependency security audit.
+  --help, -h          Show help.
 
-Commands:
-  help                Show help
-  check               Inspect repository and tools
-  all                 Run complete available validation
-  test                Run repository test runner
-  test-quick          Run quick checks
-  test-python         Run Python tests
-  test-node           Run JavaScript syntax checks
-  repair              Apply available safe code repairs
-  install             Install project dependencies
-  audit               Run dependency security checks
-  start               Run npm start
-  dev                 Run npm dev
-  meta-example        Show Meta ad creator help
-  meta-create         Forward arguments to Meta ad creator
-  meta-validate       Validate Meta ad creator input
+COMMANDS:
+  help                Show help.
+  check               Inspect repository and tools.
+  all                 Run complete available validation.
+  test                Run tools/TEST.sh.
+  test-quick          Run quick tests.
+  test-python         Run Python tests.
+  test-node           Run JavaScript syntax checks.
+  repair              Run configured repair scripts.
+  install             Install npm dependencies.
+  audit               Run dependency security checks.
+  start               Run npm start.
+  dev                 Run npm dev.
+  meta-example        Show Meta Ad Creator help.
+  meta-create         Forward arguments to Meta Ad Creator.
+  meta-validate       Validate Meta Ad Creator input.
 
-Examples:
+EXAMPLES:
   bash tools/RUN.sh check
   bash tools/RUN.sh --force all
   bash tools/RUN.sh --offline --force all
   bash tools/RUN.sh --online --audit all
   bash tools/RUN.sh --repair repair
   bash tools/RUN.sh --online install
+  bash tools/RUN.sh meta-example
 
-Offline mode:
-  Uses installed dependencies and local caches.
-  Does not intentionally invoke network-dependent commands.
+SAFETY:
+  --install is required before npm dependencies are installed.
+  Offline installation uses the local npm cache.
+  --force continues after failures but never hides them.
+  --repair runs only explicitly configured npm scripts.
+  No automatic deployment, commit, or push is performed.
 
-Force mode:
-  Continues after failed checks and reports all results.
-  It does not disable security controls or hide failures.
+OPTIONS MUST APPEAR BEFORE THE COMMAND.
 HELP
 }
 
+# ------------------------------------------------------------------------------
+# RESULTS
+# ------------------------------------------------------------------------------
+
 record_result() {
-  local status="$1"
-  local description="$2"
+    local status="$1"
+    local description="$2"
 
-  RESULTS+=("$status: $description")
+    RESULTS+=("${status}: ${description}")
 
-  case "$status" in
-    PASS) PASSED=$((PASSED + 1)) ;;
-    FAIL) FAILED=$((FAILED + 1)) ;;
-    SKIP) SKIPPED=$((SKIPPED + 1)) ;;
-  esac
+    case "$status" in
+        PASS)
+            PASSED=$((PASSED + 1))
+            ;;
+        FAIL)
+            FAILED=$((FAILED + 1))
+            ;;
+        SKIP)
+            SKIPPED=$((SKIPPED + 1))
+            ;;
+    esac
 }
 
 run_step() {
-  local description="$1"
-  shift
+    local description="$1"
+    shift
 
-  log "$description"
-
-  if "$@"; then
-    success "$description"
-    record_result PASS "$description"
-    return 0
-  else
-    local code=$?
-
-    error "$description (exit code: $code)"
-    record_result FAIL "$description"
-
-    if [[ "$FORCE" == true ]]; then
-      warn "Force mode: continuing."
-      return 0
+    if [[ "$HALT" == true ]]; then
+        skip_step "$description (execution halted)"
+        return 0
     fi
 
-    return "$code"
-  fi
+    log "$description"
+
+    local code=0
+
+    if "$@"; then
+        success "$description"
+        record_result PASS "$description"
+    else
+        code=$?
+
+        error "$description (exit code: $code)"
+        record_result FAIL "$description"
+
+        if [[ "$FORCE" == true ]]; then
+            warn "Force mode: continuing after failure."
+        else
+            HALT=true
+            warn "Execution halted. Use --force to continue after failures."
+        fi
+    fi
+
+    return 0
 }
 
 skip_step() {
-  local description="$1"
+    local description="$1"
 
-  warn "Skipped: $description"
-  record_result SKIP "$description"
+    warn "Skipped: $description"
+    record_result SKIP "$description"
 }
 
+show_report() {
+    printf '\n'
+    printf '%s\n' "============================================================"
+    printf '%s\n' "MEDORBITS EXECUTION REPORT"
+    printf '%s\n' "============================================================"
+
+    printf 'Version:  %s\n' "$VERSION"
+    printf 'Passed:   %s\n' "$PASSED"
+    printf 'Failed:   %s\n' "$FAILED"
+    printf 'Skipped:  %s\n' "$SKIPPED"
+
+    printf '\nDetailed results:\n'
+
+    local item
+    for item in "${RESULTS[@]}"; do
+        printf '  %s\n' "$item"
+    done
+
+    printf '%s\n' "============================================================"
+
+    if (( FAILED > 0 )); then
+        error "Execution completed with failures."
+        return 1
+    fi
+
+    success "Execution completed without recorded failures."
+    return 0
+}
+
+# ------------------------------------------------------------------------------
+# ENVIRONMENT
+# ------------------------------------------------------------------------------
+
 require_root() {
-  [[ -d "$ROOT_DIR" ]] || die "Repository root not found."
+    [[ -d "$ROOT_DIR" ]] || die "Repository root not found."
+    [[ -d "$SCRIPT_DIR" ]] || die "Tools directory not found."
 }
 
 check_environment() {
-  log "Repository: $ROOT_DIR"
-  log "Tools: $SCRIPT_DIR"
+    log "Repository: $ROOT_DIR"
+    log "Tools: $SCRIPT_DIR"
 
-  if has node; then
-    node --version
-  else
-    warn "Node.js is unavailable."
-  fi
+    if has node; then
+        log "Node.js: $(node --version)"
+    else
+        warn "Node.js is unavailable."
+    fi
 
-  if has npm; then
-    npm --version
-  else
-    warn "npm is unavailable."
-  fi
+    if has npm; then
+        log "npm: $(npm --version)"
+    else
+        warn "npm is unavailable."
+    fi
 
-  if has python3; then
-    python3 --version
-  elif has python; then
-    python --version
-  else
-    warn "Python is unavailable."
-  fi
+    if has python3; then
+        log "Python: $(python3 --version)"
+    elif has python; then
+        log "Python: $(python --version)"
+    else
+        warn "Python is unavailable."
+    fi
 
-  if [[ -f "$ROOT_DIR/package.json" ]]; then
-    node - "$ROOT_DIR/package.json" <<'NODE'
-const fs = require("node:fs");
+    if [[ -f "$ROOT_DIR/package.json" ]]; then
+        node --input-type=module - "$ROOT_DIR/package.json" <<'NODE'
+import fs from "node:fs";
 
 try {
-  const pkg = JSON.parse(
-    fs.readFileSync(process.argv[2], "utf8")
-  );
-
-  console.log("Package:", pkg.name || "unnamed");
-  console.log("Version:", pkg.version || "unknown");
-  console.log("Required Node:", pkg.engines?.node || "unspecified");
-  console.log("Package manager:", pkg.packageManager || "unspecified");
-
-  for (const name of ["start", "dev", "test", "check", "check:strict"]) {
-    console.log(
-      `${name}: ${pkg.scripts?.[name] ? "available" : "missing"}`
+    const pkg = JSON.parse(
+        fs.readFileSync(process.argv[2], "utf8")
     );
-  }
+
+    console.log("Package:", pkg.name || "unnamed");
+    console.log("Version:", pkg.version || "unknown");
+    console.log("Required Node:", pkg.engines?.node || "unspecified");
+    console.log("Package manager:", pkg.packageManager || "unspecified");
+
+    for (const name of [
+        "start",
+        "dev",
+        "test",
+        "check",
+        "check:strict"
+    ]) {
+        console.log(
+            `${name}: ${pkg.scripts?.[name] ? "available" : "missing"}`
+        );
+    }
 } catch (error) {
-  console.error("package.json error:", error.message);
-  process.exitCode = 1;
+    console.error("package.json error:", error.message);
+    process.exitCode = 1;
 }
 NODE
-  else
-    warn "package.json not found."
-  fi
+    else
+        warn "package.json not found."
+    fi
 
-  [[ -d "$ROOT_DIR/node_modules" ]] \
-    && log "node_modules exists" \
-    || warn "node_modules is not installed."
+    [[ -d "$ROOT_DIR/node_modules" ]] \
+        && log "node_modules exists." \
+        || warn "node_modules is not installed."
 
-  [[ -f "$ROOT_DIR/package-lock.json" ]] \
-    && log "package-lock.json exists" \
-    || warn "package-lock.json is missing."
+    [[ -f "$ROOT_DIR/package-lock.json" ]] \
+        && log "package-lock.json exists." \
+        || warn "package-lock.json is missing."
 
-  [[ -f "$ROOT_DIR/requirements-dev.txt" ]] \
-    && log "Python development requirements found." \
-    || warn "requirements-dev.txt not found."
+    [[ -f "$ROOT_DIR/requirements-dev.txt" ]] \
+        && log "Python development requirements found." \
+        || warn "requirements-dev.txt not found."
 
-  [[ -f "$ROOT_DIR/pyproject.toml" ]] \
-    && log "pyproject.toml exists." \
-    || true
+    [[ -f "$ROOT_DIR/pyproject.toml" ]] \
+        && log "pyproject.toml exists." \
+        || log "pyproject.toml not found."
 
-  [[ -f "$SCRIPT_DIR/TEST.sh" ]] \
-    && log "TEST.sh exists." \
-    || warn "TEST.sh not found."
+    [[ -f "$SCRIPT_DIR/TEST.sh" ]] \
+        && log "TEST.sh exists." \
+        || warn "TEST.sh not found."
 }
 
+# ------------------------------------------------------------------------------
+# NPM
+# ------------------------------------------------------------------------------
+
 npm_script_exists() {
-  local name="$1"
+    local name="$1"
 
-  [[ -f "$ROOT_DIR/package.json" ]] || return 1
+    [[ -f "$ROOT_DIR/package.json" ]] || return 1
+    has node || return 127
 
-  node - "$ROOT_DIR/package.json" "$name" <<'NODE'
-const fs = require("node:fs");
-const pkg = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-process.exit(pkg.scripts?.[process.argv[3]] ? 0 : 1);
+    node --input-type=module - "$ROOT_DIR/package.json" "$name" <<'NODE'
+import fs from "node:fs";
+
+try {
+    const pkg = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+    process.exit(pkg.scripts?.[process.argv[3]] ? 0 : 1);
+} catch {
+    process.exit(2);
+}
 NODE
 }
 
 run_npm_script() {
-  local name="$1"
+    local name="$1"
 
-  has npm || {
-    error "npm is not installed."
-    return 127
-  }
+    has npm || {
+        error "npm is not installed."
+        return 127
+    }
 
-  [[ -f "$ROOT_DIR/package.json" ]] || {
-    error "package.json not found."
-    return 1
-  }
+    [[ -f "$ROOT_DIR/package.json" ]] || {
+        error "package.json not found."
+        return 1
+    }
 
-  npm_script_exists "$name" || {
-    warn "npm script '$name' is not defined."
-    return 127
-  }
+    npm_script_exists "$name" || {
+        warn "npm script '${name}' is missing or package.json is invalid."
+        return 127
+    }
 
-  (
-    cd "$ROOT_DIR"
-    npm run "$name"
-  )
+    (
+        cd "$ROOT_DIR"
+        npm run "$name"
+    )
 }
+
+# ------------------------------------------------------------------------------
+# PYTHON
+# ------------------------------------------------------------------------------
 
 python_command() {
-  if has python3; then
-    python3 "$@"
-  elif has python; then
-    python "$@"
-  else
-    return 127
-  fi
-}
-
-run_test_runner() {
-  [[ -f "$SCRIPT_DIR/TEST.sh" ]] || {
-    error "tools/TEST.sh not found."
-    return 127
-  }
-
-  bash "$SCRIPT_DIR/TEST.sh" "$@"
-}
-
-run_node_checks() {
-  has node || return 127
-
-  local found=0
-  local failed=0
-
-  while IFS= read -r -d '' file; do
-    found=1
-    log "Checking JavaScript: ${file#"$ROOT_DIR"/}"
-
-    if ! node --check "$file"; then
-      failed=1
-      error "Syntax error: ${file#"$ROOT_DIR"/}"
-      [[ "$FORCE" == true ]] || return 1
+    if has python3; then
+        python3 "$@"
+    elif has python; then
+        python "$@"
+    else
+        error "Python is not installed."
+        return 127
     fi
-  done < <(
-    find "$ROOT_DIR" \
-      -type d \( \
-        -name node_modules -o \
-        -name .git -o \
-        -name .venv -o \
-        -name venv \
-      \) -prune -o \
-      -type f \( \
-        -name '*.js' -o \
-        -name '*.cjs' -o \
-        -name '*.mjs' \
-      \) -print0
-  )
-
-  [[ "$found" == 1 ]] || warn "No JavaScript files found."
-
-  return "$failed"
 }
 
 run_python_syntax() {
-  python_command - <<'PY'
+    python_command - <<'PY'
 import ast
 import pathlib
 import sys
 
 root = pathlib.Path.cwd()
+
 excluded = {
-    ".git", "node_modules", ".venv", "venv",
-    "__pycache__", ".pytest_cache", ".mypy_cache"
+    ".git",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
 }
 
 files = [
-    path for path in root.rglob("*.py")
-    if not any(part in excluded for part in path.parts)
+    path
+    for path in root.rglob("*.py")
+    if not any(part in excluded for part in path.relative_to(root).parts)
 ]
 
 errors = []
 
 for path in files:
     try:
-        ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+        source = path.read_text(encoding="utf-8-sig")
+        ast.parse(source, filename=str(path))
         print(f"[PASS] {path.relative_to(root)}")
     except (SyntaxError, UnicodeError, OSError) as exc:
         errors.append((path, exc))
-        print(f"[FAIL] {path.relative_to(root)}: {exc}", file=sys.stderr)
+        print(
+            f"[FAIL] {path.relative_to(root)}: {exc}",
+            file=sys.stderr
+        )
 
 print(f"Python files checked: {len(files)}")
 print(f"Python syntax errors: {len(errors)}")
@@ -362,244 +420,301 @@ sys.exit(1 if errors else 0)
 PY
 }
 
-run_repair() {
-  log "Starting safe automatic repair operations."
+# ------------------------------------------------------------------------------
+# JAVASCRIPT
+# ------------------------------------------------------------------------------
 
-  run_npm_script lint:python:fix || {
-    [[ "$FORCE" == true ]] || return 1
-    warn "Python lint repair unavailable or unsuccessful."
-  }
+run_node_checks() {
+    has node || {
+        error "Node.js is not installed."
+        return 127
+    }
 
-  run_npm_script format:python || {
-    [[ "$FORCE" == true ]] || return 1
-    warn "Python formatter unavailable or unsuccessful."
-  }
+    local found=0
+    local failed=0
+    local file
 
-  log "Repair operations completed."
-  log "Review the Git diff before committing."
+    while IFS= read -r -d '' file; do
+        found=1
+
+        log "Checking JavaScript: ${file#"$ROOT_DIR"/}"
+
+        if ! node --check "$file"; then
+            failed=1
+            error "Syntax error: ${file#"$ROOT_DIR"/}"
+
+            if [[ "$FORCE" != true ]]; then
+                return 1
+            fi
+        fi
+    done < <(
+        find "$ROOT_DIR" \
+            -type d \( \
+                -name node_modules -o \
+                -name .git -o \
+                -name .venv -o \
+                -name venv -o \
+                -name __pycache__ \
+            \) -prune -o \
+            -type f \( \
+                -name '*.js' -o \
+                -name '*.cjs' -o \
+                -name '*.mjs' \
+            \) -print0
+    )
+
+    [[ "$found" == 1 ]] || warn "No JavaScript files found."
+
+    return "$failed"
 }
+
+# ------------------------------------------------------------------------------
+# TEST RUNNER
+# ------------------------------------------------------------------------------
+
+run_test_runner() {
+    [[ -f "$SCRIPT_DIR/TEST.sh" ]] || {
+        error "tools/TEST.sh not found."
+        return 127
+    }
+
+    bash "$SCRIPT_DIR/TEST.sh" "$@"
+}
+
+# ------------------------------------------------------------------------------
+# REPAIR
+# ------------------------------------------------------------------------------
+
+run_repair() {
+    log "Starting configured repair operations."
+
+    run_step "Python lint repair" run_npm_script lint:python:fix
+    run_step "Python formatting" run_npm_script format:python
+
+    log "Repair operations finished."
+    log "Review all changes with git diff before committing."
+}
+
+# ------------------------------------------------------------------------------
+# INSTALLATION
+# ------------------------------------------------------------------------------
 
 run_install() {
-  has npm || return 127
+    has npm || {
+        error "npm is not installed."
+        return 127
+    }
 
-  [[ -f "$ROOT_DIR/package-lock.json" ]] || {
-    error "package-lock.json is required for reproducible npm ci."
-    return 1
-  }
+    [[ -f "$ROOT_DIR/package-lock.json" ]] || {
+        error "package-lock.json is required for npm ci."
+        return 1
+    }
 
-  if [[ "$NETWORK" == offline ]]; then
-    log "Installing from local npm cache only."
+    if [[ "$NETWORK" == offline ]]; then
+        log "Installing dependencies from local npm cache."
 
-    (
-      cd "$ROOT_DIR"
-      npm ci --offline --no-audit --no-fund
-    )
-  else
-    log "Installing npm dependencies."
+        (
+            cd "$ROOT_DIR"
+            npm ci --offline --no-audit --no-fund
+        )
+    else
+        log "Installing npm dependencies."
 
-    (
-      cd "$ROOT_DIR"
-      npm ci --no-audit --no-fund
-    )
-  fi
+        (
+            cd "$ROOT_DIR"
+            npm ci --no-audit --no-fund
+        )
+    fi
 }
+
+# ------------------------------------------------------------------------------
+# SECURITY AUDIT
+# ------------------------------------------------------------------------------
 
 run_audit() {
-  if [[ "$NETWORK" == offline ]]; then
-    warn "Security audit skipped in offline mode."
-    record_result SKIP "Online dependency security audit"
-    return 0
-  fi
+    if [[ "$NETWORK" == offline ]]; then
+        warn "Online security audit cannot run in offline mode."
+        return 2
+    fi
 
-  run_npm_script check:security
+    run_npm_script check:security
 }
+
+# ------------------------------------------------------------------------------
+# COMPLETE VALIDATION
+# ------------------------------------------------------------------------------
 
 run_all() {
-  log "Starting complete MedOrbits validation."
+    log "Starting complete MedOrbits validation."
 
-  run_step "Repository inspection" check_environment
-  run_step "JavaScript syntax validation" run_node_checks
-  run_step "Python syntax validation" run_python_syntax
+    run_step "Repository inspection" check_environment
+    run_step "JavaScript syntax validation" run_node_checks
+    run_step "Python syntax validation" run_python_syntax
 
-  run_step "JSON validation" run_npm_script check:json
-  run_step "Strict JSON validation" run_npm_script check:json:strict
-  run_step "Repository test suite" run_test_runner
-  run_step "Python tests" run_npm_script check:python
-  run_step "Code lint" run_npm_script lint:python
-  run_step "Python formatting check" run_npm_script format:python:check
-  run_step "Python type checking" run_npm_script typecheck:python
-  run_step "Node dependency check" run_npm_script check:dependencies
-  run_step "Python dependency check" run_npm_script check:dependencies:python
+    run_step "JSON validation" run_npm_script check:json
+    run_step "Strict JSON validation" run_npm_script check:json:strict
+    run_step "Repository test suite" run_test_runner
+    run_step "Python tests" run_npm_script check:python
+    run_step "Python lint" run_npm_script lint:python
+    run_step "Python formatting check" run_npm_script format:python:check
+    run_step "Python type checking" run_npm_script typecheck:python
+    run_step "Node dependency check" run_npm_script check:dependencies
+    run_step "Python dependency check" run_npm_script check:dependencies:python
 
-  if [[ "$AUDIT" == true ]]; then
-    run_step "Security audit" run_audit
-  elif [[ "$NETWORK" == online ]]; then
-    run_step "Security audit" run_audit
-  else
-    skip_step "Security audit (offline or not requested)"
-  fi
+    if [[ "$AUDIT" == true ]]; then
+        run_step "Dependency security audit" run_audit
+    else
+        skip_step "Dependency security audit (use --audit to enable)"
+    fi
 
-  log "Complete validation sequence finished."
+    log "Validation sequence completed."
 }
 
-show_report() {
-  printf '\n'
-  printf '%s\n' "============================================================"
-  printf '%s\n' "MEDORBITS EXECUTION REPORT"
-  printf '%s\n' "============================================================"
-
-  printf 'Passed:  %s\n' "$PASSED"
-  printf 'Failed:  %s\n' "$FAILED"
-  printf 'Skipped: %s\n' "$SKIPPED"
-
-  printf '\nDetailed results:\n'
-
-  local item
-  for item in "${RESULTS[@]}"; do
-    printf '  %s\n' "$item"
-  done
-
-  printf '%s\n' "============================================================"
-
-  if (( FAILED > 0 )); then
-    error "Execution completed with failures."
-    return 1
-  fi
-
-  success "Execution completed without recorded failures."
-  return 0
-}
-
-# ------------------------------------------------------------
-# GLOBAL ARGUMENT PARSING
-# ------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# ARGUMENT PARSING
+# ------------------------------------------------------------------------------
 
 while (($#)); do
-  case "$1" in
-    --force|-f)
-      FORCE=true
-      ;;
-    --offline)
-      NETWORK=offline
-      ;;
-    --online)
-      NETWORK=online
-      ;;
-    --repair)
-      AUTO_REPAIR=true
-      ;;
-    --install)
-      INSTALL_DEPS=true
-      ;;
-    --audit)
-      AUDIT=true
-      ;;
-    --help|-h)
-      COMMAND=help
-      shift
-      break
-      ;;
-    --)
-      shift
-      break
-      ;;
-    -*)
-      die "Unknown option: $1"
-      ;;
-    *)
-      COMMAND="$1"
-      shift
-      break
-      ;;
-  esac
+    case "$1" in
+        --force|-f)
+            FORCE=true
+            ;;
+        --offline)
+            NETWORK=offline
+            ;;
+        --online)
+            NETWORK=online
+            ;;
+        --repair)
+            AUTO_REPAIR=true
+            ;;
+        --install)
+            INSTALL_DEPS=true
+            ;;
+        --audit)
+            AUDIT=true
+            ;;
+        --help|-h)
+            COMMAND=help
+            shift
+            break
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            die "Unknown option: $1"
+            ;;
+        *)
+            COMMAND="$1"
+            shift
+            break
+            ;;
+    esac
 
-  shift
+    shift
 done
 
-require_root
+# ------------------------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------------------------
 
-# ------------------------------------------------------------
-# COMMAND EXECUTION
-# ------------------------------------------------------------
+main() {
+    require_root
 
-case "$COMMAND" in
-  help)
-    usage
-    ;;
+    cd "$ROOT_DIR" || die "Cannot enter repository root."
 
-  check)
-    run_step "Repository inspection" check_environment
-    ;;
+    case "$COMMAND" in
+        help)
+            usage
+            ;;
 
-  all)
-    if [[ "$INSTALL_DEPS" == true ]]; then
-      run_step "Dependency installation" run_install
-    fi
+        check)
+            run_step "Repository inspection" check_environment
+            ;;
 
-    if [[ "$AUTO_REPAIR" == true ]]; then
-      run_step "Automatic code repair" run_repair
-    fi
+        all)
+            if [[ "$INSTALL_DEPS" == true ]]; then
+                run_step "Dependency installation" run_install
+            fi
 
-    run_all
-    ;;
+            if [[ "$AUTO_REPAIR" == true ]]; then
+                run_repair
+            fi
 
-  test)
-    run_step "Repository test suite" run_test_runner "$@"
-    ;;
+            run_all
+            ;;
 
-  test-quick)
-    run_step "Quick repository tests" run_test_runner --quick
-    ;;
+        test)
+            run_step "Repository test suite" run_test_runner "$@"
+            ;;
 
-  test-python)
-    run_step "Python tests" run_test_runner --python-only
-    ;;
+        test-quick)
+            run_step "Quick repository tests" run_test_runner --quick
+            ;;
 
-  test-node)
-    run_step "JavaScript syntax checks" run_node_checks
-    ;;
+        test-python)
+            run_step "Python tests" run_test_runner --python-only
+            ;;
 
-  repair)
-    run_repair
-    ;;
+        test-node)
+            run_step "JavaScript syntax validation" run_node_checks
+            ;;
 
-  install)
-    run_install
-    ;;
+        repair)
+            run_repair
+            ;;
 
-  audit)
-    run_audit
-    ;;
+        install)
+            if [[ "$INSTALL_DEPS" != true ]]; then
+                die "Dependency installation requires --install."
+            fi
+            run_step "Dependency installation" run_install
+            ;;
 
-  start|dev)
-    run_npm_script "$COMMAND"
-    ;;
+        audit)
+            run_step "Dependency security audit" run_audit
+            ;;
 
-  meta-example)
-    [[ -f "$SCRIPT_DIR/meta_ad_creator.py" ]] \
-      || die "meta_ad_creator.py not found."
+        start|dev)
+            run_step "npm ${COMMAND}" run_npm_script "$COMMAND"
+            ;;
 
-    python_command "$SCRIPT_DIR/meta_ad_creator.py" --help
-    ;;
+        meta-example)
+            if [[ ! -f "$SCRIPT_DIR/meta_ad_creator.py" ]]; then
+                die "tools/meta_ad_creator.py not found."
+            fi
 
-  meta-create)
-    [[ -f "$SCRIPT_DIR/meta_ad_creator.py" ]] \
-      || die "meta_ad_creator.py not found."
+            run_step "Meta Ad Creator help" \
+                python_command "$SCRIPT_DIR/meta_ad_creator.py" --help
+            ;;
 
-    exec python_command "$SCRIPT_DIR/meta_ad_creator.py" create "$@"
-    ;;
+        meta-create)
+            if [[ ! -f "$SCRIPT_DIR/meta_ad_creator.py" ]]; then
+                die "tools/meta_ad_creator.py not found."
+            fi
 
-  meta-validate)
-    [[ -f "$SCRIPT_DIR/meta_ad_creator.py" ]] \
-      || die "meta_ad_creator.py not found."
+            run_step "Meta Ad Creator" \
+                python_command "$SCRIPT_DIR/meta_ad_creator.py" create "$@"
+            ;;
 
-    exec python_command "$SCRIPT_DIR/meta_ad_creator.py" validate "$@"
-    ;;
+        meta-validate)
+            if [[ ! -f "$SCRIPT_DIR/meta_ad_creator.py" ]]; then
+                die "tools/meta_ad_creator.py not found."
+            fi
 
-  *)
-    usage >&2
-    die "Unknown command: $COMMAND"
-    ;;
-esac
+            run_step "Meta Ad Creator validation" \
+                python_command "$SCRIPT_DIR/meta_ad_creator.py" validate "$@"
+            ;;
 
-show_report
+        *)
+            usage >&2
+            die "Unknown command: $COMMAND"
+            ;;
+    esac
+
+    show_report
+}
+
+main "$@"

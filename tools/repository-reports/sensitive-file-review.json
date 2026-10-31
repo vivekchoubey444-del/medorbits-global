@@ -1,9 +1,437 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "NOT_PERFORMED",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "reportType": "sensitive-file-review",
+  "reportVersion": "1.0.0",
+  "project": "MedOrbits",
+  "reportPath": "/tools/repository-reports/sensitive-file-review.json",
+  "description": "Security inventory and review of sensitive files, credentials, secrets, private data, and restricted repository resources.",
+  "metadata": {
+    "status": "not-scanned",
+    "generatedAt": null,
+    "lastScannedAt": null,
+    "scannerVersion": "1.0.0",
+    "verifiedAgainstRepository": false,
+    "readOnly": true,
+    "secretValuesStored": false,
+    "notes": [
+      "This is a baseline report template, not evidence of a completed security scan.",
+      "Never store actual secret values, passwords, tokens, private keys, or personal records in this report.",
+      "A detected filename does not prove that its contents are sensitive.",
+      "Classification must be based on file contents, permissions, context, and repository usage."
+    ]
+  },
+  "summary": {
+    "filesScanned": 0,
+    "filesSkipped": 0,
+    "sensitiveFilesDetected": 0,
+    "confirmedSensitiveFiles": 0,
+    "potentialSensitiveFiles": 0,
+    "exposedCredentials": 0,
+    "privateKeysDetected": 0,
+    "personalDataFiles": 0,
+    "databaseBackupsDetected": 0,
+    "publicExposureRisks": 0,
+    "hardcodedSecretsDetected": 0,
+    "untrackedSensitiveFiles": 0,
+    "ignoredSensitiveFiles": 0,
+    "criticalFindings": 0,
+    "highFindings": 0,
+    "mediumFindings": 0,
+    "lowFindings": 0,
+    "reviewRequired": 0,
+    "remediated": 0
+  },
+  "classification": {
+    "critical": {
+      "description": "Confirmed exposed credentials, private keys, production secrets, or highly sensitive records.",
+      "requiresImmediateReview": true
+    },
+    "high": {
+      "description": "Sensitive information accessible to unauthorized users or stored in an unsafe location.",
+      "requiresImmediateReview": true
+    },
+    "medium": {
+      "description": "Potentially sensitive files with unclear access restrictions or storage controls.",
+      "requiresReview": true
+    },
+    "low": {
+      "description": "Restricted or example files that require documentation or permission verification.",
+      "requiresReview": false
+    },
+    "info": {
+      "description": "Informational detection without a confirmed security issue.",
+      "requiresReview": false
+    }
+  },
+  "sensitiveFileCategories": [
+    {
+      "id": "SFR-001",
+      "category": "environment-files",
+      "description": "Environment configuration containing application credentials or deployment settings.",
+      "patterns": [
+        ".env",
+        ".env.*",
+        "*.env",
+        ".envrc"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-002",
+      "category": "private-keys",
+      "description": "Private keys and cryptographic key material.",
+      "patterns": [
+        "*.pem",
+        "*.key",
+        "*.p12",
+        "*.pfx",
+        "*.jks",
+        "*.keystore"
+      ],
+      "severity": "critical",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-003",
+      "category": "credentials",
+      "description": "Passwords, access tokens, API keys, and service credentials.",
+      "patterns": [
+        "*credentials*",
+        "*secrets*",
+        "*token*",
+        "*password*",
+        "*service-account*"
+      ],
+      "severity": "critical",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-004",
+      "category": "database-files",
+      "description": "Database dumps, backups, exports, and local database files.",
+      "patterns": [
+        "*.sql",
+        "*.dump",
+        "*.bak",
+        "*.db",
+        "*.sqlite",
+        "*.sqlite3"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-005",
+      "category": "personal-data",
+      "description": "Files potentially containing identifiable personal or application data.",
+      "patterns": [
+        "*applicants*",
+        "*students*",
+        "*users*",
+        "*customers*",
+        "*personal-data*",
+        "*identity*"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-006",
+      "category": "authentication-data",
+      "description": "Authentication configuration, session secrets, and signing keys.",
+      "patterns": [
+        "*auth*",
+        "*session*",
+        "*jwt*",
+        "*signing-key*",
+        "*oauth*"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-007",
+      "category": "cloud-credentials",
+      "description": "Cloud provider and hosting platform credentials.",
+      "patterns": [
+        "*aws*credentials*",
+        "*gcp*credentials*",
+        "*azure*credentials*",
+        "*cloud-token*",
+        "*deploy-token*"
+      ],
+      "severity": "critical",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-008",
+      "category": "payment-data",
+      "description": "Payment provider credentials, payment exports, and financial records.",
+      "patterns": [
+        "*payment*",
+        "*billing*",
+        "*transaction*",
+        "*invoice-export*",
+        "*gateway-secret*"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-009",
+      "category": "certificates",
+      "description": "TLS certificates, certificate signing requests, and trust stores.",
+      "patterns": [
+        "*.crt",
+        "*.cer",
+        "*.csr",
+        "*.der",
+        "*.p7b",
+        "*.p7c"
+      ],
+      "severity": "medium",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-010",
+      "category": "application-uploads",
+      "description": "Uploaded identity documents, admission records, and supporting attachments.",
+      "patterns": [
+        "uploads/**",
+        "storage/**",
+        "private-uploads/**",
+        "documents/private/**"
+      ],
+      "severity": "high",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-011",
+      "category": "backup-archives",
+      "description": "Archives and backup packages that may contain sensitive application data.",
+      "patterns": [
+        "*.zip",
+        "*.tar",
+        "*.tar.gz",
+        "*.7z",
+        "*.rar",
+        "*.backup"
+      ],
+      "severity": "medium",
+      "contentInspectionRequired": true
+    },
+    {
+      "id": "SFR-012",
+      "category": "logs-and-diagnostics",
+      "description": "Logs and diagnostic exports that may contain credentials or personal data.",
+      "patterns": [
+        "*.log",
+        "*debug*",
+        "*trace*",
+        "*diagnostic*"
+      ],
+      "severity": "medium",
+      "contentInspectionRequired": true
+    }
+  ],
+  "scanConfiguration": {
+    "rootDirectory": ".",
+    "recursive": true,
+    "followSymbolicLinks": false,
+    "includeHiddenFiles": true,
+    "scanGitTrackedFiles": true,
+    "scanGitIgnoredFiles": true,
+    "scanUntrackedFiles": true,
+    "inspectFileNames": true,
+    "inspectFileContents": true,
+    "inspectFilePermissions": true,
+    "inspectGitHistory": false,
+    "maximumFileSizeBytes": 10485760,
+    "maximumArchiveDepth": 3,
+    "excludeDirectories": [
+      ".git/objects",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      "coverage",
+      "dist",
+      "build",
+      ".next",
+      ".cache"
+    ],
+    "excludedFilesRequireSeparateReview": true,
+    "neverPrintSecretValues": true,
+    "neverUploadFileContents": true,
+    "redactDetectedValues": true,
+    "generateChecksums": true
+  },
+  "secretDetection": {
+    "enabled": true,
+    "detect": [
+      "API keys",
+      "access tokens",
+      "refresh tokens",
+      "database connection strings",
+      "password assignments",
+      "private key blocks",
+      "cloud credentials",
+      "JWT signing secrets",
+      "OAuth client secrets",
+      "payment gateway secrets",
+      "webhook signing secrets",
+      "SMTP credentials"
+    ],
+    "useEntropyAnalysis": true,
+    "usePatternMatching": true,
+    "validateAgainstProvider": false,
+    "networkValidationRequiresPermission": true,
+    "redaction": {
+      "enabled": true,
+      "replacement": "[REDACTED]",
+      "showPrefixCharacters": 0,
+      "showSuffixCharacters": 0,
+      "includeSecretLength": false,
+      "includeSecretHash": false
+    }
+  },
+  "repositoryExposureChecks": {
+    "enabled": true,
+    "checks": [
+      {
+        "id": "EXP-001",
+        "name": "sensitive-file-tracked-by-git",
+        "description": "Sensitive file is included in Git tracking.",
+        "severity": "high"
+      },
+      {
+        "id": "EXP-002",
+        "name": "sensitive-file-inside-public-directory",
+        "description": "Potentially sensitive file is located in a publicly served directory.",
+        "severity": "critical"
+      },
+      {
+        "id": "EXP-003",
+        "name": "environment-file-in-repository",
+        "description": "Environment file appears in repository contents or history.",
+        "severity": "high"
+      },
+      {
+        "id": "EXP-004",
+        "name": "unrestricted-upload-directory",
+        "description": "Private uploads may be accessible through public static hosting.",
+        "severity": "critical"
+      },
+      {
+        "id": "EXP-005",
+        "name": "credential-in-source-code",
+        "description": "Credential-like value appears directly in application source.",
+        "severity": "critical"
+      },
+      {
+        "id": "EXP-006",
+        "name": "sensitive-backup-in-public-path",
+        "description": "Backup or database export appears in a public-facing directory.",
+        "severity": "critical"
+      },
+      {
+        "id": "EXP-007",
+        "name": "sensitive-file-committed-to-history",
+        "description": "A sensitive file may exist in previous Git commits.",
+        "severity": "high"
+      },
+      {
+        "id": "EXP-008",
+        "name": "unsafe-file-permissions",
+        "description": "Sensitive file permissions may allow unauthorized access.",
+        "severity": "high"
+      }
+    ]
+  },
   "findings": [],
-  "limitations": [
-    "No secret values were copied into reports; full repository configuration is not included."
-  ]
+  "reviewRecords": [],
+  "excludedFindings": [],
+  "scanErrors": [],
+  "falsePositivePolicy": {
+    "enabled": true,
+    "requireReviewBeforeDismissal": true,
+    "requireReason": true,
+    "preserveDismissalHistory": true,
+    "neverDismissConfirmedExposedCredentialsAutomatically": true
+  },
+  "remediationPolicy": {
+    "automaticRemediationEnabled": false,
+    "requireExplicitApproval": true,
+    "requireBackup": true,
+    "requireSecurityReview": true,
+    "allowedActions": [
+      "recommend-moving-file-out-of-public-directory",
+      "recommend-adding-safe-ignore-rule",
+      "recommend-secret-rotation",
+      "recommend-access-restriction",
+      "recommend-history-cleanup",
+      "generate-redacted-report",
+      "generate-review-patch"
+    ],
+    "forbiddenActions": [
+      "print-secret-values",
+      "copy-secrets-into-reports",
+      "automatically-delete-sensitive-files",
+      "automatically-rotate-production-credentials",
+      "automatically-rewrite-git-history",
+      "automatically-change-production-permissions",
+      "upload-private-files-to-external-services",
+      "modify-production-database"
+    ],
+    "important": "Adding a sensitive file to .gitignore does not remove it from existing Git history or previously published commits."
+  },
+  "approval": {
+    "requiredForRemediation": true,
+    "approvalMustReferenceFindingId": true,
+    "requireDiffPreview": true,
+    "requireImpactAssessment": true,
+    "recordApprover": true,
+    "recordTimestamp": true
+  },
+  "reporting": {
+    "includeFilePaths": true,
+    "includeLineNumbers": true,
+    "includeDetectionRule": true,
+    "includeSeverity": true,
+    "includeConfidence": true,
+    "includeRecommendedAction": true,
+    "includeRedactedEvidence": true,
+    "excludeRawSecretValues": true,
+    "excludePersonalRecordContents": true
+  },
+  "integration": {
+    "consumedBy": [
+      "/tools/repository-reports/summary.json",
+      "/tools/repository-reports/repair-manifest.json",
+      "/tools/repository-reports/file-inventory.json",
+      "/tools/repository-reports/parse-warnings.json"
+    ],
+    "updateRepositorySummaryAfterScan": true,
+    "preservePreviousFindings": true,
+    "neverMarkUnscannedFilesAsSafe": true
+  },
+  "outputs": {
+    "jsonReport": "/tools/repository-reports/sensitive-file-review.json",
+    "csvReport": "/tools/repository-reports/sensitive-file-review.csv",
+    "logFile": "/tools/repository-reports/logs/sensitive-file-review.log",
+    "redactedEvidenceDirectory": "/tools/repository-reports/evidence/sensitive-files"
+  },
+  "exitPolicy": {
+    "success": 0,
+    "sensitiveFindingDetected": 1,
+    "criticalExposureDetected": 2,
+    "scannerFailure": 3,
+    "strictModeUnreviewedFiles": 4,
+    "forceMode": "Continue independent scans after recoverable errors while preserving a non-zero final status for unresolved critical exposures."
+  }
 }

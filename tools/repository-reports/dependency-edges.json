@@ -1,10 +1,379 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "PARTIAL",
-  "total_edges": null,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Dependency Edges Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Machine-readable graph of dependencies and relationships between MedOrbits source files, packages, modules, services, workflows, APIs, and external systems."
+  },
+  "summary": {
+    "totalEdges": 0,
+    "verifiedEdges": 0,
+    "unverifiedEdges": 0,
+    "brokenEdges": 0,
+    "ignoredEdges": 0,
+    "cyclicEdges": 0,
+    "externalDependencies": 0,
+    "internalDependencies": 0,
+    "criticalDependencies": 0,
+    "highRiskDependencies": 0
+  },
+  "graph": {
+    "directed": true,
+    "multigraph": true,
+    "orientation": "source-to-target",
+    "edgeIdentity": "edgeId",
+    "nodeIdentity": "nodeId",
+    "allowSelfLoops": false,
+    "detectCircularDependencies": true,
+    "detectTransitiveDependencies": true,
+    "includeOptionalDependencies": true,
+    "includeDevelopmentDependencies": true
+  },
+  "nodeTypes": [
+    "application",
+    "module",
+    "package",
+    "file",
+    "directory",
+    "service",
+    "api-endpoint",
+    "database",
+    "workflow",
+    "github-action",
+    "configuration",
+    "external-system",
+    "asset",
+    "unknown"
+  ],
+  "relationshipTypes": [
+    "imports",
+    "requires",
+    "exports",
+    "calls",
+    "uses",
+    "references",
+    "loads",
+    "connects-to",
+    "configures",
+    "tests",
+    "builds",
+    "deploys",
+    "generates",
+    "depends-on"
+  ],
+  "dependencyScopes": [
+    "runtime",
+    "development",
+    "build",
+    "test",
+    "security",
+    "ci",
+    "deployment",
+    "optional",
+    "unknown"
+  ],
+  "nodes": [],
   "edges": [],
-  "limitations": [
-    "Static dependencies across the full repository cannot be established from tools.zip alone."
-  ]
+  "edgeSchema": {
+    "required": [
+      "edgeId",
+      "source",
+      "target",
+      "relationship",
+      "scope",
+      "status"
+    ],
+    "properties": {
+      "edgeId": {
+        "type": "string",
+        "description": "Unique and stable dependency edge identifier."
+      },
+      "source": {
+        "type": "string",
+        "description": "Source node ID."
+      },
+      "target": {
+        "type": "string",
+        "description": "Target node ID."
+      },
+      "relationship": {
+        "type": "string",
+        "enum": [
+          "imports",
+          "requires",
+          "exports",
+          "calls",
+          "uses",
+          "references",
+          "loads",
+          "connects-to",
+          "configures",
+          "tests",
+          "builds",
+          "deploys",
+          "generates",
+          "depends-on"
+        ]
+      },
+      "scope": {
+        "type": "string",
+        "enum": [
+          "runtime",
+          "development",
+          "build",
+          "test",
+          "security",
+          "ci",
+          "deployment",
+          "optional",
+          "unknown"
+        ]
+      },
+      "versionConstraint": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "optional": {
+        "type": "boolean"
+      },
+      "cyclic": {
+        "type": "boolean"
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low",
+          "unknown"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "unverified",
+          "broken",
+          "ignored"
+        ]
+      },
+      "sourceFile": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "sourceLine": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "firstDetected": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastChecked": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  },
+  "nodeSchema": {
+    "required": [
+      "nodeId",
+      "type",
+      "name",
+      "status"
+    ],
+    "properties": {
+      "nodeId": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "application",
+          "module",
+          "package",
+          "file",
+          "directory",
+          "service",
+          "api-endpoint",
+          "database",
+          "workflow",
+          "github-action",
+          "configuration",
+          "external-system",
+          "asset",
+          "unknown"
+        ]
+      },
+      "name": {
+        "type": "string"
+      },
+      "path": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "version": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "external": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "unverified",
+          "missing",
+          "ignored"
+        ]
+      },
+      "description": {
+        "type": "string"
+      }
+    }
+  },
+  "analysis": {
+    "circularDependencies": [],
+    "orphanNodes": [],
+    "unresolvedDependencies": [],
+    "highFanInNodes": [],
+    "highFanOutNodes": [],
+    "transitiveDependencies": [],
+    "duplicateDependencies": [],
+    "versionConflicts": []
+  },
+  "riskAssessment": {
+    "enabled": true,
+    "rules": [
+      {
+        "id": "DEP-R001",
+        "name": "Missing internal dependency",
+        "severity": "high",
+        "description": "An internal dependency points to a file or module that does not exist."
+      },
+      {
+        "id": "DEP-R002",
+        "name": "Circular dependency",
+        "severity": "medium",
+        "description": "A group of modules forms a circular dependency."
+      },
+      {
+        "id": "DEP-R003",
+        "name": "Critical module dependency",
+        "severity": "critical",
+        "description": "A missing dependency affects application startup, authentication, authorization, or database access."
+      },
+      {
+        "id": "DEP-R004",
+        "name": "Version conflict",
+        "severity": "high",
+        "description": "Dependency declarations or lockfile resolutions conflict."
+      },
+      {
+        "id": "DEP-R005",
+        "name": "Unresolved external dependency",
+        "severity": "medium",
+        "description": "An external package or service cannot be resolved."
+      },
+      {
+        "id": "DEP-R006",
+        "name": "Unused dependency",
+        "severity": "low",
+        "description": "A declared dependency has no detected usage."
+      },
+      {
+        "id": "DEP-R007",
+        "name": "Unexpected dependency scope",
+        "severity": "medium",
+        "description": "A dependency appears in an inappropriate runtime or development scope."
+      }
+    ]
+  },
+  "generation": {
+    "automatic": false,
+    "sourceOfTruth": [
+      "package.json",
+      "package-lock.json",
+      "requirements.txt",
+      "requirements-dev.txt",
+      "pyproject.toml",
+      "Python import statements",
+      "JavaScript import statements",
+      "GitHub Actions workflows",
+      "Application configuration"
+    ],
+    "includeHiddenFiles": true,
+    "includeNodeModules": false,
+    "includeVirtualEnvironments": false,
+    "includeGeneratedFiles": false,
+    "includeExternalPackages": true,
+    "includeWorkflowDependencies": true,
+    "includeRuntimeReferences": true,
+    "includeDevelopmentReferences": true
+  },
+  "outputs": {
+    "json": "tools/repository-reports/dependency-edges.json",
+    "csv": "tools/repository-reports/dependency-edges.csv",
+    "graph": "tools/repository-reports/dependency-graph.dot",
+    "markdown": "tools/repository-reports/dependency-summary.md"
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "sourceFilesScanned": 0,
+    "nodesGenerated": 0,
+    "edgesGenerated": 0,
+    "warnings": [
+      "This is an initial dependency graph configuration, not a verified dependency inventory.",
+      "An empty nodes or edges array does not prove that the repository has no dependencies.",
+      "All node IDs referenced by edges must exist in the nodes array.",
+      "External dependencies must be distinguished from internal repository modules.",
+      "Circular dependency detection must operate on the actual directed graph.",
+      "Dependency relationships should be regenerated from source files and manifests."
+    ]
+  },
+  "repairPolicy": {
+    "automaticDependencyRemoval": false,
+    "automaticVersionChanges": false,
+    "automaticImportRewrites": false,
+    "automaticFileDeletion": false,
+    "automaticFileCreation": false,
+    "requireHumanReview": true,
+    "requireGitDiffReview": true,
+    "requirePostRepairValidation": true
+  }
 }

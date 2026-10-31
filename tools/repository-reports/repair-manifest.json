@@ -1,71 +1,383 @@
+
 {
-  "version": "1.0.0",
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "uploaded tools.zip archive only",
-  "repository_root": "NOT PROVIDED: archive contains tools bundle, not repository root",
-  "mode": "targeted-safe-repair",
-  "source_files_modified": [
-    "silent-wrapler.sh",
-    "repository-reports/README.md",
-    "repository-reports/unresolved-references-2.json",
-    "UPDATE.sh"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifestType": "repository-repair-manifest",
+  "manifestVersion": "1.0.0",
+  "project": "MedOrbits",
+  "manifestPath": "/tools/repository-reports/repair-manifest.json",
+  "description": "Central repair manifest for repository diagnostics, proposed fixes, approved changes, validation, and rollback tracking.",
+  "metadata": {
+    "status": "not-initialized",
+    "generatedAt": null,
+    "updatedAt": null,
+    "verifiedAgainstRepository": false,
+    "executionMode": "dry-run",
+    "readOnlyByDefault": true,
+    "notes": [
+      "This is a repair manifest template, not a record of completed repairs.",
+      "No source files are modified by creating or validating this manifest.",
+      "Repairs require explicit approval before execution.",
+      "Force mode may continue after failures but must never bypass safety controls."
+    ]
+  },
+  "summary": {
+    "totalRepairs": 0,
+    "pending": 0,
+    "approved": 0,
+    "rejected": 0,
+    "inProgress": 0,
+    "completed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "rolledBack": 0,
+    "requiringReview": 0,
+    "filesAffected": 0,
+    "validationFailures": 0
+  },
+  "execution": {
+    "defaultMode": "dry-run",
+    "supportedModes": [
+      "dry-run",
+      "preview",
+      "approved-repair",
+      "verification",
+      "rollback"
+    ],
+    "forceMode": {
+      "enabled": false,
+      "meaning": "Continue processing independent approved repair tasks after an individual task fails.",
+      "neverBypass": [
+        "approval requirements",
+        "backup requirements",
+        "protected file restrictions",
+        "secret protection",
+        "validation requirements",
+        "rollback safeguards"
+      ],
+      "preserveFailureStatus": true
+    },
+    "offlineMode": {
+      "supported": true,
+      "allowNetworkRequests": false,
+      "allowExternalPackageDownloads": false,
+      "useLocalToolsOnly": true,
+      "reportUnavailableDependencies": true
+    },
+    "onlineMode": {
+      "supported": true,
+      "allowNetworkRequests": false,
+      "requireExplicitNetworkPermission": true,
+      "requireApprovedExternalHosts": true
+    },
+    "parallelExecution": {
+      "enabled": false,
+      "maximumWorkers": 1,
+      "allowParallelChangesToSameFile": false
+    },
+    "timeoutSeconds": 300,
+    "maximumRetries": 1,
+    "stopOnCriticalFailure": true
+  },
+  "repairStatuses": [
+    "pending",
+    "requires-review",
+    "approved",
+    "rejected",
+    "in-progress",
+    "completed",
+    "failed",
+    "skipped",
+    "rolled-back"
   ],
-  "files_created": [
-    "silent-wrapper.sh"
+  "repairCategories": [
+    "syntax",
+    "configuration",
+    "imports",
+    "references",
+    "routes",
+    "navigation",
+    "assets",
+    "dependencies",
+    "security",
+    "accessibility",
+    "database",
+    "environment",
+    "documentation",
+    "formatting",
+    "tests",
+    "build",
+    "deployment-configuration",
+    "other"
   ],
-  "files_preserved": [
-    "ENFORCE.sh (reviewed; no __pycache__ deletion command found in supplied version)"
+  "priorityLevels": {
+    "critical": {
+      "description": "Confirmed issue that prevents safe application execution or exposes a serious security risk.",
+      "requiresReview": true
+    },
+    "high": {
+      "description": "Confirmed issue that breaks a major application workflow.",
+      "requiresReview": true
+    },
+    "medium": {
+      "description": "Issue affecting functionality, reliability, or maintainability.",
+      "requiresReview": true
+    },
+    "low": {
+      "description": "Non-blocking improvement or consistency correction.",
+      "requiresReview": false
+    },
+    "info": {
+      "description": "Optional recommendation without an established defect.",
+      "requiresReview": false
+    }
+  },
+  "repairRecordSchema": {
+    "id": "FIX-000001",
+    "title": "Example repair title",
+    "description": "Describe the confirmed repository issue.",
+    "category": "syntax",
+    "priority": "medium",
+    "status": "pending",
+    "sourceFinding": {
+      "report": null,
+      "findingId": null,
+      "evidence": null
+    },
+    "target": {
+      "file": null,
+      "lineStart": null,
+      "lineEnd": null,
+      "symbol": null
+    },
+    "proposedChange": {
+      "operation": "replace",
+      "description": null,
+      "patchFile": null,
+      "expectedBefore": null,
+      "expectedAfter": null,
+      "changes": []
+    },
+    "approval": {
+      "required": true,
+      "approved": false,
+      "approvedBy": null,
+      "approvedAt": null,
+      "approvalReference": null
+    },
+    "backup": {
+      "required": true,
+      "created": false,
+      "path": null,
+      "checksumBefore": null,
+      "checksumAfter": null
+    },
+    "validation": {
+      "required": true,
+      "executed": false,
+      "passed": false,
+      "commands": [],
+      "results": [],
+      "verifiedAt": null
+    },
+    "rollback": {
+      "available": false,
+      "executed": false,
+      "reason": null,
+      "restoredChecksum": null
+    },
+    "executionMetadata": {
+      "startedAt": null,
+      "completedAt": null,
+      "durationMilliseconds": null,
+      "exitCode": null,
+      "error": null
+    },
+    "tags": []
+  },
+  "repairs": [],
+  "approvalPolicy": {
+    "requireExplicitApproval": true,
+    "approvalMustMatchRepairId": true,
+    "approvalExpires": false,
+    "requireDiffPreview": true,
+    "requireImpactAssessment": true,
+    "requireBackupBeforeModification": true,
+    "requirePostRepairValidation": true,
+    "allowSelfApproval": false,
+    "approvalRecordRequired": true
+  },
+  "protectedPaths": {
+    "alwaysProtected": [
+      ".git/**",
+      ".env",
+      ".env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/*.p12",
+      "**/*.pfx",
+      "**/credentials/**",
+      "**/secrets/**"
+    ],
+    "restrictedPaths": [
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "database/migrations/**",
+      "node/database/migrations/**",
+      "uploads/**",
+      "storage/**",
+      "backups/**",
+      "LICENSE",
+      "NOTICE"
+    ],
+    "rules": [
+      "Never overwrite secrets or credentials.",
+      "Never delete Git history or repository metadata.",
+      "Never rewrite database migrations without explicit approval.",
+      "Never regenerate lockfiles as an incidental repair.",
+      "Never overwrite user-created content without a reviewed diff.",
+      "Never modify files outside the repository root."
+    ]
+  },
+  "backupPolicy": {
+    "enabled": true,
+    "requiredBeforeModification": true,
+    "directory": "/tools/repository-reports/backups",
+    "preserveOriginalFilename": true,
+    "includeTimestamp": true,
+    "includeChecksum": true,
+    "verifyBackup": true,
+    "overwriteExistingBackups": false,
+    "excludeSecrets": true,
+    "retention": {
+      "enabled": false,
+      "maximumAgeDays": null,
+      "automaticDeletion": false
+    }
+  },
+  "rollbackPolicy": {
+    "enabled": true,
+    "requireVerifiedBackup": true,
+    "requireExplicitApproval": true,
+    "verifyRestoredChecksum": true,
+    "rollbackOnValidationFailure": false,
+    "preserveFailedRepairEvidence": true,
+    "neverUseGitReset": true,
+    "neverUseGitClean": true,
+    "neverDiscardUncommittedChanges": true
+  },
+  "validationPolicy": {
+    "runAfterEveryApprovedRepair": true,
+    "runRelatedTests": true,
+    "runSyntaxChecks": true,
+    "runConfigurationChecks": true,
+    "runSecurityChecks": true,
+    "runBuildChecksWhenAvailable": true,
+    "requireCleanDiffReview": true,
+    "requireNoNewErrors": true,
+    "compareBeforeAndAfter": true,
+    "validationFailureAction": "mark-failed-and-preserve-evidence"
+  },
+  "sourceReports": [
+    "/tools/repository-reports/summary.json",
+    "/tools/repository-reports/parse-warnings.json",
+    "/tools/repository-reports/references.json",
+    "/tools/repository-reports/broken-references.json",
+    "/tools/repository-reports/unresolved-references.json",
+    "/tools/repository-reports/conflict-markers.json",
+    "/tools/repository-reports/duplicate-findings.json",
+    "/tools/repository-reports/dependency-edges.json",
+    "/tools/repository-reports/file-inventory.json",
+    "/tools/repository-reports/folder-index-map.json",
+    "/tools/repository-reports/page-connection-suggestions.json"
   ],
-  "repairs_applied": [
-    "Replaced nonexistent tools/check_repository.py example with existing medorbits_repo_toolkit.py validate command.",
-    "Added correctly spelled silent-wrapper.sh compatibility entry point while preserving silent-wrapler.sh.",
-    "Corrected unsupported Unicode-dash command examples in report documentation.",
-    "Marked unresolved-references-2.json explicitly as a pending template with unknown count until a real scan runs.",
-    "Corrected UPDATE.sh self-documentation filename."
-  ],
-  "validation_commands": [
+  "repairWorkflow": [
     {
-      "command": "compile(source, filename, \"exec\") for supplied Python files",
-      "status": "PASS",
-      "exit_code": 0
+      "step": 1,
+      "name": "discover",
+      "action": "Read available repository reports and identify confirmed findings."
     },
     {
-      "command": "bash -n on all supplied shell scripts",
-      "status": "PASS",
-      "exit_code": 0
+      "step": 2,
+      "name": "classify",
+      "action": "Assign category, severity, affected files, and dependency impact."
     },
     {
-      "command": "node --check on all supplied JavaScript files",
-      "status": "PASS",
-      "exit_code": 0
+      "step": 3,
+      "name": "propose",
+      "action": "Generate a proposed change and a reviewable patch."
     },
     {
-      "command": "json.loads on supplied and generated JSON files",
-      "status": "PASS",
-      "exit_code": 0
+      "step": 4,
+      "name": "preview",
+      "action": "Display the proposed diff and affected-file list."
+    },
+    {
+      "step": 5,
+      "name": "approve",
+      "action": "Require explicit approval for the specific repair."
+    },
+    {
+      "step": 6,
+      "name": "backup",
+      "action": "Create and verify backups before modifying files."
+    },
+    {
+      "step": 7,
+      "name": "execute",
+      "action": "Apply only the approved patch within the repository root."
+    },
+    {
+      "step": 8,
+      "name": "validate",
+      "action": "Run relevant syntax, reference, security, and test checks."
+    },
+    {
+      "step": 9,
+      "name": "record",
+      "action": "Record the result, checksums, logs, and affected files."
+    },
+    {
+      "step": 10,
+      "name": "rollback",
+      "action": "Restore from a verified backup only when explicitly approved."
     }
   ],
-  "limitations": [
-    "Only tools.zip was provided. Full website folders, package manifests, route files outside this archive, Git status, lockfiles, tests, and deployment configuration could not be inspected.",
-    "No automatic source-code generation or destructive operations were performed."
-  ],
-  "reports_written": [
-    "repository-reports/summary.json",
-    "repository-reports/file-inventory.json",
-    "repository-reports/file-inventory.csv",
-    "repository-reports/broken-references.json",
-    "repository-reports/broken-references.csv",
-    "repository-reports/unresolved-references.json",
-    "repository-reports/unresolved-references-2.json",
-    "repository-reports/dependency-edges.json",
-    "repository-reports/dependency-edges.csv",
-    "repository-reports/api-routes.json",
-    "repository-reports/conflict-markers.json",
-    "repository-reports/parse-warnings.json",
-    "repository-reports/page-connection-suggestions.json",
-    "repository-reports/duplicate-findings.json",
-    "repository-reports/folder-index-map.json",
-    "repository-reports/repair-manifest.json",
-    "repository-reports/sensitive-file-review.json"
-  ]
+  "logging": {
+    "enabled": true,
+    "directory": "/tools/repository-reports/logs",
+    "manifestLog": "/tools/repository-reports/logs/repair-manifest.log",
+    "recordSuccessfulRepairs": true,
+    "recordFailedRepairs": true,
+    "recordSkippedRepairs": true,
+    "recordApprovals": true,
+    "recordChecksums": true,
+    "redactSecrets": true
+  },
+  "integration": {
+    "updateRepositorySummary": true,
+    "updateFileInventory": true,
+    "updateReferenceReports": true,
+    "preserveOriginalFindings": true,
+    "preserveRepairHistory": true,
+    "neverMarkUnverifiedRepairAsCompleted": true
+  },
+  "outputs": {
+    "manifest": "/tools/repository-reports/repair-manifest.json",
+    "repairPlan": "/tools/repository-reports/repair-plan.json",
+    "repairHistory": "/tools/repository-reports/repair-history.json",
+    "repairLog": "/tools/repository-reports/logs/repair-manifest.log",
+    "patchDirectory": "/tools/repository-reports/patches",
+    "backupDirectory": "/tools/repository-reports/backups"
+  },
+  "exitPolicy": {
+    "success": 0,
+    "pendingApproval": 0,
+    "repairFailure": 1,
+    "validationFailure": 2,
+    "backupFailure": 3,
+    "approvalFailure": 4,
+    "manifestInvalid": 5,
+    "forceMode": "Continue independent approved tasks after recoverable failures, but never bypass approval, backup, validation, or protected-path restrictions."
+  }
 }

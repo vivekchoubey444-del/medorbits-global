@@ -1,7 +1,291 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "PASS",
-  "total_findings": 0,
-  "findings": []
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Conflict Markers Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Repository-wide detection and tracking of unresolved Git merge-conflict markers and related conflict remnants."
+  },
+  "summary": {
+    "filesScanned": 0,
+    "filesWithConflicts": 0,
+    "totalConflicts": 0,
+    "unresolvedConflicts": 0,
+    "resolvedConflicts": 0,
+    "ignoredConflicts": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "scanConfiguration": {
+    "repositoryRoot": ".",
+    "recursive": true,
+    "includeHidden": true,
+    "followSymbolicLinks": false,
+    "scanTrackedFiles": true,
+    "scanUntrackedFiles": true,
+    "scanStagedFiles": true,
+    "scanUnstagedFiles": true,
+    "maximumFileSizeMB": 25,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      "coverage",
+      "dist",
+      "build"
+    ],
+    "ignoreFiles": [
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "composer.lock"
+    ],
+    "binaryFileDetection": true,
+    "detectNestedConflicts": true,
+    "detectDiff3Markers": true,
+    "detectCustomMarkers": false,
+    "detectIncompleteConflictBlocks": true
+  },
+  "markerDefinitions": {
+    "start": {
+      "marker": "<<<<<<<",
+      "description": "Begins a Git merge-conflict section."
+    },
+    "base": {
+      "marker": "|||||||",
+      "description": "Optional common-ancestor section used by diff3 conflict style."
+    },
+    "separator": {
+      "marker": "=======",
+      "description": "Separates conflicting changes."
+    },
+    "end": {
+      "marker": ">>>>>>>",
+      "description": "Ends a Git merge-conflict section."
+    }
+  },
+  "conflictTypes": [
+    "standard",
+    "diff3",
+    "nested",
+    "incomplete",
+    "malformed",
+    "custom"
+  ],
+  "severityLevels": {
+    "critical": {
+      "priority": 1,
+      "description": "Conflict markers in production entry points, authentication, authorization, security, or database migration files."
+    },
+    "high": {
+      "priority": 2,
+      "description": "Conflict markers in active application code, API routes, controllers, services, and deployment configuration."
+    },
+    "medium": {
+      "priority": 3,
+      "description": "Conflict markers in tests, scripts, build configuration, and application documentation."
+    },
+    "low": {
+      "priority": 4,
+      "description": "Conflict markers in archived or explicitly excluded reference material."
+    }
+  },
+  "statusDefinitions": {
+    "open": "Conflict markers have been detected and require review.",
+    "resolved": "The conflict has been manually resolved and verified.",
+    "ignored": "The marker is intentional and has an approved explanation.",
+    "unverified": "The finding has not been reviewed.",
+    "false-positive": "The detected marker is legitimate file content rather than a merge conflict."
+  },
+  "conflicts": [],
+  "conflictSchema": {
+    "required": [
+      "conflictId",
+      "file",
+      "startLine",
+      "type",
+      "severity",
+      "status"
+    ],
+    "properties": {
+      "conflictId": {
+        "type": "string",
+        "description": "Stable unique identifier for the conflict."
+      },
+      "file": {
+        "type": "string",
+        "description": "Repository-relative path of the affected file."
+      },
+      "startLine": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "separatorLine": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "baseLine": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "endLine": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "diff3",
+          "nested",
+          "incomplete",
+          "malformed",
+          "custom"
+        ]
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "resolved",
+          "ignored",
+          "unverified",
+          "false-positive"
+        ]
+      },
+      "startMarker": {
+        "type": "string"
+      },
+      "separatorMarker": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "endMarker": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "oursPreview": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "theirsPreview": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "detectedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolvedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "resolution": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "scanBinaryFiles": false,
+    "scanGitMetadata": false,
+    "scanGeneratedFiles": false,
+    "preserveExistingFindings": true,
+    "deduplicate": true,
+    "stableConflictIds": true,
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/conflict-markers.csv",
+    "jsonOutput": "tools/repository-reports/conflict-markers.json",
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "repairPolicy": {
+    "automaticRepair": false,
+    "automaticDeletion": false,
+    "automaticOverwrite": false,
+    "automaticBranchSelection": false,
+    "automaticConflictResolution": false,
+    "requireHumanReview": true,
+    "requireGitDiffReview": true,
+    "requirePostRepairScan": true,
+    "preserveBothVersionsUntilReviewed": true,
+    "createBackupBeforeApprovedRepair": true
+  },
+  "gitIntegration": {
+    "detectMergeInProgress": true,
+    "detectRebaseInProgress": true,
+    "detectCherryPickInProgress": true,
+    "detectUnmergedIndexEntries": true,
+    "commands": {
+      "workingTreeStatus": "git status --short",
+      "unmergedFiles": "git diff --name-only --diff-filter=U",
+      "unmergedStagedFiles": "git diff --cached --name-only --diff-filter=U",
+      "conflictMarkerSearch": "git grep -n -E '^(<<<<<<< |[|]{7} |=======|>>>>>>> )' -- ."
+    }
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "filesScanned": 0,
+    "warnings": [
+      "This is an initial report configuration, not a verified conflict scan.",
+      "An empty conflicts array does not prove the repository is conflict-free.",
+      "Conflict markers may appear intentionally in documentation and test fixtures.",
+      "Git index conflicts and textual conflict markers are separate conditions.",
+      "Never automatically choose one side of a conflict without reviewing both versions."
+    ]
+  }
 }

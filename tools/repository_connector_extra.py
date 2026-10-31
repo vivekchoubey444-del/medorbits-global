@@ -1,51 +1,51 @@
 
 #!/usr/bin/env python3
-"""
-MedOrbits Reference-Driven Asset Collector and Site Builder
-==========================================================
+“””
+===============================================================================
+MedOrbits Extra Repository Connector
+File: tools/repository_connector_extra.py
+Version: 1.0.1
+Python: 3.10+
 
-File:
-    tools/repository_connector_extra.py
+PURPOSE
+    Extended, read-only repository analysis independent of
+    tools/repository_connector.py.
 
-Supported:
-    HTML, HTM, CSS, JavaScript, TypeScript, JSON, JSONL, XML,
-    Markdown, CSV, YAML, PDF, images, Word documents, spreadsheets,
-    presentations, text documents, fonts, audio, video and archives.
+FEATURES
+    - File inventory and SHA-256 checksums.
+    - HTML, CSS, JavaScript, Python and Markdown reference extraction.
+    - Dependency edge reporting.
+    - Broken and unresolved reference detection.
+    - Express-style API route discovery.
+    - Git conflict-marker detection without executing Git.
+    - Advisory HTML connection suggestions.
+    - JSON and CSV report generation.
+    - Hidden-file scanning option.
+    - Dry-run and strict modes.
 
-Capabilities:
-    - Discover existing repository files.
-    - Extract references from HTML, CSS, JavaScript and JSON.
-    - Resolve references to exact repository-relative destinations.
-    - Find candidate assets in an optional source directory.
-    - Copy matching assets only to missing destinations.
-    - Build a JSON asset catalogue.
-    - Build a Markdown reference report.
-    - Validate JSON files.
-    - Report missing and ambiguous assets.
-    - Never overwrite existing destination files.
-    - Never delete source files.
-    - Never execute discovered scripts.
-    - No network access.
+SAFETY
+    - Does not edit or delete source files.
+    - Does not execute repository scripts.
+    - Does not execute Git commands.
+    - Does not install dependencies.
+    - Does not automatically apply suggested HTML changes.
+    - Does not follow symbolic links.
+    - Skips large files above the configured size limit.
 
-Default mode is read-only.
+REPORT DIRECTORY
+    tools/repository-reports/
 
-Examples:
-    python tools/repository_connector_extra.py --report
+USAGE
+    python tools/repository_connector_extra.py
+    python tools/repository_connector_extra.py —root .
+    python tools/repository_connector_extra.py —dry-run
+    python tools/repository_connector_extra.py —include-hidden
+    python tools/repository_connector_extra.py —show-conflicts
+    python tools/repository_connector_extra.py —strict
+    python tools/repository_connector_extra.py —json-summary
 
-    python tools/repository_connector_extra.py --all
-
-    python tools/repository_connector_extra.py \
-        --source-dir incoming-documents --all
-
-    python tools/repository_connector_extra.py \
-        --source-dir incoming-documents --collect --apply
-
-    python tools/repository_connector_extra.py \
-        --source-dir incoming-documents --all --apply
-
-    python tools/repository_connector_extra.py \
-        --root . --output-dir storage/repository-reports --all
-"""
+===============================================================================
+“””
 
 from __future__ import annotations
 
@@ -55,837 +55,1473 @@ import hashlib
 import json
 import os
 import re
-import shutil
+import stat
 import sys
 
-from collections import Counter, defaultdict
+from collections import defaultdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from html.parser import HTMLParser
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import Any
 from urllib.parse import unquote, urlsplit
 
 
-VERSION = "2.0.0"
-MAX_FILES = 100_000
-MAX_FILE_BYTES = 100 * 1024 * 1024
+VERSION = “1.0.1”
 
-EXCLUDED_DIRS = {
-    ".git", ".hg", ".svn", ".venv", "venv",
-    "node_modules", "__pycache__", ".next", ".nuxt",
-    "dist", "build", "coverage", "vendor",
+REPORT_DIRECTORY = Path(“tools/repository-reports”)
+
+SKIP_DIRS = {
+    “.git”,
+    “.hg”,
+    “.svn”,
+    “.idea”,
+    “.vscode”,
+    “.venv”,
+    “venv”,
+    “node_modules”,
+    “__pycache__”,
+    “.pytest_cache”,
+    “.mypy_cache”,
+    “.ruff_cache”,
+    “coverage”,
+    “dist”,
+    “build”,
+    “vendor”,
+    “repository-reports”,
 }
 
-# Inventory only. These extensions are not automatically executed.
-SUPPORTED_EXTENSIONS = {
-    ".html", ".htm", ".css", ".js", ".mjs", ".cjs",
-    ".ts", ".tsx", ".jsx", ".json", ".jsonl", ".xml",
-    ".md", ".txt", ".csv", ".yaml", ".yml", ".toml",
-    ".py", ".sh", ".pdf",
-    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
-    ".ico", ".avif", ".bmp", ".tif", ".tiff",
-    ".doc", ".docx", ".odt", ".rtf",
-    ".xls", ".xlsx", ".ods", ".ppt", ".pptx", ".odp",
-    ".woff", ".woff2", ".ttf", ".otf", ".eot",
-    ".mp3", ".wav", ".ogg", ".mp4", ".webm", ".mov",
-    ".zip", ".gz", ".tar",
+SKIP_FILES = {
+    “.DS_Store”,
+    “Thumbs.db”,
+    “package-lock.json”,
+    “pnpm-lock.yaml”,
+    “yarn.lock”,
 }
 
-HTML_EXTENSIONS = {".html", ".htm"}
-CSS_EXTENSIONS = {".css"}
-JS_EXTENSIONS = {".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx"}
-JSON_EXTENSIONS = {".json", ".jsonl"}
-
-HTML_ATTRIBUTES = {
-    "href", "src", "poster", "data", "action", "formaction",
+SOURCE_EXTENSIONS = {
+    “.html”,
+    “.htm”,
+    “.css”,
+    “.js”,
+    “.mjs”,
+    “.cjs”,
+    “.jsx”,
+    “.ts”,
+    “.tsx”,
+    “.py”,
+    “.md”,
+    “.json”,
+    “.xml”,
+    “.yml”,
+    “.yaml”,
+    “.toml”,
+    “.sh”,
+    “.sql”,
+    “.txt”,
 }
 
+TEXT_EXTENSIONS = SOURCE_EXTENSIONS | {
+    “.svg”,
+    “.webmanifest”,
+    “.env.example”,
+}
 
-def now_utc() -> str:
-    return datetime.now(timezone.utc).isoformat()
+REFERENCE_EXTENSIONS = {
+    “.html”,
+    “.htm”,
+    “.css”,
+    “.js”,
+    “.mjs”,
+    “.cjs”,
+    “.jsx”,
+    “.ts”,
+    “.tsx”,
+    “.py”,
+    “.md”,
+}
 
+MAX_FILE_MB_DEFAULT = 5
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
+CONFLICT_MARKERS = (
+    re.compile(r”^<<<<<<<(?: .*)?$”, re.MULTILINE),
+    re.compile(r”^=======$”, re.MULTILINE),
+    re.compile(r”^>>>>>>>(?: .*)?$”, re.MULTILINE),
+)
 
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
+JS_REFERENCE_PATTERN = re.compile(
+    r”””
+    \b(?:import|export)\s+
+    (?:(?:[^’”;]+?)\s+from\s+)?
+    (?P<quote>[‘”])
+    (?P<target>[^’”]+)
+    (?P=quote)
+    |
+    \bimport\s*\(\s*
+    (?P<dynamic_quote>[‘”])
+    (?P<dynamic_target>[^’”]+)
+    (?P=dynamic_quote)
+    “””,
+    re.VERBOSE,
+)
 
-    return digest.hexdigest()
+PYTHON_REFERENCE_PATTERN = re.compile(
+    r”””
+    \b(?:open|Path)\s*\(\s*
+    (?P<quote>[‘”])
+    (?P<target>[^’”]+)
+    (?P=quote)
+    “””,
+    re.VERBOSE,
+)
 
+MARKDOWN_REFERENCE_PATTERN = re.compile(
+    r”!?\[[^\]]*\]\(([^)]+)\)”
+)
 
-def inside(path: Path, root: Path) -> bool:
-    try:
-        path.relative_to(root)
-        return True
-    except ValueError:
-        return False
-
-
-def safe_path(root: Path, candidate: Path) -> Path | None:
-    """Reject path traversal and symbolic links in every path component."""
-    candidate = Path(os.path.abspath(candidate))
-
-    if not inside(candidate, root):
-        return None
-
-    current = root
-
-    try:
-        parts = candidate.relative_to(root).parts
-    except ValueError:
-        return None
-
-    for part in parts:
-        current = current / part
-
-        if current.is_symlink():
-            return None
-
-    return candidate
-
-
-def rel(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix()
-
-
-def is_excluded(path: Path, root: Path) -> bool:
-    if not inside(path, root):
-        return True
-
-    return any(
-        part in EXCLUDED_DIRS
-        for part in path.relative_to(root).parts
+CSS_REFERENCE_PATTERN = re.compile(
+    r”””
+    url\(\s*
+    (?:
+        [‘”](?P<quoted>[^’”]+)[‘”]
+        |
+        (?P<plain>[^)’”]+)
     )
+    \s*\)
+    |
+    @import\s+
+    [‘”](?P<imported>[^’”]+)[‘”]
+    “””,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+API_ROUTE_PATTERN = re.compile(
+    r”””
+    \b
+    (?P<receiver>[A-Za-z_$][\w$]*)
+    \s*\.\s*
+    (?P<method>get|post|put|patch|delete|all|use|options|head)
+    \s*\(
+    \s*
+    (?:
+        (?P<quote>[‘”`])
+        (?P<literal>[^’”`]+)
+        (?P=quote)
+        |
+        (?P<dynamic>[^,\s)]+)
+    )
+    “””,
+    re.IGNORECASE | re.VERBOSE,
+)
 
 
-def scan_files(root: Path) -> list[Path]:
-    results: list[Path] = []
+# =============================================================================
+# DATA MODELS
+# =============================================================================
 
-    for folder, directories, filenames in os.walk(
-        root,
-        followlinks=False,
-    ):
-        base = Path(folder)
-
-        directories[:] = [
-            item for item in directories
-            if item not in EXCLUDED_DIRS
-            and not (base / item).is_symlink()
-        ]
-
-        for filename in filenames:
-            path = base / filename
-
-            if path.is_symlink() or is_excluded(path, root):
-                continue
-
-            if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
-                continue
-
-            results.append(path)
-
-            if len(results) >= MAX_FILES:
-                raise RuntimeError(
-                    f"File discovery limit reached: {MAX_FILES}"
-                )
-
-    return sorted(results)
+@dataclass
+class InventoryItem:
+    path: str
+    extension: str
+    size: int
+    sha256: str
+    category: str
 
 
-def read_text(path: Path) -> str:
-    if path.stat().st_size > MAX_FILE_BYTES:
-        raise ValueError("File exceeds text inspection size limit")
+@dataclass
+class Reference:
+    source: str
+    target: str
+    kind: str
+    line: int
+    status: str = “unresolved”
+    resolved_path: str = “”
 
-    return path.read_text(encoding="utf-8-sig", errors="replace")
+
+@dataclass
+class ApiRoute:
+    source: str
+    receiver: str
+    method: str
+    path: str
+    line: int
+    dynamic: bool = False
 
 
-class HTMLReferences(HTMLParser):
+@dataclass
+class Conflict:
+    path: str
+    line: int
+    marker: str
+    text: str
+
+
+@dataclass
+class Finding:
+    severity: str
+    category: str
+    path: str
+    line: int
+    message: str
+
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+class Logger:
+
+    def __init__(self, quiet: bool = False) -> None:
+        self.quiet = quiet
+
+    def info(self, message: str) -> None:
+        if not self.quiet:
+            print(f”[INFO] {message}”)
+
+    def success(self, message: str) -> None:
+        if not self.quiet:
+            print(f”[PASS] {message}”)
+
+    def warning(self, message: str) -> None:
+        if not self.quiet:
+            print(f”[WARN] {message}”)
+
+    def error(self, message: str) -> None:
+        print(f”[FAIL] {message}”, file=sys.stderr)
+
+
+# =============================================================================
+# HTML REFERENCE EXTRACTION
+# =============================================================================
+
+class HTMLReferenceParser(HTMLParser):
+
+    ATTRIBUTES = {
+        “href”: “html-href”,
+        “src”: “html-src”,
+        “action”: “html-action”,
+        “poster”: “html-poster”,
+        “data”: “html-data”,
+        “srcset”: “html-srcset”,
+    }
+
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
-        self.references: list[dict[str, str]] = []
+        self.references: list[tuple[str, str, int]] = []
 
-    def handle_starttag(self, tag: str, attrs: list) -> None:
-        values = dict(attrs)
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._process(attrs)
 
-        for attribute in HTML_ATTRIBUTES:
-            value = values.get(attribute)
+    def handle_startendtag(
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
+    ) -> None:
+        self._process(attrs)
 
-            if value:
-                self.references.append({
-                    "kind": "html-" + attribute,
-                    "value": value.strip(),
-                })
+    def _process(self, attrs: list[tuple[str, str | None]]) -> None:
+        line = self.getpos()[0]
 
-        srcset = values.get("srcset")
-
-        if srcset:
-            for item in srcset.split(","):
-                parts = item.strip().split()
-
-                if parts:
-                    self.references.append({
-                        "kind": "html-srcset",
-                        "value": parts[0],
-                    })
-
-
-def css_references(text: str) -> list[tuple[str, str]]:
-    # Handles common url(...) syntax. It is not a full CSS parser.
-    pattern = r"""url\(\s*(?:(['"])(.*?)\1|([^)]*?))\s*\)"""
-
-    found: list[tuple[str, str]] = []
-
-    for match in re.finditer(pattern, text, flags=re.IGNORECASE):
-        value = (match.group(2) or match.group(3) or "").strip()
-
-        if value:
-            found.append(("css-url", value))
-
-    return found
-
-
-def js_references(text: str) -> list[tuple[str, str]]:
-    patterns = [
-        r"""(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]""",
-        r"""\brequire\(\s*['"]([^'"]+)['"]\s*\)""",
-        r"""\bimport\(\s*['"]([^'"]+)['"]\s*\)""",
-    ]
-
-    values: set[str] = set()
-
-    for pattern in patterns:
-        values.update(re.findall(pattern, text))
-
-    return [
-        ("js-import", value)
-        for value in sorted(values)
-        if value.startswith((".", "/"))
-    ]
-
-
-def json_references(data: object) -> list[tuple[str, str]]:
-    """Collect path-like strings from JSON without assuming every string is a path."""
-    result: list[tuple[str, str]] = []
-
-    path_key = re.compile(
-        r"(?:src|href|url|path|file|image|logo|document|pdf|asset|"
-        r"stylesheet|script|download|thumbnail|poster|icon|cover)",
-        re.IGNORECASE,
-    )
-
-    def visit(value: object, parent_key: str = "") -> None:
-        if isinstance(value, dict):
-            for key, child in value.items():
-                visit(child, str(key))
-
-        elif isinstance(value, list):
-            for child in value:
-                visit(child, parent_key)
-
-        elif isinstance(value, str) and path_key.search(parent_key):
-            if value.strip():
-                result.append(("json-path", value.strip()))
-
-    visit(data)
-    return result
-
-
-def extract_references(path: Path) -> list[tuple[str, str]]:
-    extension = path.suffix.lower()
-
-    try:
-        text = read_text(path)
-    except (OSError, ValueError):
-        return []
-
-    if extension in HTML_EXTENSIONS:
-        parser = HTMLReferences()
-
-        try:
-            parser.feed(text)
-            parser.close()
-        except Exception:
-            return []
-
-        return [
-            (item["kind"], item["value"])
-            for item in parser.references
-        ]
-
-    if extension in CSS_EXTENSIONS:
-        return css_references(text)
-
-    if extension in JS_EXTENSIONS:
-        return js_references(text)
-
-    if extension in {".json", ".jsonl"}:
-        try:
-            if extension == ".json":
-                data = json.loads(text)
-            else:
-                data = [
-                    json.loads(line)
-                    for line in text.splitlines()
-                    if line.strip()
-                ]
-        except (json.JSONDecodeError, ValueError):
-            return []
-
-        return json_references(data)
-
-    return []
-
-
-def resolve_reference(
-    source: Path,
-    raw_value: str,
-    root: Path,
-) -> Path | None:
-    value = raw_value.strip()
-
-    if not value or value.startswith(("#", "?", "//")):
-        return None
-
-    parsed = urlsplit(value)
-
-    if parsed.scheme or parsed.netloc:
-        return None
-
-    decoded = unquote(parsed.path)
-
-    if not decoded:
-        return None
-
-    if decoded.startswith("/"):
-        # Website-root references resolve from the repository root.
-        candidate = root / decoded.lstrip("/")
-    else:
-        candidate = source.parent / decoded
-
-    candidate = Path(os.path.abspath(candidate))
-
-    return safe_path(root, candidate)
-
-
-def resolve_existing(
-    target: Path,
-    kind: str,
-    existing: set[Path],
-) -> Path | None:
-    candidates = [target]
-
-    # Common extension and index resolution for local JS modules.
-    if kind == "js-import" and not target.suffix:
-        candidates.extend(
-            target.with_suffix(extension)
-            for extension in (".js", ".mjs", ".cjs", ".json", ".ts")
-        )
-        candidates.append(target / "index.js")
-        candidates.append(target / "index.ts")
-
-    return next(
-        (candidate for candidate in candidates if candidate in existing),
-        None,
-    )
-
-
-def build_reference_map(
-    files: list[Path],
-    root: Path,
-) -> tuple[list[dict], list[dict], dict[str, list[str]]]:
-    known_files = set(files)
-    references: list[dict] = []
-    missing: list[dict] = []
-    related: dict[str, list[str]] = defaultdict(list)
-
-    for source in files:
-        for kind, value in extract_references(source):
-            target = resolve_reference(source, value, root)
-
-            if target is None:
+        for attribute, value in attrs:
+            if not value:
                 continue
 
-            resolved = resolve_existing(target, kind, known_files)
+            attribute = attribute.lower()
 
-            record = {
-                "source": rel(source, root),
-                "reference": value,
-                "kind": kind,
-                "expected_path": rel(target, root),
-                "status": "resolved" if resolved else "missing",
-                "resolved_path": rel(resolved, root) if resolved else None,
-            }
+            if attribute == “srcset”:
+                for candidate in value.split(“,”):
+                    candidate = candidate.strip()
 
-            references.append(record)
+                    if not candidate:
+                        continue
 
-            if resolved:
-                related[rel(source, root)].append(rel(resolved, root))
-            else:
-                missing.append(record)
+                    target = candidate.split()[0]
 
-    return references, missing, related
+                    self.references.append(
+                        (“html-srcset”, target, line)
+                    )
+
+            elif attribute in self.ATTRIBUTES:
+                self.references.append(
+                    (self.ATTRIBUTES[attribute], value.strip(), line)
+                )
 
 
-def find_candidates(
-    missing: list[dict],
-    source_files: list[Path],
-    source_root: Path,
-    destination_root: Path,
-) -> tuple[list[dict], list[dict]]:
-    """
-    Match missing targets to source files.
+# =============================================================================
+# REPOSITORY CONNECTOR
+# =============================================================================
 
-    Matching order:
-      1. Exact relative path.
-      2. Unique case-insensitive basename.
+class RepositoryConnectorExtra:
 
-    Ambiguous basename matches are never selected automatically.
-    """
-    by_relative = {
-        rel(path, source_root).casefold(): path
-        for path in source_files
-    }
+    def __init__(
+        self,
+        root: Path,
+        include_hidden: bool = False,
+        show_conflicts: bool = False,
+        max_links: int = 10000,
+        max_file_mb: int = MAX_FILE_MB_DEFAULT,
+    ) -> None:
 
-    by_name: dict[str, list[Path]] = defaultdict(list)
+        self.root = root.resolve(strict=True)
+        self.include_hidden = include_hidden
+        self.show_conflicts = show_conflicts
+        self.max_links = max_links
+        self.max_file_bytes = max_file_mb * 1024 * 1024
 
-    for path in source_files:
-        by_name[path.name.casefold()].append(path)
+        self.logger = Logger()
 
-    candidates: list[dict] = []
-    ambiguous: list[dict] = []
-    seen_targets: set[str] = set()
+        self.inventory: list[InventoryItem] = []
+        self.references: list[Reference] = []
+        self.routes: list[ApiRoute] = []
+        self.conflicts: list[Conflict] = []
+        self.findings: list[Finding] = []
 
-    for item in missing:
-        target_text = item["expected_path"]
+        self.known_files: set[str] = set()
+        self.known_directories: set[str] = set()
 
-        if target_text in seen_targets:
-            continue
+        self.scanned_files = 0
+        self.skipped_files = 0
+        self.read_errors = 0
 
-        seen_targets.add(target_text)
+        self.timestamp = datetime.now(
+            timezone.utc
+        ).strftime(“%Y%m%dT%H%M%SZ”)
 
-        destination = destination_root / target_text
-        exact = by_relative.get(target_text.casefold())
+    # =========================================================================
+    # PATH HELPERS
+    # =========================================================================
 
-        if exact:
-            candidates.append({
-                "source": str(exact),
-                "destination": str(destination),
-                "match": "exact-relative-path",
-                "reference": item["reference"],
-            })
-            continue
+    def relative(self, path: Path) -> str:
+        return path.relative_to(self.root).as_posix()
 
-        basename_matches = by_name.get(
-            Path(target_text).name.casefold(),
-            [],
+    def is_hidden(self, path: Path) -> bool:
+        if self.include_hidden:
+            return False
+
+        return any(
+            part.startswith(“.”)
+            for part in path.relative_to(self.root).parts
         )
 
-        if len(basename_matches) == 1:
-            candidates.append({
-                "source": str(basename_matches[0]),
-                "destination": str(destination),
-                "match": "unique-basename",
-                "reference": item["reference"],
-            })
-        elif len(basename_matches) > 1:
-            ambiguous.append({
-                "destination": str(destination),
-                "reference": item["reference"],
-                "possible_sources": [
-                    str(path) for path in basename_matches
-                ],
-            })
+    def safe_source_path(self, path: Path) -> bool:
+        try:
+            resolved = path.resolve(strict=True)
+            resolved.relative_to(self.root)
+        except (OSError, RuntimeError, ValueError):
+            return False
 
-    return candidates, ambiguous
+        return not path.is_symlink() and resolved.is_file()
 
+    # =========================================================================
+    # DISCOVERY
+    # =========================================================================
 
-def validate_json(files: list[Path], root: Path) -> list[dict]:
-    results: list[dict] = []
+    def discover(self) -> list[Path]:
+        discovered: list[Path] = []
 
-    for path in files:
-        if path.suffix.lower() not in JSON_EXTENSIONS:
-            continue
+        def on_walk_error(exc: OSError) -> None:
+            self.read_errors += 1
+            self.findings.append(
+                Finding(
+                    severity=“warning”,
+                    category=“filesystem”,
+                    path=str(exc.filename or “”),
+                    line=0,
+                    message=str(exc),
+                )
+            )
 
-        record = {
-            "file": rel(path, root),
-            "valid": False,
-            "error": None,
+        for current, dirs, files in os.walk(
+            self.root,
+            topdown=True,
+            followlinks=False,
+            onerror=on_walk_error,
+        ):
+            current_path = Path(current)
+
+            filtered_dirs = []
+
+            for directory in dirs:
+                candidate = current_path / directory
+
+                if directory in SKIP_DIRS:
+                    continue
+
+                if not self.include_hidden and directory.startswith(“.”):
+                    continue
+
+                try:
+                    metadata = candidate.lstat()
+                except OSError as exc:
+                    self.read_errors += 1
+                    self.findings.append(
+                        Finding(
+                            “warning”,
+                            “filesystem”,
+                            self.relative(candidate),
+                            0,
+                            str(exc),
+                        )
+                    )
+                    continue
+
+                if stat.S_ISLNK(metadata.st_mode):
+                    self.findings.append(
+                        Finding(
+                            “warning”,
+                            “symlink”,
+                            self.relative(candidate),
+                            0,
+                            “Symbolic-link directory skipped.”,
+                        )
+                    )
+                    continue
+
+                if stat.S_ISDIR(metadata.st_mode):
+                    filtered_dirs.append(directory)
+
+                    self.known_directories.add(
+                        self.relative(candidate)
+                    )
+
+            dirs[:] = filtered_dirs
+
+            for filename in files:
+                if filename in SKIP_FILES:
+                    continue
+
+                path = current_path / filename
+
+                if self.is_hidden(path):
+                    continue
+
+                try:
+                    metadata = path.lstat()
+                except OSError as exc:
+                    self.read_errors += 1
+                    self.findings.append(
+                        Finding(
+                            “warning”,
+                            “filesystem”,
+                            self.relative(path),
+                            0,
+                            str(exc),
+                        )
+                    )
+                    continue
+
+                if stat.S_ISLNK(metadata.st_mode):
+                    self.findings.append(
+                        Finding(
+                            “warning”,
+                            “symlink”,
+                            self.relative(path),
+                            0,
+                            “Symbolic-link file skipped.”,
+                        )
+                    )
+                    continue
+
+                if not stat.S_ISREG(metadata.st_mode):
+                    continue
+
+                relative = self.relative(path)
+                self.known_files.add(relative)
+                discovered.append(path)
+
+        return sorted(discovered, key=lambda item: str(item).lower())
+
+    # =========================================================================
+    # INVENTORY
+    # =========================================================================
+
+    @staticmethod
+    def category_for(path: Path) -> str:
+        extension = path.suffix.lower()
+
+        if extension in {“.html”, “.htm”}:
+            return “web-page”
+
+        if extension in {“.js”, “.mjs”, “.cjs”, “.jsx”, “.ts”, “.tsx”}:
+            return “javascript”
+
+        if extension == “.py”:
+            return “python”
+
+        if extension == “.css”:
+            return “stylesheet”
+
+        if extension == “.json”:
+            return “json-data”
+
+        if extension in {“.yml”, “.yaml”, “.toml”}:
+            return “configuration”
+
+        if extension in {“.md”, “.txt”}:
+            return “documentation”
+
+        if extension == “.sh”:
+            return “shell”
+
+        return “other”
+
+    def inventory_file(self, path: Path) -> None:
+        try:
+            metadata = path.stat()
+
+            if metadata.st_size > self.max_file_bytes:
+                self.skipped_files += 1
+                self.findings.append(
+                    Finding(
+                        “warning”,
+                        “file-size”,
+                        self.relative(path),
+                        0,
+                        f”Skipped file larger than {self.max_file_bytes} bytes.”,
+                    )
+                )
+                return
+
+            digest = hashlib.sha256()
+
+            with path.open(“rb”) as handle:
+                while True:
+                    chunk = handle.read(1024 * 1024)
+
+                    if not chunk:
+                        break
+
+                    digest.update(chunk)
+
+            self.inventory.append(
+                InventoryItem(
+                    path=self.relative(path),
+                    extension=path.suffix.lower(),
+                    size=metadata.st_size,
+                    sha256=digest.hexdigest(),
+                    category=self.category_for(path),
+                )
+            )
+
+            self.scanned_files += 1
+
+        except OSError as exc:
+            self.read_errors += 1
+            self.findings.append(
+                Finding(
+                    “warning”,
+                    “read-error”,
+                    self.relative(path),
+                    0,
+                    str(exc),
+                )
+            )
+
+    # =========================================================================
+    # TEXT READING
+    # =========================================================================
+
+    def read_text(self, path: Path) -> str | None:
+        try:
+            if not self.safe_source_path(path):
+                return None
+
+            if path.stat().st_size > self.max_file_bytes:
+                return None
+
+            return path.read_text(
+                encoding=“utf-8-sig”,
+                errors=“replace”,
+            )
+
+        except OSError as exc:
+            self.read_errors += 1
+            self.findings.append(
+                Finding(
+                    “warning”,
+                    “read-error”,
+                    self.relative(path),
+                    0,
+                    str(exc),
+                )
+            )
+            return None
+
+    # =========================================================================
+    # REFERENCE EXTRACTION
+    # =========================================================================
+
+    def add_reference(
+        self,
+        source: str,
+        target: str,
+        kind: str,
+        line: int,
+    ) -> None:
+
+        if len(self.references) >= self.max_links:
+            return
+
+        target = target.strip()
+
+        if not target:
+            return
+
+        self.references.append(
+            Reference(
+                source=source,
+                target=target,
+                kind=kind,
+                line=line,
+            )
+        )
+
+    def extract_html(self, path: Path, content: str) -> None:
+        parser = HTMLReferenceParser()
+
+        try:
+            parser.feed(content)
+            parser.close()
+        except Exception as exc:
+            self.findings.append(
+                Finding(
+                    “warning”,
+                    “html-parse”,
+                    self.relative(path),
+                    0,
+                    str(exc),
+                )
+            )
+            return
+
+        for kind, target, line in parser.references:
+            self.add_reference(
+                self.relative(path),
+                target,
+                kind,
+                line,
+            )
+
+    def extract_css(self, path: Path, content: str) -> None:
+        for match in CSS_REFERENCE_PATTERN.finditer(content):
+            target = (
+                match.group(“quoted”)
+                or match.group(“plain”)
+                or match.group(“imported”)
+            )
+
+            if target:
+                line = content.count(“\n”, 0, match.start()) + 1
+
+                self.add_reference(
+                    self.relative(path),
+                    target.strip(),
+                    “css-reference”,
+                    line,
+                )
+
+    def extract_javascript(self, path: Path, content: str) -> None:
+        for match in JS_REFERENCE_PATTERN.finditer(content):
+            target = (
+                match.group(“target”)
+                or match.group(“dynamic_target”)
+            )
+
+            if target:
+                line = content.count(“\n”, 0, match.start()) + 1
+
+                self.add_reference(
+                    self.relative(path),
+                    target,
+                    “javascript-import”,
+                    line,
+                )
+
+    def extract_python(self, path: Path, content: str) -> None:
+        for match in PYTHON_REFERENCE_PATTERN.finditer(content):
+            target = match.group(“target”)
+
+            line = content.count(“\n”, 0, match.start()) + 1
+
+            self.add_reference(
+                self.relative(path),
+                target,
+                “python-file-reference”,
+                line,
+            )
+
+    def extract_markdown(self, path: Path, content: str) -> None:
+        for match in MARKDOWN_REFERENCE_PATTERN.finditer(content):
+            target = match.group(1).strip()
+
+            if target.startswith(“<“) and target.endswith(“>”):
+                target = target[1:-1]
+
+            target = target.split()[0] if target else “”
+
+            line = content.count(“\n”, 0, match.start()) + 1
+
+            self.add_reference(
+                self.relative(path),
+                target,
+                “markdown-link”,
+                line,
+            )
+
+    # =========================================================================
+    # API ROUTE DISCOVERY
+    # =========================================================================
+
+    def extract_api_routes(self, path: Path, content: str) -> None:
+        for match in API_ROUTE_PATTERN.finditer(content):
+            groups = match.groups()
+
+            # Keep route selection explicit and compatible with the
+            # earlier connector’s four-group extraction convention.
+            path_value = (
+                groups[3]
+                or groups[4]
+                or “”
+            )
+
+            # Named-group extraction is authoritative for this version.
+            route_path = (
+                match.group(“literal”)
+                or match.group(“dynamic”)
+                or “”
+            )
+
+            if not route_path:
+                continue
+
+            dynamic = bool(match.group(“dynamic”))
+
+            self.routes.append(
+                ApiRoute(
+                    source=self.relative(path),
+                    receiver=match.group(“receiver”),
+                    method=match.group(“method”).upper(),
+                    path=route_path,
+                    line=content.count(“\n”, 0, match.start()) + 1,
+                    dynamic=dynamic,
+                )
+            )
+
+    # =========================================================================
+    # CONFLICT MARKERS
+    # =========================================================================
+
+    def extract_conflicts(self, path: Path, content: str) -> None:
+        if not self.show_conflicts:
+            return
+
+        for line_number, line in enumerate(content.splitlines(), 1):
+            stripped = line.strip()
+
+            marker = None
+
+            if stripped.startswith(“<<<<<<<“):
+                marker = “<<<<<<<“
+
+            elif stripped == “=======“:
+                marker = “=======“
+
+            elif stripped.startswith(“>>>>>>>”):
+                marker = “>>>>>>>”
+
+            if marker:
+                self.conflicts.append(
+                    Conflict(
+                        path=self.relative(path),
+                        line=line_number,
+                        marker=marker,
+                        text=stripped[:300],
+                    )
+                )
+
+    # =========================================================================
+    # FILE SCANNING
+    # =========================================================================
+
+    def scan_file(self, path: Path) -> None:
+        extension = path.suffix.lower()
+
+        if extension not in REFERENCE_EXTENSIONS:
+            return
+
+        content = self.read_text(path)
+
+        if content is None:
+            return
+
+        if extension in {“.html”, “.htm”}:
+            self.extract_html(path, content)
+
+        elif extension == “.css”:
+            self.extract_css(path, content)
+
+        elif extension in {
+            “.js”, “.mjs”, “.cjs”, “.jsx”, “.ts”, “.tsx”
+        }:
+            self.extract_javascript(path, content)
+            self.extract_api_routes(path, content)
+
+        elif extension == “.py”:
+            self.extract_python(path, content)
+
+        elif extension == “.md”:
+            self.extract_markdown(path, content)
+
+        self.extract_conflicts(path, content)
+
+    # =========================================================================
+    # REFERENCE RESOLUTION
+    # =========================================================================
+
+    @staticmethod
+    def is_external_reference(target: str) -> bool:
+        value = target.strip()
+
+        if not value:
+            return True
+
+        if value.startswith((“#”, “//“, “?”, “data:”, “blob:”)):
+            return True
+
+        try:
+            parsed = urlsplit(value)
+        except ValueError:
+            return False
+
+        return bool(
+            parsed.scheme
+            or parsed.netloc
+        )
+
+    @staticmethod
+    def has_dynamic_reference(target: str) -> bool:
+        return any(
+            marker in target
+            for marker in (
+                “${“,
+                “{{“,
+                “}}”,
+                “<%”,
+                “%>”,
+                “__dirname”,
+                “process.env”,
+                “import.meta”,
+            )
+        )
+
+    def candidate_paths(
+        self,
+        source: str,
+        target: str,
+    ) -> list[str]:
+
+        parsed = urlsplit(target)
+        raw_path = unquote(parsed.path)
+
+        if not raw_path:
+            return [source]
+
+        if “\\” in raw_path:
+            return []
+
+        if “\x00” in raw_path:
+            return []
+
+        source_parent = PurePosixPath(source).parent
+
+        if raw_path.startswith(“/“):
+            base = PurePosixPath(raw_path.lstrip(“/“))
+        else:
+            base = source_parent / raw_path
+
+        normalized = PurePosixPath(os.path.normpath(str(base)))
+
+        if normalized.is_absolute() or “..” in normalized.parts:
+            return []
+
+        candidate = normalized.as_posix()
+
+        candidates = [candidate]
+
+        if not PurePosixPath(candidate).suffix:
+            candidates.extend(
+                [
+                    candidate + “.html”,
+                    candidate + “.htm”,
+                    candidate + “.js”,
+                    candidate + “.mjs”,
+                    candidate + “.css”,
+                    candidate + “.json”,
+                ]
+            )
+
+        candidates.extend(
+            [
+                candidate.rstrip(“/“) + “/index.html”,
+                candidate.rstrip(“/“) + “/index.htm”,
+            ]
+        )
+
+        return list(dict.fromkeys(candidates))
+
+    def resolve_references(self) -> None:
+        for reference in self.references:
+
+            if self.is_external_reference(reference.target):
+                reference.status = “external”
+                continue
+
+            if self.has_dynamic_reference(reference.target):
+                reference.status = “dynamic”
+                continue
+
+            candidates = self.candidate_paths(
+                reference.source,
+                reference.target,
+            )
+
+            if not candidates:
+                reference.status = “unsafe-or-invalid”
+                continue
+
+            matched = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if candidate in self.known_files
+                ),
+                None,
+            )
+
+            if matched:
+                reference.status = “resolved”
+                reference.resolved_path = matched
+                continue
+
+            directory_match = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if candidate in self.known_directories
+                ),
+                None,
+            )
+
+            if directory_match:
+                reference.status = “directory-only”
+                reference.resolved_path = directory_match
+                continue
+
+            reference.status = “broken”
+
+    # =========================================================================
+    # ADVISORY HTML SUGGESTIONS
+    # =========================================================================
+
+    def create_html_connection_proposals(self) -> list[dict[str, Any]]:
+        “””
+        Generate suggestions only.
+
+        No HTML source file is modified.
+        “””
+
+        proposals = []
+
+        for reference in self.references:
+            if reference.status != “broken”:
+                continue
+
+            if not reference.kind.startswith(“html-“):
+                continue
+
+            proposals.append(
+                {
+                    “source”: reference.source,
+                    “line”: reference.line,
+                    “missing_target”: reference.target,
+                    “suggestion”: (
+                        “Verify the target path, filename, extension “
+                        “and deployment base path.”
+                    ),
+                    “automatic_change”: False,
+                }
+            )
+
+        return proposals
+
+    # =========================================================================
+    # COMPLETE SCAN
+    # =========================================================================
+
+    def scan(self) -> None:
+        self.logger.info(“Discovering repository files.”)
+
+        files = self.discover()
+
+        self.logger.info(
+            f”Discovered {len(files)} regular files.”
+        )
+
+        for path in files:
+            self.inventory_file(path)
+            self.scan_file(path)
+
+        self.resolve_references()
+
+    # =========================================================================
+    # REPORT HELPERS
+    # =========================================================================
+
+    def dependency_edges(self) -> list[dict[str, Any]]:
+        return [
+            {
+                “source”: item.source,
+                “target”: item.resolved_path or item.target,
+                “kind”: item.kind,
+                “status”: item.status,
+                “line”: item.line,
+            }
+            for item in self.references
+        ]
+
+    def broken_references(self) -> list[dict[str, Any]]:
+        return [
+            asdict(item)
+            for item in self.references
+            if item.status in {
+                “broken”,
+                “unsafe-or-invalid”,
+                “directory-only”,
+            }
+        ]
+
+    def unresolved_references(self) -> list[dict[str, Any]]:
+        return [
+            asdict(item)
+            for item in self.references
+            if item.status in {
+                “dynamic”,
+                “directory-only”,
+                “unsafe-or-invalid”,
+            }
+        ]
+
+    def summary(self) -> dict[str, Any]:
+        statuses: dict[str, int] = defaultdict(int)
+
+        for reference in self.references:
+            statuses[reference.status] += 1
+
+        return {
+            “connector”: “MedOrbits Extra Repository Connector”,
+            “version”: VERSION,
+            “generated_at”: datetime.now(
+                timezone.utc
+            ).isoformat(),
+            “repository”: str(self.root),
+            “files_discovered”: len(self.known_files),
+            “files_scanned”: self.scanned_files,
+            “files_skipped”: self.skipped_files,
+            “read_errors”: self.read_errors,
+            “references”: len(self.references),
+            “reference_statuses”: dict(statuses),
+            “api_routes”: len(self.routes),
+            “conflict_markers”: len(self.conflicts),
+            “findings”: len(self.findings),
+            “broken_references”: sum(
+                1 for item in self.references
+                if item.status == “broken”
+            ),
         }
 
+    # =========================================================================
+    # REPORT WRITING
+    # =========================================================================
+
+    def report_directory(self) -> Path:
+        directory = self.root / REPORT_DIRECTORY
+
+        current = self.root
+
+        for part in REPORT_DIRECTORY.parts:
+            current = current / part
+
+            try:
+                metadata = current.lstat()
+            except FileNotFoundError:
+                continue
+
+            if stat.S_ISLNK(metadata.st_mode):
+                raise ValueError(
+                    f”Report path contains a symbolic link: {current}”
+                )
+
+            if current != directory and not stat.S_ISDIR(metadata.st_mode):
+                raise ValueError(
+                    f”Report parent is not a directory: {current}”
+                )
+
+            if current == directory and not stat.S_ISDIR(metadata.st_mode):
+                raise ValueError(
+                    f”Report destination is not a directory: {current}”
+                )
+
+        directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        if directory.is_symlink() or not directory.is_dir():
+            raise ValueError(
+                “Report destination is not a safe directory.”
+            )
+
+        return directory
+
+    @staticmethod
+    def atomic_write(path: Path, content: str) -> None:
+        import tempfile
+
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=“.connector-“,
+            suffix=“.tmp”,
+            dir=path.parent,
+        )
+
+        temporary = Path(temporary_name)
+
         try:
-            text = read_text(path)
+            with os.fdopen(
+                descriptor,
+                “w”,
+                encoding=“utf-8”,
+                newline=“\n”,
+            ) as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
 
-            if path.suffix.lower() == ".json":
-                json.loads(text, parse_constant=_reject_constant)
-            else:
-                for number, line in enumerate(text.splitlines(), start=1):
-                    if line.strip():
-                        try:
-                            json.loads(line, parse_constant=_reject_constant)
-                        except (json.JSONDecodeError, ValueError) as exc:
-                            raise ValueError(f"line {number}: {exc}") from exc
+            if path.is_symlink():
+                raise ValueError(
+                    f”Refusing to overwrite symbolic link: {path}”
+                )
 
-            record["valid"] = True
+            os.replace(temporary, path)
 
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            record["error"] = str(exc)
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
 
-        results.append(record)
+    def write_json(
+        self,
+        directory: Path,
+        name: str,
+        data: Any,
+    ) -> Path:
 
-    return results
+        path = directory / name
 
+        content = json.dumps(
+            data,
+            indent=2,
+            ensure_ascii=False,
+        ) + “\n”
 
-def _reject_constant(value: str) -> None:
-    raise ValueError(f"Non-standard JSON constant: {value}")
+        self.atomic_write(path, content)
 
+        return path
 
-def build_catalogue(
-    files: list[Path],
-    root: Path,
-    related: dict[str, list[str]],
-) -> dict:
-    entries = []
+    def write_csv(
+        self,
+        directory: Path,
+        name: str,
+        rows: list[dict[str, Any]],
+    ) -> Path:
 
-    for path in files:
-        try:
-            stat = path.stat()
+        path = directory / name
 
-            if stat.st_size > MAX_FILE_BYTES:
-                digest = None
-                hash_status = "skipped-size-limit"
-            else:
-                digest = sha256_file(path)
-                hash_status = "computed"
+        if rows:
+            fieldnames = list(rows[0].keys())
+        else:
+            fieldnames = [“status”]
 
-            entries.append({
-                "path": rel(path, root),
-                "filename": path.name,
-                "extension": path.suffix.lower(),
-                "size_bytes": stat.st_size,
-                "sha256": digest,
-                "hash_status": hash_status,
-                "related_files": sorted(set(
-                    related.get(rel(path, root), [])
-                )),
-            })
+        from io import StringIO
 
-        except OSError:
-            continue
+        buffer = StringIO(newline=“”)
 
-    return {
-        "schema_version": "1.0.0",
-        "generated_at": now_utc(),
-        "file_count": len(entries),
-        "files": entries,
-    }
-
-
-def write_new_file(path: Path, content: str, root: Path) -> None:
-    """Create a new file exclusively. Existing files are never replaced."""
-    path = Path(os.path.abspath(path))
-
-    checked = safe_path(root, path)
-
-    if checked is None:
-        raise ValueError(f"Unsafe output path: {path}")
-
-    if checked.exists():
-        raise FileExistsError(
-            f"Output already exists; refusing to overwrite: {checked}"
+        writer = csv.DictWriter(
+            buffer,
+            fieldnames=fieldnames,
+            extrasaction=“ignore”,
         )
 
-    checked.parent.mkdir(parents=True, exist_ok=True)
+        writer.writeheader()
+        writer.writerows(rows)
 
-    checked = safe_path(root, checked)
+        self.atomic_write(path, buffer.getvalue())
 
-    if checked is None:
-        raise ValueError("Output path became unsafe.")
+        return path
 
-    with checked.open("x", encoding="utf-8", newline="\n") as stream:
-        stream.write(content)
-        stream.flush()
-        os.fsync(stream.fileno())
+    def write_reports(self) -> list[Path]:
+        directory = self.report_directory()
 
+        prefix = f”extra-{self.timestamp}”
 
-def copy_candidate(
-    source: Path,
-    destination: Path,
-    root: Path,
-    source_root: Path,
-) -> str:
-    source = Path(os.path.abspath(source))
-    destination = Path(os.path.abspath(destination))
+        proposals = self.create_html_connection_proposals()
 
-    checked_source = safe_path(source_root, source)
-    checked_destination = safe_path(root, destination)
+        reports = [
+            (
+                f”{prefix}-summary.json”,
+                self.summary(),
+            ),
+            (
+                f”{prefix}-inventory.json”,
+                [asdict(item) for item in self.inventory],
+            ),
+            (
+                f”{prefix}-references.json”,
+                [asdict(item) for item in self.references],
+            ),
+            (
+                f”{prefix}-dependencies.json”,
+                self.dependency_edges(),
+            ),
+            (
+                f”{prefix}-broken-references.json”,
+                self.broken_references(),
+            ),
+            (
+                f”{prefix}-unresolved-references.json”,
+                self.unresolved_references(),
+            ),
+            (
+                f”{prefix}-api-routes.json”,
+                [asdict(item) for item in self.routes],
+            ),
+            (
+                f”{prefix}-conflicts.json”,
+                [asdict(item) for item in self.conflicts],
+            ),
+            (
+                f”{prefix}-findings.json”,
+                [asdict(item) for item in self.findings],
+            ),
+            (
+                f”{prefix}-html-suggestions.json”,
+                proposals,
+            ),
+        ]
 
-    if checked_source is None or checked_destination is None:
-        raise ValueError("Source or destination path is unsafe.")
+        written = []
 
-    if not checked_source.is_file():
-        raise ValueError(f"Source is not a regular file: {source}")
+        for name, data in reports:
+            written.append(
+                self.write_json(directory, name, data)
+            )
 
-    if checked_source.stat().st_size > MAX_FILE_BYTES:
-        raise ValueError(f"Source exceeds size limit: {source}")
+        csv_reports = [
+            (
+                f”{prefix}-inventory.csv”,
+                [asdict(item) for item in self.inventory],
+            ),
+            (
+                f”{prefix}-references.csv”,
+                [asdict(item) for item in self.references],
+            ),
+            (
+                f”{prefix}-api-routes.csv”,
+                [asdict(item) for item in self.routes],
+            ),
+            (
+                f”{prefix}-conflicts.csv”,
+                [asdict(item) for item in self.conflicts],
+            ),
+        ]
 
-    if checked_destination.exists():
-        raise FileExistsError(
-            f"Destination exists; preserving it: {destination}"
+        for name, rows in csv_reports:
+            written.append(
+                self.write_csv(directory, name, rows)
+            )
+
+        return written
+
+    # =========================================================================
+    # FINAL STATUS
+    # =========================================================================
+
+    def has_strict_failures(self) -> bool:
+        broken = any(
+            item.status == “broken”
+            for item in self.references
         )
 
-    checked_destination.parent.mkdir(parents=True, exist_ok=True)
-
-    # Revalidate after creating directories.
-    checked_destination = safe_path(root, checked_destination)
-
-    if checked_destination is None or checked_destination.exists():
-        raise FileExistsError(
-            f"Destination became unavailable: {destination}"
+        invalid = any(
+            item.status == “unsafe-or-invalid”
+            for item in self.references
         )
 
-    # Exclusive mode prevents overwriting a destination created concurrently.
-    with checked_source.open("rb") as src:
-        with checked_destination.open("xb") as dst:
-            shutil.copyfileobj(src, dst)
-            dst.flush()
-            os.fsync(dst.fileno())
+        errors = any(
+            item.severity == “error”
+            for item in self.findings
+        )
 
-    if sha256_file(checked_source) != sha256_file(checked_destination):
-        raise IOError(f"Copied-file checksum mismatch: {destination}")
+        return broken or invalid or errors
 
-    return "copied"
+
+# =============================================================================
+# CLI
+# =============================================================================
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=“Extended read-only MedOrbits repository scanner.”
+    )
+
+    parser.add_argument(
+        “—root”,
+        type=Path,
+        default=Path.cwd(),
+        help=“Repository root.”,
+    )
+
+    parser.add_argument(
+        “—dry-run”,
+        action=“store_true”,
+        help=“Scan without writing reports.”,
+    )
+
+    parser.add_argument(
+        “—include-hidden”,
+        action=“store_true”,
+        help=“Include hidden files and directories.”,
+    )
+
+    parser.add_argument(
+        “—show-conflicts”,
+        action=“store_true”,
+        help=“Scan files for Git conflict markers.”,
+    )
+
+    parser.add_argument(
+        “—max-links”,
+        type=int,
+        default=10000,
+        help=“Maximum references to collect.”,
+    )
+
+    parser.add_argument(
+        “—max-file-mb”,
+        type=int,
+        default=MAX_FILE_MB_DEFAULT,
+        help=“Maximum file size to read, in MiB.”,
+    )
+
+    parser.add_argument(
+        “—strict”,
+        action=“store_true”,
+        help=“Return exit code 1 when broken references are found.”,
+    )
+
+    parser.add_argument(
+        “—json-summary”,
+        action=“store_true”,
+        help=“Print the machine-readable summary to stdout.”,
+    )
+
+    return parser.parse_args()
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Map repository references, catalogue assets, and safely "
-            "collect files to referenced destinations."
-        )
-    )
+    args = parse_args()
 
-    parser.add_argument("--root", default=".", help="Repository root.")
-    parser.add_argument(
-        "--source-dir",
-        help="Directory containing supplied documents and assets.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        default="storage/repository-reports",
-        help="Repository-relative report directory.",
-    )
-    parser.add_argument("--report", action="store_true")
-    parser.add_argument("--validate-json", action="store_true")
-    parser.add_argument("--catalogue", action="store_true")
-    parser.add_argument("--collect", action="store_true")
-    parser.add_argument("--all", action="store_true")
-    parser.add_argument(
-        "--apply",
-        action="store_true",
-        help="Write requested reports and copy selected assets.",
-    )
-
-    args = parser.parse_args()
-    root = Path(args.root).resolve()
-
-    if not root.is_dir():
-        print(f"ERROR: invalid repository root: {root}", file=sys.stderr)
+    if args.max_links < 1:
+        print(“ERROR: —max-links must be at least 1.”, file=sys.stderr)
         return 2
 
-    if args.all:
-        args.report = True
-        args.validate_json = True
-        args.catalogue = True
-
-    if args.collect and not args.source_dir:
-        print("ERROR: --collect requires --source-dir.", file=sys.stderr)
+    if args.max_file_mb < 1:
+        print(“ERROR: —max-file-mb must be at least 1.”, file=sys.stderr)
         return 2
 
     try:
-        files = scan_files(root)
-        references, missing, related = build_reference_map(files, root)
+        root = args.root.expanduser().resolve(strict=True)
 
-        json_results = (
-            validate_json(files, root)
-            if args.validate_json
-            else []
+        if not root.is_dir():
+            raise ValueError(“Repository root must be a directory.”)
+
+        connector = RepositoryConnectorExtra(
+            root=root,
+            include_hidden=args.include_hidden,
+            show_conflicts=args.show_conflicts,
+            max_links=args.max_links,
+            max_file_mb=args.max_file_mb,
         )
 
-        catalogue = build_catalogue(files, root, related)
+        connector.scan()
 
-        source_root = None
-        source_files: list[Path] = []
-        copy_candidates: list[dict] = []
-        ambiguous: list[dict] = []
+        summary = connector.summary()
 
-        if args.source_dir:
-            source_root = Path(args.source_dir)
-
-            if not source_root.is_absolute():
-                source_root = root / source_root
-
-            source_root = source_root.resolve()
-
-            if not source_root.is_dir():
-                raise ValueError(
-                    f"Source directory does not exist: {source_root}"
+        if args.json_summary:
+            print(
+                json.dumps(
+                    summary,
+                    indent=2,
+                    ensure_ascii=False,
                 )
-
-            source_files = scan_files(source_root)
-
-            copy_candidates, ambiguous = find_candidates(
-                missing,
-                source_files,
-                source_root,
-                root,
             )
+        else:
+            print(“\nMedOrbits Extra Connector”)
+            print(“=“ * 45)
+            print(f”Repository:       {root}”)
+            print(f”Files discovered: {summary[‘files_discovered’]}”)
+            print(f”Files scanned:    {summary[‘files_scanned’]}”)
+            print(f”Files skipped:    {summary[‘files_skipped’]}”)
+            print(f”References:       {summary[‘references’]}”)
+            print(f”Broken references:{summary[‘broken_references’]:>5}”)
+            print(f”API routes:       {summary[‘api_routes’]}”)
+            print(f”Conflict markers: {summary[‘conflict_markers’]}”)
+            print(f”Findings:         {summary[‘findings’]}”)
 
-        report = {
-            "tool": "MedOrbits Reference-Driven Asset Collector",
-            "version": VERSION,
-            "generated_at": now_utc(),
-            "repository_root": str(root),
-            "summary": {
-                "files_discovered": len(files),
-                "references_discovered": len(references),
-                "resolved_references": sum(
-                    item["status"] == "resolved"
-                    for item in references
-                ),
-                "missing_references": len(missing),
-                "json_files_checked": len(json_results),
-                "invalid_json_files": sum(
-                    not item["valid"] for item in json_results
-                ),
-                "source_files_available": len(source_files),
-                "copy_candidates": len(copy_candidates),
-                "ambiguous_matches": len(ambiguous),
-            },
-            "references": references,
-            "missing_references": missing,
-            "json_validation": json_results,
-            "catalogue": catalogue if args.catalogue else None,
-            "copy_candidates": copy_candidates,
-            "ambiguous_matches": ambiguous,
-            "safety": {
-                "dry_run": not args.apply,
-                "existing_files_overwritten": False,
-                "source_files_deleted": False,
-                "scripts_executed": False,
-                "network_access": False,
-                "ambiguous_matches_auto_copied": False,
-            },
-        }
-
-        output_dir = Path(args.output_dir)
-
-        if not output_dir.is_absolute():
-            output_dir = root / output_dir
-
-        output_dir = Path(os.path.abspath(output_dir))
-
-        if not inside(output_dir, root):
-            raise ValueError("Output directory must be inside the repository.")
-
-        print("MedOrbits Reference-Driven Asset Collector")
-        print(f"Repository: {root}")
-        print(f"Files discovered: {len(files)}")
-        print(f"References discovered: {len(references)}")
-        print(f"Missing references: {len(missing)}")
-        print(f"Copy candidates: {len(copy_candidates)}")
-        print(f"Ambiguous matches: {len(ambiguous)}")
-
-        if args.report:
-            print("\nMissing reference preview:")
-            for item in missing[:50]:
-                print(
-                    f"  {item['source']} -> {item['expected_path']}"
-                )
-
-        if args.collect:
-            print("\nAsset collection preview:")
-            for item in copy_candidates[:100]:
-                print(
-                    f"  {item['source']} -> {item['destination']} "
-                    f"[{item['match']}]"
-                )
-
-        if args.apply:
-            # Write reports first; exclusive creation prevents replacement.
-            outputs: list[tuple[Path, str]] = [
-                (
-                    output_dir / "repository-connector-report.json",
-                    json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-                )
-            ]
-
-            if args.catalogue:
-                outputs.append((
-                    output_dir / "asset-catalogue.json",
-                    json.dumps(catalogue, indent=2, ensure_ascii=False) + "\n",
-                ))
-
-            for path, content in outputs:
-                write_new_file(path, content, root)
-                print(f"CREATED REPORT: {rel(path, root)}")
-
-            if args.collect and source_root is not None:
-                copied = 0
-                skipped = 0
-                failed = 0
-
-                for item in copy_candidates:
-                    try:
-                        result = copy_candidate(
-                            Path(item["source"]),
-                            Path(item["destination"]),
-                            root,
-                            source_root,
-                        )
-                        copied += 1
-                        print(f"COPIED: {item['destination']} [{result}]")
-
-                    except FileExistsError as exc:
-                        skipped += 1
-                        print(f"SKIPPED: {exc}", file=sys.stderr)
-
-                    except (OSError, ValueError) as exc:
-                        failed += 1
-                        print(f"FAILED: {exc}", file=sys.stderr)
-
-                print(
-                    f"Collection complete: copied={copied}, "
-                    f"skipped={skipped}, failed={failed}"
-                )
-
-                if failed:
-                    return 1
+        if args.dry_run:
+            print(“\nDRY-RUN: No reports or source files were written.”)
 
         else:
-            print("\nDRY RUN: no files were written or copied.")
+            reports = connector.write_reports()
 
-            if args.report or args.all:
-                print(
-                    "Report preview available. Add --apply to write "
-                    "the JSON report and requested catalogue."
-                )
+            print(
+                f”\nReports generated: {len(reports)}”
+            )
 
-            if args.collect:
-                print(
-                    "Add --apply to copy unambiguous candidates. "
-                    "Existing destinations will be preserved."
-                )
+            print(
+                “Report directory: “
+                f”{root / REPORT_DIRECTORY}”
+            )
 
-        if report["summary"]["invalid_json_files"]:
+        if args.strict and connector.has_strict_failures():
+            print(
+                “\nSTRICT CHECK FAILED: “
+                “Broken references or errors were detected.”
+            )
             return 1
+
+        print(“\nConnector completed.”)
+        print(“Repository source files were not modified.”)
 
         return 0
 
     except (OSError, ValueError, RuntimeError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
+        print(
+            f”ERROR: Repository connector failed: {exc}”,
+            file=sys.stderr,
+        )
         return 1
 
 
-if __name__ == "__main__":
+if __name__ == “__main__”:
     raise SystemExit(main())

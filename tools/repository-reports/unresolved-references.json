@@ -1,11 +1,333 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "PENDING_FULL_REPOSITORY_SCAN",
-  "is_template": true,
-  "total_findings": null,
-  "findings": [],
-  "limitations": [
-    "Full repository is required for an evidence-based unresolved-reference report."
-  ]
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Unresolved References Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Repository-wide tracking of references that cannot be resolved, verified, or mapped to an existing target."
+  },
+  "summary": {
+    "filesScanned": 0,
+    "totalReferences": 0,
+    "unresolvedReferences": 0,
+    "resolvedReferences": 0,
+    "unverifiedReferences": 0,
+    "ignoredReferences": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "scanConfiguration": {
+    "repositoryRoot": ".",
+    "recursive": true,
+    "includeHidden": true,
+    "followSymbolicLinks": false,
+    "scanTrackedFiles": true,
+    "scanUntrackedFiles": true,
+    "scanJavaScriptImports": true,
+    "scanPythonImports": true,
+    "scanHtmlReferences": true,
+    "scanCssReferences": true,
+    "scanJsonReferences": true,
+    "scanApiReferences": true,
+    "scanEnvironmentVariables": true,
+    "scanConfigurationKeys": true,
+    "scanDatabaseReferences": true,
+    "scanExternalIntegrations": true,
+    "checkExternalUrls": false,
+    "maximumFileSizeMB": 25,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      "coverage",
+      "dist",
+      "build"
+    ],
+    "ignorePatterns": [
+      "*.min.js",
+      "*.map",
+      "*.lock"
+    ]
+  },
+  "referenceTypes": [
+    "file",
+    "directory",
+    "javascript-module",
+    "python-module",
+    "html-link",
+    "html-asset",
+    "css-import",
+    "css-asset",
+    "json-reference",
+    "api-endpoint",
+    "environment-variable",
+    "configuration-key",
+    "database-table",
+    "database-column",
+    "database-query",
+    "external-package",
+    "external-service",
+    "github-action",
+    "workflow-reference",
+    "document",
+    "image",
+    "font",
+    "unknown"
+  ],
+  "severityLevels": {
+    "critical": {
+      "priority": 1,
+      "description": "Unresolved references affecting startup, authentication, authorization, secrets, database connectivity, or critical application functionality."
+    },
+    "high": {
+      "priority": 2,
+      "description": "Unresolved references affecting API routes, application services, admissions, recruitment, documents, or essential integrations."
+    },
+    "medium": {
+      "priority": 3,
+      "description": "Unresolved references affecting secondary functionality, supporting modules, or documentation."
+    },
+    "low": {
+      "priority": 4,
+      "description": "Unresolved optional, cosmetic, archived, or nonessential references."
+    }
+  },
+  "statusDefinitions": {
+    "open": "Reference has been detected but remains unresolved.",
+    "resolved": "Target has been located and verified.",
+    "unverified": "Reference has not been conclusively checked.",
+    "ignored": "Reference is intentionally excluded with a documented reason.",
+    "false-positive": "The detected reference is not genuinely unresolved.",
+    "blocked": "Resolution requires an unavailable external resource, permission, or configuration."
+  },
+  "references": [],
+  "referenceSchema": {
+    "required": [
+      "referenceId",
+      "referenceType",
+      "sourceFile",
+      "referencedValue",
+      "severity",
+      "status"
+    ],
+    "properties": {
+      "referenceId": {
+        "type": "string",
+        "description": "Unique stable unresolved-reference identifier."
+      },
+      "referenceType": {
+        "type": "string",
+        "enum": [
+          "file",
+          "directory",
+          "javascript-module",
+          "python-module",
+          "html-link",
+          "html-asset",
+          "css-import",
+          "css-asset",
+          "json-reference",
+          "api-endpoint",
+          "environment-variable",
+          "configuration-key",
+          "database-table",
+          "database-column",
+          "database-query",
+          "external-package",
+          "external-service",
+          "github-action",
+          "workflow-reference",
+          "document",
+          "image",
+          "font",
+          "unknown"
+        ]
+      },
+      "sourceFile": {
+        "type": "string"
+      },
+      "sourceLine": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "referencedValue": {
+        "type": "string"
+      },
+      "expectedTarget": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "resolvedTarget": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "resolutionMethod": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "resolved",
+          "unverified",
+          "ignored",
+          "false-positive",
+          "blocked"
+        ]
+      },
+      "errorCode": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "firstDetected": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastChecked": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolvedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolution": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "ignoreReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "resolutionCategories": [
+    "correct-path",
+    "restore-missing-file",
+    "correct-import",
+    "register-api-route",
+    "declare-environment-variable",
+    "correct-configuration",
+    "apply-database-migration",
+    "install-dependency",
+    "correct-external-url",
+    "document-intentional-reference",
+    "manual-investigation"
+  ],
+  "analysis": {
+    "missingFiles": [],
+    "missingModules": [],
+    "unregisteredApiEndpoints": [],
+    "undeclaredEnvironmentVariables": [],
+    "missingConfigurationKeys": [],
+    "missingDatabaseObjects": [],
+    "missingAssets": [],
+    "unresolvedExternalPackages": [],
+    "unresolvedExternalServices": [],
+    "missingWorkflowReferences": [],
+    "unresolvedDocuments": [],
+    "dynamicReferencesRequiringReview": []
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "preserveExistingFindings": true,
+    "stableReferenceIds": true,
+    "deduplicate": true,
+    "includeGeneratedFiles": false,
+    "includeBinaryFiles": false,
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/unresolved-references.csv",
+    "jsonOutput": "tools/repository-reports/unresolved-references.json",
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "repairPolicy": {
+    "automaticRepair": false,
+    "automaticFileCreation": false,
+    "automaticFileDeletion": false,
+    "automaticOverwrite": false,
+    "automaticImportRewriting": false,
+    "automaticEnvironmentValueGeneration": false,
+    "automaticDatabaseMigration": false,
+    "requireHumanReview": true,
+    "requireGitDiffReview": true,
+    "requirePostRepairVerification": true,
+    "preserveOriginalReference": true
+  },
+  "outputs": {
+    "json": "tools/repository-reports/unresolved-references.json",
+    "csv": "tools/repository-reports/unresolved-references.csv",
+    "markdown": "tools/repository-reports/unresolved-references.md"
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "scannerVersion": null,
+    "sourceFilesScanned": 0,
+    "referencesAnalyzed": 0,
+    "warnings": [
+      "This is an initial report template, not a verified repository scan.",
+      "An empty references array does not establish that all references are resolved.",
+      "Dynamic imports and runtime-generated references require additional analysis.",
+      "Environment variable names can be verified without exposing their secret values.",
+      "Database references must be checked against actual migrations and schema definitions.",
+      "External services should not be marked unavailable solely because network access is disabled.",
+      "Unresolved references must not be automatically deleted or replaced without review."
+    ]
+  }
 }

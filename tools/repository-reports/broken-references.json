@@ -1,10 +1,282 @@
+
 {
-  "generated_at": "2026-10-28T23:17:47.792323+00:00",
-  "scope": "tools.zip only",
-  "status": "PARTIAL",
-  "total_findings": null,
-  "findings": [],
-  "limitations": [
-    "The archive does not include the full repository root; relative references to parent project files cannot be conclusively resolved."
-  ]
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "report": {
+    "name": "MedOrbits Broken References Report",
+    "version": "1.0.0",
+    "project": "MedOrbits",
+    "generatedAt": null,
+    "generator": "tools/repository-reports",
+    "status": "baseline",
+    "description": "Repository-wide inventory of unresolved file paths, imports, links, assets, API references, and configuration references."
+  },
+  "summary": {
+    "totalReferences": 0,
+    "brokenReferences": 0,
+    "verifiedReferences": 0,
+    "unverifiedReferences": 0,
+    "ignoredReferences": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "scanConfiguration": {
+    "repositoryRoot": ".",
+    "recursive": true,
+    "includeHidden": true,
+    "followSymbolicLinks": false,
+    "checkInternalFiles": true,
+    "checkExternalUrls": false,
+    "checkJavaScriptImports": true,
+    "checkPythonImports": true,
+    "checkHtmlLinks": true,
+    "checkCssReferences": true,
+    "checkJsonReferences": true,
+    "checkApiReferences": true,
+    "ignoreDirectories": [
+      ".git",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".pytest_cache",
+      "coverage",
+      "dist",
+      "build"
+    ],
+    "ignorePatterns": [
+      "*.min.js",
+      "*.map",
+      "*.lock"
+    ],
+    "maximumFileSizeMB": 25
+  },
+  "referenceTypes": [
+    "html-link",
+    "html-asset",
+    "css-import",
+    "css-asset",
+    "javascript-import",
+    "javascript-asset",
+    "python-import",
+    "json-reference",
+    "api-reference",
+    "configuration-reference",
+    "markdown-link",
+    "image-reference",
+    "font-reference",
+    "document-reference",
+    "unknown"
+  ],
+  "severityLevels": {
+    "critical": {
+      "description": "Broken references affecting security, authentication, core application startup, or essential data access.",
+      "priority": 1
+    },
+    "high": {
+      "description": "Broken references affecting important application functionality.",
+      "priority": 2
+    },
+    "medium": {
+      "description": "Broken references affecting secondary features or documentation.",
+      "priority": 3
+    },
+    "low": {
+      "description": "Nonessential or cosmetic broken references.",
+      "priority": 4
+    }
+  },
+  "statusDefinitions": {
+    "open": "Reference has been identified but not repaired.",
+    "fixed": "Reference has been repaired and verified.",
+    "ignored": "Reference is intentionally excluded with a documented reason.",
+    "unverified": "Reference has not yet been checked against its target.",
+    "false-positive": "Scanner result has been reviewed and determined not to be a genuine issue."
+  },
+  "references": [],
+  "referenceSchema": {
+    "required": [
+      "referenceId",
+      "referenceType",
+      "sourceFile",
+      "referencedPath",
+      "severity",
+      "status"
+    ],
+    "properties": {
+      "referenceId": {
+        "type": "string",
+        "description": "Unique stable reference identifier."
+      },
+      "referenceType": {
+        "type": "string",
+        "enum": [
+          "html-link",
+          "html-asset",
+          "css-import",
+          "css-asset",
+          "javascript-import",
+          "javascript-asset",
+          "python-import",
+          "json-reference",
+          "api-reference",
+          "configuration-reference",
+          "markdown-link",
+          "image-reference",
+          "font-reference",
+          "document-reference",
+          "unknown"
+        ]
+      },
+      "sourceFile": {
+        "type": "string",
+        "description": "Repository-relative file containing the reference."
+      },
+      "sourceLine": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "referencedPath": {
+        "type": "string"
+      },
+      "resolvedTarget": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "targetType": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "file",
+          "directory",
+          "api-endpoint",
+          "external-url",
+          "module",
+          "unknown",
+          null
+        ]
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "open",
+          "fixed",
+          "ignored",
+          "unverified",
+          "false-positive"
+        ]
+      },
+      "errorCode": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "httpStatus": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "detectedBy": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "firstDetected": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastChecked": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolvedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "resolution": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "ignoreReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  },
+  "scanner": {
+    "enabled": true,
+    "mode": "read-only",
+    "autoRepair": false,
+    "autoDelete": false,
+    "autoRename": false,
+    "autoOverwrite": false,
+    "generateCsv": true,
+    "csvOutput": "tools/repository-reports/broken-references.csv",
+    "jsonOutput": "tools/repository-reports/broken-references.json",
+    "preserveExistingFindings": true,
+    "deduplicate": true,
+    "stableReferenceIds": true,
+    "exitOnCritical": true,
+    "exitOnHigh": false
+  },
+  "resolutionPolicy": {
+    "verifyTargetBeforeRepair": true,
+    "preserveOriginalReference": true,
+    "requireGitDiffReview": true,
+    "requirePostRepairVerification": true,
+    "allowExternalUrlReplacement": false,
+    "allowAutomaticPathCorrection": false,
+    "allowAutomaticFileCreation": false,
+    "allowAutomaticFileDeletion": false
+  },
+  "integrity": {
+    "verifiedAgainstRepository": false,
+    "lastScan": null,
+    "sourceFilesScanned": 0,
+    "referencesScanned": 0,
+    "scannerVersion": null,
+    "warnings": [
+      "This is an initial report template, not a verified scan result.",
+      "An empty references array does not mean the repository has no broken references.",
+      "External URL checks are disabled by default.",
+      "API references must be checked against actual registered routes.",
+      "Dynamic imports and runtime-generated paths may require manual verification."
+    ]
+  }
 }

@@ -1,151 +1,431 @@
+
 #!/usr/bin/env node
-'use strict';
 
 /**
  * MedOrbits JavaScript Syntax Validator
  * File: tools/validate-javascript.js
+ * Version: 2.0.0
  *
  * Usage:
  *   node tools/validate-javascript.js
  *   node tools/validate-javascript.js tools scripts
  *   node tools/validate-javascript.js tools/repair-package-lock.cjs
  *
- * Uses Node.js built-in syntax checking.
- * Does not execute application code.
+ * Options:
+ *   --help       Show help.
+ *   --version    Show version.
+ *
+ * Validation:
+ *   - Uses Node.js built-in syntax checking.
+ *   - Supports .js, .cjs and .mjs.
+ *   - Does not execute application code.
+ *
+ * Safety:
+ *   - Read-only.
+ *   - Does not install dependencies.
+ *   - Does not modify source files.
+ *   - Does not follow symbolic links.
+ *   - Rejects paths outside the repository.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const ROOT = process.cwd();
+const SCRIPT_FILE = fileURLToPath(import.meta.url);
+const SCRIPT_DIR = path.dirname(SCRIPT_FILE);
+const ROOT = path.resolve(SCRIPT_DIR, "..");
 
-const EXTENSIONS = new Set(['.js', '.cjs', '.mjs']);
+const VERSION = "2.0.0";
+const NODE = process.execPath;
 
-const EXCLUDED_DIRS = new Set([
-  '.git',
-  'node_modules',
-  '.venv',
-  'venv',
-  'vendor',
-  '__pycache__',
-  'dist',
-  'build',
-  'coverage',
-  '.next'
+const TIMEOUT_MS = 30000;
+const MAX_BUFFER = 5 * 1024 * 1024;
+
+const EXTENSIONS = new Set([
+  ".js",
+  ".cjs",
+  ".mjs"
 ]);
 
-function collectFiles(target) {
-  const stat = fs.statSync(target);
+const EXCLUDED_DIRS = new Set([
+  ".git",
+  "node_modules",
+  ".venv",
+  "venv",
+  "vendor",
+  "__pycache__",
+  "dist",
+  "build",
+  "coverage",
+  ".next",
+  ".nuxt",
+  ".pytest_cache",
+  ".mypy_cache",
+  ".ruff_cache",
+  ".turbo",
+  ".cache"
+]);
 
-  if (stat.isFile()) {
-    if (!EXTENSIONS.has(path.extname(target).toLowerCase())) {
-      throw new Error(`Unsupported JavaScript file: ${target}`);
-    }
+const results = {
+  checked: 0,
+  passed: 0,
+  failed: 0,
+  skipped: 0
+};
 
-    return [target];
+const failures = [];
+
+function printHelp() {
+  console.log(`
+MedOrbits JavaScript Syntax Validator v${VERSION}
+
+Usage:
+  node tools/validate-javascript.js [options] [paths...]
+
+Examples:
+  node tools/validate-javascript.js
+  node tools/validate-javascript.js tools scripts
+  node tools/validate-javascript.js tools/repair-package-lock.cjs
+
+Options:
+  --help       Display help.
+  --version    Display version.
+
+Supported extensions:
+  .js
+  .cjs
+  .mjs
+
+Safety:
+  Uses node --check.
+  Does not execute application code.
+  Does not modify source files.
+`);
+}
+
+function relativePath(file) {
+  return path.relative(ROOT, file).split(path.sep).join("/");
+}
+
+function isInsideRoot(target) {
+  const relative = path.relative(ROOT, target);
+
+  return (
+    relative === "" ||
+    (
+      relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative)
+    )
+  );
+}
+
+function recordPass(file) {
+  results.checked++;
+  results.passed++;
+
+  console.log(`[PASS] ${relativePath(file)}`);
+}
+
+function recordFailure(file, message) {
+  results.checked++;
+
+  results.failed++;
+
+  const description = `${relativePath(file)}: ${message}`;
+
+  failures.push(description);
+
+  console.error(`[FAIL] ${description}`);
+}
+
+function recordSkip(message) {
+  results.skipped++;
+
+  console.log(`[SKIP] ${message}`);
+}
+
+function collectFiles(directory, output = []) {
+  let entries;
+
+  try {
+    entries = fs.readdirSync(directory, {
+      withFileTypes: true
+    });
+  } catch (error) {
+    throw new Error(
+      `Cannot read directory ${relativePath(directory)}: ${error.message}`
+    );
   }
 
-  if (!stat.isDirectory()) return [];
+  entries.sort((a, b) => a.name.localeCompare(b.name));
 
-  const results = [];
+  for (const entry of entries) {
+    const fullPath = path.join(directory, entry.name);
 
-  for (const entry of fs.readdirSync(target, {
-    withFileTypes: true
-  })) {
-    if (entry.isSymbolicLink()) continue;
-
-    const fullPath = path.join(target, entry.name);
+    // Never traverse symbolic links.
+    if (entry.isSymbolicLink()) {
+      continue;
+    }
 
     if (entry.isDirectory()) {
       if (!EXCLUDED_DIRS.has(entry.name)) {
-        results.push(...collectFiles(fullPath));
+        collectFiles(fullPath, output);
       }
-    } else if (
+
+      continue;
+    }
+
+    if (
       entry.isFile() &&
       EXTENSIONS.has(path.extname(entry.name).toLowerCase())
     ) {
-      results.push(fullPath);
+      output.push(fullPath);
     }
   }
 
-  return results;
+  return output;
+}
+
+function resolveTargets(targets) {
+  const files = [];
+
+  for (const target of targets) {
+    const absolute = path.resolve(ROOT, target);
+
+    if (!isInsideRoot(absolute)) {
+      throw new Error(
+        `Path outside repository rejected: ${target}`
+      );
+    }
+
+    let stat;
+
+    try {
+      stat = fs.lstatSync(absolute);
+    } catch (error) {
+      throw new Error(
+        `Cannot access ${target}: ${error.message}`
+      );
+    }
+
+    if (stat.isSymbolicLink()) {
+      throw new Error(
+        `Symbolic links are not permitted: ${target}`
+      );
+    }
+
+    if (stat.isFile()) {
+      const extension = path.extname(absolute).toLowerCase();
+
+      if (!EXTENSIONS.has(extension)) {
+        throw new Error(
+          `Unsupported JavaScript extension: ${target}`
+        );
+      }
+
+      files.push(absolute);
+      continue;
+    }
+
+    if (stat.isDirectory()) {
+      files.push(...collectFiles(absolute));
+      continue;
+    }
+
+    throw new Error(
+      `Unsupported filesystem entry: ${target}`
+    );
+  }
+
+  return [...new Set(files)].sort();
+}
+
+function validateFile(file) {
+  let stat;
+
+  try {
+    stat = fs.lstatSync(file);
+  } catch (error) {
+    return {
+      ok: false,
+      message: `Cannot inspect file: ${error.message}`
+    };
+  }
+
+  if (stat.isSymbolicLink()) {
+    return {
+      ok: false,
+      message: "Symbolic links are not permitted."
+    };
+  }
+
+  if (!stat.isFile()) {
+    return {
+      ok: false,
+      message: "Not a regular file."
+    };
+  }
+
+  const result = spawnSync(
+    NODE,
+    ["--check", file],
+    {
+      cwd: ROOT,
+      encoding: "utf8",
+      timeout: TIMEOUT_MS,
+      maxBuffer: MAX_BUFFER,
+      windowsHide: true,
+      shell: false,
+      stdio: ["ignore", "pipe", "pipe"]
+    }
+  );
+
+  if (result.error) {
+    const timedOut =
+      result.error.code === "ETIMEDOUT";
+
+    return {
+      ok: false,
+      message: timedOut
+        ? `Syntax check exceeded ${TIMEOUT_MS} ms.`
+        : `Unable to execute Node.js syntax checker: ${result.error.message}`,
+      stdout: result.stdout,
+      stderr: result.stderr
+    };
+  }
+
+  if (result.signal) {
+    return {
+      ok: false,
+      message: `Syntax checker terminated by signal ${result.signal}.`,
+      stdout: result.stdout,
+      stderr: result.stderr
+    };
+  }
+
+  if (result.status !== 0) {
+    return {
+      ok: false,
+      message: `Node.js syntax check exited with code ${result.status}.`,
+      stdout: result.stdout,
+      stderr: result.stderr
+    };
+  }
+
+  return {
+    ok: true
+  };
 }
 
 function main() {
-  const targets = process.argv.slice(2);
-  const inputs = targets.length ? targets : [ROOT];
-  const files = [];
+  const args = process.argv.slice(2);
 
-  try {
-    for (const input of inputs) {
-      const absolute = path.resolve(ROOT, input);
+  if (args.includes("--help") || args.includes("-h")) {
+    printHelp();
+    return;
+  }
 
-      if (!fs.existsSync(absolute)) {
-        throw new Error(`Path does not exist: ${input}`);
-      }
+  if (args.includes("--version")) {
+    console.log(
+      `MedOrbits JavaScript Syntax Validator v${VERSION}`
+    );
+    return;
+  }
 
-      files.push(...collectFiles(absolute));
-    }
-  } catch (error) {
-    console.error(`ERROR: ${error.message}`);
+  if (args.some(arg => arg.startsWith("--"))) {
+    console.error("[ERROR] Unknown option.");
+    printHelp();
     process.exitCode = 2;
     return;
   }
 
-  const uniqueFiles = [...new Set(files)].sort();
+  let files;
 
-  if (uniqueFiles.length === 0) {
-    console.log('No JavaScript files found.');
+  try {
+    files = args.length > 0
+      ? resolveTargets(args)
+      : collectFiles(ROOT);
+  } catch (error) {
+    console.error(`[ERROR] ${error.message}`);
+    process.exitCode = 2;
     return;
   }
 
-  let passed = 0;
-  let failed = 0;
+  if (files.length === 0) {
+    recordSkip("No JavaScript files found.");
+    return;
+  }
 
-  console.log(`Checking ${uniqueFiles.length} JavaScript file(s)...`);
+  console.log("============================================================");
+  console.log("MedOrbits JavaScript Syntax Validation");
+  console.log("============================================================");
+  console.log(`Repository: ${ROOT}`);
+  console.log(`Version:    ${VERSION}`);
+  console.log(`Node:       ${process.version}`);
+  console.log(`Files:      ${files.length}`);
+  console.log("============================================================");
 
-  for (const file of uniqueFiles) {
-    const relative = path.relative(ROOT, file);
+  for (const file of files) {
+    const result = validateFile(file);
 
-    const result = spawnSync(
-      process.execPath,
-      ['--check', file],
-      {
-        encoding: 'utf8',
-        timeout: 15000,
-        windowsHide: true
-      }
-    );
+    if (result.ok) {
+      recordPass(file);
+      continue;
+    }
 
-    if (result.error || result.status !== 0) {
-      failed++;
-      console.error(`\nFAIL ${relative}`);
+    recordFailure(file, result.message);
 
-      if (result.error) {
-        console.error(result.error.message);
-      }
+    if (result.stderr) {
+      console.error(
+        result.stderr.trim().split(/\r?\n/).slice(0, 12).join("\n")
+      );
+    }
 
-      if (result.stderr) {
-        console.error(result.stderr.trim());
-      }
-
-      if (result.stdout) {
-        console.error(result.stdout.trim());
-      }
-    } else {
-      passed++;
-      console.log(`PASS ${relative}`);
+    if (result.stdout) {
+      console.error(
+        result.stdout.trim().split(/\r?\n/).slice(0, 12).join("\n")
+      );
     }
   }
 
-  console.log(`\nResults: ${passed} passed, ${failed} failed.`);
+  console.log("\n============================================================");
+  console.log("MedOrbits JavaScript Validation Summary");
+  console.log("============================================================");
+  console.log(`Checked: ${results.checked}`);
+  console.log(`Passed:  ${results.passed}`);
+  console.log(`Failed:  ${results.failed}`);
+  console.log(`Skipped: ${results.skipped}`);
+  console.log("============================================================");
 
-  if (failed > 0) {
+  if (results.failed > 0) {
+    console.error("\nFailure details:");
+
+    for (const failure of failures) {
+      console.error(` - ${failure}`);
+    }
+
+    console.error("\n[RESULT] JAVASCRIPT VALIDATION FAILED");
     process.exitCode = 1;
+    return;
+  }
+
+  if (results.skipped > 0) {
+    console.log(
+      "\n[RESULT] Completed with skipped checks."
+    );
   } else {
-    console.log('All checked JavaScript files passed syntax checks.');
+    console.log(
+      "\n[RESULT] All discovered JavaScript files passed syntax validation."
+    );
   }
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  console.error(`[FATAL] ${error.message}`);
+  process.exitCode = 2;
+}
