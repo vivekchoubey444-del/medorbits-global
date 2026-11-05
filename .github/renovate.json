@@ -1,4 +1,3 @@
-
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "MedOrbits dependency automation and software supply-chain maintenance",
@@ -16,7 +15,6 @@
   "schedule": [
     "after 3am and before 6am on monday"
   ],
-
   "updateNotScheduled": false,
 
   "prHourlyLimit": 2,
@@ -30,7 +28,6 @@
     "dependencies",
     "automated"
   ],
-
   "assigneesFromCodeOwners": true,
 
   "semanticCommitType": "chore",
@@ -48,7 +45,8 @@
     "enabled": true,
     "labels": [
       "security",
-      "dependencies"
+      "dependencies",
+      "review-required"
     ],
     "automerge": false,
     "vulnerabilityFixStrategy": "lowest",
@@ -61,7 +59,7 @@
     "schedule": [
       "before 5am on monday"
     ],
-    "recreateWhen": "always",
+    "recreateWhen": "auto",
     "labels": [
       "dependencies",
       "lockfile",
@@ -74,16 +72,10 @@
 
   "packageRules": [
     {
-      "description": "Group root npm production dependencies",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchFileNames": [
-        "package.json"
-      ],
-      "matchDepTypes": [
-        "dependencies"
-      ],
+      "description": "Group npm production dependencies",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["**/package.json"],
+      "matchDepTypes": ["dependencies"],
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -99,16 +91,10 @@
       "automerge": false
     },
     {
-      "description": "Group root npm development dependencies",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchFileNames": [
-        "package.json"
-      ],
-      "matchDepTypes": [
-        "devDependencies"
-      ],
+      "description": "Group npm development dependencies",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["**/package.json"],
+      "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -125,9 +111,7 @@
     },
     {
       "description": "Group GitHub Actions updates",
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -142,7 +126,7 @@
       "automerge": false
     },
     {
-      "description": "Group Python dependency updates",
+      "description": "Group Python dependencies",
       "matchManagers": [
         "pip_requirements",
         "pep621",
@@ -156,6 +140,76 @@
       "groupName": "MedOrbits Python dependencies",
       "addLabels": [
         "python",
+        "dependencies"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Group Java Maven dependencies",
+      "matchManagers": ["maven"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits Java Maven dependencies",
+      "addLabels": [
+        "java",
+        "maven"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Group Gradle dependencies",
+      "matchManagers": ["gradle"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits Gradle dependencies",
+      "addLabels": [
+        "java",
+        "gradle"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Group C and C++ Conan dependencies",
+      "matchManagers": ["conan"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits C++ dependencies",
+      "addLabels": [
+        "cpp",
+        "conan"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Group Rust dependencies",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits Rust dependencies",
+      "addLabels": [
+        "rust",
+        "dependencies"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Group Go dependencies",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "MedOrbits Go dependencies",
+      "addLabels": [
+        "go",
         "dependencies"
       ],
       "automerge": false
@@ -181,10 +235,7 @@
     },
     {
       "description": "Keep major upgrades separate for manual review",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "groupName": null,
+      "matchUpdateTypes": ["major"],
       "addLabels": [
         "breaking-change",
         "review-required"
@@ -193,9 +244,7 @@
     },
     {
       "description": "Require manual review for lockfile maintenance",
-      "matchUpdateTypes": [
-        "lockFileMaintenance"
-      ],
+      "matchUpdateTypes": ["lockFileMaintenance"],
       "addLabels": [
         "dependencies",
         "lockfile",
