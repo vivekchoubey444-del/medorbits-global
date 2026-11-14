@@ -1,47 +1,161 @@
+
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "project": "MedOrbits",
-  "configurationVersion": "1.0.0",
-  "provider": "Vercel",
-  "configurationSource": "__headers/vercel/headers.fragment.json",
-  "deploymentTarget": "root vercel.json",
+  "version": "1.0.0",
+  "environment": "production",
+  "policy": {
+    "name": "MedOrbits Web Security Header Policy",
+    "description": "Security and HTTP response header requirements for MedOrbits web infrastructure.",
+    "owner": "MedOrbits",
+    "status": "active",
+    "lastReviewed": "2026-11-14"
+  },
   "headers": {
-    "X-Content-Type-Options": {
-      "value": "nosniff",
-      "purpose": "Prevent MIME type sniffing"
+    "required": {
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Cross-Origin-Opener-Policy": "same-origin"
     },
-    "Referrer-Policy": {
-      "value": "strict-origin-when-cross-origin",
-      "purpose": "Limit referrer information sent to other origins"
+    "recommended": {
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "Cross-Origin-Resource-Policy": "same-origin"
     },
-    "X-Frame-Options": {
-      "value": "SAMEORIGIN",
-      "purpose": "Restrict framing to same-origin pages",
-      "review": "Check iframe-based forms and integrations"
-    },
-    "Permissions-Policy": {
-      "value": "camera=(), microphone=(), geolocation=()",
-      "purpose": "Disable browser features not currently required",
-      "review": "Update only if a feature requires a permission"
-    },
-    "Cross-Origin-Opener-Policy": {
-      "value": "same-origin",
-      "purpose": "Isolate the browsing context",
-      "review": "Test OAuth, payment and popup workflows"
+    "conditional": {
+      "Content-Security-Policy": {
+        "enabled": false,
+        "mode": "report-only",
+        "description": "Enable after testing all scripts, styles, fonts, APIs and external integrations.",
+        "directives": {
+          "default-src": "'self'",
+          "base-uri": "'self'",
+          "object-src": "'none'",
+          "frame-ancestors": "'self'",
+          "form-action": "'self'",
+          "upgrade-insecure-requests": true
+        }
+      }
     }
   },
-  "intentionallyOmitted": {
-    "Content-Security-Policy": "Requires an application-specific source inventory and testing",
-    "Strict-Transport-Security": "Enable only after confirming HTTPS coverage for all affected hosts",
-    "Cross-Origin-Resource-Policy": "Set according to actual cross-origin asset requirements"
-  },
   "cache": {
-    "assets": "public, max-age=604800",
-    "html": "no-cache, must-revalidate",
-    "personalizedResponses": "Do not use public shared caching"
+    "html": {
+      "policy": "no-cache, must-revalidate",
+      "description": "HTML documents must revalidate before reuse."
+    },
+    "assets": {
+      "policy": "public, max-age=604800",
+      "maxAgeSeconds": 604800,
+      "description": "Static assets are cached for seven days."
+    },
+    "hashedAssets": {
+      "policy": "public, max-age=31536000, immutable",
+      "maxAgeSeconds": 31536000,
+      "immutable": true,
+      "description": "Use only for content-hashed filenames."
+    },
+    "jsonData": {
+      "policy": "public, max-age=300, stale-while-revalidate=60",
+      "maxAgeSeconds": 300
+    },
+    "privateDocuments": {
+      "policy": "private, no-store",
+      "maxAgeSeconds": 0,
+      "description": "Student records, identity documents and private administrative files must never be publicly cached."
+    },
+    "api": {
+      "policy": "no-store",
+      "maxAgeSeconds": 0,
+      "description": "Authentication, personal data and sensitive API responses must not be cached."
+    }
   },
-  "automation": {
-    "deploy": false,
-    "modifyDns": false,
-    "modifyProviderSettings": false
+  "routePolicies": {
+    "public": [
+      "/",
+      "/education/",
+      "/career/",
+      "/pages/"
+    ],
+    "private": [
+      "/account/",
+      "/admin/",
+      "/database/",
+      "/official-documents/private/"
+    ],
+    "api": [
+      "/api/"
+    ]
+  },
+  "securityRequirements": {
+    "https": {
+      "required": true,
+      "hstsEnabled": true,
+      "includeSubDomains": true,
+      "preload": false,
+      "requireAllSubdomainsHttps": true
+    },
+    "contentSecurityPolicy": {
+      "required": true,
+      "enforcement": "report-only-until-tested",
+      "allowUnsafeInline": false,
+      "allowUnsafeEval": false,
+      "requireNonceOrHashForInlineScripts": true
+    },
+    "cors": {
+      "credentials": false,
+      "wildcardOriginWithCredentials": false,
+      "allowOrigin": [
+        "https://medorbits.in",
+        "https://www.medorbits.in"
+      ]
+    },
+    "authentication": {
+      "requiredForPrivateRoutes": true,
+      "serverSideAuthorization": true,
+      "preventInsecureDirectObjectReferences": true,
+      "preventMassAssignment": true
+    },
+    "informationDisclosure": {
+      "exposeStackTraces": false,
+      "exposeEnvironmentVariables": false,
+      "exposeSecrets": false,
+      "directoryListing": false
+    }
+  },
+  "deployment": {
+    "platform": "Vercel",
+    "configurationFile": "vercel.json",
+    "referenceConfiguration": "__headers/vercel/vercel.config.json",
+    "headerFragment": "__headers/vercel/headers.fragment.json",
+    "validator": "__headers/vercel/validate-headers.js",
+    "requireValidationBeforeDeployment": true,
+    "failOnValidationErrors": true,
+    "manualReviewRequiredForWarnings": true
+  },
+  "validation": {
+    "requiredHeaders": [
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "X-Frame-Options",
+      "Permissions-Policy",
+      "Cross-Origin-Opener-Policy"
+    ],
+    "forbiddenValues": [
+      "X-Content-Type-Options: none",
+      "X-Frame-Options: ALLOWALL"
+    ],
+    "checkDuplicateHeaders": true,
+    "checkDuplicateSources": true,
+    "checkCachePolicies": true,
+    "checkHsts": true,
+    "checkCsp": true,
+    "checkPrivateDocumentCaching": true
+  },
+  "compliance": {
+    "securityReview": "required",
+    "deploymentReview": "required",
+    "periodicReviewDays": 90,
+    "incidentReview": true
   }
 }

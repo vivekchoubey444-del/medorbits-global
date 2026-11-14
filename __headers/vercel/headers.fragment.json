@@ -39,11 +39,64 @@
     ]
   },
   {
+    "source": "/assets/data/(.*)",
+    "headers": [
+      {
+        "key": "Cache-Control",
+        "value": "public, max-age=300, stale-while-revalidate=60"
+      }
+    ]
+  },
+  {
     "source": "/(.*)\\.html",
     "headers": [
       {
         "key": "Cache-Control",
         "value": "no-cache, must-revalidate"
+      }
+    ]
+  },
+  {
+    "source": "/api/(.*)",
+    "headers": [
+      {
+        "key": "Cache-Control",
+        "value": "no-store"
+      },
+      {
+        "key": "X-Content-Type-Options",
+        "value": "nosniff"
+      }
+    ]
+  },
+  {
+    "source": "/account/(.*)",
+    "headers": [
+      {
+        "key": "Cache-Control",
+        "value": "private, no-store"
+      }
+    ]
+  },
+  {
+    "source": "/admin/(.*)",
+    "headers": [
+      {
+        "key": "Cache-Control",
+        "value": "private, no-store"
+      }
+    ]
+  },
+  {
+    "source": "/official-documents/private/(.*)",
+    "headers": [
+      {
+        "key": "Cache-Control",
+        "value": "private, no-store"
+      },
+      {
+        "key": "X-Content-Type-Options",
+        "value": "nosniff"
       }
     ]
   }
